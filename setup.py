@@ -10,7 +10,7 @@ def readme():
         return f.read()
 
 setup(
-    name='FATS',
+    name='turbofats',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -66,7 +66,7 @@ setup(
     # simple. Or you can use find_packages().
     # packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
-    packages = ['FATS'],
+    packages = ['turbofats'],
 
     include_package_data=True,
 

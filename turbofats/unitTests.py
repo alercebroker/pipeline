@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas import read_csv
 import numpy as np
-import FATS
+import turbofats
 import pickle
 
 from tqdm import tqdm
@@ -11,7 +11,7 @@ import multiprocessing as mp
 import pytest
 
 
-from FATS.Feature import FeatureSpace
+from turbofats.Feature import FeatureSpace
 
 ts_path = "/Users/JonathanWihl/Desktop/FATS 2.0/CSSAllVarPhot.csv"
 ts_save_path = "lcs.pkl"

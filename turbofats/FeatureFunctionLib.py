@@ -4,6 +4,8 @@ import time
 import math
 import bisect
 
+from numba import jit
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -891,80 +893,82 @@ class Psi_eta(Base):
             print("error: please run PeriodLS first to generate values for Psi_eta")
 
 
+@jit(nopython=True)
+def car_likelihood(parameters, t, x, error_vars):
+    sigma = parameters[0]
+    tau = parameters[1]
+    # b = parameters[1] #comment it to do 2 pars estimation
+    # tau = params(1,1);
+    # sigma = sqrt(2*var(x)/tau);
+    
+    b = np.mean(x) / tau
+    epsilon = 1e-300
+    cte_neg = -np.infty
+    num_datos = len(x)
+    
+    Omega = []
+    x_hat = []
+    a = []
+    x_ast = []
+    
+    # Omega = np.zeros((num_datos,1))
+    # x_hat = np.zeros((num_datos,1))
+    # a = np.zeros((num_datos,1))
+    # x_ast = np.zeros((num_datos,1))
+    
+    # Omega[0]=(tau*(sigma**2))/2.
+    # x_hat[0]=0.
+    # a[0]=0.
+    # x_ast[0]=x[0] - b*tau
+
+    Omega.append(np.array([tau * (sigma ** 2) / 2.0]))
+    x_hat.append(np.array([0.0]))
+    a.append(np.array([0.0]))
+    x_ast.append(x[0] - b * tau)
+    
+    loglik = np.array([0.0])
+    
+    for i in range(1, num_datos):
+        a_new = np.exp(-(t[i] - t[i - 1]) / tau)
+        x_ast.append(x[i] - b * tau)
+        x_hat_val = (
+            a_new * x_hat[i - 1] +
+            (a_new * Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1])) *
+            (x_ast[i - 1] - x_hat[i - 1]))
+        x_hat.append(x_hat_val)
+        
+        Omega.append(
+            Omega[0] * (1 - (a_new ** 2)) + ((a_new ** 2)) * Omega[i - 1] *
+            (1 - (Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1]))))
+        
+        # x_ast[i]=x[i] - b*tau
+        # x_hat[i]=a_new*x_hat[i-1] + (a_new*Omega[i-1]/(Omega[i-1] +
+        # error_vars[i-1]))*(x_ast[i-1]-x_hat[i-1])
+        # Omega[i]=Omega[0]*(1-(a_new**2)) + ((a_new**2))*Omega[i-1]*
+        # ( 1 - (Omega[i-1]/(Omega[i-1]+ error_vars[i-1])))
+
+        loglik_inter = np.log(
+            ((2 * np.pi * (Omega[i] + error_vars[i])) ** -0.5) *
+            (np.exp(-0.5 * (((x_hat[i] - x_ast[i]) ** 2) /
+            (Omega[i] + error_vars[i]))) + epsilon))
+
+        loglik = loglik + loglik_inter
+
+        if(loglik[0] <= cte_neg):
+            print('CAR lik --> inf')
+            return None
+
+    # the minus one is to perfor maximization using the minimize function
+    return -loglik
+
 class CAR_sigma(Base):
 
     def __init__(self):
-
         self.Data = ['magnitude', 'time', 'error']
 
     def CAR_Lik(self, parameters, t, x, error_vars):
-
-        sigma = parameters[0]
-        tau = parameters[1]
-        # b = parameters[1] #comment it to do 2 pars estimation
-        # tau = params(1,1);
-        # sigma = sqrt(2*var(x)/tau);
-
-        b = np.mean(x) / tau
-        epsilon = 1e-300
-        cte_neg = -np.infty
-        num_datos = np.size(x)
-
-        Omega = []
-        x_hat = []
-        a = []
-        x_ast = []
-
-        # Omega = np.zeros((num_datos,1))
-        # x_hat = np.zeros((num_datos,1))
-        # a = np.zeros((num_datos,1))
-        # x_ast = np.zeros((num_datos,1))
-
-        # Omega[0]=(tau*(sigma**2))/2.
-        # x_hat[0]=0.
-        # a[0]=0.
-        # x_ast[0]=x[0] - b*tau
-
-        Omega.append((tau * (sigma ** 2)) / 2.)
-        x_hat.append(0.)
-        a.append(0.)
-        x_ast.append(x[0] - b * tau)
-
-        loglik = 0.
-
-        for i in range(1, num_datos):
-
-            a_new = np.exp(-(t[i] - t[i - 1]) / tau)
-            x_ast.append(x[i] - b * tau)
-            x_hat.append(
-                a_new * x_hat[i - 1] +
-                (a_new * Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1])) *
-                (x_ast[i - 1] - x_hat[i - 1]))
-
-            Omega.append(
-                Omega[0] * (1 - (a_new ** 2)) + ((a_new ** 2)) * Omega[i - 1] *
-                (1 - (Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1]))))
-
-            # x_ast[i]=x[i] - b*tau
-            # x_hat[i]=a_new*x_hat[i-1] + (a_new*Omega[i-1]/(Omega[i-1] +
-            # error_vars[i-1]))*(x_ast[i-1]-x_hat[i-1])
-            # Omega[i]=Omega[0]*(1-(a_new**2)) + ((a_new**2))*Omega[i-1]*
-            # ( 1 - (Omega[i-1]/(Omega[i-1]+ error_vars[i-1])))
-
-            loglik_inter = np.log(
-                ((2 * np.pi * (Omega[i] + error_vars[i])) ** -0.5) *
-                (np.exp(-0.5 * (((x_hat[i] - x_ast[i]) ** 2) /
-                 (Omega[i] + error_vars[i]))) + epsilon))
-
-            loglik = loglik + loglik_inter
-
-            if(loglik <= cte_neg):
-                print('CAR lik --> inf')
-                return None
-
-        # the minus one is to perfor maximization using the minimize function
-        return -loglik
-
+        return car_likelihood(parameters, t, x, error_vars)
+    
     def calculateCAR(self, time, data, error):
 
         x0 = [10, 0.5]
