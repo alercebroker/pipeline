@@ -3,6 +3,7 @@ import sys
 import time
 import math
 import bisect
+import warnings
 
 from numba import jit
 
@@ -95,10 +96,14 @@ class Autocor_length(Base):
 
         magnitude = data[0]
         AC = stattools.acf(magnitude, nlags=self.nlags)
+        
         k = next((index for index, value in
                  enumerate(AC) if value < np.exp(-1)), None)
 
         while k is None:
+            if self.nlags > len(magnitude):
+                warnings.warn('Setting autocorrelation length as light curve length')
+                return len(magnitude)
             self.nlags = self.nlags + 100
             AC = stattools.acf(magnitude, nlags=self.nlags)
             k = next((index for index, value in
