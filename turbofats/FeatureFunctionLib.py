@@ -5,6 +5,7 @@ import math
 import bisect
 
 from numba import jit
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -820,6 +821,29 @@ class PeriodLS(Base):
         return T
 
 
+class PeriodLS_v2(Base):
+    def __init__(self, ofac=6.0):
+        self.Data = ['magnitude', 'time', 'error']
+        self.ofac = ofac
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]
+
+        global new_time_v2
+        global prob_v2
+        global period_v2
+
+        fx_v2, fy_v2, jmax_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
+                                         fmin=0.0,
+                                         fmax=20.0)
+        period_v2 = fx_v2[jmax_v2]
+        T_v2 = 1.0 / period_v2
+        new_time_v2 = np.mod(time, 2 * T_v2) / (2 * T_v2)
+
+        return T_v2
+
 class Period_fit(Base):
 
     def __init__(self):
@@ -834,6 +858,18 @@ class Period_fit(Base):
             print("error: please run PeriodLS first to generate values for Period_fit")
 
 
+class Period_fit_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+        
+    def fit(self, data):
+        try:
+            return prob_v2
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Period_fit_v2")
+            
+            
 class Psi_CS(Base):
 
     def __init__(self):
@@ -892,6 +928,46 @@ class Psi_eta(Base):
         except:
             print("error: please run PeriodLS first to generate values for Psi_eta")
 
+
+class Psi_CS_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+    def fit(self, data):
+        try:
+            magnitude = data[0]
+            time = data[1]
+            folded_data = magnitude[np.argsort(new_time_v2)]
+            sigma = np.std(folded_data)
+            N = len(folded_data)
+            m = np.mean(folded_data)
+            s = np.cumsum(folded_data - m) * 1.0 / (N * sigma)
+            R = np.max(s) - np.min(s)
+
+            return R
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Psi_CS_v2")
+
+
+class Psi_eta_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+    def fit(self, data):
+        try:
+            magnitude = data[0]
+            folded_data = magnitude[np.argsort(new_time_v2)]
+
+            N = len(folded_data)
+            sigma2 = np.var(folded_data)
+
+            Psi_eta = (1.0 / ((N - 1) * sigma2) *
+                       np.sum(np.power(folded_data[1:] - folded_data[:-1], 2)))
+
+            return Psi_eta
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Psi_eta_v2")
+            
 
 @jit(nopython=True)
 def car_likelihood(parameters, t, x, error_vars):
@@ -974,12 +1050,17 @@ class CAR_sigma(Base):
         x0 = [10, 0.5]
         bnds = ((0, 100), (0.0001, 100))
 
-        res = minimize(self.CAR_Lik, x0, args=(time, data, error),
-                       method='L-BFGS-B', bounds=bnds)
-        # options={'disp': True}
-        sigma = res.x[0]
         global tau
-        tau = res.x[1]
+        try:
+            res = minimize(self.CAR_Lik, x0, args=(time, data, error),
+                           method='L-BFGS-B', bounds=bnds)
+            sigma = res.x[0]
+            tau = res.x[1]
+        except TypeError:
+            warnings.warn('CAR optimizer raised an exception')
+            # options={'disp': True}
+            sigma = np.nan
+            tau = np.nan
         return sigma
 
     # def getAtt(self):
@@ -1028,6 +1109,42 @@ class CAR_mean(Base):
             print("error: please run CAR_sigma first to generate values for CAR_mean")
 
 
+class Harmonics(Base):
+    def __init__(self, n_harmonics=10):
+        self.Data = ['magnitude', 'time', 'error']
+        self.n_harmonics = n_harmonics
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]
+
+        try:
+            best_freq = period_v2
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Harmonics")
+
+        Omega = [np.array([[1.]*len(time)])]
+        timefreq = (2.0*np.pi*best_freq*np.arange(1, self.n_harmonics+1)).reshape(1, -1).T*time
+        Omega.append(np.cos(timefreq))
+        Omega.append(np.sin(timefreq))
+        Omega = np.concatenate(Omega).T
+        inverr2 = (1.0/error**2)
+        coeffs = np.linalg.lstsq(inverr2.reshape(-1,1)*Omega, magnitude*inverr2, rcond=None)
+        fitted_magnitude = np.dot(Omega, coeffs[0]) 
+        coef_cos = coeffs[0][1:self.n_harmonics+1]
+        coef_sin = coeffs[0][self.n_harmonics+1:]
+        coef_mag = np.sqrt(coef_cos**2 + coef_sin**2)
+        coef_phi = np.arctan2(coef_sin, coef_cos)
+
+        # Relative phase
+        coef_phi = coef_phi - coef_phi[0]
+        coef_phi = coef_phi[1:]
+
+        nmse = np.mean((fitted_magnitude - magnitude)**2)/np.var(error)
+        return np.concatenate([coef_mag, coef_phi, np.array([nmse])]).tolist()
+
+            
 class Freq1_harmonics_amplitude_0(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
@@ -1051,9 +1168,7 @@ class Freq1_harmonics_amplitude_0(Base):
             return a*np.sin(2*np.pi*Freq*x)+b*np.cos(2*np.pi*Freq*x)+c
 
         for i in range(3):
-
             wk1, wk2, jmax, prob = lomb.fasper(time, magnitude, error, 6., 100.)
-
             fundamental_Freq = wk1[jmax]
 
             # fit to a_i sin(2pi f_i t) + b_i cos(2 pi f_i t) + b_i,o

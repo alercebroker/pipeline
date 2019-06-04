@@ -71,7 +71,7 @@ def __spread__(y, yy, n, x, m):
       nden=(nden/(j+1-ilo))*(j-ihi)  
       yy[j] = yy[j] + y*fac/(nden*(x-j))  
   
-def fasper(x,y, err, ofac,hifac, MACC=4):
+def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
   """ function fasper 
     Given abscissas x (which need not be equally spaced) and ordinates 
     y, and given a desired oversampling factor ofac (a typical value 
@@ -116,7 +116,7 @@ def fasper(x,y, err, ofac,hifac, MACC=4):
 
   my_per.set_data(x,y,err)
   #Course Frequency Evaluation
-  my_per.frequency_grid_evaluation(fmin=0.0, fmax=5.0, fresolution=1e-3)
+  my_per.frequency_grid_evaluation(fmin=fmin, fmax=fmax, fresolution=1e-3)
   #Finetine with smaller frequency steps
   my_per.finetune_best_frequencies(fresolution=1e-4, n_local_optima=10)
   #wk1: frequency grid, wk2: value of the periodgram at particular frequency
