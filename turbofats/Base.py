@@ -9,3 +9,6 @@ class Base:
     def fit(self, data):
         pass
         #return self
+
+    def is1d(self):
+        return True

@@ -1,15 +1,10 @@
-import os
-import sys
-import time
 import math
-import bisect
-import warnings
 
 from numba import jit
 import warnings
 
 import numpy as np
-import pandas as pd
+
 from scipy import stats
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
@@ -1115,14 +1110,15 @@ class CAR_mean(Base):
 
 
 class Harmonics(Base):
-    def __init__(self, n_harmonics=10):
+    def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
-        self.n_harmonics = n_harmonics
+        self.n_harmonics = 7 # HARD-CODED
+        self.penalization = 1 # HARD-CODED
 
     def fit(self, data):
         magnitude = data[0]
         time = data[1]
-        error = data[2]
+        error = data[2]+10**-2
 
         try:
             best_freq = period_v2
@@ -1135,10 +1131,19 @@ class Harmonics(Base):
         Omega.append(np.sin(timefreq))
         Omega = np.concatenate(Omega).T
         inverr2 = (1.0/error**2)
-        coeffs = np.linalg.lstsq(inverr2.reshape(-1,1)*Omega, magnitude*inverr2, rcond=None)
-        fitted_magnitude = np.dot(Omega, coeffs[0]) 
-        coef_cos = coeffs[0][1:self.n_harmonics+1]
-        coef_sin = coeffs[0][self.n_harmonics+1:]
+        #coeffs = np.linalg.lstsq(inverr2.reshape(-1, 1)*Omega, magnitude*inverr2, rcond=None)[0]
+
+        # weighted regularized linear regression
+        reg = np.array([0.]*(1+self.n_harmonics*2))
+        reg[1:(self.n_harmonics+1)] = np.linspace(0, 1, self.n_harmonics)*self.penalization*len(magnitude)**2*inverr2.mean()
+        reg[(self.n_harmonics+1):] = reg[1:(self.n_harmonics+1)]
+        dreg = np.diag(reg)
+        wA = inverr2.reshape(-1, 1)*Omega
+        wB = (magnitude*inverr2).reshape(-1, 1)
+        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)+dreg), wA.T), wB).flatten()
+        fitted_magnitude = np.dot(Omega, coeffs) 
+        coef_cos = coeffs[1:self.n_harmonics+1]
+        coef_sin = coeffs[self.n_harmonics+1:]
         coef_mag = np.sqrt(coef_cos**2 + coef_sin**2)
         coef_phi = np.arctan2(coef_sin, coef_cos)
 
@@ -1149,6 +1154,14 @@ class Harmonics(Base):
         nmse = np.mean((fitted_magnitude - magnitude)**2)/np.var(error)
         return np.concatenate([coef_mag, coef_phi, np.array([nmse])]).tolist()
 
+    def is1d(self):
+        return False
+
+    def get_feature_names(self):
+        feature_names = ['Harmonics_mag_%d' % (i+1) for i in range(self.n_harmonics)]
+        feature_names += ['Harmonics_phase_%d' % (i+1) for i in range(1, self.n_harmonics)]
+        feature_names.append('Harmonics_mse')
+        return feature_names
             
 class Freq1_harmonics_amplitude_0(Base):
     def __init__(self):

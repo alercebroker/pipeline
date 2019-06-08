@@ -1,11 +1,7 @@
-import os
 import sys
-import time
 import inspect
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 from turbofats import featureFunction
 
@@ -48,6 +44,7 @@ class FeatureSpace:
         self.featureList = []
         self.featureOrder = []
         self.featureList = []
+        self.featureNames = [] # Useful for multidimensional features
 
         self.sort = False
 
@@ -101,6 +98,10 @@ class FeatureSpace:
                                 if inspect.isclass(obj) and feature == name:
                                     if set(obj().Data).issubset(self.Data):
                                         self.featureList.append(name)
+                                        if obj().is1d():
+                                            self.featureNames.append(name)
+                                        else:
+                                            self.featureNames += obj().get_feature_names()
                                     else:
                                         print("Warning: the feature", name, "could not be calculated because", obj().Data, "are needed.")
 
