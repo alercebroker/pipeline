@@ -29,11 +29,11 @@ Reference:
  
 """  
 from __future__ import division
+import numpy as np
 from numpy import *  
 from numpy.fft import *  
 import matplotlib.pylab as plt
 import P4J
-
 
   
 def __spread__(y, yy, n, x, m):  
@@ -122,9 +122,9 @@ def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
   #wk1: frequency grid, wk2: value of the periodgram at particular frequency
   wk1, wk2 = my_per.get_periodogram()
 
-  pmax = wk2.max()
-  jmax = wk2.argmax()
-  
+  pmax = np.nanmax(wk2)
+  jmax = np.nanargmax(wk2)
+
   #Significance estimation
   expy = exp(-wk2)
   effm = 2.0*(len(wk1))/ofac
