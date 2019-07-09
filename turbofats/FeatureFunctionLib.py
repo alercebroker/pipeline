@@ -94,7 +94,7 @@ class Autocor_length(Base):
     def fit(self, data):
 
         magnitude = data[0]
-        AC = stattools.acf(magnitude, nlags=self.nlags)
+        AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
 
         k = next((index for index, value in
                  enumerate(AC) if value < np.exp(-1)), None)
@@ -104,7 +104,7 @@ class Autocor_length(Base):
                 warnings.warn('Setting autocorrelation length as light curve length')
                 return len(magnitude)
             self.nlags = self.nlags + 100
-            AC = stattools.acf(magnitude, nlags=self.nlags)
+            AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
             k = next((index for index, value in
                       enumerate(AC) if value < np.exp(-1)), None)
 
