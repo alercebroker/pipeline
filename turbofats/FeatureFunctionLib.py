@@ -1669,6 +1669,39 @@ class GP_DRW_tau(Base):
             print("error: please run GP_DRW_sigma first to generate values for GP_DRW_tau")
 
 
+@jit(nopython=True)
+def SFarray(jd, mag, err):
+    """
+    calculate an array with (m(ti)-m(tj)), whit (err(t)^2+err(t+tau)^2) and another with tau=dt
+
+    inputs:
+    jd: julian days array
+    mag: magnitudes array
+    err: error of magnitudes array
+
+    outputs:
+    tauarray: array with the difference in time (ti-tj)
+    sfarray: array with |m(ti)-m(tj)|
+    errarray: array with err(ti)^2+err(tj)^2
+    """
+
+    sfarray = []
+    tauarray = []
+    errarray = []
+    err_squared = err**2
+    len_mag = len(mag)
+    for i in range(len_mag):
+        for j in range(i+1, len_mag):
+            dm = mag[i] - mag[j]
+            sigma = err_squared[i] + err_squared[j]
+            dt = jd[j] - jd[i]
+            sfarray.append(np.abs(dm))
+            tauarray.append(dt)
+            errarray.append(sigma)
+    sfarray = np.array(sfarray)
+    tauarray = np.array(tauarray)
+    errarray = np.array(errarray)
+    return (tauarray, sfarray, errarray)
 
 
 class SF_ML_amplitude(Base):
@@ -1679,38 +1712,6 @@ class SF_ML_amplitude(Base):
 
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
-
-
-    def SFarray(self,jd,mag,err):
-        """
-        calculate an array with (m(ti)-m(tj)), whit (err(t)^2+err(t+tau)^2) and another with tau=dt
-
-        inputs:
-        jd: julian days array
-        mag: magnitudes array
-        err: error of magnitudes array
-
-        outputs:
-        tauarray: array with the difference in time (ti-tj)
-        sfarray: array with |m(ti)-m(tj)|
-        errarray: array with err(ti)^2+err(tj)^2
-        """
-
-        sfarray=[]
-        tauarray=[]
-        errarray=[]
-        for i, item in enumerate(mag):
-            for j in range(i+1,len(mag)):
-                dm=mag[i]-mag[j]
-                sigma=err[i]**2+err[j]**2
-                dt=(jd[j]-jd[i])
-                sfarray.append(np.abs(dm))
-                tauarray.append(dt)
-                errarray.append(sigma)
-        sfarray=np.array(sfarray)
-        tauarray=np.array(tauarray)
-        errarray=np.array(errarray)
-        return (tauarray,sfarray,errarray)
 
 
     def SFVmod(self,dt,A,gamma):
@@ -1741,8 +1742,8 @@ class SF_ML_amplitude(Base):
 
     def SF_Lik(self, theta, t, mag, err):
 
-        dtarray, dmagarray, sigmaarray = self.SFarray(t,mag,err)
-        ndt=np.where((dtarray<=365))
+        dtarray, dmagarray, sigmaarray = SFarray(t,mag,err)
+        ndt=np.where((dtarray<=365) & (dtarray>=3))
         dtarray=dtarray[ndt]
         dmagarray=dmagarray[ndt]
         sigmaarray=sigmaarray[ndt]
@@ -1754,21 +1755,24 @@ class SF_ML_amplitude(Base):
         t = data[1]
         err = data[2]
 
-        x0 = [0.5, 0.5]
-        bnds = ((0.0, 5), (0.0, 10))
+        x0 = [0.0, 0.0]
+        #bnds = ((-0.1, 5), (0.0, 10))
 
-        #res = minimize(self.SF_Lik, x0, args=(t,mag,err),
-        #               method='Nelder-Mead', options={'fatol': 1e-10, 'xatol': 1e-10, 'maxiter': 15000})
+        res = minimize(self.SF_Lik, x0, args=(t,mag,err),
+                        method='L-BFGS-B')
 
+        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
+        #               method='SLSQP')#, options={'ftol': 1e-6, 'maxiter': 200})
 
-        res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
-                       method='SLSQP', options={'ftol': 1e-8, 'maxiter': 200})
+        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
+        #               method='L-BFGS-B')
 
-        aSF_min = res.x[1]
-        if (aSF_min<1e-3): aSF_min = 0.0
+        aSF_min = abs(res.x[1])
         global gSF_min
         gSF_min = res.x[0]
-        if (aSF_min<1e-3): gSF_min = 0.0
+        if (aSF_min<1e-3):
+            aSF_min = 0.0
+            gSF_min = 0.0
         return aSF_min
 
 
@@ -1784,10 +1788,6 @@ class SF_ML_gamma(Base):
             return gSF_min
         except:
             print("error: please run SF_ML_amplitude first to generate values for SF_ML_gamma")
-
-
-
-
 
 
 class IAR_phi(Base):
