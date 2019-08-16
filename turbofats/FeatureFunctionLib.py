@@ -1644,6 +1644,10 @@ class GP_DRW_sigma(Base):
         mag = magnitude-magnitude.mean()
         kern = GPy.kern.OU(1)
         m = GPy.models.GPHeteroscedasticRegression(t[:, None], mag[:, None], kern)
+
+        # DeprecationWarning:Assigning the 'data' attribute is an inherently
+        # unsafe operation and will be removed in the future.
+        
         m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None] # Set the noise parameters to the error in Y
         m.het_Gauss.variance.fix() # We can fix the noise term, since we already know it
         m.optimize()
