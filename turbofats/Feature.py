@@ -1,13 +1,11 @@
-import os
 import sys
-import time
 import inspect
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 from turbofats import featureFunction
+
+import collections
 
 
 class FeatureSpace:
@@ -46,6 +44,7 @@ class FeatureSpace:
         self.featureList = []
         self.featureOrder = []
         self.featureList = []
+        self.featureNames = [] # Useful for multidimensional features
 
         self.sort = False
 
@@ -99,6 +98,10 @@ class FeatureSpace:
                                 if inspect.isclass(obj) and feature == name:
                                     if set(obj().Data).issubset(self.Data):
                                         self.featureList.append(name)
+                                        if obj().is1d():
+                                            self.featureNames.append(name)
+                                        else:
+                                            self.featureNames += obj().get_feature_names()
                                     else:
                                         print("Warning: the feature", name, "could not be calculated because", obj().Data, "are needed.")
 
@@ -133,10 +136,17 @@ class FeatureSpace:
                 print("could not initilize " + item)
 
     def calculateFeature(self, data):
+        def flatten(l):
+            for el in l:
+                if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+                    yield from flatten(el)
+                else:
+                    yield el
         self._X = np.asarray(data)
         self.__result = []
         for f in self.featureFunc:
             self.__result.append(f(self._X))
+        self.__result = flatten(self.__result)
         return self
 
     def result(self, method='array'):
@@ -144,7 +154,8 @@ class FeatureSpace:
             if self.sort == True:
                 return [np.asarray(self.__result)[i] for i in self.idx]
             else:
-                return np.asarray(self.__result)
+                ans = np.asarray(self.__result)
+                return ans 
         elif method == 'dict':
             if self.sort == True:
                 return dict(zip([self.featureList[i] for i in self.idx], [np.asarray(self.__result)[i] for i in self.idx]))

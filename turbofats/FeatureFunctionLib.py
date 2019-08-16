@@ -1,19 +1,18 @@
-import os
-import sys
-import time
 import math
-import bisect
-import warnings
 
 from numba import jit
+import warnings
 
 import numpy as np
-import pandas as pd
+
 from scipy import stats
+from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
 from statsmodels.tsa import stattools
 from scipy.interpolate import interp1d
+from scipy.stats import chi2
+import GPy
 
 from .Base import Base
 from . import lomb
@@ -95,8 +94,8 @@ class Autocor_length(Base):
     def fit(self, data):
 
         magnitude = data[0]
-        AC = stattools.acf(magnitude, nlags=self.nlags)
-        
+        AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
+
         k = next((index for index, value in
                  enumerate(AC) if value < np.exp(-1)), None)
 
@@ -105,7 +104,7 @@ class Autocor_length(Base):
                 warnings.warn('Setting autocorrelation length as light curve length')
                 return len(magnitude)
             self.nlags = self.nlags + 100
-            AC = stattools.acf(magnitude, nlags=self.nlags)
+            AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
             k = next((index for index, value in
                       enumerate(AC) if value < np.exp(-1)), None)
 
@@ -718,7 +717,7 @@ class Eta_color(Base):
         S2 = sum(w)
 
         eta_B_R = (1 / sigma2) * (S1 / S2)
-        
+
 
         return eta_B_R
 
@@ -825,6 +824,29 @@ class PeriodLS(Base):
         return T
 
 
+class PeriodLS_v2(Base):
+    def __init__(self, ofac=6.0):
+        self.Data = ['magnitude', 'time', 'error']
+        self.ofac = ofac
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]
+
+        global new_time_v2
+        global prob_v2
+        global period_v2
+
+        fx_v2, fy_v2, jmax_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
+                                         fmin=0.0,
+                                         fmax=20.0)
+        period_v2 = fx_v2[jmax_v2]
+        T_v2 = 1.0 / period_v2
+        new_time_v2 = np.mod(time, 2 * T_v2) / (2 * T_v2)
+
+        return T_v2
+
 class Period_fit(Base):
 
     def __init__(self):
@@ -837,6 +859,18 @@ class Period_fit(Base):
             return prob
         except:
             print("error: please run PeriodLS first to generate values for Period_fit")
+
+
+class Period_fit_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+
+    def fit(self, data):
+        try:
+            return prob_v2
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Period_fit_v2")
 
 
 class Psi_CS(Base):
@@ -898,6 +932,46 @@ class Psi_eta(Base):
             print("error: please run PeriodLS first to generate values for Psi_eta")
 
 
+class Psi_CS_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+    def fit(self, data):
+        try:
+            magnitude = data[0]
+            time = data[1]
+            folded_data = magnitude[np.argsort(new_time_v2)]
+            sigma = np.std(folded_data)
+            N = len(folded_data)
+            m = np.mean(folded_data)
+            s = np.cumsum(folded_data - m) * 1.0 / (N * sigma)
+            R = np.max(s) - np.min(s)
+
+            return R
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Psi_CS_v2")
+
+
+class Psi_eta_v2(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time']
+
+    def fit(self, data):
+        try:
+            magnitude = data[0]
+            folded_data = magnitude[np.argsort(new_time_v2)]
+
+            N = len(folded_data)
+            sigma2 = np.var(folded_data)
+
+            Psi_eta = (1.0 / ((N - 1) * sigma2) *
+                       np.sum(np.power(folded_data[1:] - folded_data[:-1], 2)))
+
+            return Psi_eta
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Psi_eta_v2")
+
+
 @jit(nopython=True)
 def car_likelihood(parameters, t, x, error_vars):
     sigma = parameters[0]
@@ -905,22 +979,22 @@ def car_likelihood(parameters, t, x, error_vars):
     # b = parameters[1] #comment it to do 2 pars estimation
     # tau = params(1,1);
     # sigma = sqrt(2*var(x)/tau);
-    
+
     b = np.mean(x) / tau
     epsilon = 1e-300
     cte_neg = -np.infty
     num_datos = len(x)
-    
+
     Omega = []
     x_hat = []
     a = []
     x_ast = []
-    
+
     # Omega = np.zeros((num_datos,1))
     # x_hat = np.zeros((num_datos,1))
     # a = np.zeros((num_datos,1))
     # x_ast = np.zeros((num_datos,1))
-    
+
     # Omega[0]=(tau*(sigma**2))/2.
     # x_hat[0]=0.
     # a[0]=0.
@@ -930,9 +1004,9 @@ def car_likelihood(parameters, t, x, error_vars):
     x_hat.append(np.array([0.0]))
     a.append(np.array([0.0]))
     x_ast.append(x[0] - b * tau)
-    
+
     loglik = np.array([0.0])
-    
+
     for i in range(1, num_datos):
         a_new = np.exp(-(t[i] - t[i - 1]) / tau)
         x_ast.append(x[i] - b * tau)
@@ -941,11 +1015,11 @@ def car_likelihood(parameters, t, x, error_vars):
             (a_new * Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1])) *
             (x_ast[i - 1] - x_hat[i - 1]))
         x_hat.append(x_hat_val)
-        
+
         Omega.append(
             Omega[0] * (1 - (a_new ** 2)) + ((a_new ** 2)) * Omega[i - 1] *
             (1 - (Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1]))))
-        
+
         # x_ast[i]=x[i] - b*tau
         # x_hat[i]=a_new*x_hat[i-1] + (a_new*Omega[i-1]/(Omega[i-1] +
         # error_vars[i-1]))*(x_ast[i-1]-x_hat[i-1])
@@ -973,18 +1047,23 @@ class CAR_sigma(Base):
 
     def CAR_Lik(self, parameters, t, x, error_vars):
         return car_likelihood(parameters, t, x, error_vars)
-    
+
     def calculateCAR(self, time, data, error):
 
-        x0 = [10, 0.5]
-        bnds = ((0, 100), (0.0001, 100))
+        x0 = [0.01, 100]
+        bnds = ((0, 20), (0.000001, 2000))
 
-        res = minimize(self.CAR_Lik, x0, args=(time, data, error),
-                       method='L-BFGS-B', bounds=bnds)
-        # options={'disp': True}
-        sigma = res.x[0]
         global tau
-        tau = res.x[1]
+        try:
+            res = minimize(self.CAR_Lik, x0, args=(time, data, error),
+                           method='L-BFGS-B', bounds=bnds)
+            sigma = res.x[0]
+            tau = res.x[1]
+        except TypeError:
+            warnings.warn('CAR optimizer raised an exception')
+            # options={'disp': True}
+            sigma = np.nan
+            tau = np.nan
         return sigma
 
     # def getAtt(self):
@@ -1033,6 +1112,60 @@ class CAR_mean(Base):
             print("error: please run CAR_sigma first to generate values for CAR_mean")
 
 
+class Harmonics(Base):
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+        self.n_harmonics = 7 # HARD-CODED
+        self.penalization = 1 # HARD-CODED
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]+10**-2
+
+        try:
+            best_freq = period_v2
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Harmonics")
+
+        Omega = [np.array([[1.]*len(time)])]
+        timefreq = (2.0*np.pi*best_freq*np.arange(1, self.n_harmonics+1)).reshape(1, -1).T*time
+        Omega.append(np.cos(timefreq))
+        Omega.append(np.sin(timefreq))
+        Omega = np.concatenate(Omega).T
+        inverr2 = (1.0/error**2)
+        #coeffs = np.linalg.lstsq(inverr2.reshape(-1, 1)*Omega, magnitude*inverr2, rcond=None)[0]
+
+        # weighted regularized linear regression
+        reg = np.array([0.]*(1+self.n_harmonics*2))
+        reg[1:(self.n_harmonics+1)] = np.linspace(0, 1, self.n_harmonics)*self.penalization*len(magnitude)**2*inverr2.mean()
+        reg[(self.n_harmonics+1):] = reg[1:(self.n_harmonics+1)]
+        dreg = np.diag(reg)
+        wA = inverr2.reshape(-1, 1)*Omega
+        wB = (magnitude*inverr2).reshape(-1, 1)
+        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)+dreg), wA.T), wB).flatten()
+        fitted_magnitude = np.dot(Omega, coeffs)
+        coef_cos = coeffs[1:self.n_harmonics+1]
+        coef_sin = coeffs[self.n_harmonics+1:]
+        coef_mag = np.sqrt(coef_cos**2 + coef_sin**2)
+        coef_phi = np.arctan2(coef_sin, coef_cos)
+
+        # Relative phase
+        coef_phi = coef_phi - coef_phi[0]
+        coef_phi = coef_phi[1:]
+
+        nmse = np.mean((fitted_magnitude - magnitude)**2)/np.var(error)
+        return np.concatenate([coef_mag, coef_phi, np.array([nmse])]).tolist()
+
+    def is1d(self):
+        return False
+
+    def get_feature_names(self):
+        feature_names = ['Harmonics_mag_%d' % (i+1) for i in range(self.n_harmonics)]
+        feature_names += ['Harmonics_phase_%d' % (i+1) for i in range(1, self.n_harmonics)]
+        feature_names.append('Harmonics_mse')
+        return feature_names
+
 class Freq1_harmonics_amplitude_0(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
@@ -1056,9 +1189,7 @@ class Freq1_harmonics_amplitude_0(Base):
             return a*np.sin(2*np.pi*Freq*x)+b*np.cos(2*np.pi*Freq*x)+c
 
         for i in range(3):
-
             wk1, wk2, jmax, prob = lomb.fasper(time, magnitude, error, 6., 100.)
-
             fundamental_Freq = wk1[jmax]
 
             # fit to a_i sin(2pi f_i t) + b_i cos(2 pi f_i t) + b_i,o
@@ -1449,3 +1580,378 @@ class StructureFunction_index_32(Base):
             return m_32
         except:
             print("error: please run StructureFunction_index_21 first to generate values for all Structure Function")
+
+
+
+class Pvar(Base):
+    """
+    Calculate the probability of a light curve to be variable.
+    """
+    def __init__(self):
+        self.Data = ['magnitude', 'error']
+
+    def fit(self, data):
+        magnitude = data[0]
+        error = data[2]
+
+
+        mean_mag = np.mean(magnitude)
+        nepochs = float(len(magnitude))
+
+        chi = np.sum( (magnitude - mean_mag)**2. / error**2. )
+        p_chi = chi2.cdf(chi,(nepochs-1))
+
+        return p_chi
+
+
+
+
+class ExcessVar(Base):
+    """
+    Calculate the excess variance,which is a measure of the intrinsic variability amplitude.
+    """
+    def __init__(self):
+        self.Data = ['magnitude', 'error']
+
+    def fit(self, data):
+        magnitude = data[0]
+        error = data[2]
+
+        mean_mag=np.mean(magnitude)
+        nepochs=float(len(magnitude))
+
+        a = (magnitude-mean_mag)**2
+        ex_var = (np.sum(a-error**2)/((nepochs*(mean_mag**2))))
+
+        return ex_var
+
+
+
+class GP_DRW_sigma(Base):
+    """
+    Based on Matthew Graham's method to model DRW with gaussian process.
+    """
+
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+
+    def fit(self, data):
+        magnitude = data[0]
+        t = data[1]
+        err = data[2]
+
+
+        mag = magnitude-magnitude.mean()
+        kern = GPy.kern.OU(1)
+        m = GPy.models.GPHeteroscedasticRegression(t[:, None], mag[:, None], kern)
+        m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None] # Set the noise parameters to the error in Y
+        m.het_Gauss.variance.fix() # We can fix the noise term, since we already know it
+        m.optimize()
+        pars = [m.OU.variance.values[0], m.OU.lengthscale.values[0]] # sigma^2, tau
+
+        sigmaDRW = pars[0]
+        global tauDRW
+        tauDRW = pars[1]
+        return sigmaDRW
+
+
+class GP_DRW_tau(Base):
+
+    def __init__(self):
+
+        self.Data = ['magnitude', 'time', 'error']
+
+    def fit(self, data):
+
+        try:
+            return tauDRW
+        except:
+            print("error: please run GP_DRW_sigma first to generate values for GP_DRW_tau")
+
+
+@jit(nopython=True)
+def SFarray(jd, mag, err):
+    """
+    calculate an array with (m(ti)-m(tj)), whit (err(t)^2+err(t+tau)^2) and another with tau=dt
+
+    inputs:
+    jd: julian days array
+    mag: magnitudes array
+    err: error of magnitudes array
+
+    outputs:
+    tauarray: array with the difference in time (ti-tj)
+    sfarray: array with |m(ti)-m(tj)|
+    errarray: array with err(ti)^2+err(tj)^2
+    """
+
+    sfarray = []
+    tauarray = []
+    errarray = []
+    err_squared = err**2
+    len_mag = len(mag)
+    for i in range(len_mag):
+        for j in range(i+1, len_mag):
+            dm = mag[i] - mag[j]
+            sigma = err_squared[i] + err_squared[j]
+            dt = jd[j] - jd[i]
+            sfarray.append(np.abs(dm))
+            tauarray.append(dt)
+            errarray.append(sigma)
+    sfarray = np.array(sfarray)
+    tauarray = np.array(tauarray)
+    errarray = np.array(errarray)
+    return (tauarray, sfarray, errarray)
+
+
+class SF_ML_amplitude(Base):
+    """
+    Fit the model A*tau^gamma to the SF, finding the maximum value of the likelihood.
+    Based on Schmidt et al. 2010.
+    """
+
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+
+
+    def SFVmod(self,dt,A,gamma):
+        """SF power model: SF = A*(dt/365)**gamma"""
+        return ( A*((dt/365.0)**gamma) )
+
+
+    def SFVeff2(self,dt,sigma,A,gamma):
+        """SF power model plus the error"""
+        return ( (self.SFVmod(dt,A,gamma))**2 + sigma )
+
+    def SFlike_one(self,theta,dt,dmag,sigma):
+        """likelihood for one value of dmag (one pair of epochs)"""
+
+        gamma, A = theta
+        aux=(1/np.sqrt(2*np.pi*self.SFVeff2(dt,sigma,A,gamma)))*np.exp(-1.0*(dmag**2)/(2.0*self.SFVeff2(dt,sigma,A,gamma)))
+
+        return aux
+
+    def SFlnlike(self,theta, dtarray, dmagarray, sigmaarray):
+        """likelihood for the whole light curve"""
+        gamma, A = theta
+
+        aux=-1.0*np.sum(np.log(self.SFlike_one(theta,dtarray,dmagarray,sigmaarray)))
+
+        return aux
+
+
+    def SF_Lik(self, theta, t, mag, err):
+
+        dtarray, dmagarray, sigmaarray = SFarray(t,mag,err)
+        ndt=np.where((dtarray<=365) & (dtarray>=3))
+        dtarray=dtarray[ndt]
+        dmagarray=dmagarray[ndt]
+        sigmaarray=sigmaarray[ndt]
+
+        return self.SFlnlike(theta, dtarray, dmagarray, sigmaarray)
+
+    def fit(self, data):
+        mag = data[0]
+        t = data[1]
+        err = data[2]
+
+        x0 = [0.0, 0.0]
+        #bnds = ((-0.1, 5), (0.0, 10))
+
+        res = minimize(self.SF_Lik, x0, args=(t,mag,err),
+                        method='L-BFGS-B')
+
+        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
+        #               method='SLSQP')#, options={'ftol': 1e-6, 'maxiter': 200})
+
+        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
+        #               method='L-BFGS-B')
+
+        aSF_min = abs(res.x[1])
+        global gSF_min
+        gSF_min = res.x[0]
+        if (aSF_min<1e-3):
+            aSF_min = 0.0
+            gSF_min = 0.0
+        return aSF_min
+
+
+class SF_ML_gamma(Base):
+
+    def __init__(self):
+
+        self.Data = ['magnitude', 'time', 'error']
+
+    def fit(self, data):
+
+        try:
+            return gSF_min
+        except:
+            print("error: please run SF_ML_amplitude first to generate values for SF_ML_gamma")
+
+
+class IAR_phi(Base):
+    """
+    functions to compute an IAR model with Kalman filter.
+    Author: Felipe Elorrieta.
+    """
+
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+
+
+
+    def IAR_phi_kalman(self,x,t,y,yerr,standarized=True,c=0.5):
+        n=len(y)
+        Sighat=np.zeros(shape=(1,1))
+        Sighat[0,0]=1
+        if standarized == False:
+             Sighat=np.var(y)*Sighat
+        xhat=np.zeros(shape=(1,n))
+        delta=np.diff(t)
+        Q=Sighat
+        phi=x
+        F=np.zeros(shape=(1,1))
+        G=np.zeros(shape=(1,1))
+        G[0,0]=1
+        sum_Lambda=0
+        sum_error=0
+        if np.isnan(phi) == True:
+            phi=1.1
+        if abs(phi) < 1:
+            for i in range(n-1):
+                Lambda=np.dot(np.dot(G,Sighat),G.transpose())+yerr[i+1]**2
+                if (Lambda <= 0) or (np.isnan(Lambda) == True):
+                    sum_Lambda=n*1e10
+                    break
+                phi2=phi**delta[i]
+                F[0,0]=phi2
+                phi2=1-phi**(delta[i]*2)
+                Qt=phi2*Q
+                sum_Lambda=sum_Lambda+np.log(Lambda)
+                Theta=np.dot(np.dot(F,Sighat),G.transpose())
+                sum_error= sum_error + (y[i]-np.dot(G,xhat[0:1,i]))**2/Lambda
+                xhat[0:1,i+1]=np.dot(F,xhat[0:1,i])+np.dot(np.dot(Theta,np.linalg.inv(Lambda)),(y[i]-np.dot(G,xhat[0:1,i])))
+                Sighat=np.dot(np.dot(F,Sighat),F.transpose()) + Qt - np.dot(np.dot(Theta,np.linalg.inv(Lambda)),Theta.transpose())
+            yhat=np.dot(G,xhat)
+            out=(sum_Lambda + sum_error)/n
+            if np.isnan(sum_Lambda) == True:
+                out=1e10
+        else:
+            out=1e10
+        return out
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]
+
+        if np.sum(error)==0:
+            error=np.zeros(len(magnitude))
+
+        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude,ddof=1))
+        deltanorm = error/np.sqrt(np.var(magnitude,ddof=1))
+
+        out=minimize_scalar(self.IAR_phi_kalman,args=(time,ynorm,deltanorm),bounds=(0,1),method="bounded",options={'xatol': 1e-12, 'maxiter': 50000})
+
+        phi = out.x
+        try: phi = phi[0][0]
+        except: phi = phi
+
+        return phi
+
+
+class CIAR_phiR_beta(Base):
+    """
+    functions to compute an IAR model with Kalman filter.
+    Author: Felipe Elorrieta.
+    (beta version)
+    """
+
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+
+    def CIAR_phi_kalman(self,x,t,y,yerr,mean_zero=True,standarized=True,c=0.5):
+        n=len(y)
+        Sighat=np.zeros(shape=(2,2))
+        Sighat[0,0]=1
+        Sighat[1,1]=c
+        if standarized == False:
+             Sighat=np.var(y)*Sighat
+        if mean_zero == False:
+             y=y-np.mean(y)
+        xhat=np.zeros(shape=(2,n))
+        delta=np.diff(t)
+        Q=Sighat
+        phi_R=x[0]
+        phi_I=x[1]
+        F=np.zeros(shape=(2,2))
+        G=np.zeros(shape=(1,2))
+        G[0,0]=1
+        phi=complex(phi_R, phi_I)
+        Phi=abs(phi)
+        psi=np.arccos(phi_R/Phi)
+        sum_Lambda=0
+        sum_error=0
+        if np.isnan(phi) == True:
+            phi=1.1
+        if abs(phi) < 1:
+            for i in range(n-1):
+                Lambda=np.dot(np.dot(G,Sighat),G.transpose())+yerr[i+1]**2
+                if (Lambda <= 0) or (np.isnan(Lambda) == True):
+                    sum_Lambda=n*1e10
+                    break
+                phi2_R=(Phi**delta[i])*np.cos(delta[i]*psi)
+                phi2_I=(Phi**delta[i])*np.sin(delta[i]*psi)
+                phi2=1-abs(phi**delta[i])**2
+                F[0,0]=phi2_R
+                F[0,1]=-phi2_I
+                F[1,0]=phi2_I
+                F[1,1]=phi2_R
+                Qt=phi2*Q
+                sum_Lambda=sum_Lambda+np.log(Lambda)
+                Theta=np.dot(np.dot(F,Sighat),G.transpose())
+                sum_error= sum_error + (y[i]-np.dot(G,xhat[0:2,i]))**2/Lambda
+                xhat[0:2,i+1]=np.dot(F,xhat[0:2,i])+np.dot(np.dot(Theta,np.linalg.inv(Lambda)),(y[i]-np.dot(G,xhat[0:2,i])))
+                Sighat=np.dot(np.dot(F,Sighat),F.transpose()) + Qt - np.dot(np.dot(Theta,np.linalg.inv(Lambda)),Theta.transpose())
+            yhat=np.dot(G,xhat)
+            out=(sum_Lambda + sum_error)/n
+            if np.isnan(sum_Lambda) == True:
+                out=1e10
+        else:
+            out=1e10
+        return out
+
+    def fit(self, data):
+        magnitude = data[0]
+        time = data[1]
+        error = data[2]
+
+        niter=4
+        seed=1234
+
+        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude,ddof=1))
+        deltanorm = error/np.sqrt(np.var(magnitude,ddof=1))
+
+        np.random.seed(seed)
+        aux=1e10
+        value=1e10
+        br=0
+        if np.sum(error)==0:
+            deltanorm=np.zeros(len(y))
+        for i in range(niter):
+            phi_R=2*np.random.uniform(0,1,1)-1
+            phi_I=2*np.random.uniform(0,1,1)-1
+            bnds = ((-0.9999, 0.9999), (-0.9999, 0.9999))
+            out=minimize(self.CIAR_phi_kalman,np.array([phi_R, phi_I]),args=(time,ynorm,deltanorm),bounds=bnds,method='L-BFGS-B')
+            value=out.fun
+            if aux > value:
+                par=out.x
+                aux=value
+                br=br+1
+            if aux <= value and br>1 and i>math.trunc(niter/2):
+                break
+            #print br
+        if aux == 1e10:
+           par=np.zeros(2)
+        return par[0]

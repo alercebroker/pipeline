@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
-from os import path
+
 
 # Get the long description from the relevant file
 # with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
@@ -8,6 +8,7 @@ from os import path
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 setup(
     name='turbofats',
@@ -22,7 +23,7 @@ setup(
     # The project's main homepage.
     url=' http://isadoranun.github.io/tsfeat/FeaturesDocumentation.html',
 
-    download_url = 'https://github.com/isadoranun/tsfeat',
+    download_url = 'https://github.com/alercebroker/turbo-fats',
 
     # Author details
     author='Isadora Nun',
@@ -66,11 +67,11 @@ setup(
     # simple. Or you can use find_packages().
     # packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
-    packages = ['turbofats'],
+    packages=['turbofats'],
 
     include_package_data=True,
 
-    zip_safe=False
+    zip_safe=False, install_requires=['numpy', 'numba', 'scipy', 'statsmodels']
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed. For an analysis of "install_requires" vs pip's
