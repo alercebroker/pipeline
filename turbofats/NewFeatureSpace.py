@@ -1,6 +1,15 @@
 import numpy as np
 import pandas as pd
 from turbofats import FeatureFunctionLib
+from numba import jit
+
+
+@jit(nopython=True)
+def is_sorted(a):
+    for i in range(a.size-1):
+        if a[i+1] < a[i] :
+            return False
+    return True
 
 
 class NewFeatureSpace(object):
@@ -25,7 +34,12 @@ class NewFeatureSpace(object):
         return lightcurve[self.data_column_names].values.T
 
     def calculate_features(self, lightcurve):
+        lightcurve = lightcurve.copy()
+        if not is_sorted(lightcurve['mjd'].values):
+            lightcurve.sort_values('mjd', inplace=True)
+            
         lightcurve_array = self.__lightcurve_to_array(lightcurve)
+                    
         self.results = []
         for feature in self.feature_objects:
             result = feature.fit(lightcurve_array)
