@@ -1647,7 +1647,7 @@ class GP_DRW_sigma(Base):
 
         # DeprecationWarning:Assigning the 'data' attribute is an inherently
         # unsafe operation and will be removed in the future.
-        
+
         m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None] # Set the noise parameters to the error in Y
         m.het_Gauss.variance.fix() # We can fix the noise term, since we already know it
         m.optimize()
@@ -1713,75 +1713,119 @@ class SF_ML_amplitude(Base):
     Fit the model A*tau^gamma to the SF, finding the maximum value of the likelihood.
     Based on Schmidt et al. 2010.
     """
-
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
 
+    def bincalc(self,nbin=0.1,bmin=5,bmax=2000):
+        """
+        calculate the bin range, in logscale
 
-    def SFVmod(self,dt,A,gamma):
-        """SF power model: SF = A*(dt/365)**gamma"""
-        return ( A*((dt/365.0)**gamma) )
+        inputs:
+        nbin: size of the bin in log scale
+        bmin: minimum value of the bins
+        bmax: maximum value of the bins
 
+        output: bins array
+        """
 
-    def SFVeff2(self,dt,sigma,A,gamma):
-        """SF power model plus the error"""
-        return ( (self.SFVmod(dt,A,gamma))**2 + sigma )
+        logbmin=np.log10(bmin)
+        logbmax=np.log10(bmax)
 
-    def SFlike_one(self,theta,dt,dmag,sigma):
-        """likelihood for one value of dmag (one pair of epochs)"""
+        logbins=np.arange(logbmin,logbmax,nbin)
 
-        gamma, A = theta
-        aux=(1/np.sqrt(2*np.pi*self.SFVeff2(dt,sigma,A,gamma)))*np.exp(-1.0*(dmag**2)/(2.0*self.SFVeff2(dt,sigma,A,gamma)))
+        bins=10**logbins
 
-        return aux
-
-    def SFlnlike(self,theta, dtarray, dmagarray, sigmaarray):
-        """likelihood for the whole light curve"""
-        gamma, A = theta
-
-        aux=-1.0*np.sum(np.log(self.SFlike_one(theta,dtarray,dmagarray,sigmaarray)))
-
-        return aux
+        #bins=np.linspace(bmin,bmax,60)
+        return (bins)
 
 
-    def SF_Lik(self, theta, t, mag, err):
+    def SF_formula(self,jd,mag,errmag,nbin=0.1,bmin=5,bmax=2000):
 
-        dtarray, dmagarray, sigmaarray = SFarray(t,mag,err)
-        ndt=np.where((dtarray<=365) & (dtarray>=3))
+
+        dtarray, dmagarray, sigmaarray = SFarray(jd,mag,errmag)
+        ndt=np.where((dtarray<=365) & (dtarray>=5))
         dtarray=dtarray[ndt]
         dmagarray=dmagarray[ndt]
         sigmaarray=sigmaarray[ndt]
 
-        return self.SFlnlike(theta, dtarray, dmagarray, sigmaarray)
+        bins=self.bincalc(nbin,bmin,bmax)
 
-    def fit(self, data):
+        sf_list=[]
+        tau_list=[]
+        numobj_list=[]
+
+        for i in range(0,len(bins)-1):
+            n=np.where((dtarray>=bins[i]) & (dtarray<bins[i+1]))
+            nobjbin=len(n[0])
+            if nobjbin>=1:
+                dmag1=(dmagarray[n])**2
+                derr1=(sigmaarray[n])
+                sf=(dmag1-derr1)
+                sff=np.sqrt(np.mean(sf))
+                sf_list.append(sff)
+                numobj_list.append(nobjbin)
+                #central tau for the bin
+                tau_list.append((bins[i]+bins[i+1])*0.5)
+
+
+        SF=np.array(sf_list)
+        nob=np.array(numobj_list)
+        tau=np.array(tau_list)
+        nn=np.where((nob>0) & (SF>-99))
+        tau=tau[nn]
+        SF=SF[nn]
+
+        if (len(SF)<2):
+            tau = np.array([-99])
+            SF = np.array([-99])
+
+
+        return (tau/365.,SF)
+
+
+    def fit(self,data):
+        
         mag = data[0]
         t = data[1]
         err = data[2]
 
-        x0 = [0.0, 0.0]
-        #bnds = ((-0.1, 5), (0.0, 10))
+        tau,sf = self.SF_formula(t,mag,err)
 
-        res = minimize(self.SF_Lik, x0, args=(t,mag,err),
-                        method='L-BFGS-B')
+        if tau[0] == -99:
+            A = -0.5
+            gamma = -0.5
 
-        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
-        #               method='SLSQP')#, options={'ftol': 1e-6, 'maxiter': 200})
+        else:
 
-        #res = minimize(self.SF_Lik, x0, bounds=bnds, args=(t,mag,err),
-        #               method='L-BFGS-B')
+            y=np.log10(sf)
+            x=np.log10(tau)
+            x=x[np.where((tau<=0.5) & (tau>0.01))]
+            y=y[np.where((tau<=0.5) & (tau>0.01))]
 
-        aSF_min = abs(res.x[1])
-        global gSF_min
-        gSF_min = res.x[0]
-        if (aSF_min<1e-3):
-            aSF_min = 0.0
-            gSF_min = 0.0
-        return aSF_min
+            try :
+                coefficients = np.polyfit(x, y, 1)
+                A=10**(coefficients[1])
+                gamma = coefficients[0]
 
+                if A<0.005:
+                    A = 0.0
+                    gamma = 0.0
+                elif A>15: A = 15
+                if gamma>3: gamma = 3
+                elif gamma<-0.5 : gamma =-0.5
+
+
+            except:
+                A = -0.5
+                gamma = -0.5
+
+        A_sf = A
+        global g_sf
+        g_sf = gamma
+
+        return(A_sf)
 
 class SF_ML_gamma(Base):
-
     def __init__(self):
 
         self.Data = ['magnitude', 'time', 'error']
@@ -1789,9 +1833,9 @@ class SF_ML_gamma(Base):
     def fit(self, data):
 
         try:
-            return gSF_min
+            return g_sf
         except:
-            print("error: please run SF_ML_amplitude first to generate values for SF_ML_gamma")
+            print("error: please run SF_amplitude first to generate values for SF_gamma")
 
 
 class IAR_phi(Base):
