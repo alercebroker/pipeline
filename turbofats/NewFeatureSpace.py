@@ -7,7 +7,7 @@ from numba import jit
 @jit(nopython=True)
 def is_sorted(a):
     for i in range(a.size-1):
-        if a[i+1] < a[i] :
+        if a[i+1] < a[i]:
             return False
     return True
 
@@ -34,19 +34,29 @@ class NewFeatureSpace(object):
         return lightcurve[self.data_column_names].values.T
 
     def calculate_features(self, lightcurve):
+        n_objects = len(lightcurve.index.unique())
+        if n_objects > 1:
+            raise Exception('TurboFATS cannot handle more than one lightcurve simultaneously')
+        elif n_objects == 0 or len(lightcurve) <= 5:
+            df = pd.DataFrame(columns=self.feature_names)
+            df.index.name = 'oid'
+            return df
+
+        oid = lightcurve.index.values[0]
         lightcurve = lightcurve.copy()
         if not is_sorted(lightcurve['mjd'].values):
             lightcurve.sort_values('mjd', inplace=True)
             
         lightcurve_array = self.__lightcurve_to_array(lightcurve)
                     
-        self.results = []
+        results = []
         for feature in self.feature_objects:
             result = feature.fit(lightcurve_array)
             if feature.is1d():
-                self.results.append(result)
+                results.append(result)
             else:
-                self.results += result
-        self.results = np.array(self.results).reshape(1, -1).astype(np.float)
-        df = pd.DataFrame(self.results, columns=self.feature_names)
+                results += result
+        results = np.array(results).reshape(1, -1).astype(np.float)
+        df = pd.DataFrame(results, columns=self.feature_names, index=[oid])
+        df.index.name = 'oid'
         return df
