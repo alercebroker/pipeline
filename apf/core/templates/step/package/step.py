@@ -1,4 +1,6 @@
 from apf.core.step import GenericStep
+import logging
+
 
 class {{step_name}}(GenericStep):
     """{{step_name}} Description
@@ -13,17 +15,12 @@ class {{step_name}}(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self,consumer,producer = None, **step_args):
-        super().__init__(consumer,producer, **step_args)
+    def __init__(self,consumer = None, producer = None, level = logging.INFO,**step_args):
+        super().__init__(consumer,producer,level=level)
 
-    def execute(self):
-        while True:
-            message = self.consumer.consume()
-            ################################
-            #   Here comes the Step Logic  #
-            ################################
-            print("Running ")
+    def execute(self,message):
+        ################################
+        #   Here comes the Step Logic  #
+        ################################
 
-            if self.producer:
-                self.producer.produce()
-            self.consumer.commit(message)
+        pass

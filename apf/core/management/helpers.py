@@ -73,11 +73,17 @@ def new_step():
 
     requirements_template = route.get_template("step/requirements.txt")
     with open(os.path.join(output_path,"requirements.txt"),"w") as f:
+        dev = os.environ.get("APF_ENVIRONMENT", "production")
+
         try:
             version = apf.__version__
         except AttributeError:
             version = '0.0.0'
-        f.write(requirements_template.render(apf_version=version))
+        f.write(requirements_template.render(apf_version=version, develop=(dev=="develop")))
+
+    settings_template = route.get_template("step/settings.py")
+    with open(os.path.join(output_path,"settings.py"),"w") as f:
+        f.write(settings_template.render(step_name=args.step_name))
 
 
 
