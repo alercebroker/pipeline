@@ -21,4 +21,4 @@ class GenericStep():
             self.execute(self.message)
             if self.producer:
                 self.producer.produce()
-            self.consumer.commit(self.message)
+            self.consumer.commit()
