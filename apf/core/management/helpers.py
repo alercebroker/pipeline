@@ -12,6 +12,7 @@ def execute_from_command_line(argv):
     parser = argparse.ArgumentParser(description="Alert Processing Framework for astronomy", usage="""apf [-h] command
     newstep         Create package for a new apf step.
     build           Generate Dockerfile and scripts to run a step.
+    initdb          Create schema on empty database.
     """)
     parser.add_argument("command", choices=["build", "newstep"])
     parser.add_argument("extras",action='append', nargs="*")
@@ -21,8 +22,13 @@ def execute_from_command_line(argv):
         build_dockerfiles()
     if args.command == "newstep":
         new_step()
+    if args.command == "initdb":
+        initdb()
 
 def _validate_steps(steps):
+    pass
+
+def initdb():
     pass
 
 def new_step():
