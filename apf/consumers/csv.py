@@ -4,6 +4,17 @@ import io
 import pandas as pd
 
 class CSVConsumer(GenericConsumer):
+    """CSV Consumer.
+
+    Parameters
+    ----------
+    FILE_PATH: path
+        CSV path location
+
+    OTHER_ARGS: dict
+        Parameters passed to :func:`pandas.read_csv`
+
+    """
     def __init__(self,config):
         super().__init__(config)
         path = self.config.get("FILE_PATH",None)

@@ -6,6 +6,13 @@ import os
 import glob
 
 class AVROFileConsumer(GenericConsumer):
+    """Consume from a AVRO Files Directory.
+
+    Parameters
+    ----------
+    DIRECTORY_PATH: path
+        AVRO files Directory path location
+    """
     def __init__(self,config):
         super().__init__(config)
 

@@ -5,6 +5,22 @@ import fastavro
 import io
 
 class KafkaConsumer(GenericConsumer):
+    """Consume from a Kafka Topic
+
+    Parameters
+    ----------
+    TOPICS: :py:class:`list`
+            List of topics to consume.
+
+    PARAMS: dict
+        Parameters passed to :class:`confluent_kafka.Consumer`
+
+        The required parameters are:
+        
+        - *bootstrap.servers*: comma separated <host:port> :py:class:`str` to brokers.
+        - *group.id*: :py:class:`str` with consumer group name.
+
+    """
     def __init__(self,config):
         super().__init__(config)
         # Disable auto commit
