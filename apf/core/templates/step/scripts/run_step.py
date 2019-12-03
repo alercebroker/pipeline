@@ -20,10 +20,8 @@ sys.path.append(PACKAGE_PATH)
 from settings import *
 from {{package_name}} import {{class_name}}
 from apf.consumers import GenericConsumer
-from apf.producers import GenericProducer
 
 consumer = GenericConsumer(config=CONSUMER_CONFIG)
-producer = GenericProducer(config=PRODUCER_CONFIG)
 
-step = {{class_name}}(consumer,producer,config=STEP_CONFIG,level=level)
+step = {{class_name}}(consumer,config=STEP_CONFIG,level=level)
 step.start()

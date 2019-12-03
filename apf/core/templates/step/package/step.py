@@ -9,14 +9,12 @@ class {{step_name}}(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    producer : GenericProducer
-        Description of parameter `producer`.
     **step_args : type
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self,consumer = None, producer = None, level = logging.INFO,**step_args):
-        super().__init__(consumer,producer,level=level)
+    def __init__(self,consumer = None, level = logging.INFO,**step_args):
+        super().__init__(consumer,level=level)
 
     def execute(self,message):
         ################################
