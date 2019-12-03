@@ -22,13 +22,17 @@ class GenericConsumer():
         """
         yield None
 
-    def commit(self,msj):
+    def commit(self):
         """Post consume processing.
         Can be a postgresql, kafka, commit or a custom function to run after an alert is processed.
 
-        Parameters
-        ----------
-        msj : dict-like
-            Message consumed.
+        The commited value has to be stored as a class attribute in consume to be accessed. i.e.
+
+            def consume(self):
+                self.message = get_message()
+
+            def commit(self):
+                commit_logic(self.message) 
+
         """
         pass
