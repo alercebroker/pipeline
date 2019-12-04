@@ -4,3 +4,4 @@
 
 CONSUMER_CONFIG = {}
 STEP_CONFIG = {}
+DB_CONFIG = {}

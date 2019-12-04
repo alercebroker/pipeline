@@ -1,4 +1,4 @@
-from . import engine, Base
+from . import Base
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON
 from sqlalchemy.orm import relationship
 
@@ -23,7 +23,7 @@ class Class(Base):
 class Taxonomy(Base):
     __tablename__ = 'taxonomy'
 
-    id = Column(integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     classes = relationship(
         "Class",
@@ -119,7 +119,7 @@ class MagnitudeStatistics(Base):
 class Features(Base):
     __tablename__ = 'features'
 
-    id = Column(Integer)
+    id = Column(Integer, primary_key=True)
     data = Column(JSON)
     oid = Column(String, ForeignKey('astro_object.oid'))
 
