@@ -44,12 +44,21 @@ class AstroObject(Base):
     __tablename__ = 'astro_object'
 
     oid = Column(String, primary_key=True)
+    nobs = Column(Integer)
+    meanra = Column(Float)
+    meandec = Column(Float)
+    sigmara = Column(Float)
+    sigmadec = Column(Float)
+    deltajd = Column(Float)
+    lastmjd = Column(Float)
+    firstmjd = Column(Float)
+
     xmatch = relationship("Xmatch", uselist=False,
                           back_populates='astro_object')
     magref = relationship("MagRef", uselist=False,
                           back_populates='astro_object')
-    statistics = relationship(
-        "Statistics", uselist=False, back_populates='astro_object')
+    magnitude_statistics = relationship(
+        "MagnitudeStatistics", uselist=False, back_populates='astro_object')
     features = relationship("Features")
     classification = relationship("Classification")
     non_detections = relationship("NonDetection")
@@ -69,7 +78,8 @@ class Xmatch(Base):
     __tablename__ = 'xmatch'
 
     id = Column(Integer, primary_key=True)
-    class_name = Column(String)
+    catalog_id = Column(String)
+    catalog_oid = Column(String)
     oid = Column(String, ForeignKey('astro_object.oid'))
     astro_object = relationship("AstroObject", back_populates='xmatch')
 
@@ -88,49 +98,22 @@ class MagRef(Base):
     astro_object = relationship("AstroObject", back_populates='magref')
 
 
-class Statistics(Base):
-    __tablename__ = 'statistics'
+class MagnitudeStatistics(Base):
+    __tablename__ = 'magnitude_statistics'
 
     id = Column(Integer, primary_key=True)
-    nobs = Column(Integer)
-    mean_magap_g = Column(Float)
-    mean_magap_r = Column(Float)
-    median_magap_g = Column(Float)
-    median_magap_r = Column(Float)
-    max_magap_g = Column(Float)
-    max_magap_r = Column(Float)
-    min_magap_g = Column(Float)
-    min_magap_r = Column(Float)
-    sigma_magap_g = Column(Float)
-    sigma_magap_r = Column(Float)
-    last_magap_g = Column(Float)
-    last_magap_r = Column(Float)
-    first_magap_g = Column(Float)
-    first_magap_r = Column(Float)
-    mean_magpsf_g = Column(Float)
-    mean_magpsf_r = Column(Float)
-    median_magpsf_g = Column(Float)
-    median_magpsf_r = Column(Float)
-    max_magpsf_g = Column(Float)
-    max_magpsf_r = Column(Float)
-    min_magpsf_g = Column(Float)
-    min_magpsf_r = Column(Float)
-    sigma_magpsf_g = Column(Float)
-    sigma_magpsf_r = Column(Float)
-    last_magpsf_g = Column(Float)
-    last_magpsf_r = Column(Float)
-    first_magpsf_g = Column(Float)
-    first_magpsf_r = Column(Float)
-    meanra = Column(Float)
-    meandec = Column(Float)
-    sigmara = Column(Float)
-    sigmadec = Column(Float)
-    deltajd = Column(Float)
-    lastmjd = Column(Float)
-    firstmjd = Column(Float)
-
+    magnitude_type = Column(String)
+    fid = Column(Integer)
+    mean = Column(Float)
+    median = Column(Float)
+    max_mag = Column(Float)
+    min_mag = Column(Float)
+    sigma = Column(Float)
+    last = Column(Float)
+    first = Column(Float)
     oid = Column(String, ForeignKey('astro_object.oid'))
-    astro_object = relationship("AstroObject", back_populates='statistics')
+    astro_object = relationship(
+        "AstroObject", back_populates='magnitude_statistics')
 
 
 class Features(Base):
@@ -158,26 +141,12 @@ class Detection(Base):
     candid = Column(Integer)
     mjd = Column(Float)
     fid = Column(Integer)
-    diffmaglim = Column(Float)
     magpsf = Column(Float)
     magap = Column(Float)
     sigmapsf = Column(Float)
     sigmagap = Column(Float)
     ra = Column(Float)
     dec = Column(Float)
-    sigmara = Column(Float)
-    sigmadec = Column(Float)
-    isdiffpos = Column(Integer)
-    distpsnr1 = Column(Float)
-    sgscore1 = Column(Float)
-    field = Column(Integer)
-    rcid = Column(Integer)
-    magnr = Column(Float)
-    sigmagnr = Column(Float)
     rb = Column(Float)
-    magpsf_corr = Column(Float)
-    magap_corr = Column(Float)
-    sigmapsf_corr = Column(Float)
-    sigmagap_corr = Column(Float)
-
+    alert = Column(JSON)
     oid = Column(String, ForeignKey('astro_object.oid'))
