@@ -30,7 +30,7 @@ This will install the *apf* python package and *apf* command line script.
 
 Each *step* is composed by a **consumer** and is isolated from other steps inside a docker container.
 
-When running, the step calls the **execute()** method for each *message* consumed. A step can have multiple producers and databases back-ends plugins that can be accessed inside the *execute* methoid to have a more complex
+When running, the step calls the **execute()** method for each *message* consumed. A step can have multiple producers and databases back-ends plugins that can be accessed inside the *execute* method to have a more complex
 logic.
 
 .. image:: _static/images/step.png
