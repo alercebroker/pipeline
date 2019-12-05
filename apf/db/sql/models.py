@@ -1,6 +1,7 @@
 from . import Base
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON
 from sqlalchemy.orm import relationship
+from .. import generic
 
 taxonomy_class = Table('taxonomy_class', Base.metadata,
                        Column('class_id', Integer, ForeignKey('class.id')),
@@ -9,18 +10,25 @@ taxonomy_class = Table('taxonomy_class', Base.metadata,
                        )
 
 
-class Class(Base):
+class Class(Base, generic.AbstractClass):
     __tablename__ = 'class'
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    acronym = Column(String)
     taxonomies = relationship(
         "Taxonomy",
         secondary=taxonomy_class,
         back_populates="classes")
 
+    def get_taxonomies(self):
+        return self.taxonomies
 
-class Taxonomy(Base):
+    def __repr__(self):
+        return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
+
+
+class Taxonomy(Base, generic.AbstractTaxonomy):
     __tablename__ = 'taxonomy'
 
     id = Column(Integer, primary_key=True)
@@ -32,12 +40,32 @@ class Taxonomy(Base):
     )
     classifiers = relationship("Classifier")
 
+    def get_classes(self):
+        return self.classes
 
-class Classifier(Base):
+    def get_classifiers(self):
+        return self.classifiers
+
+    def __repr__(self):
+        return "<Taxonomy(name='%s')>" % (self.name)
+
+
+class Classifier(Base, generic.AbstractClassifier):
     __tablename__ = 'classifier'
     id = Column(Integer, primary_key=True)
     name = Column(String)
     taxonomy_id = Column(Integer, ForeignKey('taxonomy.id'))
+    features = relationship("Features")
+    classifications = relationship("Classification")
+
+    def get_features(self):
+        return self.features
+
+    def get_classifications(self):
+        return self.classifications
+
+    def __repr__(self):
+        return "<Classifier(name='%s')>" % (self.name)
 
 
 class AstroObject(Base):
@@ -53,16 +81,39 @@ class AstroObject(Base):
     lastmjd = Column(Float)
     firstmjd = Column(Float)
 
-    xmatch = relationship("Xmatch", uselist=False,
-                          back_populates='astro_object')
+    xmatches = relationship("Xmatch", back_populates='astro_object')
     magref = relationship("MagRef", uselist=False,
                           back_populates='astro_object')
     magnitude_statistics = relationship(
         "MagnitudeStatistics", uselist=False, back_populates='astro_object')
     features = relationship("Features")
-    classification = relationship("Classification")
+    classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
+
+    def get_classifications(self):
+        return self.classifications
+
+    def get_magnitude_statistics(self):
+        return self.magnitude_statistics
+
+    def get_xmatches(self):
+        return self.xmatches
+
+    def get_magref(self):
+        return self.magref
+
+    def get_features(self):
+        return self.features
+
+    def get_non_detections(self):
+        return self.non_detections
+
+    def get_detections(self):
+        return self.detections
+
+    def __repr__(self):
+        return "<AstroObject(oid='')>" % (self.oid)
 
 
 class Classification(Base):
@@ -73,15 +124,16 @@ class Classification(Base):
     probability = Column(Float)
     astro_object = Column(String, ForeignKey('astro_object.oid'))
 
+    classifier = relationship("Classifier", back_populates="classifications")
+
 
 class Xmatch(Base):
     __tablename__ = 'xmatch'
 
-    id = Column(Integer, primary_key=True)
-    catalog_id = Column(String)
-    catalog_oid = Column(String)
+    catalog_id = Column(String, primary_key=True)
+    catalog_oid = Column(String, primary_key=True)
     oid = Column(String, ForeignKey('astro_object.oid'))
-    astro_object = relationship("AstroObject", back_populates='xmatch')
+    astro_object = relationship("AstroObject", back_populates='xmatches')
 
 
 class MagRef(Base):
@@ -122,6 +174,7 @@ class Features(Base):
     id = Column(Integer, primary_key=True)
     data = Column(JSON)
     oid = Column(String, ForeignKey('astro_object.oid'))
+    classifier = relationship("Classifier", back_populates='features')
 
 
 class NonDetection(Base):
