@@ -68,7 +68,6 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
 
         self.comp = self.component(self.params)
         first_offset = self.comp.consumer.position([self.tp])[0].offset
-        print(first_offset)
         for msj in self.comp.consume():
             self.assertIsInstance(msj, dict)
             n_msjs += 1
@@ -80,7 +79,6 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
 
         self.comp = self.component(self.params)
         offset_second = self.comp.consumer.position([self.tp])[0].offset
-        print(offset_second)
         n_msjs = 0
         for msj in self.comp.consume():
             self.assertIsInstance(msj, dict)
