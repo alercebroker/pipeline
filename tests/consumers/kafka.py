@@ -75,7 +75,7 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
                 break
         self.assertEqual(n_msjs, 100)
         offset_without = self.comp.consumer.position([self.tp])[0].offset
-        self.assertTrue(offset_without == 100)
+        self.assertEqual(offset_without,100)
 
         self.comp = self.component(self.params)
         offset_second = self.comp.consumer.position([self.tp])[0].offset
