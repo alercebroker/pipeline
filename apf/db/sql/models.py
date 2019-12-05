@@ -191,7 +191,7 @@ class Detection(Base, generic.AbstractDetection):
     __tablename__ = 'detection'
 
     id = Column(Integer, primary_key=True)
-    candid = Column(Integer)
+    candid = Column(String)
     mjd = Column(Float)
     fid = Column(Integer)
     magpsf = Column(Float)
