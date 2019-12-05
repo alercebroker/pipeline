@@ -68,7 +68,7 @@ class Classifier(Base, generic.AbstractClassifier):
         return "<Classifier(name='%s')>" % (self.name)
 
 
-class AstroObject(Base):
+class AstroObject(Base, generic.AbstractAstroObject):
     __tablename__ = 'astro_object'
 
     oid = Column(String, primary_key=True)
@@ -112,8 +112,12 @@ class AstroObject(Base):
     def get_detections(self):
         return self.detections
 
+    # TODO implement light curve formatting
+    def get_lightcurve(self):
+        pass
+
     def __repr__(self):
-        return "<AstroObject(oid='')>" % (self.oid)
+        return "<AstroObject(oid='%s')>" % (self.oid)
 
 
 class Classification(Base):
@@ -123,11 +127,9 @@ class Classification(Base):
     class_name = Column(String)
     probability = Column(Float)
     astro_object = Column(String, ForeignKey('astro_object.oid'))
+    classifier_id = Column(Integer, ForeignKey('classifier.id'))
 
-    classifier = relationship("Classifier", back_populates="classifications")
-
-
-class Xmatch(Base):
+class Xmatch(Base, generic.AbstractXmatch):
     __tablename__ = 'xmatch'
 
     catalog_id = Column(String, primary_key=True)
@@ -149,8 +151,7 @@ class MagRef(Base):
     oid = Column(String, ForeignKey('astro_object.oid'))
     astro_object = relationship("AstroObject", back_populates='magref')
 
-
-class MagnitudeStatistics(Base):
+class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = 'magnitude_statistics'
 
     id = Column(Integer, primary_key=True)
@@ -168,16 +169,15 @@ class MagnitudeStatistics(Base):
         "AstroObject", back_populates='magnitude_statistics')
 
 
-class Features(Base):
+class Features(Base, generic.AbstractFeatures):
     __tablename__ = 'features'
 
     id = Column(Integer, primary_key=True)
     data = Column(JSON)
     oid = Column(String, ForeignKey('astro_object.oid'))
-    classifier = relationship("Classifier", back_populates='features')
+    classifier_id = Column(Integer, ForeignKey('classifier.id'))
 
-
-class NonDetection(Base):
+class NonDetection(Base, generic.AbstractNonDetection):
     __tablename__ = 'non_detection'
 
     id = Column(Integer, primary_key=True)
@@ -187,7 +187,7 @@ class NonDetection(Base):
     oid = Column(String, ForeignKey('astro_object.oid'))
 
 
-class Detection(Base):
+class Detection(Base, generic.AbstractDetection):
     __tablename__ = 'detection'
 
     id = Column(Integer, primary_key=True)
