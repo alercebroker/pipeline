@@ -38,7 +38,14 @@ class GenericClassificationTest():
 
 
 class GenericAstroObjectTest():
-    pass
+    model = None
+    params = {}
+    
+    def test_get_magref(self):
+        obj = self.model(**self.params)
+        magref = obj.get_magref()
+        print(magref)
+        self.assertIsInstance([], list)
 
 
 class GenericFeaturesTest():

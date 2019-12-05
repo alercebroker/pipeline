@@ -36,7 +36,15 @@ class ClassificationTest(GenericClassificationTest, unittest.TestCase):
 
 
 class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
-    pass
+    model = AstroObject
+    params = {}
+
+    def setUp(self):
+        engine = create_engine('sqlite:///:memory:')
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        Base.metadata.create_all(engine)
+        self.session.add(MagRef())
 
 
 class FeaturesTest(GenericFeaturesTest, unittest.TestCase):
