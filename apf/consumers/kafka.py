@@ -16,7 +16,7 @@ class KafkaConsumer(GenericConsumer):
         Parameters passed to :class:`confluent_kafka.Consumer`
 
         The required parameters are:
-        
+
         - *bootstrap.servers*: comma separated <host:port> :py:class:`str` to brokers.
         - *group.id*: :py:class:`str` with consumer group name.
 
@@ -31,7 +31,13 @@ class KafkaConsumer(GenericConsumer):
         if "auto.offset.reset" not in self.config:
             self.config["PARAMS"]["auto.offset.reset"] = "beginning"
         #Creating consumer
-        self.init = False
+        self.consumer = Consumer(self.config["PARAMS"])
+        self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
+        self.consumer.subscribe(self.config["TOPICS"])
+
+    def __del__(self):
+        self.logger.info("Shutting down Consumer")
+        self.consumer.close()
 
     def _deserialize_message(self,message):
         bytes_io = io.BytesIO(message.value())
@@ -39,15 +45,7 @@ class KafkaConsumer(GenericConsumer):
         data = reader.next()
         return data
 
-    def _init_consumer(self):
-        if not self.init:
-            self.consumer = Consumer(self.config["PARAMS"])
-            self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
-            self.consumer.subscribe(self.config["TOPICS"])
-            self.init = True
-
     def consume(self):
-        self._init_consumer()
         message = None
         while True:
             while message is None:

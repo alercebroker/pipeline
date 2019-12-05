@@ -18,17 +18,3 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
     depends_on:
       - zookeeper
-
-
-  kafka-manager:
-    image: 'hlebalbau/kafka-manager:stable'
-    environment:
-      - ZK_HOSTS=zookeeper:2181
-      - APPLICATION_SECRET="random-secret"
-    ports:
-      - "9000:9000"
-    command: -Dpidfile.path=/dev/null
-    depends_on:
-      - zookeeper
-      - kafka
-
