@@ -53,13 +53,6 @@ def initdb():
     engine = create_engine(db_credentials)
     Base.metadata.create_all(engine)
 
-    Session.configure(bind=engine)
-    session = Session()
-    q = session.query(Class).all()
-    for i in q:
-        print(i.name, i.acronym, i.get_taxonomies())
-    session.commit()
-
 
 def new_step():
     import re
