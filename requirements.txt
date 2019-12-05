@@ -1,3 +1,4 @@
 confluent_kafka
 jinja2
 fastavro
+numpydoc
