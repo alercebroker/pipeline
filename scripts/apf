@@ -5,7 +5,6 @@ import sys
 
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alerce_reporter_api.settings')
     try:
         from apf.core.management import execute_from_command_line
     except ImportError as exc:
