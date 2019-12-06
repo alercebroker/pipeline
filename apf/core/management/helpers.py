@@ -52,8 +52,7 @@ def initdb():
         db_credentials = "sqlite:///:memory:"
     engine = create_engine(db_credentials)
     Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
-
+    print("Database created with credentials from {}".format(args.settings))
 
 def new_step():
     import re
