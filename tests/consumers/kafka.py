@@ -40,7 +40,6 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
             ],
         }
         schema = fastavro.parse_schema(schema)
-
         for i in range(100):
             out = io.BytesIO()
             alert = {'id': i, 'station':'test', 'time': random.randint(0,1000000), 'temp':random.randint(0,100)}

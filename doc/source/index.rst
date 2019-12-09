@@ -49,5 +49,6 @@ Documentation
    core
    consumers
    db
+   producers
    :maxdepth: 2
    :caption: Contents:
