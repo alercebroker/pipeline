@@ -50,8 +50,23 @@ class GenericAstroObjectTest():
 
     def test_get_classifications(self):
         classes = self.model.get_classifications()
-        print(classes)
         self.assertEqual(len(classes), 1)
+
+    def test_get_features(self):
+        features = self.model.get_features()
+        self.assertIsInstance(features, list)
+        self.assertEqual(len(features), 1)
+
+    def test_get_detections(self):
+        detections = self.model.get_detections()
+        self.assertIsInstance(detections, list)
+        self.assertEqual(len(detections), 1)
+
+    def test_get_non_detections(self):
+        non_detections = self.model.get_non_detections()
+        self.assertIsInstance(non_detections, list)
+        self.assertEqual(len(non_detections), 1)
+
 
 class GenericFeaturesTest():
     pass
