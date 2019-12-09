@@ -17,6 +17,9 @@ class GenericStep():
         Additional parameters for the step.
     """
     def __init__(self,consumer = None, level = logging.INFO,**step_args):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info(f"Creating {self.__class__.__name__}")
+        self.config = config
         self.consumer = GenericConsumer() if consumer is None else consumer
 
     @abstractmethod
