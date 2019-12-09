@@ -21,5 +21,13 @@ def get_session(db_config):
     db_credentials = 'postgresql://{}:{}@{}:{}/{}'.format(
         psql_config["USER"], psql_config["PASSWORD"], psql_config["HOST"], psql_config["PORT"], psql_config["DB_NAME"])
     engine = create_engine(db_credentials)
+    Base.metadata.create_all(engine)
     Session.configure(bind=engine)
     return Session()
+
+def add_to_database(session, objects):
+    if isinstance(objects, list):
+        session.add_all(objects)
+    else:
+        session.add(objects)
+    session.commit()

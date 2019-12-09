@@ -1,14 +1,25 @@
 class AbstractClass():
-    id = None
+    """
+    Abstract Class model
+
+    Attributes
+    ----------
+    name : str
+        the class name
+    acronym : str
+        the short class name
+    """
     name = None
     acronym = None
 
     def get_taxonomies(self):
+        """
+        Gets the taxonomies that the class instance belongs to
+        """
         pass
 
 
 class AbstractTaxonomy():
-    id = None
     name = None
     def get_classes(self):
         pass
@@ -18,7 +29,6 @@ class AbstractTaxonomy():
 
 
 class AbstractClassifier():
-    id = None
     name = None
 
     def get_features(self):
@@ -77,7 +87,6 @@ class AbstractXmatch():
     catalog_object_id = None
 
 class AbstractMagnitudeStatistics():
-    id = None
     magnitude_type = None
     fid = None
     mean = None
@@ -89,7 +98,6 @@ class AbstractMagnitudeStatistics():
     first = None
 
 class AbstractClassification():
-    id = None
     class_name = None
     probability = None
 
@@ -98,13 +106,11 @@ class AbstractFeatures():
     data = None
 
 class AbstractNonDetection():
-    id = None
     mjd = None
     diffmaglim = None
     fid = None
 
 class AbstractDetection():
-    id = None
     candid = None
     mjd = None
     fid = None

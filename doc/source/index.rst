@@ -48,5 +48,6 @@ Documentation
    new_step
    core
    consumers
+   db
    :maxdepth: 2
    :caption: Contents:
