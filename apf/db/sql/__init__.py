@@ -22,4 +22,4 @@ def get_session(db_config):
         psql_config["USER"], psql_config["PASSWORD"], psql_config["HOST"], psql_config["PORT"], psql_config["DB_NAME"])
     engine = create_engine(db_credentials)
     Session.configure(bind=engine)
-    self.session = Session()
+    return Session()
