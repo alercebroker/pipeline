@@ -1,18 +1,14 @@
 class GenericClassTest():
     model = None
-    params = {}
     def test_get_taxonomies(self):
-        mod = self.model(**self.params)
-        taxonomies = mod.get_taxonomies()
+        taxonomies = self.model.get_taxonomies()
         self.assertIsInstance(taxonomies, list)
 
 
 class GenericTaxonomyTest():
     model = None
-    params = {}
     def test_get_classes(self):
-        mod = self.model(**self.params)
-        classes = mod.get_classes()
+        classes = self.model.get_classes()
         self.assertIsInstance(classes, list)
 
 
@@ -39,13 +35,37 @@ class GenericClassificationTest():
 
 class GenericAstroObjectTest():
     model = None
-    params = {}
     
     def test_get_magref(self):
-        obj = self.model(**self.params)
-        magref = obj.get_magref()
-        print(magref)
-        self.assertIsInstance([], list)
+        magref = self.model.get_magref()
+        self.assertEqual(magref.fid, 1)
+
+    def test_get_xmatches(self):
+        xmatches = self.model.get_xmatches()
+        self.assertEqual(len(xmatches),1)
+
+    def test_get_magnitude_statistics(self):
+        magstats = self.model.get_magnitude_statistics()
+        self.assertEqual(magstats.fid, 1)
+
+    def test_get_classifications(self):
+        classes = self.model.get_classifications()
+        self.assertEqual(len(classes), 1)
+
+    def test_get_features(self):
+        features = self.model.get_features()
+        self.assertIsInstance(features, list)
+        self.assertEqual(len(features), 1)
+
+    def test_get_detections(self):
+        detections = self.model.get_detections()
+        self.assertIsInstance(detections, list)
+        self.assertEqual(len(detections), 1)
+
+    def test_get_non_detections(self):
+        non_detections = self.model.get_non_detections()
+        self.assertIsInstance(non_detections, list)
+        self.assertEqual(len(non_detections), 1)
 
 
 class GenericFeaturesTest():

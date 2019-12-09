@@ -48,5 +48,6 @@ Documentation
    new_step
    core
    consumers
+   producers
    :maxdepth: 2
    :caption: Contents:
