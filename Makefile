@@ -11,6 +11,7 @@ $(LIB_DIR)/libfunctions.a:
 
 bdist_wheel: setup.py $(MODULE_NAME)/functions.pyx $(LIB_DIR)/libfunctions.a
 	python3 setup.py bdist_wheel
+	auditwheel repair dist/paps*.whl
 
 install: setup.py $(MODULE_NAME)/functions.pyx $(LIB_DIR)/libfunctions.a
 	python setup.py bdist_wheel

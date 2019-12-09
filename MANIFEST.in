@@ -1,0 +1,3 @@
+recursive-include paps/lib *
+include *.pxd
+include *.pyx
