@@ -13,8 +13,8 @@ class {{step_name}}(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self,consumer = None, level = logging.INFO,**step_args):
-        super().__init__(consumer,level=level)
+    def __init__(self,consumer = None, config = None,level = logging.INFO,**step_args):
+        super().__init__(consumer,config=config, level=level)
 
     def execute(self,message):
         ################################

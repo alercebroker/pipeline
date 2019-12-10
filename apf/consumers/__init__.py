@@ -9,3 +9,6 @@ from .csv import *
 
 from . import avro_file
 from .avro_file import *
+
+from . import json
+from .json import *
