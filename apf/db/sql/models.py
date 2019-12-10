@@ -9,6 +9,11 @@ taxonomy_class = Table('taxonomy_class', Base.metadata,
                               ForeignKey('taxonomy.name'))
                        )
 
+features_object = Table('features_object', Base.metadata,
+                        Column('object_id', String,
+                               ForeignKey('astro_object.oid')),
+                        Column('feature_version', String, ForeignKey('features.version')))
+
 
 class Class(Base, generic.AbstractClass):
     __tablename__ = 'class'
@@ -53,11 +58,7 @@ class Classifier(Base, generic.AbstractClassifier):
     __tablename__ = 'classifier'
     name = Column(String, primary_key=True)
     taxonomy_name = Column(String, ForeignKey('taxonomy.name'))
-    features = Column(String, ForeignKey('features.version'))
     classifications = relationship("Classification")
-
-    def get_features(self):
-        return self.features
 
     def get_classifications(self):
         return self.classifications
@@ -80,12 +81,14 @@ class AstroObject(Base, generic.AbstractAstroObject):
     firstmjd = Column(Float)
 
     xmatches = relationship("Xmatch")
-    magref = relationship("MagRef", uselist=False,
-                          back_populates='astro_object')
     magnitude_statistics = relationship("MagnitudeStatistics", uselist=False)
     classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
+    features = relationship(
+        "Features",
+        secondary=features_object,
+        back_populates="objects")
 
     def get_classifications(self):
         return self.classifications
@@ -95,9 +98,6 @@ class AstroObject(Base, generic.AbstractAstroObject):
 
     def get_xmatches(self):
         return self.xmatches
-
-    def get_magref(self):
-        return self.magref
 
     def get_non_detections(self):
         return self.non_detections
@@ -128,8 +128,8 @@ class Classification(Base):
     classifiers = relationship("Classifier", back_populates='classifications')
 
     def __repr__(self):
-        return "<Classification(class_name='%s', probability='%s', astro_object='%s', classifier_name='%s')>" % (self.class_name, 
-                                                                        self.probability, self.astro_object, self.classifier_name)
+        return "<Classification(class_name='%s', probability='%s', astro_object='%s', classifier_name='%s')>" % (self.class_name,
+                                                                                                                 self.probability, self.astro_object, self.classifier_name)
 
 
 class Xmatch(Base, generic.AbstractXmatch):
@@ -138,19 +138,6 @@ class Xmatch(Base, generic.AbstractXmatch):
     catalog_id = Column(String, primary_key=True)
     catalog_oid = Column(String, primary_key=True)
     oid = Column(String, ForeignKey('astro_object.oid'))
-
-
-class MagRef(Base):
-    __tablename__ = 'magref'
-
-    fid = Column(Integer, primary_key=True)
-    rcid = Column(Integer)
-    field = Column(Integer)
-    magref = Column(Float)
-    sigmagref = Column(Float)
-    corrected = Column(Boolean)
-    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
-    astro_object = relationship("AstroObject", back_populates='magref')
 
 
 class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
@@ -173,8 +160,11 @@ class Features(Base, generic.AbstractFeatures):
 
     version = Column(String, primary_key=True)
     data = Column(JSON)
-    classifier = relationship("Classifier")
 
+    objects = relationship(
+        "AstroObject",
+        secondary=features_object,
+        back_populates="features")
 
 class NonDetection(Base, generic.AbstractNonDetection):
     __tablename__ = 'non_detection'
