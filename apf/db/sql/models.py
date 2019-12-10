@@ -53,7 +53,7 @@ class Classifier(Base, generic.AbstractClassifier):
     __tablename__ = 'classifier'
     name = Column(String, primary_key=True)
     taxonomy_name = Column(String, ForeignKey('taxonomy.name'))
-    features = relationship("Features")
+    features = Column(String, ForeignKey('features.version'))
     classifications = relationship("Classification")
 
     def get_features(self):
@@ -83,7 +83,6 @@ class AstroObject(Base, generic.AbstractAstroObject):
     magref = relationship("MagRef", uselist=False,
                           back_populates='astro_object')
     magnitude_statistics = relationship("MagnitudeStatistics", uselist=False)
-    features = relationship("Features")
     classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
@@ -99,9 +98,6 @@ class AstroObject(Base, generic.AbstractAstroObject):
 
     def get_magref(self):
         return self.magref
-
-    def get_features(self):
-        return self.features
 
     def get_non_detections(self):
         return self.non_detections
@@ -175,10 +171,9 @@ class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
 class Features(Base, generic.AbstractFeatures):
     __tablename__ = 'features'
 
-    id = Column(Integer, primary_key=True)
+    version = Column(String, primary_key=True)
     data = Column(JSON)
-    oid = Column(String, ForeignKey('astro_object.oid'))
-    classifier_name = Column(String, ForeignKey('classifier.name'))
+    classifier = relationship("Classifier")
 
 
 class NonDetection(Base, generic.AbstractNonDetection):
@@ -187,7 +182,7 @@ class NonDetection(Base, generic.AbstractNonDetection):
     mjd = Column(Float, primary_key=True)
     diffmaglim = Column(Float, nullable=False)
     fid = Column(Integer, primary_key=True)
-    oid = Column(String, ForeignKey('astro_object.oid'))
+    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
 
 
 class Detection(Base, generic.AbstractDetection):
