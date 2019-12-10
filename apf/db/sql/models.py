@@ -194,16 +194,16 @@ class Detection(Base, generic.AbstractDetection):
     __tablename__ = 'detection'
 
     candid = Column(String, primary_key=True)
-    mjd = Column(Float, primary_key=True)
-    fid = Column(Integer, primary_key=True)
+    mjd = Column(Float, nullable=False)
+    fid = Column(Integer, nullable=False)
     magpsf = Column(Float, nullable=False)
     magap = Column(Float, nullable=False)
     sigmapsf = Column(Float, nullable=False)
     sigmagap = Column(Float, nullable=False)
-    ra = Column(Float)
-    dec = Column(Float)
+    ra = Column(Float, nullable=False)
+    dec = Column(Float, nullable=False)
     rb = Column(Float)
-    alert = Column(JSON)
-    oid = Column(String, ForeignKey('astro_object.oid'))
+    alert = Column(JSON, nullable=False)
+    oid = Column(String, ForeignKey('astro_object.oid'), nullable=False)
 
     __table_args__ = (Index('object_id', 'oid', postgresql_using='btree'),)
