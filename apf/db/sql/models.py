@@ -9,11 +9,6 @@ taxonomy_class = Table('taxonomy_class', Base.metadata,
                               ForeignKey('taxonomy.name'))
                        )
 
-features_object = Table('features_object', Base.metadata,
-                        Column('object_id', String,
-                               ForeignKey('astro_object.oid')),
-                        Column('feature_version', String, ForeignKey('features.version')))
-
 
 class Class(Base, generic.AbstractClass):
     __tablename__ = 'class'
@@ -85,10 +80,7 @@ class AstroObject(Base, generic.AbstractAstroObject):
     classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
-    features = relationship(
-        "Features",
-        secondary=features_object,
-        back_populates="objects")
+    features = relationship("FeaturesObject")
 
     def get_classifications(self):
         return self.classifications
@@ -159,12 +151,18 @@ class Features(Base, generic.AbstractFeatures):
     __tablename__ = 'features'
 
     version = Column(String, primary_key=True)
-    data = Column(JSON)
 
-    objects = relationship(
-        "AstroObject",
-        secondary=features_object,
-        back_populates="features")
+
+class FeaturesObject(Base):
+    __tablename__ = 'features_object'
+
+    features_version = Column(String, ForeignKey(
+        'features.version'), primary_key=True)
+    object_id = Column(String, ForeignKey(
+        'astro_object.oid'), primary_key=True)
+    data = Column(JSON)
+    features = relationship("Features")
+
 
 class NonDetection(Base, generic.AbstractNonDetection):
     __tablename__ = 'non_detection'

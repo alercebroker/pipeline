@@ -58,9 +58,6 @@ class AbstractAstroObject():
     def get_xmatches(self):
         pass
 
-    def get_magref(self):
-        pass
-
     def get_features(self):
         pass
 
@@ -73,14 +70,6 @@ class AbstractAstroObject():
     def get_lightcurve(self):
         pass
 
-class AbstractMagRef():
-    id = None
-    fid = None
-    rcid = None
-    field = None
-    magref = None
-    sigmagref = None
-    corrected = None
 
 class AbstractXmatch():
     catalog_id = None
@@ -102,8 +91,7 @@ class AbstractClassification():
     probability = None
 
 class AbstractFeatures():
-    id = None
-    data = None
+    version = None
 
 class AbstractNonDetection():
     mjd = None
