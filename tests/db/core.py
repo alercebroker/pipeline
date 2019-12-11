@@ -16,11 +16,6 @@ class GenericClassifierTest():
     pass
 
 
-
-class GenericMagRefTest():
-    pass
-
-
 class GenericXMatchTest():
     pass
 
@@ -35,10 +30,6 @@ class GenericClassificationTest():
 
 class GenericAstroObjectTest():
     model = None
-    
-    def test_get_magref(self):
-        magref = self.model.get_magref()
-        self.assertEqual(magref.fid, 1)
 
     def test_get_xmatches(self):
         xmatches = self.model.get_xmatches()

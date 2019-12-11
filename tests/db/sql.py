@@ -19,10 +19,6 @@ class ClassifierTest(GenericClassifierTest, unittest.TestCase):
     pass
 
 
-class MagRefTest(GenericMagRefTest, unittest.TestCase):
-    pass
-
-
 class XMatchTest(GenericXMatchTest, unittest.TestCase):
     pass
 
@@ -49,16 +45,16 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         taxonomy.classifiers.append(classifier)
         self.model = AstroObject(oid="ZTF1", nobs=1, lastmjd=1.0, meanra=1.0,
                                  meandec=1.0, sigmara=1.0, sigmadec=1.0, deltajd=1.0, firstmjd=1.0)
-        self.model.magref = MagRef(
-            fid=1, rcid=1, field=1, magref=1.0, sigmagref=1.0, corrected=1.0)
         self.model.xmatches.append(
             Xmatch(catalog_id="C1", catalog_object_id="O1"))
         self.model.magnitude_statistics = MagnitudeStatistics(
             fid=1, magnitude_type="psf", mean=1.0, median=1.0, max_mag=1.0, min_mag=1.0, sigma=1.0, last=1.0, first=1.0)
         self.model.classifications.append(Classification(
             class_name="Super Nova", probability=1.0, classifier_name="C1"))
-        self.model.features.append(
-            Features(data=json.loads('{"test": "test"}')))
+
+        features_object = FeaturesObject(data=json.loads('{"test":"test"}'))
+        features_object.features = Features(version="V1")
+        self.model.features.append(features_object)
         self.model.detections.append(Detection(candid="t", mjd=1, fid=1, ra=1, dec=1, rb=1,
                                                magap=1, magpsf=1, sigmapsf=1, sigmagap=1, alert=json.loads('{"test":"test"}')))
         self.model.non_detections.append(NonDetection(mjd=1, fid=1, diffmaglim=1))
