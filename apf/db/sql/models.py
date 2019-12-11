@@ -97,6 +97,9 @@ class AstroObject(Base, generic.AbstractAstroObject):
     def get_detections(self):
         return self.detections
 
+    def get_features(self):
+        return self.features
+
     # TODO implement light curve formatting
     def get_lightcurve(self):
         pass
