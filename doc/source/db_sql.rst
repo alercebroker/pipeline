@@ -1,3 +1,17 @@
+Initialize database
+===================
+
+Before you connect to your database, make sure you initialize it first.
+To do that execute the following command from your step root folder
+
+``init db``
+
+When you run this command with an empty database it will create the
+following schema:
+
+.. image:: _static/images/diagram.png
+    :align: center
+
 Set database Connection
 =======================
 
@@ -12,7 +26,7 @@ Set database Connection
         "PSQL":{
             "HOST": "localhost",
             "USER": "postgres",
-            "PASSWORD": "docker",
+            "PASSWORD": "password",
             "PORT": 5432,
             "DB_NAME": "test"
         }
@@ -24,12 +38,6 @@ Set database Connection
 
 Calling the above function will create a connection to the database wich
 we will later use to store objects.
-
-If the database has not yet any tables, then the following schema will
-be created:
-
-.. image:: _static/images/diagram.png
-    :align: center
 
 Create model instances
 ======================
