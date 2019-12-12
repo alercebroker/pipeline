@@ -2,7 +2,11 @@ from abc import abstractmethod
 
 from apf.consumers import GenericConsumer
 
+import time
 import logging
+import datetime
+from elasticsearch import Elasticsearch
+
 
 class GenericStep():
     """Generic Step for apf.
@@ -21,6 +25,23 @@ class GenericStep():
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
         self.consumer = GenericConsumer() if consumer is None else consumer
+        self.metrics = None
+
+        if "ES_CONFIG" in config:
+            logging.getLogger("elasticsearch").setLevel(logging.WARNING)
+            self.logger.info("Creating ES Metrics sender")
+            self.metrics = Elasticsearch(**config["ES_CONFIG"])
+            self.doc_type = "metric"
+
+
+    def send_metrics(self,**metrics):
+        if self.metrics:
+            date = datetime.datetime.utcnow().strftime("%Y%m%d")
+            index_prefix = self.config["ES_CONFIG"].get("INDEX_PREFIX", "pipeline")
+            self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
+            metrics["@timestamp"] = datetime.datetime.utcnow()
+            metrics["source"] = self.__class__.__name__
+            self.metrics.index(index = self.index,doc_type = self.doc_type,body=metrics)
 
     @abstractmethod
     def execute(self, message):
@@ -38,5 +59,7 @@ class GenericStep():
         """Start running the step.
         """
         for self.message in self.consumer.consume():
+            t0 = time.time()
             self.execute(self.message)
             self.consumer.commit()
+            self.send_metrics(execution_time = time.time()-t0)
