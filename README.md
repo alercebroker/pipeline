@@ -4,7 +4,7 @@
 
 Run:
 ```
-make install
+pip install -e .
 ```
 
 # Using PAPS
