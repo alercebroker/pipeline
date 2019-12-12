@@ -8,3 +8,5 @@ Producers plugins
   :exclude-members:
 .. autoclass:: apf.producers.KafkaProducer
   :exclude-members:
+.. autoclass:: apf.producers.JSONProducer
+  :exclude-members:
