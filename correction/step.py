@@ -29,7 +29,7 @@ class Correction(GenericStep):
         self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
     def execute(self, message):
-        message = self.correct_message(message)
+        message["candidate"].update(self.correct_message(message["candidate"]))
         self.insert_db(message)
         light_curve = self.get_lightcurve(message["objectId"])
         write = {
@@ -70,14 +70,14 @@ class Correction(GenericStep):
         return result
 
     def correct_message(self, message):
-        isdiffpos = str(message["candidate"]['isdiffpos'])
+        isdiffpos = str(message['isdiffpos'])
         isdiffpos = 1 if (isdiffpos == 't' or isdiffpos == '1') else -1
-        magpsf = message["candidate"]['magpsf']
-        magap = message["candidate"]['magap']
-        magref = message["candidate"]['magnr']
-        sigmagref = message["candidate"]['sigmagnr']
-        sigmapsf = message["candidate"]['sigmapsf']
-        sigmagap = message["candidate"]['sigmagap']
+        magpsf = message['magpsf']
+        magap = message['magap']
+        magref = message['magnr']
+        sigmagref = message['sigmagnr']
+        sigmapsf = message['sigmapsf']
+        sigmagap = message['sigmagap']
 
         magpsf_corr = self.correctMagnitude(magref, isdiffpos, magpsf)
         sigmapsf_corr = self.correctSigmaMag(
@@ -86,13 +86,13 @@ class Correction(GenericStep):
         sigmagap_corr = self.correctSigmaMag(
             magref, sigmagref, isdiffpos, magap, sigmagap)
 
-        message["candidate"]["magpsf_corr"] = magpsf_corr if not np.isnan(
+        message["magpsf_corr"] = magpsf_corr if not np.isnan(
             magpsf_corr) else None
-        message["candidate"]["sigmapsf_corr"] = sigmapsf_corr if not np.isnan(
+        message["sigmapsf_corr"] = sigmapsf_corr if not np.isnan(
             sigmapsf_corr) else None
-        message["candidate"]["magap_corr"] = magap_corr if not np.isnan(
+        message["magap_corr"] = magap_corr if not np.isnan(
             magap_corr) else None
-        message["candidate"]["sigmagap_corr"] = sigmagap_corr if not np.isnan(
+        message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
             sigmagap_corr) else None
 
         return message
@@ -105,9 +105,13 @@ class Correction(GenericStep):
             "dec": message["candidate"]["dec"],
             "rb": message["candidate"]["rb"],
             "magap": message["candidate"]["magap"],
+            "magap_corr": message["candidate"]["magap_corr"],
             "magpsf": message["candidate"]["magpsf"],
+            "magpsf_corr": message["candidate"]["magpsf_corr"],
             "sigmagap": message["candidate"]["sigmagap"],
+            "sigmagap_corr": message["candidate"]["sigmagap_corr"],
             "sigmapsf": message["candidate"]["sigmapsf"],
+            "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
             "oid": message["objectId"],
             "alert": message["candidate"]
         }
@@ -135,6 +139,7 @@ class Correction(GenericStep):
                     non_det.mjd, non_det.fid, created, datetime.datetime.utcnow(), t1-t0))
 
             else:
+                prv_cand.update(self.correct_message(prv_cand))
                 detection_args = {
                     "mjd": prv_cand["jd"] - 2400000.5,
                     "fid": prv_cand["fid"],
@@ -142,16 +147,20 @@ class Correction(GenericStep):
                     "dec": prv_cand["dec"],
                     "rb": prv_cand["rb"],
                     "magap": prv_cand["magap"],
+                    "magap_corr": prv_cand["magap_corr"],
                     "magpsf": prv_cand["magpsf"],
+                    "magpsf_corr": prv_cand["magpsf_corr"],
                     "sigmagap": prv_cand["sigmagap"],
+                    "sigmagap_corr": prv_cand["sigmagap_corr"],
                     "sigmapsf": prv_cand["sigmapsf"],
+                    "sigmapsf_corr": prv_cand["sigmapsf_corr"],
                     "oid": message["objectId"],
                     "alert": prv_cand
                 }
                 det, created = get_or_create(self.session, Detection, filter_by={
                                              "candid": str(prv_cand["candid"])}, **detection_args)
-                self.logger.info("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(det.candid, created, datetime.datetime.utcnow(), t1-t0))
-
+                self.logger.info("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
+                    det.candid, created, datetime.datetime.utcnow(), t1-t0))
 
         self.session.commit()
 
@@ -164,7 +173,6 @@ class Correction(GenericStep):
         }
         for d in ret["detections"]:
             del d["_sa_instance_state"]
-            d["alert"] = json.dumps(d["alert"])
         for d in ret["non_detections"]:
             del d['_sa_instance_state']
         return ret
