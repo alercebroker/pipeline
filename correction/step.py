@@ -164,7 +164,7 @@ class Correction(GenericStep):
         }
         for d in ret["detections"]:
             del d["_sa_instance_state"]
-            d["alert"] = json.dumps(d["alert"])
+
         for d in ret["non_detections"]:
             del d['_sa_instance_state']
         return ret
