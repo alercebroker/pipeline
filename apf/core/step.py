@@ -31,17 +31,15 @@ class GenericStep():
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
             self.logger.info("Creating ES Metrics sender")
             self.metrics = Elasticsearch(**config["ES_CONFIG"])
-            self.doc_type = "metric"
 
-
-    def send_metrics(self,**metrics):
+    def send_metrics(self,doc_type="metric",**metrics):
         if self.metrics:
             date = datetime.datetime.utcnow().strftime("%Y%m%d")
             index_prefix = self.config["ES_CONFIG"].get("INDEX_PREFIX", "pipeline")
             self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
             metrics["@timestamp"] = datetime.datetime.utcnow()
             metrics["source"] = self.__class__.__name__
-            self.metrics.index(index = self.index,doc_type = self.doc_type,body=metrics)
+            self.metrics.index(index = self.index,doc_type = doc_type,body=metrics)
 
     @abstractmethod
     def execute(self, message):
