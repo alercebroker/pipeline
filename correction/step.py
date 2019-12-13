@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 from apf.db.sql.models import Detection, AstroObject, NonDetection
-from apf.db.sql import get_session, get_or_create
+from apf.db.sql import get_session, get_or_create, bulk_insert
 from apf.producers import KafkaProducer
 import datetime
 import time
@@ -37,7 +37,6 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
-        self.logger.info(write)
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
@@ -94,7 +93,6 @@ class Correction(GenericStep):
             magap_corr) else None
         message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
             sigmagap_corr) else None
-
         return message
 
     def insert_db(self, message):
@@ -121,11 +119,15 @@ class Correction(GenericStep):
         t1 = time.time()
         self.logger.info("object={}\tcreated={}\tdate={}\ttime={}".format(
             obj.oid, created, datetime.datetime.utcnow(), t1-t0))
+        t0 = time.time()
         det, created = get_or_create(self.session, Detection, filter_by={
                                      "candid": str(message["candid"])}, **kwargs)
+        t1 = time.time()
         self.logger.info("detection={}\tcreated={}\tdate={}\ttime={}".format(
             det.candid, created, datetime.datetime.utcnow(), t1-t0))
 
+        # prv_cands = []
+        t0 = time.time()
         for prv_cand in message["prv_candidates"]:
             mjd = prv_cand["jd"] - 2400000.5
             if prv_cand["diffmaglim"] is not None:
@@ -133,8 +135,10 @@ class Correction(GenericStep):
                     "diffmaglim": prv_cand["diffmaglim"],
                     "oid": kwargs["oid"]
                 }
+                t0 = time.time()
                 non_det, created = get_or_create(self.session, NonDetection, filter_by={
                     "mjd": mjd, "fid": prv_cand["fid"]}, **non_detection_args)
+                t1 = time.time()
                 self.logger.info("non_detection={},{}\tcreated={}\tdate={}\ttime={}".format(
                     non_det.mjd, non_det.fid, created, datetime.datetime.utcnow(), t1-t0))
 
@@ -155,13 +159,17 @@ class Correction(GenericStep):
                     "sigmapsf": prv_cand["sigmapsf"],
                     "sigmapsf_corr": prv_cand["sigmapsf_corr"],
                     "oid": message["objectId"],
-                    "alert": prv_cand
+                    "alert": prv_cand,
+                    
+                    "candid":str(prv_cand["candid"])
                 }
-                det, created = get_or_create(self.session, Detection, filter_by={
-                                             "candid": str(prv_cand["candid"])}, **detection_args)
+                prv_cands.append(detection_args)
                 self.logger.info("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
                     det.candid, created, datetime.datetime.utcnow(), t1-t0))
-
+        bulk_insert(prv_cands, Detection,self.session)
+        t1 = time.time()
+        self.logger.info("Processed {} prv_candidates in {} seconds".format(
+            len(message["prv_candidates"]), t1-t0))
         self.session.commit()
 
     def get_lightcurve(self, oid):
