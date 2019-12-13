@@ -256,6 +256,14 @@ class AbstractDetection():
         error for psf magnitude
     sigmagap : float
         error for ap magnitude
+    magpsf_corr : float
+        magnitude correction for magpsf
+    magap_corr : float
+        magnitude correction for magap
+    sigmapsf_corr : float
+        correction for sigmapsf
+    sigmagap_corr : float
+        correction for sigmagap
     """
     candid = None
     mjd = None
@@ -268,4 +276,8 @@ class AbstractDetection():
     sigmapsf = None
     sigmagap = None
     alert = None
+    magap_corr = None
+    magpsf_corr = None
+    sigmapsf_corr = None
+    sigmagap_corr = None
     
