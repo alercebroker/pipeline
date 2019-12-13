@@ -126,7 +126,7 @@ class Correction(GenericStep):
         self.logger.info("detection={}\tcreated={}\tdate={}\ttime={}".format(
             det.candid, created, datetime.datetime.utcnow(), t1-t0))
 
-        # prv_cands = []
+        prv_cands = []
         t0 = time.time()
         for prv_cand in message["prv_candidates"]:
             mjd = prv_cand["jd"] - 2400000.5
