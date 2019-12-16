@@ -26,7 +26,7 @@ class GenericStep():
         self.config = config
         self.consumer = GenericConsumer() if consumer is None else consumer
         self.metrics = None
-        self.disable_autocommit = self.config.get("DISABLE_AUTOCOMMIT", False)
+        self.commit = self.config.get("COMMIT", True)
 
         if "ES_CONFIG" in config:
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
@@ -60,6 +60,6 @@ class GenericStep():
         for self.message in self.consumer.consume():
             t0 = time.time()
             self.execute(self.message)
-            if self.disable_autocommit:
+            if self.commit:
                 self.consumer.commit()
             self.send_metrics(execution_time = time.time()-t0)
