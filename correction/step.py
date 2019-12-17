@@ -71,6 +71,7 @@ class Correction(GenericStep):
     def correct_message(self, message):
         isdiffpos = str(message['isdiffpos'])
         isdiffpos = 1 if (isdiffpos == 't' or isdiffpos == '1') else -1
+        message["isdiffpos"] = isdiffpos
         magpsf = message['magpsf']
         magap = message['magap']
         magref = message['magnr']
