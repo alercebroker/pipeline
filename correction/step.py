@@ -117,13 +117,13 @@ class Correction(GenericStep):
         obj, created = get_or_create(self.session, AstroObject, filter_by={
                                      "oid": message["objectId"]})
         t1 = time.time()
-        self.logger.info("object={}\tcreated={}\tdate={}\ttime={}".format(
+        self.logger.debug("object={}\tcreated={}\tdate={}\ttime={}".format(
             obj.oid, created, datetime.datetime.utcnow(), t1-t0))
         t0 = time.time()
         det, created = get_or_create(self.session, Detection, filter_by={
                                      "candid": str(message["candid"])}, **kwargs)
         t1 = time.time()
-        self.logger.info("detection={}\tcreated={}\tdate={}\ttime={}".format(
+        self.logger.debug("detection={}\tcreated={}\tdate={}\ttime={}".format(
             det.candid, created, datetime.datetime.utcnow(), t1-t0))
 
         prv_cands = []
@@ -139,7 +139,7 @@ class Correction(GenericStep):
                 non_det, created = get_or_create(self.session, NonDetection, filter_by={
                     "mjd": mjd, "fid": prv_cand["fid"]}, **non_detection_args)
                 t1 = time.time()
-                self.logger.info("non_detection={},{}\tcreated={}\tdate={}\ttime={}".format(
+                self.logger.debug("non_detection={},{}\tcreated={}\tdate={}\ttime={}".format(
                     non_det.mjd, non_det.fid, created, datetime.datetime.utcnow(), t1-t0))
 
             else:
@@ -160,15 +160,15 @@ class Correction(GenericStep):
                     "sigmapsf_corr": prv_cand["sigmapsf_corr"],
                     "oid": message["objectId"],
                     "alert": prv_cand,
-                    
+
                     "candid":str(prv_cand["candid"])
                 }
                 prv_cands.append(detection_args)
-                self.logger.info("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
+                self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
                     det.candid, created, datetime.datetime.utcnow(), t1-t0))
         bulk_insert(prv_cands, Detection,self.session)
         t1 = time.time()
-        self.logger.info("Processed {} prv_candidates in {} seconds".format(
+        self.logger.debug("Processed {} prv_candidates in {} seconds".format(
             len(message["prv_candidates"]), t1-t0))
         self.session.commit()
 
