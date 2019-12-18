@@ -18,3 +18,31 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
     depends_on:
       - zookeeper
+  postgres:
+    image: 'postgres'
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_PASSWORD=docker
+  elasticsearch:
+    image: "elasticsearch:7.5.0"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - "discovery.type=single-node"
+    volumes:
+      - "./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+  grafana:
+    image: "grafana/grafana"
+    ports:
+      - "3000:3000"
+    links:
+      - elasticsearch
+  kibana:
+    image: "kibana:7.5.0"
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch
