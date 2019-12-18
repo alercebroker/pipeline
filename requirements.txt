@@ -1,0 +1,4 @@
+apf>=0.0.0
+P4J
+-e git+git@github.com:alercebroker/paps.git#egg=paps
+-e git+git@github.com:alercebroker/features.git@mlflow_refactoring#egg=lc_features
