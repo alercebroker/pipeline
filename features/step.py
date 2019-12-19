@@ -1,8 +1,8 @@
 from apf.core.step import GenericStep
 import logging
 
-from lc_features.preprocess import *
-from lc_features.extractors import *
+from late_classifier.features.preprocess import *
+from late_classifier.features.extractors import *
 
 import numpy as np
 import pandas as pd
@@ -53,7 +53,6 @@ class FeaturesComputer(GenericStep):
         t0 = time.time()
         oid = message["oid"]
         detections = json_normalize(message["detections"])
-        self.logger.debug(list(detections.columns))
         if len(detections) < 6:
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
@@ -75,10 +74,7 @@ class FeaturesComputer(GenericStep):
         if len(features) > 0:
             if type(features) is pd.Series:
                 features = pd.DataFrame([features])
-            # features.fid = features.fid.astype(int)
-            features.index = features.fid
-            del features["fid"]
-            result = self._clean_result(features.to_dict())
+            result = self._clean_result(features.loc[oid].to_dict())
         else:
             self.logger.debug(f"No features for {oid}")
             return
