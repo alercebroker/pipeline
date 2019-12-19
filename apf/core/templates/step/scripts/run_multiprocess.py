@@ -20,8 +20,18 @@ sys.path.append(PACKAGE_PATH)
 
 from {{package_name}} import {{class_name}}
 from apf.consumers import GenericConsumer as Consumer
+n_process = STEP_CONFIG.get("N_PROCESS",1)
 
-consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = {{class_name}}(consumer,config=STEP_CONFIG,level=level)
-step.start()
+def create_and_run(idx, Consumer):
+    CONSUMER_CONFIG["ID"] = idx
+    consumer = Consumer(config=CONSUMER_CONFIG)
+    step = {{class_name}}(consumer,config=STEP_CONFIG,level=level)
+    step.start()
+
+process_list = []
+for i in range(n_process):
+    process_list.append(Process(target=create_and_run, args=(i,Consumer)))
+
+[p.start() for p in process_list]
+[p.join() for p in process_list]
