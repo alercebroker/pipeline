@@ -138,7 +138,7 @@ class Xmatch(Base, generic.AbstractXmatch):
 class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = 'magnitude_statistics'
 
-    magnitude_type = Column(String)
+    magnitude_type = Column(String, primary_key=True)
     fid = Column(Integer, primary_key=True)
     mean = Column(Float)
     median = Column(Float)

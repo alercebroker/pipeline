@@ -6,9 +6,9 @@ Consumer plugins
     :members:
 .. autoclass:: apf.consumers.KafkaConsumer
   :exclude-members:
-  .. autoclass:: apf.consumers.CSVConsumer
+.. autoclass:: apf.consumers.CSVConsumer
+:exclude-members:
+.. autoclass:: apf.consumers.JSONConsumer
   :exclude-members:
-  .. autoclass:: apf.consumers.JSONConsumer
-    :exclude-members:
 .. autoclass:: apf.consumers.AVROFileConsumer
   :exclude-members:
