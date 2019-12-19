@@ -5,9 +5,11 @@ import pandas as pd
 from apf.db.sql.models import Detection, AstroObject, NonDetection
 from apf.db.sql import get_session, get_or_create, bulk_insert
 from apf.producers import KafkaProducer
+from apf.consumers import KafkaConsumer
 import datetime
 import time
 import json
+from .s3 import get_object_url, upload_file
 np.seterr(divide='ignore')
 
 
@@ -38,6 +40,11 @@ class Correction(GenericStep):
             "non_detections": light_curve["non_detections"]
         }
         self.producer.produce(write)
+
+        if type(self.consumer) is KafkaConsumer:   
+            upload_file(self.consumer.message.value(), "ztf-storage", message["candidate"]["candid"])
+
+
 
     def correctMagnitude(self, magref, sign, magdiff):
         result = np.nan
