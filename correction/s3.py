@@ -28,9 +28,8 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
 def get_object_url(date, candid):
     return create_presigned_url("alerce-challenges", "ztf_{}_programid1/{}.avro".format(date,candid))
 
-def upload_file(f, date, candid):
+def upload_file(f, date, candid, bucket_name):
     s3 = boto3.client('s3')
-    BUCKET_NAME = "alerce-challenges"
-    OBJECT_NAME = "ztf_{}_programid1/{}.avro".format(date,candid)
-    s3.upload_fileobj(f, BUCKET_NAME, OBJECT_NAME)
+    object_name = "ztf_{}_programid1/{}.avro".format(date,candid)
+    s3.upload_fileobj(f, bucket_name, object_name)
     return get_object_url(date,candid)

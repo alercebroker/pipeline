@@ -1,1 +1,5 @@
 apf==
+pandas==0.25.3
+boto3
+elasticsearch
+psycopg2
