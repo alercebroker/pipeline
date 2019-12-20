@@ -72,20 +72,23 @@ def new_step():
 
     print(f"Creating apf step package in {output_path}")
 
+    package_name = "".join(
+    [word for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
     # Creating main package directory
-    os.makedirs(os.path.join(output_path, args.step_name))
+    os.makedirs(os.path.join(output_path, package_name))
     os.makedirs(os.path.join(output_path, "tests"))
     os.makedirs(os.path.join(output_path, "scripts"))
 
     loader = jinja2.FileSystemLoader(TEMPLATE_PATH)
     route = jinja2.Environment(loader=loader)
 
+
     init_template = route.get_template("step/package/__init__.py")
-    with open(os.path.join(output_path, args.step_name, "__init__.py"), "w") as f:
+    with open(os.path.join(output_path,package_name, "__init__.py"), "w") as f:
         f.write(init_template.render())
 
     step_template = route.get_template("step/package/step.py")
-    with open(os.path.join(output_path, args.step_name, "step.py"), "w") as f:
+    with open(os.path.join(output_path,package_name, "step.py"), "w") as f:
 
         class_name = "".join(
             [word.capitalize() for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
@@ -98,7 +101,12 @@ def new_step():
     run_script_template = route.get_template("step/scripts/run_step.py")
     with open(os.path.join(output_path, "scripts", "run_step.py"), "w") as f:
         f.write(run_script_template.render(
-            package_name=args.step_name, class_name=class_name))
+            package_name=package_name, class_name=class_name))
+
+    run_multiprocess_template = route.get_template("step/scripts/run_multiprocess.py")
+    with open(os.path.join(output_path, "scripts", "run_multiprocess.py"), "w") as f:
+        f.write(run_multiprocess_template.render(
+            package_name=package_name, class_name=class_name))
 
     requirements_template = route.get_template("step/requirements.txt")
     with open(os.path.join(output_path, "requirements.txt"), "w") as f:
