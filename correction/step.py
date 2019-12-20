@@ -34,20 +34,19 @@ class Correction(GenericStep):
 
     def execute(self, message):
         message["candidate"].update(self.correct_message(message["candidate"]))
-        url = None
-        if type(self.consumer) is KafkaConsumer:
-            f = io.BytesIO(self.consumer.message.value())
-            year, month, day = self.jd_to_date(message["candidate"]["jd"])
-            date = "{}{}{}".format(year, month, int(day))
-            url = upload_file(
-                f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
-        self.insert_db(message, url)
+        self.insert_db(message)
         light_curve = self.get_lightcurve(message["objectId"])
         write = {
             "oid": message["objectId"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
+        if type(self.consumer) is KafkaConsumer:
+            f = io.BytesIO(self.consumer.message.value())
+            year, month, day = self.jd_to_date(message["candidate"]["jd"])
+            date = "{}{}{}".format(year, month, int(day))
+            upload_file(
+                f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
@@ -105,9 +104,18 @@ class Correction(GenericStep):
             magap_corr) else None
         message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
             sigmagap_corr) else None
+        
+        message["magpsf_corr"] = magpsf_corr if not np.isinf(
+            magpsf_corr) else None
+        message["sigmapsf_corr"] = sigmapsf_corr if not np.isinf(
+            sigmapsf_corr) else None
+        message["magap_corr"] = magap_corr if not np.isinf(
+            magap_corr) else None
+        message["sigmagap_corr"] = sigmagap_corr if not np.isinf(
+            sigmagap_corr) else None
         return message
 
-    def insert_db(self, message, url=None):
+    def insert_db(self, message):
         kwargs = {
             "mjd": message["candidate"]["jd"] - 2400000.5,
             "fid": message["candidate"]["fid"],
@@ -124,17 +132,19 @@ class Correction(GenericStep):
             "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
             "oid": message["objectId"],
             "alert": message["candidate"],
-            "avro": url
+            "avro": get_object_url(self.config["STORAGE"]["NAME"],
+                                   self.jd_to_date(message["candidate"]["jd"]),
+                                   message["candidate"]["candid"])
         }
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
-                                     "oid": message["objectId"]})
+            "oid": message["objectId"]})
         t1 = time.time()
         self.logger.debug("object={}\tcreated={}\tdate={}\ttime={}".format(
             obj.oid, created, datetime.datetime.utcnow(), t1-t0))
         t0 = time.time()
         det, created = get_or_create(self.session, Detection, filter_by={
-                                     "candid": str(message["candid"])}, **kwargs)
+            "candid": str(message["candid"])}, **kwargs)
         t1 = time.time()
         self.logger.debug("detection={}\tcreated={}\tdate={}\ttime={}".format(
             det.candid, created, datetime.datetime.utcnow(), t1-t0))
@@ -175,7 +185,9 @@ class Correction(GenericStep):
                         "oid": message["objectId"],
                         "alert": prv_cand,
                         "candid": str(prv_cand["candid"]),
-                        "avro": url
+                        "avro": get_object_url(self.config["STORAGE"]["NAME"],
+                                               self.jd_to_date(prv_cand["jd"]),
+                                               str(prv_cand["candid"]))
                     }
                     prv_cands.append(detection_args)
                     self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
