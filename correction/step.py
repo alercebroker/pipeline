@@ -34,7 +34,13 @@ class Correction(GenericStep):
 
     def execute(self, message):
         message["candidate"].update(self.correct_message(message["candidate"]))
-        self.insert_db(message)
+        url = None
+        if type(self.consumer) is KafkaConsumer:
+            f = io.BytesIO(self.consumer.message.value())
+            year, month, day = self.jd_to_date(message["candidate"]["jd"])
+            date = "{}{}{}".format(year, month, int(day))
+            url = upload_file(f,date, message["candidate"]["candid"])
+        self.insert_db(message, url)
         light_curve = self.get_lightcurve(message["objectId"])
         write = {
             "oid": message["objectId"],
@@ -42,15 +48,7 @@ class Correction(GenericStep):
             "non_detections": light_curve["non_detections"]
         }
         self.producer.produce(write)
-
-        if type(self.consumer) is KafkaConsumer:
-            f = io.BytesIO(self.consumer.message.value())
-            year, month, day = self.jd_to_date(message["candidate"]["jd"])
-            date = "{}{}{}".format(year, month, int(day))
-            url = upload_file(f,date, message["candidate"]["candid"])
-            self.logger.info(url)
-
-
+                
 
     def correctMagnitude(self, magref, sign, magdiff):
         result = np.nan
@@ -109,7 +107,7 @@ class Correction(GenericStep):
             sigmagap_corr) else None
         return message
 
-    def insert_db(self, message):
+    def insert_db(self, message, url=None):
         kwargs = {
             "mjd": message["candidate"]["jd"] - 2400000.5,
             "fid": message["candidate"]["fid"],
@@ -125,7 +123,8 @@ class Correction(GenericStep):
             "sigmapsf": message["candidate"]["sigmapsf"],
             "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
             "oid": message["objectId"],
-            "alert": message["candidate"]
+            "alert": message["candidate"],
+            "s3_url": url
         }
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
@@ -175,8 +174,8 @@ class Correction(GenericStep):
                         "sigmapsf_corr": prv_cand["sigmapsf_corr"],
                         "oid": message["objectId"],
                         "alert": prv_cand,
-                        
-                        "candid":str(prv_cand["candid"])
+                        "candid":str(prv_cand["candid"]),
+                        "s3_url": url
                     }
                     prv_cands.append(detection_args)
                     self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
