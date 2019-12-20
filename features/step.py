@@ -1,4 +1,5 @@
 from apf.core.step import GenericStep
+from apf.producers import KafkaProducer
 import logging
 
 from late_classifier.features.preprocess import *
@@ -36,6 +37,13 @@ class FeaturesComputer(GenericStep):
         self.preprocessor = DetectionsPreprocessorZTF()
         self.featuresComputer = HierarchicalFeaturesComputer([1,2])
         self.session = get_session(self.config["DB_CONFIG"])
+
+        prod_config = self.config.get("PRODUCER_CONFIG", None)
+        if prod_config:
+            self.producer = KafkaProducer(prod_config)
+        else:
+            self.producer = None
+
 
     def _clean_result(self,result):
         cleaned_results = {}
@@ -87,6 +95,13 @@ class FeaturesComputer(GenericStep):
         features.features = version
         obj.features.append(features)
         self.session.commit()
+
+        if self.producer:
+            out_message = {
+                "oid": oid,
+                "features": result
+            }
+            self.producer.produce(out_message)
 
         compute_time = features_t1-features_t0
         wall_time = time.time()-t0
