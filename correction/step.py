@@ -41,7 +41,7 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
-        if type(self.consumer) is KafkaConsumer:
+        if type(self.consumer) is KafkaConsumer and "STORAGE" in self.config:
             f = io.BytesIO(self.consumer.message.value())
             year, month, day = self.jd_to_date(message["candidate"]["jd"])
             date = "{}{}{}".format(year, month, int(day))
@@ -106,7 +106,6 @@ class Correction(GenericStep):
             sigmagap_corr) and not np.isinf(sigmagap_corr) else None
 
         return message
-        
 
     def insert_db(self, message):
         kwargs = {
@@ -125,10 +124,12 @@ class Correction(GenericStep):
             "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
             "oid": message["objectId"],
             "alert": message["candidate"],
-            "avro": get_object_url(self.config["STORAGE"]["NAME"],
-                                   self.jd_to_date(message["candidate"]["jd"]),
-                                   message["candidate"]["candid"])
         }
+        if "STORAGE" in self.config:
+            kwargs["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
+                                            self.jd_to_date(
+                                                message["candidate"]["jd"]),
+                                            message["candidate"]["candid"])
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
             "oid": message["objectId"]})
@@ -178,10 +179,12 @@ class Correction(GenericStep):
                         "oid": message["objectId"],
                         "alert": prv_cand,
                         "candid": str(prv_cand["candid"]),
-                        "avro": get_object_url(self.config["STORAGE"]["NAME"],
-                                               self.jd_to_date(prv_cand["jd"]),
-                                               str(prv_cand["candid"]))
                     }
+                    if "STORAGE" in self.config:
+                        detection_args["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
+                                                                self.jd_to_date(
+                                                                    prv_cand["jd"]),
+                                                                str(prv_cand["candid"]))
                     prv_cands.append(detection_args)
                     self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
                         det.candid, created, datetime.datetime.utcnow(), t1-t0))
