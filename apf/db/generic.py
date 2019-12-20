@@ -266,7 +266,7 @@ class AbstractDetection():
         correction for sigmapsf
     sigmagap_corr : float
         correction for sigmagap
-    s3_url : string
+    avro : string
         url for avro file in s3
     """
     candid = None
@@ -284,5 +284,5 @@ class AbstractDetection():
     magpsf_corr = None
     sigmapsf_corr = None
     sigmagap_corr = None
-    s3_url = None
+    avro = None
     
