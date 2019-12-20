@@ -97,23 +97,16 @@ class Correction(GenericStep):
             magref, sigmagref, isdiffpos, magap, sigmagap)
 
         message["magpsf_corr"] = magpsf_corr if not np.isnan(
-            magpsf_corr) else None
+            magpsf_corr) and not np.isinf(magpsf_corr) else None
         message["sigmapsf_corr"] = sigmapsf_corr if not np.isnan(
-            sigmapsf_corr) else None
+            sigmapsf_corr) and not np.isinf(sigmapsf_corr) else None
         message["magap_corr"] = magap_corr if not np.isnan(
-            magap_corr) else None
+            magap_corr) and not np.isinf(magap_corr) else None
         message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
-            sigmagap_corr) else None
-        
-        message["magpsf_corr"] = magpsf_corr if not np.isinf(
-            magpsf_corr) else None
-        message["sigmapsf_corr"] = sigmapsf_corr if not np.isinf(
-            sigmapsf_corr) else None
-        message["magap_corr"] = magap_corr if not np.isinf(
-            magap_corr) else None
-        message["sigmagap_corr"] = sigmagap_corr if not np.isinf(
-            sigmagap_corr) else None
+            sigmagap_corr) and not np.isinf(sigmagap_corr) else None
+
         return message
+        
 
     def insert_db(self, message):
         kwargs = {
