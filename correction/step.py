@@ -124,7 +124,7 @@ class Correction(GenericStep):
             "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
             "oid": message["objectId"],
             "alert": message["candidate"],
-            "s3_url": url
+            "avro": url
         }
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
@@ -175,7 +175,7 @@ class Correction(GenericStep):
                         "oid": message["objectId"],
                         "alert": prv_cand,
                         "candid": str(prv_cand["candid"]),
-                        "s3_url": url
+                        "avro": url
                     }
                     prv_cands.append(detection_args)
                     self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
