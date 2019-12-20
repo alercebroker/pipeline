@@ -195,5 +195,6 @@ class Detection(Base, generic.AbstractDetection):
     rb = Column(Float)
     alert = Column(JSON, nullable=False)
     oid = Column(String, ForeignKey('astro_object.oid'), nullable=False)
+    s3_url = Column(String)
 
     __table_args__ = (Index('object_id', 'oid', postgresql_using='btree'),)
