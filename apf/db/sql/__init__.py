@@ -16,6 +16,11 @@ def get_or_create(session, model, filter_by=None, **kwargs):
         session.add(instance)
         return instance, True
 
+def update(instance, args):
+    for key in args.keys():
+        setattr(instance, key, args[key])
+    return instance
+
 
 def get_session(db_config):
     psql_config = db_config["PSQL"]
