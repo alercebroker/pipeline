@@ -7,10 +7,12 @@ import sys
 from apf.db.sql import Base, models, Session
 from apf.db.sql.models import Class
 from sqlalchemy import create_engine
-
+import alembic.config
 HELPER_PATH = os.path.dirname(os.path.abspath(__file__))
 CORE_PATH = os.path.abspath(os.path.join(HELPER_PATH, ".."))
 TEMPLATE_PATH = os.path.abspath(os.path.join(CORE_PATH, "templates"))
+MIGRATIONS_PATH = os.path.abspath(
+    os.path.join(CORE_PATH, "../db/sql/"))
 
 
 def execute_from_command_line(argv):
@@ -18,8 +20,11 @@ def execute_from_command_line(argv):
     newstep         Create package for a new apf step.
     build           Generate Dockerfile and scripts to run a step.
     initdb          Create schema on empty database.
+    make_migrations Get differences with database and create migrations
+    migrate         Update database from migrations
     """)
-    parser.add_argument("command", choices=["build", "newstep", "initdb"])
+    parser.add_argument("command", choices=[
+                        "build", "newstep", "initdb", "make_migrations", "migrate"])
     parser.add_argument("extras", action='append', nargs="*")
     args, _ = parser.parse_known_args()
 
@@ -29,6 +34,10 @@ def execute_from_command_line(argv):
         new_step()
     if args.command == "initdb":
         initdb()
+    if args.command == "make_migrations":
+        make_migrations()
+    if args.command == "migrate":
+        migrate()
 
 
 def _validate_steps(steps):
@@ -52,7 +61,48 @@ def initdb():
         db_credentials = "sqlite:///:memory:"
     engine = create_engine(db_credentials)
     Base.metadata.create_all(engine)
+    os.chdir(MIGRATIONS_PATH)
+    alembic.config.main([
+        'stamp', 'head'
+    ])
     print("Database created with credentials from {}".format(args.settings))
+
+
+def make_migrations():
+    parser = argparse.ArgumentParser(description="Get differences from database and create migration files",
+                                     usage="apf make_migrations [-h] [--settings settings_path]")
+    parser.add_argument("--settings", default=os.path.abspath("./settings.py"))
+    args, _ = parser.parse_known_args()
+
+    if not os.path.exists(args.settings):
+        raise Exception("Settings file not found")
+    sys.path.append(os.path.dirname(os.path.expanduser(args.settings)))
+
+    os.chdir(MIGRATIONS_PATH)
+    alembicArgs = [
+        '--raiseerr',
+        'revision', '--autogenerate', '-m', 'tables'
+    ]
+    alembic.config.main(alembicArgs)
+
+
+def migrate():
+    parser = argparse.ArgumentParser(description="Updates database from migrations",
+                                     usage="apf migrate [-h] [--settings settings_path]")
+    parser.add_argument("--settings", default=os.path.abspath("./settings.py"))
+    args, _ = parser.parse_known_args()
+
+    if not os.path.exists(args.settings):
+        raise Exception("Settings file not found")
+    sys.path.append(os.path.dirname(os.path.expanduser(args.settings)))
+
+    os.chdir(MIGRATIONS_PATH)
+    alembicArgs = [
+        '--raiseerr',
+        'upgrade', 'head'
+    ]
+    alembic.config.main(alembicArgs)
+
 
 def new_step():
     import re
@@ -73,7 +123,7 @@ def new_step():
     print(f"Creating apf step package in {output_path}")
 
     package_name = "".join(
-    [word for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
+        [word for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
     # Creating main package directory
     os.makedirs(os.path.join(output_path, package_name))
     os.makedirs(os.path.join(output_path, "tests"))
@@ -82,13 +132,12 @@ def new_step():
     loader = jinja2.FileSystemLoader(TEMPLATE_PATH)
     route = jinja2.Environment(loader=loader)
 
-
     init_template = route.get_template("step/package/__init__.py")
-    with open(os.path.join(output_path,package_name, "__init__.py"), "w") as f:
+    with open(os.path.join(output_path, package_name, "__init__.py"), "w") as f:
         f.write(init_template.render())
 
     step_template = route.get_template("step/package/step.py")
-    with open(os.path.join(output_path,package_name, "step.py"), "w") as f:
+    with open(os.path.join(output_path, package_name, "step.py"), "w") as f:
 
         class_name = "".join(
             [word.capitalize() for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
@@ -103,7 +152,8 @@ def new_step():
         f.write(run_script_template.render(
             package_name=package_name, class_name=class_name))
 
-    run_multiprocess_template = route.get_template("step/scripts/run_multiprocess.py")
+    run_multiprocess_template = route.get_template(
+        "step/scripts/run_multiprocess.py")
     with open(os.path.join(output_path, "scripts", "run_multiprocess.py"), "w") as f:
         f.write(run_multiprocess_template.render(
             package_name=package_name, class_name=class_name))
