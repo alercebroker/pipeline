@@ -2,7 +2,7 @@
 #       features   Settings File
 ##################################################
 
-LOGGING_DEBUG=True
+FEATURE_VERSION = "v0.1"
 
 CONSUMER_CONFIG = {"TOPICS": ["test_offset"],
                    "PARAMS": {
@@ -45,5 +45,5 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG" : ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "FEATURE_VERSION": "v0.1"
+    "FEATURE_VERSION": FEATURE_VERSION
 }
