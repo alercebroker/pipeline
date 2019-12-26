@@ -72,8 +72,7 @@ def new_step():
 
     print(f"Creating apf step package in {output_path}")
 
-    package_name = "".join(
-    [word for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
+    package_name = args.step_name.lower()
     # Creating main package directory
     os.makedirs(os.path.join(output_path, package_name))
     os.makedirs(os.path.join(output_path, "tests"))
