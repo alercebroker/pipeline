@@ -1,7 +1,6 @@
 import jinja2
 import argparse
 import os
-import yaml
 import apf
 import sys
 from apf.db.sql import Base, models, Session

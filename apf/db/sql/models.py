@@ -108,7 +108,7 @@ class AstroObject(Base, generic.AbstractAstroObject):
         return "<AstroObject(oid='%s')>" % (self.oid)
 
 
-class Classification(Base):
+class Classification(Base, generic.AbstractClassification):
     __tablename__ = 'classification'
 
     class_name = Column(String, ForeignKey('class.name'), primary_key=True)
@@ -117,6 +117,7 @@ class Classification(Base):
         'astro_object.oid'), primary_key=True)
     classifier_name = Column(String, ForeignKey(
         'classifier.name'), primary_key=True)
+    probabilities = Column(JSON)
 
     classes = relationship("Class", back_populates='classifications')
     objects = relationship("AstroObject", back_populates='classifications')
@@ -195,5 +196,6 @@ class Detection(Base, generic.AbstractDetection):
     rb = Column(Float)
     alert = Column(JSON, nullable=False)
     oid = Column(String, ForeignKey('astro_object.oid'), nullable=False)
+    avro = Column(String)
 
     __table_args__ = (Index('object_id', 'oid', postgresql_using='btree'),)

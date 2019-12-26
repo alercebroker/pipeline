@@ -53,7 +53,7 @@ class KafkaConsumer(GenericConsumer):
                 message = self.consumer.poll(timeout=60)
 
             if message.error():
-                raise Exception("Error in kafka stream: {message.error()}")
+                raise Exception(f"Error in kafka stream: {message.error()}")
 
             self.message = message
 

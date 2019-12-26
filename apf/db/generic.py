@@ -197,6 +197,8 @@ class AbstractClassification():
         name of the class
     probability : float
         probability of the classification
+    probabilities : json
+        probabilities for each class
     """
     class_name = None
     probability = None
@@ -264,6 +266,8 @@ class AbstractDetection():
         correction for sigmapsf
     sigmagap_corr : float
         correction for sigmagap
+    avro : string
+        url for avro file in s3
     """
     candid = None
     mjd = None
@@ -280,4 +284,5 @@ class AbstractDetection():
     magpsf_corr = None
     sigmapsf_corr = None
     sigmagap_corr = None
+    avro = None
     
