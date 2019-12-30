@@ -7,6 +7,17 @@ import json
 class JSONConsumer(GenericConsumer):
     """JSON Consumer.
 
+    **Example:**
+
+    JSON Consumer configuration example
+
+    .. code-block:: python
+
+        #settings.py
+        CONSUMER_CONFIG = { ...
+            "FILEPATH": "json_file_path"
+        }
+
     Parameters
     ----------
     FILE_PATH: path

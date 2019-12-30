@@ -4,9 +4,13 @@ from pandas.io.json import json_normalize
 class CSVProducer(GenericProducer):
     """CSV File Producer.
 
+    .. warning::
+        `CSVProducer` only works for a **single process** step, running it distributed or with
+        multiprocessing can result on issues.
+
     Parameters
     ----------
-    FILE_PATH: :py:class:`str`
+    FILE_PATH: :class:`str`
         Output CSV File Path.
     """
     def __init__(self,config):
