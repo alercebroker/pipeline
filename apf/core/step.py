@@ -41,7 +41,7 @@ class GenericStep():
             self.logger.info("Creating ES Metrics sender")
             self.metrics = Elasticsearch(**config["ES_CONFIG"])
 
-    def send_metrics(self,metrics):
+    def send_metrics(self,**metrics):
         """Send Metrics to an Elasticsearch Cluster.
 
         For this method to work the `ES_CONFIG` variable has to be set in the `STEP_CONFIG`
