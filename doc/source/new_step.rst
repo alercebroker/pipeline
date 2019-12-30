@@ -1,9 +1,9 @@
 New apf step tutorial
 =======================
 
-*apf* was created to simplify the development of an stram processing pipeline.
+*apf* was created to simplify the development of an stream processing pipeline.
 
-To illustrate how the creation of a pipeline step was inteded we have the following diagram.
+To illustrate how the creation of a pipeline step was intended we have the following diagram.
 
 .. image:: _static/images/apf-flow.png
     :align: center
