@@ -48,7 +48,8 @@ Documentation
    new_step
    core
    consumers
-   db
+   db_plugins
+   database
    producers
    :maxdepth: 2
    :caption: Contents:

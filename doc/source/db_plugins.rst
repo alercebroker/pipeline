@@ -38,4 +38,6 @@ Database plugins
 
 2. SQL
 ------------
-:doc:`SQL <./db_sql>`
+.. include:: db_sql.rst
+
+

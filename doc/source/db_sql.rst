@@ -1,10 +1,9 @@
 Initialize database
-===================
-
++++++++++++++++++
 Before you connect to your database, make sure you initialize it first.
 To do that execute the following command from your step root folder
 
-``init db``
+``apf init db``
 
 When you run this command with an empty database it will create the
 following schema:
@@ -12,8 +11,25 @@ following schema:
 .. image:: _static/images/diagram.png
     :align: center
 
+Migrations
++++++++++++++++
+Migrations keep track of database changes. To fully init the database with your 
+step configuration run 
+
+.. code:: python
+
+    apf make_migrations
+    apf migrate
+
+
+This will set the head state for tracking changes on the database and also execute any migrations that might be present.
+
+The first command ``apf make_migrations`` will create migration files according to differences from apf models and your database.
+
+The seccond command ``apf migrate`` will execute the migrations and update your database.
+
 Set database Connection
-=======================
++++++++++++++++++++++
 
 .. code:: ipython3
 
@@ -40,7 +56,7 @@ Calling the above function will create a connection to the database wich
 we will later use to store objects.
 
 Create model instances
-======================
+++++++++++++++++++++
 
 Use get_or_create function to get an instance of a model. The instance
 will be an object from the database if it already exists or it will
@@ -79,7 +95,7 @@ create a new instance. **This object is not yet added to the database**
 
 
 Add related models
-==================
+++++++++++++++++++
 
 Lets say for example that we want to create a class that belongs to a
 taxonomy.
@@ -142,7 +158,7 @@ When we add a taxonomy to a class it also means that a class is added to
 the taxonomy.
 
 Add objects to the database
-===========================
+++++++++++++++++++++++++++
 
 All our instanced objects are not yet added to the database. To do that
 we use ``add_to_database(session, objects)`` function
