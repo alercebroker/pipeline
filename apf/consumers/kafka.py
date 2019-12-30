@@ -3,6 +3,7 @@ from confluent_kafka import Consumer
 
 import fastavro
 import io
+import importlib
 
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic
@@ -32,8 +33,22 @@ class KafkaConsumer(GenericConsumer):
             self.config["PARAMS"]["auto.offset.reset"] = "beginning"
         #Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
-        self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
-        self.consumer.subscribe(self.config["TOPICS"])
+
+        self.dynamic_topic = False
+        if self.config.get("TOPICS"):
+            self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
+            self.consumer.subscribe(self.config["TOPICS"])
+        elif self.config.get("TOPIC_STRATEGY"):
+            self.dynamic_topic = True
+            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(".", 1)
+            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
+            self.topic_strategy = TopicStrategy(**self.config["TOPIC_STRATEGY"]["PARAMS"])
+            self.topic = self.topic_strategy.get_topic()
+            self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
+            self.logger.info(f'Subscribing to {self.topic}')
+            self.consumer.subscribe(self.topic)
+        else:
+            raise Exception("No topics o topic strategy set. ")
 
     def __del__(self):
         self.logger.info("Shutting down Consumer")
@@ -49,6 +64,14 @@ class KafkaConsumer(GenericConsumer):
         message = None
         while True:
             while message is None:
+                if self.dynamic_topic:
+                    topic = self.topic_strategy.get_topic()
+                    if topic != self.topic:
+                        self.topic = topic
+                        self.consumer.unsubscribe()
+                        self.logger.info(f'Subscribing to {self.topic}')
+                        self.consumer.subscribe(topic)
+
                 #Get 1 message with a 60 sec timeout
                 message = self.consumer.poll(timeout=60)
 
@@ -58,6 +81,7 @@ class KafkaConsumer(GenericConsumer):
             self.message = message
 
             data = self._deserialize_message(message)
+
             message = None
             yield data
 
