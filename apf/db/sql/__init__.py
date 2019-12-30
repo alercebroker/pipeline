@@ -40,12 +40,4 @@ def add_to_database(session, objects):
 
 
 def bulk_insert(objects, model, session, batch_size=1000):
-    batch = []
-    insert_stmt = model.__table__.insert()
-    for obj in objects:
-        if len(batch) > batch_size:
-            session.execute(insert_stmt, batch)
-            batch.clear()
-        batch.append(obj)
-    if batch:
-        session.execute(insert_stmt, batch)
+    session.bulk_insert_mappings(model, objects)
