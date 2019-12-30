@@ -11,7 +11,9 @@ The design concept is that there are generic models that contain attributes and 
 
 2. Database Initialization
 --------------------------
-Database plugins will always read the configuration 
+Database plugins will read the configuration you define in the settings.py file of the step. In ``settings.py`` inside `STEP_CONFIG`, add `DB_CONFIG` wich should contain your database connection information.
+
+After defining `DB_CONFIG` you can now initiaize your database. To do so, run the `initdb`command as follows
 
 3. Migrations
 -------------
