@@ -1739,22 +1739,20 @@ class SF_ML_amplitude(Base):
         return (bins)
 
 
-    def SF_formula(self,jd,mag,errmag,nbin=0.1,bmin=5,bmax=2000):
+    def SF_formula(self, jd, mag, errmag, nbin=0.1, bmin=5, bmax=2000):
+        dtarray, dmagarray, sigmaarray = SFarray(jd, mag, errmag)
+        ndt = np.where((dtarray <= 365) & (dtarray >= 5))
+        dtarray = dtarray[ndt]
+        dmagarray = dmagarray[ndt]
+        sigmaarray = sigmaarray[ndt]
 
+        bins = self.bincalc(nbin,bmin,bmax)
 
-        dtarray, dmagarray, sigmaarray = SFarray(jd,mag,errmag)
-        ndt=np.where((dtarray<=365) & (dtarray>=5))
-        dtarray=dtarray[ndt]
-        dmagarray=dmagarray[ndt]
-        sigmaarray=sigmaarray[ndt]
+        sf_list = []
+        tau_list = []
+        numobj_list = []
 
-        bins=self.bincalc(nbin,bmin,bmax)
-
-        sf_list=[]
-        tau_list=[]
-        numobj_list=[]
-
-        for i in range(0,len(bins)-1):
+        for i in range(0, len(bins)-1):
             n=np.where((dtarray>=bins[i]) & (dtarray<bins[i+1]))
             nobjbin=len(n[0])
             if nobjbin>=1:
