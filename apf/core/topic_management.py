@@ -10,7 +10,7 @@ class DailyTopicStrategy(GenericTopicStrategy):
 
     Parameters
     ----------
-    topic_format : str
+    topic_format : str/list
         Topic format with %s for the date field.
     date_format : str
         Date formart string i.e. "%Y%m%d".
@@ -25,6 +25,14 @@ class DailyTopicStrategy(GenericTopicStrategy):
         self.change_hour  = change_hour
 
     def get_topic(self):
+        """Get list of topics updated to the current date.
+
+        Returns
+        -------
+        :class:`list`
+            List of updated topics.
+
+        """
         now = datetime.datetime.utcnow()
         if now.hour >= self.change_hour:
             now += datetime.timedelta(days=1)

@@ -11,7 +11,7 @@ Alert Processing Framework (*apf*) documentation
 First developed to process `ZTF data <https://www.ztf.caltech.edu/>`_ it is capable to be used
 for any stream/static data processing pipeline.
 
-installing *apf*
+Installing *apf*
 ====================
 
 *apf* installation can be done with *pip*
@@ -36,9 +36,9 @@ logic.
 .. image:: _static/images/step.png
     :align: center
 
-This generic step greatly reduce the development of each component of the pipeline and make it easier to test each component separetly.
+This generic step greatly reduce the development of each component of the pipeline and make it easier to test each component separately.
 
-A quickstart guide to create a new step can be found `here <new_step.html>`_.
+A quick-start guide to create a new step can be found `here <new_step.html>`_.
 
 
 Documentation
@@ -48,7 +48,6 @@ Documentation
    new_step
    core
    consumers
-   db
    producers
+   db
    :maxdepth: 2
-   :caption: Contents:

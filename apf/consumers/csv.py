@@ -6,13 +6,29 @@ import pandas as pd
 class CSVConsumer(GenericConsumer):
     """CSV Consumer.
 
+    **Example:**
+
+    CSV Consumer configuration example
+
+    .. code-block:: python
+
+        #settings.py
+        CONSUMER_CONFIG = { ...
+            "FILEPATH": "csv_file_path",
+            "OTHER_ARGS": {
+                "index_col": "id",
+                "sep": ";",
+                "header": 0
+            }
+        }
+
     Parameters
     ----------
     FILE_PATH: path
         CSV path location
 
     OTHER_ARGS: dict
-        Parameters passed to :func:`pandas.read_csv`
+        Parameters passed to :func:`pandas.read_csv` (reference `here <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html>`_)
 
     """
     def __init__(self,config):
