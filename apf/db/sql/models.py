@@ -111,12 +111,12 @@ class AstroObject(Base, generic.AbstractAstroObject):
 class Classification(Base, generic.AbstractClassification):
     __tablename__ = 'classification'
 
+    astro_object = Column(String, ForeignKey(
+    'astro_object.oid'), primary_key=True)
+    classifier_name = Column(String, ForeignKey(
+    'classifier.name'), primary_key=True)
     class_name = Column(String, ForeignKey('class.name'), primary_key=True)
     probability = Column(Float)
-    astro_object = Column(String, ForeignKey(
-        'astro_object.oid'), primary_key=True)
-    classifier_name = Column(String, ForeignKey(
-        'classifier.name'), primary_key=True)
     probabilities = Column(JSON)
 
     classes = relationship("Class", back_populates='classifications')
@@ -131,14 +131,15 @@ class Classification(Base, generic.AbstractClassification):
 class Xmatch(Base, generic.AbstractXmatch):
     __tablename__ = 'xmatch'
 
+    oid = Column(String, ForeignKey('astro_object.oid'))
     catalog_id = Column(String, primary_key=True)
     catalog_oid = Column(String, primary_key=True)
-    oid = Column(String, ForeignKey('astro_object.oid'))
 
 
 class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = 'magnitude_statistics'
 
+    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
     magnitude_type = Column(String, primary_key=True)
     fid = Column(Integer, primary_key=True)
     mean = Column(Float)
@@ -148,7 +149,6 @@ class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     sigma = Column(Float)
     last = Column(Float)
     first = Column(Float)
-    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
 
 
 class Features(Base, generic.AbstractFeatures):
@@ -160,10 +160,10 @@ class Features(Base, generic.AbstractFeatures):
 class FeaturesObject(Base):
     __tablename__ = 'features_object'
 
+    object_id = Column(String, ForeignKey(
+    'astro_object.oid'), primary_key=True)
     features_version = Column(String, ForeignKey(
         'features.version'), primary_key=True)
-    object_id = Column(String, ForeignKey(
-        'astro_object.oid'), primary_key=True)
     data = Column(JSON)
     features = relationship("Features")
 
@@ -171,10 +171,10 @@ class FeaturesObject(Base):
 class NonDetection(Base, generic.AbstractNonDetection):
     __tablename__ = 'non_detection'
 
+    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
+    fid = Column(Integer, primary_key=True)
     mjd = Column(Float, primary_key=True)
     diffmaglim = Column(Float, nullable=False)
-    fid = Column(Integer, primary_key=True)
-    oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
 
 
 class Detection(Base, generic.AbstractDetection):
@@ -198,4 +198,4 @@ class Detection(Base, generic.AbstractDetection):
     oid = Column(String, ForeignKey('astro_object.oid'), nullable=False)
     avro = Column(String)
 
-    __table_args__ = (Index('object_id', 'oid', postgresql_using='btree'),)
+    __table_args__ = (Index('object_id', 'oid', postgresql_using='hash'),)
