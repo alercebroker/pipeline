@@ -75,6 +75,12 @@ class AstroObject(Base, generic.AbstractAstroObject):
     lastmjd = Column(Float)
     firstmjd = Column(Float)
 
+    __table_args__ = (
+        Index("object_nobs", "nobs", postgresql_using="btree"),
+        Index("object_firstmjd", "firstmjd", postgresql_using="btree"),
+        Index("object_lastmjd", "lastmjd", postgresql_using="btree"),
+    )
+
     xmatches = relationship("Xmatch")
     magnitude_statistics = relationship("MagnitudeStatistics", uselist=False)
     classifications = relationship("Classification")
@@ -149,6 +155,14 @@ class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     sigma = Column(Float)
     last = Column(Float)
     first = Column(Float)
+
+    __table_args__ = (
+        Index('mag_mean', 'mean', postgresql_using='btree'),
+        Index('mag_median', 'median', postgresql_using='btree'),
+        Index('mag_min', 'min_mag', postgresql_using='btree'),
+        Index('mag_max', 'max_mag', postgresql_using='btree'),
+        Index('mag_first', 'first', postgresql_using='btree'),
+        Index('mag_last', 'last', postgresql_using='btree'))
 
 
 class Features(Base, generic.AbstractFeatures):
