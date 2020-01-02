@@ -11,7 +11,6 @@ import math
 import time
 import json
 import io
-from .s3 import get_object_url, upload_file
 np.seterr(divide='ignore')
 
 
