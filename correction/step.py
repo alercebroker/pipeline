@@ -46,7 +46,7 @@ class Correction(GenericStep):
         result = np.nan
 
         try:
-            aux = 10 ** (-0.4 * magref) + sign * 10 ** (-0.4 * magdiff)
+            aux = np.power(10, (-0.4 * magref)) + sign * np.power(10,(-0.4 * magdiff))
             result = -2.5 * np.log10(aux)
         except:
             self.logger.exception("Correct magnitude failed")
@@ -58,12 +58,12 @@ class Correction(GenericStep):
         result = np.nan
 
         try:
-            auxref = 10 ** (-0.4 * magref)
-            auxdiff = 10 ** (-0.4 * magdiff)
+            auxref = np.power(10, (-0.4 * magref))
+            auxdiff = np.power(10,(-0.4 * magdiff))
             aux = auxref + sign * auxdiff
 
-            result = np.sqrt((auxref * sigmagref) ** 2 +
-                             (auxdiff * sigmagdiff) ** 2) / aux
+            result = np.sqrt(np.power((auxref * sigmagref), 2) +
+                             np.power((auxdiff * sigmagdiff), 2)) / aux
 
         except:
 
