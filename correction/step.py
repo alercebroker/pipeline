@@ -154,15 +154,16 @@ class Correction(GenericStep):
                         "diffmaglim": prv_cand["diffmaglim"],
                         "oid": kwargs["oid"]
                     }
-                    filters = {"mjd": mjd, "fid": prv_cand["fid"]}
-                    non_det = get_record(self.session, NonDetection,filter_by=filters)
-                    if non_det is None:
+                    filters = {"mjd": mjd, "fid": prv_cand["fid"], "oid": message["objectId"]}
+                    non_det = self.session.query(NonDetection.oid).filter_by(**filters).scalar() is not None
+                    if not non_det:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
                             non_dets.append(non_detection_args)
                 else:
-                    det = get_record(self.session, Detection,filter_by={"candid": str(prv_cand["candid"])})
-                    if det is None:
+                    filters = {"candid": str(prv_cand["candid"])}
+                    det = self.session.query(Detection.candid).filter_by(**filters).scalar() is not None
+                    if not det:
                         prv_cand.update(self.correct_message(prv_cand))
                         detection_args = {
                             "mjd": prv_cand["jd"] - 2400000.5,
