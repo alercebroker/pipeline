@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, load_only
 
 Base = declarative_base()
 Session = sessionmaker()
@@ -14,10 +14,10 @@ def get_or_create(session, model, filter_by=None, **kwargs):
     :param model: The class of the model to be instantiated
     :param dict filter_by: attributes used to find object in the database
     :param dict kwargs: attributes used to create the object that are not used in filter_by
-    
+
     :returns: Tuple with the instanced object and wether it was created or not
     """
-    instance = session.query(model).filter_by(**filter_by).first()
+    instance = session.query(model).options(load_only(*filter_by.keys())).filter_by(**filter_by).first()
     if instance:
         return instance, False
     else:
@@ -59,7 +59,7 @@ def get_session(db_config):
 def add_to_database(session, objects):
     """
     Adds objects to the database by adding them to the session.
-    
+
     :param session: Session object connected to the database
     :param list/model objects: Model instances to be added
     """
@@ -76,6 +76,6 @@ def bulk_insert(objects, model, session):
 
     :param list objects: Objects to be added
     :param model: Class of the model to be added
-    :param session: Session instance 
+    :param session: Session instance
     """
     session.bulk_insert_mappings(model, objects)
