@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker, load_only
 Base = declarative_base()
 Session = sessionmaker()
 
+def get_record(session, model, filter_by=None):
+    return session.query(model).filter_by(**filter_by).first()
 
 def get_or_create(session, model, filter_by=None, **kwargs):
     """
@@ -30,7 +32,7 @@ def get_or_create(session, model, filter_by=None, **kwargs):
 def update(instance, args):
     """
     Updates an object
-    :param instance: Object to be updated
+    :param instance: Object to be updatedoptions(load_only(*filter_by.keys()))
     :param dict args: Attributes updated
 
     :returns: The updated object instance
