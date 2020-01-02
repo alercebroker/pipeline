@@ -3,7 +3,7 @@
 ##################################################
 
 CONSUMER_CONFIG = {
-    "DIRECTORY_PATH": "ztf_public_20190302"
+    "DIRECTORY_PATH": "../avro_files/ztf_public_20190302"
     # "TOPICS": ["mag_test"],
     # "PARAMS": {
     #     "bootstrap.servers": "kafka1.alerce.online:9092",
@@ -21,13 +21,13 @@ DB_CONFIG = {
     }
 }
 
-# ES_CONFIG = {"INDEX_PREFIX":"ztf_pipeline"}
+ES_CONFIG = {"INDEX_PREFIX":"ztf_pipeline"}
 
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     # "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": {
-        "TOPIC": "mag_test",
+        "TOPIC": "s3_test",
         "PARAMS": {
             'bootstrap.servers': '127.0.0.1:9092',
         },
@@ -75,7 +75,4 @@ STEP_CONFIG = {
             ],
         }
     },
-    "STORAGE":{
-        "NAME": "ztf-storage"
-    }
 }

@@ -11,7 +11,6 @@ import math
 import time
 import json
 import io
-from .s3 import get_object_url, upload_file
 np.seterr(divide='ignore')
 
 
@@ -41,19 +40,13 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
-        if type(self.consumer) is KafkaConsumer and "STORAGE" in self.config:
-            f = io.BytesIO(self.consumer.message.value())
-            year, month, day = self.jd_to_date(message["candidate"]["jd"])
-            date = "{}{}{}".format(year, month, int(day))
-            upload_file(
-                f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
         result = np.nan
 
         try:
-            aux = 10 ** (-0.4 * magref) + sign * 10 ** (-0.4 * magdiff)
+            aux = np.power(10, (-0.4 * magref)) + sign * np.power(10,(-0.4 * magdiff))
             result = -2.5 * np.log10(aux)
         except:
             self.logger.exception("Correct magnitude failed")
@@ -65,12 +58,12 @@ class Correction(GenericStep):
         result = np.nan
 
         try:
-            auxref = 10 ** (-0.4 * magref)
-            auxdiff = 10 ** (-0.4 * magdiff)
+            auxref = np.power(10, (-0.4 * magref))
+            auxdiff = np.power(10,(-0.4 * magdiff))
             aux = auxref + sign * auxdiff
 
-            result = np.sqrt((auxref * sigmagref) ** 2 +
-                             (auxdiff * sigmagdiff) ** 2) / aux
+            result = np.sqrt(np.power((auxref * sigmagref), 2) +
+                             np.power((auxdiff * sigmagdiff), 2)) / aux
 
         except:
 
@@ -125,11 +118,6 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "alert": message["candidate"],
         }
-        if "STORAGE" in self.config:
-            kwargs["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
-                                            self.jd_to_date(
-                                                message["candidate"]["jd"]),
-                                            message["candidate"]["candid"])
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
             "oid": message["objectId"]})
