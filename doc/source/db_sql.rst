@@ -3,7 +3,7 @@ Initialize database
 Before you connect to your database, make sure you initialize it first.
 To do that execute the following command from your step root folder
 
-``apf init db``
+``apf initdb``
 
 When you run this command with an empty database it will create the
 following schema:
