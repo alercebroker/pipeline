@@ -11,7 +11,6 @@ import math
 import time
 import json
 import io
-from .s3 import get_object_url, upload_file
 np.seterr(divide='ignore')
 
 
@@ -41,12 +40,6 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
-        if type(self.consumer) is KafkaConsumer and "STORAGE" in self.config:
-            f = io.BytesIO(self.consumer.message.value())
-            year, month, day = self.jd_to_date(message["candidate"]["jd"])
-            date = "{}{}{}".format(year, month, int(day))
-            upload_file(
-                f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
@@ -80,7 +73,7 @@ class Correction(GenericStep):
 
     def correct_message(self, message):
         isdiffpos = str(message['isdiffpos'])
-        isdiffpos = 1 if (isdiffpos == 't' or isdiffpos == '1') else -1
+        isdiffpos = 1 if isdiffpos in ('t', 1) else -1
         message["isdiffpos"] = isdiffpos
         magpsf = message['magpsf']
         magap = message['magap']
@@ -125,11 +118,6 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "alert": message["candidate"],
         }
-        if "STORAGE" in self.config:
-            kwargs["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
-                                            self.jd_to_date(
-                                                message["candidate"]["jd"]),
-                                            message["candidate"]["candid"])
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
             "oid": message["objectId"]})
@@ -151,11 +139,10 @@ class Correction(GenericStep):
                 if prv_cand["diffmaglim"] is not None:
                     non_detection_args = {
                         "diffmaglim": prv_cand["diffmaglim"],
-                        "oid": kwargs["oid"]
                     }
                     t0 = time.time()
                     non_det, created = get_or_create(self.session, NonDetection, filter_by={
-                        "mjd": mjd, "fid": prv_cand["fid"]}, **non_detection_args)
+                        "mjd": mjd, "fid": prv_cand["fid"], "oid": kwargs["oid"]}, **non_detection_args)
                     t1 = time.time()
                     self.logger.debug("non_detection={},{}\tcreated={}\tdate={}\ttime={}".format(
                         non_det.mjd, non_det.fid, created, datetime.datetime.utcnow(), t1-t0))
@@ -180,11 +167,6 @@ class Correction(GenericStep):
                         "alert": prv_cand,
                         "candid": str(prv_cand["candid"]),
                     }
-                    if "STORAGE" in self.config:
-                        detection_args["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
-                                                                self.jd_to_date(
-                                                                    prv_cand["jd"]),
-                                                                str(prv_cand["candid"]))
                     prv_cands.append(detection_args)
                     self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
                         det.candid, created, datetime.datetime.utcnow(), t1-t0))
@@ -207,26 +189,4 @@ class Correction(GenericStep):
             del d['_sa_instance_state']
         return ret
 
-    def jd_to_date(self, jd):
-        jd = jd + 0.5
-        F, I = math.modf(jd)
-        I = int(I)
-        A = math.trunc((I - 1867216.25)/36524.25)
-        if I > 2299160:
-            B = I + 1 + A - math.trunc(A / 4.)
-        else:
-            B = I
-        C = B + 1524
-        D = math.trunc((C - 122.1) / 365.25)
-        E = math.trunc(365.25 * D)
-        G = math.trunc((C - E) / 30.6001)
-        day = C - E + F - math.trunc(30.6001 * G)
-        if G < 13.5:
-            month = G - 1
-        else:
-            month = G - 13
-        if month > 2.5:
-            year = D - 4716
-        else:
-            year = D - 4715
-        return year, month, day
+
