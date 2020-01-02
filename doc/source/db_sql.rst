@@ -169,3 +169,13 @@ we use ``add_to_database(session, objects)`` function
 
 You can also pass a single object to
 ``add_to_database(session, model_instance)``
+
+
+APF SQL Functions
++++++++++++++++++
+
+.. autofunction:: apf.db.sql.get_or_create
+.. autofunction:: apf.db.sql.update
+.. autofunction:: apf.db.sql.get_session
+.. autofunction:: apf.db.sql.add_to_database
+.. autofunction:: apf.db.sql.bulk_insert
