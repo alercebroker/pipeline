@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 from apf.db.sql.models import Detection, AstroObject, NonDetection
-from apf.db.sql import get_session, get_or_create, get_record,bulk_insert
+from apf.db.sql import get_session, get_or_create, check_exists,bulk_insert
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 import datetime
@@ -155,14 +155,14 @@ class Correction(GenericStep):
                         "oid": kwargs["oid"]
                     }
                     filters = {"mjd": mjd, "fid": prv_cand["fid"], "oid": message["objectId"]}
-                    non_det = self.session.query(NonDetection.oid).filter_by(**filters).scalar() is not None
+                    non_det = check_exists(self.session, NonDetection.oid, filter_by=filters)
                     if not non_det:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
                             non_dets.append(non_detection_args)
                 else:
                     filters = {"candid": str(prv_cand["candid"])}
-                    det = self.session.query(Detection.candid).filter_by(**filters).scalar() is not None
+                    det = check_exists(self.session,Detection.candid, filter_by=filters)
                     if not det:
                         prv_cand.update(self.correct_message(prv_cand))
                         detection_args = {
