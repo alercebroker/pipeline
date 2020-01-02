@@ -189,7 +189,7 @@ class NonDetection(Base, generic.AbstractNonDetection):
     fid = Column(Integer, primary_key=True)
     mjd = Column(Float, primary_key=True)
     diffmaglim = Column(Float, nullable=False)
-
+    __table_args__ = (Index('non_det_oid', 'oid', postgresql_using='hash'),)
 
 class Detection(Base, generic.AbstractDetection):
     __tablename__ = 'detection'

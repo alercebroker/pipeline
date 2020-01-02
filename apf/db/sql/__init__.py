@@ -1,10 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, load_only
 
 Base = declarative_base()
 Session = sessionmaker()
 
+def get_record(session, model, filter_by=None):
+    return session.query(model).filter_by(**filter_by).first()
 
 def get_or_create(session, model, filter_by=None, **kwargs):
     """
@@ -27,7 +29,7 @@ def get_or_create(session, model, filter_by=None, **kwargs):
     instance, created
         Tuple with the instanced object and wether it was created or not
     """
-    instance = session.query(model).filter_by(**filter_by).first()
+    instance = session.query(model).options(load_only(*filter_by.keys())).filter_by(**filter_by).first()
     if instance:
         return instance, False
     else:
