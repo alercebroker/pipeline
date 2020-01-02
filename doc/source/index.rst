@@ -46,10 +46,10 @@ Documentation
 
 .. toctree::
    new_step
+   database
    core
    consumers
    db_plugins
-   database
    producers
    db
    :maxdepth: 2
