@@ -127,4 +127,7 @@ class KafkaProducer(GenericProducer):
 
         for topic in self.topic:
             self.producer.produce(topic,avro_message)
-            self.producer.flush()
+
+    def __del__(self):
+        self.logger.info("Waiting to produce last messages")
+        self.producer.flush()

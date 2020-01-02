@@ -5,8 +5,21 @@ from sqlalchemy.orm import sessionmaker, load_only
 Base = declarative_base()
 Session = sessionmaker()
 
-def get_record(session, model, filter_by=None):
-    return session.query(model).filter_by(**filter_by).first()
+"""
+    Check if record exists in database.
+
+    :param session: The connection session
+    :param model: The class of the model to be instantiated
+    :param dict filter_by: attributes used to find object in the database
+    :param dict kwargs: attributes used to create the object that are not used in filter_by
+
+    :returns: True if object exists else False
+
+"""
+def check_exists(session, model, filter_by=None):
+    return session.query(
+                session.query(model).filter_by(**filter_by).exists()
+            ).scalar()
 
 def get_or_create(session, model, filter_by=None, **kwargs):
     """
