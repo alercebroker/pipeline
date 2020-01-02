@@ -144,6 +144,7 @@ class Correction(GenericStep):
             det.candid, created, datetime.datetime.utcnow(), t1-t0))
 
         prv_cands = []
+        non_dets = []
         if message["prv_candidates"]:
             t0 = time.time()
             for prv_cand in message["prv_candidates"]:
@@ -153,42 +154,37 @@ class Correction(GenericStep):
                         "diffmaglim": prv_cand["diffmaglim"],
                         "oid": kwargs["oid"]
                     }
-                    t0 = time.time()
-                    non_det, created = get_or_create(self.session, NonDetection, filter_by={
-                        "mjd": mjd, "fid": prv_cand["fid"]}, **non_detection_args)
-                    t1 = time.time()
-                    self.logger.debug("non_detection={},{}\tcreated={}\tdate={}\ttime={}".format(
-                        non_det.mjd, non_det.fid, created, datetime.datetime.utcnow(), t1-t0))
-
+                    filters = {"mjd": mjd, "fid": prv_cand["fid"]}
+                    non_det = get_record(self.session, NonDetection,filter_by=filters)
+                    if non_det is None:
+                        filters.update(non_detection_args)
+                        non_dets.append(filters)
                 else:
-                    prv_cand.update(self.correct_message(prv_cand))
-                    detection_args = {
-                        "mjd": prv_cand["jd"] - 2400000.5,
-                        "fid": prv_cand["fid"],
-                        "ra": prv_cand["ra"],
-                        "dec": prv_cand["dec"],
-                        "rb": prv_cand["rb"],
-                        "magap": prv_cand["magap"],
-                        "magap_corr": prv_cand["magap_corr"],
-                        "magpsf": prv_cand["magpsf"],
-                        "magpsf_corr": prv_cand["magpsf_corr"],
-                        "sigmagap": prv_cand["sigmagap"],
-                        "sigmagap_corr": prv_cand["sigmagap_corr"],
-                        "sigmapsf": prv_cand["sigmapsf"],
-                        "sigmapsf_corr": prv_cand["sigmapsf_corr"],
-                        "oid": message["objectId"],
-                        "alert": prv_cand,
-                        "candid": str(prv_cand["candid"]),
-                    }
-                    if "STORAGE" in self.config:
-                        detection_args["avro"] = get_object_url(self.config["STORAGE"]["NAME"],
-                                                                self.jd_to_date(
-                                                                    prv_cand["jd"]),
-                                                                str(prv_cand["candid"]))
-                    prv_cands.append(detection_args)
-                    self.logger.debug("detection_in_prv_cand={}\tcreated={}\tdate={}\ttime={}".format(
-                        det.candid, created, datetime.datetime.utcnow(), t1-t0))
+                    det = get_record(self.session, Detection,filter_by={"candid": str(prv_cand["candid"])})
+                    if det is None:
+                        prv_cand.update(self.correct_message(prv_cand))
+                        detection_args = {
+                            "mjd": prv_cand["jd"] - 2400000.5,
+                            "fid": prv_cand["fid"],
+                            "ra": prv_cand["ra"],
+                            "dec": prv_cand["dec"],
+                            "rb": prv_cand["rb"],
+                            "magap": prv_cand["magap"],
+                            "magap_corr": prv_cand["magap_corr"],
+                            "magpsf": prv_cand["magpsf"],
+                            "magpsf_corr": prv_cand["magpsf_corr"],
+                            "sigmagap": prv_cand["sigmagap"],
+                            "sigmagap_corr": prv_cand["sigmagap_corr"],
+                            "sigmapsf": prv_cand["sigmapsf"],
+                            "sigmapsf_corr": prv_cand["sigmapsf_corr"],
+                            "oid": message["objectId"],
+                            "alert": prv_cand,
+                            "candid": str(prv_cand["candid"]),
+                        }
+                        prv_cands.append(detection_args)
+
             bulk_insert(prv_cands, Detection, self.session)
+            bulk_insert(non_dets, NonDetection, self.session)
             t1 = time.time()
             self.logger.debug("Processed {} prv_candidates in {} seconds".format(
                 len(message["prv_candidates"]), t1-t0))
