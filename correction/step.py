@@ -34,8 +34,8 @@ class Correction(GenericStep):
 
     def execute(self, message):
         message["candidate"].update(self.correct_message(message["candidate"]))
-        self.insert_db(message)
         light_curve = self.get_lightcurve(message["objectId"])
+        self.insert_db(message, light_curve)
         write = {
             "oid": message["objectId"],
             "detections": light_curve["detections"],
@@ -101,7 +101,7 @@ class Correction(GenericStep):
 
         return message
 
-    def insert_db(self, message):
+    def insert_db(self, message, light_curve):
         kwargs = {
             "mjd": message["candidate"]["jd"] - 2400000.5,
             "fid": message["candidate"]["fid"],
@@ -119,6 +119,11 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "alert": message["candidate"],
         }
+        found = list(filter(lambda det: det['candid'] == str(message["candid"]), light_curve["detections"]))
+        self.logger.info(len(found))
+        if len(found) > 0:
+            return
+
         t0 = time.time()
         obj, created = get_or_create(self.session, AstroObject, filter_by={
             "oid": message["objectId"]})
@@ -147,15 +152,16 @@ class Correction(GenericStep):
 
                     dt = Time(mjd,format="mjd")
                     filters = {"datetime":  dt.datetime, "fid": prv_cand["fid"], "oid": message["objectId"]}
-                    non_det = check_exists(self.session, NonDetection.oid, filter_by=filters)
-                    if not non_det:
+                    found = list(filter(lambda non_det: (Time(non_det["mjd"], format="mjd").datetime == filters["datetime"]) and
+                                                        (non_det["fid"] == filters["fid"]) and
+                                                        (non_det["oid"] == filters["oid"]), light_curve["non_detections"]))
+                    if len(found) == 0:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
                             non_dets.append(non_detection_args)
                 else:
-                    filters = {"candid": str(prv_cand["candid"])}
-                    det = check_exists(self.session,Detection.candid, filter_by=filters)
-                    if not det:
+                    found = list(filter(lambda det: det['candid'] == prv_cand["candid"], light_curve["detections"]))
+                    if len(found) == 0:
                         prv_cand.update(self.correct_message(prv_cand))
                         detection_args = {
                             "mjd": prv_cand["jd"] - 2400000.5,
