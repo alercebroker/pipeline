@@ -11,6 +11,7 @@ import math
 import time
 import json
 import io
+from astropy.time import Time
 np.seterr(divide='ignore')
 
 
@@ -140,9 +141,12 @@ class Correction(GenericStep):
                 if prv_cand["diffmaglim"] is not None:
                     non_detection_args = {
                         "diffmaglim": prv_cand["diffmaglim"],
-                        "oid": kwargs["oid"]
+                        "oid": kwargs["oid"],
+                        "mjd": mjd
                     }
-                    filters = {"mjd": mjd, "fid": prv_cand["fid"], "oid": message["objectId"]}
+
+                    dt = Time(mjd,format="mjd")
+                    filters = {"datetime":  dt.datetime, "fid": prv_cand["fid"], "oid": message["objectId"]}
                     non_det = check_exists(self.session, NonDetection.oid, filter_by=filters)
                     if not non_det:
                         non_detection_args.update(filters)
@@ -170,6 +174,7 @@ class Correction(GenericStep):
                             "oid": message["objectId"],
                             "alert": prv_cand,
                             "candid": str(prv_cand["candid"]),
+                            "parent_candidate": str(message["candid"])
                         }
                         prv_cands.append(detection_args)
 
@@ -191,6 +196,7 @@ class Correction(GenericStep):
             del d["_sa_instance_state"]
         for d in ret["non_detections"]:
             del d['_sa_instance_state']
+            del d['datetime']
         return ret
 
     def jd_to_date(self, jd):
