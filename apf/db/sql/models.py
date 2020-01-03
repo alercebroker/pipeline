@@ -1,5 +1,5 @@
 from . import Base
-from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON, Index
+from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON, Index, DateTime
 from sqlalchemy.orm import relationship
 from .. import generic
 
@@ -187,7 +187,8 @@ class NonDetection(Base, generic.AbstractNonDetection):
 
     oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
     fid = Column(Integer, primary_key=True)
-    mjd = Column(Float, primary_key=True)
+    datetime = Column(DateTime,primary_key=True)
+    mjd = Column(Float,nullable=False)
     diffmaglim = Column(Float, nullable=False)
     __table_args__ = (Index('non_det_oid', 'oid', postgresql_using='hash'),)
 
