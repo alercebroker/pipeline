@@ -1137,7 +1137,7 @@ class Harmonics(Base):
         # weighted regularized linear regression
         wA = inverr.reshape(-1, 1)*Omega
         wB = (magnitude*inverr).reshape(-1, 1)
-        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)), wA.T), wB).flatten()
+        coeffs = np.matmul(np.linalg.pinv(wA), wB).flatten()
         fitted_magnitude = np.dot(Omega, coeffs)
         coef_cos = coeffs[1:self.n_harmonics+1]
         coef_sin = coeffs[self.n_harmonics+1:]
