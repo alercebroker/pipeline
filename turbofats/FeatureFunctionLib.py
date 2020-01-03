@@ -13,7 +13,7 @@ from statsmodels.tsa import stattools
 from scipy.interpolate import interp1d
 from scipy.stats import chi2
 import GPy
-
+import matplotlib.pyplot as plt
 from .Base import Base
 from . import lomb
 
@@ -837,15 +837,39 @@ class PeriodLS_v2(Base):
         global new_time_v2
         global prob_v2
         global period_v2
+        global power_rate
 
         fx_v2, fy_v2, jmax_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
                                          fmin=0.0,
                                          fmax=20.0)
-        period_v2 = fx_v2[jmax_v2]
-        T_v2 = 1.0 / period_v2
-        new_time_v2 = np.mod(time, 2 * T_v2) / (2 * T_v2)
 
+        period_v2 = fx_v2[jmax_v2]
+        period_2 = fx_v2[int(jmax_v2/2)]
+        frac_1 = fy_v2[jmax_v2]
+        frac_2 = fy_v2[int(jmax_v2/2)]
+        T_v2 = 1.0 / period_v2
+        T2_v2 = 1.0 / period_2
+        print(T_v2,T2_v2)
+        new_time_v2 = np.mod(time, 2 * T_v2) / (2 * T_v2)
+        power_rate = frac_1/frac_2
+        print(power_rate)
+
+        plt.plot(fx_v2, fy_v2)
+        #plt.savefig('periodogram.png')
+        plt.show()
         return T_v2
+
+class Period_power_rate(Base):
+    def __init__(self):
+
+        self.Data = ['magnitude', 'time', 'error']
+
+    def fit(self, data):
+
+        try:
+            return power_rate
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Period_power_rate")
 
 class Period_fit(Base):
 
@@ -1776,7 +1800,7 @@ class SF_ML_amplitude(Base):
 
 
     def fit(self,data):
-        
+
         mag = data[0]
         t = data[1]
         err = data[2]
