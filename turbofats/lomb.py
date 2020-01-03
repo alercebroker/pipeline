@@ -119,26 +119,30 @@ def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
   #Course Frequency Evaluation
   my_per.frequency_grid_evaluation(fmin=fmin, fmax=fmax, fresolution=1e-3)
   #Finetine with smaller frequency steps
+  n_best = 100
   my_per.finetune_best_frequencies(fresolution=1e-4, n_local_optima=10)
   #wk1: frequency grid, wk2: value of the periodgram at particular frequency
   wk1, wk2 = my_per.get_periodogram()
 
-  pmax = np.nanmax(wk2)
   jmax = np.nanargmax(wk2)
 
   #Significance estimation
-  expy = exp(-wk2)
-  effm = 2.0*(len(wk1))/ofac
-  sig = effm*expy
-  ind = (sig > 0.01).nonzero()
-  sig[ind] = 1.0-(1.0-expy[ind])**effm
+  use_entropy = True
+  if use_entropy:
+    top_values = np.sort(wk2)[-n_best:]
+    normalized_top_values = top_values + 1e-2
+    normalized_top_values = normalized_top_values / np.sum(normalized_top_values)
+    entropy = (-normalized_top_values * np.log(normalized_top_values)).sum()
+    prob = 1 - entropy / np.log(n_best)
+  else:
+    top_values = np.sort(wk2)[-n_best:]
+    print(top_values)
+    mean_value = wk2.mean()
+    exp_parameter = 1/mean_value  # biased estimator for exponential distribution
+    cdf = 1 - np.exp(-exp_parameter*wk2.max())
+    prob = cdf
 
-  #Estimate significance of largest peak value
-  expy = exp(-pmax)
-  effm = 2.0*(len(wk1))/ofac
-  prob = effm*expy
-
-  return wk1,wk2,jmax,prob
+  return wk1, wk2, jmax, prob
 
 
   """

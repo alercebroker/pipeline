@@ -1115,8 +1115,7 @@ class CAR_mean(Base):
 class Harmonics(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
-        self.n_harmonics = 7 # HARD-CODED
-        self.penalization = 1 # HARD-CODED
+        self.n_harmonics = 7  # HARD-CODED
 
     def fit(self, data):
         magnitude = data[0]
@@ -1132,18 +1131,13 @@ class Harmonics(Base):
         timefreq = (2.0*np.pi*best_freq*np.arange(1, self.n_harmonics+1)).reshape(1, -1).T*time
         Omega.append(np.cos(timefreq))
         Omega.append(np.sin(timefreq))
-        Omega = np.concatenate(Omega).T
-        inverr2 = (1.0/error**2)
-        #coeffs = np.linalg.lstsq(inverr2.reshape(-1, 1)*Omega, magnitude*inverr2, rcond=None)[0]
+        Omega = np.concatenate(Omega, axis=0).T  # Omega.shape == (lc_length, 1+2*self.n_harmonics)
+        inverr = 1.0/error
 
         # weighted regularized linear regression
-        reg = np.array([0.]*(1+self.n_harmonics*2))
-        reg[1:(self.n_harmonics+1)] = np.linspace(0, 1, self.n_harmonics)*self.penalization*len(magnitude)**2*inverr2.mean()
-        reg[(self.n_harmonics+1):] = reg[1:(self.n_harmonics+1)]
-        dreg = np.diag(reg)
-        wA = inverr2.reshape(-1, 1)*Omega
-        wB = (magnitude*inverr2).reshape(-1, 1)
-        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)+dreg), wA.T), wB).flatten()
+        wA = inverr.reshape(-1, 1)*Omega
+        wB = (magnitude*inverr).reshape(-1, 1)
+        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)), wA.T), wB).flatten()
         fitted_magnitude = np.dot(Omega, coeffs)
         coef_cos = coeffs[1:self.n_harmonics+1]
         coef_sin = coeffs[self.n_harmonics+1:]
@@ -1151,11 +1145,11 @@ class Harmonics(Base):
         coef_phi = np.arctan2(coef_sin, coef_cos)
 
         # Relative phase
-        coef_phi = coef_phi - coef_phi[0]
-        coef_phi = coef_phi[1:]
+        coef_phi = coef_phi - coef_phi[0]*np.arange(1, self.n_harmonics+1)
+        coef_phi = coef_phi[1:] % (2*np.pi)
 
-        nmse = np.mean((fitted_magnitude - magnitude)**2)/np.var(error)
-        return np.concatenate([coef_mag, coef_phi, np.array([nmse])]).tolist()
+        mse = np.mean((fitted_magnitude - magnitude)**2)
+        return np.concatenate([coef_mag, coef_phi, np.array([mse])]).tolist()
 
     def is1d(self):
         return False
