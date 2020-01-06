@@ -7,6 +7,8 @@ from apf.db.sql import Base, models, Session
 from apf.db.sql.models import Class
 from sqlalchemy import create_engine
 import alembic.config
+import click
+
 HELPER_PATH = os.path.dirname(os.path.abspath(__file__))
 CORE_PATH = os.path.abspath(os.path.join(HELPER_PATH, ".."))
 TEMPLATE_PATH = os.path.abspath(os.path.join(CORE_PATH, "templates"))
@@ -14,43 +16,21 @@ MIGRATIONS_PATH = os.path.abspath(
     os.path.join(CORE_PATH, "../db/sql/"))
 
 
-def execute_from_command_line(argv):
-    parser = argparse.ArgumentParser(description="Alert Processing Framework for astronomy", usage="""apf [-h] command
-    newstep         Create package for a new apf step.
-    build           Generate Dockerfile and scripts to run a step.
-    initdb          Create schema on empty database.
-    make_migrations Get differences with database and create migrations
-    migrate         Update database from migrations
-    """)
-    parser.add_argument("command", choices=[
-                        "build", "newstep", "initdb", "make_migrations", "migrate"])
-    parser.add_argument("extras", action='append', nargs="*")
-    args, _ = parser.parse_known_args()
-
-    if args.command == "build":
-        build_dockerfiles()
-    if args.command == "newstep":
-        new_step()
-    if args.command == "initdb":
-        initdb()
-    if args.command == "make_migrations":
-        make_migrations()
-    if args.command == "migrate":
-        migrate()
+@click.group()
+def cli():
+    pass
 
 
 def _validate_steps(steps):
     pass
 
 
-def initdb():
-    parser = argparse.ArgumentParser(description="Create or connect models to database",
-                                     usage="apf initdb [-h] [--settings settings_path]")
-    parser.add_argument("--settings", default=os.path.abspath("./settings.py"))
-    args, _ = parser.parse_known_args()
-    if not os.path.exists(args.settings):
+@cli.command()
+@click.option('--settings_path', default=".", help="settings.py path")
+def initdb(settings_path):
+    if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(args.settings)))
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
     from settings import DB_CONFIG
     if "PSQL" in DB_CONFIG:
         db_config = DB_CONFIG["PSQL"]
@@ -64,18 +44,15 @@ def initdb():
     alembic.config.main([
         'stamp', 'head'
     ])
-    print("Database created with credentials from {}".format(args.settings))
+    click.echo("Database created with credentials from {}".format(settings_path))
 
 
-def make_migrations():
-    parser = argparse.ArgumentParser(description="Get differences from database and create migration files",
-                                     usage="apf make_migrations [-h] [--settings settings_path]")
-    parser.add_argument("--settings", default=os.path.abspath("./settings.py"))
-    args, _ = parser.parse_known_args()
-
-    if not os.path.exists(args.settings):
+@cli.command()
+@click.option('--settings_path', default=".", help="settings.py path")
+def make_migrations(settings_path):
+    if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(args.settings)))
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
 
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = [
@@ -85,15 +62,12 @@ def make_migrations():
     alembic.config.main(alembicArgs)
 
 
-def migrate():
-    parser = argparse.ArgumentParser(description="Updates database from migrations",
-                                     usage="apf migrate [-h] [--settings settings_path]")
-    parser.add_argument("--settings", default=os.path.abspath("./settings.py"))
-    args, _ = parser.parse_known_args()
-
-    if not os.path.exists(args.settings):
+@cli.command()
+@click.option('--settings_path', default=".", help="settings.py path")
+def migrate(settings_path):
+    if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(args.settings)))
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
 
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = [
@@ -103,25 +77,20 @@ def migrate():
     alembic.config.main(alembicArgs)
 
 
-def new_step():
+@cli.command()
+@click.argument('name')
+def new_step(name):
     import re
-
-    parser = argparse.ArgumentParser(description="Create an APF step",
-                                     usage="apf newstep [-h] step_name")
-    parser.add_argument("newstep")
-    parser.add_argument("step_name")
-    args, _ = parser.parse_known_args()
-
     BASE = os.getcwd()
 
-    output_path = os.path.join(BASE, args.step_name)
+    output_path = os.path.join(BASE, name)
 
     if os.path.exists(output_path):
         raise Exception("Output directory already exist.")
 
     print(f"Creating apf step package in {output_path}")
 
-    package_name = args.step_name.lower()
+    package_name = name.lower()
     # Creating main package directory
     os.makedirs(os.path.join(output_path, package_name))
     os.makedirs(os.path.join(output_path, "tests"))
@@ -138,7 +107,7 @@ def new_step():
     with open(os.path.join(output_path, package_name, "step.py"), "w") as f:
 
         class_name = "".join(
-            [word.capitalize() for word in re.split("_|\s|-|\||;|\.|,", args.step_name)])
+            [word.capitalize() for word in re.split("_|\s|-|\||;|\.|,", name)])
         f.write(step_template.render(step_name=class_name))
 
     dockerfile_template = route.get_template("step/Dockerfile.template")
@@ -169,13 +138,12 @@ def new_step():
 
     settings_template = route.get_template("step/settings.py")
     with open(os.path.join(output_path, "settings.py"), "w") as f:
-        f.write(settings_template.render(step_name=args.step_name))
+        f.write(settings_template.render(step_name=name))
 
 
+@cli.command()
+@click.argument('input')
+@click.argument('output')
+@click.argument('build')
 def build_dockerfiles():
-    parser = argparse.ArgumentParser(description="Create Dockerfiles for steps",
-                                     usage="apf build [-h] input output")
-    parser.add_argument("build")
-    args, _ = parser.parse_known_args()
-
     pass

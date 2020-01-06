@@ -13,7 +13,12 @@ class GenericTaxonomyTest():
 
 
 class GenericClassifierTest():
-    pass
+    model = None
+    def test_get_classifications(self):
+        print(self.model)
+        classifications = self.model.get_classifications()
+        self.assertIsInstance(classifications, list)
+        self.assertEqual(len(classifications), 1)
 
 
 class GenericXMatchTest():

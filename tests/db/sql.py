@@ -16,7 +16,19 @@ class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
 
 
 class ClassifierTest(GenericClassifierTest, unittest.TestCase):
-    pass
+    def setUp(self):
+        engine = create_engine('sqlite:///:memory:')
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        Base.metadata.create_all(engine)
+        self.model = Classifier(name="Late Classifier")
+        astro_object = AstroObject(oid="ZTF1", nobs=1, lastmjd=1.0,
+                                   meanra=1.0, meandec=1.0, sigmadec=1.0, deltajd=1.0, firstmjd=1.0)
+        classifier = Classifier(name="test")
+        class_ = Class(name="SN")
+        classification = Classification(
+            astro_object="ZTF1", classifier_name="test", class_name="SN")
+        self.model.classifications.append(classification)
 
 
 class XMatchTest(GenericXMatchTest, unittest.TestCase):
@@ -57,8 +69,8 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         self.model.features.append(features_object)
         self.model.detections.append(Detection(candid="t", mjd=1, fid=1, ra=1, dec=1, rb=1,
                                                magap=1, magpsf=1, sigmapsf=1, sigmagap=1, alert=json.loads('{"test":"test"}')))
-        self.model.non_detections.append(NonDetection(mjd=1, fid=1, diffmaglim=1))
-
+        self.model.non_detections.append(
+            NonDetection(mjd=1, fid=1, diffmaglim=1))
 
 
 class FeaturesTest(GenericFeaturesTest, unittest.TestCase):
