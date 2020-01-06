@@ -35,7 +35,6 @@ class Correction(GenericStep):
     def execute(self, message):
         message["candidate"].update(self.correct_message(message["candidate"]))
         light_curve = self.get_lightcurve(message["objectId"])
-        self.logger.info(message["objectId"] + ": " + str(len(light_curve["non_detections"])))
         self.insert_db(message, light_curve)
         for non_det in light_curve["non_detections"]:
             if "datetime" in non_det:
@@ -45,7 +44,6 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
-        self.logger.info(message["objectId"] + ": " + str(len(light_curve["non_detections"])))
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
@@ -159,9 +157,9 @@ class Correction(GenericStep):
 
                     dt = Time(mjd,format="mjd")
                     filters = {"datetime":  dt.datetime, "fid": prv_cand["fid"], "oid": message["objectId"]}
-                    found = list(filter(lambda non_det: (Time(non_det["mjd"], format="mjd").datetime == filters["datetime"]) and
+                    found = list(filter(lambda non_det: ((non_det["datetime"] == filters["datetime"]) and
                                                         (non_det["fid"] == filters["fid"]) and
-                                                        (non_det["oid"] == filters["oid"]), light_curve["non_detections"]))
+                                                        (non_det["oid"] == filters["oid"])), light_curve["non_detections"]))
                     if len(found) == 0:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
@@ -211,7 +209,6 @@ class Correction(GenericStep):
             del d["_sa_instance_state"]
         for d in ret["non_detections"]:
             del d['_sa_instance_state']
-            del d['datetime']
         return ret
 
     def jd_to_date(self, jd):
