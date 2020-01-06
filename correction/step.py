@@ -35,12 +35,17 @@ class Correction(GenericStep):
     def execute(self, message):
         message["candidate"].update(self.correct_message(message["candidate"]))
         light_curve = self.get_lightcurve(message["objectId"])
+        self.logger.info(message["objectId"] + ": " + str(len(light_curve["non_detections"])))
         self.insert_db(message, light_curve)
+        for non_det in light_curve["non_detections"]:
+            if "datetime" in non_det:
+                del non_det["datetime"]
         write = {
             "oid": message["objectId"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
+        self.logger.info(message["objectId"] + ": " + str(len(light_curve["non_detections"])))
         self.producer.produce(write)
 
     def correctMagnitude(self, magref, sign, magdiff):
@@ -120,7 +125,6 @@ class Correction(GenericStep):
             "alert": message["candidate"],
         }
         found = list(filter(lambda det: det['candid'] == str(message["candid"]), light_curve["detections"]))
-        self.logger.info(len(found))
         if len(found) > 0:
             return
 
@@ -133,9 +137,12 @@ class Correction(GenericStep):
         t0 = time.time()
         det, created = get_or_create(self.session, Detection, filter_by={
             "candid": str(message["candid"])}, **kwargs)
+        det = det.__dict__
+        del det["_sa_instance_state"]
+        light_curve["detections"].append(det)
         t1 = time.time()
         self.logger.debug("detection={}\tcreated={}\tdate={}\ttime={}".format(
-            det.candid, created, datetime.datetime.utcnow(), t1-t0))
+            det["candid"], created, datetime.datetime.utcnow(), t1-t0))
 
         prv_cands = []
         non_dets = []
@@ -159,6 +166,7 @@ class Correction(GenericStep):
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
                             non_dets.append(non_detection_args)
+                            light_curve["non_detections"].append(non_detection_args)
                 else:
                     found = list(filter(lambda det: det['candid'] == prv_cand["candid"], light_curve["detections"]))
                     if len(found) == 0:
@@ -183,6 +191,7 @@ class Correction(GenericStep):
                             "parent_candidate": str(message["candid"])
                         }
                         prv_cands.append(detection_args)
+                        light_curve["detections"].append(detection_args)
 
             bulk_insert(prv_cands, Detection, self.session)
             bulk_insert(non_dets, NonDetection, self.session)
