@@ -6,10 +6,10 @@ import sys
 
 def main():
     try:
-        from apf.core.management import execute_from_command_line
+        from apf.core.management import cli
     except ImportError as exc:
         raise ImportError from exc
-    execute_from_command_line(sys.argv)
+    cli()
 
 
 if __name__ == '__main__':
