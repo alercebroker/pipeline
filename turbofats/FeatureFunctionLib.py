@@ -802,26 +802,7 @@ class AndersonDarling(Base):
 class PeriodLS(Base):
 
     def __init__(self, ofac=6.):
-
-        self.Data = ['magnitude', 'time', 'error']
-        self.ofac = ofac
-
-    def fit(self, data):
-
-        magnitude = data[0]
-        time = data[1]
-        error = data[2]
-
-        global new_time
-        global prob
-        global period
-
-        fx, fy, jmax, prob = lomb.fasper(time, magnitude, error, self.ofac, 100.)
-        period = fx[jmax]
-        T = 1.0 / period
-        new_time = np.mod(time, 2 * T) / (2 * T)
-
-        return T
+        raise Exception('This class is deprecated')
 
 
 class PeriodLS_v2(Base):
@@ -838,33 +819,21 @@ class PeriodLS_v2(Base):
         global prob_v2
         global period_v2
 
-        fx_v2, fy_v2, jmax_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
+        _, _, period_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
                                          fmin=0.0,
                                          fmax=20.0)
-        period_v2 = fx_v2[jmax_v2]
-        T_v2 = 1.0 / period_v2
-        new_time_v2 = np.mod(time, 2 * T_v2) / (2 * T_v2)
+        new_time_v2 = np.mod(time, 2 * period_v2) / (2 * period_v2)
+        return period_v2
 
-        return T_v2
 
 class Period_fit(Base):
-
     def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-
-        try:
-            return prob
-        except:
-            print("error: please run PeriodLS first to generate values for Period_fit")
+        raise Exception('This class is deprecated')
 
 
 class Period_fit_v2(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time']
-
 
     def fit(self, data):
         try:
@@ -1123,7 +1092,7 @@ class Harmonics(Base):
         error = data[2]+10**-2
 
         try:
-            best_freq = period_v2
+            best_freq = 1/period_v2
         except:
             print("error: please run PeriodLS_v2 first to generate values for Harmonics")
 

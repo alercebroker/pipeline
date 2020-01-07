@@ -123,8 +123,8 @@ def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
   my_per.finetune_best_frequencies(fresolution=1e-4, n_local_optima=10)
   #wk1: frequency grid, wk2: value of the periodgram at particular frequency
   wk1, wk2 = my_per.get_periodogram()
-
-  jmax = np.nanargmax(wk2)
+  fbest, pbest = my_per.get_best_frequencies()
+  period_candidate = 1.0 / fbest[0]
 
   #Significance estimation
   use_entropy = True
@@ -142,7 +142,7 @@ def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
     cdf = 1 - np.exp(-exp_parameter*wk2.max())
     prob = cdf
 
-  return wk1, wk2, jmax, prob
+  return wk1, wk2, period_candidate, prob
 
 
   """
