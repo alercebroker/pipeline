@@ -13,7 +13,7 @@ from statsmodels.tsa import stattools
 from scipy.interpolate import interp1d
 from scipy.stats import chi2
 import GPy
-
+import matplotlib.pyplot as plt
 from .Base import Base
 from . import lomb
 
@@ -818,12 +818,33 @@ class PeriodLS_v2(Base):
         global new_time_v2
         global prob_v2
         global period_v2
+        global power_rate
 
-        _, _, period_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
+        fx_v2, fy_v2, period_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
                                          fmin=0.0,
                                          fmax=20.0)
+
         new_time_v2 = np.mod(time, 2 * period_v2) / (2 * period_v2)
+
+        jmax_v2 = np.nanargmax(fy_v2)
+        frac_big = fy_v2[jmax_v2]
+        frac_small = fy_v2[int(jmax_v2/2)]
+        power_rate = frac_small/frac_big
+
         return period_v2
+
+
+class Period_power_rate(Base):
+    def __init__(self):
+
+        self.Data = ['magnitude', 'time', 'error']
+
+    def fit(self, data):
+
+        try:
+            return power_rate
+        except:
+            print("error: please run PeriodLS_v2 first to generate values for Period_power_rate")
 
 
 class Period_fit(Base):
@@ -845,60 +866,13 @@ class Period_fit_v2(Base):
 class Psi_CS(Base):
 
     def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-
-        try:
-            magnitude = data[0]
-            time = data[1]
-            folded_data = magnitude[np.argsort(new_time)]
-            sigma = np.std(folded_data)
-            N = len(folded_data)
-            m = np.mean(folded_data)
-            s = np.cumsum(folded_data - m) * 1.0 / (N * sigma)
-            R = np.max(s) - np.min(s)
-
-            return R
-        except:
-            print("error: please run PeriodLS first to generate values for Psi_CS")
+        raise Exception('This class is deprecated')
 
 
 class Psi_eta(Base):
 
     def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-
-        # folded_time = np.sort(new_time)
-        try:
-            magnitude = data[0]
-            folded_data = magnitude[np.argsort(new_time)]
-
-            # w = 1.0 / np.power(folded_time[1:]-folded_time[:-1] ,2)
-            # w_mean = np.mean(w)
-
-            # N = len(folded_time)
-            # sigma2=np.var(folded_data)
-
-            # S1 = sum(w*(folded_data[1:]-folded_data[:-1])**2)
-            # S2 = sum(w)
-
-            # Psi_eta = w_mean * np.power(folded_time[N-1]-folded_time[0],2) * S1 /
-            # (sigma2 * S2 * N**2)
-
-            N = len(folded_data)
-            sigma2 = np.var(folded_data)
-
-            Psi_eta = (1.0 / ((N - 1) * sigma2) *
-                       np.sum(np.power(folded_data[1:] - folded_data[:-1], 2)))
-
-            return Psi_eta
-        except:
-            print("error: please run PeriodLS first to generate values for Psi_eta")
+        raise Exception('This class is deprecated')
 
 
 class Psi_CS_v2(Base):
@@ -1106,7 +1080,7 @@ class Harmonics(Base):
         # weighted regularized linear regression
         wA = inverr.reshape(-1, 1)*Omega
         wB = (magnitude*inverr).reshape(-1, 1)
-        coeffs = np.matmul(np.matmul(np.linalg.inv(np.matmul(wA.T, wA)), wA.T), wB).flatten()
+        coeffs = np.matmul(np.linalg.pinv(wA), wB).flatten()
         fitted_magnitude = np.dot(Omega, coeffs)
         coef_cos = coeffs[1:self.n_harmonics+1]
         coef_sin = coeffs[self.n_harmonics+1:]
@@ -1745,7 +1719,7 @@ class SF_ML_amplitude(Base):
 
 
     def fit(self,data):
-        
+
         mag = data[0]
         t = data[1]
         err = data[2]

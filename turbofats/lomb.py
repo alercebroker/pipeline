@@ -113,7 +113,7 @@ def fasper(x,y, err, ofac,hifac, MACC=4, fmin=0.0, fmax=5.0):
       Translation of IDL code (orig. Numerical recipies)
   """
 
-  my_per = P4J.periodogram(method='MHAOV')
+  my_per = P4J.periodogram(method='MHAOV')#P4J.periodogram(method='QMIEU',debug=False)
 
   my_per.set_data(x,y,err)
   #Course Frequency Evaluation
