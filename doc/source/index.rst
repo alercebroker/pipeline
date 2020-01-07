@@ -47,6 +47,7 @@ Documentation
 .. toctree::
    new_step
    database
+   profiling
    core
    consumers
    db_plugins
