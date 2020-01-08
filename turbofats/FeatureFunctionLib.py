@@ -834,7 +834,7 @@ class PeriodLS_v2(Base):
         return period_v2
 
 
-class Period_power_rate(Base):
+class PeriodPowerRate(Base):
     def __init__(self):
 
         self.Data = ['magnitude', 'time', 'error']
