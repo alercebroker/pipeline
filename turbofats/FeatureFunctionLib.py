@@ -1773,18 +1773,46 @@ class SF_ML_gamma(Base):
             print("error: please run SF_amplitude first to generate values for SF_gamma")
 
 
-class IAR_phi(Base):
-    """
-    functions to compute an IAR model with Kalman filter.
-    Author: Felipe Elorrieta.
-    """
+@jit(nopython=True)
+def iar_phi_kalman_numba(x, t, y, yerr, standarized):
+    n = len(y)
+    Sighat = np.float(1.0)
+    if not standarized:
+        Sighat = np.var(y) * Sighat
+    xhat = np.zeros(shape=(1, n))
+    delta = np.diff(t)
+    Q = Sighat
+    phi = x
+    G = np.float(1.0)
+    sum_Lambda = np.float(0.0)
+    sum_error = np.float(0.0)
+    if np.isnan(phi):
+        phi = 1.1
+    if abs(phi) < 1:
+        for i in range(n - 1):
+            Lambda = G * Sighat * G + yerr[i + 1] ** 2
+            if (Lambda <= 0) or np.isnan(Lambda):
+                sum_Lambda = np.float(n * 1e10)
+                break
+            phi2 = phi ** delta[i]
+            F = phi2
+            phi2 = 1 - phi ** (delta[i] * 2)
+            Qt = phi2 * Q
+            sum_Lambda = sum_Lambda + np.log(Lambda)
+            Theta = F * Sighat * G
+            g_dot_xhat = G * xhat[0:1, i][0]
+            sum_error = sum_error + (y[i] - g_dot_xhat) ** 2 / Lambda
+            xhat[0:1, i + 1] = F * xhat[0:1, i] + Theta / Lambda * (y[i] - G * xhat[0:1, i])
+            Sighat = F * Sighat * F + Qt - Theta / Lambda * Theta
+        out = (sum_Lambda + sum_error) / n
+        if np.isnan(sum_Lambda):
+            out = 1e10
+    else:
+        out = 1e10
+    return out
 
-    def __init__(self):
-        self.Data = ['magnitude', 'time', 'error']
 
-
-
-    def IAR_phi_kalman(self,x,t,y,yerr,standarized=True,c=0.5):
+def old_iar_kalman(x,t,y,yerr,standarized=True,c=0.5):
         n=len(y)
         Sighat=np.zeros(shape=(1,1))
         Sighat[0,0]=1
@@ -1824,22 +1852,43 @@ class IAR_phi(Base):
             out=1e10
         return out
 
+
+class IAR_phi(Base):
+    """
+    functions to compute an IAR model with Kalman filter.
+    Author: Felipe Elorrieta.
+    """
+
+    def __init__(self):
+        self.Data = ['magnitude', 'time', 'error']
+
+    def IAR_phi_kalman(self, x, t, y, yerr, standarized=True, c=0.5):
+        #return old_iar_kalman(x, t, y, yerr, standarized, c)
+        return iar_phi_kalman_numba(x, t, y, yerr, standarized)
+
     def fit(self, data):
         magnitude = data[0]
         time = data[1]
         error = data[2]
 
-        if np.sum(error)==0:
+        if np.sum(error) == 0:
             error=np.zeros(len(magnitude))
 
-        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude,ddof=1))
-        deltanorm = error/np.sqrt(np.var(magnitude,ddof=1))
+        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude, ddof=1))
+        deltanorm = error/np.sqrt(np.var(magnitude, ddof=1))
 
-        out=minimize_scalar(self.IAR_phi_kalman,args=(time,ynorm,deltanorm),bounds=(0,1),method="bounded",options={'xatol': 1e-12, 'maxiter': 50000})
+        out = minimize_scalar(
+            self.IAR_phi_kalman,
+            args=(time, ynorm, deltanorm),
+            bounds=(0, 1),
+            method="bounded",
+            options={'xatol': 1e-12, 'maxiter': 50000})
 
         phi = out.x
-        try: phi = phi[0][0]
-        except: phi = phi
+        try:
+            phi = phi[0][0]
+        except:
+            phi = phi
 
         return phi
 
