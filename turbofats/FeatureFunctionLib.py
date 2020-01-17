@@ -1812,47 +1812,6 @@ def iar_phi_kalman_numba(x, t, y, yerr, standarized):
     return out
 
 
-def old_iar_kalman(x,t,y,yerr,standarized=True,c=0.5):
-        n=len(y)
-        Sighat=np.zeros(shape=(1,1))
-        Sighat[0,0]=1
-        if standarized == False:
-             Sighat=np.var(y)*Sighat
-        xhat=np.zeros(shape=(1,n))
-        delta=np.diff(t)
-        Q=Sighat
-        phi=x
-        F=np.zeros(shape=(1,1))
-        G=np.zeros(shape=(1,1))
-        G[0,0]=1
-        sum_Lambda=0
-        sum_error=0
-        if np.isnan(phi) == True:
-            phi=1.1
-        if abs(phi) < 1:
-            for i in range(n-1):
-                Lambda=np.dot(np.dot(G,Sighat),G.transpose())+yerr[i+1]**2
-                if (Lambda <= 0) or (np.isnan(Lambda) == True):
-                    sum_Lambda=n*1e10
-                    break
-                phi2=phi**delta[i]
-                F[0,0]=phi2
-                phi2=1-phi**(delta[i]*2)
-                Qt=phi2*Q
-                sum_Lambda=sum_Lambda+np.log(Lambda)
-                Theta=np.dot(np.dot(F,Sighat),G.transpose())
-                sum_error= sum_error + (y[i]-np.dot(G,xhat[0:1,i]))**2/Lambda
-                xhat[0:1,i+1]=np.dot(F,xhat[0:1,i])+np.dot(np.dot(Theta,np.linalg.inv(Lambda)),(y[i]-np.dot(G,xhat[0:1,i])))
-                Sighat=np.dot(np.dot(F,Sighat),F.transpose()) + Qt - np.dot(np.dot(Theta,np.linalg.inv(Lambda)),Theta.transpose())
-            yhat=np.dot(G,xhat)
-            out=(sum_Lambda + sum_error)/n
-            if np.isnan(sum_Lambda) == True:
-                out=1e10
-        else:
-            out=1e10
-        return out
-
-
 class IAR_phi(Base):
     """
     functions to compute an IAR model with Kalman filter.
@@ -1863,7 +1822,6 @@ class IAR_phi(Base):
         self.Data = ['magnitude', 'time', 'error']
 
     def IAR_phi_kalman(self, x, t, y, yerr, standarized=True, c=0.5):
-        #return old_iar_kalman(x, t, y, yerr, standarized, c)
         return iar_phi_kalman_numba(x, t, y, yerr, standarized)
 
     def fit(self, data):
