@@ -19,6 +19,7 @@ class TestFeatures(unittest.TestCase):
         expected_mean = 17.371986
         self.assertTrue(np.abs(mean - expected_mean) < 0.01)
 
+
 class TestNewFeatureSpace(unittest.TestCase):
     def setUp(self):
         self.lc_data = pd.read_pickle('ZTF18aaiopei_detections.pkl')
@@ -64,6 +65,7 @@ class TestNewFeatureSpace(unittest.TestCase):
         plt.subplot(2, 1, 2)
         plt.plot(t, y)
         plt.show()
+
 
 if __name__ == '__main__':
     unittest.main()
