@@ -143,7 +143,7 @@ class AbstractXmatch():
     Abstract Crossmatch model
 
     Attributes
-    ---------
+    ----------
     catalog_id : str
         name identifying the catalog
     catalog_object_id : str
@@ -285,4 +285,3 @@ class AbstractDetection():
     sigmapsf_corr = None
     sigmagap_corr = None
     avro = None
-    

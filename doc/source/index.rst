@@ -45,12 +45,12 @@ Documentation
 =============
 
 .. toctree::
-   new_step
-   database
-   profiling
-   core
-   consumers
-   db_plugins
-   producers
-   db
-   :maxdepth: 2
+  new_step
+  database
+  profiling
+  core
+  consumers
+  db_plugins
+  producers
+  db
+  :maxdepth: 2

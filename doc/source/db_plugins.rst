@@ -1,8 +1,8 @@
 Database plugins
-===============
+================
 
 1. Generic classes
--------------
+-------------------
 .. autoclass:: apf.db.generic.AbstractClass
     :members:
 
@@ -18,13 +18,7 @@ Database plugins
 .. autoclass:: apf.db.generic.AbstractClassification
     :members:
 
-.. autoclass:: apf.db.generic.AbstractXMatch
-    :members:
-
 .. autoclass:: apf.db.generic.AbstractFeatures
-    :members:
-
-.. autoclass:: apf.db.generic.AbstractMagRef
     :members:
 
 .. autoclass:: apf.db.generic.AbstractMagnitudeStatistics
@@ -39,5 +33,3 @@ Database plugins
 2. SQL
 ------------
 .. include:: db_sql.rst
-
-

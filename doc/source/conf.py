@@ -68,3 +68,5 @@ html_theme_options = {
 
 
 autodoc_inherit_docstrings = False
+
+master_doc = 'index'
