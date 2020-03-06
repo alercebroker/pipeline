@@ -1,5 +1,8 @@
-Alert Processing Framework (*apf*) documentation
+Alert Processing Framework (*apf*)
 ================================================
+
+[![Documentation Status](https://readthedocs.org/projects/apf/badge/?version=latest)](https://apf.readthedocs.io/en/latest/?badge=latest)
+
 
 *apf* is a framework developed to create a dockerized pipeline to
 process an alert stream, that can be easily be deployed in a local
@@ -43,4 +46,4 @@ complex logic.
 This generic step greatly reduce the development of each component of
 the pipeline and make it easier to test each component separately.
 
-A quick-start guide to create a new step can be found
+A quick-start guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).
