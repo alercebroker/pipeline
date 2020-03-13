@@ -1,0 +1,17 @@
+version: '0.1'
+services:
+  correction:
+    image: 'correction_step:latest'
+    restart: 'always'
+    environment:
+      - DB_HOST=apf-postgres
+      - DB_USER=apf_admin
+      - DB_PASSWORD=mysecretpassword
+      - DB_PORT=5432
+      - DB_NAME=apf_db
+      - CONSUMER_TOPICS=mag_test
+      - CONSUMER_SERVER=kafka1.alerce.online:9092
+      - CONSUMER_GROUP_ID=test
+      - PRODUCER_TOPIC=bridge_1
+      - PRODUCER_SERVER=kafkaenvironment_kafka_1:9092
+      - ES_PREFIX=ztf_pipeline
