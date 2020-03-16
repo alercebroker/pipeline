@@ -21,6 +21,7 @@ CONSUMER_CONFIG = {
     }
 }
 
+
 PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
@@ -69,11 +70,14 @@ PRODUCER_CONFIG = {
 }
 
 ES_CONFIG = {
-    "INDEX_PREFIX": os.environ["ES_PREFIX"]
+    "INDEX_PREFIX": os.environ["ES_PREFIX"],
+    "host": os.environ["ES_NETWORK_HOST"],
+    "port": os.environ["ES_NETWORK_PORT"]
 }
 
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "COMMIT": False,
 }
