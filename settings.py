@@ -1,43 +1,42 @@
 ##################################################
 #       s3_step   Settings File
 ##################################################
+import os
 
-# Set the global logging level to debug
-# LOGGING_DEBUG = True
+ES_CONFIG = {
+    "INDEX_PREFIX": os.environ["ES_PREFIX"],
+    "host": os.environ["ES_NETWORK_HOST"],
+    "port": os.environ["ES_NETWORK_PORT"]
+}
 
-# Elasticsearch Metrics Consfiguration
-# ES_CONFIG = {
-#     "INDEX_PREFIX": "",
-#     # Used to generate index index_prefix+class_name+date
-#     # Other parameters
-# }
 # Other parameters that can be passed are defined here
 # https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation-
 CONSUMER_CONFIG = {
-     # "DIRECTORY_PATH": "../avro_files/ztf_public_20190302"
-
-     "TOPICS": ["ztf_20191218_programid1_aux"],
-     "PARAMS": {
-         "bootstrap.servers": "kafka1.alerce.online:9092",
-         "group.id": "test"
-     }
+    "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
+    "PARAMS": {
+         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
+         "group.id": os.environ["CONSUMER_GROUP_ID"]
+    }
 }
 
 # Database configuration
 # Depending on the database backend the parameters can change
 DB_CONFIG = {}
 
+# https://stackoverflow.com/questions/45981950/how-to-specify-credentials-when-connecting-to-boto3-s3
+STORAGE_CONFIG = {
+    "BUCKET_NAME": os.environ["BUCKET_NAME"]
+}
+
 # Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
-    # "ES_CONFIG": ES_CONFIG,    #Enables metrics for step
+    "ES_CONFIG": ES_CONFIG,
+    "STORAGE": STORAGE_CONFIG,
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     "COMMIT": False,  # Disables commit, useful to debug KafkaConsumer
-    "STORAGE": {
-        "NAME": "alerce-challenges"
-    }
 }
 
