@@ -1,4 +1,6 @@
-apf>=0.0.0
+# -e APF
 P4J
--e git+git@github.com:alercebroker/paps.git#egg=paps
--e git+git@github.com:alercebroker/late_classifier.git#egg=late_classifier
+matplotlib
+GPy
+# -e git+https://github.com/alercebroker/paps.git#egg=paps
+# -e git+https://github.com/alercebroker/late_classifier.git#egg=late_classifier

@@ -1,30 +1,33 @@
 ##################################################
 #       features   Settings File
 ##################################################
-
+import os
 FEATURE_VERSION = "v0.1"
 
-CONSUMER_CONFIG = {"TOPICS": ["test_offset"],
+CONSUMER_CONFIG = {"TOPICS": [os.getenv("CONSUMER_TOPICS")],
                    "PARAMS": {
-                        'bootstrap.servers': '127.0.0.1:9092',
-                        'group.id': "test1"
-                    }
-                   }
+    'bootstrap.servers': os.getenv("CONSUMER_SERVER"),
+    'group.id': os.getenv("CONSUMER_GROUP_ID")
+}
+}
 DB_CONFIG = {
-    "PSQL":{
-        "HOST": "localhost",
-        "USER": "postgres",
-        "PASSWORD": "docker",
-        "PORT": 5432,
-        "DB_NAME": "test"
+    "PSQL": {
+        "HOST": os.getenv("DB_HOST"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "PORT": os.getenv("DB_PORT"),
+        "DB_NAME": os.getenv("DB_NAME")
     }
 }
-ES_CONFIG = {"INDEX_PREFIX":"ztf_pipeline"}
+ES_CONFIG = {"INDEX_PREFIX": os.getenv("ES_PREFIX"),
+             "host": os.getenv("ES_NETWORK_HOST"),
+             "port": os.getenv("ES_NETWORK_PORT")
+             }
 
 PRODUCER_CONFIG = {
-    "TOPIC": "feature_test",
+    "TOPIC": os.getenv("PRODUCER_TOPIC"),
     "PARAMS": {
-        'bootstrap.servers': '127.0.0.1:9092',
+        'bootstrap.servers': os.getenv("PRODUCER_SERVER"),
     },
     "SCHEMA": {
         'doc': 'Features',
@@ -34,8 +37,8 @@ PRODUCER_CONFIG = {
             {'name': 'oid', 'type': 'string'},
             {'name': 'features', 'type': {
                 'type': 'map',
-                'values': ['float', 'int', 'string','null']
-                }
+                'values': ['float', 'int', 'string', 'null']
+            }
             }
         ]
     }
@@ -43,7 +46,7 @@ PRODUCER_CONFIG = {
 
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
-    "ES_CONFIG" : ES_CONFIG,
+    "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "FEATURE_VERSION": FEATURE_VERSION
 }
