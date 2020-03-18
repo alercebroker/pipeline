@@ -61,6 +61,7 @@ class FeaturesComputer(GenericStep):
         t0 = time.time()
         oid = message["oid"]
         detections = json_normalize(message["detections"])
+        non_detections = json_normalize(message["non_detections"])
         if len(detections) < 6:
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
@@ -76,7 +77,7 @@ class FeaturesComputer(GenericStep):
         }, inplace=True)
         detections.index = [oid]*len(detections)
         features_t0 = time.time()
-        features = self.featuresComputer.compute_features(detections, non_detections = pd.DataFrame(columns=["mjd"]))#.loc[oid]
+        features = self.featuresComputer.compute_features(detections, non_detections = non_detections) 
         features_t1 = time.time()
 
         if len(features) > 0:

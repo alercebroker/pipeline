@@ -1,7 +1,4 @@
 FROM python:3.6
-RUN git clone https://github.com/alercebroker/APF.git
-RUN git clone https://github.com/alercebroker/paps.git
-RUN git clone https://github.com/alercebroker/late_classifier.git
 COPY requirements.txt /app/requirements.txt
 COPY /APF /APF 
 COPY /late_classifier /late_classifier
