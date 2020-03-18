@@ -22,6 +22,7 @@ class AVROFileConsumer(GenericConsumer):
         files.sort()
 
         for file in files:
+            self.logger.debug(f"Reading File: {file}")
             with open(file,"rb") as f:
                 avro_reader = fastavro.reader(f)
                 data = avro_reader.next()
