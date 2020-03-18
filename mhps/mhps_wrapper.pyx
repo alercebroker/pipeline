@@ -70,4 +70,4 @@ def statistics(np.ndarray[double, ndim=1, mode="c"] mag,
   _statistics(N,<double*> &flux[0],<double*> &mag[0],<double*> &magerr[0], <double*> &time[0], <double*> &mask[0],
             mag0, t1, t2, epsilon, dt, mean,
             &Ik2_low_freq, &Ik2_high_freq,&nonzero,&PN_flag)
-  return (Ik2_low_freq/Ik2_high_freq, Ik2_low_freq, Ik2_high_freq,nonzero,PN_flag)
+  return Ik2_low_freq/Ik2_high_freq, Ik2_low_freq, Ik2_high_freq,nonzero,PN_flag
