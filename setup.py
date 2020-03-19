@@ -1,10 +1,10 @@
-from setuptools import setup,find_packages
+from setuptools import setup
 from setuptools.extension import Extension
-from Cython.Build import cythonize,build_ext
+from Cython.Build import cythonize
 import numpy
 
-module_name = "paps"
-pyx_path = [f"{module_name}/{module_name}_wrapper.pyx",f"{module_name}/lib/functions.c"]
+module_name = "mhps"
+pyx_path = [f"{module_name}/{module_name}_wrapper.pyx", f"{module_name}/lib/functions.c"]
 headers_path = [f"{module_name}/lib/functions.h"]
 lib_path = f"{module_name}/lib"
 
@@ -20,9 +20,9 @@ setup(
     ext_modules=cythonize([paps_extension]),
     install_requires=["numpy==1.17.4","Cython==0.29.12"],
     build_requires=["Cython==0.29.12","numpy==1.17.4"],
-    packages = [module_name],
-    url = 'https://github.com/alercebroker/paps',
-    description = 'Patricia Arevalo Power Spectra https://arxiv.org/abs/1207.5825',
-    author = 'ALeRCE',
-    version = '0.0.1',
+    packages=[module_name],
+    url='https://github.com/alercebroker/paps',
+    description='Patricia Arevalo Power Spectra https://arxiv.org/abs/1207.5825',
+    author='ALeRCE',
+    version='0.0.1',
 )
