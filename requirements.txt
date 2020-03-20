@@ -2,5 +2,5 @@
 P4J
 matplotlib
 GPy
-# -e git+https://github.com/alercebroker/paps.git#egg=paps
+# -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 # -e git+https://github.com/alercebroker/late_classifier.git#egg=late_classifier

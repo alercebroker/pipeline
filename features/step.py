@@ -10,7 +10,7 @@ import pandas as pd
 from pandas.io.json import json_normalize
 
 from apf.db.sql import get_session,get_or_create
-from apf.db.sql.models import Features,AstroObject,FeaturesObject
+from apf.db.sql.models import Features, AstroObject, FeaturesObject
 
 
 import datetime
@@ -44,8 +44,7 @@ class FeaturesComputer(GenericStep):
         else:
             self.producer = None
 
-
-    def _clean_result(self,result):
+    def _clean_result(self, result):
         cleaned_results = {}
         for key in result:
             if type(result[key]) is dict:
@@ -68,16 +67,13 @@ class FeaturesComputer(GenericStep):
         else:
             self.logger.debug(f"{oid} Object has enough detections")
             self.logger.debug("Calculating Features")
-
         detections.rename(columns={
             "alert.sgscore1": "sgscore1",
             "alert.isdiffpos": "isdiffpos",
-            "alert.magpsf_corr": "magpsf_corr",
-            "alert.sigmapsf_corr": "sigmapsf_corr"
         }, inplace=True)
         detections.index = [oid]*len(detections)
         features_t0 = time.time()
-        features = self.featuresComputer.compute_features(detections, non_detections = non_detections) 
+        features = self.featuresComputer.compute_features(detections, non_detections=non_detections)
         features_t1 = time.time()
 
         if len(features) > 0:
