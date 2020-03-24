@@ -1,0 +1,19 @@
+version: '3'
+services:
+  correction:
+    image: 'correction_step:latest'
+    restart: 'always'
+    environment:
+      - DB_HOST=
+      - DB_USER=
+      - DB_PASSWORD=
+      - DB_PORT=
+      - DB_NAME=
+      - CONSUMER_TOPICS=
+      - CONSUMER_SERVER=
+      - CONSUMER_GROUP_ID=
+      - PRODUCER_TOPIC=
+      - PRODUCER_SERVER=
+      - ES_PREFIX=
+      - ES_NETWORK_HOST=
+      - ES_NETWORK_PORT=

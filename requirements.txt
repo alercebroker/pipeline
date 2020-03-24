@@ -1,5 +1,6 @@
-apf==
 pandas==0.25.3
-boto3
-elasticsearch
-psycopg2
+boto3==1.10.8
+elasticsearch==7.5.1
+psycopg2==2.8.4
+astropy==4.0
+-e git+https://git@github.com/alercebroker/APF#egg=APF
