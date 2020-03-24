@@ -1,31 +1,36 @@
 ##################################################
 #       features   Settings File
 ##################################################
+import os
 
-
-
-CONSUMER_CONFIG = {"TOPICS": ["feature_test"],
-                   "PARAMS": {
-                        'bootstrap.servers': '127.0.0.1:9092',
-                        'group.id': "test1"
-                    }
-                   }
-DB_CONFIG = {
-    "PSQL":{
-        "HOST": "localhost",
-        "USER": "postgres",
-        "PASSWORD": "docker",
-        "PORT": 5432,
-        "DB_NAME": "test"
+CONSUMER_CONFIG = {
+    "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
+    "PARAMS": {
+        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
+        "group.id": os.environ["CONSUMER_GROUP_ID"]
     }
 }
 
-ES_CONFIG = {"INDEX_PREFIX":"ztf_pipeline"}
+DB_CONFIG = {
+    "PSQL": {
+        "HOST": os.environ["DB_HOST"],
+        "USER": os.environ["DB_USER"],
+        "PASSWORD": os.environ["DB_PASSWORD"],
+        "PORT": int(os.environ["DB_PORT"]),
+        "DB_NAME": os.environ["DB_NAME"]
+    }
+}
+
+ES_CONFIG = {
+    "INDEX_PREFIX": os.environ["ES_PREFIX"],
+    "host": os.environ["ES_NETWORK_HOST"],
+    "port": os.environ["ES_NETWORK_PORT"]
+}
 
 PRODUCER_CONFIG = {
-    "TOPIC": "late_classification_test",
+    "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
-        'bootstrap.servers': '127.0.0.1:9092',
+        'bootstrap.servers': os.environ["PRODUCER_SERVER"],
     },
     "SCHEMA": {
         'doc': 'Late Classification',
@@ -33,15 +38,15 @@ PRODUCER_CONFIG = {
         'type': 'record',
         'fields': [
             {'name': 'oid', 'type': 'string'},
-            {'name': 'probabilties', 'type': {
+            {'name': 'probabilities', 'type': {
                 'type': 'map',
                 'values': ['float']
                 }
             },
-            {'name': 'class', 'type':'string'},
-            {'name':'hierarchical', 'type':{
+            {'name': 'class', 'type': 'string'},
+            {'name': 'hierarchical', 'type': {
                 'type': 'array',
-                'items': [{'type': 'map','values':['float', {'type':'map', 'values': 'float'}]}]
+                'items': [{'type': 'map', 'values': ['float', {'type': 'map', 'values': 'float'}]}]
             }}
         ]
     }
