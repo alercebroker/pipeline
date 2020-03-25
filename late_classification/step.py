@@ -51,7 +51,5 @@ class LateClassifier(GenericStep):
             features = features[self.features_required].values.reshape((1, -1))
             result = self.model.predict(features, pipeline=True)
             result["oid"] = oid
-            print(result)
             self.producer.produce(result)
             self.logger.info(result)
-            raise

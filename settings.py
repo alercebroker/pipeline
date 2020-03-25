@@ -37,17 +37,42 @@ PRODUCER_CONFIG = {
         'name': 'probabilities',
         'type': 'record',
         'fields': [
-            {'name': 'oid', 'type': 'string'},
-            {'name': 'probabilities', 'type': {
-                'type': 'map',
-                'values': ['float']
+            {
+                'name': 'oid',
+                'type': 'string'
+            },
+            {
+                'name': 'probabilities',
+                'type': {
+                    'type': 'map',
+                    'values': ['float']
                 }
             },
-            {'name': 'class', 'type': 'string'},
-            {'name': 'hierarchical', 'type': {
-                'type': 'array',
-                'items': [{'type': 'map', 'values': ['float', {'type': 'map', 'values': 'float'}]}]
-            }}
+            {
+                'name': 'class',
+                'type': 'string'
+            },
+            {
+                'name': 'hierarchical',
+                'type':
+                {
+                    'name': 'root',
+                    'type': 'map',
+                    'values': [
+                        {
+                            'type': 'map',
+                            'values': 'float'
+                        },
+                        {
+                            'type': 'map',
+                            'values': {
+                                'type': 'map',
+                                'values': 'float'
+                            }
+                        }
+                    ]
+                }
+            }
         ]
     }
 }
