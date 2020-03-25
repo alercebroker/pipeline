@@ -1,11 +1,8 @@
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from apf.db.sql import get_or_create
-from apf.db.sql.models import Class, Classification, Classifier
 from late_classifier.classifier.hierarchical_rf import HierarchicalRF
 
 import logging
-import os
 import pandas as pd
 import numpy as np
 
