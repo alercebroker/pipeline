@@ -3,13 +3,13 @@ from apf.producers import KafkaProducer
 import logging
 
 from late_classifier.features.preprocess import *
-from late_classifier.features.extractors import *
+from late_classifier.features.custom import *
 
 import numpy as np
 import pandas as pd
 from pandas.io.json import json_normalize
 
-from apf.db.sql import get_session,get_or_create
+from apf.db.sql import get_session, get_or_create
 from apf.db.sql.models import Features, AstroObject, FeaturesObject
 
 
@@ -32,10 +32,10 @@ class FeaturesComputer(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self,consumer = None, config=None,level = logging.INFO,**step_args):
-        super().__init__(consumer,config=config,level=level)
+    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+        super().__init__(consumer, config=config, level=level)
         self.preprocessor = DetectionsPreprocessorZTF()
-        self.featuresComputer = HierarchicalFeaturesComputer([1,2])
+        self.featuresComputer = CustomHierarchicalExtractor()#HierarchicalExtractor([1, 2])
         self.session = get_session(self.config["DB_CONFIG"])
 
         prod_config = self.config.get("PRODUCER_CONFIG", None)
@@ -85,8 +85,10 @@ class FeaturesComputer(GenericStep):
             return
 
         obj, created = get_or_create(self.session, AstroObject, filter_by={"oid": oid})
-        version, created = get_or_create(self.session,Features, filter_by={"version":self.config["FEATURE_VERSION"]})
-        features, created = get_or_create(self.session,FeaturesObject, filter_by={"features_version":self.config["FEATURE_VERSION"], "object_id": oid})
+        version, created = get_or_create(self.session, Features, filter_by={"version": self.config["FEATURE_VERSION"]})
+        features, created = get_or_create(self.session, FeaturesObject, filter_by={
+            "features_version": self.config["FEATURE_VERSION"], "object_id": oid
+        })
 
         features.data = result
         features.features = version
