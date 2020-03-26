@@ -56,7 +56,7 @@ class FeaturesComputer(GenericStep):
                     cleaned_results[key] = result[key]
         return cleaned_results
 
-    def execute(self,message):
+    def execute(self, message):
         t0 = time.time()
         oid = message["oid"]
         detections = json_normalize(message["detections"])
@@ -74,6 +74,7 @@ class FeaturesComputer(GenericStep):
         detections.index = [oid]*len(detections)
         features_t0 = time.time()
         features = self.featuresComputer.compute_features(detections, non_detections=non_detections)
+        features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features_t1 = time.time()
 
         if len(features) > 0:
