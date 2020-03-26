@@ -1,11 +1,13 @@
 import os
 import sys
-
 import logging
+
+
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH,".."))
+PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
+
 from settings import *
 
 level = logging.INFO
@@ -23,5 +25,5 @@ from apf.consumers import KafkaConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = S3Step(consumer,config=STEP_CONFIG,level=level)
+step = S3Step(consumer, config=STEP_CONFIG, level=level)
 step.start()

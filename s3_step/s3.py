@@ -28,6 +28,7 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
 def get_object_url(bucket_name, date, candid):
     return "https://{}.s3.amazonaws.com/ztf_{}_programid1/{}.avro".format(bucket_name, date, candid)
 
+
 def upload_file(f, date, candid, bucket_name):
     s3 = boto3.client('s3')
     object_name = "ztf_{}_programid1/{}.avro".format(date,candid)

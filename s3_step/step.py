@@ -4,6 +4,7 @@ import io
 from .s3 import upload_file
 import math
 
+
 class S3Step(GenericStep):
     """S3Step Description
 
@@ -26,7 +27,6 @@ class S3Step(GenericStep):
         date = "{}{}{}".format(year, month, int(day))
         upload_file(
             f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
-
 
     def jd_to_date(self, jd):
         jd = jd + 0.5
