@@ -60,6 +60,13 @@ class FeaturesComputer(GenericStep):
         t0 = time.time()
         oid = message["oid"]
         detections = json_normalize(message["detections"])
+        detections.rename(columns={
+            "alert.sgscore1": "sgscore1",
+            "alert.isdiffpos": "isdiffpos",
+        }, inplace=True)
+        detections.index = [oid] * len(detections)
+        detections.index.name = "oid"
+        detections = self.preprocessor.preprocess(detections)
         non_detections = json_normalize(message["non_detections"])
         if len(detections) < 6:
             self.logger.debug(f"{oid} Object has less than 6 detections")
@@ -67,16 +74,11 @@ class FeaturesComputer(GenericStep):
         else:
             self.logger.debug(f"{oid} Object has enough detections")
             self.logger.debug("Calculating Features")
-        detections.rename(columns={
-            "alert.sgscore1": "sgscore1",
-            "alert.isdiffpos": "isdiffpos",
-        }, inplace=True)
-        detections.index = [oid]*len(detections)
         features_t0 = time.time()
         features = self.featuresComputer.compute_features(detections, non_detections=non_detections)
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
+        features = features.astype(float)
         features_t1 = time.time()
-
         if len(features) > 0:
             if type(features) is pd.Series:
                 features = pd.DataFrame([features])
