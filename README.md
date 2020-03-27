@@ -1,5 +1,5 @@
 # Mexican Hat Power Spectra (MHPS)
-
+[![Build Status](https://travis-ci.com/alercebroker/mhps.svg?branch=master)](https://travis-ci.com/alercebroker/mhps)
 
 Based in work of [`Patricia Arevalo Power Spectra`](https://arxiv.org/abs/1207.5825).
 
