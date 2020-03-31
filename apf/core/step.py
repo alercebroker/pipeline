@@ -28,7 +28,7 @@ class GenericStep():
     **step_args : dict
         Additional parameters for the step.
     """
-    def __init__(self,consumer = None, level = logging.INFO,config=None, **step_args):
+    def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
@@ -39,7 +39,7 @@ class GenericStep():
         if "ES_CONFIG" in config:
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
             self.logger.info("Creating ES Metrics sender")
-            self.metrics = Elasticsearch(**config["ES_CONFIG"])
+            self.metrics = Elasticsearch([config["ES_CONFIG"]])
 
     def send_metrics(self,**metrics):
         """Send Metrics to an Elasticsearch Cluster.
