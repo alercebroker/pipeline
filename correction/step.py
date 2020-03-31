@@ -1,16 +1,12 @@
 from apf.core.step import GenericStep
 import logging
 import numpy as np
-import pandas as pd
 from apf.db.sql.models import Detection, AstroObject, NonDetection
-from apf.db.sql import get_session, get_or_create, check_exists,bulk_insert
+from apf.db.sql import get_session, get_or_create, bulk_insert
 from apf.producers import KafkaProducer
-from apf.consumers import KafkaConsumer
 import datetime
 import math
 import time
-import json
-import io
 from astropy.time import Time
 np.seterr(divide='ignore')
 
@@ -33,6 +29,7 @@ class Correction(GenericStep):
         self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
     def execute(self, message):
+        fid = message["candidate"]["fid"]
         message["candidate"].update(self.correct_message(message["candidate"]))
         light_curve = self.get_lightcurve(message["objectId"])
         self.insert_db(message, light_curve)
@@ -41,27 +38,24 @@ class Correction(GenericStep):
                 del non_det["datetime"]
         write = {
             "oid": message["objectId"],
-            "candid": message["candid"],
+            "candid": str(message["candid"]),
             "detections": light_curve["detections"],
-            "non_detections": light_curve["non_detections"]
+            "non_detections": light_curve["non_detections"],
+            "fid": fid
         }
         self.producer.produce(write)
 
-    def correctMagnitude(self, magref, sign, magdiff):
+    def correct_magnitude(self, magref, sign, magdiff):
         result = np.nan
-
         try:
             aux = np.power(10, (-0.4 * magref)) + sign * np.power(10,(-0.4 * magdiff))
             result = -2.5 * np.log10(aux)
-        except:
-            self.logger.exception("Correct magnitude failed")
-
+        except Exception as e:
+            self.logger.exception("Correct magnitude failed: {}".format(e))
         return result
 
-    def correctSigmaMag(self, magref, sigmagref, sign, magdiff, sigmagdiff):
-
+    def correct_sigma_mag(self, magref, sigmagref, sign, magdiff, sigmagdiff):
         result = np.nan
-
         try:
             auxref = np.power(10, (-0.4 * magref))
             auxdiff = np.power(10,(-0.4 * magdiff))
@@ -70,10 +64,8 @@ class Correction(GenericStep):
             result = np.sqrt(np.power((auxref * sigmagref), 2) +
                              np.power((auxdiff * sigmagdiff), 2)) / aux
 
-        except:
-
-            self.logger.exception("Correct sigma magnitude failed")
-
+        except Exception as e:
+            self.logger.exception("Correct sigma magnitude failed: {}".format(e))
         return result
 
     def correct_message(self, message):
@@ -87,11 +79,11 @@ class Correction(GenericStep):
         sigmapsf = message['sigmapsf']
         sigmagap = message['sigmagap']
 
-        magpsf_corr = self.correctMagnitude(magref, isdiffpos, magpsf)
-        sigmapsf_corr = self.correctSigmaMag(
+        magpsf_corr = self.correct_magnitude(magref, isdiffpos, magpsf)
+        sigmapsf_corr = self.correct_sigma_mag(
             magref, sigmagref, isdiffpos, magpsf, sigmapsf)
-        magap_corr = self.correctMagnitude(magref, isdiffpos, magap)
-        sigmagap_corr = self.correctSigmaMag(
+        magap_corr = self.correct_magnitude(magref, isdiffpos, magap)
+        sigmagap_corr = self.correct_sigma_mag(
             magref, sigmagref, isdiffpos, magap, sigmagap)
 
         message["magpsf_corr"] = magpsf_corr if not np.isnan(
@@ -102,8 +94,13 @@ class Correction(GenericStep):
             magap_corr) and not np.isinf(magap_corr) else None
         message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
             sigmagap_corr) and not np.isinf(sigmagap_corr) else None
-
         return message
+
+    def clean_alert(self, message):
+        keys_message = set([*message])
+        keys_alert = set([*message["alert"]])
+        keys_diff = keys_alert.difference(keys_message)
+        return {k: message['alert'][k] for k in keys_diff}
 
     def insert_db(self, message, light_curve):
         kwargs = {
@@ -123,6 +120,7 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "alert": message["candidate"],
         }
+        kwargs["alert"] = self.clean_alert(kwargs)
         found = list(filter(lambda det: det['candid'] == str(message["candid"]), light_curve["detections"]))
         if len(found) > 0:
             return
@@ -160,7 +158,8 @@ class Correction(GenericStep):
                     filters = {"datetime":  dt.datetime, "fid": prv_cand["fid"], "oid": message["objectId"]}
                     found = list(filter(lambda non_det: ((non_det["datetime"] == filters["datetime"]) and
                                                         (non_det["fid"] == filters["fid"]) and
-                                                        (non_det["oid"] == filters["oid"])), light_curve["non_detections"]))
+                                                        (non_det["oid"] == filters["oid"])),
+                                        light_curve["non_detections"]))
                     if len(found) == 0:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
@@ -198,6 +197,7 @@ class Correction(GenericStep):
             self.logger.debug("Processed {} prv_candidates in {} seconds".format(
                 len(message["prv_candidates"]), t1-t0))
         self.session.commit()
+        return kwargs
 
     def get_lightcurve(self, oid):
         detections = self.session.query(Detection).filter_by(oid=oid)
