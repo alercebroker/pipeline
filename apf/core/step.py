@@ -109,4 +109,9 @@ class GenericStep():
             self.execute(self.message)
             if self.commit:
                 self.consumer.commit()
-            self.send_metrics(execution_time = time.time()-t0)
+            metrics = {
+                "execution_time": time.time()-t0
+            }
+            if "candid" in self.message:
+                metrics["candid"] = self.message["candid"]
+            self.send_metrics(**metrics)
