@@ -41,6 +41,7 @@ class Correction(GenericStep):
                 del non_det["datetime"]
         write = {
             "oid": message["objectId"],
+            "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"]
         }
