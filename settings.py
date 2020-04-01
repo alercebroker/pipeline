@@ -2,7 +2,6 @@
 #       correction   Settings File
 ##################################################
 import os
-LOGGING_DEBUG = True
 DB_CONFIG = {
     "PSQL": {
         "HOST": os.environ["DB_HOST"],
@@ -14,7 +13,11 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
-    "DIRECTORY_PATH": "/test_pipeline/test_data/tests/ztf_sample/"
+    "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
+    "PARAMS": {
+         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
+         "group.id": os.environ["CONSUMER_GROUP_ID"]
+    }
 }
 
 
@@ -38,18 +41,13 @@ PRODUCER_CONFIG = {
                         {'name': 'candid', 'type': 'string'},
                         {'name': 'mjd', 'type': 'float'},
                         {'name': 'fid', 'type': 'int'},
-                        {'name': 'magpsf_corr', 'type': [
-                            'float', 'null'], 'default':None},
-                        {'name': 'magap_corr', 'type': [
-                            'float', 'null'], 'default':None},
-                        {'name': 'sigmapsf_corr', 'type': [
-                            'float', 'null'], 'default':None},
-                        {'name': 'sigmagap_corr', 'type': [
-                            'float', 'null'], 'default':None},
+                        {'name': 'magpsf_corr', 'type': ['float', 'null'], 'default':None},
+                        {'name': 'magap_corr', 'type': ['float', 'null'], 'default':None},
+                        {'name': 'sigmapsf_corr', 'type': ['float', 'null'], 'default':None},
+                        {'name': 'sigmagap_corr', 'type': ['float', 'null'], 'default':None},
                         {'name': 'ra', 'type': 'float'},
                         {'name': 'dec', 'type': 'float'},
-                        {'name': 'rb', 'type': [
-                            'float', 'null'], 'default':None},
+                        {'name': 'rb', 'type': ['float', 'null'], 'default':None},
                         {'name': 'oid', 'type': 'string'},
                         {'name': 'alert',
                          'type': {
@@ -77,7 +75,7 @@ ES_CONFIG = {
 
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
-    # "ES_CONFIG": ES_CONFIG,
+    "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "COMMIT": False,
 }
