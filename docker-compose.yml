@@ -1,0 +1,18 @@
+version: "3"
+services:
+  correction:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "always"
+    env_file:
+      - db_settings.env
+      - es_settings.env
+    environment:
+      - CONSUMER_TOPICS=ztf_20200309_programid1_aux
+      - CONSUMER_SERVER=kafka1.alerce.online:9092
+      - CONSUMER_GROUP_ID=test
+      - PRODUCER_TOPIC=correction-test
+      - PRODUCER_SERVER=kafka.alerce.online:9092
+    volumes:
+      - ./test_pipeline:/test_pipeline
