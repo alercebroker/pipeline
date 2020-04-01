@@ -25,6 +25,7 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         'bootstrap.servers': os.environ["PRODUCER_SERVER"],
+        'message.max.bytes': 6291456
     },
     "SCHEMA": {
         'doc': 'Lightcurve',
@@ -77,5 +78,5 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "COMMIT": False,
+    "N_PROCESS": os.getenv("N_PROCESS")
 }
