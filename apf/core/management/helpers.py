@@ -52,7 +52,7 @@ def initdb(settings_path):
 def make_migrations(settings_path):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
+    sys.path.append(os.path.abspath(settings_path))
 
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = [
@@ -67,7 +67,7 @@ def make_migrations(settings_path):
 def migrate(settings_path):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
+    sys.path.append(os.path.abspath(settings_path))
 
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = [

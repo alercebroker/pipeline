@@ -17,6 +17,12 @@ class AbstractClass():
         Gets the taxonomies that the class instance belongs to
         """
         pass
+    
+    def get_classifications(self):
+        """
+        Gets all classifications with the class
+        """
+        pass
 
 
 class AbstractTaxonomy():
@@ -56,6 +62,12 @@ class AbstractClassifier():
     def get_classifications(self):
         """
         Gets classifications done by the classifier
+        """
+        pass
+
+    def get_taxonomy(self):
+        """
+        Gets the taxonomy the classifier is using
         """
         pass
 
@@ -152,6 +164,12 @@ class AbstractXmatch():
     catalog_id = None
     catalog_object_id = None
 
+    def get_object(self):
+        """
+        Gets the object referring to the crossmatch
+        """
+        pass
+
 class AbstractMagnitudeStatistics():
     """
     Abstract Magnitude Statistics model
@@ -187,6 +205,12 @@ class AbstractMagnitudeStatistics():
     last = None
     first = None
 
+    def get_object(self):
+        """
+        Gets the object associated with the stats
+        """
+        pass
+
 class AbstractClassification():
     """
     Abstract Classification model
@@ -200,8 +224,26 @@ class AbstractClassification():
     probabilities : json
         probabilities for each class
     """
-    class_name = None
+
     probability = None
+    probabilities = None
+
+    def get_class(self):
+        """
+        Gets the class of the classification
+        """
+        pass
+    def get_object(self):
+        """
+        Gets the object classifified
+        """
+        pass
+    def get_classifier(self):
+        """
+        Gets the classifier used
+        """
+        pass
+
 
 
 class AbstractFeatures():
@@ -214,6 +256,7 @@ class AbstractFeatures():
         name of the version used for features
     """
     version = None
+
 
 class AbstractNonDetection():
     """
@@ -231,6 +274,12 @@ class AbstractNonDetection():
     mjd = None
     diffmaglim = None
     fid = None
+
+    def get_object(self):
+        """
+        Gets the object related
+        """
+        pass
 
 class AbstractDetection():
     """
@@ -285,3 +334,40 @@ class AbstractDetection():
     sigmapsf_corr = None
     sigmagap_corr = None
     avro = None
+
+    def get_object(self):
+        """
+        Gets the object related
+        """
+        pass
+
+class AbstractOutlierDetector():
+    """
+    Abstract class for outlier detection models
+
+    Attributes
+    ------------
+    name : str
+        a name for identifying the model
+    """
+    name = None
+
+    def get_outlier_scores(self):
+        """
+        Gets all the outlier scores produced by the detector
+        """
+        pass
+
+class AbstractOutlierScore():
+    """
+    Abstract class for outlier scores
+
+    Attributes
+    ----------
+    score : float
+        the main metric for identifying outliers
+    scores : json
+        other scoring metrics for outliers
+    """
+    score = None
+    scores = None

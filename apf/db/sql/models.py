@@ -24,6 +24,9 @@ class Class(Base, generic.AbstractClass):
     def get_taxonomies(self):
         return self.taxonomies
 
+    def get_classifications(self):
+        return self.classifications
+
     def __repr__(self):
         return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
 
@@ -106,9 +109,11 @@ class AstroObject(Base, generic.AbstractAstroObject):
     def get_features(self):
         return self.features
 
-    # TODO implement light curve formatting
     def get_lightcurve(self):
-        pass
+        return {
+            "detections": self.get_detections(),
+            "non_detections": self.get_non_detections()
+        }
 
     def __repr__(self):
         return "<AstroObject(oid='%s')>" % (self.oid)
@@ -128,6 +133,15 @@ class Classification(Base, generic.AbstractClassification):
     classes = relationship("Class", back_populates='classifications')
     objects = relationship("AstroObject", back_populates='classifications')
     classifiers = relationship("Classifier", back_populates='classifications')
+
+
+    def get_class(self):
+        return self.class_name
+    def get_object(self):
+        return self.astro_object
+    def get_classifier(self):
+        return self.classifier_name
+
 
     def __repr__(self):
         return "<Classification(class_name='%s', probability='%s', astro_object='%s', classifier_name='%s')>" % (self.class_name,
@@ -214,3 +228,17 @@ class Detection(Base, generic.AbstractDetection):
     avro = Column(String)
 
     __table_args__ = (Index('object_id', 'oid', postgresql_using='hash'),)
+
+class OutlierDetector(Base, generic.AbstractOutlierDetector):
+    __tablename__ = 'outlier_detector'
+
+    name = Column(String, primary_key=True)
+
+class OutlierScore(Base, generic.AbstractOutlierScore):
+    __tablename__ = 'outlier_score'
+    astro_object = Column(String, ForeignKey(
+    'astro_object.oid'), primary_key=True)
+    detector_name = Column(String, ForeignKey(
+    'outlier_detector.name'), primary_key=True)
+    score = Column(Float, primary_key=True)
+    scores = Column(JSON)

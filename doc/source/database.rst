@@ -19,7 +19,7 @@ After defining `DB_CONFIG` you can now initiaize your database. To do so, run th
 .. code-block:: bash
 
     apf initdb
-    apf make_migrations
+    apf make-migrations
     apf migrate
 
 

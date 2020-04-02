@@ -16,10 +16,13 @@ Session = sessionmaker()
     :returns: True if object exists else False
 
 """
+
+
 def check_exists(session, model, filter_by=None):
     return session.query(
-                session.query(model).filter_by(**filter_by).exists()
-            ).scalar()
+        session.query(model).filter_by(**filter_by).exists()
+    ).scalar()
+
 
 def get_or_create(session, model, filter_by=None, **kwargs):
     """
@@ -42,7 +45,8 @@ def get_or_create(session, model, filter_by=None, **kwargs):
     instance, created
         Tuple with the instanced object and wether it was created or not
     """
-    instance = session.query(model).options(load_only(*filter_by.keys())).filter_by(**filter_by).first()
+    instance = session.query(model).options(
+        load_only(*filter_by.keys())).filter_by(**filter_by).first()
     if instance:
         return instance, False
     else:
