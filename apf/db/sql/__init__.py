@@ -135,3 +135,7 @@ def bulk_insert(objects, model, session):
         Session instance 
     """
     session.bulk_insert_mappings(model, objects)
+
+
+def query(session, model, params=None, offset=None, limit=None):
+    return session.query(model).filter(**params)[offset:limit]
