@@ -138,4 +138,5 @@ def bulk_insert(objects, model, session):
 
 
 def query(session, model, params=None, offset=None, limit=None):
-    return session.query(model).filter(**params)[offset:limit]
+    return [instance.__dict__ for instance in session.query(model). \
+            filter(**params)[offset:limit]]
