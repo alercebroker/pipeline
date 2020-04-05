@@ -2,6 +2,7 @@ from . import Base
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON, Index, DateTime
 from sqlalchemy.orm import relationship
 from .. import generic
+from sqlalchemy_serializer import SerializerMixin
 
 taxonomy_class = Table('taxonomy_class', Base.metadata,
                        Column('class_name', String, ForeignKey('class.name')),
@@ -10,7 +11,7 @@ taxonomy_class = Table('taxonomy_class', Base.metadata,
                        )
 
 
-class Class(Base, generic.AbstractClass):
+class Class(Base, generic.AbstractClass, SerializerMixin):
     __tablename__ = 'class'
 
     name = Column(String, primary_key=True)
@@ -31,7 +32,7 @@ class Class(Base, generic.AbstractClass):
         return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
 
 
-class Taxonomy(Base, generic.AbstractTaxonomy):
+class Taxonomy(Base, generic.AbstractTaxonomy, SerializerMixin):
     __tablename__ = 'taxonomy'
 
     name = Column(String, primary_key=True)
@@ -52,7 +53,7 @@ class Taxonomy(Base, generic.AbstractTaxonomy):
         return "<Taxonomy(name='%s')>" % (self.name)
 
 
-class Classifier(Base, generic.AbstractClassifier):
+class Classifier(Base, generic.AbstractClassifier, SerializerMixin):
     __tablename__ = 'classifier'
     name = Column(String, primary_key=True)
     taxonomy_name = Column(String, ForeignKey('taxonomy.name'))
@@ -65,7 +66,7 @@ class Classifier(Base, generic.AbstractClassifier):
         return "<Classifier(name='%s')>" % (self.name)
 
 
-class AstroObject(Base, generic.AbstractAstroObject):
+class AstroObject(Base, generic.AbstractAstroObject, SerializerMixin):
     __tablename__ = 'astro_object'
 
     oid = Column(String, primary_key=True)
@@ -119,7 +120,7 @@ class AstroObject(Base, generic.AbstractAstroObject):
         return "<AstroObject(oid='%s')>" % (self.oid)
 
 
-class Classification(Base, generic.AbstractClassification):
+class Classification(Base, generic.AbstractClassification, SerializerMixin):
     __tablename__ = 'classification'
 
     astro_object = Column(String, ForeignKey(
@@ -134,21 +135,12 @@ class Classification(Base, generic.AbstractClassification):
     objects = relationship("AstroObject", back_populates='classifications')
     classifiers = relationship("Classifier", back_populates='classifications')
 
-
-    def get_class(self):
-        return self.class_name
-    def get_object(self):
-        return self.astro_object
-    def get_classifier(self):
-        return self.classifier_name
-
-
     def __repr__(self):
         return "<Classification(class_name='%s', probability='%s', astro_object='%s', classifier_name='%s')>" % (self.class_name,
                                                                                                                  self.probability, self.astro_object, self.classifier_name)
 
 
-class Xmatch(Base, generic.AbstractXmatch):
+class Xmatch(Base, generic.AbstractXmatch, SerializerMixin):
     __tablename__ = 'xmatch'
 
     oid = Column(String, ForeignKey('astro_object.oid'))
@@ -156,7 +148,7 @@ class Xmatch(Base, generic.AbstractXmatch):
     catalog_oid = Column(String, primary_key=True)
 
 
-class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
+class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics, SerializerMixin):
     __tablename__ = 'magnitude_statistics'
 
     oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
@@ -179,13 +171,13 @@ class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
         Index('mag_last', 'last', postgresql_using='btree'))
 
 
-class Features(Base, generic.AbstractFeatures):
+class Features(Base, generic.AbstractFeatures, SerializerMixin):
     __tablename__ = 'features'
 
     version = Column(String, primary_key=True)
 
 
-class FeaturesObject(Base):
+class FeaturesObject(Base, SerializerMixin):
     __tablename__ = 'features_object'
 
     object_id = Column(String, ForeignKey(
@@ -196,7 +188,7 @@ class FeaturesObject(Base):
     features = relationship("Features")
 
 
-class NonDetection(Base, generic.AbstractNonDetection):
+class NonDetection(Base, generic.AbstractNonDetection, SerializerMixin):
     __tablename__ = 'non_detection'
 
     oid = Column(String, ForeignKey('astro_object.oid'), primary_key=True)
@@ -206,7 +198,7 @@ class NonDetection(Base, generic.AbstractNonDetection):
     diffmaglim = Column(Float, nullable=False)
     __table_args__ = (Index('non_det_oid', 'oid', postgresql_using='hash'),)
 
-class Detection(Base, generic.AbstractDetection):
+class Detection(Base, generic.AbstractDetection, SerializerMixin):
     __tablename__ = 'detection'
 
     candid = Column(String, primary_key=True)
@@ -229,12 +221,12 @@ class Detection(Base, generic.AbstractDetection):
 
     __table_args__ = (Index('object_id', 'oid', postgresql_using='hash'),)
 
-class OutlierDetector(Base, generic.AbstractOutlierDetector):
+class OutlierDetector(Base, generic.AbstractOutlierDetector, SerializerMixin):
     __tablename__ = 'outlier_detector'
 
     name = Column(String, primary_key=True)
 
-class OutlierScore(Base, generic.AbstractOutlierScore):
+class OutlierScore(Base, generic.AbstractOutlierScore, SerializerMixin):
     __tablename__ = 'outlier_score'
     astro_object = Column(String, ForeignKey(
     'astro_object.oid'), primary_key=True)
