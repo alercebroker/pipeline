@@ -137,6 +137,18 @@ def bulk_insert(objects, model, session):
     session.bulk_insert_mappings(model, objects)
 
 
-def query(session, model, params=None, offset=None, limit=None):
-    return [instance.__dict__ for instance in session.query(model). \
-            filter(**params)[offset:limit]]
+def query(session, model, page=None, page_size=None, total=None, *params):
+    offset = None
+    limit = None
+    if page and page_size:
+        offset = page_size * (page -1)
+        limit = page_size + offset
+    sql_query = session.query(model).filter(*params)
+    if not total:
+        total = sql_query.order_by(None).count()
+    results = sql_query[offset:limit]
+    return {
+        "total": total,
+        "results": results
+    }
+        
