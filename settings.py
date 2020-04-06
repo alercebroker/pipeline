@@ -36,7 +36,5 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG": ES_CONFIG,
     "STORAGE": STORAGE_CONFIG,
-    # "N_PROCESS": 4,            # Number of process for multiprocess script
-    "COMMIT": False,  # Disables commit, useful to debug KafkaConsumer
 }
 
