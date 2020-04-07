@@ -17,9 +17,9 @@ sys.path.append(PACKAGE_PATH)
 
 from settings import CONSUMER_CONFIG, STEP_CONFIG
 from correction import Correction
-from apf.consumers import AVROFileConsumer
+from apf.consumers import KafkaConsumer
 
-consumer = AVROFileConsumer(config=CONSUMER_CONFIG)
+consumer = KafkaConsumer(config=CONSUMER_CONFIG)
 
 step = Correction(consumer,config=STEP_CONFIG,level=level)
 step.start()
