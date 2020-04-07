@@ -71,4 +71,4 @@ class LateClassifier(GenericStep):
                           "astro_object": oid, "classifier_name": classifier.name, "class_name": _class.name}, **kwargs)
             self.session.commit()
             result["oid"] = oid
-            # self.producer.produce(result)
+            self.producer.produce(result)
