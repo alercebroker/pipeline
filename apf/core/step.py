@@ -28,6 +28,7 @@ class GenericStep():
     **step_args : dict
         Additional parameters for the step.
     """
+
     def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
@@ -39,9 +40,10 @@ class GenericStep():
         if "ES_CONFIG" in config:
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
             self.logger.info("Creating ES Metrics sender")
-            self.metrics = Elasticsearch([config["ES_CONFIG"]])
+            self.elastic_search = Elasticsearch([config["ES_CONFIG"]])
+            self.metrics = {}
 
-    def send_metrics(self,**metrics):
+    def send_metrics(self, **metrics):
         """Send Metrics to an Elasticsearch Cluster.
 
         For this method to work the `ES_CONFIG` variable has to be set in the `STEP_CONFIG`
@@ -81,13 +83,13 @@ class GenericStep():
             Parameters sended to Elasticsearch.
 
         """
-        if self.metrics:
+        if self.elastic_search:
             date = datetime.datetime.utcnow().strftime("%Y%m%d")
-            index_prefix = self.config["ES_CONFIG"].get("INDEX_PREFIX", "pipeline")
+            index_prefix = self.config["ES_CONFIG"].get(
+                "INDEX_PREFIX", "pipeline")
             self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
-            metrics["@timestamp"] = datetime.datetime.utcnow()
             metrics["source"] = self.__class__.__name__
-            self.metrics.index(index = self.index,body=metrics)
+            self.elastic_search.index(index=self.index, body=metrics)
 
     @abstractmethod
     def execute(self, message):
@@ -105,13 +107,16 @@ class GenericStep():
         """Start running the step.
         """
         for self.message in self.consumer.consume():
+            self.metrics["timestamp_received"] = datetime.datetime.utcnow()
+            if "timestamp_sent" in self.message:
+                self.metrics["queue_time"] = self.metrics["timestamp_received"] - \
+                    self.message["timestamp_sent"]
             t0 = time.time()
             self.execute(self.message)
             if self.commit:
                 self.consumer.commit()
-            metrics = {
-                "execution_time": time.time()-t0
-            }
+            self.metrics["timestamp_sent"] = datetime.datetime.utcnow()
+            self.metrics["execution_time"] = time.time()-t0
             if "candid" in self.message:
-                metrics["candid"] = self.message["candid"]
-            self.send_metrics(**metrics)
+                self.metrics["candid"] = self.message["candid"]
+            self.send_metrics(**self.metrics)
