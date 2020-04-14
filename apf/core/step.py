@@ -84,7 +84,7 @@ class GenericStep():
 
         """
         if self.elastic_search:
-            date = datetime.datetime.utcnow().strftime("%Y%m%d")
+            date = datetime.datetime.now().strftime("%Y%m%d")
             index_prefix = self.config["ES_CONFIG"].get(
                 "INDEX_PREFIX", "pipeline")
             self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
@@ -107,7 +107,7 @@ class GenericStep():
         """Start running the step.
         """
         for self.message in self.consumer.consume():
-            self.metrics["timestamp_received"] = datetime.datetime.now()
+            self.metrics["timestamp_received"] = datetime.datetime.now(datetime.timezone.utc)
             if "timestamp_sent" in self.message:
                 self.metrics["queue_time"] = self.metrics["timestamp_received"] - \
                     self.message["timestamp_sent"]
