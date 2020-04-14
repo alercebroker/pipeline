@@ -65,44 +65,63 @@
 ```json
 {
   "doc": "Late Classification",
-  "name": "probabilities",
+  "name": "probabilities + features",
   "type": "record",
   "fields": [
     {
-      "name": "oid",
-      "type": "string"
-    },
-    {
-      "name": "probabilities",
+      "name": "features",
       "type": {
-        "type": "map",
-        "values": [
-          "float"
-        ]
+          "type": "record",
+          "name": "features_record",
+          "fields": [
+              {"name": "oid", "type": "string"},
+              {"name": "features", "type": {
+                  "type": "map",
+                  "values": ["float", "int", "string", "null"]
+                  }
+              }
+          ]
       }
     },
     {
-      "name": "class",
-      "type": "string"
-    },
-    {
-      "name": "hierarchical",
+      "name": "late_classification",
       "type": {
-        "name": "root",
-        "type": "map",
-        "values": [
-          {
-            "type": "map",
-            "values": "float"
-          },
-          {
-            "type": "map",
-            "values": {
-              "type": "map",
-              "values": "float"
+          "type": "record",
+          "name": "late_record",
+          "fields": [
+            {
+              "name": "probabilities",
+              "type": {
+                  "type": "map",
+                  "values": ["float"],
+              }
+            },
+            {
+              "name": "class",
+              "type": "string"
+            },
+            {
+              "name": "hierarchical",
+              "type":
+              {
+                "name": "root",
+                "type": "map",
+                "values": [
+                  {
+                    "type": "map",
+                    "values": "float"
+                  },
+                  {
+                    "type": "map",
+                    "values": {
+                      "type": "map",
+                      "values": "float"
+                    }
+                  }
+                ]
+              }
             }
-          }
-        ]
+          ]
       }
     }
   ]

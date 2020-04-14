@@ -70,5 +70,11 @@ class LateClassifier(GenericStep):
             get_or_create(self.session, Classification, filter_by={
                           "astro_object": oid, "classifier_name": classifier.name, "class_name": _class.name}, **kwargs)
             self.session.commit()
-            result["oid"] = oid
-            self.producer.produce(result)
+            new_message = {
+                "candid": message["candid"],
+                "oid": oid,
+                "features": message["features"],
+                "late_classification": result,
+            }
+            # self.logger.debug(new_message)
+            self.producer.produce(new_message)

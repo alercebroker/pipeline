@@ -34,40 +34,54 @@ PRODUCER_CONFIG = {
     },
     "SCHEMA": {
         'doc': 'Late Classification',
-        'name': 'probabilities',
+        'name': 'probabilities + features',
         'type': 'record',
         'fields': [
+            {'name': 'candid', 'type': 'string'},
+            {'name': 'oid', 'type': 'string'},
             {
-                'name': 'oid',
-                'type': 'string'
-            },
-            {
-                'name': 'probabilities',
+                'name': 'features',
                 'type': {
                     'type': 'map',
-                    'values': ['float']
+                    'values': ['float', 'int', 'string', 'null']
                 }
             },
             {
-                'name': 'class',
-                'type': 'string'
-            },
-            {
-                'name': 'hierarchical',
-                'type':
-                {
-                    'name': 'root',
-                    'type': 'map',
-                    'values': [
+                'name': 'late_classification',
+                'type': {
+                    'type': 'record',
+                    'name': 'late_record',
+                    'fields': [
                         {
-                            'type': 'map',
-                            'values': 'float'
+                            'name': 'probabilities',
+                            'type': {
+                                'type': 'map',
+                                'values': ['float'],
+                            }
                         },
                         {
-                            'type': 'map',
-                            'values': {
+                            'name': 'class',
+                            'type': 'string'
+                        },
+                        {
+                            'name': 'hierarchical',
+                            'type':
+                            {
+                                'name': 'root',
                                 'type': 'map',
-                                'values': 'float'
+                                'values': [
+                                    {
+                                        'type': 'map',
+                                        'values': 'float'
+                                    },
+                                    {
+                                        'type': 'map',
+                                        'values': {
+                                            'type': 'map',
+                                            'values': 'float'
+                                        }
+                                    }
+                                ]
                             }
                         }
                     ]
