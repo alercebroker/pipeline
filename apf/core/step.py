@@ -112,7 +112,7 @@ class GenericStep():
             queue_time = self.metrics["timestamp_received"] - \
                 self.message["timestamp_sent"]
             if "timestamp_sent" in self.message:
-                self.metrics["queue_time"] = queue_time
+                self.metrics["queue_time"] = queue_time.total_seconds()
             t0 = time.time()
             self.execute(self.message)
             if self.commit:
