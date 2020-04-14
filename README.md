@@ -92,6 +92,14 @@ This step require a consumer and producer.
       "type": "string"
     },
     {
+      "name": "candid",
+      "type": "string"
+    },
+    {
+      "name": "fid",
+      "type": "int"
+    }
+    {
       "name": "detections",
       "type": {
         "type": "array",

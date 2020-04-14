@@ -31,6 +31,7 @@ class Correction(GenericStep):
     def execute(self, message):
         fid = message["candidate"]["fid"]
         message["candidate"].update(self.correct_message(message["candidate"]))
+        message["candid"] = str(message["candid"])
         light_curve = self.get_lightcurve(message["objectId"])
         self.insert_db(message, light_curve)
         for non_det in light_curve["non_detections"]:
@@ -38,7 +39,7 @@ class Correction(GenericStep):
                 del non_det["datetime"]
         write = {
             "oid": message["objectId"],
-            "candid": str(message["candid"]),
+            "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
             "fid": fid

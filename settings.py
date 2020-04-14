@@ -17,7 +17,8 @@ CONSUMER_CONFIG = {
     "PARAMS": {
          "bootstrap.servers": os.environ["CONSUMER_SERVER"],
          "group.id": os.environ["CONSUMER_GROUP_ID"]
-    }
+    },
+    "DIRECTORY_PATH": os.environ["AVRO_PATH"]
 }
 
 
@@ -33,6 +34,8 @@ PRODUCER_CONFIG = {
         'type': 'record',
         'fields': [
             {'name': 'oid', 'type': 'string'},
+            {'name': 'candid', 'type': 'string'},
+            {'name': 'fid', 'type': 'int'},
             {'name': 'detections', 'type': {
                 'type': 'array',
                 'items': {
