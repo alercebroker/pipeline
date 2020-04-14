@@ -107,10 +107,12 @@ class GenericStep():
         """Start running the step.
         """
         for self.message in self.consumer.consume():
-            self.metrics["timestamp_received"] = datetime.datetime.now(datetime.timezone.utc)
+            self.metrics["timestamp_received"] = datetime.datetime.now(
+                datetime.timezone.utc)
+            queue_time = self.metrics["timestamp_received"] - \
+                self.message["timestamp_sent"]
             if "timestamp_sent" in self.message:
-                self.metrics["queue_time"] = self.metrics["timestamp_received"] - \
-                    self.message["timestamp_sent"]
+                self.metrics["queue_time"] = queue_time
             t0 = time.time()
             self.execute(self.message)
             if self.commit:
