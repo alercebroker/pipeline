@@ -84,7 +84,8 @@ class GenericStep():
 
         """
         if self.elastic_search:
-            date = datetime.datetime.now().strftime("%Y%m%d")
+            date = datetime.datetime.now(
+                datetime.timezone.utc).strftime("%Y%m%d")
             index_prefix = self.config["ES_CONFIG"].get(
                 "INDEX_PREFIX", "pipeline")
             self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
@@ -118,7 +119,8 @@ class GenericStep():
             if self.commit:
                 self.consumer.commit()
             if not "timestamp_sent" in self.metrics:
-                self.metrics["timestamp_sent"] = datetime.datetime.now()
+                self.metrics["timestamp_sent"] = datetime.datetime.now(
+                    datetime.timezone.utc)
             self.metrics["execution_time"] = time.time()-t0
             if "candid" in self.message:
                 self.metrics["candid"] = self.message["candid"]
