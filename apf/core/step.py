@@ -36,12 +36,12 @@ class GenericStep():
         self.consumer = GenericConsumer() if consumer is None else consumer
         self.metrics = None
         self.commit = self.config.get("COMMIT", True)
+        self.metrics = {}
 
         if "ES_CONFIG" in config:
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
             self.logger.info("Creating ES Metrics sender")
             self.elastic_search = Elasticsearch([config["ES_CONFIG"]])
-            self.metrics = {}
 
     def send_metrics(self, **metrics):
         """Send Metrics to an Elasticsearch Cluster.
