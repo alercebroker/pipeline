@@ -37,6 +37,7 @@ class GenericStep():
         self.metrics = None
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
+        self.elastic_search = None
 
         if "ES_CONFIG" in config:
             logging.getLogger("elasticsearch").setLevel(logging.WARNING)
