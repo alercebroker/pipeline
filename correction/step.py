@@ -29,27 +29,40 @@ class Correction(GenericStep):
         self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
     def execute(self, message):
-        fid = message["candidate"]["fid"]
+        # Add queue time metric
+        # mjd = message["candidate"]["jd"] - 2400000.5
+        # mjd_date = Time(mjd, format="mjd").to_datetime()
+        # queue_time = datetime.datetime.now() - mjd_date
+        # self.metrics["queue_time"] = queue_time.total_seconds()
+        # Correct Lightcurve
         message["candidate"].update(self.correct_message(message["candidate"]))
-        message["candid"] = str(message["candid"])
         light_curve = self.get_lightcurve(message["objectId"])
+        # Insert detections and non detections to database
         self.insert_db(message, light_curve)
+        # Clear non_detections for producer
         for non_det in light_curve["non_detections"]:
             if "datetime" in non_det:
                 del non_det["datetime"]
+        # Format candid for producer
+        message["candid"] = str(message["candid"])
+        fid = message["candidate"]["fid"]
         write = {
             "oid": message["objectId"],
             "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
-            "fid": fid
+            "fid": fid,
+            "timestamp_sent": datetime.datetime.now(datetime.timezone.utc)
         }
+        self.metrics["timestamp_sent"] = write["timestamp_sent"]
+        self.metrics["oid"] = write["oid"]
         self.producer.produce(write)
 
     def correct_magnitude(self, magref, sign, magdiff):
         result = np.nan
         try:
-            aux = np.power(10, (-0.4 * magref)) + sign * np.power(10,(-0.4 * magdiff))
+            aux = np.power(10, (-0.4 * magref)) + sign * \
+                np.power(10, (-0.4 * magdiff))
             result = -2.5 * np.log10(aux)
         except Exception as e:
             self.logger.exception("Correct magnitude failed: {}".format(e))
@@ -59,14 +72,15 @@ class Correction(GenericStep):
         result = np.nan
         try:
             auxref = np.power(10, (-0.4 * magref))
-            auxdiff = np.power(10,(-0.4 * magdiff))
+            auxdiff = np.power(10, (-0.4 * magdiff))
             aux = auxref + sign * auxdiff
 
             result = np.sqrt(np.power((auxref * sigmagref), 2) +
                              np.power((auxdiff * sigmagdiff), 2)) / aux
 
         except Exception as e:
-            self.logger.exception("Correct sigma magnitude failed: {}".format(e))
+            self.logger.exception(
+                "Correct sigma magnitude failed: {}".format(e))
         return result
 
     def correct_message(self, message):
@@ -122,7 +136,8 @@ class Correction(GenericStep):
             "alert": message["candidate"],
         }
         kwargs["alert"] = self.clean_alert(kwargs)
-        found = list(filter(lambda det: det['candid'] == str(message["candid"]), light_curve["detections"]))
+        found = list(filter(lambda det: det['candid'] == str(
+            message["candid"]), light_curve["detections"]))
         if len(found) > 0:
             return
 
@@ -155,19 +170,22 @@ class Correction(GenericStep):
                         "mjd": mjd
                     }
 
-                    dt = Time(mjd,format="mjd")
-                    filters = {"datetime":  dt.datetime, "fid": prv_cand["fid"], "oid": message["objectId"]}
+                    dt = Time(mjd, format="mjd")
+                    filters = {"datetime":  dt.datetime,
+                               "fid": prv_cand["fid"], "oid": message["objectId"]}
                     found = list(filter(lambda non_det: ((non_det["datetime"] == filters["datetime"]) and
-                                                        (non_det["fid"] == filters["fid"]) and
-                                                        (non_det["oid"] == filters["oid"])),
+                                                         (non_det["fid"] == filters["fid"]) and
+                                                         (non_det["oid"] == filters["oid"])),
                                         light_curve["non_detections"]))
                     if len(found) == 0:
                         non_detection_args.update(filters)
                         if non_detection_args not in non_dets:
                             non_dets.append(non_detection_args)
-                            light_curve["non_detections"].append(non_detection_args)
+                            light_curve["non_detections"].append(
+                                non_detection_args)
                 else:
-                    found = list(filter(lambda det: det['candid'] == prv_cand["candid"], light_curve["detections"]))
+                    found = list(filter(
+                        lambda det: det['candid'] == prv_cand["candid"], light_curve["detections"]))
                     if len(found) == 0:
                         prv_cand.update(self.correct_message(prv_cand))
                         detection_args = {
