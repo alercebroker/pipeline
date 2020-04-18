@@ -4,4 +4,4 @@ elasticsearch==7.5.1
 psycopg2==2.8.4
 astropy==4.0
 boto3==1.10.8
--e git+https://git@github.com/alercebroker/APF#egg=APF
+-e git+https://git@github.com/alercebroker/APF@develop#egg=APF
