@@ -124,5 +124,5 @@ class GenericStep():
                     datetime.timezone.utc)
             self.metrics["execution_time"] = time.time()-t0
             if "candid" in self.message:
-                self.metrics["candid"] = self.message["candid"]
+                self.metrics["candid"] = str(self.message["candid"])
             self.send_metrics(**self.metrics)
