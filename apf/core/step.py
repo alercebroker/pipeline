@@ -119,9 +119,7 @@ class GenericStep():
             self.execute(self.message)
             if self.commit:
                 self.consumer.commit()
-            if "timestamp_sent" in self.message:
-                self.metrics["timestamp_sent"] = self.message["timestamp_sent"]
-            else:
+            if not "timestamp_sent" in self.metrics:
                 self.metrics["timestamp_sent"] = datetime.datetime.now(
                     datetime.timezone.utc)
             self.metrics["execution_time"] = time.time()-t0
