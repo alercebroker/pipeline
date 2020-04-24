@@ -1,4 +1,4 @@
-confluent-kafka==1.2.0
+confluent-kafka==1.4.0
 Jinja2==2.10.3
 fastavro==0.22.7
 numpydoc==0.9.1
