@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from turbofats import FeatureFunctionLib
 from numba import jit
+import warnings
 
 
 @jit(nopython=True)
@@ -51,7 +52,14 @@ class NewFeatureSpace(object):
                     
         results = []
         for feature in self.feature_objects:
-            result = feature.fit(lightcurve_array)
+            try:
+                result = feature.fit(lightcurve_array)
+            except Exception as e:
+                warnings.warn('Exeption when computing turbo-fats feature: '+str(e))
+                if feature.is1d():
+                    result = np.NaN
+                else:
+                    result = [np.NaN] * len(feature.get_feature_names())
             if feature.is1d():
                 results.append(result)
             else:
