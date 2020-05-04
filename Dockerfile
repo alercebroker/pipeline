@@ -13,4 +13,6 @@ COPY . /app
 WORKDIR /app/scripts
 
 ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=1
 CMD ["python", "run_step.py"]
