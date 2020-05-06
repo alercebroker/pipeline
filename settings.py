@@ -68,10 +68,6 @@ PRODUCER_CONFIG = {
                     'values': ['float', 'int', 'string', 'null']
                 }
             }},
-            {'name': 'timestamp_sent', 'type': {
-                'type': 'long',
-                'logicalType': 'timestamp-millis'
-            }}
         ],
     }
 }

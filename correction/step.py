@@ -52,10 +52,7 @@ class Correction(GenericStep):
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
             "fid": fid,
-            "timestamp_sent": datetime.datetime.now(datetime.timezone.utc)
         }
-        self.metrics["timestamp_sent"] = write["timestamp_sent"]
-        self.metrics["oid"] = write["oid"]
         self.producer.produce(write)
 
     def correct_magnitude(self, magref, sign, magdiff):
