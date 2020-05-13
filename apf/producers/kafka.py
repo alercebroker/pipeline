@@ -5,6 +5,8 @@ import fastavro
 import io
 import importlib
 
+import json
+
 
 class KafkaProducer(GenericProducer):
     """Kafka Single Topic Producer.
@@ -98,6 +100,7 @@ class KafkaProducer(GenericProducer):
         self.schema = self.config["SCHEMA"]
 
         self.schema = fastavro.parse_schema(self.schema)
+        self.flush = 0
 
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
@@ -117,16 +120,16 @@ class KafkaProducer(GenericProducer):
         """Produce Message to a topic.
         """
         out = io.BytesIO()
-        fastavro.writer(out, self.schema, [message])
-        avro_message = out.getvalue()
-
-        if self.dynamic_topic:
-            topics = self.topic_strategy.get_topic()
-            if self.topic != topics:
-                self.topic = topics
-
+        fastavro.schemaless_writer(out, self.schema, message)
+        message = out.getvalue()
+        # message = json.dumps(message)
         for topic in self.topic:
-            self.producer.produce(topic,avro_message)
+            self.producer.produce(topic,message)
+            self.flush += 1
+
+        if self.flush > 500:
+            self.flush = 0
+            self.producer.flush()
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
