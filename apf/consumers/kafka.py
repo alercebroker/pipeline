@@ -5,6 +5,7 @@ import fastavro
 import io
 import importlib
 
+
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
@@ -101,16 +102,17 @@ class KafkaConsumer(GenericConsumer):
             }
 
     """
-    def __init__(self,config):
+
+    def __init__(self, config):
         super().__init__(config)
         # Disable auto commit
         self.config["PARAMS"]["enable.auto.commit"] = False
-        if "max.poll.interval.ms" not in config["PARAMS"]:
-            self.config["PARAMS"]["max.poll.interval.ms"] = 10*60*1000
+        # if "max.poll.interval.ms" not in config["PARAMS"]:
+        #     self.config["PARAMS"]["max.poll.interval.ms"] = 10*60*1000
 
         if "auto.offset.reset" not in self.config:
             self.config["PARAMS"]["auto.offset.reset"] = "beginning"
-        #Creating consumer
+        # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
 
         self.dynamic_topic = False
@@ -119,9 +121,12 @@ class KafkaConsumer(GenericConsumer):
             self.consumer.subscribe(self.config["TOPICS"])
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
-            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(".", 1)
-            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
-            self.topic_strategy = TopicStrategy(**self.config["TOPIC_STRATEGY"]["PARAMS"])
+            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
+                ".", 1)
+            TopicStrategy = getattr(
+                importlib.import_module(module_name), class_name)
+            self.topic_strategy = TopicStrategy(
+                **self.config["TOPIC_STRATEGY"]["PARAMS"])
             self.topic = self.topic_strategy.get_topic()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f'Subscribing to {self.topic}')
@@ -133,7 +138,7 @@ class KafkaConsumer(GenericConsumer):
         self.logger.info("Shutting down Consumer")
         self.consumer.close()
 
-    def _deserialize_message(self,message):
+    def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
         reader = fastavro.reader(bytes_io)
         data = reader.next()
@@ -142,28 +147,17 @@ class KafkaConsumer(GenericConsumer):
     def consume(self):
         message = None
         while True:
-            while message is None:
-                if self.dynamic_topic:
-                    topic = self.topic_strategy.get_topic()
-                    if topic != self.topic:
-                        self.topic = topic
-                        self.consumer.unsubscribe()
-                        self.logger.info(f'Subscribing to {self.topic}')
-                        self.consumer.subscribe(topic)
-
-                #Get 1 message with a 60 sec timeout
-                message = self.consumer.poll(timeout=60)
+            message = self.consumer.poll(timeout=60)
+            if message is None:
+                continue
 
             if message.error():
                 raise Exception(f"Error in kafka stream: {message.error()}")
 
             self.message = message
 
-            data = self._deserialize_message(message)
-
-            message = None
-            yield data
-
+            message = self._deserialize_message(message)
+            yield message
 
     def commit(self):
         self.consumer.commit(self.message)
