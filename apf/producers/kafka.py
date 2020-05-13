@@ -94,7 +94,8 @@ class KafkaProducer(GenericProducer):
                 }
             }
     """
-    def __init__(self,config):
+
+    def __init__(self, config):
         super().__init__(config=config)
         self.producer = Producer(self.config["PARAMS"])
         self.schema = self.config["SCHEMA"]
@@ -108,24 +109,27 @@ class KafkaProducer(GenericProducer):
             self.topic = [self.config["TOPIC"]]
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
-            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(".", 1)
-            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
-            self.topic_strategy = TopicStrategy(**self.config["TOPIC_STRATEGY"]["PARAMS"])
+            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
+                ".", 1)
+            TopicStrategy = getattr(
+                importlib.import_module(module_name), class_name)
+            self.topic_strategy = TopicStrategy(
+                **self.config["TOPIC_STRATEGY"]["PARAMS"])
             self.topic = self.topic_strategy.get_topic()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f'Producing to {self.topic}')
             self.consumer.subscribe(self.topic)
 
-    def produce(self,message=None):
+    def produce(self, message=None):
         """Produce Message to a topic.
         """
         out = io.BytesIO()
-        fastavro.schemaless_writer(out, self.schema, message)
+        fastavro.writer(out, self.schema, [message])
         message = out.getvalue()
         # message = json.dumps(message)
         for topic in self.topic:
             try:
-                self.producer.produce(topic,message)
+                self.producer.produce(topic, message)
                 self.flush += 1
             except BufferError as e:
                 self.logger.debug(f"Error producing message: {e}")
