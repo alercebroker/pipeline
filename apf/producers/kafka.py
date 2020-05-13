@@ -124,8 +124,14 @@ class KafkaProducer(GenericProducer):
         message = out.getvalue()
         # message = json.dumps(message)
         for topic in self.topic:
-            self.producer.produce(topic,message)
-            self.flush += 1
+            try:
+                self.producer.produce(topic,message)
+                self.flush += 1
+            except BufferError as e:
+                self.logger.debug(f"Error producing message: {e}")
+                self.logger.debug("Flushing and producing again")
+                self.producer.flush()
+                self.producer.produce(topic, message)
 
         if self.flush > 500:
             self.flush = 0
