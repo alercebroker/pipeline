@@ -101,7 +101,6 @@ class KafkaProducer(GenericProducer):
         self.schema = self.config["SCHEMA"]
 
         self.schema = fastavro.parse_schema(self.schema)
-        self.flush = 0
 
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
@@ -130,16 +129,13 @@ class KafkaProducer(GenericProducer):
         for topic in self.topic:
             try:
                 self.producer.produce(topic, message)
-                self.flush += 1
+                self.producer.poll(0)
             except BufferError as e:
                 self.logger.debug(f"Error producing message: {e}")
                 self.logger.debug("Flushing and producing again")
-                self.producer.flush()
+                self.producer.poll(1)
                 self.producer.produce(topic, message)
 
-        if self.flush > 500:
-            self.flush = 0
-            self.producer.flush()
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
