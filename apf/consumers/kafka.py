@@ -145,6 +145,10 @@ class KafkaConsumer(GenericConsumer):
         return data
 
     def consume(self, num_messages=1, timeout=60):
+        if "consume.messages" in self.config:
+            num_messages = self.config["consume.messages"]
+        if "consume.timeout" in self.config:
+            timeout = self.config["consume.timeout"]
         messages = []
         while True:
             messages = self.consumer.consume(num_messages=num_messages,timeout=timeout)
