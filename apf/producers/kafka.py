@@ -129,10 +129,9 @@ class KafkaProducer(GenericProducer):
         for topic in self.topic:
             try:
                 self.producer.produce(topic, message)
-                self.producer.poll(0)
             except BufferError as e:
                 self.logger.debug(f"Error producing message: {e}")
-                self.logger.debug("Flushing and producing again")
+                self.logger.debug("Calling poll to empty queue and producing again")
                 self.producer.poll(1)
                 self.producer.produce(topic, message)
 
