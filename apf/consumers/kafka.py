@@ -144,20 +144,27 @@ class KafkaConsumer(GenericConsumer):
         data = reader.next()
         return data
 
-    def consume(self):
-        message = None
+    def consume(self, num_messages=1, timeout=60):
+        messages = []
         while True:
-            message = self.consumer.poll(timeout=60)
-            if message is None:
+            messages = self.consumer.consume(num_messages=num_messages,timeout=timeout)
+            if len(messages) == 0:
                 continue
+            
+            deserialized = []
+            for message in messages:
+                if message.error():
+                    raise Exception(f"Error in kafka stream: {message.error()}")
+                
+                message = self._deserialize_message(message)
+                deserialized.append(message)
 
-            if message.error():
-                raise Exception(f"Error in kafka stream: {message.error()}")
-
-            self.message = message
-
-            message = self._deserialize_message(message)
-            yield message
-
+            self.messages = messages
+            messages = []
+            if num_messages == 1:
+                yield deserialized[0]
+            else:
+                yield deserialized
     def commit(self):
-        self.consumer.commit(self.message)
+        for message in self.messages:
+            self.consumer.commit(message)

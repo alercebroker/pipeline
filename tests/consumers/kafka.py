@@ -1,14 +1,14 @@
 from .core import GenericConsumerTest
 from apf.consumers import KafkaConsumer
-
+from confluent_kafka.admin import AdminClient, NewTopic
 import unittest
-from confluent_kafka import Producer,TopicPartition
+from confluent_kafka import Producer, TopicPartition
 import fastavro
 import random
 import io
 
 
-class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
+class TestKafkaConsumer(GenericConsumerTest, unittest.TestCase):
     component = KafkaConsumer
     params = {
         "TOPICS": ["apf_test"],
@@ -19,12 +19,10 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
         }
     }
 
-    tp = TopicPartition('apf_test',partition=0)
+    admin = AdminClient({'bootstrap.servers': '127.0.0.1:9092'})
 
-
-
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
+        self.tp = TopicPartition('apf_test', partition=0)
         p = Producer({"bootstrap.servers": "127.0.0.1:9092"})
 
         schema = {
@@ -42,11 +40,21 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
         schema = fastavro.parse_schema(schema)
         for i in range(100):
             out = io.BytesIO()
-            alert = {'id': i, 'station':'test', 'time': random.randint(0,1000000), 'temp':random.randint(0,100)}
+            alert = {'id': i, 'station': 'test', 'time': random.randint(
+                0, 1000000), 'temp': random.randint(0, 100)}
             fastavro.writer(out, schema, [alert])
             message = out.getvalue()
             p.produce('apf_test', message)
-            p.flush()
+        p.flush()
+    
+    def tearDown(self):
+        fs = self.admin.delete_topics(["apf_test"])
+        for t, f in fs.items():
+            try:
+                f.result()
+            except Exception as e:
+                print(f"failed to delete topic {t}: {e}")
+
 
     def test_consume(self):
         pass
@@ -56,13 +64,27 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
         self.comp = self.component(self.params)
         for msj in self.comp.consume():
             self.assertIsInstance(msj, dict)
-            n_msjs +=1
+            n_msjs += 1
             if(msj["id"] == 99):
                 break
         self.assertEqual(n_msjs, 100)
 
+    def test_consume_batch(self):
+        params = self.params
+        params["PARAMS"]["group.id"] = "new"
+        self.comp = self.component(params)
+        n_batches = 0
+        for batch in self.comp.consume(10):
+            self.assertIsInstance(batch, list)
+            self.assertEqual(len(batch), 10)
+            self.assertIsInstance(batch[0], dict)
+            n_batches += 1
+            if batch[-1]["id"] == 99:
+                break
+        self.assertEqual(n_batches, 10)
+
     def test_2_commit(self):
-        #Loading data without commit
+        # Loading data without commit
         n_msjs = 0
 
         self.comp = self.component(self.params)
@@ -74,7 +96,7 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
                 break
         self.assertEqual(n_msjs, 100)
         offset_without = self.comp.consumer.position([self.tp])[0].offset
-        self.assertEqual(offset_without,100)
+        self.assertEqual(offset_without, 100)
 
         self.comp = self.component(self.params)
         offset_second = self.comp.consumer.position([self.tp])[0].offset
@@ -82,9 +104,9 @@ class KafkaConsumer(GenericConsumerTest,unittest.TestCase):
         for msj in self.comp.consume():
             self.assertIsInstance(msj, dict)
             self.comp.commit()
-            n_msjs +=1
+            n_msjs += 1
             if(msj["id"] == 99):
                 break
         self.assertEqual(n_msjs, 100)
         offset_with = self.comp.consumer.position([self.tp])[0].offset
-        self.assertEqual(offset_with,100)
+        self.assertEqual(offset_with, 100)
