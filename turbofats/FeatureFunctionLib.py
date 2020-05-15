@@ -8,12 +8,11 @@ import numpy as np
 from scipy import stats
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
-from scipy.optimize import curve_fit
 from statsmodels.tsa import stattools
 from scipy.interpolate import interp1d
 from scipy.stats import chi2
 import GPy
-import matplotlib.pyplot as plt
+
 from .Base import Base
 from . import lomb
 
@@ -26,12 +25,11 @@ class Amplitude(Base):
 
     def fit(self, data):
         magnitude = data[0]
-        N = len(magnitude)
+        n = len(magnitude)
         sorted_mag = np.sort(magnitude)
 
-        return (np.median(sorted_mag[int(-math.ceil(0.05 * N)):]) -
-                np.median(sorted_mag[0:int(math.ceil(0.05 * N))])) / 2.0
-        # return sorted_mag[10]
+        return (np.median(sorted_mag[int(-math.ceil(0.05 * n)):]) -
+                np.median(sorted_mag[0:int(math.ceil(0.05 * n))])) / 2.0
 
 
 class Rcs(Base):
@@ -57,22 +55,14 @@ class StetsonK(Base):
     def fit(self, data):
         magnitude = data[0]
         error = data[2]
-        N = len(magnitude)
+        n = len(magnitude)
 
-        mean_mag = (np.sum(magnitude/(error*error))/np.sum(1.0 /(error * error)))
-
-        #mean_mag = (np.sum(magnitude/(error/np.sqrt(N)))/np.sum(1.0 /(error/np.sqrt(N))))#Check if errors are stds or variance
-        #weights = (1/error**2)/np.sum(1/error**2)
-        #mean_mag = np.sum(weights*magnitude)
-
-        sigmap = (np.sqrt(N * 1.0 / (N - 1)) *
+        mean_mag = (np.sum(magnitude/(error*error))/np.sum(1.0 / (error * error)))
+        sigmap = (np.sqrt(n * 1.0 / (n - 1)) *
                   (magnitude - mean_mag) / error)
 
-        K = (1 / np.sqrt(N * 1.0) * np.sum(np.abs(sigmap)) / np.sqrt(np.sum(sigmap ** 2)))
-        #K = (1 / N) * np.sum(np.abs(sigmap)) / (np.sqrt((1 / N) * np.sum(sigmap ** 2)))
-
-
-        return K
+        k = (1 / np.sqrt(n * 1.0) * np.sum(np.abs(sigmap)) / np.sqrt(np.sum(sigmap ** 2)))
+        return k
 
 
 class Meanvariance(Base):
@@ -86,7 +76,6 @@ class Meanvariance(Base):
 
 
 class Autocor_length(Base):
-
     def __init__(self, lags=100):
         self.Data = ['magnitude']
         self.nlags = lags
@@ -94,19 +83,19 @@ class Autocor_length(Base):
     def fit(self, data):
 
         magnitude = data[0]
-        AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
+        ac = stattools.acf(magnitude, nlags=self.nlags, fft=False)
 
         k = next((index for index, value in
-                 enumerate(AC) if value < np.exp(-1)), None)
+                 enumerate(ac) if value < np.exp(-1)), None)
 
         while k is None:
             if self.nlags > len(magnitude):
                 warnings.warn('Setting autocorrelation length as light curve length')
                 return len(magnitude)
             self.nlags = self.nlags + 100
-            AC = stattools.acf(magnitude, nlags=self.nlags, fft=False)
+            ac = stattools.acf(magnitude, nlags=self.nlags, fft=False)
             k = next((index for index, value in
-                      enumerate(AC) if value < np.exp(-1)), None)
+                      enumerate(ac) if value < np.exp(-1)), None)
 
         return k
 
@@ -187,8 +176,6 @@ class SlottedA_length(Base):
         K = 100
 
         [SAC, slots] = self.slotted_autocorrelation(magnitude, time, self.T, K)
-        # SlottedA_length.SAC = SAC
-        # SlottedA_length.slots = slots
 
         SAC2 = SAC[slots]
         SlottedA_length.autocor_vector = SAC2
@@ -213,7 +200,6 @@ class SlottedA_length(Base):
         return slots[k] * self.T
 
     def getAtt(self):
-        # return SlottedA_length.SAC, SlottedA_length.slots
         return SlottedA_length.autocor_vector
 
 
@@ -228,10 +214,8 @@ class StetsonK_AC(SlottedA_length):
         try:
 
             a = StetsonK_AC()
-            # [autocor_vector, slots] = a.getAtt()
             autocor_vector = a.getAtt()
 
-            # autocor_vector = autocor_vector[slots]
             N_autocor = len(autocor_vector)
             sigmap = (np.sqrt(N_autocor * 1.0 / (N_autocor - 1)) *
                       (autocor_vector - np.mean(autocor_vector)) /
@@ -243,7 +227,6 @@ class StetsonK_AC(SlottedA_length):
             return K
 
         except:
-
             print("error: please run SlottedA_length first to generate values for StetsonK_AC ")
 
 
@@ -309,7 +292,8 @@ class Con(Base):
         for i in range(N - self.consecutiveStar + 1):
             flag = 0
             for j in range(self.consecutiveStar):
-                if(magnitude[i + j] > m + 2 * sigma or magnitude[i + j] < m - 2 * sigma):
+                if (magnitude[i + j] > m + 2 * sigma
+                        or magnitude[i + j] < m - 2 * sigma):
                     flag = 1
                 else:
                     flag = 0
@@ -317,26 +301,6 @@ class Con(Base):
             if flag:
                 count = count + 1
         return count * 1.0 / (N - self.consecutiveStar + 1)
-
-
-# class VariabilityIndex(Base):
-
-#     # Eta. Removed, it is not invariant to time sampling
-#     '''
-#     The index is the ratio of mean of the square of successive difference to
-#     the variance of data points
-#     '''
-#     def __init__(self):
-#         self.category='timeSeries'
-
-
-#     def fit(self, data):
-
-#         N = len(data)
-#         sigma2 = np.var(data)
-
-#         return 1.0/((N-1)*sigma2) * np.sum(np.power(data[1:] - data[:-1] , 2)
-#      )
 
 
 class Color(Base):
@@ -350,8 +314,6 @@ class Color(Base):
         magnitude = data[0]
         magnitude2 = data[3]
         return np.mean(magnitude) - np.mean(magnitude2)
-
-# The categories of the following featurs should be revised
 
 
 class Beyond1Std(Base):
@@ -388,7 +350,6 @@ class SmallKurtosis(Base):
     """
 
     def __init__(self):
-        self.category = 'basic'
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -483,7 +444,6 @@ class MaxSlope(Base):
 class MedianAbsDev(Base):
 
     def __init__(self):
-        self.category = 'basic'
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -704,13 +664,9 @@ class Eta_color(Base):
         aligned_magnitude = data[4]
         aligned_magnitude2 = data[5]
         aligned_time = data[6]
-        N = len(aligned_magnitude)
         B_Rdata = aligned_magnitude - aligned_magnitude2
 
         w = 1.0 / np.power(aligned_time[1:] - aligned_time[:-1], 2)
-        w_mean = np.mean(w)
-
-        N = len(aligned_time)
         sigma2 = np.var(B_Rdata)
 
         S1 = sum(w * (B_Rdata[1:] - B_Rdata[:-1]) ** 2)
@@ -733,17 +689,12 @@ class Eta_e(Base):
         magnitude = data[0]
         time = data[1]
         w = 1.0 / np.power(np.subtract(time[1:], time[:-1]), 2)
-        w_mean = np.mean(w)
-
-        N = len(time)
         sigma2 = np.var(magnitude)
 
         S1 = np.sum(w * np.power(np.subtract(magnitude[1:], magnitude[:-1]), 2))
         S2 = np.sum(w)
 
         eta_e = (1 / sigma2) * (S1 / S2)
-        #(sigma2 * S2 * N ** 2)
-
         return eta_e
 
 
@@ -799,12 +750,6 @@ class AndersonDarling(Base):
         return 1 / (1.0 + np.exp(-10 * (ander - 0.3)))
 
 
-class PeriodLS(Base):
-
-    def __init__(self, ofac=6.):
-        raise Exception('This class is deprecated')
-
-
 class PeriodLS_v2(Base):
     def __init__(self, ofac=6.0):
         self.Data = ['magnitude', 'time', 'error']
@@ -820,9 +765,14 @@ class PeriodLS_v2(Base):
         global period_v2
         global power_rate
 
-        fx_v2, fy_v2, period_v2, prob_v2 = lomb.fasper(time, magnitude, error, self.ofac, 100.0,
-                                         fmin=0.0,
-                                         fmax=20.0)
+        fx_v2, fy_v2, period_v2, prob_v2 = lomb.fasper(
+            time,
+            magnitude,
+            error,
+            self.ofac,
+            100.0,
+            fmin=0.0,
+            fmax=20.0)
 
         new_time_v2 = np.mod(time, 2 * period_v2) / (2 * period_v2)
 
@@ -847,11 +797,6 @@ class PeriodPowerRate(Base):
             print("error: please run PeriodLS_v2 first to generate values for Period_power_rate")
 
 
-class Period_fit(Base):
-    def __init__(self):
-        raise Exception('This class is deprecated')
-
-
 class Period_fit_v2(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time']
@@ -861,18 +806,6 @@ class Period_fit_v2(Base):
             return prob_v2
         except:
             print("error: please run PeriodLS_v2 first to generate values for Period_fit_v2")
-
-
-class Psi_CS(Base):
-
-    def __init__(self):
-        raise Exception('This class is deprecated')
-
-
-class Psi_eta(Base):
-
-    def __init__(self):
-        raise Exception('This class is deprecated')
 
 
 class Psi_CS_v2(Base):
@@ -919,9 +852,6 @@ class Psi_eta_v2(Base):
 def car_likelihood(parameters, t, x, error_vars):
     sigma = parameters[0]
     tau = parameters[1]
-    # b = parameters[1] #comment it to do 2 pars estimation
-    # tau = params(1,1);
-    # sigma = sqrt(2*var(x)/tau);
 
     b = np.mean(x) / tau
     epsilon = 1e-300
@@ -932,16 +862,6 @@ def car_likelihood(parameters, t, x, error_vars):
     x_hat = []
     a = []
     x_ast = []
-
-    # Omega = np.zeros((num_datos,1))
-    # x_hat = np.zeros((num_datos,1))
-    # a = np.zeros((num_datos,1))
-    # x_ast = np.zeros((num_datos,1))
-
-    # Omega[0]=(tau*(sigma**2))/2.
-    # x_hat[0]=0.
-    # a[0]=0.
-    # x_ast[0]=x[0] - b*tau
 
     Omega.append(np.array([tau * (sigma ** 2) / 2.0]))
     x_hat.append(np.array([0.0]))
@@ -960,14 +880,8 @@ def car_likelihood(parameters, t, x, error_vars):
         x_hat.append(x_hat_val)
 
         Omega.append(
-            Omega[0] * (1 - (a_new ** 2)) + ((a_new ** 2)) * Omega[i - 1] *
+            Omega[0] * (1 - (a_new ** 2)) + (a_new ** 2) * Omega[i - 1] *
             (1 - (Omega[i - 1] / (Omega[i - 1] + error_vars[i - 1]))))
-
-        # x_ast[i]=x[i] - b*tau
-        # x_hat[i]=a_new*x_hat[i-1] + (a_new*Omega[i-1]/(Omega[i-1] +
-        # error_vars[i-1]))*(x_ast[i-1]-x_hat[i-1])
-        # Omega[i]=Omega[0]*(1-(a_new**2)) + ((a_new**2))*Omega[i-1]*
-        # ( 1 - (Omega[i-1]/(Omega[i-1]+ error_vars[i-1])))
 
         loglik_inter = np.log(
             ((2 * np.pi * (Omega[i] + error_vars[i])) ** -0.5) *
@@ -976,15 +890,15 @@ def car_likelihood(parameters, t, x, error_vars):
 
         loglik = loglik + loglik_inter
 
-        if(loglik[0] <= cte_neg):
+        if loglik[0] <= cte_neg:
             print('CAR lik --> inf')
             return None
 
-    # the minus one is to perfor maximization using the minimize function
+    # the minus one is to perform maximization using the minimize function
     return -loglik
 
-class CAR_sigma(Base):
 
+class CAR_sigma(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
 
@@ -993,7 +907,7 @@ class CAR_sigma(Base):
 
     def calculateCAR(self, time, data, error):
 
-        x0 = [0.01, 100]
+        x0 = np.array([0.01, 100])
         bnds = ((0, 20), (0.000001, 2000))
 
         global tau
@@ -1004,17 +918,11 @@ class CAR_sigma(Base):
             tau = res.x[1]
         except TypeError:
             warnings.warn('CAR optimizer raised an exception')
-            # options={'disp': True}
             sigma = np.nan
             tau = np.nan
         return sigma
 
-    # def getAtt(self):
-    #     return CAR_sigma.tau
-
     def fit(self, data):
-        # LC = np.hstack((self.time , data.reshape((self.N,1)), self.error))
-
         N = len(data[0])
         magnitude = data[0].reshape((N, 1))
         time = data[1].reshape((N, 1))
@@ -1068,7 +976,7 @@ class Harmonics(Base):
         try:
             best_freq = 1/period_v2
         except:
-            print("error: please run PeriodLS_v2 first to generate values for Harmonics")
+            raise Exception("error: please run PeriodLS_v2 first to generate values for Harmonics")
 
         Omega = [np.array([[1.]*len(time)])]
         timefreq = (2.0*np.pi*best_freq*np.arange(1, self.n_harmonics+1)).reshape(1, -1).T*time
@@ -1102,342 +1010,6 @@ class Harmonics(Base):
         feature_names += ['Harmonics_phase_%d' % (i+1) for i in range(1, self.n_harmonics)]
         feature_names.append('Harmonics_mse')
         return feature_names
-
-class Freq1_harmonics_amplitude_0(Base):
-    def __init__(self):
-        self.Data = ['magnitude', 'time', 'error']
-
-    def fit(self, data):
-        magnitude = data[0]
-        time = data[1]
-        error = data[2]
-
-
-        time = time - np.min(time)
-
-        global A
-        global PH
-        global scaledPH
-        A = []
-        PH = []
-        scaledPH = []
-
-        def model(x, a, b, c, Freq):
-            return a*np.sin(2*np.pi*Freq*x)+b*np.cos(2*np.pi*Freq*x)+c
-
-        for i in range(3):
-            wk1, wk2, jmax, prob = lomb.fasper(time, magnitude, error, 6., 100.)
-            fundamental_Freq = wk1[jmax]
-
-            # fit to a_i sin(2pi f_i t) + b_i cos(2 pi f_i t) + b_i,o
-
-            # a, b are the parameters we care about
-            # c is a constant offset
-            # f is the fundamental Frequency
-            def yfunc(Freq):
-                def func(x, a, b, c):
-                    return a*np.sin(2*np.pi*Freq*x)+b*np.cos(2*np.pi*Freq*x)+c
-                return func
-
-            Atemp = []
-            PHtemp = []
-            popts = []
-
-            for j in range(4):
-                popt, pcov = curve_fit(yfunc((j+1)*fundamental_Freq), time, magnitude)
-                Atemp.append(np.sqrt(popt[0]**2+popt[1]**2))
-                PHtemp.append(np.arctan(popt[1] / popt[0]))
-                popts.append(popt)
-
-            A.append(Atemp)
-            PH.append(PHtemp)
-
-            for j in range(4):
-                magnitude = np.array(magnitude) - model(time, popts[j][0], popts[j][1], popts[j][2], (j+1)*fundamental_Freq)
-
-        for ph in PH:
-            scaledPH.append(np.array(ph) - ph[0])
-
-        return A[0][0]
-
-
-class Freq1_harmonics_amplitude_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-
-        try:
-            return A[0][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_amplitude_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-
-        try:
-            return A[0][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_amplitude_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[0][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_amplitude_0(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[1][0]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_amplitude_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[1][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_amplitude_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[1][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_amplitude_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[1][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_amplitude_0(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[2][0]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_amplitude_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[2][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_amplitude_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[2][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_amplitude_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return A[2][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_rel_phase_0(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[0][0]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_rel_phase_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[0][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_rel_phase_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[0][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq1_harmonics_rel_phase_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[0][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_rel_phase_0(Base):
-    def __init__(self):
-        self.category = 'timeSeries'
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[1][0]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_rel_phase_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[1][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_rel_phase_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[1][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq2_harmonics_rel_phase_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[1][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_rel_phase_0(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[2][0]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_rel_phase_1(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[2][1]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_rel_phase_2(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[2][2]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
-
-
-class Freq3_harmonics_rel_phase_3(Base):
-    def __init__(self):
-
-        self.Data = ['magnitude', 'time']
-
-    def fit(self, data):
-        try:
-            return scaledPH[2][3]
-        except:
-            print("error: please run Freq1_harmonics_amplitude_0 first to generate values for all harmonics")
 
 
 class Gskew(Base):
@@ -1531,16 +1103,13 @@ class Pvar(Base):
         magnitude = data[0]
         error = data[2]
 
-
         mean_mag = np.mean(magnitude)
         nepochs = float(len(magnitude))
 
-        chi = np.sum( (magnitude - mean_mag)**2. / error**2. )
-        p_chi = chi2.cdf(chi,(nepochs-1))
+        chi = np.sum((magnitude - mean_mag)**2. / error**2.)
+        p_chi = chi2.cdf(chi, (nepochs-1))
 
         return p_chi
-
-
 
 
 class ExcessVar(Base):
@@ -1554,14 +1123,13 @@ class ExcessVar(Base):
         magnitude = data[0]
         error = data[2]
 
-        mean_mag=np.mean(magnitude)
-        nepochs=float(len(magnitude))
+        mean_mag = np.mean(magnitude)
+        nepochs = float(len(magnitude))
 
         a = (magnitude-mean_mag)**2
-        ex_var = (np.sum(a-error**2)/((nepochs*(mean_mag**2))))
+        ex_var = (np.sum(a-error**2) / (nepochs * (mean_mag ** 2)))
 
         return ex_var
-
 
 
 class GP_DRW_sigma(Base):
@@ -1577,7 +1145,6 @@ class GP_DRW_sigma(Base):
         t = data[1]
         err = data[2]
 
-
         mag = magnitude-magnitude.mean()
         kern = GPy.kern.OU(1)
         m = GPy.models.GPHeteroscedasticRegression(t[:, None], mag[:, None], kern)
@@ -1585,10 +1152,10 @@ class GP_DRW_sigma(Base):
         # DeprecationWarning:Assigning the 'data' attribute is an inherently
         # unsafe operation and will be removed in the future.
 
-        m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None] # Set the noise parameters to the error in Y
+        m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None]  # Set the noise parameters to the error in Y
         m.het_Gauss.variance.fix() # We can fix the noise term, since we already know it
         m.optimize()
-        pars = [m.OU.variance.values[0], m.OU.lengthscale.values[0]] # sigma^2, tau
+        pars = [m.OU.variance.values[0], m.OU.lengthscale.values[0]]  # sigma^2, tau
 
         sigmaDRW = pars[0]
         global tauDRW
@@ -1642,7 +1209,7 @@ def SFarray(jd, mag, err):
     sfarray = np.array(sfarray)
     tauarray = np.array(tauarray)
     errarray = np.array(errarray)
-    return (tauarray, sfarray, errarray)
+    return tauarray, sfarray, errarray
 
 
 class SF_ML_amplitude(Base):
@@ -1653,7 +1220,7 @@ class SF_ML_amplitude(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
 
-    def bincalc(self,nbin=0.1,bmin=5,bmax=2000):
+    def bincalc(self, nbin=0.1, bmin=5, bmax=2000):
         """
         calculate the bin range, in logscale
 
@@ -1665,16 +1232,13 @@ class SF_ML_amplitude(Base):
         output: bins array
         """
 
-        logbmin=np.log10(bmin)
-        logbmax=np.log10(bmax)
+        logbmin = np.log10(bmin)
+        logbmax = np.log10(bmax)
 
-        logbins=np.arange(logbmin,logbmax,nbin)
+        logbins = np.arange(logbmin, logbmax, nbin)
 
-        bins=10**logbins
-
-        #bins=np.linspace(bmin,bmax,60)
-        return (bins)
-
+        bins = 10**logbins
+        return bins
 
     def SF_formula(self, jd, mag, errmag, nbin=0.1, bmin=5, bmax=2000):
         dtarray, dmagarray, sigmaarray = SFarray(jd, mag, errmag)
@@ -1683,72 +1247,68 @@ class SF_ML_amplitude(Base):
         dmagarray = dmagarray[ndt]
         sigmaarray = sigmaarray[ndt]
 
-        bins = self.bincalc(nbin,bmin,bmax)
+        bins = self.bincalc(nbin, bmin, bmax)
 
         sf_list = []
         tau_list = []
         numobj_list = []
 
         for i in range(0, len(bins)-1):
-            n=np.where((dtarray>=bins[i]) & (dtarray<bins[i+1]))
-            nobjbin=len(n[0])
-            if nobjbin>=1:
-                dmag1=(dmagarray[n])**2
-                derr1=(sigmaarray[n])
-                sf=(dmag1-derr1)
-                sff=np.sqrt(np.mean(sf))
+            n = np.where((dtarray >= bins[i]) & (dtarray < bins[i+1]))
+            nobjbin = len(n[0])
+            if nobjbin >= 1:
+                dmag1 = (dmagarray[n])**2
+                derr1 = (sigmaarray[n])
+                sf = (dmag1-derr1)
+                sff = np.sqrt(np.mean(sf))
                 sf_list.append(sff)
                 numobj_list.append(nobjbin)
-                #central tau for the bin
+                # central tau for the bin
                 tau_list.append((bins[i]+bins[i+1])*0.5)
 
+        SF = np.array(sf_list)
+        nob = np.array(numobj_list)
+        tau = np.array(tau_list)
+        nn = np.where((nob > 0) & (SF > -99))
+        tau = tau[nn]
+        SF = SF[nn]
 
-        SF=np.array(sf_list)
-        nob=np.array(numobj_list)
-        tau=np.array(tau_list)
-        nn=np.where((nob>0) & (SF>-99))
-        tau=tau[nn]
-        SF=SF[nn]
-
-        if (len(SF)<2):
+        if len(SF) < 2:
             tau = np.array([-99])
             SF = np.array([-99])
 
+        return tau/365., SF
 
-        return (tau/365.,SF)
-
-
-    def fit(self,data):
-
+    def fit(self, data):
         mag = data[0]
         t = data[1]
         err = data[2]
 
-        tau,sf = self.SF_formula(t,mag,err)
+        tau, sf = self.SF_formula(t, mag, err)
 
         if tau[0] == -99:
             A = -0.5
             gamma = -0.5
 
         else:
-
-            y=np.log10(sf)
-            x=np.log10(tau)
-            x=x[np.where((tau<=0.5) & (tau>0.01))]
-            y=y[np.where((tau<=0.5) & (tau>0.01))]
-
-            try :
+            y = np.log10(sf)
+            x = np.log10(tau)
+            x = x[np.where((tau <= 0.5) & (tau > 0.01))]
+            y = y[np.where((tau <= 0.5) & (tau > 0.01))]
+            try:
                 coefficients = np.polyfit(x, y, 1)
-                A=10**(coefficients[1])
+                A = 10**(coefficients[1])
                 gamma = coefficients[0]
 
-                if A<0.005:
+                if A < 0.005:
                     A = 0.0
                     gamma = 0.0
-                elif A>15: A = 15
-                if gamma>3: gamma = 3
-                elif gamma<-0.5 : gamma =-0.5
-
+                elif A > 15:
+                    A = 15
+                if gamma > 3:
+                    gamma = 3
+                elif gamma < -0.5:
+                    gamma = -0.5
 
             except:
                 A = -0.5
@@ -1758,7 +1318,8 @@ class SF_ML_amplitude(Base):
         global g_sf
         g_sf = gamma
 
-        return(A_sf)
+        return A_sf
+
 
 class SF_ML_gamma(Base):
     def __init__(self):
@@ -1766,7 +1327,6 @@ class SF_ML_gamma(Base):
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         try:
             return g_sf
         except:
@@ -1861,55 +1421,59 @@ class CIAR_phiR_beta(Base):
     def __init__(self):
         self.Data = ['magnitude', 'time', 'error']
 
-    def CIAR_phi_kalman(self,x,t,y,yerr,mean_zero=True,standarized=True,c=0.5):
-        n=len(y)
-        Sighat=np.zeros(shape=(2,2))
-        Sighat[0,0]=1
-        Sighat[1,1]=c
-        if standarized == False:
-             Sighat=np.var(y)*Sighat
-        if mean_zero == False:
-             y=y-np.mean(y)
-        xhat=np.zeros(shape=(2,n))
-        delta=np.diff(t)
-        Q=Sighat
-        phi_R=x[0]
-        phi_I=x[1]
-        F=np.zeros(shape=(2,2))
-        G=np.zeros(shape=(1,2))
-        G[0,0]=1
-        phi=complex(phi_R, phi_I)
-        Phi=abs(phi)
-        psi=np.arccos(phi_R/Phi)
-        sum_Lambda=0
-        sum_error=0
-        if np.isnan(phi) == True:
-            phi=1.1
+    def CIAR_phi_kalman(self, x, t, y, yerr, mean_zero=True, standarized=True, c=0.5):
+        n = len(y)
+        Sighat = np.zeros(shape=(2, 2))
+        Sighat[0, 0] = 1
+        Sighat[1, 1] = c
+        if not standarized:
+             Sighat = np.var(y)*Sighat
+        if not mean_zero:
+             y = y-np.mean(y)
+        xhat = np.zeros(shape=(2, n))
+        delta = np.diff(t)
+        Q = Sighat
+        phi_R = x[0]
+        phi_I = x[1]
+        F = np.zeros(shape=(2, 2))
+        G = np.zeros(shape=(1, 2))
+        G[0, 0] = 1
+        phi = complex(phi_R, phi_I)
+        Phi = abs(phi)
+        psi = np.arccos(phi_R/Phi)
+        sum_Lambda = 0
+        sum_error = 0
+        if np.isnan(phi):
+            phi = 1.1
         if abs(phi) < 1:
             for i in range(n-1):
-                Lambda=np.dot(np.dot(G,Sighat),G.transpose())+yerr[i+1]**2
-                if (Lambda <= 0) or (np.isnan(Lambda) == True):
-                    sum_Lambda=n*1e10
+                Lambda = np.dot(np.dot(G, Sighat), G.transpose())+yerr[i+1]**2
+                if (Lambda <= 0) or np.isnan(Lambda):
+                    sum_Lambda = n*1e10
                     break
-                phi2_R=(Phi**delta[i])*np.cos(delta[i]*psi)
-                phi2_I=(Phi**delta[i])*np.sin(delta[i]*psi)
-                phi2=1-abs(phi**delta[i])**2
-                F[0,0]=phi2_R
-                F[0,1]=-phi2_I
-                F[1,0]=phi2_I
-                F[1,1]=phi2_R
-                Qt=phi2*Q
-                sum_Lambda=sum_Lambda+np.log(Lambda)
-                Theta=np.dot(np.dot(F,Sighat),G.transpose())
-                sum_error= sum_error + (y[i]-np.dot(G,xhat[0:2,i]))**2/Lambda
-                xhat[0:2,i+1]=np.dot(F,xhat[0:2,i])+np.dot(np.dot(Theta,np.linalg.inv(Lambda)),(y[i]-np.dot(G,xhat[0:2,i])))
-                Sighat=np.dot(np.dot(F,Sighat),F.transpose()) + Qt - np.dot(np.dot(Theta,np.linalg.inv(Lambda)),Theta.transpose())
-            yhat=np.dot(G,xhat)
-            out=(sum_Lambda + sum_error)/n
-            if np.isnan(sum_Lambda) == True:
-                out=1e10
+                phi2_R = (Phi**delta[i])*np.cos(delta[i]*psi)
+                phi2_I = (Phi**delta[i])*np.sin(delta[i]*psi)
+                phi2 = 1-abs(phi**delta[i])**2
+                F[0, 0] = phi2_R
+                F[0, 1] = -phi2_I
+                F[1, 0] = phi2_I
+                F[1, 1] = phi2_R
+                Qt = phi2*Q
+                sum_Lambda = sum_Lambda+np.log(Lambda)
+                Theta = np.dot(np.dot(F, Sighat), G.transpose())
+                sum_error = sum_error + (y[i]-np.dot(G, xhat[0:2, i]))**2/Lambda
+                xhat[0:2, i+1] = (
+                        np.dot(F, xhat[0:2,i])
+                        + np.dot(np.dot(Theta, np.linalg.inv(Lambda)), (y[i]-np.dot(G, xhat[0:2, i]))))
+                Sighat = (
+                        np.dot(np.dot(F, Sighat), F.transpose())
+                        + Qt
+                        - np.dot(np.dot(Theta, np.linalg.inv(Lambda)), Theta.transpose()))
+            out = (sum_Lambda + sum_error)/n
+            if np.isnan(sum_Lambda):
+                out = 1e10
         else:
-            out=1e10
+            out = 1e10
         return out
 
     def fit(self, data):
@@ -1917,31 +1481,34 @@ class CIAR_phiR_beta(Base):
         time = data[1]
         error = data[2]
 
-        niter=4
-        seed=1234
+        niter = 4
+        seed = 1234
 
-        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude,ddof=1))
-        deltanorm = error/np.sqrt(np.var(magnitude,ddof=1))
+        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude, ddof=1))
+        deltanorm = error/np.sqrt(np.var(magnitude, ddof=1))
 
         np.random.seed(seed)
-        aux=1e10
-        value=1e10
-        br=0
-        if np.sum(error)==0:
-            deltanorm=np.zeros(len(y))
+        aux = 1e10
+        br = 0
+        if np.sum(error) == 0:
+            deltanorm = np.zeros(len(error))
         for i in range(niter):
-            phi_R=2*np.random.uniform(0,1,1)-1
-            phi_I=2*np.random.uniform(0,1,1)-1
+            phi_R = 2*np.random.uniform(0, 1, 1)-1
+            phi_I = 2*np.random.uniform(0, 1, 1)-1
             bnds = ((-0.9999, 0.9999), (-0.9999, 0.9999))
-            out=minimize(self.CIAR_phi_kalman,np.array([phi_R, phi_I]),args=(time,ynorm,deltanorm),bounds=bnds,method='L-BFGS-B')
-            value=out.fun
+            out = minimize(
+                self.CIAR_phi_kalman,
+                np.array([phi_R, phi_I]),
+                args=(time, ynorm, deltanorm),
+                bounds=bnds,
+                method='L-BFGS-B')
+            value = out.fun
             if aux > value:
-                par=out.x
-                aux=value
-                br=br+1
-            if aux <= value and br>1 and i>math.trunc(niter/2):
+                par = out.x
+                aux = value
+                br = br+1
+            if aux <= value and br > 1 and i > math.trunc(niter/2):
                 break
-            #print br
         if aux == 1e10:
-           par=np.zeros(2)
+           par = np.zeros(2)
         return par[0]

@@ -3,3 +3,8 @@ scipy
 matplotlib
 GPy
 P4J
+numba
+statsmodels
+setuptools
+numpy
+requests

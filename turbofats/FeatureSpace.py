@@ -13,7 +13,7 @@ def is_sorted(a):
     return True
 
 
-class NewFeatureSpace(object):
+class FeatureSpace(object):
     def __init__(self, feature_list, data_column_names=None):
         self.feature_objects = []
         self.feature_names = []

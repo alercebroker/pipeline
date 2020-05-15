@@ -1,6 +1,6 @@
 import unittest
 from turbofats.FeatureFunctionLib import Mean
-from turbofats import NewFeatureSpace
+from turbofats import FeatureSpace
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -44,7 +44,7 @@ class TestNewFeatureSpace(unittest.TestCase):
             'IAR_phi',
             'LinearTrend'
         ]
-        new_feature_space = NewFeatureSpace(feature_list)
+        new_feature_space = FeatureSpace(feature_list)
         features = new_feature_space.calculate_features(self.lc_g)
         print(features.iloc[0])
         expected_mean = 17.371986
