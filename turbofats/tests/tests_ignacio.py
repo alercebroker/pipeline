@@ -14,7 +14,7 @@ class TestFeatures(unittest.TestCase):
         self.lc_g_np = self.lc_g[['magpsf_corr', 'mjd', 'sigmapsf_corr']].values.T
 
     def testMean(self):
-        mean_computer = Mean()
+        mean_computer = Mean(shared_data=None)
         mean = mean_computer.fit(self.lc_g_np)
         expected_mean = 17.371986
         self.assertTrue(np.abs(mean - expected_mean) < 0.01)

@@ -20,7 +20,8 @@ from . import lomb
 class Amplitude(Base):
     """Half the difference between the maximum and the minimum magnitude"""
 
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -35,7 +36,8 @@ class Amplitude(Base):
 class Rcs(Base):
     """Range of cumulative sum"""
 
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -49,7 +51,8 @@ class Rcs(Base):
 
 
 class StetsonK(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'error']
 
     def fit(self, data):
@@ -67,7 +70,8 @@ class StetsonK(Base):
 
 class Meanvariance(Base):
     """variability index"""
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -76,7 +80,8 @@ class Meanvariance(Base):
 
 
 class Autocor_length(Base):
-    def __init__(self, lags=100):
+    def __init__(self, shared_data, lags=100):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
         self.nlags = lags
 
@@ -101,13 +106,13 @@ class Autocor_length(Base):
 
 
 class SlottedA_length(Base):
-
-    def __init__(self, T=-99):
+    def __init__(self, shared_data, T=-99):
         """
         lc: MACHO lightcurve in a pandas DataFrame
         k: lag (default: 1)
         T: tau (slot size in days. default: 4)
         """
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
         SlottedA_length.SAC = []
@@ -204,18 +209,14 @@ class SlottedA_length(Base):
 
 
 class StetsonK_AC(SlottedA_length):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         try:
-
-            a = StetsonK_AC()
+            a = StetsonK_AC(self.shared_data)
             autocor_vector = a.getAtt()
-
             N_autocor = len(autocor_vector)
             sigmap = (np.sqrt(N_autocor * 1.0 / (N_autocor - 1)) *
                       (autocor_vector - np.mean(autocor_vector)) /
@@ -225,17 +226,16 @@ class StetsonK_AC(SlottedA_length):
                  np.sum(np.abs(sigmap)) / np.sqrt(np.sum(sigmap ** 2)))
 
             return K
-
         except:
             print("error: please run SlottedA_length first to generate values for StetsonK_AC ")
 
 
 class StetsonL(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error', 'magnitude2', 'error2']
 
     def fit(self, data):
-
         aligned_magnitude = data[4]
         aligned_magnitude2 = data[5]
         aligned_error = data[7]
@@ -274,13 +274,12 @@ class Con(Base):
     that are out of 2sigma range, and normalized by N-2
     Pavlos not happy
     """
-    def __init__(self, consecutiveStar=3):
+    def __init__(self, shared_data, consecutiveStar=3):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
-
         self.consecutiveStar = consecutiveStar
 
     def fit(self, data):
-
         magnitude = data[0]
         N = len(magnitude)
         if N < self.consecutiveStar:
@@ -307,7 +306,8 @@ class Color(Base):
     """Average color for each MACHO lightcurve
     mean(B1) - mean(B2)
     """
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'magnitude2']
 
     def fit(self, data):
@@ -320,12 +320,11 @@ class Beyond1Std(Base):
     """Percentage of points beyond one st. dev. from the weighted
     (by photometric errors) mean
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'error']
 
     def fit(self, data):
-
         magnitude = data[0]
         error = data[2]
         n = len(magnitude)
@@ -333,13 +332,11 @@ class Beyond1Std(Base):
         weighted_mean = np.average(magnitude, weights=1 / error ** 2)
 
         # Standard deviation with respect to the weighted mean
-
         var = sum((magnitude - weighted_mean) ** 2)
         std = np.sqrt((1.0 / (n - 1)) * var)
 
         count = np.sum(np.logical_or(magnitude > weighted_mean + std,
                                      magnitude < weighted_mean - std))
-
         return float(count) / n
 
 
@@ -348,8 +345,8 @@ class SmallKurtosis(Base):
 
     See http://www.xycoon.com/peakedness_small_sample_test_1.htm
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -368,8 +365,8 @@ class SmallKurtosis(Base):
 
 class Std(Base):
     """Standard deviation of the magnitudes"""
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -379,8 +376,8 @@ class Std(Base):
 
 class Skew(Base):
     """Skewness of the magnitudes"""
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -390,8 +387,8 @@ class Skew(Base):
 
 class StetsonJ(Base):
     """Stetson (1996) variability index, a robust standard deviation"""
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error', 'magnitude2', 'error2']
 
     #lc fields are [data, mjd, error, second_data, aligned_data, aligned_second_data, aligned_mjd]
@@ -427,8 +424,8 @@ class MaxSlope(Base):
     Examining successive (time-sorted) magnitudes, the maximal first difference
     (value of delta magnitude over delta time)
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
@@ -442,8 +439,8 @@ class MaxSlope(Base):
 
 
 class MedianAbsDev(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -461,8 +458,8 @@ class MedianBRP(Base):
     Fraction (<= 1) of photometric points within amplitude/10
     of the median magnitude
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -483,8 +480,8 @@ class PairSlopeTrend(Base):
     the fraction of increasing first differences minus the fraction of
     decreasing first differences.
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -496,8 +493,8 @@ class PairSlopeTrend(Base):
 
 
 class FluxPercentileRatioMid20(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -518,8 +515,8 @@ class FluxPercentileRatioMid20(Base):
 
 
 class FluxPercentileRatioMid35(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -540,8 +537,8 @@ class FluxPercentileRatioMid35(Base):
 
 
 class FluxPercentileRatioMid50(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -562,8 +559,8 @@ class FluxPercentileRatioMid50(Base):
 
 
 class FluxPercentileRatioMid65(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -584,8 +581,8 @@ class FluxPercentileRatioMid65(Base):
 
 
 class FluxPercentileRatioMid80(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -606,8 +603,8 @@ class FluxPercentileRatioMid80(Base):
 
 
 class PercentDifferenceFluxPercentile(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -626,8 +623,8 @@ class PercentDifferenceFluxPercentile(Base):
 
 
 class PercentAmplitude(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -642,8 +639,8 @@ class PercentAmplitude(Base):
 
 
 class LinearTrend(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
@@ -655,9 +652,8 @@ class LinearTrend(Base):
 
 
 class Eta_color(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'magnitude2']
 
     def fit(self, data):
@@ -679,13 +675,11 @@ class Eta_color(Base):
 
 
 class Eta_e(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
-
         magnitude = data[0]
         time = data[1]
         w = 1.0 / np.power(np.subtract(time[1:], time[:-1]), 2)
@@ -699,21 +693,19 @@ class Eta_e(Base):
 
 
 class Mean(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
         magnitude = data[0]
         B_mean = np.mean(magnitude)
-
         return B_mean
 
 
 class Q31(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
 
         self.Data = ['magnitude']
 
@@ -723,9 +715,8 @@ class Q31(Base):
 
 
 class Q31_color(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'magnitude2']
 
     def fit(self, data):
@@ -738,20 +729,19 @@ class Q31_color(Base):
 
 
 class AndersonDarling(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
-
         magnitude = data[0]
         ander = stats.anderson(magnitude)[0]
         return 1 / (1.0 + np.exp(-10 * (ander - 0.3)))
 
 
 class PeriodLS_v2(Base):
-    def __init__(self, ofac=6.0):
+    def __init__(self, shared_data, ofac=6.0):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
         self.ofac = ofac
 
@@ -759,11 +749,6 @@ class PeriodLS_v2(Base):
         magnitude = data[0]
         time = data[1]
         error = data[2]
-
-        global new_time_v2
-        global prob_v2
-        global period_v2
-        global power_rate
 
         fx_v2, fy_v2, period_v2, prob_v2 = lomb.fasper(
             time,
@@ -775,47 +760,55 @@ class PeriodLS_v2(Base):
             fmax=20.0)
 
         new_time_v2 = np.mod(time, 2 * period_v2) / (2 * period_v2)
+        self.shared_data['new_time_v2'] = new_time_v2
+        self.shared_data['prob_v2'] = prob_v2
+        self.shared_data['period_v2'] = period_v2
 
         jmax_v2 = np.nanargmax(fy_v2)
         frac_big = fy_v2[jmax_v2]
         frac_small = fy_v2[int(jmax_v2/2)]
         power_rate = frac_small/frac_big
+        self.shared_data['power_rate'] = power_rate
 
         return period_v2
 
 
 class PeriodPowerRate(Base):
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         try:
+            power_rate = self.shared_data['power_rate']
             return power_rate
         except:
             print("error: please run PeriodLS_v2 first to generate values for Period_power_rate")
 
 
 class Period_fit_v2(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         try:
+            prob_v2 = self.shared_data['prob_v2']
             return prob_v2
         except:
             print("error: please run PeriodLS_v2 first to generate values for Period_fit_v2")
 
 
 class Psi_CS_v2(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         try:
             magnitude = data[0]
             time = data[1]
+            new_time_v2 = self.shared_data['new_time_v2']
             folded_data = magnitude[np.argsort(new_time_v2)]
             sigma = np.std(folded_data)
             N = len(folded_data)
@@ -829,12 +822,14 @@ class Psi_CS_v2(Base):
 
 
 class Psi_eta_v2(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         try:
             magnitude = data[0]
+            new_time_v2 = self.shared_data['new_time_v2']
             folded_data = magnitude[np.argsort(new_time_v2)]
 
             N = len(folded_data)
@@ -899,18 +894,17 @@ def car_likelihood(parameters, t, x, error_vars):
 
 
 class CAR_sigma(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def CAR_Lik(self, parameters, t, x, error_vars):
         return car_likelihood(parameters, t, x, error_vars)
 
     def calculateCAR(self, time, data, error):
-
         x0 = np.array([0.01, 100])
         bnds = ((0, 20), (0.000001, 2000))
 
-        global tau
         try:
             res = minimize(self.CAR_Lik, x0, args=(time, data, error),
                            method='L-BFGS-B', bounds=bnds)
@@ -920,6 +914,7 @@ class CAR_sigma(Base):
             warnings.warn('CAR optimizer raised an exception')
             sigma = np.nan
             tau = np.nan
+        self.shared_data['tau'] = tau
         return sigma
 
     def fit(self, data):
@@ -934,37 +929,35 @@ class CAR_sigma(Base):
 
 
 class CAR_tau(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         try:
+            tau = self.shared_data['tau']
             return tau
         except:
             print("error: please run CAR_sigma first to generate values for CAR_tau")
 
 
 class CAR_mean(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         magnitude = data[0]
-
         try:
+            tau = self.shared_data['tau']
             return np.mean(magnitude) / tau
         except:
             print("error: please run CAR_sigma first to generate values for CAR_mean")
 
 
 class Harmonics(Base):
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
         self.n_harmonics = 7  # HARD-CODED
 
@@ -974,6 +967,7 @@ class Harmonics(Base):
         error = data[2]+10**-2
 
         try:
+            period_v2 = self.shared_data['period_v2']
             best_freq = 1/period_v2
         except:
             raise Exception("error: please run PeriodLS_v2 first to generate values for Harmonics")
@@ -1014,8 +1008,8 @@ class Harmonics(Base):
 
 class Gskew(Base):
     """Median-based measure of the skew"""
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude']
 
     def fit(self, data):
@@ -1030,17 +1024,13 @@ class Gskew(Base):
 
 
 class StructureFunction_index_21(Base):
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         magnitude = data[0]
         time = data[1]
-
-        global m_21
-        global m_31
-        global m_32
 
         Nsf = 100
         Np = 100
@@ -1053,9 +1043,9 @@ class StructureFunction_index_21(Base):
         mag_int = f(time_int)
 
         for tau in np.arange(1, Nsf):
-            sf1[tau-1] = np.mean(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]) , 1.0))
-            sf2[tau-1] = np.mean(np.abs(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]) , 2.0)))
-            sf3[tau-1] = np.mean(np.abs(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]) , 3.0)))
+            sf1[tau-1] = np.mean(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]), 1.0))
+            sf2[tau-1] = np.mean(np.abs(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]), 2.0)))
+            sf3[tau-1] = np.mean(np.abs(np.power(np.abs(mag_int[0:Np-tau] - mag_int[tau:Np]), 3.0)))
         sf1_log = np.log10(np.trim_zeros(sf1))
         sf2_log = np.log10(np.trim_zeros(sf2))
         sf3_log = np.log10(np.trim_zeros(sf3))
@@ -1063,29 +1053,34 @@ class StructureFunction_index_21(Base):
         m_21, b_21 = np.polyfit(sf1_log, sf2_log, 1)
         m_31, b_31 = np.polyfit(sf1_log, sf3_log, 1)
         m_32, b_32 = np.polyfit(sf2_log, sf3_log, 1)
+        self.shared_data['m_21'] = m_21
+        self.shared_data['m_31'] = m_31
+        self.shared_data['m_32'] = m_32
 
         return m_21
 
 
 class StructureFunction_index_31(Base):
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         try:
+            m_31 = self.shared_data['m_31']
             return m_31
         except:
             print("error: please run StructureFunction_index_21 first to generate values for all Structure Function")
 
 
 class StructureFunction_index_32(Base):
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time']
 
     def fit(self, data):
         try:
+            m_32 = self.shared_data['m_32']
             return m_32
         except:
             print("error: please run StructureFunction_index_21 first to generate values for all Structure Function")
@@ -1096,7 +1091,8 @@ class Pvar(Base):
     """
     Calculate the probability of a light curve to be variable.
     """
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'error']
 
     def fit(self, data):
@@ -1116,7 +1112,8 @@ class ExcessVar(Base):
     """
     Calculate the excess variance,which is a measure of the intrinsic variability amplitude.
     """
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'error']
 
     def fit(self, data):
@@ -1136,8 +1133,8 @@ class GP_DRW_sigma(Base):
     """
     Based on Matthew Graham's method to model DRW with gaussian process.
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
@@ -1153,25 +1150,24 @@ class GP_DRW_sigma(Base):
         # unsafe operation and will be removed in the future.
 
         m['.*het_Gauss.variance'] = abs(err ** 2.)[:, None]  # Set the noise parameters to the error in Y
-        m.het_Gauss.variance.fix() # We can fix the noise term, since we already know it
+        m.het_Gauss.variance.fix()  # We can fix the noise term, since we already know it
         m.optimize()
         pars = [m.OU.variance.values[0], m.OU.lengthscale.values[0]]  # sigma^2, tau
 
         sigmaDRW = pars[0]
-        global tauDRW
         tauDRW = pars[1]
+        self.shared_data['tauDRW'] = tauDRW
         return sigmaDRW
 
 
 class GP_DRW_tau(Base):
-
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
-
         try:
+            tauDRW = self.shared_data['tauDRW']
             return tauDRW
         except:
             print("error: please run GP_DRW_sigma first to generate values for GP_DRW_tau")
@@ -1192,7 +1188,6 @@ def SFarray(jd, mag, err):
     sfarray: array with |m(ti)-m(tj)|
     errarray: array with err(ti)^2+err(tj)^2
     """
-
     sfarray = []
     tauarray = []
     errarray = []
@@ -1217,7 +1212,8 @@ class SF_ML_amplitude(Base):
     Fit the model A*tau^gamma to the SF, finding the maximum value of the likelihood.
     Based on Schmidt et al. 2010.
     """
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def bincalc(self, nbin=0.1, bmin=5, bmax=2000):
@@ -1231,7 +1227,6 @@ class SF_ML_amplitude(Base):
 
         output: bins array
         """
-
         logbmin = np.log10(bmin)
         logbmax = np.log10(bmax)
 
@@ -1315,19 +1310,19 @@ class SF_ML_amplitude(Base):
                 gamma = -0.5
 
         A_sf = A
-        global g_sf
         g_sf = gamma
-
+        self.shared_data['g_sf'] = g_sf
         return A_sf
 
 
 class SF_ML_gamma(Base):
-    def __init__(self):
-
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def fit(self, data):
         try:
+            g_sf = self.shared_data['g_sf']
             return g_sf
         except:
             print("error: please run SF_amplitude first to generate values for SF_gamma")
@@ -1377,8 +1372,8 @@ class IAR_phi(Base):
     functions to compute an IAR model with Kalman filter.
     Author: Felipe Elorrieta.
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def IAR_phi_kalman(self, x, t, y, yerr, standarized=True, c=0.5):
@@ -1390,7 +1385,7 @@ class IAR_phi(Base):
         error = data[2]
 
         if np.sum(error) == 0:
-            error=np.zeros(len(magnitude))
+            error = np.zeros(len(magnitude))
 
         ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude, ddof=1))
         deltanorm = error/np.sqrt(np.var(magnitude, ddof=1))
@@ -1417,8 +1412,8 @@ class CIAR_phiR_beta(Base):
     Author: Felipe Elorrieta.
     (beta version)
     """
-
-    def __init__(self):
+    def __init__(self, shared_data):
+        super().__init__(shared_data)
         self.Data = ['magnitude', 'time', 'error']
 
     def CIAR_phi_kalman(self, x, t, y, yerr, mean_zero=True, standarized=True, c=0.5):
@@ -1510,5 +1505,5 @@ class CIAR_phiR_beta(Base):
             if aux <= value and br > 1 and i > math.trunc(niter/2):
                 break
         if aux == 1e10:
-           par = np.zeros(2)
+            par = np.zeros(2)
         return par[0]

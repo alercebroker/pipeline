@@ -17,6 +17,7 @@ class FeatureSpace(object):
     def __init__(self, feature_list, data_column_names=None):
         self.feature_objects = []
         self.feature_names = []
+        self.shared_data = {}
         if data_column_names is None:
             self.data_column_names = ['magpsf_corr', 'mjd', 'sigmapsf_corr']
         else:
@@ -24,7 +25,7 @@ class FeatureSpace(object):
 
         for feature_name in feature_list:
             feature_class = getattr(FeatureFunctionLib, feature_name)
-            feature_instance = feature_class()
+            feature_instance = feature_class(self.shared_data)
             self.feature_objects.append(feature_instance)
             if feature_instance.is1d():
                 self.feature_names.append(feature_name)
@@ -55,7 +56,7 @@ class FeatureSpace(object):
             try:
                 result = feature.fit(lightcurve_array)
             except Exception as e:
-                warnings.warn('Exeption when computing turbo-fats feature: '+str(e))
+                warnings.warn('Exception when computing turbo-fats feature: '+str(e))
                 if feature.is1d():
                     result = np.NaN
                 else:
