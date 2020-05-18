@@ -20,7 +20,7 @@ logging.basicConfig(level=level,
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
 from {{package_name}} import {{class_name}}
-from apf.consumers import GenericConsumer as Consumer
+from apf.consumers import KafkaConsumer as Consumer
 n_process = STEP_CONFIG.get("N_PROCESS",1)
 
 
