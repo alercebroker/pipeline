@@ -52,6 +52,7 @@ class FeatureSpace(object):
         lightcurve_array = self.__lightcurve_to_array(lightcurve)
                     
         results = []
+        self.shared_data.clear()
         for feature in self.feature_objects:
             try:
                 result = feature.fit(lightcurve_array)
