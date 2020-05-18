@@ -118,4 +118,5 @@ class GenericStep():
                 self.consumer.commit()
             if "candid" in self.message:
                 self.metrics["candid"] = str(self.message["candid"])
-            self.send_metrics(**self.metrics)
+                if str(self.message["candid"]).endswith('0'):
+                    self.send_metrics(**self.metrics)
