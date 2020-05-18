@@ -40,7 +40,7 @@ class GenericStep():
         self.elastic_search = None
 
         if "ES_CONFIG" in config:
-            logging.getLogger("elasticsearch").setLevel(logging.WARNING)
+            logging.getLogger("elasticsearch").setLevel(logging.ERROR)
             self.logger.info("Creating ES Metrics sender")
             self.elastic_search = Elasticsearch([config["ES_CONFIG"]])
 
