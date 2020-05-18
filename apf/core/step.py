@@ -112,11 +112,10 @@ class GenericStep():
             self.metrics["timestamp_received"] = datetime.datetime.now(
                 datetime.timezone.utc)
             self.execute(self.message)
+            self.metrics["timestamp_sent"] = datetime.datetime.now(
+                datetime.timezone.utc)
             if self.commit:
                 self.consumer.commit()
-            if not "timestamp_sent" in self.metrics:
-                self.metrics["timestamp_sent"] = datetime.datetime.now(
-                    datetime.timezone.utc)
             if "candid" in self.message:
                 self.metrics["candid"] = str(self.message["candid"])
             self.send_metrics(**self.metrics)
