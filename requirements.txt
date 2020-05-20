@@ -1,4 +1,4 @@
--e git+https://github.com/alercebroker/APF.git#egg=apf
+-e git+https://git@github.com/alercebroker/APF@feature/metrics#egg=APF
 P4J
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 psycopg2==2.8.4

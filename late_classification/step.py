@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 import numpy as np
 
-from apf.db.sql import get_or_create, get_session
+from apf.db.sql import get_or_create, get_session, update
 from apf.db.sql.models import Classification, Classifier, Class, AstroObject, Taxonomy
 
 
@@ -30,7 +30,7 @@ class LateClassifier(GenericStep):
         self.features_required = set(self.model.model["features"])
 
         if self.config.get("PRODUCER_CONFIG", None):
-            self.producer = KafkaProducer(self.config["PRODUCER_CONFIG"])
+            self.producer = self.init_producer(KafkaProducer) # KafkaProducer(self.config["PRODUCER_CONFIG"])
         else:
             self.producer = None
 
@@ -50,7 +50,7 @@ class LateClassifier(GenericStep):
             set(features.index))
 
         if len(missing_features) != 0:
-            self.logger.info(f"{oid}\t Missing Features: {missing_features}")
+            self.logger.debug(f"{oid}\t Missing Features: {missing_features}")
         else:
             features.replace([np.inf, -np.inf], np.nan, inplace=True)
             features.fillna(-999, inplace=True)
@@ -65,10 +65,14 @@ class LateClassifier(GenericStep):
                                       "name": result["class"]})
             kwargs = {
                 "probability": result["probabilities"][max(result["probabilities"], key=result["probabilities"].get)],
-                "probabilities": result["probabilities"]
+                "probabilities": result["probabilities"],
+                "class_name": _class.name
             }
-            get_or_create(self.session, Classification, filter_by={
-                          "astro_object": oid, "classifier_name": classifier.name, "class_name": _class.name}, **kwargs)
+
+            resp, created = get_or_create(self.session, Classification, filter_by={
+                "astro_object": oid, "classifier_name": classifier.name}, **kwargs)
+            if not created:
+                resp = update(resp, kwargs)
             self.session.commit()
             new_message = {
                 "candid": message["candid"],
