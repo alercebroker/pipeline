@@ -31,10 +31,26 @@ STORAGE_CONFIG = {
     "BUCKET_NAME": os.environ["BUCKET_NAME"]
 }
 
+PRODUCER_CONFIG = {
+    "TOPIC": os.getenv("PRODUCER_TOPIC", None),
+    "PARAMS": {
+        'bootstrap.servers': os.getenv("PRODUCER_SERVER", None),
+    },
+    "SCHEMA": {
+            'doc': 'S3 file',
+            'name': 'S3 step',
+            'type': 'record',
+            'fields': [
+                {'name': 'candid', 'type': 'string'}
+        ]
+    }
+}
+
 # Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG": ES_CONFIG,
     "STORAGE": STORAGE_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG
 }
 

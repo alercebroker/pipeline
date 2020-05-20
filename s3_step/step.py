@@ -1,4 +1,5 @@
 from apf.core.step import GenericStep
+from apf.producers import KafkaProducer
 import logging
 import io
 from .s3 import upload_file
@@ -19,14 +20,23 @@ class S3Step(GenericStep):
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
+        if self.config.get("PRODUCER_CONFIG", None):
+            self.producer = self.init_producer(KafkaProducer)  # KafkaProducer(self.config["PRODUCER_CONFIG"])
+        else:
+            self.producer = None
 
     def execute(self, message):
-        self.logger.info(message["objectId"])
-        f = io.BytesIO(self.consumer.message.value())
+        self.logger.debug(message["objectId"])
+        f = io.BytesIO(self.consumer.messages[0].value())
         year, month, day = self.jd_to_date(message["candidate"]["jd"])
         date = "{}{}{}".format(year, month, int(day))
         upload_file(
-            f, date, message["candidate"]["candid"], self.config["STORAGE"]["NAME"])
+            f, date, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"])
+        if self.producer:
+            new_message = {
+                "candid": str(message["candidate"]["candid"]),
+            }
+            self.producer.produce(new_message)
 
     def jd_to_date(self, jd):
         jd = jd + 0.5
