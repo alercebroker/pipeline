@@ -9,7 +9,7 @@ import importlib
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
-    As default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors. This strategy can be disabled
+    By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors. This strategy can be disabled
     completly adding `"COMMIT":False` to the `STEP_CONFIG` variable in the step's `settings.py` file.
 
     **Example:**
@@ -145,6 +145,23 @@ class KafkaConsumer(GenericConsumer):
         return data
 
     def consume(self, num_messages=1, timeout=60):
+        """
+        Consumes `num_messages` messages from the specified topic.
+        
+        Will return a dictionary or a list, depending on the number of messages consumed.
+
+        If num_messages > 1 then it returns list.
+
+        If num_messages = 1 then it returns dict.
+
+        Parameters
+        --------------
+        num_messages: int
+            Number of messages to be consumed
+        timeout: int
+            Seconds to wait when consuming messages. Raises exception if doesn't get the messages after
+            specified time
+        """
         if "consume.messages" in self.config:
             num_messages = self.config["consume.messages"]
         if "consume.timeout" in self.config:

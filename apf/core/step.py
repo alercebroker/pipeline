@@ -100,8 +100,8 @@ class GenericStep():
 
         Parameters
         ----------
-        message : dict
-            Dict-like message to be processed.
+        message : dict, list
+            Dict-like message to be processed or list of dict-like messages
         """
         pass
 
@@ -114,9 +114,8 @@ class GenericStep():
             self.execute(self.message)
             if self.commit:
                 self.consumer.commit()
-            if not "timestamp_sent" in self.metrics:
-                self.metrics["timestamp_sent"] = datetime.datetime.now(
-                    datetime.timezone.utc)
+            self.metrics["timestamp_sent"] = datetime.datetime.now(
+                datetime.timezone.utc)
             if "candid" in self.message:
                 self.metrics["candid"] = str(self.message["candid"])
             self.send_metrics(**self.metrics)

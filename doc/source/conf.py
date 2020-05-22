@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'ALeRCE Alert Processing Framework'
-copyright = '2019, ALeRCE'
+copyright = '2020, ALeRCE'
 author = 'ALeRCE'
 
 # The full version, including alpha/beta/rc tags
