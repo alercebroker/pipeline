@@ -12,6 +12,8 @@ class XmatchStep(GenericStep):
 
 	def __init__(self,consumer = None, config = None,level = logging.INFO,**step_args):
 		super().__init__(consumer,config=config, level=level)
+
+		self.xmatch_config = config['XMATCH_CONFIG']
 		self.xmatch_client = XmatchClient()
 		self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
@@ -60,27 +62,9 @@ class XmatchStep(GenericStep):
 		df = pd.DataFrame(array,columns=['oid','ra','dec'])
 
 		#xmatch
-		catalog_alias = 'allwise'
-		columns = [
-				'AllWISE',
-				'RAJ2000',
-				'DEJ2000',
-				'W1mag',
-				'W2mag',
-				'W3mag',
-				'W4mag',
-				'e_W1mag',
-				'e_W2mag',
-				'e_W3mag',
-				'e_W4mag',
-				'Jmag',
-				'e_Jmag',
-				'Hmag',
-				'e_Hmag',
-				'Kmag',
-				'e_Kmag'
-
-		]
+		catalog = self.xmatch_config['CATALOG']
+		catalog_alias = catalog['name']
+		columns = catalog['columns']
 		radius = 1
 		selection = 'best'
 		input_type  = 'pandas'
