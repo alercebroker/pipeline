@@ -21,8 +21,8 @@ No special conditions, only connection to kafka.
 	- Use of CDS Xmatch Client
   - Crossmatch only with ALLWISE catalog
 	- Future enhancement: 
-		- [] Crossmatch with more catalogs provided by CDS: GAIA-DR2, SDSS-DR12 
-    - [] Define whether or not save results to a database and how
+		[ ] Crossmatch with more catalogs provided by CDS: GAIA-DR2, SDSS-DR12 
+    		[ ] Define whether or not save results to a database and how
 
 ## Libraries used
 - APF
@@ -46,8 +46,8 @@ No special conditions, only connection to kafka.
 ### Xmatch setup
 
 - `CATALOG`: An array of catalog settings to perform crossmatch with. Each catalog contains:
-              - `name` : Name of the catalog
-              - `columns` : A subset of columns to be selected from the catalog
+	- `name` : Name of the catalog
+        - `columns` : A subset of columns to be selected from the catalog
 
 ## Stream
 
@@ -61,5 +61,32 @@ This step require a consumer and producer.
 
 ### Output schema
 ```Python
+
+RESULT_TYPE = {
+	'type' : 'map',
+	'values' : {
+		'type' : 'map',
+		'values' : [ "string", "float", "null"]
+	}
+}
+
+PRODUCER_CONFIG = {
+ 			"TOPIC": 'xmatch_test',
+    		"PARAMS": {
+        		'bootstrap.servers': os.environ["KAFKA_SERVER"] ,
+        		'message.max.bytes': 6291456
+    		},
+			"SCHEMA" : {
+
+				'doc' : 'Xmatch',
+				'name' : 'xmatch',
+				'type' : 'record',
+				'fields' : [
+					{'name' : 'oid', 'type' : 'string'},
+					{'name' : 'result', 'type' : [ "null", RESULT_TYPE ] }
+				]
+			}
+}
+
 
 ```
