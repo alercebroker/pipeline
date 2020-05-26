@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 with open("requirements.txt") as f:
     required_packages = f.readlines()
 
 setup(
    name='apf',
-   version="0.0.0",
+   version="0.0.2",
    description='ALeRCE Alert Processing Framework.',
    author='ALeRCE Team',
    author_email='contact@alerce.online',
-   packages=['apf'],
+   packages=find_namespace_packages(include=['apf.*']),
    scripts=['scripts/apf'],
    install_requires=required_packages,
    build_requires=required_packages
