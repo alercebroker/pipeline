@@ -1,8 +1,5 @@
-# -e APF
 P4J
 matplotlib
 GPy
-psycopg2
 -e git+https://github.com/alercebroker/APF.git#egg=apf
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
-# -e git+https://github.com/alercebroker/late_classifier.git#egg=late_classifier

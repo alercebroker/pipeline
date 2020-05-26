@@ -42,16 +42,16 @@ PRODUCER_CONFIG = {
     }
 }
 
-ES_CONFIG = {
-    "INDEX_PREFIX": os.environ["ES_PREFIX"],
-    "host": os.environ["ES_NETWORK_HOST"],
-    "port": os.environ["ES_NETWORK_PORT"]
-}
+#ES_CONFIG = {
+#    "INDEX_PREFIX": os.environ["ES_PREFIX"],
+#    "host": os.environ["ES_NETWORK_HOST"],
+#    "port": os.environ["ES_NETWORK_PORT"]
+#}
 
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "DB_CONFIG": DB_CONFIG,
-    "ES_CONFIG": ES_CONFIG,
+    # "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "FEATURE_VERSION": FEATURE_VERSION,
 }
