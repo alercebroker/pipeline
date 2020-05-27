@@ -1,5 +1,5 @@
-from plugins.db.sql import Base, models, Session
-from plugins.db.sql.models import Class
+from db_plugins.db.sql import Base, models, Session
+from db_plugins.db.sql.models import Class
 from sqlalchemy import create_engine
 import alembic.config
 import click

@@ -6,7 +6,7 @@ import sys
 
 def main():
     try:
-        from plugins.cli.manage import cli
+        from db_plugins.cli.manage import cli
     except ImportError as exc:
         raise ImportError from exc
     cli()
