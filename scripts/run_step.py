@@ -9,7 +9,10 @@ sys.path.append(PACKAGE_PATH)
 from settings import *
 
 level = logging.INFO
-if os.getenv("LOGGING_DEBUG", default=False):
+
+debug = os.getenv("LOGGING_DEBUG")
+
+if debug in ("True", "true", "1"):
     level = logging.DEBUG
     logging.getLogger('matplotlib').setLevel(logging.WARNING)
 

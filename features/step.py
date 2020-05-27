@@ -77,12 +77,38 @@ class FeaturesComputer(GenericStep):
         return detections
 
     def _compute_features(self, detections, non_detections):
+        """Compute Hierarchical-Features in detections and non detections to `dict`.
+
+        **Example:**
+
+        Parameters
+        ----------
+        detections : pandas.DataFrame
+            Detections of an object
+        non_detections : pandas.DataFrame
+            Non detections of an object
+        """
         features = self.featuresComputer.compute_features(detections, non_detections=non_detections)
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
         return features
 
     def insert_db(self, oid, result):
+        """Insert the `dict` result in database.
+        Consider:
+            - object: Refer with oid
+            - features: In result `dict`
+            - version: Set in config of the step
+
+        **Example:**
+
+        Parameters
+        ----------
+        oid : string
+            Object identifier of all detections
+        result : dict
+            Result of features compute
+        """
         obj, created = get_or_create(self.session, AstroObject, filter_by={"oid": oid})
         version, created = get_or_create(self.session, Features, filter_by={"version": self.config["FEATURE_VERSION"]})
         features, created = get_or_create(self.session, FeaturesObject, filter_by={
@@ -127,6 +153,5 @@ class FeaturesComputer(GenericStep):
 
         compute_time = features_t1-features_t0
         wall_time = time.time()-t0
-
         self.send_metrics(oid=oid, compute_time=compute_time)
         self.logger.debug(f"object={oid}\tdate={datetime.datetime.now()}\tcompute_time={compute_time:.6f}\twall_time={wall_time:.6f}")
