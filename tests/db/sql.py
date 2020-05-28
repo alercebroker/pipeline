@@ -1,6 +1,6 @@
 from .core import *
-from apf.db.sql import *
-from apf.db.sql.models import *
+from db_plugins.db.sql import *
+from db_plugins.db.sql.models import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import unittest
