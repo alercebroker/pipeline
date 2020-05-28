@@ -1,0 +1,8 @@
+language: python
+
+install:
+  - pip install -r requirements.txt
+  - pip install -e .
+
+script:
+  - python tests/run_tests.py
