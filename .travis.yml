@@ -3,6 +3,7 @@ language: python
 install:
   - pip install -r requirements.txt
   - pip install -e .
+  - pip install coverage
 
 script:
-  - python tests/run_tests.py
+  - coverage run --source db_plugins -m unittest tests/run_tests.py
