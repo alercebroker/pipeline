@@ -7,3 +7,6 @@ install:
 
 script:
   - coverage run --source db_plugins -m unittest tests/run_tests.py
+
+after_success:
+  - coverage report
