@@ -37,7 +37,6 @@ PRODUCER_CONFIG = {
         'name': 'probabilities + features',
         'type': 'record',
         'fields': [
-            {'name': 'candid', 'type': 'string'},
             {'name': 'oid', 'type': 'string'},
             {
                 'name': 'features',
