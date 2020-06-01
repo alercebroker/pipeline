@@ -1,4 +1,4 @@
-from apf.db.sql.models import Base
+from db_plugins.db.sql.models import Base
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
