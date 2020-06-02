@@ -1,6 +1,4 @@
-from db_plugins.db.sql import Base, models, Session
-from db_plugins.db.sql.models import Class
-from sqlalchemy import create_engine
+from db_plugins.db.sql import start_db
 import alembic.config
 import click
 import os, sys
@@ -28,8 +26,7 @@ def initdb(settings_path):
             db_config["USER"], db_config["PASSWORD"], db_config["HOST"], db_config["PORT"], db_config["DB_NAME"])
     else:
         db_credentials = "sqlite:///:memory:"
-    engine = create_engine(db_credentials)
-    Base.metadata.create_all(engine)
+    start_db(db_credentials)
     os.chdir(MIGRATIONS_PATH)
     alembic.config.main([
         'stamp', 'head'
