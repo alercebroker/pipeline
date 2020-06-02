@@ -1,8 +1,8 @@
-from . import Base
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, Float, Boolean, JSON, Index, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
 from .. import generic
-
+Base = declarative_base()
 taxonomy_class = Table('taxonomy_class', Base.metadata,
                        Column('class_name', String, ForeignKey('class.name')),
                        Column('taxonomy_name', String,
