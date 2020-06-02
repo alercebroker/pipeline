@@ -1,9 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, load_only
+from sqlalchemy.orm import sessionmaker, load_only, scoped_session
+from .models import *
 
-Base = declarative_base()
 Session = sessionmaker()
+
+
+def start_db(credentials):
+    engine = create_engine(credentials)
+    Base.metadata.create_all(bind=engine)
 
 """
     Check if record exists in database.
@@ -16,8 +21,6 @@ Session = sessionmaker()
     :returns: True if object exists else False
 
 """
-
-
 def check_exists(session, model, filter_by=None):
     return session.query(
         session.query(model).filter_by(**filter_by).exists()
@@ -78,7 +81,7 @@ def update(instance, args):
     return instance
 
 
-def get_session(db_config):
+def get_session(db_config, credentials=None):
     """
     Gets the database session
 
@@ -91,7 +94,7 @@ def get_session(db_config):
     Returns
     -----------
     Session
-        a session instance
+        a Session instance
     """
     psql_config = db_config["PSQL"]
     db_credentials = 'postgresql://{}:{}@{}:{}/{}'.format(
@@ -101,23 +104,26 @@ def get_session(db_config):
     return Session()
 
 
-def add_to_database(session, objects):
+def get_scoped_session(db_credentials):
     """
-    Adds objects to the database by adding them to the session.
+    Gets the database scoped session
 
     Parameters
     ------------
 
-    session: Session
-        Session object connected to the database
-    objects: list/model
-        Model instances to be added
+    db_config : dict
+        Credentials to set up the database connection
+
+    Returns
+    -----------
+    Session
+        a scoped_session class
     """
-    if isinstance(objects, list):
-        session.add_all(objects)
-    else:
-        session.add(objects)
-    session.commit()
+    engine = create_engine(db_credentials)
+    db_session = scoped_session(sessionmaker(
+        bind=engine, autocommit=False, autoflush=False))
+    Base.query = db_session.query_property()
+    return db_session
 
 
 def bulk_insert(objects, model, session):
@@ -138,10 +144,28 @@ def bulk_insert(objects, model, session):
 
 
 def query(session, model, page=None, page_size=None, total=None, *params):
+    """
+    Queries specified model with pagination
+
+    Parameters
+    -----------
+    session: Session
+        Session instance
+    model: Model
+        Class of the model to be added
+    page:
+        Page number to be retrieved
+    page_size:
+        Number of elements in the page
+    total:
+        Total of elements in the query without pagination
+    *params:
+        Additional filtering params
+    """
     offset = None
     limit = None
     if page and page_size:
-        offset = page_size * (page -1)
+        offset = page_size * (page - 1)
         limit = page_size + offset
     sql_query = session.query(model).filter(*params)
     if not total:
@@ -151,4 +175,3 @@ def query(session, model, page=None, page_size=None, total=None, *params):
         "total": total,
         "results": results
     }
-        
