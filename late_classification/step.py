@@ -39,6 +39,16 @@ class LateClassifier(GenericStep):
         self.session = get_session(config["DB_CONFIG"])
 
     def _format_features(self, features):
+        """Format a message that correspond features `dict`.
+        This method take the keys and values, transform it to DataFrame. After that
+        rename some columns for make this readable for classifier.
+        **Example:**
+
+        Parameters
+        ----------
+        message : dict
+            Message deserialized of Kafka.
+        """
         features = pd.DataFrame.from_records([features])
         features.rename(columns={
             "PeriodLS_v2_1": 'MHAOV_Period_1',
@@ -53,6 +63,19 @@ class LateClassifier(GenericStep):
         return features
 
     def insert_db(self, result, oid):
+        """Insert the `dict` result in database.
+        Consider:
+            - oid: Refer with oid
+            - features: In result `dict`
+        **Example:**
+
+        Parameters
+        ----------
+        oid : string
+            Object identifier of all detections
+        result : dict
+            Result of classifier
+        """
         classifier, _ = get_or_create(self.session, Classifier, filter_by={
             "name": self.config["CLASSIFIER_NAME"]})
         taxonomy, _ = get_or_create(self.session, Taxonomy, filter_by={
