@@ -559,7 +559,7 @@ following schema:
 
 
 
-![image](_static/images/diagram.png)
+![Diagram](docs/source/_static/images/diagram.png)
 
 ### Migrations
 
