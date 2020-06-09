@@ -40,26 +40,24 @@ class DatabaseConnection:
         self.session.remove()
 
     def query(self, models, page=None, page_size=None, total=None, sort_by=None, sort_desc="DESC", *params):
-        """
-        offset = None
-        limit = None
-        if page and page_size:
-            offset = page_size * (page - 1)
-            limit = page_size + offset
-        sql_query = self.session.query(*models).filter(*params)
-        if not total:
-            total = sql_query.order_by(None).count()
-        if sort_by is not None:
-            if sort_desc == "DESC":
-                sql_query = sql_query.order_by(sort_by.desc())
-            else:
-                sql_query = sql_query.order_by(sort_by.asc())
-        results = sql_query[offset:limit]
-        return {
-            "total": total,
-            "results": results
-        }
-        """
+        # offset = None
+        # limit = None
+        # if page and page_size:
+        #     offset = page_size * (page - 1)
+        #     limit = page_size + offset
+        # sql_query = self.session.query(*models).filter(*params)
+        # if not total:
+        #     total = sql_query.order_by(None).count()
+        # if sort_by is not None:
+        #     if sort_desc == "DESC":
+        #         sql_query = sql_query.order_by(sort_by.desc())
+        #     else:
+        #         sql_query = sql_query.order_by(sort_by.asc())
+        # results = sql_query[offset:limit]
+        # return {
+        #     "total": total,
+        #     "results": results
+        # }
         pass
 
     def check_exists(self, model, filter_by):
