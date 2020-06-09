@@ -1,177 +1,126 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session
-from .models import *
 
-Session = sessionmaker()
+class DatabaseConnection:
+    def __init__(self, db_credentials=None, base=None):
+        self.session = None
+        self.engine = create_engine(db_credentials) if db_credentials else None
+        self.base = base
 
+    def init_app(self, db_credentials, base):
+        self.engine = create_engine(db_credentials)
+        self.base = base
 
-def start_db(credentials):
-    engine = create_engine(credentials)
-    Base.metadata.create_all(bind=engine)
+    def create_session(self,bind=None, **options):
+        if bind:
+            self.session = sessionmaker(bind=bind, **options)()
+        else:
+            self.session = sessionmaker(bind=self.engine, **options)()
+        return self.session
 
-"""
-    Check if record exists in database.
+    def create_scoped_session(self):
+        self.session = scoped_session(
+            self.create_session(autocommit=False, autoflush=False)
+        )
+        return self.session
 
-    :param session: The connection session
-    :param model: The class of the model to be instantiated
-    :param dict filter_by: attributes used to find object in the database
-    :param dict kwargs: attributes used to create the object that are not used in filter_by
+    def create_db(self):
+        self.base.metadata.create_all(bind=self.engine)
 
-    :returns: True if object exists else False
+    def drop_db(self):
+        self.base.metadata.drop_all(bind=self.engine)
 
-"""
-def check_exists(session, model, filter_by=None):
-    return session.query(
-        session.query(model).filter_by(**filter_by).exists()
-    ).scalar()
+    def cleanup(self, resp_or_exc):
+        self.session.remove()
 
+    def query(self):
+        pass
 
-def get_or_create(session, model, filter_by=None, **kwargs):
-    """
-    Initializes a model by creating it or getting it from the database if it exists
+    def check_exists(self, model, filter_by):
+        """
+        Check if record exists in database.
 
-    Parameters
-    ----------
+        :param session: The connection session
+        :param model: The class of the model to be instantiated
+        :param dict filter_by: attributes used to find object in the database
+        :param dict kwargs: attributes used to create the object that are not used in filter_by
 
-    session : Session
-        The connection session
-    model : Model
-        The class of the model to be instantiated
-    filter_by : dict
-        attributes used to find object in the database
-    kwargs : dict
-        attributes used to create the object that are not used in filter_by
+        :returns: True if object exists else False
 
-    Returns
-    ----------
-    instance, created
-        Tuple with the instanced object and wether it was created or not
-    """
-    instance = session.query(model).options(
-        load_only(*filter_by.keys())).filter_by(**filter_by).first()
-    if instance:
-        return instance, False
-    else:
-        filter_by.update(kwargs)
-        instance = model(**filter_by)
-        session.add(instance)
-        return instance, True
+        """
+        return self.session.query(
+            self.session.query(model).filter_by(**filter_by).exists()
+        ).scalar()
 
+    def get_or_create(self, model, filter_by=None, **kwargs):
+        """
+        Initializes a model by creating it or getting it from the database if it exists
 
-def update(instance, args):
-    """
-    Updates an object
+        Parameters
+        ----------
 
-    Parameter
-    -----------
+        session : Session
+            The connection session
+        model : Model
+            The class of the model to be instantiated
+        filter_by : dict
+            attributes used to find object in the database
+        kwargs : dict
+            attributes used to create the object that are not used in filter_by
 
-    instance : Model
-        Object to be updated
-    args : dict
-        Attributes updated
-
-    Returns
-    ----------
-    instance
-        The updated object instance
-    """
-    for key in args.keys():
-        setattr(instance, key, args[key])
-    return instance
-
-
-def get_session(db_config, credentials=None):
-    """
-    Gets the database session
-
-    Parameters
-    ------------
-
-    db_config : dict
-        Credentials to set up the database connection
-
-    Returns
-    -----------
-    Session
-        a Session instance
-    """
-    psql_config = db_config["PSQL"]
-    db_credentials = 'postgresql://{}:{}@{}:{}/{}'.format(
-        psql_config["USER"], psql_config["PASSWORD"], psql_config["HOST"], psql_config["PORT"], psql_config["DB_NAME"])
-    engine = create_engine(db_credentials)
-    Session.configure(bind=engine)
-    return Session()
+        Returns
+        ----------
+        instance, created
+            Tuple with the instanced object and wether it was created or not
+        """
+        instance = (
+            self.session.query(model)
+            .options(load_only(*filter_by.keys()))
+            .filter_by(**filter_by)
+            .first()
+        )
+        if instance:
+            return instance, False
+        else:
+            filter_by.update(kwargs)
+            instance = model(**filter_by)
+            self.session.add(instance)
+            return instance, True
 
 
-def get_scoped_session(db_credentials):
-    """
-    Gets the database scoped session
+    def update(self, instance, args):
+        """
+        Updates an object
 
-    Parameters
-    ------------
+        Parameter
+        -----------
 
-    db_config : dict
-        Credentials to set up the database connection
+        instance : Model
+            Object to be updated
+        args : dict
+            Attributes updated
 
-    Returns
-    -----------
-    Session
-        a scoped_session class
-    """
-    engine = create_engine(db_credentials)
-    db_session = scoped_session(sessionmaker(
-        bind=engine, autocommit=False, autoflush=False))
-    Base.query = db_session.query_property()
-    return db_session
+        Returns
+        ----------
+        instance
+            The updated object instance
+        """
+        for key in args.keys():
+            setattr(instance, key, args[key])
+        return instance
 
+    def bulk_insert(self, objects, model):
+        """
+        Inserts multiple objects to the database improving performance
 
-def bulk_insert(objects, model, session):
-    """
-    Inserts multiple objects to the database improving performance
+        Parameters
+        -----------
 
-    Parameters
-    -----------
-
-    objects : list
-        Objects to be added
-    model: Model
-        Class of the model to be added
-    session: Session
-        Session instance 
-    """
-    session.bulk_insert_mappings(model, objects)
-
-
-def query(session, model, page=None, page_size=None, total=None, *params):
-    """
-    Queries specified model with pagination
-
-    Parameters
-    -----------
-    session: Session
-        Session instance
-    model: Model
-        Class of the model to be added
-    page:
-        Page number to be retrieved
-    page_size:
-        Number of elements in the page
-    total:
-        Total of elements in the query without pagination
-    *params:
-        Additional filtering params
-    """
-    offset = None
-    limit = None
-    if page and page_size:
-        offset = page_size * (page - 1)
-        limit = page_size + offset
-    sql_query = session.query(model).filter(*params)
-    if not total:
-        total = sql_query.order_by(None).count()
-    results = sql_query[offset:limit]
-    return {
-        "total": total,
-        "results": results
-    }
+        objects : list
+            Objects to be added
+        model: Model
+            Class of the model to be added
+        session: Session
+            Session instance 
+        """
+        self.session.bulk_insert_mappings(model, objects)
