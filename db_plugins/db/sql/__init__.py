@@ -39,7 +39,7 @@ class DatabaseConnection:
     def cleanup(self, resp_or_exc):
         self.session.remove()
 
-    def query(self, models, page=None, page_size=None, total=None, sort_by=None, sort_desc="DESC", *params):
+    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
         # offset = None
         # limit = None
         # if page and page_size:
@@ -58,7 +58,15 @@ class DatabaseConnection:
         #     "total": total,
         #     "results": results
         # }
-        pass
+        sql_query = self.session.query(*models).filter(*params)
+        total = sql_query.order_by(None).count() if not total else None
+        if sort_by is not None:
+            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
+        results = sql_query[offset:limit]
+        return {
+            "total": total,
+            "results": results
+        }
 
     def check_exists(self, model, filter_by):
         """
