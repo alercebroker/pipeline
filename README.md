@@ -579,12 +579,12 @@ The seccond command `apf migrate` will execute the migrations and update your da
 
 ### Set database Connection
 
-```
+```python
 from db_plugins.db.sql import DatabaseConnection
 from db_plugins.db.sql.models import *
 ```
 
-```
+```python
 db_config = {
     "SQL": "sqlite:///:memory:"
 }
@@ -592,7 +592,7 @@ db_config = {
 
 The URL used here follows this format: dialect[+driver]://user:password@host/dbname[?key=value..]
 
-```
+```python
 db = DatabaseConnection()
 db.init_app(db_config["SQL"], Base)
 db.create_session()
@@ -607,11 +607,11 @@ Use get_or_create function to get an instance of a model. The instance
 will be an object from the database if it already exists or it will
 create a new instance. **This object is not yet added to the database**
 
-```
+```python
 instance, created = db.get_or_create(Model,args)
 ```
 
-```
+```python
 model_args = {
     "oid":"ZTFid",
     "nobs":1,
@@ -625,7 +625,7 @@ model_args = {
 }
 ```
 
-```
+```python
 obj, created = db.get_or_create(AstroObject, **model_args)
 print(obj, "created: " + str(created))
 ```
@@ -637,14 +637,14 @@ print(obj, "created: " + str(created))
 Lets say for example that we want to create a class that belongs to a
 taxonomy.
 
-```
+```python
 class_, created = db.get_or_create(Class, name="Super Nova", acronym="SN")
 class_
 ```
 
 `<Class(name='Super Nova', acronym='SN')>`
 
-```
+```python
 taxonomy, created = db.get_or_create(Taxonomy, name="Example")
 print(taxonomy, "created: " + str(created))
 class_.taxonomies.append(taxonomy)
@@ -652,13 +652,13 @@ class_.taxonomies.append(taxonomy)
 
 `<Taxonomy(name='Example')> created: False`
 
-```
+```python
 class_.taxonomies
 ```
 
 `[<Taxonomy(name='Example')>, <Taxonomy(name='Example')>]`
 
-```
+```python
 taxonomy.classes
 ```
 
@@ -674,7 +674,7 @@ the taxonomy.
 All our instanced objects are not yet added to the database. To do that
 we use `session.add` or `session.add_all` methods
 
-```
+```python
 db.session.add(class_)
 db.session.commit()
 ```
