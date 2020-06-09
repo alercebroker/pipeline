@@ -8,17 +8,16 @@ import json
 import time
 
 
-engine = create_engine("sqlite:///:memory:")
-Session = sessionmaker()
-Base.metadata.create_all(engine)
 db = DatabaseConnection()
+db.init_app("sqlite:///:memory:", Base)
+db.create_db()
 
 
 class DatabaseConnectionTest(unittest.TestCase):
     def setUp(self):
-        self.connection = engine.connect()
+        self.connection = db.engine.connect()
         self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
+        db.create_session(bind=self.connection)
         astro_object = AstroObject(
             oid="ZTF1",
             nobs=1,
@@ -29,23 +28,20 @@ class DatabaseConnectionTest(unittest.TestCase):
             deltajd=1.0,
             firstmjd=1.0,
         )
-        self.session.add(astro_object)
+        db.session.add(astro_object)
         class_object = Class(name="Super Nova", acronym="SN")
-        self.session.add(class_object)
+        db.session.add(class_object)
         classifier = Classifier(name="test")
-        self.session.add(classifier)
+        db.session.add(classifier)
         classification = Classification(
             astro_object="ZTF1",
             classifier_name="test",
             class_name="SN")
-        self.session.add(classification)
-        self.session.commit()
-        db.session = self.session
-        db.engine = engine
-        db.base = Base
+        db.session.add(classification)
+        db.session.commit()
 
     def tearDown(self):
-        self.session.close()
+        db.session.close()
         self.trans.rollback()
         self.connection.close()
 
@@ -79,7 +75,7 @@ class DatabaseConnectionTest(unittest.TestCase):
     def test_bulk_insert(self):
         astro_objects = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
         db.bulk_insert(astro_objects, AstroObject)
-        objects = self.session.query(AstroObject).all()
+        objects = db.session.query(AstroObject).all()
         self.assertEqual(len(objects), 3)
 
     def test_query_all(self):
@@ -143,9 +139,9 @@ class DatabaseConnectionTest(unittest.TestCase):
 
 class ClassTest(unittest.TestCase, GenericClassTest):
     def setUp(self):
-        self.connection = engine.connect()
+        self.connection = db.engine.connect()
         self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
+        self.session = db.create_session(bind=self.connection)
         self.model = Class(name="Super Nova", acronym="SN")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -162,38 +158,38 @@ class ClassTest(unittest.TestCase, GenericClassTest):
             astro_object="ZTF1", classifier_name="test", class_name="SN"
         )
         self.model.classifications.append(classification)
-        self.session.add(astro_object)
-        self.session.commit()
+        db.session.add(astro_object)
+        db.session.commit()
 
     def tearDown(self):
-        self.session.close()
+        db.session.close()
         self.trans.rollback()
         self.connection.close()
 
 
 class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
     def setUp(self):
-        self.connection = engine.connect()
+        self.connection = db.engine.connect()
         self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
+        self.session = db.create_session(bind=self.connection)
         self.model = Taxonomy(name="test")
         class_ = Class(name="SN")
         classifier = Classifier(name="asdasd")
         self.model.classifiers.append(classifier)
         self.model.classes.append(class_)
-        self.session.commit()
+        db.session.commit()
 
     def tearDown(self):
-        self.session.close()
+        db.session.close()
         self.trans.rollback()
         self.connection.close()
 
 
 class ClassifierTest(GenericClassifierTest, unittest.TestCase):
     def setUp(self):
-        self.connection = engine.connect()
+        self.connection = db.engine.connect()
         self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
+        self.session = db.create_session(bind=self.connection)
         self.model = Classifier(name="Late Classifier")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -213,7 +209,7 @@ class ClassifierTest(GenericClassifierTest, unittest.TestCase):
         self.model.classifications.append(classification)
 
     def tearDown(self):
-        self.session.close()
+        db.session.close()
         self.trans.rollback()
         self.connection.close()
 
@@ -232,9 +228,9 @@ class ClassificationTest(GenericClassificationTest, unittest.TestCase):
 
 class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
     def setUp(self):
-        self.connection = engine.connect()
+        self.connection = db.engine.connect()
         self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
+        self.session = db.create_session(bind=self.connection)
 
         class_ = Class(name="Super Nova", acronym="SN")
         taxonomy = Taxonomy(name="Test")
@@ -292,7 +288,7 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         # self.session.add(self.model)
 
     def tearDown(self):
-        self.session.close()
+        db.session.close()
         self.trans.rollback()
         self.connection.close()
 

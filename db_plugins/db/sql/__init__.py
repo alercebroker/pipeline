@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session
 
+
 class DatabaseConnection:
     def __init__(self, db_credentials=None, base=None):
         self.session = None
@@ -11,17 +12,22 @@ class DatabaseConnection:
         self.engine = create_engine(db_credentials)
         self.base = base
 
-    def create_session(self,bind=None, **options):
+    def create_session(self, bind=None, **options):
         if bind:
             self.session = sessionmaker(bind=bind, **options)()
         else:
             self.session = sessionmaker(bind=self.engine, **options)()
         return self.session
 
-    def create_scoped_session(self):
-        self.session = scoped_session(
-            self.create_session(autocommit=False, autoflush=False)
-        )
+    def create_scoped_session(self, bind=None):
+        if bind:
+            self.session = scoped_session(
+                sessionmaker(bind=bind, autocommit=False, autoflush=False)
+            )
+        else:
+            self.session = scoped_session(
+                sessionmaker(bind=self.engine, autocommit=False, autoflush=False)
+            )
         return self.session
 
     def create_db(self):
@@ -114,7 +120,6 @@ class DatabaseConnection:
             instance = model(**filter_by)
             self.session.add(instance)
             return instance, True
-
 
     def update(self, instance, args):
         """
