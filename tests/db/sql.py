@@ -117,7 +117,7 @@ class DatabaseConnectionTest(unittest.TestCase):
     def test_order_asc(self):
         for i in range(19):
             db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
-        self.session.commit()
+        db.session.commit()
         results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
         for i in range(10):
             self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
