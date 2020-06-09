@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import unittest
 import json
+import time
 
 
 engine = create_engine("sqlite:///:memory:")
@@ -29,6 +30,15 @@ class DatabaseConnectionTest(unittest.TestCase):
             firstmjd=1.0,
         )
         self.session.add(astro_object)
+        class_object = Class(name="Super Nova", acronym="SN")
+        self.session.add(class_object)
+        classifier = Classifier(name="test")
+        self.session.add(classifier)
+        classification = Classification(
+            astro_object="ZTF1",
+            classifier_name="test",
+            class_name="SN")
+        self.session.add(classification)
         self.session.commit()
         db.session = self.session
         db.engine = engine
@@ -71,6 +81,66 @@ class DatabaseConnectionTest(unittest.TestCase):
         db.bulk_insert(astro_objects, AstroObject)
         objects = self.session.query(AstroObject).all()
         self.assertEqual(len(objects), 3)
+
+    def test_query_all(self):
+        results = db.query([AstroObject])
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].oid, "ZTF1")
+
+    def test_query_filter(self):
+        ahora = time.time()
+        results = db.query([AstroObject], None,
+                        None, None, None, None, AstroObject.oid == "ZTF1")
+        despues = time.time()
+        print("Tiempo de filtro: " + str(despues - ahora))
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].oid, "ZTF1")
+
+    def test_join(self):
+        ahora = time.time()
+        results = db.query([Classification, AstroObject, Class], None, None, None,
+                                 Classification.astro_object == AstroObject.oid,
+                                 Classification.class_name == Class.name)
+        despues = time.time()
+        print("Tiempo de join: " + str(despues - ahora))
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
+        self.assertEqual(results["results"][0].Classification.class_name, "SN")
+        self.assertEqual(results["results"][0].Class.name, "Super Nova")
+
+    def test_query_pagination(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
+        self.session.commit()
+        ahora = time.time()
+        results = db.query([AstroObject], 1, 10)
+        despues = time.time()
+        print("Tiempo de paginacion: " + str(despues - ahora))
+        self.assertEqual(len(results["results"]), 10)
+        self.assertEqual(results["total"], 20)
+
+    def test_order_desc(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
+        self.session.commit()
+        ahora = time.time()
+        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "DESC")
+        despues = time.time()
+        print("Tiempo de ordenamiento: " + str(despues - ahora))
+        for i in range(10):
+            self.assertGreater(results["results"][i].nobs, results["results"][19-i].nobs)
+
+    def test_order_asc(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
+        self.session.commit()
+        ahora = time.time()
+        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
+        despues = time.time()
+        print("Tiempo de ordenamiento: " + str(despues - ahora))
+        for i in range(10):
+            self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
+
 
 
 
