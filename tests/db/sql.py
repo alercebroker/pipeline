@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import unittest
 import json
+import time
 
 
 db = DatabaseConnection()
@@ -28,6 +29,15 @@ class DatabaseConnectionTest(unittest.TestCase):
             firstmjd=1.0,
         )
         db.session.add(astro_object)
+        class_object = Class(name="Super Nova", acronym="SN")
+        db.session.add(class_object)
+        classifier = Classifier(name="test")
+        db.session.add(classifier)
+        classification = Classification(
+            astro_object="ZTF1",
+            classifier_name="test",
+            class_name="SN")
+        db.session.add(classification)
         db.session.commit()
 
     def tearDown(self):
@@ -67,6 +77,51 @@ class DatabaseConnectionTest(unittest.TestCase):
         db.bulk_insert(astro_objects, AstroObject)
         objects = db.session.query(AstroObject).all()
         self.assertEqual(len(objects), 3)
+
+    def test_query_all(self):
+        results = db.query([AstroObject])
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].oid, "ZTF1")
+
+    def test_query_filter(self):
+        results = db.query([AstroObject], None,
+                        None, None, None, None, AstroObject.oid == "ZTF1")
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].oid, "ZTF1")
+
+    def test_join(self):
+        results = db.query([Classification, AstroObject, Class], None, None, None,
+                                 Classification.astro_object == AstroObject.oid,
+                                 Classification.class_name == Class.name)
+        self.assertEqual(len(results["results"]), 1)
+        self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
+        self.assertEqual(results["results"][0].Classification.class_name, "SN")
+        self.assertEqual(results["results"][0].Class.name, "Super Nova")
+
+    def test_query_pagination(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
+        self.session.commit()
+        results = db.query([AstroObject], 1, 10)
+        self.assertEqual(len(results["results"]), 10)
+        self.assertEqual(results["total"], 20)
+
+    def test_order_desc(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
+        self.session.commit()
+        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "DESC")
+        for i in range(10):
+            self.assertGreater(results["results"][i].nobs, results["results"][19-i].nobs)
+
+    def test_order_asc(self):
+        for i in range(19):
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
+        self.session.commit()
+        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
+        for i in range(10):
+            self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
+
 
 
 
