@@ -36,7 +36,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         classification = Classification(
             astro_object="ZTF1",
             classifier_name="test",
-            class_name="SN")
+            class_name="Super Nova")
         db.session.add(classification)
         db.session.commit()
 
@@ -100,7 +100,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         print(results["results"])
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
-        self.assertEqual(results["results"][0].Classification.class_name, "SN")
+        self.assertEqual(results["results"][0].Classification.class_name, "Super Nova")
         self.assertEqual(results["results"][0].Class.name, "Super Nova")
 
     def test_query_pagination(self):

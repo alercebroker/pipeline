@@ -40,12 +40,6 @@ class DatabaseConnection:
     def cleanup(self, resp_or_exc):
         self.session.remove()
 
-    """
-    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
-        sql_query = models[0].paginate(per_page=10, page=1)
-        return sql_query.items()
-    """
-
     def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
         sql_query = self.session.query(*models).filter(*params)
         total = sql_query.order_by(None).count() if not total else None
@@ -58,6 +52,21 @@ class DatabaseConnection:
         }
 
     """
+    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
+        sql_query = self.session.query(*models)
+        for model in models[1:]:
+            sql_query = sql_query.join(model, *params)
+        sql_query = sql_query.filter(*params)
+        print (sql_query)
+        total = sql_query.order_by(None).count() if not total else None
+        if sort_by is not None:
+            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
+        results = sql_query[offset:limit]
+        return {
+            "total": total,
+            "results": results
+        }
+
     def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", filters=[]):
         sql_query = apply_filters(self.session.query(*models), filters)
         total = sql_query.order_by(None).count() if not total else None
@@ -68,6 +77,10 @@ class DatabaseConnection:
             "total": total,
             "results": results
         }
+        
+    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
+        sql_query = models[0].paginate(per_page=10, page=1)
+        return sql_query.items()
     """
 
 

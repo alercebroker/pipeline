@@ -1,4 +1,5 @@
-from db_plugins.db.sql import start_db
+from db_plugins.db.sql import DatabaseConnection
+from db_plugins.db.sql.models import Base
 import alembic.config
 import click
 import os, sys
@@ -20,13 +21,13 @@ def initdb(settings_path):
         raise Exception("Settings file not found")
     sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
     from settings import DB_CONFIG
-    if "PSQL" in DB_CONFIG:
-        db_config = DB_CONFIG["PSQL"]
-        db_credentials = 'postgresql://{}:{}@{}:{}/{}'.format(
-            db_config["USER"], db_config["PASSWORD"], db_config["HOST"], db_config["PORT"], db_config["DB_NAME"])
+    if "SQL" in DB_CONFIG:
+        db_config = DB_CONFIG["SQL"]
     else:
-        db_credentials = "sqlite:///:memory:"
-    start_db(db_credentials)
+        db_config = "sqlite:///:memory:"
+    db = DatabaseConnection()
+    db.init_app(db_config, Base)
+    db.create_db()
     os.chdir(MIGRATIONS_PATH)
     alembic.config.main([
         'stamp', 'head'

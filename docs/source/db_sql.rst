@@ -33,26 +33,24 @@ Set database Connection
 
 .. code:: ipython3
 
-    from apf.db.sql import get_session, get_or_create, add_to_database
-    from apf.db.sql.models import *
+    from db_plugins.db.sql import DatabaseConnection
+    from db_plugins.db.sql.models import *
 
 .. code:: ipython3
 
     db_config = {
-        "PSQL":{
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "password",
-            "PORT": 5432,
-            "DB_NAME": "test"
-        }
+        "SQL": "sqlite:///:memory:"
     }
+
+The URL used here follows this format: `dialect[+driver]://user:password@host/dbname[?key=value..]`
 
 .. code:: ipython3
 
-    session = get_session(db_config)
+    db = DatabaseConnection()
+    db.init_app(db_config["SQL"], Base)
+    db.create_session()
 
-Calling the above function will create a connection to the database wich
+The above code will create a connection to the database wich
 we will later use to store objects.
 
 Create model instances
@@ -64,7 +62,7 @@ create a new instance. **This object is not yet added to the database**
 
 .. code:: python
 
-   instance, created = get_or_create(session,Model,args)
+   instance, created = db.get_or_create(Model,args)
 
 .. code:: ipython3
 
@@ -82,16 +80,10 @@ create a new instance. **This object is not yet added to the database**
 
 .. code:: ipython3
 
-    obj, created = get_or_create(session, AstroObject, **model_args)
-
-.. code:: ipython3
-
+    obj, created = db.get_or_create(AstroObject, **model_args)
     print(obj, "created: " + str(created))
 
-
-.. parsed-literal::
-
-    <AstroObject(oid='ZTFid')> created: False
+``<AstroObject(oid='ZTFid')> created: False``
 
 
 Add related models
@@ -102,53 +94,33 @@ taxonomy.
 
 .. code:: ipython3
 
-    class_, created = get_or_create(session, Class, name="Super Nova", acronym="SN")
+    class_, created = db.get_or_create(Class, name="Super Nova", acronym="SN")
     class_
 
-
-
-
-.. parsed-literal::
-
-    <Class(name='Super Nova', acronym='SN')>
+``<Class(name='Super Nova', acronym='SN')>``
 
 
 
 .. code:: ipython3
 
-    taxonomy, created = get_or_create(session, Taxonomy, name="Example")
+    taxonomy, created = db.get_or_create(Taxonomy, name="Example")
     print(taxonomy, "created: " + str(created))
     class_.taxonomies.append(taxonomy)
 
-
-.. parsed-literal::
-
-    <Taxonomy(name='Example')> created: False
-
+``<Taxonomy(name='Example')> created: False``
 
 .. code:: ipython3
 
     class_.taxonomies
 
-
-
-
-.. parsed-literal::
-
-    [<Taxonomy(name='Example')>, <Taxonomy(name='Example')>]
-
+``[<Taxonomy(name='Example')>, <Taxonomy(name='Example')>]``
 
 
 .. code:: ipython3
 
     taxonomy.classes
 
-
-
-
-.. parsed-literal::
-
-    [<Class(name='Super Nova', acronym='SN')>]
+``[<Class(name='Super Nova', acronym='SN')>]``
 
 
 
@@ -161,21 +133,16 @@ Add objects to the database
 ++++++++++++++++++++++++++++
 
 All our instanced objects are not yet added to the database. To do that
-we use ``add_to_database(session, objects)`` function
+we use ``session.add`` or ``session.add_all`` methods
 
 .. code:: ipython3
 
-    add_to_database(session, [class_, obj])
-
-You can also pass a single object to
-``add_to_database(session, model_instance)``
+    db.session.add(class_)
+    db.session.commit()
 
 
-APF SQL Functions
+DatabaseConnection documentation
 +++++++++++++++++
 
-.. autofunction:: apf.db.sql.get_or_create
-.. autofunction:: apf.db.sql.update
-.. autofunction:: apf.db.sql.get_session
-.. autofunction:: apf.db.sql.add_to_database
-.. autofunction:: apf.db.sql.bulk_insert
+.. autoclass:: db_plugins.db.sql.DatabaseConnection
+
