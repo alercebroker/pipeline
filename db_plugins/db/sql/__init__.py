@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session
-
+from sqlalchemy_filters import apply_filters
+from db_plugins.db.sql.models import *
 
 class DatabaseConnection:
     def __init__(self, db_credentials=None, base=None):
@@ -39,27 +40,13 @@ class DatabaseConnection:
     def cleanup(self, resp_or_exc):
         self.session.remove()
 
+    """
     def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
-        """
-        offset = None
-        limit = None
-        if page and page_size:
-            offset = page_size * (page - 1)
-            limit = page_size + offset
-        sql_query = self.session.query(*models).filter(*params)
-        if not total:
-            total = sql_query.order_by(None).count()
-        if sort_by is not None:
-            if sort_desc == "DESC":
-                sql_query = sql_query.order_by(sort_by.desc())
-            else:
-                sql_query = sql_query.order_by(sort_by.asc())
-        results = sql_query[offset:limit]
-        return {
-            "total": total,
-            "results": results
-        }
-        """
+        sql_query = models[0].paginate(per_page=10, page=1)
+        return sql_query.items()
+    """
+
+    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
         sql_query = self.session.query(*models).filter(*params)
         total = sql_query.order_by(None).count() if not total else None
         if sort_by is not None:
@@ -69,6 +56,20 @@ class DatabaseConnection:
             "total": total,
             "results": results
         }
+
+    """
+    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", filters=[]):
+        sql_query = apply_filters(self.session.query(*models), filters)
+        total = sql_query.order_by(None).count() if not total else None
+        if sort_by is not None:
+            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
+        results = sql_query[offset:limit]
+        return {
+            "total": total,
+            "results": results
+        }
+    """
+
 
     def check_exists(self, model, filter_by):
         """

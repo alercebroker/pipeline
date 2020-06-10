@@ -84,6 +84,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertEqual(results["results"][0].oid, "ZTF1")
 
     def test_query_filter(self):
+        #filters = [{'field': "oid", 'op': '==', 'value': "ZTF1"}]
         results = db.query([AstroObject], None,
                         None, None, None, None, AstroObject.oid == "ZTF1")
         self.assertEqual(len(results["results"]), 1)
@@ -96,6 +97,7 @@ class DatabaseConnectionTest(unittest.TestCase):
                                  Classification.class_name == Class.name)
         despues = time.time()
         print("Tiempo de join: " + str(despues - ahora))
+        print(results["results"])
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
         self.assertEqual(results["results"][0].Classification.class_name, "SN")
@@ -104,7 +106,7 @@ class DatabaseConnectionTest(unittest.TestCase):
     def test_query_pagination(self):
         for i in range(19):
             db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
-        self.session.commit()
+        db.session.commit()
         ahora = time.time()
         results = db.query([AstroObject], 0, 10)
         despues = time.time()
@@ -114,27 +116,25 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def test_order_desc(self):
         for i in range(19):
-            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
-        self.session.commit()
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
+        db.session.commit()
         ahora = time.time()
         results = db.query([AstroObject], None, None, None, AstroObject.nobs, "DESC")
         despues = time.time()
-        print("Tiempo de ordenamiento: " + str(despues - ahora))
+        print("Tiempo de ordenamiento desc: " + str(despues - ahora))
         for i in range(10):
             self.assertGreater(results["results"][i].nobs, results["results"][19-i].nobs)
 
     def test_order_asc(self):
         for i in range(19):
-            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
-        self.session.commit()
+            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
+        db.session.commit()
         ahora = time.time()
         results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
         despues = time.time()
-        print("Tiempo de ordenamiento: " + str(despues - ahora))
+        print("Tiempo de ordenamiento asc: " + str(despues - ahora))
         for i in range(10):
             self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
-
-
 
 
 class ClassTest(unittest.TestCase, GenericClassTest):
