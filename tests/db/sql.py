@@ -91,13 +91,9 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertEqual(results["results"][0].oid, "ZTF1")
 
     def test_join(self):
-        ahora = time.time()
         results = db.query([Classification, AstroObject, Class], None, None, None,
                                  Classification.astro_object == AstroObject.oid,
                                  Classification.class_name == Class.name)
-        despues = time.time()
-        print("Tiempo de join: " + str(despues - ahora))
-        print(results["results"])
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
         self.assertEqual(results["results"][0].Classification.class_name, "Super Nova")
@@ -107,10 +103,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         for i in range(19):
             db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
         db.session.commit()
-        ahora = time.time()
         results = db.query([AstroObject], 0, 10)
-        despues = time.time()
-        print("Tiempo de paginacion: " + str(despues - ahora))
         self.assertEqual(len(results["results"]), 10)
         self.assertEqual(results["total"], 20)
 
@@ -118,10 +111,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         for i in range(19):
             db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
         db.session.commit()
-        ahora = time.time()
         results = db.query([AstroObject], None, None, None, AstroObject.nobs, "DESC")
-        despues = time.time()
-        print("Tiempo de ordenamiento desc: " + str(despues - ahora))
         for i in range(10):
             self.assertGreater(results["results"][i].nobs, results["results"][19-i].nobs)
 
@@ -129,10 +119,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         for i in range(19):
             db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
         db.session.commit()
-        ahora = time.time()
         results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
-        despues = time.time()
-        print("Tiempo de ordenamiento asc: " + str(despues - ahora))
         for i in range(10):
             self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
 
