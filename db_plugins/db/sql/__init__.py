@@ -1,88 +1,35 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, load_only, scoped_session
-from sqlalchemy_filters import apply_filters
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
+from sqlalchemy.ext.declarative import declarative_base
+
+class BaseModel:
+    query = None
+
+Base = declarative_base(cls=BaseModel)
 from db_plugins.db.sql.models import *
 
-class DatabaseConnection:
-    def __init__(self, db_credentials=None, base=None):
-        self.session = None
-        self.engine = create_engine(db_credentials) if db_credentials else None
-        self.base = base
 
-    def init_app(self, db_credentials, base):
-        self.engine = create_engine(db_credentials)
-        self.base = base
-
-    def create_session(self, bind=None, **options):
-        if bind:
-            self.session = sessionmaker(bind=bind, **options)()
-        else:
-            self.session = sessionmaker(bind=self.engine, **options)()
-        return self.session
-
-    def create_scoped_session(self, bind=None):
-        if bind:
-            self.session = scoped_session(
-                sessionmaker(bind=bind, autocommit=False, autoflush=False)
-            )
-        else:
-            self.session = scoped_session(
-                sessionmaker(bind=self.engine, autocommit=False, autoflush=False)
-            )
-        return self.session
-
-    def create_db(self):
-        self.base.metadata.create_all(bind=self.engine)
-
-    def drop_db(self):
-        self.base.metadata.drop_all(bind=self.engine)
-
-    def cleanup(self, resp_or_exc):
-        self.session.remove()
-
-    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
+class BaseQuery(Query):
+    def query(
+        self,
+        models,
+        offset=None,
+        limit=None,
+        total=None,
+        sort_by=None,
+        sort_desc="DESC",
+        *params
+    ):
         sql_query = self.session.query(*models).filter(*params)
         total = sql_query.order_by(None).count() if not total else None
         if sort_by is not None:
-            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
+            sql_query = (
+                sql_query.order_by(sort_by.desc())
+                if sort_desc == "DESC"
+                else sql_query.order_by(sort_by.asc())
+            )
         results = sql_query[offset:limit]
-        return {
-            "total": total,
-            "results": results
-        }
-
-    """
-    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
-        sql_query = self.session.query(*models)
-        for model in models[1:]:
-            sql_query = sql_query.join(model, *params)
-        sql_query = sql_query.filter(*params)
-        print (sql_query)
-        total = sql_query.order_by(None).count() if not total else None
-        if sort_by is not None:
-            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
-        results = sql_query[offset:limit]
-        return {
-            "total": total,
-            "results": results
-        }
-
-    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", filters=[]):
-        sql_query = apply_filters(self.session.query(*models), filters)
-        total = sql_query.order_by(None).count() if not total else None
-        if sort_by is not None:
-            sql_query = sql_query.order_by(sort_by.desc()) if sort_desc == "DESC" else sql_query.order_by(sort_by.asc())
-        results = sql_query[offset:limit]
-        return {
-            "total": total,
-            "results": results
-        }
-        
-    def query(self, models, offset=None, limit=None, total=None, sort_by=None, sort_desc="DESC", *params):
-        sql_query = models[0].paginate(per_page=10, page=1)
-        return sql_query.items()
-    """
-
+        return {"total": total, "results": results}
 
     def check_exists(self, model, filter_by):
         """
@@ -103,10 +50,8 @@ class DatabaseConnection:
     def get_or_create(self, model, filter_by=None, **kwargs):
         """
         Initializes a model by creating it or getting it from the database if it exists
-
         Parameters
         ----------
-
         session : Session
             The connection session
         model : Model
@@ -115,7 +60,6 @@ class DatabaseConnection:
             attributes used to find object in the database
         kwargs : dict
             attributes used to create the object that are not used in filter_by
-
         Returns
         ----------
         instance, created
@@ -133,7 +77,7 @@ class DatabaseConnection:
             filter_by.update(kwargs)
             instance = model(**filter_by)
             self.session.add(instance)
-            return instance, True
+            return instance, True 
 
     def update(self, instance, args):
         """
@@ -171,3 +115,27 @@ class DatabaseConnection:
             Session instance 
         """
         self.session.bulk_insert_mappings(model, objects)
+
+
+class DatabaseConnection:
+    def __init__(self, config, base=Base, session_options=None):
+        self.config = config
+        self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
+        self.Base = base
+        if session_options is None:
+            session_options = {}
+        self.Session = sessionmaker(bind=self.engine, **session_options)
+        self.session = None
+
+    def create_session(self):
+        self.session = self.Session()
+
+    def create_scoped_session(self, scope_func=None):
+        self.session = scoped_session(self.Session, scopefunc=scope_func)
+        self.Base.query = self.session.query_property(query_cls=BaseQuery)
+
+    def create_db(self):
+        self.Base.metadata.create_all(bind=self.engine)
+
+    def drop_db(self):
+        self.Base.metadata.drop_all(bind=self.engine)

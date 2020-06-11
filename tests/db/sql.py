@@ -1,5 +1,5 @@
 from .core import *
-from db_plugins.db.sql import DatabaseConnection
+from db_plugins.db.sql import DatabaseConnection, BaseQuery
 from db_plugins.db.sql.models import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -8,16 +8,25 @@ import json
 import time
 
 
-db = DatabaseConnection()
-db.init_app("sqlite:///:memory:", Base)
-db.create_db()
-
-
 class DatabaseConnectionTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": True,
+            "query_cls": BaseQuery
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
     def setUp(self):
-        self.connection = db.engine.connect()
-        self.trans = self.connection.begin()
-        db.create_session(bind=self.connection)
+        self.db.create_db()
         astro_object = AstroObject(
             oid="ZTF1",
             nobs=1,
@@ -28,72 +37,64 @@ class DatabaseConnectionTest(unittest.TestCase):
             deltajd=1.0,
             firstmjd=1.0,
         )
-        db.session.add(astro_object)
+        self.db.session.add(astro_object)
         class_object = Class(name="Super Nova", acronym="SN")
-        db.session.add(class_object)
+        self.db.session.add(class_object)
         classifier = Classifier(name="test")
-        db.session.add(classifier)
+        self.db.session.add(classifier)
         classification = Classification(
-            astro_object="ZTF1",
-            classifier_name="test",
-            class_name="Super Nova")
-        db.session.add(classification)
-        db.session.commit()
+            astro_object="ZTF1", classifier_name="test", class_name="Super Nova"
+        )
+        self.db.session.add(classification)
+        self.db.session.commit()
 
     def tearDown(self):
-        db.session.close()
-        self.trans.rollback()
-        self.connection.close()
+        self.db.session.close()
+        self.db.drop_db()
 
     def test_get_or_create(self):
-        instance, created = db.get_or_create(AstroObject, {"oid": "ZTF1"})
+        instance, created = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
         self.assertIsInstance(instance, AstroObject)
         self.assertFalse(created)
 
     def test_check_exists(self):
-        self.assertTrue(db.check_exists(AstroObject, {"oid": "ZTF1"}))
+        self.assertTrue(self.db.session.query().check_exists(AstroObject, {"oid": "ZTF1"}))
 
     def test_update(self):
-        instance, _ = db.get_or_create(AstroObject, {"oid": "ZTF1"})
-        updated = db.update(instance, {"oid": "ZTF2"})
+        instance, _ = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
+        updated = self.db.session.query().update(instance, {"oid": "ZTF2"})
         self.assertEqual(updated.oid, "ZTF2")
-        instance, created = db.get_or_create(AstroObject, {"oid": "ZTF1"})
+        instance, created = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
         self.assertTrue(created)
-
-    def test_create_session(self):
-        session = db.create_session()
-        from sqlalchemy.orm.session import Session as S
-
-        self.assertIsInstance(session, S)
-
-    def test_create_scoped_session(self):
-        session = db.create_scoped_session()
-        from sqlalchemy.orm import scoped_session as S
-
-        self.assertIsInstance(session, S)
 
     def test_bulk_insert(self):
         astro_objects = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
-        db.bulk_insert(astro_objects, AstroObject)
-        objects = db.session.query(AstroObject).all()
+        self.db.session.query().bulk_insert(astro_objects, AstroObject)
+        objects = self.db.session.query(AstroObject).all()
         self.assertEqual(len(objects), 3)
 
     def test_query_all(self):
-        results = db.query([AstroObject])
+        results = self.db.session.query().query([AstroObject])
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].oid, "ZTF1")
 
     def test_query_filter(self):
-        #filters = [{'field': "oid", 'op': '==', 'value': "ZTF1"}]
-        results = db.query([AstroObject], None,
-                        None, None, None, None, AstroObject.oid == "ZTF1")
+        # filters = [{'field': "oid", 'op': '==', 'value': "ZTF1"}]
+        results = self.db.session.query().query(
+            [AstroObject], None, None, None, None, None, AstroObject.oid == "ZTF1"
+        )
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].oid, "ZTF1")
 
     def test_join(self):
-        results = db.query([Classification, AstroObject, Class], None, None, None,
-                                 Classification.astro_object == AstroObject.oid,
-                                 Classification.class_name == Class.name)
+        results = self.db.session.query().query(
+            [Classification, AstroObject, Class],
+            None,
+            None,
+            None,
+            Classification.astro_object == AstroObject.oid,
+            Classification.class_name == Class.name,
+        )
         self.assertEqual(len(results["results"]), 1)
         self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
         self.assertEqual(results["results"][0].Classification.class_name, "Super Nova")
@@ -101,34 +102,81 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def test_query_pagination(self):
         for i in range(19):
-            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
-        db.session.commit()
-        results = db.query([AstroObject], 0, 10)
+            self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
+        self.db.session.commit()
+        results = self.db.session.query().query([AstroObject], 0, 10)
         self.assertEqual(len(results["results"]), 10)
         self.assertEqual(results["total"], 20)
 
     def test_order_desc(self):
         for i in range(19):
-            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
-        db.session.commit()
-        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "DESC")
+            self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
+        self.db.session.commit()
+        results = self.db.session.query().query(
+            [AstroObject], None, None, None, AstroObject.nobs, "DESC"
+        )
         for i in range(10):
-            self.assertGreater(results["results"][i].nobs, results["results"][19-i].nobs)
+            self.assertGreater(
+                results["results"][i].nobs, results["results"][19 - i].nobs
+            )
 
     def test_order_asc(self):
         for i in range(19):
-            db.get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100-i})
-        db.session.commit()
-        results = db.query([AstroObject], None, None, None, AstroObject.nobs, "ASC")
+            self.db.session.query().get_or_create(
+                AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100 - i}
+            )
+        self.db.session.commit()
+        results = self.db.session.query().query(
+            [AstroObject], None, None, None, AstroObject.nobs, "ASC"
+        )
         for i in range(10):
-            self.assertLess(results["results"][i].nobs, results["results"][19-i].nobs)
+            self.assertLess(results["results"][i].nobs, results["results"][19 - i].nobs)
+
+
+class ScopedDatabaseConnectionTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": False,
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_scoped_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
+    def setUp(self):
+        self.db.create_db()
+        astro_object = AstroObject(
+            oid="ZTF1",
+            nobs=1,
+            lastmjd=1.0,
+            meanra=1.0,
+            meandec=1.0,
+            sigmadec=1.0,
+            deltajd=1.0,
+            firstmjd=1.0,
+        )
+        self.db.session.add(astro_object)
+        self.db.session.commit()
+
+    def tearDown(self):
+        self.db.drop_db()
+        self.db.session.remove()
+
+    def test_query_property(self):
+        self.assertEqual(len(AstroObject.query.all()), 1)
+        self.assertEqual(AstroObject.query.first().oid, "ZTF1")
+
 
 
 class ClassTest(unittest.TestCase, GenericClassTest):
     def setUp(self):
-        self.connection = db.engine.connect()
-        self.trans = self.connection.begin()
-        self.session = db.create_session(bind=self.connection)
+        db.create_db()
         self.model = Class(name="Super Nova", acronym="SN")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -150,15 +198,12 @@ class ClassTest(unittest.TestCase, GenericClassTest):
 
     def tearDown(self):
         db.session.close()
-        self.trans.rollback()
-        self.connection.close()
+        db.drop_db()
 
 
 class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
     def setUp(self):
-        self.connection = db.engine.connect()
-        self.trans = self.connection.begin()
-        self.session = db.create_session(bind=self.connection)
+        db.create_db()
         self.model = Taxonomy(name="test")
         class_ = Class(name="SN")
         classifier = Classifier(name="asdasd")
@@ -168,15 +213,12 @@ class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
 
     def tearDown(self):
         db.session.close()
-        self.trans.rollback()
-        self.connection.close()
+        db.drop_db()
 
 
 class ClassifierTest(GenericClassifierTest, unittest.TestCase):
     def setUp(self):
-        self.connection = db.engine.connect()
-        self.trans = self.connection.begin()
-        self.session = db.create_session(bind=self.connection)
+        db.create_db()
         self.model = Classifier(name="Late Classifier")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -197,8 +239,7 @@ class ClassifierTest(GenericClassifierTest, unittest.TestCase):
 
     def tearDown(self):
         db.session.close()
-        self.trans.rollback()
-        self.connection.close()
+        db.drop_db()
 
 
 class XMatchTest(GenericXMatchTest, unittest.TestCase):
@@ -215,10 +256,7 @@ class ClassificationTest(GenericClassificationTest, unittest.TestCase):
 
 class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
     def setUp(self):
-        self.connection = db.engine.connect()
-        self.trans = self.connection.begin()
-        self.session = db.create_session(bind=self.connection)
-
+        db.create_db()
         class_ = Class(name="Super Nova", acronym="SN")
         taxonomy = Taxonomy(name="Test")
         class_.taxonomies.append(taxonomy)
@@ -276,8 +314,7 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
 
     def tearDown(self):
         db.session.close()
-        self.trans.rollback()
-        self.connection.close()
+        db.drop_db()
 
 
 class FeaturesTest(GenericFeaturesTest, unittest.TestCase):
