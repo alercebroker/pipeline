@@ -15,7 +15,7 @@ class DatabaseConnectionTest(unittest.TestCase):
         session_options = {
             "autocommit": False,
             "autoflush": True,
-            "query_cls": BaseQuery
+            "query_cls": BaseQuery,
         }
         self.db = DatabaseConnection(config, session_options=session_options)
         self.db.create_session()
@@ -53,18 +53,26 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.db.drop_db()
 
     def test_get_or_create(self):
-        instance, created = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
+        instance, created = self.db.session.query().get_or_create(
+            AstroObject, {"oid": "ZTF1"}
+        )
         self.assertIsInstance(instance, AstroObject)
         self.assertFalse(created)
 
     def test_check_exists(self):
-        self.assertTrue(self.db.session.query().check_exists(AstroObject, {"oid": "ZTF1"}))
+        self.assertTrue(
+            self.db.session.query().check_exists(AstroObject, {"oid": "ZTF1"})
+        )
 
     def test_update(self):
-        instance, _ = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
+        instance, _ = self.db.session.query().get_or_create(
+            AstroObject, {"oid": "ZTF1"}
+        )
         updated = self.db.session.query().update(instance, {"oid": "ZTF2"})
         self.assertEqual(updated.oid, "ZTF2")
-        instance, created = self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF1"})
+        instance, created = self.db.session.query().get_or_create(
+            AstroObject, {"oid": "ZTF1"}
+        )
         self.assertTrue(created)
 
     def test_bulk_insert(self):
@@ -102,7 +110,9 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def test_query_pagination(self):
         for i in range(19):
-            self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2)})
+            self.db.session.query().get_or_create(
+                AstroObject, {"oid": "ZTF" + str(i + 2)}
+            )
         self.db.session.commit()
         results = self.db.session.query().query([AstroObject], 0, 10)
         self.assertEqual(len(results["results"]), 10)
@@ -110,7 +120,9 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def test_order_desc(self):
         for i in range(19):
-            self.db.session.query().get_or_create(AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i})
+            self.db.session.query().get_or_create(
+                AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i}
+            )
         self.db.session.commit()
         results = self.db.session.query().query(
             [AstroObject], None, None, None, AstroObject.nobs, "DESC"
@@ -140,6 +152,7 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
         session_options = {
             "autocommit": False,
             "autoflush": False,
+            "query_cls": BaseQuery,
         }
         self.db = DatabaseConnection(config, session_options=session_options)
         self.db.create_scoped_session()
@@ -147,7 +160,7 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.db.drop_db()
-        self.db.session.close()
+        self.db.session.remove()
 
     def setUp(self):
         self.db.create_db()
@@ -172,11 +185,38 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
         self.assertEqual(len(AstroObject.query.all()), 1)
         self.assertEqual(AstroObject.query.first().oid, "ZTF1")
 
+    def test_method_access_from_session(self):
+        instance, created = self.db.session.query().get_or_create(
+            model=AstroObject, filter_by={"oid": "ZTF1"}
+        )
+        self.assertIsInstance(instance, AstroObject)
+        self.assertFalse(created)
+
+    def test_method_access_from_query_property(self):
+        instance, created = AstroObject.query.get_or_create(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(instance, AstroObject)
+        self.assertFalse(created)
 
 
 class ClassTest(unittest.TestCase, GenericClassTest):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": False,
+            "query_cls": BaseQuery,
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
     def setUp(self):
-        db.create_db()
+        self.db.create_db()
         self.model = Class(name="Super Nova", acronym="SN")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -193,32 +233,64 @@ class ClassTest(unittest.TestCase, GenericClassTest):
             astro_object="ZTF1", classifier_name="test", class_name="SN"
         )
         self.model.classifications.append(classification)
-        db.session.add(astro_object)
-        db.session.commit()
+        self.db.session.add(astro_object)
+        self.db.session.commit()
 
     def tearDown(self):
-        db.session.close()
-        db.drop_db()
+        self.db.session.close()
+        self.db.drop_db()
 
 
 class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": False,
+            "query_cls": BaseQuery,
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
     def setUp(self):
-        db.create_db()
+        self.db.create_db()
         self.model = Taxonomy(name="test")
         class_ = Class(name="SN")
         classifier = Classifier(name="asdasd")
         self.model.classifiers.append(classifier)
         self.model.classes.append(class_)
-        db.session.commit()
+        self.db.session.commit()
 
     def tearDown(self):
-        db.session.close()
-        db.drop_db()
+        self.db.session.close()
+        self.db.drop_db()
 
 
 class ClassifierTest(GenericClassifierTest, unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": False,
+            "query_cls": BaseQuery,
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
     def setUp(self):
-        db.create_db()
+        self.db.create_db()
         self.model = Classifier(name="Late Classifier")
         astro_object = AstroObject(
             oid="ZTF1",
@@ -238,8 +310,8 @@ class ClassifierTest(GenericClassifierTest, unittest.TestCase):
         self.model.classifications.append(classification)
 
     def tearDown(self):
-        db.session.close()
-        db.drop_db()
+        self.db.session.close()
+        self.db.drop_db()
 
 
 class XMatchTest(GenericXMatchTest, unittest.TestCase):
@@ -255,8 +327,24 @@ class ClassificationTest(GenericClassificationTest, unittest.TestCase):
 
 
 class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
+        session_options = {
+            "autocommit": False,
+            "autoflush": False,
+            "query_cls": BaseQuery,
+        }
+        self.db = DatabaseConnection(config, session_options=session_options)
+        self.db.create_session()
+
+    @classmethod
+    def tearDownClass(self):
+        self.db.drop_db()
+        self.db.session.close()
+
     def setUp(self):
-        db.create_db()
+        self.db.create_db()
         class_ = Class(name="Super Nova", acronym="SN")
         taxonomy = Taxonomy(name="Test")
         class_.taxonomies.append(taxonomy)
@@ -313,8 +401,8 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         # self.session.add(self.model)
 
     def tearDown(self):
-        db.session.close()
-        db.drop_db()
+        self.db.session.close()
+        self.db.drop_db()
 
 
 class FeaturesTest(GenericFeaturesTest, unittest.TestCase):
