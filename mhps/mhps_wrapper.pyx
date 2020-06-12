@@ -65,7 +65,7 @@ def statistics(np.ndarray[double, ndim=1, mode="c"] mag,
 
   cdef np.ndarray[double,ndim=1] mask = np.ones(N,dtype=np.float64)
 
-  flux = (flux - mean)/np.sqrt(var)
+  flux = flux - mean
 
   _statistics(N,<double*> &flux[0],<double*> &mag[0],<double*> &magerr[0], <double*> &time[0], <double*> &mask[0],
             mag0, t1, t2, epsilon, dt, mean,
