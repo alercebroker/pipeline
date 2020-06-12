@@ -2,8 +2,10 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
 
+
 class BaseModel:
     query = None
+
 
 Base = declarative_base(cls=BaseModel)
 from db_plugins.db.sql.models import *
@@ -31,7 +33,7 @@ class BaseQuery(Query):
         results = sql_query[offset:limit]
         return {"total": total, "results": results}
 
-    def check_exists(self, model, filter_by):
+    def check_exists(self, model=None, filter_by=None):
         """
         Check if record exists in database.
 
@@ -43,11 +45,13 @@ class BaseQuery(Query):
         :returns: True if object exists else False
 
         """
+        model = self._entities[0].mapper.class_ if self._entities else model
+        query = self.session.query(model) if not self._entities else self
         return self.session.query(
-            self.session.query(model).filter_by(**filter_by).exists()
+            query.filter_by(**filter_by).exists()
         ).scalar()
 
-    def get_or_create(self, model, filter_by=None, **kwargs):
+    def get_or_create(self, model=None, filter_by=None, **kwargs):
         """
         Initializes a model by creating it or getting it from the database if it exists
         Parameters
@@ -65,11 +69,10 @@ class BaseQuery(Query):
         instance, created
             Tuple with the instanced object and wether it was created or not
         """
+        model = self._entities[0].mapper.class_ if self._entities else model
+        query = self.session.query(model) if not self._entities else self
         instance = (
-            self.session.query(model)
-            .options(load_only(*filter_by.keys()))
-            .filter_by(**filter_by)
-            .first()
+            query.options(load_only(*filter_by.keys())).filter_by(**filter_by).first()
         )
         if instance:
             return instance, False
@@ -77,7 +80,7 @@ class BaseQuery(Query):
             filter_by.update(kwargs)
             instance = model(**filter_by)
             self.session.add(instance)
-            return instance, True 
+            return instance, True
 
     def update(self, instance, args):
         """
