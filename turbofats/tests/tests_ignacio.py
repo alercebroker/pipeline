@@ -51,20 +51,22 @@ class TestNewFeatureSpace(unittest.TestCase):
         mean = features['Mean'][0]
         self.assertTrue(np.abs(mean - expected_mean) < 0.01)
         period = features['PeriodLS_v2'][0]
-        plt.subplot(2, 1, 1)
-        plt.errorbar(
-            self.lc_g['mjd'] % period,
-            self.lc_g['magpsf_corr'],
-            yerr=self.lc_g['sigmapsf_corr'],
-            fmt='*g')
+        do_plots = False
+        if do_plots:
+            plt.subplot(2, 1, 1)
+            plt.errorbar(
+                self.lc_g['mjd'] % period,
+                self.lc_g['magpsf_corr'],
+                yerr=self.lc_g['sigmapsf_corr'],
+                fmt='*g')
 
-        t = np.linspace(0, period, 100)
-        y = features['Harmonics_mag_1'][0]*np.cos(2*np.pi*t/period)
-        for harmonic in range(2, 8):
-            y += features['Harmonics_mag_%d' % harmonic][0]*np.cos(harmonic*2*np.pi*t/period - features['Harmonics_phase_%d' % harmonic][0])
-        plt.subplot(2, 1, 2)
-        plt.plot(t, y)
-        plt.show()
+            t = np.linspace(0, period, 100)
+            y = features['Harmonics_mag_1'][0]*np.cos(2*np.pi*t/period)
+            for harmonic in range(2, 8):
+                y += features['Harmonics_mag_%d' % harmonic][0]*np.cos(harmonic*2*np.pi*t/period - features['Harmonics_phase_%d' % harmonic][0])
+            plt.subplot(2, 1, 2)
+            plt.plot(t, y)
+            plt.show()
 
 
 if __name__ == '__main__':

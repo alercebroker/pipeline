@@ -28,7 +28,6 @@ Reference:
   bib code: 1989ApJ...338..277P
 
 """
-from __future__ import division
 import numpy as np
 import P4J
 
