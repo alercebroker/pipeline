@@ -1,5 +1,5 @@
 from .core import *
-from db_plugins.db.sql import DatabaseConnection, BaseQuery
+from db_plugins.db.sql import DatabaseConnection, BaseQuery, Pagination
 from db_plugins.db.sql.models import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -143,6 +143,12 @@ class DatabaseConnectionTest(unittest.TestCase):
         )
         for i in range(10):
             self.assertLess(results["results"][i].nobs, results["results"][19 - i].nobs)
+
+    def test_paginate(self):
+        pagination = self.db.session.query(AstroObject).paginate()
+        self.assertIsInstance(pagination, Pagination)
+        self.assertEqual(pagination.total, 1)
+        self.assertEqual(pagination.items[0].oid, "ZTF1")
 
 
 class ScopedDatabaseConnectionTest(unittest.TestCase):

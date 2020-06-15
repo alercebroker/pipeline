@@ -102,23 +102,6 @@ class AstroObject(Base, generic.AbstractAstroObject):
     detections = relationship("Detection")
     features = relationship("FeaturesObject")
 
-    def get_classifications(self):
-        return self.classifications
-
-    def get_magnitude_statistics(self):
-        return self.magnitude_statistics
-
-    def get_xmatches(self):
-        return self.xmatches
-
-    def get_non_detections(self):
-        return self.non_detections
-
-    def get_detections(self):
-        return self.detections
-
-    def get_features(self):
-        return self.features
 
     def get_lightcurve(self):
         return {

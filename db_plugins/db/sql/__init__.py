@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
+from math import ceil
 
 
 class BaseModel:
@@ -9,6 +10,62 @@ class BaseModel:
 
 Base = declarative_base(cls=BaseModel)
 from db_plugins.db.sql.models import *
+
+
+class Pagination:
+    def __init__(self, query, page, per_page, total, items):
+        self.query = query
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+        self.items = items
+
+    @property
+    def pages(self):
+        """The total number of pages"""
+        if self.per_page == 0 or self.total is None:
+            pages = 0
+        else:
+            pages = int(ceil(self.total / float(self.per_page)))
+        return pages
+
+    def prev(self):
+        """Returns a :class:`Pagination` object for the previous page."""
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
+        return self.query.paginate(self.page - 1, self.per_page)
+
+    @property
+    def prev_num(self):
+        """Number of the previous page."""
+        if not self.has_prev:
+            return None
+        return self.page - 1
+
+    @property
+    def has_prev(self):
+        """True if a previous page exists"""
+        return self.page > 1
+
+    def next(self):
+        """Returns a :class:`Pagination` object for the next page."""
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
+        return self.query.paginate(self.page + 1, self.per_page)
+
+    @property
+    def has_next(self):
+        """True if a next page exists."""
+        return self.page < self.pages
+
+    @property
+    def next_num(self):
+        """Number of the next page"""
+        if not self.has_next:
+            return None
+        return self.page + 1
 
 
 class BaseQuery(Query):
@@ -47,9 +104,7 @@ class BaseQuery(Query):
         """
         model = self._entities[0].mapper.class_ if self._entities else model
         query = self.session.query(model) if not self._entities else self
-        return self.session.query(
-            query.filter_by(**filter_by).exists()
-        ).scalar()
+        return self.session.query(query.filter_by(**filter_by).exists()).scalar()
 
     def get_or_create(self, model=None, filter_by=None, **kwargs):
         """
@@ -119,16 +174,41 @@ class BaseQuery(Query):
         """
         self.session.bulk_insert_mappings(model, objects)
 
+    def paginate(self, page=1, per_page=10, count=True):
+        if page < 1:
+            page = 1
+        if per_page < 0:
+            per_page = 10
+        items = self.limit(per_page).offset((page - 1) * per_page).all()
+        if not count:
+            total = None
+        else:
+            total = self.order_by(None).count()
+        return Pagination(self, page, per_page, total, items)
+
 
 class DatabaseConnection:
-    def __init__(self, config, base=Base, session_options=None):
+    def __init__(self, config=None, base=Base, session_options=None):
         self.config = config
-        self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
+        self.engine = (
+            create_engine(config["SQLALCHEMY_DATABASE_URL"]) if config else None
+        )
         self.Base = base
-        if session_options is None:
-            session_options = {}
-        self.Session = sessionmaker(bind=self.engine, **session_options)
+        session_options = session_options or {}
+        self.Session = (
+            sessionmaker(bind=self.engine, **session_options) if self.engine else None
+        )
         self.session = None
+
+    def start(self, config, base=Base, session_options=None):
+        self.config = config
+        if not self.engine:
+            self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
+        self.Base = base
+        session_options = session_options or {}
+        if not self.Session:
+            self.Session = sessionmaker(bind=self.engine, **session_options)
+
 
     def create_session(self):
         self.session = self.Session()
