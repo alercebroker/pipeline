@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import unittest
 import json
 import time
+import datetime
 
 
 class DatabaseConnectionTest(unittest.TestCase):
@@ -205,119 +206,15 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
 
 
 class ClassTest(unittest.TestCase, GenericClassTest):
-    @classmethod
-    def setUpClass(self):
-        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
-        session_options = {
-            "autocommit": False,
-            "autoflush": False,
-            "query_cls": BaseQuery,
-        }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_session()
-
-    @classmethod
-    def tearDownClass(self):
-        self.db.drop_db()
-        self.db.session.close()
-
-    def setUp(self):
-        self.db.create_db()
-        self.model = Class(name="Super Nova", acronym="SN")
-        astro_object = AstroObject(
-            oid="ZTF1",
-            nobs=1,
-            lastmjd=1.0,
-            meanra=1.0,
-            meandec=1.0,
-            sigmadec=1.0,
-            deltajd=1.0,
-            firstmjd=1.0,
-        )
-        classifier = Classifier(name="test")
-        classification = Classification(
-            astro_object="ZTF1", classifier_name="test", class_name="SN"
-        )
-        self.model.classifications.append(classification)
-        self.db.session.add(astro_object)
-        self.db.session.commit()
-
-    def tearDown(self):
-        self.db.session.close()
-        self.db.drop_db()
+    pass
 
 
 class TaxonomyTest(GenericTaxonomyTest, unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
-        session_options = {
-            "autocommit": False,
-            "autoflush": False,
-            "query_cls": BaseQuery,
-        }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_session()
-
-    @classmethod
-    def tearDownClass(self):
-        self.db.drop_db()
-        self.db.session.close()
-
-    def setUp(self):
-        self.db.create_db()
-        self.model = Taxonomy(name="test")
-        class_ = Class(name="SN")
-        classifier = Classifier(name="asdasd")
-        self.model.classifiers.append(classifier)
-        self.model.classes.append(class_)
-        self.db.session.commit()
-
-    def tearDown(self):
-        self.db.session.close()
-        self.db.drop_db()
+    pass
 
 
 class ClassifierTest(GenericClassifierTest, unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
-        session_options = {
-            "autocommit": False,
-            "autoflush": False,
-            "query_cls": BaseQuery,
-        }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_session()
-
-    @classmethod
-    def tearDownClass(self):
-        self.db.drop_db()
-        self.db.session.close()
-
-    def setUp(self):
-        self.db.create_db()
-        self.model = Classifier(name="Late Classifier")
-        astro_object = AstroObject(
-            oid="ZTF1",
-            nobs=1,
-            lastmjd=1.0,
-            meanra=1.0,
-            meandec=1.0,
-            sigmadec=1.0,
-            deltajd=1.0,
-            firstmjd=1.0,
-        )
-        classifier = Classifier(name="test")
-        class_ = Class(name="SN")
-        classification = Classification(
-            astro_object="ZTF1", classifier_name="test", class_name="SN"
-        )
-        self.model.classifications.append(classification)
-
-    def tearDown(self):
-        self.db.session.close()
-        self.db.drop_db()
+    pass
 
 
 class XMatchTest(GenericXMatchTest, unittest.TestCase):
@@ -367,7 +264,7 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
             deltajd=1.0,
             firstmjd=1.0,
         )
-        self.model.xmatches.append(Xmatch(catalog_id="C1", catalog_object_id="O1"))
+        self.model.xmatches.append(Xmatch(catalog_id="C1", catalog_oid="O1"))
         self.model.magnitude_statistics = MagnitudeStatistics(
             fid=1,
             magnitude_type="psf",
@@ -403,8 +300,11 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
                 alert=json.loads('{"test":"test"}'),
             )
         )
-        self.model.non_detections.append(NonDetection(mjd=1, fid=1, diffmaglim=1))
-        # self.session.add(self.model)
+        self.model.non_detections.append(
+            NonDetection(mjd=1, fid=1, diffmaglim=1, datetime=datetime.datetime.now())
+        )
+        self.db.session.add(self.model)
+        self.db.session.commit()
 
     def tearDown(self):
         self.db.session.close()

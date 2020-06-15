@@ -34,12 +34,6 @@ class Class(Base, generic.AbstractClass):
     )
     classifications = relationship("Classification")
 
-    def get_taxonomies(self):
-        return self.taxonomies
-
-    def get_classifications(self):
-        return self.classifications
-
     def __repr__(self):
         return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
 
@@ -53,11 +47,6 @@ class Taxonomy(Base, generic.AbstractTaxonomy):
     )
     classifiers = relationship("Classifier")
 
-    def get_classes(self):
-        return self.classes
-
-    def get_classifiers(self):
-        return self.classifiers
 
     def __repr__(self):
         return "<Taxonomy(name='%s')>" % (self.name)
@@ -69,8 +58,6 @@ class Classifier(Base, generic.AbstractClassifier):
     taxonomy_name = Column(String, ForeignKey("taxonomy.name"))
     classifications = relationship("Classification")
 
-    def get_classifications(self):
-        return self.classifications
 
     def __repr__(self):
         return "<Classifier(name='%s')>" % (self.name)
@@ -105,8 +92,8 @@ class AstroObject(Base, generic.AbstractAstroObject):
 
     def get_lightcurve(self):
         return {
-            "detections": self.get_detections(),
-            "non_detections": self.get_non_detections(),
+            "detections": self.detections,
+            "non_detections": self.non_detections,
         }
 
     def __repr__(self):
