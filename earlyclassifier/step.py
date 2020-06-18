@@ -89,4 +89,4 @@ class EarlyClassifier(GenericStep):
             add_to_database(self.session, classifications)
         else:
             self.logger.debug(
-                "Object {} has stamps with too many NaN values".format(message["objectId"]))
+                f"Object {message['objectId']}: {probabilities['content']}")
