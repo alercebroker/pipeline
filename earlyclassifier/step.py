@@ -40,8 +40,6 @@ class EarlyClassifier(GenericStep):
         metadata_df = metadata_df.to_frame().transpose()
         metadata_df.to_csv(metadata_stream, index=False)
 
-        print(metadata_df)
-        return
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
