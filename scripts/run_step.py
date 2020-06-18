@@ -19,7 +19,7 @@ logging.basicConfig(level=level,
 
 
 from earlyclassifier import EarlyClassifier
-from apf.consumers import AVROFileConsumer as Consumer
+from apf.consumers import KafkaConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
