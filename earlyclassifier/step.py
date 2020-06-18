@@ -31,11 +31,17 @@ class EarlyClassifier(GenericStep):
         add_to_database(self.session, self.classifier)
 
     def execute(self, message):
+        oid = message['objectId']
+
         metadata_stream = io.StringIO()
         metadata = message['candidate']
-        metadata_df = pd.Series(metadata).to_frame().transpose()
+        metadata_df = pd.Series(metadata)
+        metadata_df['oid'] = oid
+        metadata_df = metadata_df.to_frame().transpose()
         metadata_df.to_csv(metadata_stream, index=False)
 
+        print(metadata_df)
+        return
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
