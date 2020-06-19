@@ -75,32 +75,7 @@ Database plugins
 
 1. Generic classes
 -------------------
-.. autoclass:: db_plugins.db.generic.AbstractClass
-    :members:
 
-.. autoclass:: db_plugins.db.generic.AbstractTaxonomy
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractClassifier
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractAstroObject
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractClassification
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractFeatures
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractMagnitudeStatistics
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractNonDetection
-    :members:
-
-.. autoclass:: db_plugins.db.generic.AbstractDetection
-    :members:
 
 2. SQL
 ------------
@@ -115,7 +90,7 @@ To do that execute the following command from your step root folder
 When you run this command with an empty database it will create the
 following schema:
 
-.. image:: _static/images/diagram.png
+.. image:: docs/source/_static/images/diagram.png
     :align: center
 
 Migrations
@@ -268,5 +243,4 @@ we use ``session.add`` or ``session.add_all`` methods
 DatabaseConnection documentation
 +++++++++++++++++
 
-.. autoclass:: db_plugins.db SQLDatabase
 
