@@ -1,5 +1,4 @@
-from db_plugins.db.sql import DatabaseConnection
-from db_plugins.db.sql.models import Base
+from db_plugins.db import SQLDatabase
 import alembic.config
 import click
 import os, sys
@@ -24,13 +23,17 @@ def initdb(settings_path):
 
     if "SQL" in DB_CONFIG:
         db_config = DB_CONFIG["SQL"]
-    else:
-        db_config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
-    db = DatabaseConnection(db_config)
+        init_sql(db_config)
+        click.echo("Database created with credentials from {}".format(settings_path))
+
+
+def init_sql(config):
+    db = SQLDatabase()
+    db.connect(config=config)
     db.create_db()
+    db.session.close()
     os.chdir(MIGRATIONS_PATH)
     alembic.config.main(["stamp", "head"])
-    click.echo("Database created with credentials from {}".format(settings_path))
 
 
 @cli.command()
