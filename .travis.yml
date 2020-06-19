@@ -6,6 +6,6 @@ install:
   - pip install coverage
 
 script:
-  - coverage run --source db_plugins -m unittest tests/run_tests.py
+  - coverage run --source db_plugins -m pytest
 
 after_success: bash <(curl -s https://codecov.io/bash)
