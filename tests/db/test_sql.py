@@ -1,6 +1,7 @@
-from .core import *
-from db_plugins.db.sql import DatabaseConnection, BaseQuery, Pagination
+from test_core import *
+from db_plugins.db import SQLDatabase
 from db_plugins.db.sql.models import *
+from db_plugins.db.sql import Pagination
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import unittest
@@ -16,10 +17,9 @@ class DatabaseConnectionTest(unittest.TestCase):
         session_options = {
             "autocommit": False,
             "autoflush": True,
-            "query_cls": BaseQuery,
         }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_session()
+        self.db = SQLDatabase()
+        self.db.connect(config=config, session_options=session_options)
 
     @classmethod
     def tearDownClass(self):
@@ -159,10 +159,9 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
         session_options = {
             "autocommit": False,
             "autoflush": False,
-            "query_cls": BaseQuery,
         }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_scoped_session()
+        self.db = SQLDatabase()
+        self.db.connect(config=config, session_options=session_options, use_scoped=True)
 
     @classmethod
     def tearDownClass(self):
@@ -236,10 +235,9 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         session_options = {
             "autocommit": False,
             "autoflush": False,
-            "query_cls": BaseQuery,
         }
-        self.db = DatabaseConnection(config, session_options=session_options)
-        self.db.create_session()
+        self.db = SQLDatabase()
+        self.db.connect(config=config, session_options=session_options)
 
     @classmethod
     def tearDownClass(self):

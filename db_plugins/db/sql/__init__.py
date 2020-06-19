@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
 from math import ceil
+from ..generic import DatabaseConnection
 
 
 class BaseModel:
@@ -187,28 +188,25 @@ class BaseQuery(Query):
         return Pagination(self, page, per_page, total, items)
 
 
-class DatabaseConnection:
-    def __init__(self, config=None, base=Base, session_options=None):
-        self.config = config
-        self.engine = (
-            create_engine(config["SQLALCHEMY_DATABASE_URL"]) if config else None
-        )
-        self.Base = base
-        session_options = session_options or {}
-        self.Session = (
-            sessionmaker(bind=self.engine, **session_options) if self.engine else None
-        )
+class SQLConnection(DatabaseConnection):
+    def __init__(self):
+        self.config = None
+        self.engine = None
+        self.Base = None
+        self.Session = None
         self.session = None
 
-    def start(self, config, base=Base, session_options=None):
+    def start(self, config, base=None, session_options=None, use_scoped=False, scope_func=None):
         self.config = config
-        if not self.engine:
-            self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
-        self.Base = base
+        self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
+        self.Base = base or Base
         session_options = session_options or {}
-        if not self.Session:
-            self.Session = sessionmaker(bind=self.engine, **session_options)
-
+        session_options["query_cls"] = BaseQuery
+        self.Session = sessionmaker(bind=self.engine, **session_options)
+        if not use_scoped:
+            self.create_session()
+        else:
+            self.create_scoped_session(scope_func)
 
     def create_session(self):
         self.session = self.Session()

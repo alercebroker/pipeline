@@ -1,3 +1,29 @@
+import abc
+class DatabaseConnection(abc.ABC):
+    """
+    Main database connection interface declares common functionality
+    to all databases
+    """
+
+    @abc.abstractmethod
+    def start(self):
+        """
+        Initiates the database connection.
+        """
+        pass
+    @abc.abstractmethod
+    def create_db(self):
+        """
+        Creates database collections or tables
+        """
+        pass
+
+    @abc.abstractmethod
+    def drop_db(self):
+        """
+        Removes database collections or tables
+        """
+
 class AbstractClass():
     """
     Abstract Class model
