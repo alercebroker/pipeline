@@ -8,8 +8,8 @@ To do that execute the following command from your step root folder
 When you run this command with an empty database it will create the
 following schema:
 
-.. image:: _static/images/diagram.png
-    :align: center
+.. .. image:: _static/images/diagram.png
+..     :align: center
 
 Migrations
 +++++++++++++++
@@ -28,12 +28,30 @@ The first command ``apf make_migrations`` will create migration files according 
 
 The seccond command ``apf migrate`` will execute the migrations and update your database.
 
+What migrations can and can't detect
++++++++++++++++++++++++++++++++++++++++++
+Migrations will detect:
+
+- Table additions, removals.
+
+- Column additions, removals.
+
+- Change of nullable status on columns.
+
+- Basic changes in indexes
+
+Migrations can't detect:
+
+- Changes of table name. These will come out as an add/drop of two different tables, and should be hand-edited into a name change instead.
+
+- Changes of column name. Like table name changes, these are detected as a column add/drop pair, which is not at all the same as a name change.
+
 Set database Connection
 ++++++++++++++++++++++++
 
 .. code:: ipython3
 
-    from db_plugins.db.sql import DatabaseConnection
+    from db_plugins.db import SQLDatabase
     from db_plugins.db.sql.models import *
 
 .. code:: ipython3
@@ -46,9 +64,8 @@ The URL used here follows this format: `dialect[+driver]://user:password@host/db
 
 .. code:: ipython3
 
-    db = DatabaseConnection()
-    db.init_app(db_config["SQL"], Base)
-    db.create_session()
+    db = SQLDatabase()
+    db.connect(config=db_config)
 
 The above code will create a connection to the database wich
 we will later use to store objects.
@@ -62,7 +79,7 @@ create a new instance. **This object is not yet added to the database**
 
 .. code:: python
 
-   instance, created = db.get_or_create(Model,args)
+   instance, created = db.session.query().get_or_create(Model,args)
 
 .. code:: ipython3
 
@@ -80,7 +97,7 @@ create a new instance. **This object is not yet added to the database**
 
 .. code:: ipython3
 
-    obj, created = db.get_or_create(AstroObject, **model_args)
+    obj, created = db.session.query().get_or_create(AstroObject, **model_args)
     print(obj, "created: " + str(created))
 
 ``<AstroObject(oid='ZTFid')> created: False``
@@ -94,7 +111,7 @@ taxonomy.
 
 .. code:: ipython3
 
-    class_, created = db.get_or_create(Class, name="Super Nova", acronym="SN")
+    class_, created = db.session.query().get_or_create(Class, name="Super Nova", acronym="SN")
     class_
 
 ``<Class(name='Super Nova', acronym='SN')>``
@@ -103,7 +120,7 @@ taxonomy.
 
 .. code:: ipython3
 
-    taxonomy, created = db.get_or_create(Taxonomy, name="Example")
+    taxonomy, created = db.session.query().get_or_create(Taxonomy, name="Example")
     print(taxonomy, "created: " + str(created))
     class_.taxonomies.append(taxonomy)
 
@@ -144,5 +161,5 @@ we use ``session.add`` or ``session.add_all`` methods
 DatabaseConnection documentation
 +++++++++++++++++
 
-.. autoclass:: db_plugins.db.sql.DatabaseConnection
+.. autoclass:: db_plugins.db SQLDatabase
 
