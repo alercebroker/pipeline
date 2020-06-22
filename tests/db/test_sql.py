@@ -82,69 +82,6 @@ class DatabaseConnectionTest(unittest.TestCase):
         objects = self.db.session.query(AstroObject).all()
         self.assertEqual(len(objects), 3)
 
-    def test_query_all(self):
-        results = self.db.session.query().query([AstroObject])
-        self.assertEqual(len(results["results"]), 1)
-        self.assertEqual(results["results"][0].oid, "ZTF1")
-
-    def test_query_filter(self):
-        # filters = [{'field': "oid", 'op': '==', 'value': "ZTF1"}]
-        results = self.db.session.query().query(
-            [AstroObject], None, None, None, None, None, AstroObject.oid == "ZTF1"
-        )
-        self.assertEqual(len(results["results"]), 1)
-        self.assertEqual(results["results"][0].oid, "ZTF1")
-
-    def test_join(self):
-        results = self.db.session.query().query(
-            [Classification, AstroObject, Class],
-            None,
-            None,
-            None,
-            Classification.astro_object == AstroObject.oid,
-            Classification.class_name == Class.name,
-        )
-        self.assertEqual(len(results["results"]), 1)
-        self.assertEqual(results["results"][0].AstroObject.oid, "ZTF1")
-        self.assertEqual(results["results"][0].Classification.class_name, "Super Nova")
-        self.assertEqual(results["results"][0].Class.name, "Super Nova")
-
-    def test_query_pagination(self):
-        for i in range(19):
-            self.db.session.query().get_or_create(
-                AstroObject, {"oid": "ZTF" + str(i + 2)}
-            )
-        self.db.session.commit()
-        results = self.db.session.query().query([AstroObject], 0, 10)
-        self.assertEqual(len(results["results"]), 10)
-        self.assertEqual(results["total"], 20)
-
-    def test_order_desc(self):
-        for i in range(19):
-            self.db.session.query().get_or_create(
-                AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": i}
-            )
-        self.db.session.commit()
-        results = self.db.session.query().query(
-            [AstroObject], None, None, None, AstroObject.nobs, "DESC"
-        )
-        for i in range(10):
-            self.assertGreater(
-                results["results"][i].nobs, results["results"][19 - i].nobs
-            )
-
-    def test_order_asc(self):
-        for i in range(19):
-            self.db.session.query().get_or_create(
-                AstroObject, {"oid": "ZTF" + str(i + 2), "nobs": 100 - i}
-            )
-        self.db.session.commit()
-        results = self.db.session.query().query(
-            [AstroObject], None, None, None, AstroObject.nobs, "ASC"
-        )
-        for i in range(10):
-            self.assertLess(results["results"][i].nobs, results["results"][19 - i].nobs)
-
     def test_paginate(self):
         pagination = self.db.session.query(AstroObject).paginate()
         self.assertIsInstance(pagination, Pagination)

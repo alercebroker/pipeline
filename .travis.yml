@@ -6,6 +6,6 @@ install:
   - pip install coverage
 
 script:
-  - coverage run --source db_plugins -m pytest
+  - coverage run --source db_plugins --omit db_plugins/db/sql/serializers.py -m pytest
 
 after_success: bash <(curl -s https://codecov.io/bash)

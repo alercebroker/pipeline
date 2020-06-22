@@ -1,4 +1,4 @@
-from db_plugins.db.sql.models import Base
+from db_plugins.db.sql import Base
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -11,9 +11,8 @@ from settings import DB_CONFIG
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-db_config = DB_CONFIG["PSQL"]
-db_credentials = 'postgresql://{}:{}@{}:{}/{}'.format(
-    db_config["USER"], db_config["PASSWORD"], db_config["HOST"], db_config["PORT"], db_config["DB_NAME"])
+db_config = DB_CONFIG["SQL"]
+db_credentials = db_config["SQLALCHEMY_DATABASE_URL"]
 
 config.set_main_option('sqlalchemy.url',db_credentials)
 # Interpret the config file for Python logging.
