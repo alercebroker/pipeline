@@ -7,7 +7,7 @@ before_install:
   - ssh-add stamp_classifier_travis
 
 install:
-  - git clone --branch staging -depth=1 git@github.com:alercebroker/stamp_classifier.git
+  - git clone --branch staging --depth=1 git@github.com:alercebroker/stamp_classifier.git
   - mv stamp_classifier ..
 
 before_script:
