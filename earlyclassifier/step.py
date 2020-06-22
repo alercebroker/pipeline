@@ -29,6 +29,7 @@ class EarlyClassifier(GenericStep):
         }
         self.classifier, created = get_or_create(self.session, Classifier, fby)
         add_to_database(self.session, self.classifier)
+        self.requests_session = requests.Session()
 
     def execute(self, message):
         oid = message['objectId']
@@ -53,7 +54,7 @@ class EarlyClassifier(GenericStep):
         retries = 0
         while not work and retries < self.config["n_retry"]:
             try:
-                resp = requests.post(self.config["clf_api"], files=files)
+                resp = self.requests_session.post(self.config["clf_api"], files=files)
                 work = True
             except requests.exceptions.RequestException as e:
                 self.logger.warning(
