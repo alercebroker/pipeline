@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.com/alercebroker/mhps.svg?branch=master)](https://travis-ci.com/alercebroker/mhps)
+[![codecov](https://codecov.io/gh/alercebroker/mhps/branch/master/graph/badge.svg)](https://codecov.io/gh/alercebroker/mhps)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/a5ace81486b44fb18fd332c643976f5e)](https://www.codacy.com/gh/alercebroker/mhps?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alercebroker/mhps&amp;utm_campaign=Badge_Grade)
 
 # Mexican Hat Power Spectra (MHPS)
 
