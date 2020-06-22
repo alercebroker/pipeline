@@ -18,8 +18,8 @@ paps_extension = Extension(
 setup(
     name=module_name,
     ext_modules=cythonize([paps_extension]),
-    install_requires=["numpy==1.17.4","Cython==0.29.12"],
-    build_requires=["Cython==0.29.12","numpy==1.17.4"],
+    install_requires=["numpy==1.17.4", "Cython==0.29.12"],
+    build_requires=["Cython==0.29.12", "numpy==1.17.4"],
     packages=[module_name],
     url='https://github.com/alercebroker/paps',
     description='Patricia Arevalo Power Spectra https://arxiv.org/abs/1207.5825',
