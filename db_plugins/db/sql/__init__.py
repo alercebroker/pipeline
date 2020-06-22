@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
-from math import ceil
-from ..generic import DatabaseConnection
+from ..generic import DatabaseConnection, BaseQuery, Pagination
 
 
 class BaseModel:
@@ -13,84 +12,7 @@ Base = declarative_base(cls=BaseModel)
 from db_plugins.db.sql.models import *
 
 
-class Pagination:
-    def __init__(self, query, page, per_page, total, items):
-        self.query = query
-        self.page = page
-        self.per_page = per_page
-        self.total = total
-        self.items = items
-
-    @property
-    def pages(self):
-        """The total number of pages"""
-        if self.per_page == 0 or self.total is None:
-            pages = 0
-        else:
-            pages = int(ceil(self.total / float(self.per_page)))
-        return pages
-
-    def prev(self):
-        """Returns a :class:`Pagination` object for the previous page."""
-        assert (
-            self.query is not None
-        ), "a query object is required for this method to work"
-        return self.query.paginate(self.page - 1, self.per_page)
-
-    @property
-    def prev_num(self):
-        """Number of the previous page."""
-        if not self.has_prev:
-            return None
-        return self.page - 1
-
-    @property
-    def has_prev(self):
-        """True if a previous page exists"""
-        return self.page > 1
-
-    def next(self):
-        """Returns a :class:`Pagination` object for the next page."""
-        assert (
-            self.query is not None
-        ), "a query object is required for this method to work"
-        return self.query.paginate(self.page + 1, self.per_page)
-
-    @property
-    def has_next(self):
-        """True if a next page exists."""
-        return self.page < self.pages
-
-    @property
-    def next_num(self):
-        """Number of the next page"""
-        if not self.has_next:
-            return None
-        return self.page + 1
-
-
-class BaseQuery(Query):
-    def query(
-        self,
-        models,
-        offset=None,
-        limit=None,
-        total=None,
-        sort_by=None,
-        sort_desc="DESC",
-        *params
-    ):
-        sql_query = self.session.query(*models).filter(*params)
-        total = sql_query.order_by(None).count() if not total else None
-        if sort_by is not None:
-            sql_query = (
-                sql_query.order_by(sort_by.desc())
-                if sort_desc == "DESC"
-                else sql_query.order_by(sort_by.asc())
-            )
-        results = sql_query[offset:limit]
-        return {"total": total, "results": results}
-
+class SQLQuery(BaseQuery, Query):
     def check_exists(self, model=None, filter_by=None):
         """
         Check if record exists in database.
@@ -196,12 +118,14 @@ class SQLConnection(DatabaseConnection):
         self.Session = None
         self.session = None
 
-    def start(self, config, base=None, session_options=None, use_scoped=False, scope_func=None):
+    def start(
+        self, config, base=None, session_options=None, use_scoped=False, scope_func=None
+    ):
         self.config = config
         self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
         self.Base = base or Base
         session_options = session_options or {}
-        session_options["query_cls"] = BaseQuery
+        session_options["query_cls"] = SQLQuery
         self.Session = sessionmaker(bind=self.engine, **session_options)
         if not use_scoped:
             self.create_session()
@@ -213,10 +137,13 @@ class SQLConnection(DatabaseConnection):
 
     def create_scoped_session(self, scope_func=None):
         self.session = scoped_session(self.Session, scopefunc=scope_func)
-        self.Base.query = self.session.query_property(query_cls=BaseQuery)
+        self.Base.query = self.session.query_property(query_cls=SQLQuery)
 
     def create_db(self):
         self.Base.metadata.create_all(bind=self.engine)
 
     def drop_db(self):
         self.Base.metadata.drop_all(bind=self.engine)
+
+    def query(self, **kwargs):
+        return self.session.query(**kwargs)

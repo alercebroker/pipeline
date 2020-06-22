@@ -1,4 +1,6 @@
 import abc
+from math import ceil
+
 class DatabaseConnection(abc.ABC):
     """
     Main database connection interface declares common functionality
@@ -11,6 +13,7 @@ class DatabaseConnection(abc.ABC):
         Initiates the database connection.
         """
         pass
+
     @abc.abstractmethod
     def create_db(self):
         """
@@ -23,8 +26,103 @@ class DatabaseConnection(abc.ABC):
         """
         Removes database collections or tables
         """
+        pass
 
-class AbstractClass():
+    @abc.abstractmethod
+    def query(self):
+        """
+        Gets a database query object. It may have different underlying implementation depending on the database used.
+        """
+        pass
+
+
+class BaseQuery(abc.ABC):
+    @abc.abstractmethod
+    def check_exists(self, model, filter_by):
+        """
+        Checks if a model exists in the database
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_or_create(self, model, filter_by, **kwargs):
+        """
+        Creates a model if it doesn't exist in the database.
+        It always returns a model instance and whether it was created or not.
+        """
+        pass
+
+    @abc.abstractmethod
+    def update(self, instance, args):
+        """
+        Updates a model instance with specified args
+        """
+        pass
+
+    @abc.abstractmethod
+    def paginate(self, page=1, per_page=10, count=True):
+        """
+        Returns a pagination object from this query
+        """
+        pass
+
+class Pagination:
+    def __init__(self, query, page, per_page, total, items):
+        self.query = query
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+        self.items = items
+
+    @property
+    def pages(self):
+        """The total number of pages"""
+        if self.per_page == 0 or self.total is None:
+            pages = 0
+        else:
+            pages = int(ceil(self.total / float(self.per_page)))
+        return pages
+
+    def prev(self):
+        """Returns a :class:`Pagination` object for the previous page."""
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
+        return self.query.paginate(self.page - 1, self.per_page)
+
+    @property
+    def prev_num(self):
+        """Number of the previous page."""
+        if not self.has_prev:
+            return None
+        return self.page - 1
+
+    @property
+    def has_prev(self):
+        """True if a previous page exists"""
+        return self.page > 1
+
+    def next(self):
+        """Returns a :class:`Pagination` object for the next page."""
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
+        return self.query.paginate(self.page + 1, self.per_page)
+
+    @property
+    def has_next(self):
+        """True if a next page exists."""
+        return self.page < self.pages
+
+    @property
+    def next_num(self):
+        """Number of the next page"""
+        if not self.has_next:
+            return None
+        return self.page + 1
+
+
+class AbstractClass:
     """
     Abstract Class model
 
@@ -35,6 +133,7 @@ class AbstractClass():
     acronym : str
         the short class name
     """
+
     name = None
     acronym = None
 
@@ -43,7 +142,7 @@ class AbstractClass():
         Gets the taxonomies that the class instance belongs to
         """
         pass
-    
+
     def get_classifications(self):
         """
         Gets all classifications with the class
@@ -51,7 +150,7 @@ class AbstractClass():
         pass
 
 
-class AbstractTaxonomy():
+class AbstractTaxonomy:
     """
     Abstract Taxonomy model
 
@@ -60,7 +159,9 @@ class AbstractTaxonomy():
     name : str
         the taxonomy name
     """
+
     name = None
+
     def get_classes(self):
         """
         Gets the classes that a taxonomy uses
@@ -74,7 +175,7 @@ class AbstractTaxonomy():
         pass
 
 
-class AbstractClassifier():
+class AbstractClassifier:
     """
     Abstract Classifier model
 
@@ -83,6 +184,7 @@ class AbstractClassifier():
     name : str
         name of the classifier
     """
+
     name = None
 
     def get_classifications(self):
@@ -98,7 +200,7 @@ class AbstractClassifier():
         pass
 
 
-class AbstractAstroObject():
+class AbstractAstroObject:
     """
     Abstract Object model
 
@@ -123,6 +225,7 @@ class AbstractAstroObject():
     deltajd: float
         difference between last and first mjd
     """
+
     oid = None
     nobs = None
     lastmjd = None
@@ -176,7 +279,7 @@ class AbstractAstroObject():
         pass
 
 
-class AbstractXmatch():
+class AbstractXmatch:
     """
     Abstract Crossmatch model
 
@@ -187,6 +290,7 @@ class AbstractXmatch():
     catalog_object_id : str
         the catalog's name identifier for the object
     """
+
     catalog_id = None
     catalog_object_id = None
 
@@ -196,7 +300,8 @@ class AbstractXmatch():
         """
         pass
 
-class AbstractMagnitudeStatistics():
+
+class AbstractMagnitudeStatistics:
     """
     Abstract Magnitude Statistics model
 
@@ -221,6 +326,7 @@ class AbstractMagnitudeStatistics():
     first : float
         value for the first magnitude meassured
     """
+
     magnitude_type = None
     fid = None
     mean = None
@@ -237,7 +343,8 @@ class AbstractMagnitudeStatistics():
         """
         pass
 
-class AbstractClassification():
+
+class AbstractClassification:
     """
     Abstract Classification model
 
@@ -259,11 +366,13 @@ class AbstractClassification():
         Gets the class of the classification
         """
         pass
+
     def get_object(self):
         """
         Gets the object classifified
         """
         pass
+
     def get_classifier(self):
         """
         Gets the classifier used
@@ -271,8 +380,7 @@ class AbstractClassification():
         pass
 
 
-
-class AbstractFeatures():
+class AbstractFeatures:
     """
     Abstract Features model
 
@@ -281,10 +389,11 @@ class AbstractFeatures():
     version : str
         name of the version used for features
     """
+
     version = None
 
 
-class AbstractNonDetection():
+class AbstractNonDetection:
     """
     Abstract model for non detections
 
@@ -297,6 +406,7 @@ class AbstractNonDetection():
     fid : int
         band identifier 1 for red, 2 for green
     """
+
     mjd = None
     diffmaglim = None
     fid = None
@@ -307,7 +417,8 @@ class AbstractNonDetection():
         """
         pass
 
-class AbstractDetection():
+
+class AbstractDetection:
     """
     Abstract model for detections
 
@@ -344,6 +455,7 @@ class AbstractDetection():
     avro : string
         url for avro file in s3
     """
+
     candid = None
     mjd = None
     fid = None
@@ -367,7 +479,8 @@ class AbstractDetection():
         """
         pass
 
-class AbstractOutlierDetector():
+
+class AbstractOutlierDetector:
     """
     Abstract class for outlier detection models
 
@@ -376,6 +489,7 @@ class AbstractOutlierDetector():
     name : str
         a name for identifying the model
     """
+
     name = None
 
     def get_outlier_scores(self):
@@ -384,7 +498,8 @@ class AbstractOutlierDetector():
         """
         pass
 
-class AbstractOutlierScore():
+
+class AbstractOutlierScore:
     """
     Abstract class for outlier scores
 
@@ -395,5 +510,6 @@ class AbstractOutlierScore():
     scores : json
         other scoring metrics for outliers
     """
+
     score = None
     scores = None
