@@ -145,5 +145,5 @@ class SQLConnection(DatabaseConnection):
     def drop_db(self):
         self.Base.metadata.drop_all(bind=self.engine)
 
-    def query(self, **kwargs):
-        return self.session.query(**kwargs)
+    def query(self, *args):
+        return self.session.query(*args)

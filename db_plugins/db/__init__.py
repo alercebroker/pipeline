@@ -34,6 +34,6 @@ class SQLDatabase(ALeRCEDatabase):
     def session(self):
         return self.conn.session
 
-    def query(self, **kwargs):
-        return self.conn.query(**kwargs)
+    def query(self, *args):
+        return self.conn.query(*args)
         
