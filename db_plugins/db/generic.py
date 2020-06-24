@@ -8,7 +8,7 @@ class DatabaseConnection(abc.ABC):
     """
 
     @abc.abstractmethod
-    def start(self):
+    def connect(self):
         """
         Initiates the database connection.
         """

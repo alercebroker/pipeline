@@ -4,12 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from ..generic import DatabaseConnection, BaseQuery, Pagination
 
 
-class BaseModel:
-    query = None
-
-
-Base = declarative_base(cls=BaseModel)
-from db_plugins.db.sql.models import *
+Base = declarative_base()
+from db_plugins.db.sql import models
 
 
 class SQLQuery(BaseQuery, Query):
@@ -118,7 +114,7 @@ class SQLConnection(DatabaseConnection):
         self.Session = None
         self.session = None
 
-    def start(
+    def connect(
         self, config, base=None, session_options=None, use_scoped=False, scope_func=None
     ):
         self.config = config
