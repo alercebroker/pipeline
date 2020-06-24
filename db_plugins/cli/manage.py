@@ -1,4 +1,4 @@
-from db_plugins.db import SQLDatabase
+from db_plugins.db import SQLConnectionCreator
 import alembic.config
 import click
 import os, sys
@@ -28,7 +28,7 @@ def initdb(settings_path):
 
 
 def init_sql(config):
-    db = SQLDatabase()
+    db = SQLConnectionCreator()
     db.connect(config=config)
     db.create_db()
     db.session.close()

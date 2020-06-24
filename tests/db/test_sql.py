@@ -1,5 +1,5 @@
 from test_core import *
-from db_plugins.db import SQLDatabase
+from db_plugins.db import SQLConnectionCreator
 from db_plugins.db.sql.models import *
 from db_plugins.db.sql import Pagination
 from sqlalchemy import create_engine
@@ -18,7 +18,7 @@ class DatabaseConnectionTest(unittest.TestCase):
             "autocommit": False,
             "autoflush": True,
         }
-        self.db = SQLDatabase()
+        self.db = SQLConnectionCreator()
         self.db.connect(config=config, session_options=session_options)
 
     @classmethod
@@ -97,7 +97,7 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
             "autocommit": False,
             "autoflush": False,
         }
-        self.db = SQLDatabase()
+        self.db = SQLConnectionCreator()
         self.db.connect(config=config, session_options=session_options, use_scoped=True)
 
     @classmethod
@@ -173,7 +173,7 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
             "autocommit": False,
             "autoflush": False,
         }
-        self.db = SQLDatabase()
+        self.db = SQLConnectionCreator()
         self.db.connect(config=config, session_options=session_options)
 
     @classmethod

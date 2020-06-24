@@ -1,31 +1,31 @@
 import abc
-from .sql import SQLConnection
+from db_plugins.db.sql import SQLConnection
 
-class ALeRCEDatabase(abc.ABC):
+class DatabaseConnectionCreator(abc.ABC):
     @abc.abstractmethod
-    def create_database(self):
+    def create_connection(self):
         pass
 
     def connect(self, **kwargs):
-        connection = self.create_database()
+        connection = self.create_connection()
         connection.start(**kwargs)
 
     def create_db(self):
-        connection = self.create_database()
+        connection = self.create_connection()
         connection.create_db()
 
     def drop_db(self):
-        connection = self.create_database()
+        connection = self.create_connection()
         connection.drop_db()
 
     def query(self, *args):
-        connection = self.create_database()
+        connection = self.create_connection()
         return connection.query(*args)
 
 
-class SQLDatabase(ALeRCEDatabase):
+class SQLConnectionCreator(DatabaseConnectionCreator):
     conn = None
-    def create_database(self):
+    def create_connection(self):
         if not self.conn:
             self.conn = SQLConnection()
         return self.conn
