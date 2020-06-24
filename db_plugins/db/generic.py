@@ -29,12 +29,11 @@ class DatabaseConnection(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def query(self):
+    def query(self, *args):
         """
-        Gets a database query object. It may have different underlying implementation depending on the database used.
+        Gets a query object
         """
         pass
-
 
 class BaseQuery(abc.ABC):
     @abc.abstractmethod
@@ -65,6 +64,29 @@ class BaseQuery(abc.ABC):
         Returns a pagination object from this query
         """
         pass
+
+    @abc.abstractmethod
+    def bulk_insert(self, objects, model):
+        """
+        Inserts multiple objects to the database
+        """
+        pass
+
+    # @abc.abstractmethod
+    # def find_all(self):
+    #     """
+    #     Retrieves all items from the result of this query
+    #     """
+    #     pass
+
+    # @abc.abstractmethod
+    # def find_one(self):
+    #     """
+    #     Retrieves only one item from the result of this query.
+    #     Returns None if result is empty.
+    #     """
+    #     pass
+
 
 class Pagination:
     def __init__(self, query, page, per_page, total, items):
@@ -120,6 +142,7 @@ class Pagination:
         if not self.has_next:
             return None
         return self.page + 1
+
 
 
 class AbstractClass:

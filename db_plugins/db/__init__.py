@@ -18,9 +18,9 @@ class ALeRCEDatabase(abc.ABC):
         connection = self.create_database()
         connection.drop_db()
 
-    def query(self, **kwargs):
+    def query(self, *args):
         connection = self.create_database()
-        return connection.query(**kwargs)
+        return connection.query(*args)
 
 
 class SQLDatabase(ALeRCEDatabase):
@@ -34,6 +34,4 @@ class SQLDatabase(ALeRCEDatabase):
     def session(self):
         return self.conn.session
 
-    def query(self, *args):
-        return self.conn.query(*args)
-        
+
