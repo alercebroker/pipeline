@@ -199,16 +199,18 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
             firstmjd=1.0,
         )
         self.model.xmatches.append(Xmatch(catalog_id="C1", catalog_oid="O1"))
-        self.model.magnitude_statistics = MagnitudeStatistics(
-            fid=1,
-            magnitude_type="psf",
-            mean=1.0,
-            median=1.0,
-            max_mag=1.0,
-            min_mag=1.0,
-            sigma=1.0,
-            last=1.0,
-            first=1.0,
+        self.model.magnitude_statistics.append(
+            MagnitudeStatistics(
+                fid=1,
+                magnitude_type="psf",
+                mean=1.0,
+                median=1.0,
+                max_mag=1.0,
+                min_mag=1.0,
+                sigma=1.0,
+                last=1.0,
+                first=1.0,
+            )
         )
         self.model.classifications.append(
             Classification(
