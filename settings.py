@@ -18,10 +18,17 @@ import os
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation-
 CONSUMER_CONFIG = {
-			"TOPICS" : ["historic-data"],
+            "TOPIC_STRATEGY": {
+                "CLASS": "apf.core.topic_management.DailyTopicStrategy",
+                "PARAMS": {
+                    "topic_format": "ztf_%s_programid1",
+                    "date_format": "%Y%m%d",
+                    "change_hour": 23,
+                },
+            },
 			"PARAMS" : {
-					"bootstrap.servers": os.environ["KAFKA_SERVER"],
-					"group.id" : os.environ["CONSUMER_GROUP"],
+					"bootstrap.servers": os.environ["CONSUMER_SERVER"],
+					"group.id" : os.environ["CONSUMER_GROUP_ID"],
 			},
 			"consume.timeout" : 10,
 			"consume.messages" : 1000
@@ -37,9 +44,9 @@ RESULT_TYPE = {
 }
 
 PRODUCER_CONFIG = {
- 			"TOPIC": 'xmatch_test',
+ 			"TOPIC": os.environ["PRODUCER_TOPIC"],
     		"PARAMS": {
-        		'bootstrap.servers': os.environ["KAFKA_SERVER"] ,
+        		'bootstrap.servers': os.environ["PRODUCER_SERVER"],
         		'message.max.bytes': 6291456
     		},
 			"SCHEMA" : {
