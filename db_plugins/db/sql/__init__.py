@@ -94,6 +94,19 @@ class SQLQuery(BaseQuery, Query):
         self.session.bulk_insert_mappings(model, objects)
 
     def paginate(self, page=1, per_page=10, count=True):
+        """
+        Returns pagination object with the results
+
+        Parameters
+        -----------
+        
+        page : int
+            page or offset of the query
+        per_page : int
+            number of items per each result page
+        count : bool
+            whether to count total elements in query
+        """
         if page < 1:
             page = 1
         if per_page < 0:
@@ -104,6 +117,47 @@ class SQLQuery(BaseQuery, Query):
         else:
             total = self.order_by(None).count()
         return Pagination(self, page, per_page, total, items)
+
+    def find_one(self, model=None, filter_by=None):
+        """
+        Finds one item of the specified model. 
+        
+        If there are more than one item an error occurs.
+        If there are no items, then it returns None
+
+        Parameters
+        -----------
+        model : Model
+            Class of the model to be retrieved
+        filter_by : dict
+            attributes used to find object in the database
+        """
+        model = self._entities[0].mapper.class_ if self._entities else model
+        query = self.session.query(model) if not self._entities else self
+        return query.filter_by(**filter_by).one_or_none()
+
+    def find(self, model=None, filter_by=None, paginate=True):
+        """
+        Finds list of items of the specified model. 
+        
+        If there are too many items a timeout can happen.
+
+        Parameters
+        -----------
+        model : Model
+            Class of the model to be retrieved
+        filter_by : dict
+            attributes used to find objects in the database
+        paginate : bool
+            whether to get a paginated result or not
+        """
+        model = self._entities[0].mapper.class_ if self._entities else model
+        query = self.session.query(model) if not self._entities else self
+        query = query.filter_by(**filter_by)
+        if paginate:
+            return query.paginate()
+        else:
+            return query.all()
 
 
 class SQLConnection(DatabaseConnection):
