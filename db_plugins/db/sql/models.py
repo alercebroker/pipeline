@@ -81,7 +81,7 @@ class AstroObject(Base, generic.AbstractAstroObject):
     )
 
     xmatches = relationship("Xmatch")
-    magnitude_statistics = relationship("MagnitudeStatistics", uselist=False)
+    magnitude_statistics = relationship("MagnitudeStatistics", uselist=True)
     classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
