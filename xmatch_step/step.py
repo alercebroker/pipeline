@@ -25,27 +25,29 @@ class XmatchStep(GenericStep):
 		}
 		return record
 
-	def _format_result(self, input,result):
+	def _format_result(self, msgs, input, result):
 
 		messages = []
 		#objects without xmatch
 		without_result = input[ ~input['oid_in'].isin(result['oid_in']) ]['oid_in'].values
-		for oid in without_result:
-			message = { 'oid' : oid, 'result' : None }
-			messages.append(message)
 
-		#results from allwise
-		for idx,row in result.iterrows():
-			oid =  row['oid_in']
-			columns = dict(row)
-			del columns['oid_in']
-			message = {
-						'oid': oid,
-						'result' :  {
-										'allwise' : columns
-						}
-			}
-			messages.append(message)
+		for m in msgs:
+			oid = m['objectId']
+			if oid in without_result:
+				message = {'cid': 'allwise', 'result': None}
+			else:
+				sel = result[result['oid_in'] == oid]
+				row = sel.iloc[0]
+				columns = dict(row)
+				del columns['oid_in']
+				message = {
+					'cid': 'allwise',
+					'result': {
+						'allwise': columns
+					}
+				}
+			m['xmatchs'] = message
+			messages.append(m)
 
 		return messages
 
@@ -80,7 +82,7 @@ class XmatchStep(GenericStep):
 							radius
 		)
 
-		messages = self._format_result(df,result)
+		messages = self._format_result(messages, df, result)
 
 		self._produce(messages)
 
