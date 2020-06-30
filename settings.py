@@ -1,5 +1,5 @@
 ##################################################
-#       correction   Settings File
+#       Correction   Settings File
 ##################################################
 import os
 DB_CONFIG = {

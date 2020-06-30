@@ -1,13 +1,14 @@
 from apf.core.step import GenericStep
-import logging
-import numpy as np
-from apf.db.sql.models import Detection, AstroObject, NonDetection
-from apf.db.sql import get_session, get_or_create, bulk_insert
 from apf.producers import KafkaProducer
+from db_plugins.db.sql import models
+from astropy.time import Time
+from correction import *
+import numpy as np
 import datetime
+import logging
 import math
 import time
-from astropy.time import Time
+
 np.seterr(divide='ignore')
 
 
@@ -22,10 +23,8 @@ class Correction(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-
     def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         super().__init__(consumer, level=level, config=config, **step_args)
-        self.session = get_session(config["DB_CONFIG"])
         self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
     def execute(self, message):
