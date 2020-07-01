@@ -42,11 +42,9 @@ class XmatchStep(GenericStep):
 				del columns['oid_in']
 				message = {
 					'cid': 'allwise',
-					'result': {
-						'allwise': columns
-					}
+					'result': columns
 				}
-			m['xmatchs'] = message
+			m['xmatchs'] = [message]
 			messages.append(m)
 
 		return messages
