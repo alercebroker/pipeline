@@ -1,6 +1,4 @@
-.. image:: https://travis-ci.org/alercebroker/db-plugins.svg?branch=master
-    :target: https://travis-ci.org/alercebroker/db-plugins
-
+.. image:: https://github.com/alercebroker/db-plugins/workflows/Tests/badge.svg?branch=master&event=push
 .. image:: https://codecov.io/gh/alercebroker/db-plugins/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/alercebroker/db-plugins
 
