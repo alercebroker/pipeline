@@ -1,4 +1,4 @@
-from db_plugins.db.sql import Base
+from db_plugins.db.sql import Base, satisfy_keys, settings_map
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -11,10 +11,17 @@ from settings import DB_CONFIG
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-db_config = DB_CONFIG["SQL"]
+if "SQL" in DB_CONFIG:
+    db_config = DB_CONFIG["SQL"]
+    required_key = satisfy_keys(set(db_config.keys()))
+    if len(required_key) == 0:
+        db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
+else:
+    raise Exception(f"Missing arguments in settings")
+
 db_credentials = db_config["SQLALCHEMY_DATABASE_URL"]
 
-config.set_main_option('sqlalchemy.url',db_credentials)
+config.set_main_option('sqlalchemy.url', db_credentials)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)

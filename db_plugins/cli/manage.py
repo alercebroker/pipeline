@@ -1,11 +1,21 @@
-from db_plugins.db.sql import SQLConnection
+from db_plugins.db.sql import SQLConnection, satisfy_keys, settings_map
 import alembic.config
 import click
-import os, sys
+import sys
+import os
 
 
 MANAGE_PATH = os.path.dirname(os.path.abspath(__file__))
 MIGRATIONS_PATH = os.path.abspath(os.path.join(MANAGE_PATH, "../db/sql/"))
+
+
+def init_sql(config):
+    db = SQLConnection()
+    db.connect(config=config)
+    db.create_db()
+    db.session.close()
+    os.chdir(MIGRATIONS_PATH)
+    alembic.config.main(["stamp", "head"])
 
 
 @click.group()
@@ -23,17 +33,18 @@ def initdb(settings_path):
 
     if "SQL" in DB_CONFIG:
         db_config = DB_CONFIG["SQL"]
-        init_sql(db_config)
+        required_key = satisfy_keys(set(db_config.keys()))
+        if len(required_key) == 0:
+            db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
+
+        if "SQLALCHEMY_DATABASE_URL" in db_config:
+            init_sql(db_config)
+        else:
+            raise Exception(f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}")
+
         click.echo("Database created with credentials from {}".format(settings_path))
-
-
-def init_sql(config):
-    db = SQLConnection()
-    db.connect(config=config)
-    db.create_db()
-    db.session.close()
-    os.chdir(MIGRATIONS_PATH)
-    alembic.config.main(["stamp", "head"])
+    else:
+        raise Exception("Invalid settings file")
 
 
 @cli.command()

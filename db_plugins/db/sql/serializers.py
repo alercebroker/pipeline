@@ -17,9 +17,9 @@ class ClassifierSchema(SQLAlchemyAutoSchema):
         model = Classifier
 
 
-class AstroObjectSchema(SQLAlchemyAutoSchema):
+class ObjectSchema(SQLAlchemyAutoSchema):
     class Meta:
-        model = AstroObject
+        model = Object
 
 
 class ClassificationSchema(SQLAlchemyAutoSchema):
@@ -45,3 +45,37 @@ class DetectionSchema(SQLAlchemyAutoSchema):
 class NonDetectionSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = NonDetection
+
+
+class DataqualitySchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Dataquality
+
+class Gaia_ztfSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Gaia_ztf
+
+
+class Ss_ztfSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Ss_ztf
+
+
+class Ps1_ztfSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Ps1_ztf
+
+
+class ReferenceSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Reference
+
+
+class PipelineSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Pipeline
+
+
+class StepSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Step

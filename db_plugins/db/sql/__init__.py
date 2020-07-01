@@ -3,10 +3,16 @@ from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
 from ..generic import DatabaseConnection, BaseQuery, Pagination
 
+MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DB_NAME", "ENGINE"}
 
 Base = declarative_base()
 from db_plugins.db.sql import models
 
+def satisfy_keys(config_keys):
+    return MAP_KEYS.difference(config_keys)
+
+def settings_map(config):
+    return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
 class SQLQuery(BaseQuery, Query):
     def check_exists(self, model=None, filter_by=None):

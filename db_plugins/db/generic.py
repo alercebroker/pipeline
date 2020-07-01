@@ -1,6 +1,7 @@
 import abc
 from math import ceil
 
+
 class DatabaseConnection(abc.ABC):
     """
     Main database connection interface declares common functionality
@@ -34,6 +35,7 @@ class DatabaseConnection(abc.ABC):
         Gets a query object
         """
         pass
+
 
 class BaseQuery(abc.ABC):
     @abc.abstractmethod
@@ -144,7 +146,6 @@ class Pagination:
         return self.page + 1
 
 
-
 class AbstractClass:
     """
     Abstract Class model
@@ -223,7 +224,7 @@ class AbstractClassifier:
         pass
 
 
-class AbstractAstroObject:
+class AbstractObject:
     """
     Abstract Object model
 
@@ -250,14 +251,25 @@ class AbstractAstroObject:
     """
 
     oid = None
-    nobs = None
-    lastmjd = None
+    ndethist = None
+    ncovhist = None
+    jdstarthist = None
+    jdendhist = None
+    corrected = None
+    stellar = None
+    ndet = None
+    g_r_max = None
+    g_r_max_corr = None
+    g_r_mean = None
+    g_r_mean_corr = None
     meanra = None
     meandec = None
     sigmara = None
     sigmadec = None
     deltajd = None
     firstmjd = None
+    lastmjd = None
+    step_id_corr = None
 
     def get_classifications(self):
         """
@@ -350,15 +362,26 @@ class AbstractMagnitudeStatistics:
         value for the first magnitude meassured
     """
 
-    magnitude_type = None
+    oid = None
     fid = None
-    mean = None
-    median = None
-    max_mag = None
-    min_mag = None
-    sigma = None
-    last = None
-    first = None
+    stellar = None
+    corrected = None
+    ndet = None
+    ndubious = None
+    dmdt_first = None
+    dm_first = None
+    sigmadm_first = None
+    dt_first = None
+    magmean = None
+    magmedian = None
+    magmax = None
+    magmin = None
+    magsigma = None
+    maglast = None
+    magfirst = None
+    firstmjd = None
+    lastmjd = None
+    step_id_corr = None
 
     def get_object(self):
         """
@@ -479,22 +502,37 @@ class AbstractDetection:
         url for avro file in s3
     """
 
+    avro = None
+    oid = None
     candid = None
-    mjd = None
+    jd = None
     fid = None
+    pid = None
+    diffmaglim = None
+    isdiffpos = None
+    nid = None
     ra = None
     dec = None
-    rb = None
-    magap = None
     magpsf = None
     sigmapsf = None
+    magap = None
     sigmagap = None
-    alert = None
-    magap_corr = None
+    distnr = None
+    rb = None
+    rbversion = None
+    drb = None
+    drbversion = None
+    magapbig = None
+    sigmagapbig = None
+    rfid = None
     magpsf_corr = None
     sigmapsf_corr = None
-    sigmagap_corr = None
-    avro = None
+    sigmapsf_corr_ext = None
+    corrected = None
+    dubious = None
+    parent_candid = None
+    has_stamp = None
+    step_id_corr = None
 
     def get_object(self):
         """
@@ -536,3 +574,126 @@ class AbstractOutlierScore:
 
     score = None
     scores = None
+
+
+class AbstractDataquality:
+    candid = None
+    oid = None
+    fid = None
+    xpos = None
+    ypos = None
+    chipsf = None
+    sky = None
+    fwhm = None
+    classtar = None
+    mindtoedge = None
+    seeratio = None
+    aimage = None
+    bimage = None
+    aimagerat = None
+    bimagerat = None
+    nneg = None
+    nbad = None
+    sumrat = None
+    scorr = None
+    dsnrms = None
+    ssnrms = None
+    magzpsci = None
+    magzpsciunc = None
+    magzpscirms = None
+    nmatches = None
+    clrcoeff = None
+    clrcounc = None
+    zpclrcov = None
+    zpmed = None
+    clrmed = None
+    clrrms = None
+    exptime = None
+
+
+class AbstractGaia_ztf:
+
+    oid = None
+    candid = None
+    neargaia = None
+    neargaiabright = None
+    maggaia = None
+    maggaiabright = None
+    unique = None
+
+
+class AbstractSs_ztf:
+
+    oid = None
+    candid = None
+    ssdistnr = None
+    ssmagnr = None
+    ssnamenr = None
+
+
+class AbstractPs1_ztf:
+
+    oid = None
+    candid = None
+    objectidps1 = None
+    sgmag1 = None
+    srmag1 = None
+    simag1 = None
+    szmag1 = None
+    sgscore1 = None
+    distpsnr1 = None
+    objectidps2 = None
+    sgmag2 = None
+    srmag2 = None
+    simag2 = None
+    szmag2 = None
+    sgscore2 = None
+    distpsnr2 = None
+    objectidps3 = None
+    sgmag3 = None
+    srmag3 = None
+    simag3 = None
+    szmag3 = None
+    sgscore3 = None
+    distpsnr3 = None
+    nmtchps = None
+    unique1 = None
+
+
+class AbstractReference:
+
+    oid = None
+    rfid = None
+    candiid = None
+    fid = None
+    rcid = None
+    field = None
+    magnr = None
+    sigmagnr = None
+    chinr = None
+    sharpnr = None
+    ranr = None
+    decnr = None
+    mjdstartref = None
+    mjdendref = None
+    nframesref = None
+
+
+class AbstractPipeline:
+
+    pipeline_id = None
+    step_id_corr = None
+    step_id_feat = None
+    step_id_clf = None
+    step_id_out = None
+    step_id_stamp = None
+    date = None
+
+
+class AbstractStep:
+
+    step_id = None
+    name = None
+    version = None
+    comments = None
+    date = None
