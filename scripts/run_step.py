@@ -4,7 +4,7 @@ import logging
 
 level = logging.INFO
 if os.getenv('LOGGING_DEBUG'):
-    level=logging.DEBUG
+    level = logging.DEBUG
 
 logging.basicConfig(level=level,
                     format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',

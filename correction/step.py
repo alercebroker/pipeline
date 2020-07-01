@@ -1,15 +1,20 @@
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from db_plugins.db.sql import models
-from astropy.time import Time
-from correction import *
-import numpy as np
-import datetime
-import logging
-import math
-import time
+from db_plugins.db.sql.models import Object, Detection, NonDetection
+from db_plugins.db.sql import SQLConnection
+from lc_correction.compute import apply_correction, DISTANCE_THRESHOLD
 
+import numpy as np
+import logging
+
+logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
+
+DET_KEYS = ['avro', 'oid', 'candid', 'jd', 'fid', 'pid', 'diffmaglim', 'isdiffpos', 'nid', 'ra', 'dec', 'magpsf',
+            'sigmapsf', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'drb', 'drbversion', 'magapbig', 'sigmagapbig',
+            'rfid', 'magpsf_corr', 'sigmapsf_corr', 'sigmapsf_corr_ext', 'corrected', 'dubious', 'parent_candid',
+            'has_stamp', 'step_id_corr']
+COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
 
 class Correction(GenericStep):
@@ -26,227 +31,62 @@ class Correction(GenericStep):
     def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         super().__init__(consumer, level=level, config=config, **step_args)
         self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
+        self.driver = SQLConnection()
+        self.driver.connect(config["DB_CONFIG"]["SQL"])
+
+    def get_object(self, alert: dict) -> Object:
+        data = {
+            "oid": alert["objectId"]
+        }
+        return self.driver.session.query().get_or_create(Object, data)
+
+    def get_detection(self, candidate: dict) -> Detection:
+        filters = {
+            "candid": candidate["candid"]
+        }
+        data = {key: candidate[key] for key in DET_KEYS if key in candidate.keys()}
+        return self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
+
+    def set_object_values(self, alert: dict, obj: Object) -> Object:
+        obj.ndethist = alert["candidate"]["ndethist"]
+        obj.ncovhist = alert["candidate"]["ncovhist"]
+        obj.jdstarthist = alert["candidate"]["jdstarthist"] - 2400000.5
+        obj.jdendhist = alert["candidate"]["jdendhist"] - 2400000.5
+        obj.firstmjd = alert["candidate"]["jd"] - 2400000.5
+        return obj
+
+    def preprocess_alert(self, alert: dict) -> None:
+        alert["candidate"]["mjd"] = alert["candidate"]["jd"] - 2400000.5
+        alert["candidate"]["isdiffpos"] = 1 if alert["candidate"]["isdiffpos"] in ["t", "1"] else -1
+        alert["candidate"]["corrected"] = alert["candidate"]["distnr"] < DISTANCE_THRESHOLD
+        alert["candidate"]["candid"] = str(alert["candidate"]["candid"])
+        for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
+            alert.pop(k, None)
+
+    def do_correction(self, alert: dict, inplace=False) -> dict:
+        values = apply_correction(alert["candidate"])
+        result = dict(zip(COR_KEYS, values))
+        if inplace:
+            alert.update(result)
+        return result
+
+    def process_lightcurve(self, alert: dict, obj: Object) -> None:
+        detection, created = self.get_detection(alert["candidate"])
+        print(detection, created)
 
     def execute(self, message):
-        # Add queue time metric
-        # mjd = message["candidate"]["jd"] - 2400000.5
-        # mjd_date = Time(mjd, format="mjd").to_datetime()
-        # queue_time = datetime.datetime.now() - mjd_date
-        # self.metrics["queue_time"] = queue_time.total_seconds()
-        # Correct Lightcurve
-        message["candidate"].update(self.correct_message(message["candidate"]))
-        light_curve = self.get_lightcurve(message["objectId"])
-        # Insert detections and non detections to database
-        self.insert_db(message, light_curve)
-        # Clear non_detections for producer
-        for non_det in light_curve["non_detections"]:
-            if "datetime" in non_det:
-                del non_det["datetime"]
-        # Format candid for producer
-        message["candid"] = str(message["candid"])
-        fid = message["candidate"]["fid"]
-        write = {
-            "oid": message["objectId"],
-            "candid": message["candid"],
-            "detections": light_curve["detections"],
-            "non_detections": light_curve["non_detections"],
-            "fid": fid,
-        }
-        self.producer.produce(write)
+        obj, created = self.get_object(message)
+        self.preprocess_alert(message)
+        self.do_correction(message, inplace=True)
+        self.process_lightcurve(message, obj)
+        # First observation of the object
+        if created:
+            self.set_object_values(message, obj)
 
-    def correct_magnitude(self, magref, sign, magdiff):
-        result = np.nan
-        try:
-            aux = np.power(10, (-0.4 * magref)) + sign * \
-                np.power(10, (-0.4 * magdiff))
-            result = -2.5 * np.log10(aux)
-        except Exception as e:
-            self.logger.exception("Correct magnitude failed: {}".format(e))
-        return result
+        # Another case
 
-    def correct_sigma_mag(self, magref, sigmagref, sign, magdiff, sigmagdiff):
-        result = np.nan
-        try:
-            auxref = np.power(10, (-0.4 * magref))
-            auxdiff = np.power(10, (-0.4 * magdiff))
-            aux = auxref + sign * auxdiff
 
-            result = np.sqrt(np.power((auxref * sigmagref), 2) +
-                             np.power((auxdiff * sigmagdiff), 2)) / aux
+        self.logger.info(f"{obj} -> {created}")
+        self.driver.session.commit()
 
-        except Exception as e:
-            self.logger.exception(
-                "Correct sigma magnitude failed: {}".format(e))
-        return result
-
-    def correct_message(self, message):
-        isdiffpos = str(message['isdiffpos'])
-        isdiffpos = 1 if (isdiffpos == 't' or isdiffpos == '1') else -1
-        message["isdiffpos"] = isdiffpos
-        magpsf = message['magpsf']
-        magap = message['magap']
-        magref = message['magnr']
-        sigmagref = message['sigmagnr']
-        sigmapsf = message['sigmapsf']
-        sigmagap = message['sigmagap']
-
-        magpsf_corr = self.correct_magnitude(magref, isdiffpos, magpsf)
-        sigmapsf_corr = self.correct_sigma_mag(
-            magref, sigmagref, isdiffpos, magpsf, sigmapsf)
-        magap_corr = self.correct_magnitude(magref, isdiffpos, magap)
-        sigmagap_corr = self.correct_sigma_mag(
-            magref, sigmagref, isdiffpos, magap, sigmagap)
-
-        message["magpsf_corr"] = magpsf_corr if not np.isnan(
-            magpsf_corr) and not np.isinf(magpsf_corr) else None
-        message["sigmapsf_corr"] = sigmapsf_corr if not np.isnan(
-            sigmapsf_corr) and not np.isinf(sigmapsf_corr) else None
-        message["magap_corr"] = magap_corr if not np.isnan(
-            magap_corr) and not np.isinf(magap_corr) else None
-        message["sigmagap_corr"] = sigmagap_corr if not np.isnan(
-            sigmagap_corr) and not np.isinf(sigmagap_corr) else None
-        return message
-
-    def clean_alert(self, message):
-        keys_message = set([*message])
-        keys_alert = set([*message["alert"]])
-        keys_diff = keys_alert.difference(keys_message)
-        return {k: message['alert'][k] for k in keys_diff}
-
-    def insert_db(self, message, light_curve):
-        kwargs = {
-            "mjd": message["candidate"]["jd"] - 2400000.5,
-            "fid": message["candidate"]["fid"],
-            "ra": message["candidate"]["ra"],
-            "dec": message["candidate"]["dec"],
-            "rb": message["candidate"]["rb"],
-            "magap": message["candidate"]["magap"],
-            "magap_corr": message["candidate"]["magap_corr"],
-            "magpsf": message["candidate"]["magpsf"],
-            "magpsf_corr": message["candidate"]["magpsf_corr"],
-            "sigmagap": message["candidate"]["sigmagap"],
-            "sigmagap_corr": message["candidate"]["sigmagap_corr"],
-            "sigmapsf": message["candidate"]["sigmapsf"],
-            "sigmapsf_corr": message["candidate"]["sigmapsf_corr"],
-            "oid": message["objectId"],
-            "alert": message["candidate"],
-        }
-        kwargs["alert"] = self.clean_alert(kwargs)
-        found = list(filter(lambda det: det['candid'] == str(
-            message["candid"]), light_curve["detections"]))
-        if len(found) > 0:
-            return
-
-        t0 = time.time()
-        obj, created = get_or_create(self.session, AstroObject, filter_by={
-            "oid": message["objectId"]})
-        t1 = time.time()
-        self.logger.debug("object={}\tcreated={}\tdate={}\ttime={}".format(
-            obj.oid, created, datetime.datetime.utcnow(), t1-t0))
-        t0 = time.time()
-        det, created = get_or_create(self.session, Detection, filter_by={
-            "candid": str(message["candid"])}, **kwargs)
-        det = det.__dict__
-        del det["_sa_instance_state"]
-        light_curve["detections"].append(det)
-        t1 = time.time()
-        self.logger.debug("detection={}\tcreated={}\tdate={}\ttime={}".format(
-            det["candid"], created, datetime.datetime.utcnow(), t1-t0))
-
-        prv_cands = []
-        non_dets = []
-        if message["prv_candidates"]:
-            t0 = time.time()
-            for prv_cand in message["prv_candidates"]:
-                mjd = prv_cand["jd"] - 2400000.5
-                if prv_cand["diffmaglim"] is not None:
-                    non_detection_args = {
-                        "diffmaglim": prv_cand["diffmaglim"],
-                        "oid": kwargs["oid"],
-                        "mjd": mjd
-                    }
-
-                    dt = Time(mjd, format="mjd")
-                    filters = {"datetime":  dt.datetime,
-                               "fid": prv_cand["fid"], "oid": message["objectId"]}
-                    found = list(filter(lambda non_det: ((non_det["datetime"] == filters["datetime"]) and
-                                                         (non_det["fid"] == filters["fid"]) and
-                                                         (non_det["oid"] == filters["oid"])),
-                                        light_curve["non_detections"]))
-                    if len(found) == 0:
-                        non_detection_args.update(filters)
-                        if non_detection_args not in non_dets:
-                            non_dets.append(non_detection_args)
-                            light_curve["non_detections"].append(
-                                non_detection_args)
-                else:
-                    found = list(filter(
-                        lambda det: det['candid'] == prv_cand["candid"], light_curve["detections"]))
-                    if len(found) == 0:
-                        prv_cand.update(self.correct_message(prv_cand))
-                        detection_args = {
-                            "mjd": prv_cand["jd"] - 2400000.5,
-                            "fid": prv_cand["fid"],
-                            "ra": prv_cand["ra"],
-                            "dec": prv_cand["dec"],
-                            "rb": prv_cand["rb"],
-                            "magap": prv_cand["magap"],
-                            "magap_corr": prv_cand["magap_corr"],
-                            "magpsf": prv_cand["magpsf"],
-                            "magpsf_corr": prv_cand["magpsf_corr"],
-                            "sigmagap": prv_cand["sigmagap"],
-                            "sigmagap_corr": prv_cand["sigmagap_corr"],
-                            "sigmapsf": prv_cand["sigmapsf"],
-                            "sigmapsf_corr": prv_cand["sigmapsf_corr"],
-                            "oid": message["objectId"],
-                            "alert": prv_cand,
-                            "candid": str(prv_cand["candid"]),
-                            "parent_candidate": str(message["candid"])
-                        }
-                        prv_cands.append(detection_args)
-                        light_curve["detections"].append(detection_args)
-
-            bulk_insert(prv_cands, Detection, self.session)
-            bulk_insert(non_dets, NonDetection, self.session)
-            t1 = time.time()
-            self.logger.debug("Processed {} prv_candidates in {} seconds".format(
-                len(message["prv_candidates"]), t1-t0))
-        self.session.commit()
-        return kwargs
-
-    def get_lightcurve(self, oid):
-        detections = self.session.query(Detection).filter_by(oid=oid)
-        non_detections = self.session.query(NonDetection).filter_by(oid=oid)
-        ret = {
-            "detections": [d.__dict__ for d in detections.all()],
-            "non_detections": [d.__dict__ for d in non_detections.all()]
-        }
-        for d in ret["detections"]:
-            del d["_sa_instance_state"]
-        for d in ret["non_detections"]:
-            del d['_sa_instance_state']
-        return ret
-
-    def jd_to_date(self, jd):
-        jd = jd + 0.5
-        F, I = math.modf(jd)
-        I = int(I)
-        A = math.trunc((I - 1867216.25)/36524.25)
-        if I > 2299160:
-            B = I + 1 + A - math.trunc(A / 4.)
-        else:
-            B = I
-        C = B + 1524
-        D = math.trunc((C - 122.1) / 365.25)
-        E = math.trunc(365.25 * D)
-        G = math.trunc((C - E) / 30.6001)
-        day = C - E + F - math.trunc(30.6001 * G)
-        if G < 13.5:
-            month = G - 1
-        else:
-            month = G - 13
-        if month > 2.5:
-            year = D - 4716
-        else:
-            year = D - 4715
-        return year, month, day
+        #self.producer.produce(write)

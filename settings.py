@@ -3,7 +3,8 @@
 ##################################################
 import os
 DB_CONFIG = {
-    "PSQL": {
+    "SQL": {
+        "ENGINE": os.environ["DB_ENGINE"],
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
