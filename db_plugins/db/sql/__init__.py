@@ -178,7 +178,9 @@ class SQLConnection(DatabaseConnection):
         self, config, base=None, session_options=None, use_scoped=False, scope_func=None
     ):
         self.config = config
-        self.engine = create_engine(config["SQLALCHEMY_DATABASE_URL"])
+        if len(satisfy_keys(set(config.keys()))) == 0:
+            self.config["SQLALCHEMY_DATABASE_URL"] = settings_map(self.config)
+        self.engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
         self.Base = base or Base
         session_options = session_options or {}
         session_options["query_cls"] = SQLQuery

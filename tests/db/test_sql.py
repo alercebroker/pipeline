@@ -27,9 +27,9 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        astro_object = AstroObject(
+        astro_object = Object(
             oid="ZTF1",
-            nobs=1,
+            ndet=1,
             lastmjd=1.0,
             meanra=1.0,
             meandec=1.0,
@@ -54,35 +54,35 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def test_get_or_create(self):
         instance, created = self.db.session.query().get_or_create(
-            AstroObject, {"oid": "ZTF1"}
+            Object, {"oid": "ZTF1"}
         )
-        self.assertIsInstance(instance, AstroObject)
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)
 
     def test_check_exists(self):
         self.assertTrue(
-            self.db.session.query().check_exists(AstroObject, {"oid": "ZTF1"})
+            self.db.session.query().check_exists(Object, {"oid": "ZTF1"})
         )
 
     def test_update(self):
         instance, _ = self.db.session.query().get_or_create(
-            AstroObject, {"oid": "ZTF1"}
+            Object, {"oid": "ZTF1"}
         )
         updated = self.db.session.query().update(instance, {"oid": "ZTF2"})
         self.assertEqual(updated.oid, "ZTF2")
         instance, created = self.db.session.query().get_or_create(
-            AstroObject, {"oid": "ZTF1"}
+            Object, {"oid": "ZTF1"}
         )
         self.assertTrue(created)
 
     def test_bulk_insert(self):
         astro_objects = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
-        self.db.session.query().bulk_insert(astro_objects, AstroObject)
-        objects = self.db.session.query(AstroObject).all()
+        self.db.session.query().bulk_insert(astro_objects, Object)
+        objects = self.db.session.query(Object).all()
         self.assertEqual(len(objects), 3)
 
     def test_paginate(self):
-        pagination = self.db.session.query(AstroObject).paginate()
+        pagination = self.db.session.query(Object).paginate()
         self.assertIsInstance(pagination, Pagination)
         self.assertEqual(pagination.total, 1)
         self.assertEqual(pagination.items[0].oid, "ZTF1")
@@ -106,9 +106,9 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        astro_object = AstroObject(
+        astro_object = Object(
             oid="ZTF1",
-            nobs=1,
+            ndet=1,
             lastmjd=1.0,
             meanra=1.0,
             meandec=1.0,
@@ -124,19 +124,19 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
         self.db.session.remove()
 
     def test_query_property(self):
-        self.assertEqual(len(AstroObject.query.all()), 1)
-        self.assertEqual(AstroObject.query.first().oid, "ZTF1")
+        self.assertEqual(len(Object.query.all()), 1)
+        self.assertEqual(Object.query.first().oid, "ZTF1")
 
     def test_method_access_from_session(self):
         instance, created = self.db.session.query().get_or_create(
-            model=AstroObject, filter_by={"oid": "ZTF1"}
+            model=Object, filter_by={"oid": "ZTF1"}
         )
-        self.assertIsInstance(instance, AstroObject)
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)
 
     def test_method_access_from_query_property(self):
-        instance, created = AstroObject.query.get_or_create(filter_by={"oid": "ZTF1"})
-        self.assertIsInstance(instance, AstroObject)
+        instance, created = Object.query.get_or_create(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)
 
 
@@ -164,7 +164,7 @@ class ClassificationTest(GenericClassificationTest, unittest.TestCase):
     pass
 
 
-class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
+class ObjectTest(GenericObjectTest, unittest.TestCase):
     @classmethod
     def setUpClass(self):
         config = {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"}
@@ -187,9 +187,9 @@ class AstroObjectTest(GenericAstroObjectTest, unittest.TestCase):
         class_.taxonomies.append(taxonomy)
         classifier = Classifier(name="C1")
         taxonomy.classifiers.append(classifier)
-        self.model = AstroObject(
+        self.model = Object(
             oid="ZTF1",
-            nobs=1,
+            ndet=1,
             lastmjd=1.0,
             meanra=1.0,
             meandec=1.0,

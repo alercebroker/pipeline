@@ -144,7 +144,7 @@ class Xmatch(Base, generic.AbstractXmatch):
 class MagnitudeStatistics(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = "magnitude_statistics"
 
-    oid = Column(String, primary_key=True)
+    oid = Column(String, ForeignKey('object.oid'), primary_key=True)
     fid = Column(Integer)
     stellar = Column(Boolean)
     corrected = Column(Boolean)
@@ -226,7 +226,7 @@ class Detection(Base, generic.AbstractDetection):
     drbversion = Column(String)
     magapbig = Column(Float)
     sigmagapbig = Column(Float)
-    rfid = Column(String)
+    rfid = Column(Integer)
     magpsf_corr = Column(Float)
     sigmapsf_corr = Column(Float)
     sigmapsf_corr_ext = Column(Float)

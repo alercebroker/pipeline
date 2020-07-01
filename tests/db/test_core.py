@@ -22,7 +22,7 @@ class GenericClassificationTest():
     pass
 
 
-class GenericAstroObjectTest():
+class GenericObjectTest():
     model = None
 
     def test_get_lightcurve(self):
