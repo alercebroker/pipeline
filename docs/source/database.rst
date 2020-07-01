@@ -28,7 +28,7 @@ After defining `DB_CONFIG` you can now initiaize your database. To do so, run th
 
 .. code-block:: bash
 
-    apf initdb
+    dbp initdb
 
 
 3. Migrations
@@ -37,8 +37,8 @@ When changes to models are made you would want to update the database without cr
 
 The solution is to create migrations. Migrations keep track of your database changes and let you detect differences between your database and models and update the database accordingly.
 
-Migrations will be created by running ``apf make_migrations``. This command will read your database credentials from `DB_CONFIG` inside ``settings.py``.
+Migrations will be created by running ``dbp make_migrations``. This command will read your database credentials from `DB_CONFIG` inside ``settings.py``.
 
-Then, to update your database to latest changes execute ``apf migrate``.
+Then, to update your database to latest changes execute ``dbp migrate``.
 
 

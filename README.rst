@@ -55,7 +55,7 @@ After defining `DB_CONFIG` you can now initiaize your database. To do so, run th
 
 .. code-block:: bash
 
-    apf initdb
+    dbp initdb
 
 
 3. Migrations
@@ -64,9 +64,9 @@ When changes to models are made you would want to update the database without cr
 
 The solution is to create migrations. Migrations keep track of your database changes and let you detect differences between your database and models and update the database accordingly.
 
-Migrations will be created by running ``apf make_migrations``. This command will read your database credentials from `DB_CONFIG` inside ``settings.py``.
+Migrations will be created by running ``dbp make_migrations``. This command will read your database credentials from `DB_CONFIG` inside ``settings.py``.
 
-Then, to update your database to latest changes execute ``apf migrate``.
+Then, to update your database to latest changes execute ``dbp migrate``.
 
 
 
@@ -85,7 +85,7 @@ Initialize database
 Before you connect to your database, make sure you initialize it first.
 To do that execute the following command from your step root folder
 
-``apf initdb``
+``dbp initdb``
 
 When you run this command with an empty database it will create the
 following schema:
@@ -100,15 +100,15 @@ step configuration run
 
 .. code:: python
 
-    apf make_migrations
-    apf migrate
+    dbp make_migrations
+    dbp migrate
 
 
 This will set the head state for tracking changes on the database and also execute any migrations that might be present.
 
-The first command ``apf make_migrations`` will create migration files according to differences from apf models and your database.
+The first command ``dbp make_migrations`` will create migration files according to differences from dbp models and your database.
 
-The seccond command ``apf migrate`` will execute the migrations and update your database.
+The seccond command ``dbp migrate`` will execute the migrations and update your database.
 
 What migrations can and can't detect
 +++++++++++++++++++++++++++++++++++++++++
