@@ -21,5 +21,5 @@ from apf.consumers import KafkaConsumer
 
 consumer = KafkaConsumer(config=CONSUMER_CONFIG)
 
-step = Correction(consumer,config=STEP_CONFIG,level=level)
+step = Correction(consumer, config=STEP_CONFIG, level=level)
 step.start()
