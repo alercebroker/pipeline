@@ -30,36 +30,18 @@ PRODUCER_CONFIG = {
         'message.max.bytes': 6291456
     },
     "SCHEMA": {
-        'doc': 'Lightcurve',
-        'name': 'lightcurve',
+        'doc': 'Light curve',
+        'name': 'light_curve',
         'type': 'record',
         'fields': [
-            {'name': 'oid', 'type': 'string'},
+            {'name': 'oid', 'type': 'string', 'default': None},
             {'name': 'candid', 'type': 'string'},
             {'name': 'fid', 'type': 'int'},
             {'name': 'detections', 'type': {
                 'type': 'array',
                 'items': {
-                    'type': 'record',
-                    'name': 'detection',
-                    'fields': [
-                        {'name': 'candid', 'type': 'string'},
-                        {'name': 'mjd', 'type': 'float'},
-                        {'name': 'fid', 'type': 'int'},
-                        {'name': 'magpsf_corr', 'type': ['float', 'null'], 'default':None},
-                        {'name': 'magap_corr', 'type': ['float', 'null'], 'default':None},
-                        {'name': 'sigmapsf_corr', 'type': ['float', 'null'], 'default':None},
-                        {'name': 'sigmagap_corr', 'type': ['float', 'null'], 'default':None},
-                        {'name': 'ra', 'type': 'float'},
-                        {'name': 'dec', 'type': 'float'},
-                        {'name': 'rb', 'type': ['float', 'null'], 'default':None},
-                        {'name': 'oid', 'type': 'string'},
-                        {'name': 'alert',
-                         'type': {
-                             'type': 'map',
-                             'values': ['int', 'float', 'string', 'null']
-                         }}
-                    ]
+                    'type': 'map',
+                    'values': ['float', 'int', 'string', 'null', 'boolean']
                 }
             }},
             {'name': 'non_detections', 'type': {
@@ -82,5 +64,6 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "N_PROCESS": os.getenv("N_PROCESS")
+    "N_PROCESS": os.getenv("N_PROCESS"),
+    "STEP_VERSION": os.getenv("STEP_VERSION", "dev")
 }
