@@ -253,8 +253,8 @@ class AbstractObject:
     oid = None
     ndethist = None
     ncovhist = None
-    jdstarthist = None
-    jdendhist = None
+    mjdstarthist = None
+    mjdendhist = None
     corrected = None
     stellar = None
     ndet = None
@@ -505,7 +505,7 @@ class AbstractDetection:
     avro = None
     oid = None
     candid = None
-    jd = None
+    mjd = None
     fid = None
     pid = None
     diffmaglim = None
@@ -539,7 +539,6 @@ class AbstractDetection:
         Gets the object related
         """
         pass
-
 
 class AbstractOutlierDetector:
     """

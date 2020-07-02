@@ -24,6 +24,11 @@ taxonomy_class = Table(
 )
 
 
+class Commons:
+    def __getitem__(self, field):
+        return self.__dict__[field]
+
+
 class Class(Base, generic.AbstractClass):
     __tablename__ = "class"
 
@@ -67,8 +72,8 @@ class Object(Base, generic.AbstractObject):
     oid = Column(String, primary_key=True)
     ndethist = Column(Integer)
     ncovhist = Column(Integer)
-    jdstarthist = Column(Float)
-    jdendhist = Column(Float)
+    mjdstarthist = Column(Float)
+    mjdendhist = Column(Float)
     corrected = Column(Boolean)
     stellar = Column(Boolean)
     ndet = Column(Integer)
@@ -80,7 +85,7 @@ class Object(Base, generic.AbstractObject):
     meandec = Column(Float)
     sigmara = Column(Float)
     sigmadec = Column(Float)
-    deltajd = Column(Float)
+    deltamjd = Column(Float)
     firstmjd = Column(Float)
     lastmjd = Column(Float)
     step_id_corr = Column(String)
@@ -190,7 +195,7 @@ class FeaturesObject(Base):
     features = relationship("Features")
 
 
-class NonDetection(Base, generic.AbstractNonDetection):
+class NonDetection(Base, generic.AbstractNonDetection, Commons):
     __tablename__ = "non_detection"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -201,15 +206,15 @@ class NonDetection(Base, generic.AbstractNonDetection):
     __table_args__ = (Index("non_det_oid", "oid", postgresql_using="hash"),)
 
 
-class Detection(Base, generic.AbstractDetection):
+class Detection(Base, generic.AbstractDetection, Commons):
     __tablename__ = "detection"
 
     candid = Column(String, primary_key=True)
     oid = Column(String, ForeignKey("object.oid"))
     avro = Column(String)
-    jd = Column(Float)
+    mjd = Column(Float)
     fid = Column(Integer)
-    pid = Column(Integer)
+    pid = Column(Float)
     diffmaglim = Column(Float)
     isdiffpos = Column(Integer)
     nid = Column(Integer)
@@ -239,6 +244,8 @@ class Detection(Base, generic.AbstractDetection):
     __table_args__ = (
         Index("object_id", "oid", postgresql_using="hash"),)
 
+    def __repr__(self):
+        return "<Detection(candid='%s', fid='%i', oid='%s')>" % (self.candid, self.fid, self.oid)
 
 class OutlierDetector(Base, generic.AbstractOutlierDetector):
     __tablename__ = "outlier_detector"
