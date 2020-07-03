@@ -224,13 +224,11 @@ CUTOUT = {
 }
 
 XMATCH = {
-    "doc": "Xmatch",
-	"name": "xmatch",
-	"type": "record",
-	"fields": [
-		{"name": "cid", "type": "string"},
-        {"name": "result", "type" : [{"type" : "map", "values" : [ "string", "float", "null"] }, "null"], "default": "null" }
-	]
+	'type' : 'map',	
+    'values' : {
+        'type' : 'map',	
+        'values' : [ "string", "float", "null"]	
+    } 
 }
 
 ALERT = {
@@ -248,7 +246,7 @@ ALERT = {
         {"name": "cutoutScience", "type": [CUTOUT, "null"], "default": "null"}, 
         {"name": "cutoutTemplate", "type": ["ztf.alert.cutout", "null"], "default": "null"},
 		{"name": "cutoutDifference", "type": ["ztf.alert.cutout", "null"], "default": "null"},
-        {"name": "xmatchs", "type" : [{"type": "array", "items": XMATCH}, "null"], "default": "null" }
+        {"name": "xmatchs", "type" : [XMATCH, "null"], "default": "null" }
     ]
 }
 
