@@ -27,23 +27,23 @@ class DatabaseConnectionTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        astro_object = Object(
+        obj = Object(
             oid="ZTF1",
             ndet=1,
             lastmjd=1.0,
             meanra=1.0,
             meandec=1.0,
             sigmadec=1.0,
-            deltajd=1.0,
+            deltamjd=1.0,
             firstmjd=1.0,
         )
-        self.db.session.add(astro_object)
+        self.db.session.add(obj)
         class_object = Class(name="Super Nova", acronym="SN")
         self.db.session.add(class_object)
         classifier = Classifier(name="test")
         self.db.session.add(classifier)
         classification = Classification(
-            astro_object="ZTF1", classifier_name="test", class_name="Super Nova"
+            object="ZTF1", classifier_name="test", class_name="Super Nova"
         )
         self.db.session.add(classification)
         self.db.session.commit()
@@ -76,8 +76,8 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertTrue(created)
 
     def test_bulk_insert(self):
-        astro_objects = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
-        self.db.session.query().bulk_insert(astro_objects, Object)
+        objs = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
+        self.db.session.query().bulk_insert(objs, Object)
         objects = self.db.session.query(Object).all()
         self.assertEqual(len(objects), 3)
 
@@ -106,17 +106,17 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        astro_object = Object(
+        obj = Object(
             oid="ZTF1",
             ndet=1,
             lastmjd=1.0,
             meanra=1.0,
             meandec=1.0,
             sigmadec=1.0,
-            deltajd=1.0,
+            deltamjd=1.0,
             firstmjd=1.0,
         )
-        self.db.session.add(astro_object)
+        self.db.session.add(obj)
         self.db.session.commit()
 
     def tearDown(self):
@@ -195,21 +195,31 @@ class ObjectTest(GenericObjectTest, unittest.TestCase):
             meandec=1.0,
             sigmara=1.0,
             sigmadec=1.0,
-            deltajd=1.0,
+            deltamjd=1.0,
             firstmjd=1.0,
         )
         self.model.xmatches.append(Xmatch(catalog_id="C1", catalog_oid="O1"))
         self.model.magnitude_statistics.append(
             MagnitudeStatistics(
                 fid=1,
-                magnitude_type="psf",
-                mean=1.0,
-                median=1.0,
-                max_mag=1.0,
-                min_mag=1.0,
-                sigma=1.0,
-                last=1.0,
-                first=1.0,
+                stellar=True,
+                corrected=True,
+                ndet=1,
+                ndubious=1,
+                dmdt_first=0.13,
+                dm_first = 0.12,
+                sigmadm_first = 1.4,
+                dt_first = 2.,
+                magmean = 19.,
+                magmedian = 20,
+                magmax = 1.4,
+                magmin = 1.4,
+                magsigma = 1.4,
+                maglast = 1.4,
+                magfirst = 1.4,
+                firstmjd = 1.4,
+                lastmjd = 1.4,
+                step_id_corr = "testing_id"
             )
         )
         self.model.classifications.append(
@@ -233,7 +243,6 @@ class ObjectTest(GenericObjectTest, unittest.TestCase):
                 magpsf=1,
                 sigmapsf=1,
                 sigmagap=1,
-                alert=json.loads('{"test":"test"}'),
             )
         )
         self.model.non_detections.append(
