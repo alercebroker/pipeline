@@ -246,7 +246,7 @@ ALERT = {
         {"name": "cutoutScience", "type": [CUTOUT, "null"], "default": "null"}, 
         {"name": "cutoutTemplate", "type": ["ztf.alert.cutout", "null"], "default": "null"},
 		{"name": "cutoutDifference", "type": ["ztf.alert.cutout", "null"], "default": "null"},
-        {"name": "xmatchs", "type" : [XMATCH, "null"], "default": "null" }
+        {"name": "xmatches", "type" : [XMATCH, "null"], "default": "null" }
     ]
 }
 

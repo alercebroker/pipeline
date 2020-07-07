@@ -34,13 +34,13 @@ class XmatchStep(GenericStep):
 		for m in msgs:
 			oid = m['objectId']
 			if oid  in without_result:
-				m['xmatchs'] = None
+				m['xmatches'] = None
 			else:
 				sel = result[result['oid_in'] == oid]
 				row = sel.iloc[0]
 				columns = dict(row)
 				del columns['oid_in']
-				m['xmatchs'] = {'allwise': columns}
+				m['xmatches'] = {'allwise': columns}
 			messages.append(m)
 
 		return messages
