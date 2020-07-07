@@ -23,7 +23,7 @@ class GenericConsumer():
         dict
             Dictionary like message of an alert.
         """
-        yield None
+        yield {}
 
     def commit(self):
         """Post consume processing.
@@ -32,7 +32,7 @@ class GenericConsumer():
         The commited value has to be stored as a class attribute in consume to be accessed. i.e.
 
         .. code-block:: python
-        
+
             def consume(self):
                 self.message = get_message()
 
