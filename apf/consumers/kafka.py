@@ -166,7 +166,7 @@ class KafkaConsumer(GenericConsumer):
     def consume(self, num_messages=1, timeout=60):
         """
         Consumes `num_messages` messages from the specified topic.
-        
+
         Will return a dictionary or a list, depending on the number of messages consumed.
 
         If num_messages > 1 then it returns list.
@@ -183,8 +183,13 @@ class KafkaConsumer(GenericConsumer):
         """
         if "consume.messages" in self.config:
             num_messages = self.config["consume.messages"]
+        elif "NUM_MESSAGES" in self.config:
+            num_messages = self.config["NUM_MESSAGES"]
+
         if "consume.timeout" in self.config:
             timeout = self.config["consume.timeout"]
+        elif "TIMEOUT" in self.config:
+            timeout = self.config["TIMEOUT"]
         messages = []
         while True:
             if self.dynamic_topic:
@@ -213,4 +218,3 @@ class KafkaConsumer(GenericConsumer):
     def commit(self):
         for message in self.messages:
             self.consumer.commit(message)
-
