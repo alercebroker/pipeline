@@ -138,7 +138,8 @@ class KafkaConsumer(GenericConsumer):
 
     def __del__(self):
         self.logger.info("Shutting down Consumer")
-        self.consumer.close()
+        if hasattr(self, 'consumer'):
+            self.consumer.close()
 
     def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
