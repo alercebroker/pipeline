@@ -18,7 +18,7 @@ Installing *apf*
 
 .. code-block:: bash
 
-      pip install apf
+      pip install apf_base
 
 This will install the *apf* python package and *apf* command line script.
 

@@ -24,9 +24,9 @@ class JSONConsumer(GenericConsumer):
         JSON path location
 
     """
-    def __init__(self,config):
+    def __init__(self, config):
         super().__init__(config)
-        path = self.config.get("FILE_PATH",None)
+        path = self.config.get("FILE_PATH", None)
         if path is None:
             raise Exception("FILE_PATH variable not set")
 

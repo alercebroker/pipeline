@@ -1,22 +1,25 @@
 language: python
-
 services:
-  - docker
+- docker
 env:
+  matrix:
   - DOCKER_COMPOSE_VERSION=1.25.0
-
+  global:
+    secure: mbyDCLQpbA4xKb7OYOc4qHelvtj83dTGYmgtqNaunq2tviQUTMDlovxFy/cx0BwHF48EtB2gjAqjFsU/pklmEQpFvEk7OZ8DsRaCBcbfhrWPGNzImfZvQEYiDqvJTAdeEz1D72oj470s9LcWGwMDi1kdtgZCFwkeRZcX8Pd1Y2nW0DxwGzR1c+q07yi6xCeUBlH4NexwoVBvp6HSURMxjZ+q2tAvnTRhC+8KXIpz8dgcC3ffXWcoiSxRZz1DM1kaOwTUU7PL5tBZdct/fMZ7kd3B2KI2reooro6HZfWkBuCy6dSMSllXWbMPDwy7zPNzbdWeKkCjtH5FpmwbQlnI+Ot3f7G2QQ4XOMxs/xd1tkAVl8A/VjAABVlWCIMGR8/ZLroOlbEOikKJOu9XC801n8fQY+gB7L8EfrT6Jqgjsd5tNg/rkrO+cRxZ/inHbaCT+x2IJffML8vKQv6yL+7m6bCcdhW6HinBmv1OmMz4yVvx1c6wjwqbImRfYcbkr4y0RsLzuSe20es0KxDAXBS0RqY3lntJGFYkvp+Mb+oIn0xdjT0yGPdN+jaJIQt+QvYYT9PpnjN9vmGELd/z9r0bTrc1s+PayaSCKtSBhPS13G7OLxvJyucX1CajZ/26zF8dFfBc5L09ad0+p0zXF3Eh1293J4tiFqpKsyDqLc8rOJ4=
 before_install:
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-
+- sudo rm /usr/local/bin/docker-compose
+- curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname
+  -s`-`uname -m` > docker-compose
+- chmod +x docker-compose
+- sudo mv docker-compose /usr/local/bin
 install:
-  - pip install coverage pytest pytest-cov
-  - pip install -r requirements.txt
-  - docker-compose -f tests/kafka_environment/docker-compose.yml up -d
-  - pip install -e .
-
+- pip install coverage
+- pip install codecov
+- pip install -U pytest
+- pip install -U pytest-cov
+- pip install -r requirements.txt
+- pip install -e .
 script:
-  - coverage run -m pytest
-  - pycodestyle apf/*  scripts/* --max-line-length=120 --show-pep8
+- coverage run -m pytest
+after_success:
+- codecov

@@ -9,8 +9,9 @@ import importlib
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
-    By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors. This strategy can be disabled
-    completly adding `"COMMIT":False` to the `STEP_CONFIG` variable in the step's `settings.py` file.
+    By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors.
+    This strategy can be disabled completly adding `"COMMIT":False` to the `STEP_CONFIG` variable
+    in the step's `settings.py` file.
 
     **Example:**
 
@@ -47,7 +48,7 @@ class KafkaConsumer(GenericConsumer):
                     "TOPICS": ["^topic*"]
                 }
 
-            More on pattern subscribe `here <https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
+            More on pattern subscribe `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
 
     TOPIC_STRATEGY: dict
             Parameters to configure a topic strategy instead of a fixed topic list.

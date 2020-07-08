@@ -76,7 +76,8 @@ class GenericStep():
                 }
             }
 
-        The other optional parameters are the one passed to `Elasticsearch <https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch>`_ class.
+        The other optional parameters are the one passed to
+        `Elasticsearch <https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch>`_ class.
 
         Parameters
         ----------
