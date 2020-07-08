@@ -1,4 +1,4 @@
-from .core import GenericConsumerTest
+from .test_core import GenericConsumerTest
 from apf.consumers import CSVConsumer
 import unittest
 
@@ -12,3 +12,6 @@ class CSVConsumerTest(GenericConsumerTest,unittest.TestCase):
     params = {
         "FILE_PATH": os.path.join(EXAMPLES_PATH,"test_csv.txt")
     }
+
+    def test_no_path(self):
+        self.assertRaises(Exception, self.component, {})

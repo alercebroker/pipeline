@@ -1,4 +1,4 @@
-from .core import GenericConsumerTest
+from .test_core import GenericConsumerTest
 from apf.consumers import AVROFileConsumer
 import unittest
 

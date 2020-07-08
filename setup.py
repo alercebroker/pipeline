@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
     required_packages = f.readlines()
 
 setup(
-   name='apf',
+   name='apf_base',
    version="0.0.2",
    description='ALeRCE Alert Processing Framework.',
    author='ALeRCE Team',
