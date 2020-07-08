@@ -12,9 +12,11 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
 
 install:
+  - pip install coverage pytest pytest-cov
   - pip install -r requirements.txt
   - docker-compose -f tests/kafka_environment/docker-compose.yml up -d
   - pip install -e .
 
 script:
-  - python tests/run_tests.py
+  - coverage run -m pytest
+  - pycodestyle apf/*  scripts/* --max-line-length=120 --show-pep8
