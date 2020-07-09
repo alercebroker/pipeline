@@ -1,28 +1,22 @@
 version: '3'
 services:
   correction:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # restart: 'always'
-    volumes:
-      - ".:/app"
-      - "../test_pipeline/test_data/tests/ztf_sample:/app/tests"
-    network_mode: host
+    image: 'docker.pkg.github.com/alercebroker/correction_step/correction_step:0.0.1'
+    restart: 'always'
     environment:
-      - DB_HOST=localhost
-      - DB_USER=postgres
-      - DB_PASSWORD=docker
-      - DB_PORT=5432
-      - DB_NAME=test
+      - DB_HOST=
+      - DB_USER=
+      - DB_PASSWORD=
+      - DB_PORT=
+      - DB_NAME=
       - CONSUMER_TOPICS=
       - CONSUMER_SERVER=
       - CONSUMER_GROUP_ID=
-      - AVRO_PATH=/app/tests
-      - PRODUCER_TOPIC=correction
-      - PRODUCER_SERVER=localhost:9092
-      - ES_PREFIX=ztf_pipeline
-      - ES_NETWORK_HOST=localhost
-      - ES_NETWORK_PORT=9200
-      - LOGGING_DEBUG=True
-      - N_PROCESS=1
+      - AVRO_PATH=
+      - PRODUCER_TOPIC=
+      - PRODUCER_SERVER=
+      - ES_PREFIX=
+      - ES_NETWORK_HOST=
+      - ES_NETWORK_PORT=
+      - LOGGING_DEBUG=False
+      - N_PROCESS=
