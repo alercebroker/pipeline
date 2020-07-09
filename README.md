@@ -17,7 +17,7 @@ Installing *apf*
 *apf* installation can be done with *pip*
 
 ``` {.sourceCode .bash}
-pip install apf
+pip install apf_base
 ```
 
 This will install the *apf* python package and *apf* command line
@@ -39,11 +39,14 @@ complex logic.
 
 
 <p align="center">
-  <img src="doc/source/\_static/images/apf-flow.png">
+  <img src="docs/source/_static/images/apf-flow.png">
 </p>
 
 
 This generic step greatly reduce the development of each component of
 the pipeline and make it easier to test each component separately.
+
+Creating a New Step
+===================
 
 A quick-start guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).
