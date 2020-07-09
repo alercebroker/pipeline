@@ -1,3 +1,4 @@
+from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from db_plugins.db.sql.models import Object, Detection, NonDetection
@@ -35,7 +36,13 @@ class Correction(GenericStep):
 
     def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         super().__init__(consumer, level=level, config=config, **step_args)
-        self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
+
+        if "CLASS" in config["PRODUCER_CONFIG"]:
+            Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+        else:
+            Producer = KafkaProducer
+
+        self.producer = Producer(config["PRODUCER_CONFIG"])
         self.driver = SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_VERSION"]
