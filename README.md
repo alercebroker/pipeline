@@ -1,7 +1,7 @@
 Alert Processing Framework (*apf*)
 ================================================
 
-[![Documentation Status](https://readthedocs.org/projects/apf/badge/?version=latest)](https://apf.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/apf/badge/?version=latest)](https://apf.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/alercebroker/APF/branch/master/graph/badge.svg)](https://codecov.io/gh/alercebroker/APF)
 
 
 *apf* is a framework developed to create a dockerized pipeline to
