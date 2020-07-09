@@ -93,14 +93,26 @@ The basic `run_step.py` comes with the following
 .. code-block:: python
 
     #scripts/run_step.py
-    from apf.consumers import GenericConsumer as Consumer
+    if "CLASS" in CONSUMER_CONFIG:
+        Consumer = get_class(CONSUMER_CONFIG["CLASS"])
+    else:
+        from apf.consumers import GenericConsumer as Consumer
+
     consumer = Consumer(config=CONSUMER_CONFIG)
     step = ExampleTest(consumer,config=STEP_CONFIG,level=level)
     step.start()
 
 
 The :class:`GenericConsumer` can be changed to another consumer, for example a :class:`apf.consumers.CSVConsumer`
-to read a *CSV* file or :class:`apf.consumers.KafkaConsumer` to process an Apache Kafka topic.
+to read a *CSV* file or :class:`apf.consumers.KafkaConsumer` to process an Apache Kafka topic, also the default
+consumer can be overridden in the `settings.py` file.
+
+.. code-block:: python
+
+    #settings.py
+    CONSUMER_CONFIG = {
+      'CLASS': 'apf.consumers.KafkaConsumer'
+    }
 
 4. Configuring the step
 ------------------------

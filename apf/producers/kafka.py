@@ -114,10 +114,9 @@ class KafkaProducer(GenericProducer):
                 importlib.import_module(module_name), class_name)
             self.topic_strategy = TopicStrategy(
                 **self.config["TOPIC_STRATEGY"]["PARAMS"])
-            self.topic = self.topic_strategy.get_topic()
+            self.topic = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f'Producing to {self.topic}')
-            self.consumer.subscribe(self.topic)
 
     def produce(self, message=None):
         """Produce Message to a topic.
@@ -125,7 +124,8 @@ class KafkaProducer(GenericProducer):
         out = io.BytesIO()
         fastavro.writer(out, self.schema, [message])
         message = out.getvalue()
-        # message = json.dumps(message)
+        if self.config.get("TOPIC_STRATEGY"):
+            self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             try:
                 self.producer.produce(topic, message)

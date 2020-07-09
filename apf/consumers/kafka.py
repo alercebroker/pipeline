@@ -9,8 +9,9 @@ import importlib
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
-    By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors. This strategy can be disabled
-    completly adding `"COMMIT":False` to the `STEP_CONFIG` variable in the step's `settings.py` file.
+    By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors.
+    This strategy can be disabled completly adding `"COMMIT":False` to the `STEP_CONFIG` variable
+    in the step's `settings.py` file.
 
     **Example:**
 
@@ -47,7 +48,7 @@ class KafkaConsumer(GenericConsumer):
                     "TOPICS": ["^topic*"]
                 }
 
-            More on pattern subscribe `here <https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
+            More on pattern subscribe `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
 
     TOPIC_STRATEGY: dict
             Parameters to configure a topic strategy instead of a fixed topic list.
@@ -122,21 +123,23 @@ class KafkaConsumer(GenericConsumer):
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
             module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
-                ".", 1)
-            TopicStrategy = getattr(
-                importlib.import_module(module_name), class_name)
+                ".", 1
+            )
+            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
             self.topic_strategy = TopicStrategy(
-                **self.config["TOPIC_STRATEGY"]["PARAMS"])
-            self.topic = self.topic_strategy.get_topic()
+                **self.config["TOPIC_STRATEGY"]["PARAMS"]
+            )
+            self.topics = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
-            self.logger.info(f'Subscribing to {self.topic}')
-            self.consumer.subscribe(self.topic)
+            self.logger.info(f"Subscribing to {self.topics}")
+            self.consumer.subscribe(self.topics)
         else:
             raise Exception("No topics o topic strategy set. ")
 
     def __del__(self):
         self.logger.info("Shutting down Consumer")
-        self.consumer.close()
+        if hasattr(self, 'consumer'):
+            self.consumer.close()
 
     def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
@@ -144,10 +147,28 @@ class KafkaConsumer(GenericConsumer):
         data = reader.next()
         return data
 
+    def _check_topics(self):
+        """
+        Returns true if new topic
+        """
+        topics = self.topic_strategy.get_topics()
+        if topics != self.topics:
+            return True
+        return False
+
+    def _subscribe_to_new_topics(self):
+        """
+        Sets current topic to new topic
+        """
+        self.topics = self.topic_strategy.get_topics()
+        self.consumer.unsubscribe()
+        self.logger.info(f"Suscribing to {self.topics}")
+        self.consumer.subscribe(self.topics)
+
     def consume(self, num_messages=1, timeout=60):
         """
         Consumes `num_messages` messages from the specified topic.
-        
+
         Will return a dictionary or a list, depending on the number of messages consumed.
 
         If num_messages > 1 then it returns list.
@@ -164,19 +185,28 @@ class KafkaConsumer(GenericConsumer):
         """
         if "consume.messages" in self.config:
             num_messages = self.config["consume.messages"]
+        elif "NUM_MESSAGES" in self.config:
+            num_messages = self.config["NUM_MESSAGES"]
+
         if "consume.timeout" in self.config:
             timeout = self.config["consume.timeout"]
+        elif "TIMEOUT" in self.config:
+            timeout = self.config["TIMEOUT"]
         messages = []
         while True:
-            messages = self.consumer.consume(num_messages=num_messages,timeout=timeout)
+            if self.dynamic_topic:
+                if self._check_topics():
+                    self._subscribe_to_new_topics()
+
+            messages = self.consumer.consume(num_messages=num_messages, timeout=timeout)
             if len(messages) == 0:
                 continue
-            
+
             deserialized = []
             for message in messages:
                 if message.error():
                     raise Exception(f"Error in kafka stream: {message.error()}")
-                
+
                 message = self._deserialize_message(message)
                 deserialized.append(message)
 
@@ -186,6 +216,7 @@ class KafkaConsumer(GenericConsumer):
                 yield deserialized[0]
             else:
                 yield deserialized
+
     def commit(self):
         for message in self.messages:
             self.consumer.commit(message)
