@@ -2,13 +2,13 @@
 
 ## Description
 
-Light curve correction from detections of ZTF data stream. 
+Light curve correction from detections of ZTF data stream.
 
 - `isdiffpos`: Apply sign in raw data. `isdiffpos` from stream is `"t"`,  `"f"`, `"1"` or `"-1"`. We cast the value to `1` or `-1`.
 - Correct magnitude: Calculate this correction for `magpsf` and `magap`.
 - Correct sigma magnitude: Calculate this correction for `sigmagpsf` and `sigmagap`.
 
-#### Previous steps: 
+#### Previous steps:
 - None
 
 #### Next steps:
@@ -17,10 +17,10 @@ Light curve correction from detections of ZTF data stream.
 
 ## Database interactions
 
-This step interact with some tables of `new_pipeline` database. 
+This step interact with some tables of `new_pipeline` database.
 
 ### Select:
-- The function [`get_ligthcurve`](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L202) select detections and non-detections of an object. 
+- The function [`get_ligthcurve`](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L202) select detections and non-detections of an object.
 
 ### Insert:
 - New detection.
@@ -31,17 +31,36 @@ This step interact with some tables of `new_pipeline` database.
 No special conditions, only connection to kafka, database and elasticsearch.
 
 ## Version
-- **0.0.1:** 
+- **0.0.2:**
+	- Added unittests.
+	- Changed KafkaProducer as hardcoded producer to configurable through settings.py.
+
+- **0.0.1:**
 	- Use of APF.
 	- Implementation of functions to correct magnitudes.
-	- Possible enhance: 
-		- [X] Use of `astropy` to convert `jd` to `mjd`. 
-		- [ ] Optimization in [for-loop](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L146).
+	- Possible enhance:
+		- [X] Use of `astropy` to convert `jd` to `mjd`.
+		- [X] Optimization in [for-loop](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L146).
 
 ## Libraries used
 - APF
 - Numpy
 - Astropy
+- [LC Correction](https://github.com/alercebroker/lc_correction)
+- [DB Plugins](https://github.com/alercebroker/db-plugins)
+
+## Configure Step Producer
+
+In settings.py:
+
+```python
+PRODUCER_CONFIG = {
+	"CLASS": '<Class import path>',
+	...
+}
+```
+
+Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProducer`
 
 ## Environment variables
 
@@ -75,7 +94,7 @@ This step require a consumer and producer.
 
 ### Input schema
 
-[Documentation of ZTF Avro schema.](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html) 
+[Documentation of ZTF Avro schema.](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html)
 [Avsc files](https://github.com/ZwickyTransientFacility/ztf-avro-alert/tree/master/schema)
 
 
@@ -210,7 +229,7 @@ This step require a consumer and producer.
 For use this step, first you must build the image of docker. After that you can run the step for use it.
 
 ```bash
-docker build -t correction_step:0.0.1 . 
+docker build -t correction_step:0.0.1 .
 ```
 
 ## Run step
