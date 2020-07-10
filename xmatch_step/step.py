@@ -1,5 +1,6 @@
 import pandas as pd
 
+from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from cds_xmatch_client import XmatchClient
@@ -15,7 +16,12 @@ class XmatchStep(GenericStep):
 
 		self.xmatch_config = config['XMATCH_CONFIG']
 		self.xmatch_client = XmatchClient()
-		self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
+
+		if "CLASS" in config["PRODUCER_CONFIG"]:
+			Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+		else:
+			Producer = KafkaProducer
+		self.producer = Producer(config["PRODUCER_CONFIG"])
 
 	def _extract_coordinates(self, message: dict ):
 		record = {
@@ -54,7 +60,7 @@ class XmatchStep(GenericStep):
 		for m in messages:
 			record = self._extract_coordinates(m)
 			array.append(record)
-	
+
 		df = pd.DataFrame(array,columns=['oid','ra','dec'])
 
 		#xmatch
@@ -79,4 +85,3 @@ class XmatchStep(GenericStep):
 		messages = self._format_result(messages, df, result)
 
 		self._produce(messages)
-
