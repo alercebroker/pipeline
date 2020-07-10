@@ -21,9 +21,25 @@ class AVROFileConsumer(GenericConsumer):
         files = glob.glob(os.path.join(self.config["DIRECTORY_PATH"], "*.avro"))
         files.sort()
 
+        if "consume.messages" in self.config:
+            num_messages = self.config["consume.messages"]
+        elif "NUM_MESSAGES" in self.config:
+            num_messages = self.config["NUM_MESSAGES"]
+        else:
+            num_messages = 1
+
+        batch = 0
+        msjs = []
         for file in files:
             self.logger.debug(f"Reading File: {file}")
             with open(file, "rb") as f:
                 avro_reader = fastavro.reader(f)
                 data = avro_reader.next()
-            yield data
+            if num_messages == 1:
+                yield data
+            else:
+                msjs.append(data)
+                if len(msjs) == num_messages:
+                    return_msjs = msjs.copy()
+                    msjs = []
+                    yield return_msjs
