@@ -1,0 +1,7 @@
+version: '3'
+services:
+  early_classification_step:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    network_mode: host

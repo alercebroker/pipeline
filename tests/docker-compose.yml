@@ -1,0 +1,18 @@
+version: '3'
+services:
+  stamp_service:
+    build: ../../stamp_classifier
+    ports:
+      - "5000:5000"
+    network_mode: host
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=test
+    network_mode: host
+
+
