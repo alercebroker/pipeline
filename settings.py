@@ -20,9 +20,9 @@ STEP_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
-    "TOPICS": ['ztf_20200618_programid1'],
+    "TOPICS": ['ztf_20200706_programid1'],
     "PARAMS": {
         "bootstrap.servers": "3.94.222.35:9092,3.211.25.175:9092,52.45.218.185:9092",
-        "group.id": "early_staging_old_model",
+        "group.id": "early_staging",
     }
 }
