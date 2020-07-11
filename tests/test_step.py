@@ -3,17 +3,26 @@ import subprocess
 import time
 import sys
 import os
+import pandas as pd
+from unittest import mock
 from apf.consumers import AVROFileConsumer
 FILE_PATH = os.path.dirname(__file__)
 STEP_PATH = os.path.join(FILE_PATH,"..")
 sys.path.append(STEP_PATH)
 from xmatch_step import XmatchStep
 
+EXPECTED_XMATCH = pd.read_csv(os.path.join(FILE_PATH, "examples/expected_xmatch.csv"))
+
+def mock_response(df,input_type,catalog_alias,columns,selection,output_type,radius):
+    df.rename(columns={'oid':'oid_in', 'ra':'ra_in', 'dec':'dec_in'},inplace=True)
+    return EXPECTED_XMATCH
+
 class StepTest(unittest.TestCase):
     container_name = "test_postgres"
     container = None
 
-    def test_execute(self):
+    @mock.patch('xmatch_step.XmatchClient.execute', side_effect=mock_response)
+    def test_execute(self, xmatch_mock):
         DB_CONFIG = {}
         CONSUMER_CONFIG={
             "DIRECTORY_PATH": os.path.join(FILE_PATH, "examples/avro_test"),
