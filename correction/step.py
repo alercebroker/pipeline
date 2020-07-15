@@ -1,15 +1,26 @@
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from db_plugins.db.sql.models import Object, Detection, NonDetection
+from db_plugins.db.sql.models import (
+    Object,
+    Detection,
+    NonDetection,
+    Ps1_ztf,
+    Ss_ztf,
+    Reference,
+    MagStats,
+    Dataquality,
+    Gaia_ztf
+)
 from db_plugins.db.sql import SQLConnection
-from lc_correction.compute import apply_correction, is_dubious, DISTANCE_THRESHOLD
+from lc_correction.compute import apply_correction, is_dubious, apply_mag_stats, do_dmdt, DISTANCE_THRESHOLD
 from astropy.time import Time
-from pandas import DataFrame
+from pandas import DataFrame, Series, concat
 
 
 import numpy as np
 import logging
+import numbers
 
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
@@ -18,8 +29,16 @@ DET_KEYS = ['avro', 'oid', 'candid', 'mjd', 'fid', 'pid', 'diffmaglim', 'isdiffp
             'sigmapsf', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'drb', 'drbversion', 'magapbig', 'sigmagapbig',
             'rfid', 'magpsf_corr', 'sigmapsf_corr', 'sigmapsf_corr_ext', 'corrected', 'dubious', 'parent_candid',
             'has_stamp', 'step_id_corr']
-NON_DET_KEYS = ["oid", "mjd", "diffmaglim", "fid", "datetime"]
+NON_DET_KEYS = ["oid", "mjd", "diffmaglim", "fid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
+PS1_MultKey = [ "objectidps", "sgmag", "srmag", "simag", "szmag", "sgscore", "distpsnr"]
+PS1_KEYS = ["candid","nmtchps"]
+for i in range(1,4):
+    PS1_KEYS = PS1_KEYS + [f"{key}{i}" for key in PS1_MultKey]
+REFERENCE_KEYS = ["candid", "fid", "rcid", "field", "magnr", "sigmagnr", "chinr", "sharpnr", "chinr", "ranr", "decnr", "nframesref"]
+DATAQUALITY_KEYS = ["oid","candid","fid","xpos", "ypos", "chipsf", "sky", "fwhm", "classtar", "mindtoedge", "seeratio", "aimage",
+                    "bimage", "aimagerat", "bimagerat", "nneg", "nbad", "sumrat", "scorr", "magzpsci", "magzpsciunc",
+                    "magzpscirms", "clrcoeff", "clrcounc", "dsnrms" , "ssnrms", "nmatches", "zpclrcov", "zpmed", "clrmed", "clrrms", "exptime"]
 
 
 class Correction(GenericStep):
@@ -60,19 +79,150 @@ class Correction(GenericStep):
             "mjd": prv_candidate["mjd"],
             "diffmaglim": prv_candidate["diffmaglim"],
             "fid": prv_candidate["fid"],
-            "datetime": Time(prv_candidate["mjd"], format="mjd").datetime
         }
         return data
 
     def cast_detection(self, candidate: dict) -> dict:
         return {key: candidate[key] for key in DET_KEYS if key in candidate.keys()}
 
+    def add_dataquality(self, candidate: dict, create=True):
+        candidate_params = {}
+        for key in DATAQUALITY_KEYS:
+            candidate_params[key] = candidate.get(key)
+        filters = {
+            "candid": candidate["candid"]
+        }
+        data = {
+            **candidate_params
+        }
+        if create:
+            self.driver.session.query().get_or_create(Dataquality, filter_by = filters, **data)
+        else:
+            return {**filters,**data}
+
     def get_detection(self, candidate: dict) -> Detection:
         filters = {
             "candid": candidate["candid"]
         }
         data = self.cast_detection(candidate)
-        return self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
+        detection, created = self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
+        dataquality = self.add_dataquality(candidate)
+        return detection, created
+
+
+    def get_ps1(self,message: dict) -> Ps1_ztf:
+        message_params = {}
+        for key in PS1_KEYS:
+            message_params[key] = message["candidate"][key]
+        params = {
+                "oid": message["objectId"],
+            **message_params
+        }
+        ps1, created = self.driver.session.query().get_or_create(Ps1_ztf, params)
+        return ps1
+
+    def get_ss(self, message: dict) -> Ss_ztf:
+        params = {
+            "oid": message["objectId"]
+        }
+        data = {
+            "ssdistnr": message["candidate"]["ssdistnr"],
+            "ssmagnr": message["candidate"]["ssmagnr"],
+            "ssnamenr": message["candidate"]["ssnamenr"]
+        }
+        ss, created = self.driver.session.query().get_or_create(Ss_ztf,filter_by=params, **data)
+        return ss
+
+    def get_reference(self, message:dict) -> Reference:
+        message_params = {}
+        for key in REFERENCE_KEYS:
+            message_params[key] = message["candidate"][key]
+        data = {
+            "mjdstartref": message["candidate"]["jdstartref"] - 2400000.5  ,
+            "mjdendref": message["candidate"]["jdendref"] - 2400000.5,
+            **message_params
+        }
+        filters = {
+            "oid": message["objectId"],
+            "rfid": message["candidate"]["rfid"]
+        }
+        reference, created = self.driver.session.query().get_or_create(Reference, filter_by=filters, **data)
+        return reference
+
+    def get_gaia(self,message:dict) -> Gaia_ztf:
+        filters = {
+            "oid": message["objectId"]
+        }
+        data = {
+            "neargaia" : message["candidate"]["neargaia"],
+            "neargaiabright" : message["candidate"]["neargaiabright"],
+            "maggaia" : message["candidate"]["maggaia"],
+            "maggaiabright" : message["candidate"]["maggaiabright"]
+        }
+        gaia, created = self.driver.session.query().get_or_create(Gaia_ztf, filter_by=filters, **data)
+        return gaia
+
+    def set_magstats_values(self,result: dict,magstat: MagStats) -> MagStats:
+        magstat.stellar = result.stellar
+        magstat.corrected = result.corrected
+        magstat.ndet = int(result.ndet)
+        magstat.ndubious = int(result.ndubious)
+        magstat.dmdt_first = result.dmdt_first
+        magstat.dm_first = result.dm_first
+        magstat.sigmadm_first = result.sigmadm_first
+        magstat.dt_first = result.dt_first
+        magstat.magmean = result.magpsf_mean
+        magstat.magmedian = result.magpsf_median
+        magstat.magmax = result.magpsf_max
+        magstat.magmin = result.magpsf_min
+        magstat.magsigma = result.sigmapsf_first #I dont know this one
+        magstat.maglast = result.magpsf_last
+        magstat.magfirst = result.magpsf_first
+        magstat.magmean_corr = result.magpsf_corr_mean
+        magstat.magmedian_corr = result.magpsf_corr_median
+        magstat.magmax_corr = result.magpsf_corr_max
+        magstat.magmin_corr = result.magpsf_corr_min
+        # magstat.magsigma_corr = result.magpsf_corr_sigma #This doesn't exists
+        magstat.maglast_corr = result.magpsf_corr_last
+        magstat.magfirst_corr = result.magpsf_corr_first
+        magstat.firstmjd = result.first_mjd
+        magstat.lastmjd = result.last_mjd
+        magstat.step_id = self.version
+        return MagStats
+
+    def get_magstats(self,message: dict, light_curve: list) -> MagStats:
+        ps1_ztf = self.get_ps1(message)
+        ss_ztf = self.get_ss(message)
+        reference = self.get_reference(message)
+        gaia = self.get_gaia(message)
+
+        detections = DataFrame(light_curve["detections"])
+        non_detections = DataFrame(light_curve["non_detections"])
+        detections.index = detections.candid
+        detections_fid = detections[detections.fid == message["candidate"]["fid"]]
+
+
+        new_stats = apply_mag_stats(detections_fid, distnr=ss_ztf.ssdistnr, distpsnr1=ps1_ztf.distpsnr1, sgscore1=ps1_ztf.sgscore1, chinr=reference.chinr, sharpnr=reference.sharpnr)
+        if len(non_detections) > 0:
+            non_detections_fid = non_detections[non_detections.fid == message["candidate"]["fid"]]
+            new_stats_dmdt = do_dmdt(non_detections_fid,new_stats)
+        else:
+            new_stats_dmdt = Series({
+                'dmdt_first': np.nan,
+                'dm_first': np.nan,
+                'sigmadm_first': np.nan,
+                'dt_first': np.nan
+            })
+        all_stats = concat([new_stats,new_stats_dmdt])
+        filters = {
+            "oid": message["objectId"],
+            "fid": message["candidate"]["fid"]
+        }
+        magStats, created = self.driver.session.query().get_or_create(MagStats,filter_by=filters)
+        self.set_magstats_values(all_stats, magStats)
+
+
+
 
     def set_object_values(self, alert: dict, obj: Object) -> Object:
         obj.ndethist = alert["candidate"]["ndethist"]
@@ -93,14 +243,14 @@ class Correction(GenericStep):
             alert["mjd"] = alert["jd"] - 2400000.5
             alert["isdiffpos"] = 1 if alert["isdiffpos"] in ["t", "1"] else -1
             alert["corrected"] = alert["distnr"] < DISTANCE_THRESHOLD
-            alert["candid"] = str(alert["candid"])
+            alert["candid"] = alert["candid"]
             alert["has_stamp"] = False
             alert["step_id_corr"] = self.version
         else:
             alert["candidate"]["mjd"] = alert["candidate"]["jd"] - 2400000.5
             alert["candidate"]["isdiffpos"] = 1 if alert["candidate"]["isdiffpos"] in ["t", "1"] else -1
             alert["candidate"]["corrected"] = alert["candidate"]["distnr"] < DISTANCE_THRESHOLD
-            alert["candidate"]["candid"] = str(alert["candidate"]["candid"])
+            alert["candidate"]["candid"] = alert["candidate"]["candid"]
             alert["candidate"]["has_stamp"] = True
             alert["candidate"]["step_id_corr"] = self.version
             for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
@@ -119,34 +269,55 @@ class Correction(GenericStep):
             candidate.update(result)
         return result
 
+    def check_equal(self,value_1,value_2):
+        if isinstance(value_1, numbers.Number):
+            return abs(value_2 - value_1) < 1e-5
+        else:
+            return value_1 == value_2
+
+
     def already_exists(self, candidate: dict, candidates_list: list, keys: list) -> bool:
         for cand in candidates_list:
-            if all([candidate[k] == cand[k] for k in keys]):
+            if all([self.check_equal(candidate[k],cand[k]) for k in keys]):
                 return True
         return False
+
+    def check_candid_in_db(self, candid):
+        query = self.driver.session.query(Detection.candid).filter_by(candid=candid)
+        result = query.scalar()
+        exists = result is not None
+        return exists
 
     def process_prv_candidates(self, prv_candidates: dict, obj: Object, parent_candid: str, light_curve: dict) -> None:
         prv_non_detections = []
         prv_detections = []
+        prv_dataquality = []
+        if prv_candidates is None:
+            return
         for prv in prv_candidates:
             is_non_detection = prv["candid"] is None
             prv["mjd"] = prv["jd"] - 2400000.5
 
             if is_non_detection:
                 non_detection = self.cast_non_detection(obj.oid, prv)
-                if not self.already_exists(non_detection, light_curve["non_detections"], ["datetime", "fid", "oid"]):
+                if not self.already_exists(non_detection, light_curve["non_detections"], ["mjd"]):
                     light_curve["non_detections"].append(non_detection)
                     prv_non_detections.append(non_detection)
             else:
                 self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(prv, light_curve["detections"], ["candid"]):
+                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
+                    dataquality = self.add_dataquality(prv,create=False)
+                    dataquality["oid"] = obj.oid
                     prv["oid"] = obj.oid
                     prv["parent_candid"] = parent_candid
                     light_curve["detections"].append(prv)
                     prv_detections.append(prv)
+                    prv_dataquality.append(dataquality)
+
         # Insert data to database
         self.driver.session.query().bulk_insert(prv_detections, Detection)
+        self.driver.session.query().bulk_insert(prv_dataquality, Dataquality)
         self.driver.session.query().bulk_insert(prv_non_detections, NonDetection)
 
     def process_lightcurve(self, alert: dict, obj: Object) -> dict:
@@ -158,15 +329,13 @@ class Correction(GenericStep):
             detection = detection.__dict__
             del detection["_sa_instance_state"]
             light_curve["detections"].append(detection)
+
         else:
             self.logger.warning(f"{detection} already exists")
         # Compute and analyze previous candidates
         if "prv_candidates" in alert:
             self.process_prv_candidates(alert["prv_candidates"], obj, detection["candid"], light_curve)
-        # Remove datetime key in light_curve. Reason: Not necessary when this values passed to other steps
-        for non_det in light_curve["non_detections"]:
-            if "datetime" in non_det:
-                del non_det["datetime"]
+
         return light_curve
 
     def get_light_curve(self, obj: Object) -> dict:
@@ -190,10 +359,10 @@ class Correction(GenericStep):
 
     def execute(self, message):
         obj, created = self.get_object(message)
-        self.logger.info(obj)
         self.preprocess_alert(message)
         self.do_correction(message["candidate"], obj, inplace=True)
         light_curve = self.process_lightcurve(message, obj)
+        magstats = self.get_magstats(message, light_curve)
         # First observation of the object
         if created:
             self.set_object_values(message, obj)
@@ -206,7 +375,7 @@ class Correction(GenericStep):
         self.driver.session.commit()
         write = {
             "oid": message["objectId"],
-            "candid": str(message["candid"]),
+            "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
             "fid": message["candidate"]["fid"]

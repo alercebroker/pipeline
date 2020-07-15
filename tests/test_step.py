@@ -44,3 +44,7 @@ class StepTest(unittest.TestCase):
 
     def tearDown(self):
         self.container.remove(force=True)
+
+if __name__=="__main__":
+    t = StepTest()
+    t.test_execute()
