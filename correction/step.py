@@ -175,7 +175,7 @@ class Correction(GenericStep):
         magstat.magmedian = result.magpsf_median
         magstat.magmax = result.magpsf_max
         magstat.magmin = result.magpsf_min
-        magstat.magsigma = result.sigmapsf_first #I dont know this one
+        #magstat.magsigma = result.sigmapsf_first #I dont know this one
         magstat.maglast = result.magpsf_last
         magstat.magfirst = result.magpsf_first
         magstat.magmean_corr = result.magpsf_corr_mean
@@ -378,6 +378,7 @@ class Correction(GenericStep):
             "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
+            "xmatches": message.get("xmatches"),
             "fid": message["candidate"]["fid"]
         }
         self.producer.produce(write)

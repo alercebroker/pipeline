@@ -22,6 +22,14 @@ CONSUMER_CONFIG = {
     "DIRECTORY_PATH": os.environ["AVRO_PATH"]
 }
 
+XMATCH = {
+	'type' : 'map',
+    'values' : {
+        'type' : 'map',
+        'values' : [ "string", "float", "null"]
+    }
+}
+
 
 PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
@@ -51,6 +59,7 @@ PRODUCER_CONFIG = {
                     'values': ['float', 'int', 'string', 'null']
                 }
             }},
+            {'name': 'xmatches', 'type': [XMATCH, "null"], "default": "null"},
         ],
     }
 }
