@@ -19,7 +19,7 @@ logging.basicConfig(level=level,
 
 
 from {{package_name}} import {{class_name}}
-from apf.consumers import GenericConsumer as Consumer
+from apf.consumers import KafkaConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
