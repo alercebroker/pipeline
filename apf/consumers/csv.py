@@ -15,7 +15,7 @@ class CSVConsumer(GenericConsumer):
 
         #settings.py
         CONSUMER_CONFIG = { ...
-            "FILEPATH": "csv_file_path",
+            "FILE_PATH": "csv_file_path",
             "OTHER_ARGS": {
                 "index_col": "id",
                 "sep": ";",
