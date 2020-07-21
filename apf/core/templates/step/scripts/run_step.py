@@ -23,7 +23,7 @@ from apf.core import get_class
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
 else:
-    from apf.consumers import GenericConsumer as Consumer
+    from apf.consumers import KafkaConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
