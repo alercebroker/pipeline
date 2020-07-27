@@ -21,48 +21,48 @@ class Commons:
         return self.__dict__[field]
 
 
-# taxonomy_class = Table(
-# "taxonomy_class",
-# Base.metadata,
-# Column("class_name", String, ForeignKey("class.name")),
-# Column("taxonomy_name", String, ForeignKey("taxonomy.name")),
-# )
+taxonomy_class = Table(
+"taxonomy_class",
+Base.metadata,
+Column("class_name", String, ForeignKey("class.name")),
+Column("taxonomy_name", String, ForeignKey("taxonomy.name")),
+)
 
-# class Class(Base, generic.AbstractClass):
-#     __tablename__ = "class"
-#
-#     name = Column(String, primary_key=True)
-#     acronym = Column(String)
-#     taxonomies = relationship(
-#         "Taxonomy", secondary=taxonomy_class, back_populates="classes"
-#     )
-#     classifications = relationship("Classification")
-#
-#     def __repr__(self):
-#         return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
-#
-#
-# class Taxonomy(Base, generic.AbstractTaxonomy):
-#     __tablename__ = "taxonomy"
-#
-#     name = Column(String, primary_key=True)
-#     classes = relationship(
-#         "Class", secondary=taxonomy_class, back_populates="taxonomies"
-#     )
-#     classifiers = relationship("Classifier")
-#
-#     def __repr__(self):
-#         return "<Taxonomy(name='%s')>" % (self.name)
-#
-#
-# class Classifier(Base, generic.AbstractClassifier):
-#     __tablename__ = "classifier"
-#     name = Column(String, primary_key=True)
-#     taxonomy_name = Column(String, ForeignKey("taxonomy.name"))
-#     classifications = relationship("Classification")
-#
-#     def __repr__(self):
-#         return "<Classifier(name='%s')>" % (self.name)
+class Class(Base, generic.AbstractClass):
+    __tablename__ = "class"
+
+    name = Column(String, primary_key=True)
+    acronym = Column(String)
+    taxonomies = relationship(
+        "Taxonomy", secondary=taxonomy_class, back_populates="classes"
+    )
+    classifications = relationship("Classification")
+
+    def __repr__(self):
+        return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
+
+
+class Taxonomy(Base, generic.AbstractTaxonomy):
+    __tablename__ = "taxonomy"
+
+    name = Column(String, primary_key=True)
+    classes = relationship(
+        "Class", secondary=taxonomy_class, back_populates="taxonomies"
+    )
+    classifiers = relationship("Classifier")
+
+    def __repr__(self):
+        return "<Taxonomy(name='%s')>" % (self.name)
+
+
+class Classifier(Base, generic.AbstractClassifier):
+    __tablename__ = "classifier"
+    name = Column(String, primary_key=True)
+    taxonomy_name = Column(String, ForeignKey("taxonomy.name"))
+    classifications = relationship("Classification")
+
+    def __repr__(self):
+        return "<Classifier(name='%s')>" % (self.name)
 
 
 class Object(Base, generic.AbstractObject):
@@ -97,10 +97,10 @@ class Object(Base, generic.AbstractObject):
 
     # xmatches = relationship("Xmatch")
     magstats = relationship("MagStats", uselist=True)
-    # classifications = relationship("Classification")
+    classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
-    # features = relationship("FeaturesObject")
+    features = relationship("Feature")
 
     def get_lightcurve(self):
         return {
@@ -111,30 +111,38 @@ class Object(Base, generic.AbstractObject):
     def __repr__(self):
         return "<Object(oid='%s')>" % (self.oid)
 
+class Probability(Base):
+    __tablename__ = "probability"
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    model_name = Column(String, ForeignKey("classifier.name"), primary_key=True)
+    class_name = Column(String, ForeignKey("class.name"), primary_key=True)
+    probability = Column(Float, nullable=False)
+    ranking = Column(Integer, nullable=False)
 
-# class Classification(Base, generic.AbstractClassification):
-#     __tablename__ = "classification"
-#
-#     object = Column(String, ForeignKey("object.oid"), primary_key=True)
-#     classifier_name = Column(String, ForeignKey("classifier.name"), primary_key=True)
-#     class_name = Column(String, ForeignKey("class.name"), primary_key=True)
-#     probability = Column(Float)
-#     probabilities = Column(JSON)
-#
-#     classes = relationship("Class", back_populates="classifications")
-#     objects = relationship("Object", back_populates="classifications")
-#     classifiers = relationship("Classifier", back_populates="classifications")
-#
-#     def __repr__(self):
-#         return (
-#             "<Classification(class_name='%s', probability='%s', object='%s', classifier_name='%s')>"
-#             % (
-#                 self.class_name,
-#                 self.probability,
-#                 self.object,
-#                 self.classifier_name,
-#             )
-#         )
+
+class Classification(Base, generic.AbstractClassification):
+    __tablename__ = "classification"
+
+    object = Column(String, ForeignKey("object.oid"), primary_key=True)
+    classifier_name = Column(String, ForeignKey("classifier.name"), primary_key=True)
+    class_name = Column(String, ForeignKey("class.name"), primary_key=True)
+    probability = Column(Float)
+    probabilities = Column(JSON)
+
+    classes = relationship("Class", back_populates="classifications")
+    objects = relationship("Object", back_populates="classifications")
+    classifiers = relationship("Classifier", back_populates="classifications")
+
+    def __repr__(self):
+        return (
+            "<Classification(class_name='%s', probability='%s', object='%s', classifier_name='%s')>"
+            % (
+                self.class_name,
+                self.probability,
+                self.object,
+                self.classifier_name,
+            )
+        )
 
 
 # class Xmatch(Base, generic.AbstractXmatch):
@@ -186,19 +194,14 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     )
 
 
-# class Features(Base, generic.AbstractFeatures):
-#     __tablename__ = "features"
-#
-#     version = Column(String, primary_key=True)
-#
-#
-# class FeaturesObject(Base):
-#     __tablename__ = "features_object"
-#
-#     object_id = Column(String, ForeignKey("object.oid"), primary_key=True)
-#     features_version = Column(String, ForeignKey("features.version"), primary_key=True)
-#     data = Column(JSON)
-#     features = relationship("Features")
+class Feature(Base):
+    __tablename__ = "feature"
+
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    name = Column(String, primary_key=True , nullable=False)
+    value = Column(Float, nullable=False)
+    fid = Column(Integer, primary_key=True)
+    version = Column(String, primary_key=True, nullable=False)
 
 
 class NonDetection(Base, generic.AbstractNonDetection, Commons):
