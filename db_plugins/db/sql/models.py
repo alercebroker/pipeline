@@ -56,10 +56,10 @@ class Object(Base, generic.AbstractObject):
 
     # xmatches = relationship("Xmatch")
     magstats = relationship("MagStats", uselist=True)
-    classifications = relationship("Classification")
     non_detections = relationship("NonDetection")
     detections = relationship("Detection")
     features = relationship("Feature")
+    probabilities = relationship("Probability", uselist=True)
 
     def get_lightcurve(self):
         return {
@@ -117,21 +117,23 @@ class Probability(Base):
     oid = Column(String, ForeignKey(Object.oid), primary_key=True)
     class_name = Column(String, primary_key=True)
     classifier_name = Column(String, primary_key=True)
-    classifier_version = Column(
-        String, primary_key=True
-    )
+    classifier_version = Column(String, primary_key=True)
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
     taxonomy = relationship(
         "Taxonomy",
         back_populates="probabilities",
-        foreign_keys=("[Taxonomy.class_name, Taxonomy.classifier_name]"),
+        primaryjoin="Probability.classifier_name == Taxonomy.classifier_name and Probability.classifier_version == Taxonomy.classifier_version",
     )
 
     __table_args__ = (
         ForeignKeyConstraint(
             [class_name, classifier_name, classifier_version],
-            [Taxonomy.class_name, Taxonomy.classifier_name, Taxonomy.classifier_version],
+            [
+                Taxonomy.class_name,
+                Taxonomy.classifier_name,
+                Taxonomy.classifier_version,
+            ],
         ),
         {},
     )
