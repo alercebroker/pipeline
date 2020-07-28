@@ -74,16 +74,19 @@ class Class(Base, generic.AbstractClass):
     __tablename__ = "class"
 
     name = Column(String, primary_key=True)
-    acronym = Column(String)
+    fullname = Column(String)
+    description = Column(String)
     classifiers = relationship("Taxonomy", back_populates="class_")
 
     def __repr__(self):
-        return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
+        return "<Class(name='%s', fullname='%s')>" % (self.name, self.fullname)
 
 
 class Classifier(Base, generic.AbstractClassifier):
     __tablename__ = "classifier"
     name = Column(String, primary_key=True)
+    version = Column(String, primary_key=True)
+    description = Column(String)
     classes = relationship("Taxonomy", back_populates="classifier")
 
     def __repr__(self):
@@ -94,6 +97,7 @@ class Taxonomy(Base):
     __tablename__ = "taxonomy"
     class_name = Column(String, ForeignKey(Class.name), primary_key=True)
     classifier_name = Column(String, ForeignKey(Classifier.name), primary_key=True)
+    classifier_version = Column(String, ForeignKey(Classifier.version), primary_key=True)
     class_ = relationship("Class", back_populates="classifiers")
     classifier = relationship("Classifier", back_populates="classes")
     probabilities = relationship("Probability", back_populates="taxonomy")
