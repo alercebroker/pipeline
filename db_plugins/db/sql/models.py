@@ -10,59 +10,17 @@ from sqlalchemy import (
     JSON,
     Index,
     DateTime,
+    UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from .. import generic
 
 from db_plugins.db.sql import Base
 
+
 class Commons:
     def __getitem__(self, field):
         return self.__dict__[field]
-
-
-taxonomy_class = Table(
-"taxonomy_class",
-Base.metadata,
-Column("class_name", String, ForeignKey("class.name")),
-Column("taxonomy_name", String, ForeignKey("taxonomy.name")),
-)
-
-class Class(Base, generic.AbstractClass):
-    __tablename__ = "class"
-
-    name = Column(String, primary_key=True)
-    acronym = Column(String)
-    taxonomies = relationship(
-        "Taxonomy", secondary=taxonomy_class, back_populates="classes"
-    )
-    classifications = relationship("Classification")
-
-    def __repr__(self):
-        return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
-
-
-class Taxonomy(Base, generic.AbstractTaxonomy):
-    __tablename__ = "taxonomy"
-
-    name = Column(String, primary_key=True)
-    classes = relationship(
-        "Class", secondary=taxonomy_class, back_populates="taxonomies"
-    )
-    classifiers = relationship("Classifier")
-
-    def __repr__(self):
-        return "<Taxonomy(name='%s')>" % (self.name)
-
-
-class Classifier(Base, generic.AbstractClassifier):
-    __tablename__ = "classifier"
-    name = Column(String, primary_key=True)
-    taxonomy_name = Column(String, ForeignKey("taxonomy.name"))
-    classifications = relationship("Classification")
-
-    def __repr__(self):
-        return "<Classifier(name='%s')>" % (self.name)
 
 
 class Object(Base, generic.AbstractObject):
@@ -111,38 +69,54 @@ class Object(Base, generic.AbstractObject):
     def __repr__(self):
         return "<Object(oid='%s')>" % (self.oid)
 
-class Probability(Base):
-    __tablename__ = "probability"
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    model_name = Column(String, ForeignKey("classifier.name"), primary_key=True)
-    class_name = Column(String, ForeignKey("class.name"), primary_key=True)
-    probability = Column(Float, nullable=False)
-    ranking = Column(Integer, nullable=False)
 
+class Class(Base, generic.AbstractClass):
+    __tablename__ = "class"
 
-class Classification(Base, generic.AbstractClassification):
-    __tablename__ = "classification"
-
-    object = Column(String, ForeignKey("object.oid"), primary_key=True)
-    classifier_name = Column(String, ForeignKey("classifier.name"), primary_key=True)
-    class_name = Column(String, ForeignKey("class.name"), primary_key=True)
-    probability = Column(Float)
-    probabilities = Column(JSON)
-
-    classes = relationship("Class", back_populates="classifications")
-    objects = relationship("Object", back_populates="classifications")
-    classifiers = relationship("Classifier", back_populates="classifications")
+    name = Column(String, primary_key=True)
+    acronym = Column(String)
+    classifiers = relationship("Taxonomy", back_populates="class_")
 
     def __repr__(self):
-        return (
-            "<Classification(class_name='%s', probability='%s', object='%s', classifier_name='%s')>"
-            % (
-                self.class_name,
-                self.probability,
-                self.object,
-                self.classifier_name,
-            )
-        )
+        return "<Class(name='%s', acronym='%s')>" % (self.name, self.acronym)
+
+
+class Classifier(Base, generic.AbstractClassifier):
+    __tablename__ = "classifier"
+    name = Column(String, primary_key=True)
+    classes = relationship("Taxonomy", back_populates="classifier")
+
+    def __repr__(self):
+        return "<Classifier(name='%s')>" % (self.name)
+
+
+class Taxonomy(Base):
+    __tablename__ = "taxonomy"
+    class_name = Column(String, ForeignKey(Class.name), primary_key=True)
+    classifier_name = Column(String, ForeignKey(Classifier.name), primary_key=True)
+    class_ = relationship("Class", back_populates="classifiers")
+    classifier = relationship("Classifier", back_populates="classes")
+    probabilities = relationship("Probability", back_populates="taxonomy")
+
+    __table_args__ = (UniqueConstraint("class_name", "classifier_name"),)
+
+
+class Probability(Base):
+    __tablename__ = "probability"
+    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
+    class_name = Column(String, ForeignKey(Taxonomy.class_name), primary_key=True)
+    classifier_name = Column(
+        String, ForeignKey(Taxonomy.classifier_name), primary_key=True
+    )
+    probability = Column(Float, nullable=False)
+    ranking = Column(Integer, nullable=False)
+    taxonomy = relationship(
+        "Taxonomy",
+        back_populates="probabilities",
+        foreign_keys=("[Taxonomy.class_name, Taxonomy.classifier_name]"),
+    )
+
+    __table_args__ = (UniqueConstraint("oid", "class_name", "classifier_name"),)
 
 
 # class Xmatch(Base, generic.AbstractXmatch):
@@ -156,7 +130,7 @@ class Classification(Base, generic.AbstractClassification):
 class MagStats(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = "magstats"
 
-    oid = Column(String, ForeignKey('object.oid'), primary_key=True)
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     fid = Column(Integer, primary_key=True)
     stellar = Column(Boolean)
     corrected = Column(Boolean)
@@ -198,7 +172,7 @@ class Feature(Base):
     __tablename__ = "feature"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    name = Column(String, primary_key=True , nullable=False)
+    name = Column(String, primary_key=True, nullable=False)
     value = Column(Float, nullable=False)
     fid = Column(Integer, primary_key=True)
     version = Column(String, primary_key=True, nullable=False)
@@ -249,13 +223,17 @@ class Detection(Base, generic.AbstractDetection, Commons):
     has_stamp = Column(Boolean)
     step_id_corr = Column(String)
 
-    __table_args__ = (
-        Index("object_id", "oid", postgresql_using="hash"),)
+    __table_args__ = (Index("object_id", "oid", postgresql_using="hash"),)
 
     dataquality = relationship("Dataquality")
 
     def __repr__(self):
-        return "<Detection(candid='%i', fid='%i', oid='%s')>" % (self.candid, self.fid, self.oid)
+        return "<Detection(candid='%i', fid='%i', oid='%s')>" % (
+            self.candid,
+            self.fid,
+            self.oid,
+        )
+
 
 # class OutlierDetector(Base, generic.AbstractOutlierDetector):
 #     __tablename__ = "outlier_detector"
@@ -274,7 +252,7 @@ class Detection(Base, generic.AbstractDetection, Commons):
 
 
 class Dataquality(Base, generic.AbstractDataquality):
-    __tablename__ = 'dataquality'
+    __tablename__ = "dataquality"
 
     candid = Column(BigInteger, ForeignKey("detection.candid"), primary_key=True)
     oid = Column(String, nullable=False)
@@ -310,13 +288,13 @@ class Dataquality(Base, generic.AbstractDataquality):
     exptime = Column(Float)
 
     __table_args__ = (
-
-        Index('index_candid', 'candid', postgresql_using='btree'),
-        Index('index_fid', 'fid', postgresql_using='btree'))
+        Index("index_candid", "candid", postgresql_using="btree"),
+        Index("index_fid", "fid", postgresql_using="btree"),
+    )
 
 
 class Gaia_ztf(Base, generic.AbstractGaia_ztf):
-    __tablename__ = 'gaia_ztf'
+    __tablename__ = "gaia_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     neargaia = Column(Float, nullable=False)
@@ -327,7 +305,7 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
 
 
 class Ss_ztf(Base, generic.AbstractSs_ztf):
-    __tablename__ = 'ss_ztf'
+    __tablename__ = "ss_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     ssdistnr = Column(Float, nullable=False)
@@ -336,7 +314,7 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
 
 
 class Ps1_ztf(Base, generic.AbstractPs1_ztf):
-    __tablename__ = 'ps1_ztf'
+    __tablename__ = "ps1_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     candid = Column(BigInteger, primary_key=True)
@@ -368,7 +346,7 @@ class Ps1_ztf(Base, generic.AbstractPs1_ztf):
 
 
 class Reference(Base, generic.AbstractReference):
-    __tablename__ = 'reference'
+    __tablename__ = "reference"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     rfid = Column(BigInteger, primary_key=True)
@@ -388,7 +366,7 @@ class Reference(Base, generic.AbstractReference):
 
 
 class Pipeline(Base, generic.AbstractPipeline):
-    __tablename__ = 'pipeline'
+    __tablename__ = "pipeline"
 
     pipeline_id = Column(String, primary_key=True)
     step_id_corr = Column(String, nullable=False)
@@ -400,7 +378,7 @@ class Pipeline(Base, generic.AbstractPipeline):
 
 
 class Step(Base, generic.AbstractStep):
-    __tablename__ = 'step'
+    __tablename__ = "step"
 
     step_id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
