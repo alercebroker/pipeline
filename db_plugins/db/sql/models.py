@@ -11,7 +11,7 @@ from sqlalchemy import (
     Index,
     DateTime,
     UniqueConstraint,
-    ForeignKeyConstraint
+    ForeignKeyConstraint,
 )
 from sqlalchemy.orm import relationship
 from .. import generic
@@ -87,6 +87,7 @@ class Classifier(Base, generic.AbstractClassifier):
     __tablename__ = "classifier"
     name = Column(String, primary_key=True)
     version = Column(String, primary_key=True)
+    feature_version = Column(String, ForeignKey("feature_version.version"))
     description = Column(String)
     classes = relationship("Taxonomy", back_populates="classifier")
 
@@ -97,11 +98,18 @@ class Classifier(Base, generic.AbstractClassifier):
 class Taxonomy(Base):
     __tablename__ = "taxonomy"
     class_name = Column(String, ForeignKey(Class.name), primary_key=True)
-    classifier_name = Column(String, ForeignKey(Classifier.name), primary_key=True)
-    classifier_version = Column(String, ForeignKey(Classifier.version), primary_key=True)
+    classifier_name = Column(String, primary_key=True)
+    classifier_version = Column(String, primary_key=True)
     class_ = relationship("Class", back_populates="classifiers")
     classifier = relationship("Classifier", back_populates="classes")
     probabilities = relationship("Probability", back_populates="taxonomy")
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            [classifier_name, classifier_version], [Classifier.name, Classifier.version]
+        ),
+        {},
+    )
 
 
 class Probability(Base):
@@ -109,6 +117,9 @@ class Probability(Base):
     oid = Column(String, ForeignKey(Object.oid), primary_key=True)
     class_name = Column(String, primary_key=True)
     classifier_name = Column(String, primary_key=True)
+    classifier_version = Column(
+        String, primary_key=True
+    )
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
     taxonomy = relationship(
@@ -117,8 +128,32 @@ class Probability(Base):
         foreign_keys=("[Taxonomy.class_name, Taxonomy.classifier_name]"),
     )
 
-    __table_args__ = (ForeignKeyConstraint([class_name, classifier_name],
-                                           [Taxonomy.class_name, Taxonomy.classifier_name]),{})
+    __table_args__ = (
+        ForeignKeyConstraint(
+            [class_name, classifier_name, classifier_version],
+            [Taxonomy.class_name, Taxonomy.classifier_name, Taxonomy.classifier_version],
+        ),
+        {},
+    )
+
+
+class Feature(Base):
+    __tablename__ = "feature"
+
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    name = Column(String, primary_key=True, nullable=False)
+    value = Column(Float, nullable=False)
+    fid = Column(Integer, primary_key=True)
+    version = Column(
+        String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
+    )
+
+
+class FeatureVersion(Base):
+    __tablename__ = "feature_version"
+    version = Column(String, primary_key=True)
+    step_id_feature = Column(String, ForeignKey("step.step_id"))
+    step_id_preprocess = Column(String, ForeignKey("step.step_id"))
 
 
 # class Xmatch(Base, generic.AbstractXmatch):
@@ -170,16 +205,6 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     )
 
 
-class Feature(Base):
-    __tablename__ = "feature"
-
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    name = Column(String, primary_key=True, nullable=False)
-    value = Column(Float, nullable=False)
-    fid = Column(Integer, primary_key=True)
-    version = Column(String, primary_key=True, nullable=False)
-
-
 class NonDetection(Base, generic.AbstractNonDetection, Commons):
     __tablename__ = "non_detection"
 
@@ -194,7 +219,7 @@ class Detection(Base, generic.AbstractDetection, Commons):
     __tablename__ = "detection"
 
     candid = Column(BigInteger, primary_key=True)
-    oid = Column(String, ForeignKey("object.oid"))
+    oid = Column(String, ForeignKey("object.oid"), nullable=False)
     avro = Column(String)
     mjd = Column(Float)
     fid = Column(Integer)
