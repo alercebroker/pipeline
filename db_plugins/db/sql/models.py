@@ -10,7 +10,8 @@ from sqlalchemy import (
     JSON,
     Index,
     DateTime,
-    UniqueConstraint
+    UniqueConstraint,
+    ForeignKeyConstraint
 )
 from sqlalchemy.orm import relationship
 from .. import generic
@@ -102,16 +103,12 @@ class Taxonomy(Base):
     classifier = relationship("Classifier", back_populates="classes")
     probabilities = relationship("Probability", back_populates="taxonomy")
 
-    __table_args__ = (UniqueConstraint("class_name", "classifier_name"),)
-
 
 class Probability(Base):
     __tablename__ = "probability"
     oid = Column(String, ForeignKey(Object.oid), primary_key=True)
-    class_name = Column(String, ForeignKey(Taxonomy.class_name), primary_key=True)
-    classifier_name = Column(
-        String, ForeignKey(Taxonomy.classifier_name), primary_key=True
-    )
+    class_name = Column(String, primary_key=True)
+    classifier_name = Column(String, primary_key=True)
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
     taxonomy = relationship(
@@ -120,7 +117,8 @@ class Probability(Base):
         foreign_keys=("[Taxonomy.class_name, Taxonomy.classifier_name]"),
     )
 
-    __table_args__ = (UniqueConstraint("oid", "class_name", "classifier_name"),)
+    __table_args__ = (ForeignKeyConstraint([class_name, classifier_name],
+                                           [Taxonomy.class_name, Taxonomy.classifier_name]),{})
 
 
 # class Xmatch(Base, generic.AbstractXmatch):
