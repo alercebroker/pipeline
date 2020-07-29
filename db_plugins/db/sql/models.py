@@ -167,7 +167,7 @@ class FeatureVersion(Base):
 
 
 class MagStats(Base, generic.AbstractMagnitudeStatistics):
-    __tablename__ = "magstats"
+    __tablename__ = "magstat"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     fid = Column(Integer, primary_key=True)
