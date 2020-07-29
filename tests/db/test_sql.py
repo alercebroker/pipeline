@@ -34,16 +34,27 @@ class DatabaseConnectionTest(unittest.TestCase):
             meanra=1.0,
             meandec=1.0,
             sigmadec=1.0,
-            deltamjd=1.0,
+            deltajd=1.0,
             firstmjd=1.0,
         )
         self.db.session.add(obj)
-        class_object = Class(name="Super Nova", acronym="SN")
+        class_object = Class(fullname="Super Nova", name="SN")
         self.db.session.add(class_object)
-        classifier = Classifier(name="test")
+        classifier = Classifier(name="test", version="1.0.0-test")
         self.db.session.add(classifier)
-        classification = Classification(
-            object="ZTF1", classifier_name="test", class_name="Super Nova"
+        taxonomy = Taxonomy(
+            class_name=class_object.name,
+            classifier_name=classifier.name,
+            classifier_version=classifier.version,
+        )
+        self.db.session.add(taxonomy)
+        classification = Probability(
+            oid=obj.oid,
+            classifier_name=taxonomy.classifier_name,
+            classifier_version=taxonomy.classifier_version,
+            class_name=taxonomy.class_name,
+            probability=1.0,
+            ranking=1,
         )
         self.db.session.add(classification)
         self.db.session.commit()
@@ -60,20 +71,14 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertFalse(created)
 
     def test_check_exists(self):
-        self.assertTrue(
-            self.db.session.query().check_exists(Object, {"oid": "ZTF1"})
-        )
+        self.assertTrue(self.db.session.query().check_exists(Object, {"oid": "ZTF1"}))
 
     def test_update(self):
-        instance, _ = self.db.session.query().get_or_create(
-            Object, {"oid": "ZTF1"}
+        instance = (
+            self.db.session.query(Object).filter(Object.oid == "ZTF1").one_or_none()
         )
         updated = self.db.session.query().update(instance, {"oid": "ZTF2"})
         self.assertEqual(updated.oid, "ZTF2")
-        instance, created = self.db.session.query().get_or_create(
-            Object, {"oid": "ZTF1"}
-        )
-        self.assertTrue(created)
 
     def test_bulk_insert(self):
         objs = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
@@ -87,6 +92,19 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertEqual(pagination.total, 1)
         self.assertEqual(pagination.items[0].oid, "ZTF1")
 
+    def test_find_one(self):
+        obj = self.db.query(Object).find_one(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(obj, Object)
+
+    def test_find(self):
+        obj_page = self.db.query(Object).find()
+        self.assertIsInstance(obj_page, Pagination)
+        self.assertEqual(obj_page.total, 1)
+        self.assertEqual(obj_page.items[0].oid, "ZTF1")
+
+    def test_find_paginate_false(self):
+        obj_page = self.db.query(Object).find(paginate=False)
+        self.assertIsInstance(obj_page, list)
 
 class ScopedDatabaseConnectionTest(unittest.TestCase):
     @classmethod
@@ -113,7 +131,7 @@ class ScopedDatabaseConnectionTest(unittest.TestCase):
             meanra=1.0,
             meandec=1.0,
             sigmadec=1.0,
-            deltamjd=1.0,
+            deltajd=1.0,
             firstmjd=1.0,
         )
         self.db.session.add(obj)
@@ -182,11 +200,8 @@ class ObjectTest(GenericObjectTest, unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        class_ = Class(name="Super Nova", acronym="SN")
-        taxonomy = Taxonomy(name="Test")
-        class_.taxonomies.append(taxonomy)
-        classifier = Classifier(name="C1")
-        taxonomy.classifiers.append(classifier)
+        class_ = Class(fullname="Super Nova", name="SN")
+        classifier = Classifier(name="C1", version="1.0.0-test")
         self.model = Object(
             oid="ZTF1",
             ndet=1,
@@ -195,42 +210,49 @@ class ObjectTest(GenericObjectTest, unittest.TestCase):
             meandec=1.0,
             sigmara=1.0,
             sigmadec=1.0,
-            deltamjd=1.0,
+            deltajd=1.0,
             firstmjd=1.0,
         )
-        self.model.xmatches.append(Xmatch(catalog_id="C1", catalog_oid="O1"))
-        self.model.magnitude_statistics.append(
-            MagnitudeStatistics(
+        self.model.magstats.append(
+            MagStats(
                 fid=1,
                 stellar=True,
                 corrected=True,
                 ndet=1,
                 ndubious=1,
                 dmdt_first=0.13,
-                dm_first = 0.12,
-                sigmadm_first = 1.4,
-                dt_first = 2.,
-                magmean = 19.,
-                magmedian = 20,
-                magmax = 1.4,
-                magmin = 1.4,
-                magsigma = 1.4,
-                maglast = 1.4,
-                magfirst = 1.4,
-                firstmjd = 1.4,
-                lastmjd = 1.4,
-                step_id_corr = "testing_id"
+                dm_first=0.12,
+                sigmadm_first=1.4,
+                dt_first=2.0,
+                magmean=19.0,
+                magmedian=20,
+                magmax=1.4,
+                magmin=1.4,
+                magsigma=1.4,
+                maglast=1.4,
+                magfirst=1.4,
+                firstmjd=1.4,
+                lastmjd=1.4,
+                step_id_corr="testing_id",
             )
         )
-        self.model.classifications.append(
-            Classification(
-                class_name="Super Nova", probability=1.0, classifier_name="C1"
+        self.model.probabilities.append(
+            Probability(
+                class_name=class_.name,
+                probability=1.0,
+                classifier_name=classifier.name,
+                classifier_version=classifier.version,
+                ranking=1,
             )
         )
-
-        features_object = FeaturesObject(data=json.loads('{"test":"test"}'))
-        features_object.features = Features(version="V1")
-        self.model.features.append(features_object)
+        feature_version = FeatureVersion(version="1.0.0-test")
+        feature = Feature(
+            oid=self.model.oid,
+            name="testfeature",
+            value=0.5,
+            fid=1,
+            version=feature_version.version,
+        )
         self.model.detections.append(
             Detection(
                 candid="t",
@@ -245,9 +267,7 @@ class ObjectTest(GenericObjectTest, unittest.TestCase):
                 sigmagap=1,
             )
         )
-        self.model.non_detections.append(
-            NonDetection(mjd=1, fid=1, diffmaglim=1, datetime=datetime.datetime.now())
-        )
+        self.model.non_detections.append(NonDetection(mjd=1, fid=1, diffmaglim=1))
         self.db.session.add(self.model)
         self.db.session.commit()
 
