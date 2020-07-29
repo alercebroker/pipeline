@@ -124,7 +124,7 @@ class SQLQuery(BaseQuery, Query):
             total = self.order_by(None).count()
         return Pagination(self, page, per_page, total, items)
 
-    def find_one(self, model=None, filter_by=None):
+    def find_one(self, model=None, filter_by={}):
         """
         Finds one item of the specified model. 
         
@@ -142,7 +142,7 @@ class SQLQuery(BaseQuery, Query):
         query = self.session.query(model) if not self._entities else self
         return query.filter_by(**filter_by).one_or_none()
 
-    def find(self, model=None, filter_by=None, paginate=True):
+    def find(self, model=None, filter_by={}, paginate=True):
         """
         Finds list of items of the specified model. 
         
