@@ -92,6 +92,19 @@ class DatabaseConnectionTest(unittest.TestCase):
         self.assertEqual(pagination.total, 1)
         self.assertEqual(pagination.items[0].oid, "ZTF1")
 
+    def test_find_one(self):
+        obj = self.db.query(Object).find_one(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(obj, Object)
+
+    def test_find(self):
+        obj_page = self.db.query(Object).find()
+        self.assertIsInstance(obj_page, Pagination)
+        self.assertEqual(obj_page.total, 1)
+        self.assertEqual(obj_page.items[0].oid, "ZTF1")
+
+    def test_find_paginate_false(self):
+        obj_page = self.db.query(Object).find(paginate=False)
+        self.assertIsInstance(obj_page, list)
 
 class ScopedDatabaseConnectionTest(unittest.TestCase):
     @classmethod
