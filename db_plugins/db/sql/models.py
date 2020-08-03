@@ -71,45 +71,45 @@ class Object(Base, generic.AbstractObject):
         return "<Object(oid='%s')>" % (self.oid)
 
 
-class Class(Base, generic.AbstractClass):
-    __tablename__ = "class"
-
-    name = Column(String, primary_key=True)
-    fullname = Column(String)
-    description = Column(String)
-    classifiers = relationship("Taxonomy", back_populates="class_")
-
-    def __repr__(self):
-        return "<Class(name='%s', fullname='%s')>" % (self.name, self.fullname)
-
-
-class Classifier(Base, generic.AbstractClassifier):
-    __tablename__ = "classifier"
-    name = Column(String, primary_key=True)
-    version = Column(String, primary_key=True)
-    feature_version = Column(String, ForeignKey("feature_version.version"))
-    description = Column(String)
-    classes = relationship("Taxonomy", back_populates="classifier")
-
-    def __repr__(self):
-        return "<Classifier(name='%s')>" % (self.name)
-
-
-class Taxonomy(Base):
-    __tablename__ = "taxonomy"
-    class_name = Column(String, ForeignKey(Class.name), primary_key=True)
-    classifier_name = Column(String, primary_key=True)
-    classifier_version = Column(String, primary_key=True)
-    class_ = relationship("Class", back_populates="classifiers")
-    classifier = relationship("Classifier", back_populates="classes")
-    probabilities = relationship("Probability", back_populates="taxonomy")
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            [classifier_name, classifier_version], [Classifier.name, Classifier.version]
-        ),
-        {},
-    )
+# class Class(Base, generic.AbstractClass):
+#     __tablename__ = "class"
+#
+#     name = Column(String, primary_key=True)
+#     fullname = Column(String)
+#     description = Column(String)
+#     classifiers = relationship("Taxonomy", back_populates="class_")
+#
+#     def __repr__(self):
+#         return "<Class(name='%s', fullname='%s')>" % (self.name, self.fullname)
+#
+#
+# class Classifier(Base, generic.AbstractClassifier):
+#     __tablename__ = "classifier"
+#     name = Column(String, primary_key=True)
+#     version = Column(String, primary_key=True)
+#     feature_version = Column(String, ForeignKey("feature_version.version"))
+#     description = Column(String)
+#     classes = relationship("Taxonomy", back_populates="classifier")
+#
+#     def __repr__(self):
+#         return "<Classifier(name='%s')>" % (self.name)
+#
+#
+# class Taxonomy(Base):
+#     __tablename__ = "taxonomy"
+#     class_name = Column(String, ForeignKey(Class.name), primary_key=True)
+#     classifier_name = Column(String, primary_key=True)
+#     classifier_version = Column(String, primary_key=True)
+#     class_ = relationship("Class", back_populates="classifiers")
+#     classifier = relationship("Classifier", back_populates="classes")
+#     probabilities = relationship("Probability", back_populates="taxonomy")
+#
+#     __table_args__ = (
+#         ForeignKeyConstraint(
+#             [classifier_name, classifier_version], [Classifier.name, Classifier.version]
+#         ),
+#         {},
+#     )
 
 
 class Probability(Base):
@@ -120,23 +120,23 @@ class Probability(Base):
     classifier_version = Column(String, primary_key=True)
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
-    taxonomy = relationship(
-        "Taxonomy",
-        back_populates="probabilities",
-        primaryjoin="Probability.classifier_name == Taxonomy.classifier_name and Probability.classifier_version == Taxonomy.classifier_version",
-    )
+    # taxonomy = relationship(
+    #     "Taxonomy",
+    #     back_populates="probabilities",
+    #     primaryjoin="Probability.classifier_name == Taxonomy.classifier_name and Probability.classifier_version == Taxonomy.classifier_version",
+    # )
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            [class_name, classifier_name, classifier_version],
-            [
-                Taxonomy.class_name,
-                Taxonomy.classifier_name,
-                Taxonomy.classifier_version,
-            ],
-        ),
-        {},
-    )
+    # __table_args__ = (
+    #     ForeignKeyConstraint(
+    #         [class_name, classifier_name, classifier_version],
+    #         [
+    #             Taxonomy.class_name,
+    #             Taxonomy.classifier_name,
+    #             Taxonomy.classifier_version,
+    #         ],
+    #     ),
+    #     {},
+    # )
 
 
 class FeatureVersion(Base):
@@ -195,7 +195,7 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     magfirst_corr = Column(Float)
     firstmjd = Column(Float)
     lastmjd = Column(Float)
-    step_id = Column(String)
+    # step_id_corr = Column(String)
 
     __table_args__ = (
         Index("mag_mean", "magmean", postgresql_using="btree"),
@@ -222,7 +222,7 @@ class Detection(Base, generic.AbstractDetection, Commons):
 
     candid = Column(BigInteger, primary_key=True)
     oid = Column(String, ForeignKey("object.oid"), nullable=False)
-    avro = Column(String)
+    # avro = Column(String)
     mjd = Column(Float)
     fid = Column(Integer)
     pid = Column(Float)
@@ -262,22 +262,6 @@ class Detection(Base, generic.AbstractDetection, Commons):
             self.fid,
             self.oid,
         )
-
-
-# class OutlierDetector(Base, generic.AbstractOutlierDetector):
-#     __tablename__ = "outlier_detector"
-#
-#     name = Column(String, primary_key=True)
-#
-#
-# class OutlierScore(Base, generic.AbstractOutlierScore):
-#     __tablename__ = "outlier_score"
-#     object_ = Column("object", String, ForeignKey("object.oid"), primary_key=True)
-#     detector_name = Column(
-#         String, ForeignKey("outlier_detector.name"), primary_key=True
-#     )
-#     score = Column(Float, primary_key=True)
-#     scores = Column(JSON)
 
 
 class Dataquality(Base, generic.AbstractDataquality):
@@ -330,7 +314,7 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     neargaiabright = Column(Float, nullable=False)
     maggaia = Column(Float, nullable=False)
     maggaiabright = Column(Float, nullable=False)
-    unique = Column(Boolean)
+    # unique = Column(Boolean)
 
 
 class Ss_ztf(Base, generic.AbstractSs_ztf):
