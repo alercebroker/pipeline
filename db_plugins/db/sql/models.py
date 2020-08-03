@@ -139,6 +139,13 @@ class Probability(Base):
     )
 
 
+class FeatureVersion(Base):
+    __tablename__ = "feature_version"
+    version = Column(String, primary_key=True)
+    step_id_feature = Column(String, ForeignKey("step.step_id"))
+    step_id_preprocess = Column(String, ForeignKey("step.step_id"))
+
+
 class Feature(Base):
     __tablename__ = "feature"
 
@@ -149,13 +156,6 @@ class Feature(Base):
     version = Column(
         String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
     )
-
-
-class FeatureVersion(Base):
-    __tablename__ = "feature_version"
-    version = Column(String, primary_key=True)
-    step_id_feature = Column(String, ForeignKey("step.step_id"))
-    step_id_preprocess = Column(String, ForeignKey("step.step_id"))
 
 
 # class Xmatch(Base, generic.AbstractXmatch):
