@@ -31,8 +31,8 @@ class Object(Base, generic.AbstractObject):
     oid = Column(String, primary_key=True)
     ndethist = Column(Integer)
     ncovhist = Column(Integer)
-    mjdstarthist = Column(Float)
-    mjdendhist = Column(Float)
+    mjdstarthist = Column(Float(precision=64))
+    mjdendhist = Column(Float(precision=64))
     corrected = Column(Boolean)
     stellar = Column(Boolean)
     ndet = Column(Integer)
@@ -40,13 +40,13 @@ class Object(Base, generic.AbstractObject):
     g_r_max_corr = Column(Float)
     g_r_mean = Column(Float)
     g_r_mean_corr = Column(Float)
-    meanra = Column(Float)
-    meandec = Column(Float)
-    sigmara = Column(Float)
-    sigmadec = Column(Float)
-    deltajd = Column(Float)
-    firstmjd = Column(Float)
-    lastmjd = Column(Float)
+    meanra = Column(Float(precision=64))
+    meandec = Column(Float(precision=64))
+    sigmara = Column(Float(precision=64))
+    sigmadec = Column(Float(precision=64))
+    deltajd = Column(Float(precision=64))
+    firstmjd = Column(Float(precision=64))
+    lastmjd = Column(Float(precision=64))
     step_id_corr = Column(String)
 
     __table_args__ = (
@@ -102,7 +102,7 @@ class Feature(Base):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     name = Column(String, primary_key=True, nullable=False)
-    value = Column(Float, nullable=False)
+    value = Column(Float(precision=64), nullable=False)
     fid = Column(Integer, primary_key=True)
     version = Column(
         String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
@@ -144,8 +144,8 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     magsigma_corr = Column(Float)
     maglast_corr = Column(Float)
     magfirst_corr = Column(Float)
-    firstmjd = Column(Float)
-    lastmjd = Column(Float)
+    firstmjd = Column(Float(precision=64))
+    lastmjd = Column(Float(precision=64))
     # step_id_corr = Column(String)
 
     __table_args__ = (
@@ -163,7 +163,7 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     fid = Column(Integer, primary_key=True)
-    mjd = Column(Float, primary_key=True)
+    mjd = Column(Float(precision=64), primary_key=True)
     diffmaglim = Column(Float)
     __table_args__ = (Index("non_det_oid", "oid", postgresql_using="hash"),)
 
@@ -174,14 +174,14 @@ class Detection(Base, generic.AbstractDetection, Commons):
     candid = Column(BigInteger, primary_key=True)
     oid = Column(String, ForeignKey("object.oid"), nullable=False)
     # avro = Column(String)
-    mjd = Column(Float)
+    mjd = Column(Float(precision=64))
     fid = Column(Integer)
     pid = Column(Float)
     diffmaglim = Column(Float)
     isdiffpos = Column(Integer)
     nid = Column(Integer)
-    ra = Column(Float)
-    dec = Column(Float)
+    ra = Column(Float(precision=64))
+    dec = Column(Float(precision=64))
     magpsf = Column(Float)
     sigmapsf = Column(Float)
     magap = Column(Float)
@@ -322,10 +322,10 @@ class Reference(Base, generic.AbstractReference):
     sigmagnr = Column(Float, nullable=False)
     chinr = Column(Float, nullable=False)
     sharpnr = Column(Float, nullable=False)
-    ranr = Column(Float)
-    decnr = Column(Float)
-    mjdstartref = Column(Float)
-    mjdendref = Column(Float)
+    ranr = Column(Float(precision=64))
+    decnr = Column(Float(precision=64))
+    mjdstartref = Column(Float(precision=64))
+    mjdendref = Column(Float(precision=64))
     nframesref = Column(Integer)
 
 
