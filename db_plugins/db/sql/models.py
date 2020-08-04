@@ -8,6 +8,7 @@ from sqlalchemy import (
     Float,
     Boolean,
     JSON,
+    ARRAY,
     Index,
     DateTime,
     UniqueConstraint,
@@ -71,45 +72,12 @@ class Object(Base, generic.AbstractObject):
         return "<Object(oid='%s')>" % (self.oid)
 
 
-# class Class(Base, generic.AbstractClass):
-#     __tablename__ = "class"
-#
-#     name = Column(String, primary_key=True)
-#     fullname = Column(String)
-#     description = Column(String)
-#     classifiers = relationship("Taxonomy", back_populates="class_")
-#
-#     def __repr__(self):
-#         return "<Class(name='%s', fullname='%s')>" % (self.name, self.fullname)
-#
-#
-# class Classifier(Base, generic.AbstractClassifier):
-#     __tablename__ = "classifier"
-#     name = Column(String, primary_key=True)
-#     version = Column(String, primary_key=True)
-#     feature_version = Column(String, ForeignKey("feature_version.version"))
-#     description = Column(String)
-#     classes = relationship("Taxonomy", back_populates="classifier")
-#
-#     def __repr__(self):
-#         return "<Classifier(name='%s')>" % (self.name)
-#
-#
-# class Taxonomy(Base):
-#     __tablename__ = "taxonomy"
-#     class_name = Column(String, ForeignKey(Class.name), primary_key=True)
-#     classifier_name = Column(String, primary_key=True)
-#     classifier_version = Column(String, primary_key=True)
-#     class_ = relationship("Class", back_populates="classifiers")
-#     classifier = relationship("Classifier", back_populates="classes")
-#     probabilities = relationship("Probability", back_populates="taxonomy")
-#
-#     __table_args__ = (
-#         ForeignKeyConstraint(
-#             [classifier_name, classifier_version], [Classifier.name, Classifier.version]
-#         ),
-#         {},
-#     )
+
+class Taxonomy(Base):
+    __tablename__ = "taxonomy"
+    classifier_name = Column(String, primary_key=True)
+    classifier_version = Column(String, primary_key=True)
+    classes = Column(ARRAY(String), nullable=False)
 
 
 class Probability(Base):
@@ -120,23 +88,6 @@ class Probability(Base):
     classifier_version = Column(String, primary_key=True)
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
-    # taxonomy = relationship(
-    #     "Taxonomy",
-    #     back_populates="probabilities",
-    #     primaryjoin="Probability.classifier_name == Taxonomy.classifier_name and Probability.classifier_version == Taxonomy.classifier_version",
-    # )
-
-    # __table_args__ = (
-    #     ForeignKeyConstraint(
-    #         [class_name, classifier_name, classifier_version],
-    #         [
-    #             Taxonomy.class_name,
-    #             Taxonomy.classifier_name,
-    #             Taxonomy.classifier_version,
-    #         ],
-    #     ),
-    #     {},
-    # )
 
 
 class FeatureVersion(Base):
