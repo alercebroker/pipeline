@@ -57,10 +57,10 @@ class Object(Base, generic.AbstractObject):
 
     # xmatches = relationship("Xmatch")
     magstats = relationship("MagStats", uselist=True)
-    non_detections = relationship("NonDetection")
-    detections = relationship("Detection")
+    non_detections = relationship("NonDetection", order_by="NonDetection.mjd")
+    detections = relationship("Detection", order_by="Detection.mjd")
     features = relationship("Feature")
-    probabilities = relationship("Probability", uselist=True)
+    probabilities = relationship("Probability", uselist=True, order_by="Probability.classifier_name")
 
     def get_lightcurve(self):
         return {
