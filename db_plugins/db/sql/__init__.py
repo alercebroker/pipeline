@@ -95,17 +95,17 @@ class SQLQuery(BaseQuery, Query):
         model: Model
             Class of the model to be added
         session: Session
-            Session instance 
+            Session instance
         """
         self.session.bulk_insert_mappings(model, objects)
 
-    def paginate(self, page=1, per_page=10, count=True):
+    def paginate(self, page=1, per_page=10, count=True,  max_results = 50000):
         """
         Returns pagination object with the results
 
         Parameters
         -----------
-        
+
         page : int
             page or offset of the query
         per_page : int
@@ -121,13 +121,13 @@ class SQLQuery(BaseQuery, Query):
         if not count:
             total = None
         else:
-            total = self.order_by(None).count()
+            total = self.order_by(None).limit(max_results).count()
         return Pagination(self, page, per_page, total, items)
 
     def find_one(self, model=None, filter_by={}):
         """
-        Finds one item of the specified model. 
-        
+        Finds one item of the specified model.
+
         If there are more than one item an error occurs.
         If there are no items, then it returns None
 
@@ -144,8 +144,8 @@ class SQLQuery(BaseQuery, Query):
 
     def find(self, model=None, filter_by={}, paginate=True):
         """
-        Finds list of items of the specified model. 
-        
+        Finds list of items of the specified model.
+
         If there are too many items a timeout can happen.
 
         Parameters
