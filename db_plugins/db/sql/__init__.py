@@ -121,7 +121,7 @@ class SQLQuery(BaseQuery, Query):
         if not count:
             total = None
         else:
-            total = self.order_by(None).limit(max_results).count()
+            total = self.order_by(None).limit(max_results+1).count()
         return Pagination(self, page, per_page, total, items)
 
     def find_one(self, model=None, filter_by={}):
