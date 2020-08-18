@@ -12,6 +12,12 @@ from db_plugins.db.sql.models import (
     Dataquality,
     Gaia_ztf
 )
+from db_plugins.db.sql.serializers import (
+    Gaia_ztfSchema,
+    Ss_ztfSchema,
+    Ps1_ztfSchema,
+    ReferenceSchema
+)
 from db_plugins.db.sql import SQLConnection
 from lc_correction.compute import apply_correction, is_dubious, apply_mag_stats, do_dmdt, DISTANCE_THRESHOLD
 from astropy.time import Time
@@ -114,10 +120,22 @@ class Correction(GenericStep):
         message_params = {}
         for key in PS1_KEYS:
             message_params[key] = message["candidate"][key]
+        for i in range(1,4):
+            unique_close = f"unique{i}"
+            message_params[unique_close] = True
+
         filters = {
                 "oid": message["objectId"],
         }
         ps1, created = self.driver.session.query().get_or_create(Ps1_ztf, filter_by=filters, **message_params)
+        if not created:
+
+            for i in range(1,4):
+                objectidps = f"objectidps{i}"
+                if not self.check_equal(getattr(ps1,objectidps), message_params[objectidps]):
+                    unique_close = f"unique{i}"
+                    setattr(ps1,unique_close, False)
+
         return ps1
 
     def get_ss(self, message: dict) -> Ss_ztf:
@@ -156,11 +174,20 @@ class Correction(GenericStep):
             "neargaia" : message["candidate"].get("neargaia"),
             "neargaiabright" : message["candidate"].get("neargaiabright"),
             "maggaia" : message["candidate"].get("maggaia"),
-            "maggaiabright" : message["candidate"].get("maggaiabright")
+            "maggaiabright" : message["candidate"].get("maggaiabright"),
+            "unique": True
         }
         if data["neargaia"] is None:
             return
         gaia, created = self.driver.session.query().get_or_create(Gaia_ztf, filter_by=filters, **data)
+
+        if not created:
+            if not self.check_equal(gaia.neargaia, data["neargaia"]) and \
+               not self.check_equal(gaia.neargaiabright, data["neargaiabright"]) and \
+               not self.check_equal(gaia.maggaia, data["maggaia"]) and \
+               not self.check_equal(gaia.maggaiabright, data["maggaiabright"]):
+                gaia.unique = False
+
         return gaia
 
     def set_magstats_values(self,result: dict,magstat: MagStats) -> MagStats:
@@ -203,6 +230,14 @@ class Correction(GenericStep):
                     "reference": reference,
                     "gaia": gaia
                 }
+
+    def prepare_metadata(self, metadata):
+        return {
+            "ps1": Ps1_ztfSchema().dump(metadata["ps1"]),
+            "ss": Ss_ztfSchema().dump(metadata["ss"]),
+            "reference": ReferenceSchema().dump(metadata["reference"]),
+            "gaia": Gaia_ztfSchema().dump(metadata["gaia"])
+        }
 
     def get_magstats(self, message: dict, light_curve: list, ss: Ss_ztf, ps1: Ps1_ztf, reference: Reference) -> MagStats:
 
@@ -401,6 +436,6 @@ class Correction(GenericStep):
             "non_detections": light_curve["non_detections"],
             "xmatches": message.get("xmatches"),
             "fid": message["candidate"]["fid"],
-            "metadata": metadata
+            "metadata": self.prepare_metadata(metadata)
         }
         self.producer.produce(write)
