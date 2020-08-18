@@ -115,7 +115,7 @@ class KafkaConsumer(GenericConsumer):
             self.config["PARAMS"]["auto.offset.reset"] = "beginning"
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
-
+        self.logger.info(f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}")
         self.dynamic_topic = False
         if self.config.get("TOPICS"):
             self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
