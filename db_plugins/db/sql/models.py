@@ -271,6 +271,7 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
     __tablename__ = "ss_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    candid = Column(BigInteger)
     ssdistnr = Column(Float, nullable=False)
     ssmagnr = Column(Float, nullable=False)
     ssnamenr = Column(String)
