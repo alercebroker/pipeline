@@ -25,7 +25,7 @@ import numbers
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
 
-DET_KEYS = ['avro', 'oid', 'candid', 'mjd', 'fid', 'pid', 'diffmaglim', 'isdiffpos', 'nid', 'ra', 'dec', 'magpsf',
+DET_KEYS = ['oid', 'candid', 'mjd', 'fid', 'pid', 'diffmaglim', 'isdiffpos', 'nid', 'ra', 'dec', 'magpsf',
             'sigmapsf', 'magap', 'sigmagap', 'distnr', 'rb', 'rbversion', 'drb', 'drbversion', 'magapbig', 'sigmagapbig',
             'rfid', 'magpsf_corr', 'sigmapsf_corr', 'sigmapsf_corr_ext', 'corrected', 'dubious', 'parent_candid',
             'has_stamp', 'step_id_corr']
@@ -71,7 +71,7 @@ class Correction(GenericStep):
         data = {
             "oid": alert["objectId"]
         }
-        return self.driver.session.query().get_or_create(Object, data)
+        return self.driver.session.query().get_or_create(Object, filter_by=data)
 
     def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
         data = {
@@ -114,11 +114,10 @@ class Correction(GenericStep):
         message_params = {}
         for key in PS1_KEYS:
             message_params[key] = message["candidate"][key]
-        params = {
+        filters = {
                 "oid": message["objectId"],
-            **message_params
         }
-        ps1, created = self.driver.session.query().get_or_create(Ps1_ztf, params)
+        ps1, created = self.driver.session.query().get_or_create(Ps1_ztf, filter_by=filters, **message_params)
         return ps1
 
     def get_ss(self, message: dict) -> Ss_ztf:
@@ -154,11 +153,13 @@ class Correction(GenericStep):
             "oid": message["objectId"]
         }
         data = {
-            "neargaia" : message["candidate"]["neargaia"],
-            "neargaiabright" : message["candidate"]["neargaiabright"],
-            "maggaia" : message["candidate"]["maggaia"],
-            "maggaiabright" : message["candidate"]["maggaiabright"]
+            "neargaia" : message["candidate"].get("neargaia"),
+            "neargaiabright" : message["candidate"].get("neargaiabright"),
+            "maggaia" : message["candidate"].get("maggaia"),
+            "maggaiabright" : message["candidate"].get("maggaiabright")
         }
+        if data["neargaia"] is None:
+            return
         gaia, created = self.driver.session.query().get_or_create(Gaia_ztf, filter_by=filters, **data)
         return gaia
 
@@ -175,26 +176,35 @@ class Correction(GenericStep):
         magstat.magmedian = result.magpsf_median
         magstat.magmax = result.magpsf_max
         magstat.magmin = result.magpsf_min
-        #magstat.magsigma = result.sigmapsf_first #I dont know this one
+        magstat.magsigma = result.sigmapsf #I dont know this one
         magstat.maglast = result.magpsf_last
         magstat.magfirst = result.magpsf_first
         magstat.magmean_corr = result.magpsf_corr_mean
         magstat.magmedian_corr = result.magpsf_corr_median
         magstat.magmax_corr = result.magpsf_corr_max
         magstat.magmin_corr = result.magpsf_corr_min
-        # magstat.magsigma_corr = result.magpsf_corr_sigma #This doesn't exists
+        magstat.magsigma_corr = result.sigmapsf_corr #This doesn't exists
         magstat.maglast_corr = result.magpsf_corr_last
         magstat.magfirst_corr = result.magpsf_corr_first
         magstat.firstmjd = result.first_mjd
         magstat.lastmjd = result.last_mjd
         magstat.step_id = self.version
+
         return MagStats
 
-    def get_magstats(self,message: dict, light_curve: list) -> MagStats:
+    def get_metadata(self,message: dict):
         ps1_ztf = self.get_ps1(message)
         ss_ztf = self.get_ss(message)
         reference = self.get_reference(message)
         gaia = self.get_gaia(message)
+        return {
+                    "ps1":ps1_ztf,
+                    "ss": ss_ztf,
+                    "reference": reference,
+                    "gaia": gaia
+                }
+
+    def get_magstats(self, message: dict, light_curve: list, ss: Ss_ztf, ps1: Ps1_ztf, reference: Reference) -> MagStats:
 
         detections = DataFrame(light_curve["detections"])
         non_detections = DataFrame(light_curve["non_detections"])
@@ -202,7 +212,13 @@ class Correction(GenericStep):
         detections_fid = detections[detections.fid == message["candidate"]["fid"]]
 
 
-        new_stats = apply_mag_stats(detections_fid, distnr=ss_ztf.ssdistnr, distpsnr1=ps1_ztf.distpsnr1, sgscore1=ps1_ztf.sgscore1, chinr=reference.chinr, sharpnr=reference.sharpnr)
+        new_stats = apply_mag_stats(detections_fid,
+                                    distnr=ss.ssdistnr,
+                                    distpsnr1=ps1.distpsnr1,
+                                    sgscore1=ps1.sgscore1,
+                                    chinr=reference.chinr,
+                                    sharpnr=reference.sharpnr)
+
         if len(non_detections) > 0:
             non_detections_fid = non_detections[non_detections.fid == message["candidate"]["fid"]]
             new_stats_dmdt = do_dmdt(non_detections_fid,new_stats)
@@ -220,9 +236,6 @@ class Correction(GenericStep):
         }
         magStats, created = self.driver.session.query().get_or_create(MagStats,filter_by=filters)
         self.set_magstats_values(all_stats, magStats)
-
-
-
 
     def set_object_values(self, alert: dict, obj: Object) -> Object:
         obj.ndethist = alert["candidate"]["ndethist"]
@@ -331,7 +344,7 @@ class Correction(GenericStep):
             light_curve["detections"].append(detection)
 
         else:
-            self.logger.warning(f"{detection} already exists")
+            self.logger.warning(f"[{obj.oid}-{detection.candid}] Detection already exists")
         # Compute and analyze previous candidates
         if "prv_candidates" in alert:
             self.process_prv_candidates(alert["prv_candidates"], obj, detection["candid"], light_curve)
@@ -358,27 +371,36 @@ class Correction(GenericStep):
         obj.deltamjd = obj.lastmjd - obj.firstmjd
 
     def execute(self, message):
+        self.logger.info(f'[{message["objectId"]}-{message["candid"]}] Processing message')
         obj, created = self.get_object(message)
         self.preprocess_alert(message)
         self.do_correction(message["candidate"], obj, inplace=True)
         light_curve = self.process_lightcurve(message, obj)
-        magstats = self.get_magstats(message, light_curve)
+        metadata = self.get_metadata(message)
+        magstats = self.get_magstats(message,
+                                     light_curve,
+                                     ps1 = metadata["ps1"],
+                                     ss = metadata["ss"],
+                                     reference=metadata["reference"])
+
         # First observation of the object
         if created:
             self.set_object_values(message, obj)
+
         # When the object + prv_candidates > 1
         if len(light_curve["detections"]) > 1:
-            self.logger.warning("Do basic stats")
             self.set_basic_stats(light_curve["detections"], obj)
 
         # Write in database
         self.driver.session.commit()
+        self.logger.info(f'[{message["objectId"]}-{message["candid"]}] Messages processed')
         write = {
             "oid": message["objectId"],
             "candid": message["candid"],
             "detections": light_curve["detections"],
             "non_detections": light_curve["non_detections"],
             "xmatches": message.get("xmatches"),
-            "fid": message["candidate"]["fid"]
+            "fid": message["candidate"]["fid"],
+            "metadata": metadata
         }
         self.producer.produce(write)

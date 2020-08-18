@@ -1,7 +1,7 @@
 DB_CONFIG = {
     "SQL": {
         "ENGINE": "postgresql",
-        "HOST": "3.17.78.156",
+        "HOST": "localhost",
         "USER": "postgres",
         "PASSWORD": "password",
         "PORT": 5432,
