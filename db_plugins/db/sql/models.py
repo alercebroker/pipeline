@@ -146,7 +146,7 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     magfirst_corr = Column(Float)
     firstmjd = Column(Float(precision=53))
     lastmjd = Column(Float(precision=53))
-    # step_id_corr = Column(String)
+    step_id_corr = Column(String)
 
     __table_args__ = (
         Index("mag_mean", "magmean", postgresql_using="btree"),
