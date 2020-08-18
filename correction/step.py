@@ -143,6 +143,7 @@ class Correction(GenericStep):
             "oid": message["objectId"]
         }
         data = {
+            "candid": message["candid"],
             "ssdistnr": message["candidate"]["ssdistnr"],
             "ssmagnr": message["candidate"]["ssmagnr"],
             "ssnamenr": message["candidate"]["ssnamenr"]
@@ -171,11 +172,12 @@ class Correction(GenericStep):
             "oid": message["objectId"]
         }
         data = {
+            "candid": message["candid"],
             "neargaia" : message["candidate"].get("neargaia"),
             "neargaiabright" : message["candidate"].get("neargaiabright"),
             "maggaia" : message["candidate"].get("maggaia"),
             "maggaiabright" : message["candidate"].get("maggaiabright"),
-            "unique": True
+            "unique1": True
         }
         if data["neargaia"] is None:
             return
@@ -186,7 +188,7 @@ class Correction(GenericStep):
                not self.check_equal(gaia.neargaiabright, data["neargaiabright"]) and \
                not self.check_equal(gaia.maggaia, data["maggaia"]) and \
                not self.check_equal(gaia.maggaiabright, data["maggaiabright"]):
-                gaia.unique = False
+                gaia.unique1 = False
 
         return gaia
 
@@ -215,7 +217,7 @@ class Correction(GenericStep):
         magstat.magfirst_corr = result.magpsf_corr_first
         magstat.firstmjd = result.first_mjd
         magstat.lastmjd = result.last_mjd
-        magstat.step_id = self.version
+        magstat.step_id_corr = self.version
 
         return MagStats
 
