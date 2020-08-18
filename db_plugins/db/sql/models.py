@@ -264,7 +264,7 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     neargaiabright = Column(Float, nullable=False)
     maggaia = Column(Float, nullable=False)
     maggaiabright = Column(Float, nullable=False)
-    # unique = Column(Boolean)
+    unique = Column(Boolean)
 
 
 class Ss_ztf(Base, generic.AbstractSs_ztf):
