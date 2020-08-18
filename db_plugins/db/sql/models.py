@@ -260,6 +260,7 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     __tablename__ = "gaia_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    candid = Column(BigInteger, nullable=False)
     neargaia = Column(Float, nullable=False)
     neargaiabright = Column(Float, nullable=False)
     maggaia = Column(Float, nullable=False)
@@ -271,7 +272,7 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
     __tablename__ = "ss_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger)
+    candid = Column(BigInteger, nullable=False)
     ssdistnr = Column(Float, nullable=False)
     ssmagnr = Column(Float, nullable=False)
     ssnamenr = Column(String)
