@@ -66,9 +66,7 @@ class FeaturesComputer(GenericStep):
         oid : string
             Object identifier of all detections
         """
-        # TODO ONLy convert to dataframe
         detections = self.create_detections_dataframe(detections)
-        detections = self.preprocessor.preprocess(detections)
         return detections
 
     def create_detections_dataframe(self, detections):
@@ -89,7 +87,7 @@ class FeaturesComputer(GenericStep):
     def preprocess_metadata(self, metadata):
         return metadata
 
-    def compute_features(self, detections, non_detections):
+    def compute_features(self, detections, non_detections, metadata, obj):
         """Compute Hierarchical-Features in detections and non detections to `dict`.
 
         **Example:**
@@ -100,10 +98,16 @@ class FeaturesComputer(GenericStep):
             Detections of an object
         non_detections : pandas.DataFrame
             Non detections of an object
+        metadata : dict
+            Metadata from the alert with other catalogs info
+        obj : dict
+            Object data
         """
-        # TODO pass metadata, object
         features = self.features_computer.compute_features(
-            detections, non_detections=non_detections
+            detections,
+            non_detections=non_detections,
+            metadata=metadata,
+            objects=[obj],
         )
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
@@ -205,9 +209,8 @@ class FeaturesComputer(GenericStep):
         return cleaned_results
 
     def execute(self, message):
-        t0 = time.time()
-        oid = message["oid"]
-        # TODO preprocess not needed
+        obj = message["object"]
+        oid = obj["oid"]
         detections = self.preprocess_detections(message["detections"])
         non_detections = self.preprocess_non_detections(message["non_detections"])
         xmatches = self.preprocess_xmatches(message["xmatches"])
@@ -216,15 +219,14 @@ class FeaturesComputer(GenericStep):
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
         self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
-        features = self.compute_features(detections, non_detections)
+        features = self.compute_features(detections, non_detections, metadata, obj)
         if len(features) <= 0:
             self.logger.debug(f"No features for {oid}")
             return
         if type(features) is pd.Series:
             features = pd.DataFrame([features])
         result = self.convert_nan(features.loc[oid].to_dict())
-        self.insert_db(oid, result, detections["fid"])
+        self.insert_db(oid, result)
         if self.producer:
-            # TODO create output message
-            out_message = {}
+            out_message = {"features": result}
             self.producer.produce(out_message)
