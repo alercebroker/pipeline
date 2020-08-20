@@ -7,15 +7,15 @@ import pandas as pd
 
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from apf.db.sql import get_session, get_or_create
-from apf.db.sql.models import Features, AstroObject, FeaturesObject
+from db_plugins.db.sql import SQLConnection
+from db_plugins.db.sql.models import FeatureVersion, Object, Feature
 
-from late_classifier.features.preprocess import *
-from late_classifier.features.custom import *
+from late_classifier.features.preprocess import DetectionsPreprocessorZTF
+from late_classifier.features.custom import CustomHierarchicalExtractor
 
 from pandas.io.json import json_normalize
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 logging.getLogger("GP").setLevel(logging.WARNING)
 
 
@@ -30,30 +30,30 @@ class FeaturesComputer(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        preprocessor=None,
+        features_computer=None,
+        db_connection=None,
+        producer=None,
+        level=logging.INFO,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
-        self.preprocessor = DetectionsPreprocessorZTF()
-        self.featuresComputer = CustomHierarchicalExtractor()
-        self.session = get_session(self.config["DB_CONFIG"])
+        self.preprocessor = preprocessor or DetectionsPreprocessorZTF()
+        self.features_computer = features_computer or CustomHierarchicalExtractor()
+        self.db = db_connection or SQLConnection()
+        self.db.connect(self.config["DB_CONFIG"])
         prod_config = self.config.get("PRODUCER_CONFIG", None)
         if prod_config:
-            self.producer = KafkaProducer(prod_config)
+            self.producer = producer or KafkaProducer(prod_config)
         else:
             self.producer = None
 
-    def _clean_result(self, result):
-        cleaned_results = {}
-        for key in result:
-            if type(result[key]) is dict:
-                cleaned_results[key] = self._clean_result(result[key])
-            else:
-                if np.isnan(result[key]):
-                    cleaned_results[key] = None
-                else:
-                    cleaned_results[key] = result[key]
-        return cleaned_results
-
-    def _format_detections(self, message, oid):
+    def preprocess_detections(self, detections):
         """Format a section of Kafka message that correspond of detections to `pandas.DataFrame`.
         This method take the key *detections* and use `json_normalize` to transform it to a DataFrame. After that
         rename some columns, put object_id like index and preprocess this detections.
@@ -66,17 +66,30 @@ class FeaturesComputer(GenericStep):
         oid : string
             Object identifier of all detections
         """
-        detections = json_normalize(message["detections"])
-        detections.rename(columns={
-            "alert.sgscore1": "sgscore1",
-            "alert.isdiffpos": "isdiffpos",
-        }, inplace=True)
-        detections.index = [oid] * len(detections)
-        detections.index.name = "oid"
+        # TODO ONLy convert to dataframe
+        detections = self.create_detections_dataframe(detections)
         detections = self.preprocessor.preprocess(detections)
         return detections
 
-    def _compute_features(self, detections, non_detections):
+    def create_detections_dataframe(self, detections):
+        detections = json_normalize(detections)
+        detections.rename(
+            columns={"alert.sgscore1": "sgscore1", "alert.isdiffpos": "isdiffpos",},
+            inplace=True,
+        )
+        detections.set_index("oid", inplace=True)
+        return detections
+
+    def preprocess_non_detections(self, non_detections):
+        return json_normalize(non_detections)
+
+    def preprocess_xmatches(self, xmatches):
+        return xmatches
+
+    def preprocess_metadata(self, metadata):
+        return metadata
+
+    def compute_features(self, detections, non_detections):
         """Compute Hierarchical-Features in detections and non detections to `dict`.
 
         **Example:**
@@ -88,7 +101,10 @@ class FeaturesComputer(GenericStep):
         non_detections : pandas.DataFrame
             Non detections of an object
         """
-        features = self.featuresComputer.compute_features(detections, non_detections=non_detections)
+        # TODO pass metadata, object
+        features = self.features_computer.compute_features(
+            detections, non_detections=non_detections
+        )
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
         return features
@@ -108,50 +124,107 @@ class FeaturesComputer(GenericStep):
             Object identifier of all detections
         result : dict
             Result of features compute
+        fid : pd.DataFrame
+            
         """
-        obj, created = get_or_create(self.session, AstroObject, filter_by={"oid": oid})
-        version, created = get_or_create(self.session, Features, filter_by={"version": self.config["FEATURE_VERSION"]})
-        features, created = get_or_create(self.session, FeaturesObject, filter_by={
-            "features_version": self.config["FEATURE_VERSION"], "object_id": oid
-        })
+        feature_version, created = self.db.query(FeatureVersion).get_or_create(
+            {
+                "version": self.config["FEATURE_VERSION"],
+                "step_id_feature": self.config["STEP_VERSION"],
+                "step_id_preprocess": self.config["STEP_VERSION_PREPROCESS"],
+            }
+        )
+        if created:
+            self.db.session.add(feature_version)
+        for key in result:
+            fid = self.get_fid(key)
+            feature, created = self.db.query(Feature).get_or_create(
+                {
+                    "oid": oid,
+                    "name": key,
+                    "value": result[key],
+                    "fid": fid,
+                    "version": feature_version.version,
+                }
+            )
+            if created:
+                self.db.session.add(feature)
+            else:
+                self.db.query().update(feature, {"value": feature.value})
+        self.db.session.commit()
 
-        features.data = result
-        features.features = version
-        obj.features.append(features)
-        self.session.commit()
+    def get_fid(self, feature):
+        fid0 = [
+            "W1",
+            "W1-W2",
+            "W2",
+            "W2-W3",
+            "W3",
+            "W4",
+            "g-W2",
+            "g-W3",
+            "g-r_ml",
+            "gal_b",
+            "gal_l",
+            "r-W2",
+            "r-W3",
+            "rb",
+            "sgscore1",
+        ]
+        fid12 = [
+            "Multiband_period",
+            "Period_fit",
+            "g-r_max",
+            "g-r_max_corr",
+            "g-r_mean",
+            "g-r_mean_corr",
+        ]
+        if feature in fid0:
+            return 0
+        if feature in fid12:
+            return 12
+        return int(feature.split("_")[1])
+
+    def convert_nan(self, result):
+        """Changes nan values to None
+
+        Parameters
+        ----------
+        result : dict
+            Dict that will have nans removed
+        """
+        cleaned_results = {}
+        for key in result:
+            if type(result[key]) is dict:
+                cleaned_results[key] = self.convert_nan(result[key])
+            else:
+                if np.isnan(result[key]):
+                    cleaned_results[key] = None
+                else:
+                    cleaned_results[key] = result[key]
+        return cleaned_results
 
     def execute(self, message):
         t0 = time.time()
         oid = message["oid"]
-        detections = self._format_detections(message, oid)
-        non_detections = json_normalize(message["non_detections"])
+        # TODO preprocess not needed
+        detections = self.preprocess_detections(message["detections"])
+        non_detections = self.preprocess_non_detections(message["non_detections"])
+        xmatches = self.preprocess_xmatches(message["xmatches"])
+        metadata = self.preprocess_metadata(message["metadata"])
         if len(detections) < 6:
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
-        else:
-            self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
-        features_t0 = time.time()
-        features = self._compute_features(detections, non_detections)
-        features_t1 = time.time()
-
-        if len(features) > 0:
-            if type(features) is pd.Series:
-                features = pd.DataFrame([features])
-            result = self._clean_result(features.loc[oid].to_dict())
-        else:
+        self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
+        features = self.compute_features(detections, non_detections)
+        if len(features) <= 0:
             self.logger.debug(f"No features for {oid}")
             return
-
-        self.insert_db(oid, result)
-
+        if type(features) is pd.Series:
+            features = pd.DataFrame([features])
+        result = self.convert_nan(features.loc[oid].to_dict())
+        self.insert_db(oid, result, detections["fid"])
         if self.producer:
-            out_message = {
-                "oid": oid,
-                "features": result
-            }
+            # TODO create output message
+            out_message = {}
             self.producer.produce(out_message)
-
-        compute_time = features_t1-features_t0
-        wall_time = time.time()-t0
-        self.send_metrics(oid=oid, compute_time=compute_time)
-        self.logger.debug(f"object={oid}\tdate={datetime.datetime.now()}\tcompute_time={compute_time:.6f}\twall_time={wall_time:.6f}")
