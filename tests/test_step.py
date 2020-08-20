@@ -22,7 +22,7 @@ class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "DB_CONFIG": {},
-            "PRODUCER_CONFIG": {},
+            "PRODUCER_CONFIG": {"fake": "fake"},
             "FEATURE_VERSION": "v1",
             "STEP_VERSION": "1.0-test",
             "STEP_VERSION_PREPROCESS": "1.0-test",
@@ -125,7 +125,6 @@ class StepTestCase(unittest.TestCase):
         self.mock_database_connection.query().update.assert_called_once()
         self.mock_database_connection.session.commit.assert_called_once()
 
-
     def test_insert_db_exist(self):
         oid = "ZTF1"
         features = {"testfeature_1": 1}
@@ -172,3 +171,51 @@ class StepTestCase(unittest.TestCase):
         feature = "somefeature_2"
         fid = self.step.get_fid(feature)
         self.assertEqual(fid, 2)
+
+    @mock.patch.object(FeaturesComputer, "compute_features")
+    def test_execute_less_than_6(self, mock_compute):
+        message = {
+            "object": {"oid": "ZTF1"},
+            "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456}],
+            "non_detections": [],
+            "xmatches": "",
+            "metadata": {},
+        }
+        self.step.execute(message)
+        mock_compute.assert_not_called()
+
+    @mock.patch.object(FeaturesComputer, "convert_nan")
+    @mock.patch.object(FeaturesComputer, "compute_features")
+    def test_execute_no_features(self, mock_compute, mock_convert_nan):
+        message = {
+            "object": {"oid": "ZTF1"},
+            "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456}],
+            "non_detections": [],
+            "xmatches": "",
+            "metadata": {},
+        }
+        mock_compute.return_value = pd.DataFrame()
+        self.step.execute(message)
+        mock_convert_nan.assert_not_called()
+
+    @mock.patch.object(FeaturesComputer, "compute_features")
+    def test_execute_with_producer(self, mock_compute):
+        message = {
+            "object": {"oid": "ZTF1"},
+            "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456, "fid": 1}] * 10,
+            "non_detections": [],
+            "xmatches": "",
+            "metadata": {},
+        }
+        df = pd.DataFrame({"oid": ["ZTF1"] * 10, "feat_1": [1] * 10})
+        df.set_index("oid", inplace=True)
+        mock_compute.return_value = df
+        mock_feature_version = mock.create_autospec(FeatureVersion)
+        mock_feature_version.version = self.step_config["FEATURE_VERSION"]
+        self.mock_database_connection.query().get_or_create.return_value = (
+            mock_feature_version,
+            True,
+        )
+
+        self.step.execute(message)
+        self.mock_producer.produce.assert_called_once()
