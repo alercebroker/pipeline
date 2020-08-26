@@ -109,13 +109,36 @@ class Feature(Base):
     )
 
 
-# class Xmatch(Base, generic.AbstractXmatch):
-#     __tablename__ = "xmatch"
-#
-#     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-#     catalog_id = Column(String, primary_key=True)
-#     catalog_oid = Column(String, primary_key=True)
+class Xmatch(Base):
+    __tablename__ = "xmatch"
 
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    catid = Column(String)
+    oid_catalog = Column(String)
+    dist = Column(Float(precision=53))
+    class_catalog = Column(String)
+    period = Column(Float(precision=53))
+
+class Allwise(Base):
+    __tablename__ = "allwise"
+
+    oid_catalog = Column(String, primary_key=True)
+    ra = Column(Float(precision=53))
+    dec = Column(Float(precision=53))
+    w1mpro = Column(Float(precision=53))
+    w2mpro = Column(Float(precision=53))
+    w3mpro = Column(Float(precision=53))
+    w4mpro = Column(Float(precision=53))
+    w1sigmpro = Column(Float(precision=53))
+    w2sigmpro = Column(Float(precision=53))
+    w3sigmpro = Column(Float(precision=53))
+    w4sigmpro = Column(Float(precision=53))
+    j_m_2mass = Column(Float(precision=53))
+    h_m_2mass = Column(Float(precision=53))
+    k_m_2mass = Column(Float(precision=53))
+    j_msig_2mass = Column(Float(precision=53))
+    h_msig_2mass = Column(Float(precision=53))
+    k_msig_2mass = Column(Float(precision=53))
 
 class MagStats(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = "magstat"
