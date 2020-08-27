@@ -10,8 +10,7 @@ from apf.producers import KafkaProducer
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import FeatureVersion, Object, Feature
 
-from late_classifier.features.preprocess import DetectionsPreprocessorZTF
-from late_classifier.features.custom import CustomHierarchicalExtractor
+from late_classifier.features.custom import CustomStreamHierarchicalExtractor
 
 from pandas.io.json import json_normalize
 
@@ -43,8 +42,8 @@ class FeaturesComputer(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.preprocessor = preprocessor or DetectionsPreprocessorZTF()
-        self.features_computer = features_computer or CustomHierarchicalExtractor()
+        self.preprocessor = preprocessor # Not used
+        self.features_computer = features_computer or CustomStreamHierarchicalExtractor()
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"])
         prod_config = self.config.get("PRODUCER_CONFIG", None)
@@ -107,7 +106,7 @@ class FeaturesComputer(GenericStep):
             detections,
             non_detections=non_detections,
             metadata=metadata,
-            objects=[obj],
+            obj=[obj],
         )
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
@@ -209,8 +208,8 @@ class FeaturesComputer(GenericStep):
         return cleaned_results
 
     def execute(self, message):
-        obj = message["object"]
-        oid = obj["oid"]
+        obj = pd.DataFrame({"oid": [message["object"]["oid"]]})
+        oid = message["object"]["oid"]
         detections = self.preprocess_detections(message["detections"])
         non_detections = self.preprocess_non_detections(message["non_detections"])
         xmatches = self.preprocess_xmatches(message["xmatches"])
@@ -219,7 +218,7 @@ class FeaturesComputer(GenericStep):
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
         self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
-        features = self.compute_features(detections, non_detections, metadata, obj)
+        features = self.compute_features(detections, non_detections, metadata, xmatches, objects=obj)
         if len(features) <= 0:
             self.logger.debug(f"No features for {oid}")
             return

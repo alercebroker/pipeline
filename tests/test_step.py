@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from features.step import FeaturesComputer
-from features.step import CustomHierarchicalExtractor, DetectionsPreprocessorZTF
+from features.step import CustomStreamHierarchicalExtractor
 from features.step import SQLConnection
 from features.step import KafkaProducer
 from features.step import pd
@@ -30,13 +30,9 @@ class StepTestCase(unittest.TestCase):
         self.mock_database_connection = mock.create_autospec(SQLConnection)
         self.mock_database_connection.session = mock.create_autospec(MockSession)
         self.mock_custom_hierarchical_extractor = mock.create_autospec(FeaturesComputer)
-        self.mock_detections_preprocessor_ztf = mock.create_autospec(
-            DetectionsPreprocessorZTF
-        )
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.step = FeaturesComputer(
             config=self.step_config,
-            preprocessor=self.mock_detections_preprocessor_ztf,
             features_computer=self.mock_custom_hierarchical_extractor,
             db_connection=self.mock_database_connection,
             producer=self.mock_producer,
@@ -47,7 +43,6 @@ class StepTestCase(unittest.TestCase):
         detections = [{"oid": "oidtest", "candid": 123, "mjd": 1.0}]
         detections_preprocessed = self.step.preprocess_detections(detections)
         mock_create_dataframe.assert_called_with(detections)
-        self.mock_detections_preprocessor_ztf.preprocess.assert_called()
 
     def test_preprocess_non_detections(self):
         non_detections = []
@@ -76,9 +71,11 @@ class StepTestCase(unittest.TestCase):
         self.mock_custom_hierarchical_extractor.compute_features.return_value = (
             pd.DataFrame()
         )
-        features = self.step.compute_features(detections, non_detections)
+        features = self.step.compute_features(
+            detections, non_detections, {}, {"oid": "oid"}
+        )
         self.mock_custom_hierarchical_extractor.compute_features.assert_called_with(
-            detections, non_detections
+            detections, non_detections=non_detections, metadata={}, obj=[{"oid": "oid"}]
         )
         self.assertIsInstance(features, pd.DataFrame)
 
@@ -204,7 +201,7 @@ class StepTestCase(unittest.TestCase):
             "object": {"oid": "ZTF1"},
             "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456, "fid": 1}] * 10,
             "non_detections": [],
-            "xmatches": "",
+            "xmatches": {},
             "metadata": {},
         }
         df = pd.DataFrame({"oid": ["ZTF1"] * 10, "feat_1": [1] * 10})
