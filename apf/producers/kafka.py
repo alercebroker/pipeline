@@ -105,7 +105,7 @@ class KafkaProducer(GenericProducer):
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
             self.logger.info(f'Producing to {self.config["TOPIC"]}')
-            self.topic = [self.config["TOPIC"]]
+            self.topic = self.config["TOPIC"]
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
             module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
@@ -118,7 +118,7 @@ class KafkaProducer(GenericProducer):
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f'Producing to {self.topic}')
 
-    def produce(self, message=None):
+    def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
         """
         out = io.BytesIO()
@@ -128,12 +128,12 @@ class KafkaProducer(GenericProducer):
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             try:
-                self.producer.produce(topic, message)
+                self.producer.produce(topic, message, **kwargs)
             except BufferError as e:
                 self.logger.info(f"Error producing message: {e}")
                 self.logger.info("Calling poll to empty queue and producing again")
                 self.producer.poll(1)
-                self.producer.produce(topic, message)
+                self.producer.produce(topic, message, **kwargs)
 
 
     def __del__(self):

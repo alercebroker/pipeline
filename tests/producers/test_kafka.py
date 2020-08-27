@@ -11,9 +11,9 @@ class KafkaProducerMock(unittest.TestCase):
     def flush(self):
         pass
 
-    def produce(self, topic, msj):
+    def produce(self, topic, value=None, key=None, partition=None, on_delivery=None, timestamp=None, headers=None):
         self.assertIsInstance(topic,str)
-        self.assertIsInstance(msj, (str, bytes))
+        self.assertIsInstance(value, (str, bytes))
 
 @mock.patch('apf.producers.kafka.Producer', return_value=KafkaProducerMock())
 class KafkaProducerTest(GenericProducerTest):
@@ -37,6 +37,25 @@ class KafkaProducerTest(GenericProducerTest):
 
     def test_produce(self, producer_mock):
         super().test_produce()
+
+    def test_produce_with_params(self,producer_mock):
+        params = {
+            "PARAMS": {
+                "bootstrap.servers": "kafka1:9092, kafka2:9092"
+            },
+            "TOPIC": ["topic1", "topic2"],
+            "SCHEMA": {
+                "namespace": "test.avro",
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "key", "type": "string"},
+                    {"name": "int",  "type": ["int"]},
+                ]
+            }
+        }
+        comp = self.component(params)
+        comp.produce({'key':'value', 'int':1}, key="key1")
 
     def test_topic_strategy(self,producer_mock):
         #TODO: Check if topic is changed at certain hour
