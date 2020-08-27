@@ -205,7 +205,8 @@ class KafkaConsumer(GenericConsumer):
             deserialized = []
             for message in messages:
                 if message.error():
-                    raise Exception(f"Error in kafka stream: {message.error()}")
+                    self.logger.error(Exception(f"Error in kafka stream: {message.error()}"))
+                    continue
 
                 message = self._deserialize_message(message)
                 deserialized.append(message)
