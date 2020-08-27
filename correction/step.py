@@ -28,6 +28,13 @@ import numpy as np
 import logging
 import numbers
 
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import Insert
+
+@compiles(Insert)
+def prefix_inserts(insert, compiler, **kw):
+    return compiler.visit_insert(insert, **kw) + " ON CONFLICT DO NOTHING"
+
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
 
@@ -108,7 +115,8 @@ class Correction(GenericStep):
 
     def get_detection(self, candidate: dict) -> Detection:
         filters = {
-            "candid": candidate["candid"]
+            "candid": candidate["candid"],
+            "oid": candidate["oid"]
         }
         data = self.cast_detection(candidate)
         detection, created = self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
@@ -143,6 +151,7 @@ class Correction(GenericStep):
             "oid": message["objectId"]
         }
         data = {
+            "candid": message["candid"],
             "ssdistnr": message["candidate"]["ssdistnr"],
             "ssmagnr": message["candidate"]["ssmagnr"],
             "ssnamenr": message["candidate"]["ssnamenr"]
@@ -171,11 +180,12 @@ class Correction(GenericStep):
             "oid": message["objectId"]
         }
         data = {
+            "candid": message["candid"],
             "neargaia" : message["candidate"].get("neargaia"),
             "neargaiabright" : message["candidate"].get("neargaiabright"),
             "maggaia" : message["candidate"].get("maggaia"),
             "maggaiabright" : message["candidate"].get("maggaiabright"),
-            "unique": True
+            "unique1": True
         }
         if data["neargaia"] is None:
             return
@@ -186,7 +196,7 @@ class Correction(GenericStep):
                not self.check_equal(gaia.neargaiabright, data["neargaiabright"]) and \
                not self.check_equal(gaia.maggaia, data["maggaia"]) and \
                not self.check_equal(gaia.maggaiabright, data["maggaiabright"]):
-                gaia.unique = False
+                gaia.unique1 = False
 
         return gaia
 
@@ -215,7 +225,7 @@ class Correction(GenericStep):
         magstat.magfirst_corr = result.magpsf_corr_first
         magstat.firstmjd = result.first_mjd
         magstat.lastmjd = result.last_mjd
-        magstat.step_id = self.version
+        magstat.step_id_corr = self.version
 
         return MagStats
 
@@ -330,8 +340,8 @@ class Correction(GenericStep):
                 return True
         return False
 
-    def check_candid_in_db(self, candid):
-        query = self.driver.session.query(Detection.candid).filter_by(candid=candid)
+    def check_candid_in_db(self, oid, candid):
+        query = self.driver.session.query(Detection.oid, Detection.candid).filter_by(oid=oid,candid=candid)
         result = query.scalar()
         exists = result is not None
         return exists
@@ -353,7 +363,7 @@ class Correction(GenericStep):
                     prv_non_detections.append(non_detection)
             else:
                 self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["candid"]):
+                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(obj.oid,prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
                     dataquality = self.add_dataquality(prv,create=False)
                     dataquality["oid"] = obj.oid

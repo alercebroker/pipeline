@@ -43,7 +43,9 @@ class StepTest(unittest.TestCase):
         step.start()
 
     def tearDown(self):
-        self.container.remove(force=True)
+        time.sleep(5)
+        self.container.stop()
+        self.container.remove()
 
 if __name__=="__main__":
     t = StepTest()
