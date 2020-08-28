@@ -28,13 +28,6 @@ import numpy as np
 import logging
 import numbers
 
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.expression import Insert
-
-@compiles(Insert)
-def prefix_inserts(insert, compiler, **kw):
-    return compiler.visit_insert(insert, **kw) + " ON CONFLICT DO NOTHING"
-
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
 
@@ -84,7 +77,7 @@ class Correction(GenericStep):
         data = {
             "oid": alert["objectId"]
         }
-        return self.driver.session.query().get_or_create(Object, filter_by=data)
+        return self.driver.query().get_or_create(Object, filter_by=data)
 
     def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
         data = {
@@ -109,17 +102,16 @@ class Correction(GenericStep):
             **candidate_params
         }
         if create:
-            self.driver.session.query().get_or_create(Dataquality, filter_by = filters, **data)
+            self.driver.query().get_or_create(Dataquality, filter_by = filters, **data)
         else:
             return {**filters,**data}
 
     def get_detection(self, candidate: dict) -> Detection:
         filters = {
-            "candid": candidate["candid"],
-            "oid": candidate["oid"]
+            "candid": candidate["candid"]
         }
         data = self.cast_detection(candidate)
-        detection, created = self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
+        detection, created = self.driver.query().get_or_create(Detection, filter_by=filters, **data)
         dataquality = self.add_dataquality(candidate)
         return detection, created
 
@@ -135,7 +127,7 @@ class Correction(GenericStep):
         filters = {
                 "oid": message["objectId"],
         }
-        ps1, created = self.driver.session.query().get_or_create(Ps1_ztf, filter_by=filters, **message_params)
+        ps1, created = self.driver.query().get_or_create(Ps1_ztf, filter_by=filters, **message_params)
         if not created:
 
             for i in range(1,4):
@@ -172,7 +164,7 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "rfid": message["candidate"]["rfid"]
         }
-        reference, created = self.driver.session.query().get_or_create(Reference, filter_by=filters, **data)
+        reference, created = self.driver.query().get_or_create(Reference, filter_by=filters, **data)
         return reference
 
     def get_gaia(self,message:dict) -> Gaia_ztf:
@@ -189,7 +181,7 @@ class Correction(GenericStep):
         }
         if data["neargaia"] is None:
             return
-        gaia, created = self.driver.session.query().get_or_create(Gaia_ztf, filter_by=filters, **data)
+        gaia, created = self.driver.query().get_or_create(Gaia_ztf, filter_by=filters, **data)
 
         if not created:
             if not self.check_equal(gaia.neargaia, data["neargaia"]) and \
@@ -279,7 +271,7 @@ class Correction(GenericStep):
             "oid": message["objectId"],
             "fid": message["candidate"]["fid"]
         }
-        magStats, created = self.driver.session.query().get_or_create(MagStats,filter_by=filters)
+        magStats, created = self.driver.query().get_or_create(MagStats,filter_by=filters)
         self.set_magstats_values(all_stats, magStats)
 
     def set_object_values(self, alert: dict, obj: Object) -> Object:
@@ -340,8 +332,8 @@ class Correction(GenericStep):
                 return True
         return False
 
-    def check_candid_in_db(self, oid, candid):
-        query = self.driver.session.query(Detection.oid, Detection.candid).filter_by(oid=oid,candid=candid)
+    def check_candid_in_db(self, candid):
+        query = self.driver.query(Detection.candid).filter_by(candid=candid)
         result = query.scalar()
         exists = result is not None
         return exists
@@ -363,7 +355,7 @@ class Correction(GenericStep):
                     prv_non_detections.append(non_detection)
             else:
                 self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(obj.oid,prv["candid"]):
+                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
                     dataquality = self.add_dataquality(prv,create=False)
                     dataquality["oid"] = obj.oid
@@ -374,9 +366,9 @@ class Correction(GenericStep):
                     prv_dataquality.append(dataquality)
 
         # Insert data to database
-        self.driver.session.query().bulk_insert(prv_detections, Detection)
-        self.driver.session.query().bulk_insert(prv_dataquality, Dataquality)
-        self.driver.session.query().bulk_insert(prv_non_detections, NonDetection)
+        self.driver.query().bulk_insert(prv_detections, Detection)
+        self.driver.query().bulk_insert(prv_dataquality, Dataquality)
+        self.driver.query().bulk_insert(prv_non_detections, NonDetection)
 
     def process_lightcurve(self, alert: dict, obj: Object) -> dict:
         # Setting identifier of object to detection
@@ -437,7 +429,6 @@ class Correction(GenericStep):
             self.set_basic_stats(light_curve["detections"], obj)
 
         # Write in database
-        self.driver.session.commit()
         self.logger.info(f'[{message["objectId"]}-{message["candid"]}] Messages processed')
         write = {
             "oid": message["objectId"],
