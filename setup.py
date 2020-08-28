@@ -6,11 +6,11 @@ with open("requirements.txt") as f:
 
 setup(
    name='db-plugins',
-   version="0.0.0",
+   version="0.0.1",
    description='ALeRCE Alert Processing Framework.',
    author='ALeRCE Team',
    author_email='contact@alerce.online',
-   packages=find_namespace_packages(include=['plugins.*']),
+   packages=find_namespace_packages(include=['db_plugins.*']),
    scripts=['scripts/dbp'],
    install_requires=required_packages,
    build_requires=required_packages

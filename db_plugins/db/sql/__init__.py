@@ -50,17 +50,23 @@ class SQLQuery(BaseQuery, Query):
             Tuple with the instanced object and wether it was created or not
         """
         model = self._entities[0].mapper.class_ if self._entities else model
-        query = self.session.query(model) if not self._entities else self
-        instance = (
-            query.options(load_only(*filter_by.keys())).filter_by(**filter_by).first()
-        )
-        if instance:
-            return instance, False
-        else:
-            filter_by.update(kwargs)
-            instance = model(**filter_by)
+        result = self.session.query(model).filter_by(**filter_by).first()
+        created = False
+        if result:
+            return result, created
+
+        try:
+            kwargs.update(filter_by)
+            instance = model(kwargs)
             self.session.add(instance)
-            return instance, True
+            self.session.commit()
+            created = True
+        except:
+            self.session.rollback()
+            result = self.session.query(model).filter_by(**filter_by).first()
+            created = False
+
+        return result, created
 
     def update(self, instance, args):
         """
@@ -83,7 +89,7 @@ class SQLQuery(BaseQuery, Query):
             setattr(instance, key, args[key])
         return instance
 
-    def bulk_insert(self, objects, model):
+    def bulk_insert(self, objects, model=None):
         """
         Inserts multiple objects to the database improving performance
 
@@ -97,7 +103,19 @@ class SQLQuery(BaseQuery, Query):
         session: Session
             Session instance
         """
-        self.session.bulk_insert_mappings(model, objects)
+
+        model = self._entities[0].mapper.class_ if self._entities else model
+        engine = self.session.get_bind()
+        meta_data = MetaData()
+        meta_data.reflect(bind=engine)
+        table = meta_data.tables[ model.__tablename__]
+        insert_stmt = insert(table)
+        columns = table.primary_key.columns
+        names = [ c.name for c in columns.values() ]
+        do_nothing_stmt = insert_stmt.on_conflict_do_nothing(
+	    	index_elements=names
+	    )
+        engine.execute(do_nothing_stmt,objects)
 
     def paginate(self, page=1, per_page=10, count=True,  max_results = 50000):
         """
