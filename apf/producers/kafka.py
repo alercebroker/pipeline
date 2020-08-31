@@ -105,7 +105,7 @@ class KafkaProducer(GenericProducer):
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
             self.logger.info(f'Producing to {self.config["TOPIC"]}')
-            self.topic = self.config["TOPIC"]
+            self.topic = self.config["TOPIC"] if type(self.config["TOPIC"]) is list else [self.config["TOPIC"]]
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
             module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
