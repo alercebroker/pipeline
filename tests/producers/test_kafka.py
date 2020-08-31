@@ -15,6 +15,10 @@ class KafkaProducerMock(unittest.TestCase):
         self.assertIsInstance(topic,str)
         self.assertIsInstance(value, (str, bytes))
 
+    def poll(self,timeout=0):
+        self.assertIsInstance(timeout, (int,float))
+
+
 @mock.patch('apf.producers.kafka.Producer', return_value=KafkaProducerMock())
 class KafkaProducerTest(GenericProducerTest):
     component = KafkaProducer
