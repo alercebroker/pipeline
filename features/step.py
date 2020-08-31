@@ -45,7 +45,7 @@ class FeaturesComputer(GenericStep):
         self.preprocessor = preprocessor # Not used
         self.features_computer = features_computer or CustomStreamHierarchicalExtractor()
         self.db = db_connection or SQLConnection()
-        self.db.connect(self.config["DB_CONFIG"])
+        self.db.connect(self.config["DB_CONFIG"]["SQL"])
         prod_config = self.config.get("PRODUCER_CONFIG", None)
         if prod_config:
             self.producer = producer or KafkaProducer(prod_config)

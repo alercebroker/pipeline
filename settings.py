@@ -3,9 +3,11 @@
 ##################################################
 import os
 FEATURE_VERSION = "v0.1"
+STEP_VERSION = "v0.1"
 
 DB_CONFIG = {
-    "PSQL": {
+    "SQL": {
+        "ENGINE": os.environ["DB_ENGINE"],
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
@@ -52,6 +54,8 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "DB_CONFIG": DB_CONFIG,
     # "ES_CONFIG": ES_CONFIG,
-    "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    # "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "FEATURE_VERSION": FEATURE_VERSION,
+    "STEP_VERSION": STEP_VERSION,
+    "STEP_ID_PREPROCESS": "v0.1"
 }
