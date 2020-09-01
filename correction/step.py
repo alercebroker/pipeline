@@ -405,6 +405,7 @@ class Correction(GenericStep):
         obj.meandec = detections["dec"].mean()
         obj.sigmara = detections["ra"].std()
         obj.sigmadec = detections["dec"].mean()
+        obj.corrected = detections["corrected"].all()
         obj.deltamjd = obj.lastmjd - obj.firstmjd
 
     def execute(self, message):
