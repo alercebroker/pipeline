@@ -8,7 +8,7 @@ import pandas as pd
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from db_plugins.db.sql import SQLConnection
-from db_plugins.db.sql.models import FeatureVersion, Object, Feature
+from db_plugins.db.sql.models import FeatureVersion, Object, Feature, Step
 
 from late_classifier.features.custom import CustomStreamHierarchicalExtractor
 
@@ -42,8 +42,10 @@ class FeaturesComputer(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.preprocessor = preprocessor # Not used
-        self.features_computer = features_computer or CustomStreamHierarchicalExtractor()
+        self.preprocessor = preprocessor  # Not used
+        self.features_computer = (
+            features_computer or CustomStreamHierarchicalExtractor()
+        )
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
         prod_config = self.config.get("PRODUCER_CONFIG", None)
@@ -71,7 +73,10 @@ class FeaturesComputer(GenericStep):
     def create_detections_dataframe(self, detections):
         detections = json_normalize(detections)
         detections.rename(
-            columns={"alert.sgscore1": "sgscore1", "alert.isdiffpos": "isdiffpos",},
+            columns={
+                "alert.sgscore1": "sgscore1",
+                "alert.isdiffpos": "isdiffpos",
+            },
             inplace=True,
         )
         detections.set_index("oid", inplace=True)
@@ -86,7 +91,7 @@ class FeaturesComputer(GenericStep):
     def preprocess_metadata(self, metadata):
         return metadata
 
-    def compute_features(self, detections, non_detections, metadata, obj):
+    def compute_features(self, detections, non_detections, metadata, xmatches):
         """Compute Hierarchical-Features in detections and non detections to `dict`.
 
         **Example:**
@@ -106,7 +111,7 @@ class FeaturesComputer(GenericStep):
             detections,
             non_detections=non_detections,
             metadata=metadata,
-            obj=[obj],
+            xmatches=xmatches,
         )
         features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
@@ -128,10 +133,17 @@ class FeaturesComputer(GenericStep):
         result : dict
             Result of features compute
         fid : pd.DataFrame
-            
+
         """
+        feature_step, created = self.db.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_VERSION"]},
+            name="features",
+            version=self.config["FEATURE_VERSION"],
+            comments="",
+            date=datetime.datetime.now(),
+        )
         feature_version, created = self.db.query(FeatureVersion).get_or_create(
-            {
+            filter_by={
                 "version": self.config["FEATURE_VERSION"],
                 "step_id_feature": self.config["STEP_VERSION"],
                 "step_id_preprocess": self.config["STEP_VERSION_PREPROCESS"],
@@ -142,13 +154,13 @@ class FeaturesComputer(GenericStep):
         for key in result:
             fid = self.get_fid(key)
             feature, created = self.db.query(Feature).get_or_create(
-                {
+                filter_by={
                     "oid": oid,
                     "name": key,
-                    "value": result[key],
                     "fid": fid,
                     "version": feature_version.version,
-                }
+                },
+                value=result[key],
             )
             if created:
                 self.db.session.add(feature)
@@ -208,8 +220,7 @@ class FeaturesComputer(GenericStep):
         return cleaned_results
 
     def execute(self, message):
-        obj = pd.DataFrame({"oid": [message["object"]["oid"]]})
-        oid = message["object"]["oid"]
+        oid = message["oid"]
         detections = self.preprocess_detections(message["detections"])
         non_detections = self.preprocess_non_detections(message["non_detections"])
         xmatches = self.preprocess_xmatches(message["xmatches"])
@@ -218,7 +229,7 @@ class FeaturesComputer(GenericStep):
             self.logger.debug(f"{oid} Object has less than 6 detections")
             return
         self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
-        features = self.compute_features(detections, non_detections, metadata, xmatches, objects=obj)
+        features = self.compute_features(detections, non_detections, metadata, xmatches)
         if len(features) <= 0:
             self.logger.debug(f"No features for {oid}")
             return
