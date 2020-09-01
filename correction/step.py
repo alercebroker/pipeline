@@ -28,6 +28,13 @@ import numpy as np
 import logging
 import numbers
 
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import Insert
+
+@compiles(Insert)
+def prefix_inserts(insert, compiler, **kw):
+    return compiler.visit_insert(insert, **kw) + " ON CONFLICT DO NOTHING"
+
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide='ignore')
 
@@ -108,7 +115,8 @@ class Correction(GenericStep):
 
     def get_detection(self, candidate: dict) -> Detection:
         filters = {
-            "candid": candidate["candid"]
+            "candid": candidate["candid"],
+            "oid": candidate["oid"]
         }
         data = self.cast_detection(candidate)
         detection, created = self.driver.session.query().get_or_create(Detection, filter_by=filters, **data)
@@ -332,8 +340,8 @@ class Correction(GenericStep):
                 return True
         return False
 
-    def check_candid_in_db(self, candid):
-        query = self.driver.session.query(Detection.candid).filter_by(candid=candid)
+    def check_candid_in_db(self, oid, candid):
+        query = self.driver.session.query(Detection.oid, Detection.candid).filter_by(oid=oid,candid=candid)
         result = query.scalar()
         exists = result is not None
         return exists
@@ -355,7 +363,7 @@ class Correction(GenericStep):
                     prv_non_detections.append(non_detection)
             else:
                 self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["candid"]):
+                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(obj.oid,prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
                     dataquality = self.add_dataquality(prv,create=False)
                     dataquality["oid"] = obj.oid
