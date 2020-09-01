@@ -420,6 +420,10 @@ class Correction(GenericStep):
         self.logger.info(f'[{message["objectId"]}-{message["candid"]}] Processing message')
         obj, created = self.get_object(message)
         self.preprocess_alert(message)
+        # First observation of the object
+        if created:
+            self.set_object_values(message, obj)
+
         self.do_correction(message["candidate"], obj, inplace=True)
         light_curve = self.process_lightcurve(message, obj)
         metadata = self.get_metadata(message)
@@ -429,9 +433,6 @@ class Correction(GenericStep):
                                      ss = metadata["ss"],
                                      reference=metadata["reference"])
 
-        # First observation of the object
-        if created:
-            self.set_object_values(message, obj)
 
         # When the object + prv_candidates > 1
         if len(light_curve["detections"]) > 1:
