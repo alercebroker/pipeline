@@ -108,11 +108,6 @@ class KafkaConsumer(GenericConsumer):
         super().__init__(config)
         # Disable auto commit
         self.config["PARAMS"]["enable.auto.commit"] = False
-        # if "max.poll.interval.ms" not in config["PARAMS"]:
-        #     self.config["PARAMS"]["max.poll.interval.ms"] = 10*60*1000
-
-        if "auto.offset.reset" not in self.config:
-            self.config["PARAMS"]["auto.offset.reset"] = "beginning"
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
         self.logger.info(f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}")
