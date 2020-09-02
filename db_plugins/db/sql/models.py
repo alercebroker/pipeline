@@ -50,9 +50,12 @@ class Object(Base, generic.AbstractObject):
     step_id_corr = Column(String)
 
     __table_args__ = (
-        Index("object_ndet", "ndet", postgresql_using="btree"),
-        Index("object_firstmjd", "firstmjd", postgresql_using="btree"),
-        Index("object_lastmjd", "lastmjd", postgresql_using="btree"),
+        Index("ix_object_ndet", "ndet", postgresql_using="btree"),
+        Index("ix_object_firstmjd", "firstmjd", postgresql_using="btree"),
+        Index("ix_object_g_r_max", "g_r_max", postgresql_using="btree"),
+        Index("ix_object_g_r_mean_corr", "g_r_mean_corr", postgresql_using="btree"),
+        Index("ix_object_meanra", "meanra", postgresql_using="btree"),
+        Index("ix_object_meandec", "meandec", postgresql_using="btree"),
     )
 
     # xmatches = relationship("Xmatch")
@@ -89,6 +92,15 @@ class Probability(Base):
     probability = Column(Float, nullable=False)
     ranking = Column(Integer, nullable=False)
 
+    __table_args__ = (
+        Index("ix_probabilities_oid", "oid", postgresql_using="hash"),
+        Index("ix_probabilities_class_name", "class_name", postgresql_using="btree"),
+        Index("ix_probabilities_classifier_version", "classifier_version", postgresql_using="btree"),
+        Index("ix_probabilities_probability", "probability", postgresql_using="btree"),
+        Index("ix_probabilities_ranking", "ranking", postgresql_using="btree"),
+        Index("ix_probability_classifier_name", "classifier_name", postgresql_using="btree"),
+    )
+
 
 class FeatureVersion(Base):
     __tablename__ = "feature_version"
@@ -102,10 +114,14 @@ class Feature(Base):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     name = Column(String, primary_key=True, nullable=False)
-    value = Column(Float(precision=53), nullable=False)
+    value = Column(Float(precision=53))
     fid = Column(Integer, primary_key=True)
     version = Column(
         String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_feature_oid_2", "oid", postgresql_using="hash"),
     )
 
 
@@ -113,9 +129,9 @@ class Xmatch(Base):
     __tablename__ = "xmatch"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    catid = Column(String)
-    oid_catalog = Column(String)
-    dist = Column(Float(precision=53))
+    catid = Column(String, nullable=False)
+    oid_catalog = Column(String, nullable=False)
+    dist = Column(Float(precision=53), nullable=False)
     class_catalog = Column(String)
     period = Column(Float(precision=53))
 
@@ -123,8 +139,8 @@ class Allwise(Base):
     __tablename__ = "allwise"
 
     oid_catalog = Column(String, primary_key=True)
-    ra = Column(Float(precision=53))
-    dec = Column(Float(precision=53))
+    ra = Column(Float(precision=53), nullable=False)
+    dec = Column(Float(precision=53), nullable=False)
     w1mpro = Column(Float(precision=53))
     w2mpro = Column(Float(precision=53))
     w3mpro = Column(Float(precision=53))
@@ -140,15 +156,20 @@ class Allwise(Base):
     h_msig_2mass = Column(Float(precision=53))
     k_msig_2mass = Column(Float(precision=53))
 
+    __table_args__ = (
+        Index("ix_allwise_dec", "dec", postgresql_using="btree"),
+        Index("ix_allwise_ra", "ra", postgresql_using="btree"),
+    )
+
 class MagStats(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = "magstat"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     fid = Column(Integer, primary_key=True)
-    stellar = Column(Boolean)
-    corrected = Column(Boolean)
-    ndet = Column(Integer)
-    ndubious = Column(Integer)
+    stellar = Column(Boolean, nullable=False)
+    corrected = Column(Boolean, nullable=False)
+    ndet = Column(Integer, nullable=False)
+    ndubious = Column(Integer, nullable=False)
     dmdt_first = Column(Float)
     dm_first = Column(Float)
     sigmadm_first = Column(Float)
@@ -169,15 +190,19 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     magfirst_corr = Column(Float)
     firstmjd = Column(Float(precision=53))
     lastmjd = Column(Float(precision=53))
-    step_id_corr = Column(String)
+    step_id_corr = Column(String, nullable=False)
 
     __table_args__ = (
-        Index("mag_mean", "magmean", postgresql_using="btree"),
-        Index("mag_median", "magmedian", postgresql_using="btree"),
-        Index("mag_min", "magmin", postgresql_using="btree"),
-        Index("mag_max", "magmax", postgresql_using="btree"),
-        Index("mag_first", "magfirst", postgresql_using="btree"),
-        Index("mag_last", "maglast", postgresql_using="btree"),
+        Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
+        Index("ix_magstats_fid", "fid", postgresql_using="btree"),
+        Index("ix_magstats_firstmjd", "firstmjd", postgresql_using="btree"),
+        Index("ix_magstats_lastmjd", "lastmjd", postgresql_using="btree"),
+        Index("ix_magstats_magmean", "magmean", postgresql_using="btree"),
+        Index("ix_magstats_magmin", "magmin", postgresql_using="btree"),
+        Index("ix_magstats_magfirst", "magfirst", postgresql_using="btree"),
+        Index("ix_magstats_ndet", "ndet", postgresql_using="btree"),
+        Index("ix_magstats_maglast", "maglast", postgresql_using="btree"),
+        Index("ix_magstats_oid", "oid", postgresql_using="hash"),
     )
 
 
@@ -188,7 +213,11 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     fid = Column(Integer, primary_key=True)
     mjd = Column(Float(precision=53), primary_key=True)
     diffmaglim = Column(Float)
-    __table_args__ = (Index("non_det_oid", "oid", postgresql_using="hash"),)
+    __table_args__ = (
+        Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
+        Index("ix_non_detection_mjd", "mjd", postgresql_using="btree"),
+        Index("ix_non_detection_fid", "fid", postgresql_using="btree"),
+    )
 
 
 class Detection(Base, generic.AbstractDetection, Commons):
@@ -196,16 +225,16 @@ class Detection(Base, generic.AbstractDetection, Commons):
 
     candid = Column(BigInteger, primary_key=True)
     oid = Column(String, ForeignKey("object.oid"), nullable=False)
-    mjd = Column(Float(precision=53))
-    fid = Column(Integer)
-    pid = Column(Float)
+    mjd = Column(Float(precision=53), nullable=False)
+    fid = Column(Integer, nullable=False)
+    pid = Column(Float, nullable=False)
     diffmaglim = Column(Float)
-    isdiffpos = Column(Integer)
+    isdiffpos = Column(Integer, nullable=False)
     nid = Column(Integer)
-    ra = Column(Float(precision=53))
-    dec = Column(Float(precision=53))
-    magpsf = Column(Float)
-    sigmapsf = Column(Float)
+    ra = Column(Float(precision=53), nullable=False)
+    dec = Column(Float(precision=53), nullable=False)
+    magpsf = Column(Float, nullable=False)
+    sigmapsf = Column(Float, nullable=False)
     magap = Column(Float)
     sigmagap = Column(Float)
     distnr = Column(Float)
@@ -219,16 +248,18 @@ class Detection(Base, generic.AbstractDetection, Commons):
     magpsf_corr = Column(Float)
     sigmapsf_corr = Column(Float)
     sigmapsf_corr_ext = Column(Float)
-    corrected = Column(Boolean)
-    dubious = Column(Boolean)
+    corrected = Column(Boolean, nullable=False)
+    dubious = Column(Boolean, nullable=False)
     parent_candid = Column(BigInteger)
-    has_stamp = Column(Boolean)
-    step_id_corr = Column(String)
+    has_stamp = Column(Boolean, nullable=False)
+    step_id_corr = Column(String, nullable=False)
 
-    __table_args__ = (Index("object_id", "oid", postgresql_using="hash"),)
+    __table_args__ = (
+        Index("ix_ndetection_oid", "oid", postgresql_using="hash"),
+        Index("ix_ndetection_candid", "candid", postgresql_using="btree"),
+    )
 
     dataquality = relationship("Dataquality")
-
     def __repr__(self):
         return "<Detection(candid='%i', fid='%i', oid='%s')>" % (
             self.candid,
@@ -241,7 +272,7 @@ class Dataquality(Base, generic.AbstractDataquality):
     __tablename__ = "dataquality"
 
     candid = Column(BigInteger, ForeignKey("detection.candid"), primary_key=True)
-    oid = Column(String, nullable=False)
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     fid = Column(Integer, nullable=False)
     xpos = Column(Float)
     ypos = Column(Float)
@@ -274,8 +305,8 @@ class Dataquality(Base, generic.AbstractDataquality):
     exptime = Column(Float)
 
     __table_args__ = (
-        Index("index_candid", "candid", postgresql_using="btree"),
-        Index("index_fid", "fid", postgresql_using="btree"),
+        Index("ix_dataquality_oid", "oid", postgresql_using="btree"),
+        Index("ix_ndataquality_candid", "candid", postgresql_using="btree"),
     )
 
 
@@ -283,12 +314,16 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     __tablename__ = "gaia_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger, nullable=False)
-    neargaia = Column(Float, nullable=False)
-    neargaiabright = Column(Float, nullable=False)
-    maggaia = Column(Float, nullable=False)
-    maggaiabright = Column(Float, nullable=False)
-    unique1 = Column(Boolean)
+    candid = Column(BigInteger, nullable=False),
+    neargaia = Column(Float)
+    neargaiabright = Column(Float)
+    maggaia = Column(Float)
+    maggaiabright = Column(Float)
+    unique1 = Column(Boolean, nullable=False)
+
+    __table_args__ = (
+        Index("ix_gaia_ztf_oid", "oid", postgresql_using="btree"),
+    )
 
 
 class Ss_ztf(Base, generic.AbstractSs_ztf):
@@ -296,9 +331,15 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     candid = Column(BigInteger, nullable=False)
-    ssdistnr = Column(Float, nullable=False)
-    ssmagnr = Column(Float, nullable=False)
+    ssdistnr = Column(Float)
+    ssmagnr = Column(Float)
     ssnamenr = Column(String)
+
+    __table_args__ = (
+        Index("ix_ss_ztf_candid", "candid", postgresql_using="btree"),
+        Index("ix_ss_ztf_oid", "oid", postgresql_using="btree"),
+        Index("ix_ss_ztf_ssnamenr", "ssnamenr", postgresql_using="btree"),
+    )
 
 
 class Ps1_ztf(Base, generic.AbstractPs1_ztf):
@@ -306,31 +347,35 @@ class Ps1_ztf(Base, generic.AbstractPs1_ztf):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     candid = Column(BigInteger, primary_key=True)
-    objectidps1 = Column(Float, nullable=False)
-    sgmag1 = Column(Float, nullable=False)
-    srmag1 = Column(Float, nullable=False)
-    simag1 = Column(Float, nullable=False)
-    szmag1 = Column(Float, nullable=False)
-    sgscore1 = Column(Float, nullable=False)
-    distpsnr1 = Column(Float, nullable=False)
-    objectidps2 = Column(Float, nullable=False)
-    sgmag2 = Column(Float, nullable=False)
-    srmag2 = Column(Float, nullable=False)
-    simag2 = Column(Float, nullable=False)
-    szmag2 = Column(Float, nullable=False)
-    sgscore2 = Column(Float, nullable=False)
-    distpsnr2 = Column(Float, nullable=False)
-    objectidps3 = Column(Float, nullable=False)
-    sgmag3 = Column(Float, nullable=False)
-    srmag3 = Column(Float, nullable=False)
-    simag3 = Column(Float, nullable=False)
-    szmag3 = Column(Float, nullable=False)
-    sgscore3 = Column(Float, nullable=False)
-    distpsnr3 = Column(Float, nullable=False)
-    nmtchps = Column(Integer)
-    unique1 = Column(Boolean)
-    unique2 = Column(Boolean)
-    unique3 = Column(Boolean)
+    objectidps1 = Column(Float)
+    sgmag1 = Column(Float)
+    srmag1 = Column(Float)
+    simag1 = Column(Float)
+    szmag1 = Column(Float)
+    sgscore1 = Column(Float)
+    distpsnr1 = Column(Float)
+    objectidps2 = Column(Float)
+    sgmag2 = Column(Float)
+    srmag2 = Column(Float)
+    simag2 = Column(Float)
+    szmag2 = Column(Float)
+    sgscore2 = Column(Float)
+    distpsnr2 = Column(Float)
+    objectidps3 = Column(Float)
+    sgmag3 = Column(Float)
+    srmag3 = Column(Float)
+    simag3 = Column(Float)
+    szmag3 = Column(Float)
+    sgscore3 = Column(Float)
+    distpsnr3 = Column(Float)
+    nmtchps = Column(Integer, nullable=False)
+    unique1 = Column(Boolean, nullable=False)
+    unique2 = Column(Boolean, nullable=False)
+    unique3 = Column(Boolean, nullable=False)
+
+    __table_args__ = (
+        Index("ix_ps1_ztf_oid", "oid", postgresql_using="btree"),
+    )
 
 
 class Reference(Base, generic.AbstractReference):
@@ -338,30 +383,36 @@ class Reference(Base, generic.AbstractReference):
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     rfid = Column(BigInteger, primary_key=True)
-    candid = Column(BigInteger)
-    fid = Column(Integer)
-    rcid = Column(Integer, nullable=False)
-    field = Column(Integer, nullable=False)
-    magnr = Column(Float, nullable=False)
-    sigmagnr = Column(Float, nullable=False)
-    chinr = Column(Float, nullable=False)
-    sharpnr = Column(Float, nullable=False)
-    ranr = Column(Float(precision=53))
-    decnr = Column(Float(precision=53))
-    mjdstartref = Column(Float(precision=53))
-    mjdendref = Column(Float(precision=53))
-    nframesref = Column(Integer)
+    candid = Column(BigInteger, nullable=False)
+    fid = Column(Integer, nullable=False)
+    rcid = Column(Integer)
+    field = Column(Integer)
+    magnr = Column(Float)
+    sigmagnr = Column(Float)
+    chinr = Column(Float)
+    sharpnr = Column(Float)
+    ranr = Column(Float(precision=53), nullable=False)
+    decnr = Column(Float(precision=53), nullable=False)
+    mjdstartref = Column(Float(precision=53), nullable=False)
+    mjdendref = Column(Float(precision=53), nullable=False)
+    nframesref = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        Index("ix_reference_fid", "fid", postgresql_using="btree"),
+        Index("ix_reference_oid", "oid", postgresql_using="btree"),
+        Index("ix_reference_rfid", "rfid", postgresql_using="btree"),
+    )
 
 
 class Pipeline(Base, generic.AbstractPipeline):
     __tablename__ = "pipeline"
 
     pipeline_id = Column(String, primary_key=True)
-    step_id_corr = Column(String, nullable=False)
-    step_id_feat = Column(String, nullable=False)
-    step_id_clf = Column(String, nullable=False)
-    step_id_out = Column(String, nullable=False)
-    step_id_stamp = Column(String, nullable=False)
+    step_id_corr = Column(String)
+    step_id_feat = Column(String)
+    step_id_clf = Column(String)
+    step_id_out = Column(String)
+    step_id_stamp = Column(String)
     date = Column(DateTime, nullable=False)
 
 
