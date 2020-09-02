@@ -1,4 +1,5 @@
 import unittest
+import datetime
 from unittest import mock
 from features.step import FeaturesComputer
 from features.step import CustomStreamHierarchicalExtractor
@@ -21,7 +22,7 @@ class MockSession:
 class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
-            "DB_CONFIG": {},
+            "DB_CONFIG": {"SQL": {}},
             "PRODUCER_CONFIG": {"fake": "fake"},
             "FEATURE_VERSION": "v1",
             "STEP_VERSION": "1.0-test",
@@ -71,11 +72,9 @@ class StepTestCase(unittest.TestCase):
         self.mock_custom_hierarchical_extractor.compute_features.return_value = (
             pd.DataFrame()
         )
-        features = self.step.compute_features(
-            detections, non_detections, {}, {"oid": "oid"}
-        )
+        features = self.step.compute_features(detections, non_detections, {}, {})
         self.mock_custom_hierarchical_extractor.compute_features.assert_called_with(
-            detections, non_detections=non_detections, metadata={}, obj=[{"oid": "oid"}]
+            detections, non_detections=non_detections, metadata={}, xmatches={}
         )
         self.assertIsInstance(features, pd.DataFrame)
 
@@ -91,6 +90,7 @@ class StepTestCase(unittest.TestCase):
         version = self.step_config["FEATURE_VERSION"]
         feature_id = self.step_config["STEP_VERSION"]
         preprocess_id = self.step_config["STEP_VERSION_PREPROCESS"]
+        date = datetime.datetime.now()
         mock_feature_version = mock.create_autospec(FeatureVersion)
         mock_feature_version.version = version
         mock_feature_version.value = 1
@@ -98,24 +98,31 @@ class StepTestCase(unittest.TestCase):
             mock_feature_version,
             False,
         )
-        self.step.insert_db(oid, features)
+        self.step.insert_db(oid, features, date=date)
         self.mock_database_connection.query().get_or_create.assert_has_calls(
             [
                 mock.call(
-                    {
+                    filter_by={"step_id": feature_id},
+                    name="features",
+                    version=version,
+                    comments="",
+                    date=date,
+                ),
+                mock.call(
+                    filter_by={
                         "version": version,
                         "step_id_feature": feature_id,
                         "step_id_preprocess": preprocess_id,
                     }
                 ),
                 mock.call(
-                    {
+                    filter_by={
                         "oid": oid,
                         "name": "testfeature_1",
-                        "value": 1,
                         "fid": 1,
                         "version": version,
-                    }
+                    },
+                    value=1,
                 ),
             ]
         )
@@ -128,30 +135,38 @@ class StepTestCase(unittest.TestCase):
         version = self.step_config["FEATURE_VERSION"]
         feature_id = self.step_config["STEP_VERSION"]
         preprocess_id = self.step_config["STEP_VERSION_PREPROCESS"]
+        date = datetime.datetime.now()
         mock_feature_version = mock.create_autospec(FeatureVersion)
         mock_feature_version.version = version
         self.mock_database_connection.query().get_or_create.return_value = (
             mock_feature_version,
             True,
         )
-        self.step.insert_db(oid, features)
+        self.step.insert_db(oid, features, date)
         self.mock_database_connection.query().get_or_create.assert_has_calls(
             [
                 mock.call(
-                    {
+                    filter_by={"step_id": feature_id},
+                    name="features",
+                    version=version,
+                    comments="",
+                    date=date,
+                ),
+                mock.call(
+                    filter_by={
                         "version": version,
                         "step_id_feature": feature_id,
                         "step_id_preprocess": preprocess_id,
                     }
                 ),
                 mock.call(
-                    {
+                    filter_by={
                         "oid": oid,
                         "name": "testfeature_1",
-                        "value": 1,
                         "fid": 1,
                         "version": version,
-                    }
+                    },
+                    value=1,
                 ),
             ]
         )
@@ -172,7 +187,7 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "compute_features")
     def test_execute_less_than_6(self, mock_compute):
         message = {
-            "object": {"oid": "ZTF1"},
+            "oid": "ZTF1",
             "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456}],
             "non_detections": [],
             "xmatches": "",
@@ -185,7 +200,7 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "compute_features")
     def test_execute_no_features(self, mock_compute, mock_convert_nan):
         message = {
-            "object": {"oid": "ZTF1"},
+            "oid": "ZTF1",
             "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456}],
             "non_detections": [],
             "xmatches": "",
@@ -198,7 +213,7 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "compute_features")
     def test_execute_with_producer(self, mock_compute):
         message = {
-            "object": {"oid": "ZTF1"},
+            "oid": "ZTF1",
             "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456, "fid": 1}] * 10,
             "non_detections": [],
             "xmatches": {},

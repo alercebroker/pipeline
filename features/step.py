@@ -117,7 +117,7 @@ class FeaturesComputer(GenericStep):
         features = features.astype(float)
         return features
 
-    def insert_db(self, oid, result):
+    def insert_db(self, oid, result, date=None):
         """Insert the `dict` result in database.
         Consider:
             - object: Refer with oid
@@ -140,7 +140,7 @@ class FeaturesComputer(GenericStep):
             name="features",
             version=self.config["FEATURE_VERSION"],
             comments="",
-            date=datetime.datetime.now(),
+            date=date or datetime.datetime.now(),
         )
         feature_version, created = self.db.query(FeatureVersion).get_or_create(
             filter_by={
