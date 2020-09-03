@@ -21,12 +21,6 @@ DB_CONFIG = {
     }
 }
 
-ES_CONFIG = {
-    "INDEX_PREFIX": os.environ["ES_PREFIX"],
-    "host": os.environ["ES_NETWORK_HOST"],
-    "port": os.environ["ES_NETWORK_PORT"]
-}
-
 PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
@@ -92,7 +86,6 @@ PRODUCER_CONFIG = {
 
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
-    "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "CLASSIFIER_NAME": os.environ["CLASSIFIER_NAME"],
     "TAXONOMY_NAME": os.environ["TAXONOMY_NAME"],

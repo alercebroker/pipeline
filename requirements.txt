@@ -1,4 +1,6 @@
--e git+https://git@github.com/alercebroker/APF@feature/metrics#egg=APF
-P4J
--e git+https://github.com/alercebroker/mhps.git#egg=mhps
-psycopg2==2.8.4
+scipy
+numpy
+pandas
+-e git+https://git@github.com/alercebroker/APF@develop#egg=APF
+-e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
+#-e git+ssh://git@github.com/alercebroker/late_classifier#egg=late_classifier
