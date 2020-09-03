@@ -13,6 +13,7 @@ from sqlalchemy import (
     DateTime,
     UniqueConstraint,
     ForeignKeyConstraint,
+    text
 )
 from sqlalchemy.orm import relationship
 from .. import generic
@@ -24,6 +25,14 @@ class Commons:
     def __getitem__(self, field):
         return self.__dict__[field]
 
+class Step(Base, generic.AbstractStep):
+    __tablename__ = "step"
+
+    step_id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    comments = Column(String, nullable=False)
+    date = Column(DateTime, nullable=False)
 
 class Object(Base, generic.AbstractObject):
     __tablename__ = "object"
@@ -96,15 +105,19 @@ class Probability(Base):
         Index("ix_probabilities_oid", "oid", postgresql_using="hash"),
         Index("ix_probabilities_probability", "probability", postgresql_using="btree"),
         Index("ix_probabilities_ranking", "ranking", postgresql_using="btree"),
-        Index("ix_classification_rank1", "ranking = 1", postgresql_using="btree")
+        Index("ix_classification_rank1", "ranking", postgresql_where=ranking==1, postgresql_using="btree")
     )
 
 
 class FeatureVersion(Base):
     __tablename__ = "feature_version"
     version = Column(String, primary_key=True)
-    step_id_feature = Column(String, ForeignKey("step.step_id"))
-    step_id_preprocess = Column(String, ForeignKey("step.step_id"))
+    step_id_feature = Column(String, ForeignKey(Step.step_id))
+    step_id_preprocess = Column(String, ForeignKey(Step.step_id))
+
+    # __table_args__ = (ForeignKeyConstraint([step_id_feature, step_id_preprocess],
+    #                                        [Step.step_id, Step.step_id]),
+    #                   {})
 
 
 class Feature(Base):
@@ -219,7 +232,7 @@ class Detection(Base, generic.AbstractDetection, Commons):
     __tablename__ = "detection"
 
     candid = Column(BigInteger, primary_key=True)
-    oid = Column(String, ForeignKey("object.oid"), nullable=False)
+    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
     mjd = Column(Float(precision=53), nullable=False)
     fid = Column(Integer, nullable=False)
     pid = Column(Float, nullable=False)
@@ -265,8 +278,8 @@ class Detection(Base, generic.AbstractDetection, Commons):
 class Dataquality(Base, generic.AbstractDataquality):
     __tablename__ = "dataquality"
 
-    candid = Column(BigInteger, ForeignKey("detection.candid"), primary_key=True)
-    oid = Column(String, ForeignKey("detection.oid"), primary_key=True)
+    candid = Column(BigInteger, primary_key=True)
+    oid = Column(String, primary_key=True)
     fid = Column(Integer, nullable=False)
     xpos = Column(Float)
     ypos = Column(Float)
@@ -297,6 +310,11 @@ class Dataquality(Base, generic.AbstractDataquality):
     clrmed = Column(Float)
     clrrms = Column(Float)
     exptime = Column(Float)
+
+    __table_args__ = (ForeignKeyConstraint([candid, oid],
+                                           [Detection.candid, Detection.oid]),
+                      {})
+
 
 
 class Gaia_ztf(Base, generic.AbstractGaia_ztf):
@@ -394,11 +412,3 @@ class Pipeline(Base, generic.AbstractPipeline):
     date = Column(DateTime, nullable=False)
 
 
-class Step(Base, generic.AbstractStep):
-    __tablename__ = "step"
-
-    step_id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    version = Column(String, nullable=False)
-    comments = Column(String, nullable=False)
-    date = Column(DateTime, nullable=False)
