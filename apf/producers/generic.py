@@ -10,7 +10,7 @@ class GenericProducer():
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
 
-    def produce(self,message = None):
+    def produce(self,message = None, **kwargs):
         """Send a message after processing.
 
         Parameters
