@@ -94,11 +94,9 @@ class Probability(Base):
 
     __table_args__ = (
         Index("ix_probabilities_oid", "oid", postgresql_using="hash"),
-        Index("ix_probabilities_class_name", "class_name", postgresql_using="btree"),
-        Index("ix_probabilities_classifier_version", "classifier_version", postgresql_using="btree"),
         Index("ix_probabilities_probability", "probability", postgresql_using="btree"),
         Index("ix_probabilities_ranking", "ranking", postgresql_using="btree"),
-        Index("ix_probability_classifier_name", "classifier_name", postgresql_using="btree"),
+        Index("ix_classification_rank1", "ranking = 1", postgresql_using="btree")
     )
 
 
@@ -194,7 +192,6 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
 
     __table_args__ = (
         Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
-        Index("ix_magstats_fid", "fid", postgresql_using="btree"),
         Index("ix_magstats_firstmjd", "firstmjd", postgresql_using="btree"),
         Index("ix_magstats_lastmjd", "lastmjd", postgresql_using="btree"),
         Index("ix_magstats_magmean", "magmean", postgresql_using="btree"),
@@ -215,8 +212,6 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     diffmaglim = Column(Float)
     __table_args__ = (
         Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
-        Index("ix_non_detection_mjd", "mjd", postgresql_using="btree"),
-        Index("ix_non_detection_fid", "fid", postgresql_using="btree"),
     )
 
 
@@ -256,7 +251,6 @@ class Detection(Base, generic.AbstractDetection, Commons):
 
     __table_args__ = (
         Index("ix_ndetection_oid", "oid", postgresql_using="hash"),
-        Index("ix_ndetection_candid", "candid", postgresql_using="btree"),
     )
 
     dataquality = relationship("Dataquality")
@@ -272,7 +266,7 @@ class Dataquality(Base, generic.AbstractDataquality):
     __tablename__ = "dataquality"
 
     candid = Column(BigInteger, ForeignKey("detection.candid"), primary_key=True)
-    oid = Column(String, ForeignKey("object.oid"), primary_key=True)
+    oid = Column(String, ForeignKey("detection.oid"), primary_key=True)
     fid = Column(Integer, nullable=False)
     xpos = Column(Float)
     ypos = Column(Float)
@@ -304,26 +298,17 @@ class Dataquality(Base, generic.AbstractDataquality):
     clrrms = Column(Float)
     exptime = Column(Float)
 
-    __table_args__ = (
-        Index("ix_dataquality_oid", "oid", postgresql_using="btree"),
-        Index("ix_ndataquality_candid", "candid", postgresql_using="btree"),
-    )
-
 
 class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     __tablename__ = "gaia_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    candid = Column(BigInteger, nullable=False),
+    candid = Column(BigInteger, nullable=False)
     neargaia = Column(Float)
     neargaiabright = Column(Float)
     maggaia = Column(Float)
     maggaiabright = Column(Float)
     unique1 = Column(Boolean, nullable=False)
-
-    __table_args__ = (
-        Index("ix_gaia_ztf_oid", "oid", postgresql_using="btree"),
-    )
 
 
 class Ss_ztf(Base, generic.AbstractSs_ztf):
@@ -337,7 +322,6 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
 
     __table_args__ = (
         Index("ix_ss_ztf_candid", "candid", postgresql_using="btree"),
-        Index("ix_ss_ztf_oid", "oid", postgresql_using="btree"),
         Index("ix_ss_ztf_ssnamenr", "ssnamenr", postgresql_using="btree"),
     )
 
@@ -373,10 +357,6 @@ class Ps1_ztf(Base, generic.AbstractPs1_ztf):
     unique2 = Column(Boolean, nullable=False)
     unique3 = Column(Boolean, nullable=False)
 
-    __table_args__ = (
-        Index("ix_ps1_ztf_oid", "oid", postgresql_using="btree"),
-    )
-
 
 class Reference(Base, generic.AbstractReference):
     __tablename__ = "reference"
@@ -399,8 +379,6 @@ class Reference(Base, generic.AbstractReference):
 
     __table_args__ = (
         Index("ix_reference_fid", "fid", postgresql_using="btree"),
-        Index("ix_reference_oid", "oid", postgresql_using="btree"),
-        Index("ix_reference_rfid", "rfid", postgresql_using="btree"),
     )
 
 
