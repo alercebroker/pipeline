@@ -1,14 +1,15 @@
 from abc import abstractmethod
 
 from apf.consumers import GenericConsumer
+from apf.metrics import KafkaMetricsProducer
+from apf.core import get_class
 
 import time
 import logging
 import datetime
-from elasticsearch import Elasticsearch
 
 
-class GenericStep():
+class GenericStep:
     """Generic Step for apf.
 
     Parameters
@@ -34,24 +35,17 @@ class GenericStep():
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
         self.consumer = GenericConsumer() if consumer is None else consumer
-        self.metrics = None
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
-        self.elastic_search = None
-
-        if "ES_CONFIG" in config:
-            logging.getLogger("elasticsearch").setLevel(logging.ERROR)
-            self.logger.info("Creating ES Metrics sender")
-            self.elastic_search = Elasticsearch([config["ES_CONFIG"]])
+        if self.config.get("METRICS_CONFIG"):
+            Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", KafkaMetricsProducer))
+        self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
 
     def send_metrics(self, **metrics):
-        """Send Metrics to an Elasticsearch Cluster.
+        """Send Metrics to an Kafka topic.
 
-        For this method to work the `ES_CONFIG` variable has to be set in the `STEP_CONFIG`
+        For this method to work the `METRICS_CONFIG` variable has to be set in the `STEP_CONFIG`
         variable.
-
-        By default if `ES_CONFIG` is set the step sends the time of the :meth:`execute()` method as `execution_time=float`
-        and `source=Class`, this helps to debug the step.
 
         **Example:**
 
@@ -68,31 +62,26 @@ class GenericStep():
 
             #settings.py
             STEP_CONFIG = {...
-                "ES_CONFIG":{ #Can be a empty dictionary
-                    #Optional but useful parameter
-                    "INDEX_PREFIX": "ztf_pipeline",
-                    # Used to generate index index_prefix+class_name+date
-                    #Other optional
+                "METRICS_CONFIG":{ #Can be a empty dictionary
+                    "CLASS": "apf.metrics.KafkaMetricsProducer",
+                    "PARAMS": { # params for the apf.metrics.KafkaMetricsProducer
+                        "PARAMS":{
+                            ## this producer uses confluent_kafka.Producer, so here we provide
+                            ## arguments for that class, like bootstrap.servers
+                            bootstrap.servers": "kafka1:9092",
+                        },
+                        "TOPIC": "metrics_topic" # the topic to store the metrics
+                    },
                 }
             }
-
-        The other optional parameters are the one passed to
-        `Elasticsearch <https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch>`_ class.
 
         Parameters
         ----------
         **metrics : dict-like
-            Parameters sended to Elasticsearch.
+            Parameters sent to the kafka topic as message.
 
         """
-        if self.elastic_search:
-            date = datetime.datetime.now(
-                datetime.timezone.utc).strftime("%Y%m%d")
-            index_prefix = self.config["ES_CONFIG"].get(
-                "INDEX_PREFIX", "pipeline")
-            self.index = f"{index_prefix}-{self.__class__.__name__.lower()}-{date}"
-            metrics["source"] = self.__class__.__name__
-            self.elastic_search.index(index=self.index, body=metrics)
+        self.metrics_sender.send_metrics(metrics)
 
     @abstractmethod
     def execute(self, message):
@@ -107,16 +96,17 @@ class GenericStep():
         pass
 
     def start(self):
-        """Start running the step.
-        """
+        """Start running the step."""
         for self.message in self.consumer.consume():
             self.metrics["timestamp_received"] = datetime.datetime.now(
-                datetime.timezone.utc)
+                datetime.timezone.utc
+            )
             self.execute(self.message)
             if self.commit:
                 self.consumer.commit()
             self.metrics["timestamp_sent"] = datetime.datetime.now(
-                datetime.timezone.utc)
+                datetime.timezone.utc
+            )
             if "candid" in self.message:
                 self.metrics["candid"] = str(self.message["candid"])
                 self.send_metrics(**self.metrics)
