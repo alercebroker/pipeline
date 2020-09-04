@@ -15,6 +15,8 @@ from db_plugins.db.sql.models import (
                     Taxonomy
                     )
 
+import numexpr
+
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used to process
     check the `execute()` method.
@@ -32,6 +34,7 @@ class LateClassifier(GenericStep):
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
 
+        numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         self.model = HierarchicalRandomForest({})
         self.model.download_model()
@@ -87,17 +90,17 @@ class LateClassifier(GenericStep):
 
 
         """
-            filters = {
-                "oid": oid,
-                "class_name": class_name,
-                "classifier_name": classifier,
-                "classifier_version": version,
-            }
-            data = {
-                "probability": probability,
-                "ranking": ranking
-            }
-            return self.driver.session.query().get_or_create(Probability, filter_by=filters, **data)
+        filters = {
+            "oid": oid,
+            "class_name": class_name,
+            "classifier_name": classifier,
+            "classifier_version": version,
+        }
+        data = {
+            "probability": probability,
+            "ranking": ranking
+        }
+        return self.driver.session.query().get_or_create(Probability, filter_by=filters, **data)
 
     def set_taxonomy(self, classes, classifier_name, classifier_version):
         """ Save the class taxonomy if it doesn't exists.
@@ -170,6 +173,7 @@ class LateClassifier(GenericStep):
             prob.ranking = rank
 
             probabilities.append(prob)
+        return probabilities
 
     def insert_db(self, result, oid):
         """Iterate over the late_classifier results and insert into the database.
@@ -202,8 +206,7 @@ class LateClassifier(GenericStep):
             child_probabilities = hierarchical["children"][child]
             prob_tmp = self.insert_dict(oid, child_probabilities, child.lower())
             probabilities.extend(prob_tmp)
-
-
+        return probabilities
 
     def execute(self, message):
         """Run the classification.
@@ -230,12 +233,15 @@ class LateClassifier(GenericStep):
         if len(missing_features) != 0:
             self.logger.info(f"[{oid}] Missing {len(missing_features)} Features: {missing_features}")
         else:
+            self.logger.info(f"[{oid}] Processing")
             result = self.model.predict_in_pipeline(features)
-            self.insert_db(result, oid)
+            probabilities = self.insert_db(result, oid)
             new_message = {
                 "oid": oid,
                 "features": message["features"],
                 "late_classification": result,
             }
+            self.logger.info(f"[{oid}] Processed")
             self.producer.produce(new_message)
+            self.logger.info(f"[{oid}] Produced")
             self.driver.session.commit()

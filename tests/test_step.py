@@ -67,9 +67,9 @@ class StepTest(unittest.TestCase):
                 )
         step.start()
 
-    # def tearDownClass(self):
-    #    self.container.stop()
-    #    self.container.remove()
+    def tearDown(self):
+       self.container.stop()
+       self.container.remove()
 
 if __name__=="__main__":
     t = StepTest()

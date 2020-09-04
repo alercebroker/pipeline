@@ -1,33 +1,37 @@
-# LC Classifier 
+# LC Classifier
 
 ## Description
 
 - Classification with [`Hierarchical RF`](https://github.com/alercebroker/late_classifier/blob/master/late_classifier/classifier/hierarchical_rf/model.py) model.
-- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_0.2/).
-	- Version 0.2 of model switch `paps` fields for `mhps`.
+- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). - Version 1.0.0 of model from Light Curve Classification Paper.
 - If lack of some feature, so it isn't classify.
 
-#### Previous steps: 
+#### Previous steps:
+
 - [LC Features](https://github.com/alercebroker/feature_step)
 
 ## Database interactions
 
 ### Insert/Update
-- Table ` `
+
+- Table `Probability`
+- Table `Taxonomy`
 
 ## Previous conditions
 
 - Fields of required features.
 
 ## Version
-- **0.0.1:** 
-	- Use of APF.
-	- Use of [Late Classifier Library](https://github.com/alercebroker/late_classifier).
+
+- **0.0.1:** - Use of APF. - Use of [Late Classifier Library](https://github.com/alercebroker/late_classifier).
+- **0.0.2:** - Added `db-plugins` instead of `apf.db`, using new `Probability` and `Taxonomy` tables.
 
 ## Libraries used
+
 - APF
 - Numpy
 - Pandas
+- Scipy
 - Late Classifier Library
 
 ## Environment variables
@@ -51,17 +55,14 @@
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 
-### Elasticsearch setup
-- `ES_PREFIX`: Enables the indexing of term prefixes to speed up prefix searches. e.g: `ztf_pipeline`
-- `ES_NETWORK_HOST`: Elasticsearch host.
-- `ES_NETWORK_PORT`: Elasticsearch port.
-
 ## Stream
 
 ### Input schema
-- Output stream of  [`Feature Step`](https://github.com/alercebroker/feature_step#output-schema).
+
+- Output stream of [`Feature Step`](https://github.com/alercebroker/feature_step#output-schema).
 
 ### Output schema
+
 ```json
 {
   "doc": "Late Classification",
@@ -71,57 +72,58 @@
     {
       "name": "features",
       "type": {
-          "type": "record",
-          "name": "features_record",
-          "fields": [
-              {"name": "oid", "type": "string"},
-              {"name": "features", "type": {
-                  "type": "map",
-                  "values": ["float", "int", "string", "null"]
-                  }
-              }
-          ]
+        "type": "record",
+        "name": "features_record",
+        "fields": [
+          { "name": "oid", "type": "string" },
+          {
+            "name": "features",
+            "type": {
+              "type": "map",
+              "values": ["float", "int", "string", "null"]
+            }
+          }
+        ]
       }
     },
     {
       "name": "late_classification",
       "type": {
-          "type": "record",
-          "name": "late_record",
-          "fields": [
-            {
-              "name": "probabilities",
-              "type": {
+        "type": "record",
+        "name": "late_record",
+        "fields": [
+          {
+            "name": "probabilities",
+            "type": {
+              "type": "map",
+              "values": ["float"]
+            }
+          },
+          {
+            "name": "class",
+            "type": "string"
+          },
+          {
+            "name": "hierarchical",
+            "type": {
+              "name": "root",
+              "type": "map",
+              "values": [
+                {
                   "type": "map",
-                  "values": ["float"],
-              }
-            },
-            {
-              "name": "class",
-              "type": "string"
-            },
-            {
-              "name": "hierarchical",
-              "type":
-              {
-                "name": "root",
-                "type": "map",
-                "values": [
-                  {
+                  "values": "float"
+                },
+                {
+                  "type": "map",
+                  "values": {
                     "type": "map",
                     "values": "float"
-                  },
-                  {
-                    "type": "map",
-                    "values": {
-                      "type": "map",
-                      "values": "float"
-                    }
                   }
-                ]
-              }
+                }
+              ]
             }
-          ]
+          }
+        ]
       }
     }
   ]
@@ -129,21 +131,25 @@
 ```
 
 ## Build docker image
+
 For use this step, first you must build the image of docker. After that you can run the step for use it.
 
 ```bash
-docker build -t late_classification_step:0.0.1 . 
+docker build -t late_classification_step:0.0.1 .
 ```
 
 ## Run step
 
 ### Run container of docker
+
 You can use a `docker run` command, you must set all environment variables.
+
 ```bash
 docker run --name my_lc_class_step -e DB_NAME=myhost -e [... all env ...] -d late_classification_step:0.0.1
 ```
 
 ### Run docker-compose
+
 Also you can edit the environment variables in [`docker-compose.yml`](https://github.com/alercebroker/feature_step/blob/master/docker-compose.yml) file. After that use `docker-compose up` command. This run only one container.
 
 ```bash

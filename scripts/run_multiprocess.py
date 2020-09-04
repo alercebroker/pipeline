@@ -2,6 +2,7 @@ import os
 import sys
 
 import logging
+from multiprocessing import Process
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH,".."))
@@ -19,7 +20,13 @@ logging.basicConfig(level=level,
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
 from late_classification import LateClassifier
-from apf.consumers import GenericConsumer as Consumer
+from apf.core import get_class
+if "CLASS" in CONSUMER_CONFIG:
+    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
+else:
+    from apf.consumers import KafkaConsumer as Consumer
+consumer = Consumer(config=CONSUMER_CONFIG)
+
 n_process = STEP_CONFIG.get("N_PROCESS",1)
 
 

@@ -2,8 +2,10 @@
 #       features   Settings File
 ##################################################
 import os
+from features_schema import FEATURES_SCHEMA
 
 CONSUMER_CONFIG = {
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
@@ -13,10 +15,11 @@ CONSUMER_CONFIG = {
 
 DB_CONFIG = {
     "PSQL": {
+        "ENGINE": os.getenv("DB_ENGINE", "postgresql"),
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.environ["DB_PORT"]),
+        "PORT": int(os.getenv("DB_PORT",5432)),
         "DB_NAME": os.environ["DB_NAME"]
     }
 }
@@ -32,13 +35,7 @@ PRODUCER_CONFIG = {
         'type': 'record',
         'fields': [
             {'name': 'oid', 'type': 'string'},
-            {
-                'name': 'features',
-                'type': {
-                    'type': 'map',
-                    'values': ['float', 'int', 'string', 'null']
-                }
-            },
+            FEATURES_SCHEMA,
             {
                 'name': 'late_classification',
                 'type': {
@@ -87,7 +84,4 @@ PRODUCER_CONFIG = {
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "CLASSIFIER_NAME": os.environ["CLASSIFIER_NAME"],
-    "TAXONOMY_NAME": os.environ["TAXONOMY_NAME"],
-    "COMMIT": False
 }
