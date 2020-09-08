@@ -33,9 +33,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install black pytest numpy Cython
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with black
-      run: |
-        black . 
     - name: Test with pytest
       run: |
         python -m pytest
