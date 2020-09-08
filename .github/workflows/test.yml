@@ -28,6 +28,10 @@ jobs:
         repository: alercebroker/turbo-fats
         token: ${{ secrets.ACCESS_TOKEN }}
         ref: paper_paula
+    - name: Install private repos
+      run: |
+        pip install -e late_classifier/
+        pip install -e turbo-fats/
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
