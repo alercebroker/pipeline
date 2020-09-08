@@ -22,12 +22,14 @@ jobs:
         repository: alercebroker/late_classifier
         token: ${{ secrets.ACCESS_TOKEN }}
         ref: paper_paula_new_db
+        path: late_classifier
     - name: Checkout turbofats
       uses: actions/checkout@v2
       with:
         repository: alercebroker/turbo-fats
         token: ${{ secrets.ACCESS_TOKEN }}
         ref: paper_paula
+        path: turbo-fats
     - name: Install private repos
       run: |
         ls
