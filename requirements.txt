@@ -1,5 +1,10 @@
-P4J
+numpy
+Cython
 matplotlib
 GPy
--e git+https://github.com/alercebroker/APF.git#egg=apf
+-e git+https://github.com/alercebroker/APF.git@feature/kafka_metrics_sender#egg=apf
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
+-e git+https://github.com/alercebroker/db-plugins.git#egg=db-plugins
+-e git+https://github.com/alercebroker/late_classifier.git@paper_paula_new_db#egg=late-classifier
+-e git+https://github.com/alercebroker/turbo-fats.git@paper_paula#egg=turbo-fats
+-e git+https://github.com/alercebroker/P4J.git#egg=P4J

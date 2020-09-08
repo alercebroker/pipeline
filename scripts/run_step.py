@@ -14,11 +14,13 @@ debug = os.getenv("LOGGING_DEBUG")
 
 if debug in ("True", "true", "1"):
     level = logging.DEBUG
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
-logging.basicConfig(level=level,
-                    format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S',)
+logging.basicConfig(
+    level=level,
+    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 from features import FeaturesComputer
 from apf.consumers import KafkaConsumer as Consumer
