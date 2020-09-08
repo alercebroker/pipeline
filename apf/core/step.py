@@ -37,9 +37,10 @@ class GenericStep:
         self.consumer = GenericConsumer() if consumer is None else consumer
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
+        self.metrics_sender = None
         if self.config.get("METRICS_CONFIG"):
             Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", KafkaMetricsProducer))
-        self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
+            self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
 
     def send_metrics(self, **metrics):
         """Send Metrics to an Kafka topic.
@@ -81,7 +82,8 @@ class GenericStep:
             Parameters sent to the kafka topic as message.
 
         """
-        self.metrics_sender.send_metrics(metrics)
+        if self.metrics_sender:
+            self.metrics_sender.send_metrics(metrics)
 
     @abstractmethod
     def execute(self, message):
