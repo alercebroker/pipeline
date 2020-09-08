@@ -1,4 +1,4 @@
-name: test
+name: build-image
 on:
   workflow_run:
     workflows: ["test"]
