@@ -30,6 +30,7 @@ jobs:
         ref: paper_paula
     - name: Install private repos
       run: |
+        ls
         pip install -e ./late_classifier
         pip install -e ./turbo-fats
     - name: Install dependencies
