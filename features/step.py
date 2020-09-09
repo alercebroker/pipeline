@@ -243,5 +243,5 @@ class FeaturesComputer(GenericStep):
         result = self.convert_nan(features.loc[oid].to_dict())
         self.insert_db(oid, result)
         if self.producer:
-            out_message = {"features": result}
+            out_message = {"features": result, "candid": message["candid"], "oid": oid}
             self.producer.produce(out_message)
