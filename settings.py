@@ -32,13 +32,13 @@ PRODUCER_CONFIG = {
     },
     "SCHEMA": {
         "doc": "Features",
-        "name": "features",
+        "name": "features_document",
         "type": "record",
         "fields": [
             {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
             {
-                "name": "features_field",
+                "name": "features",
                 "type": {
                     "name": "features_record",
                     "type": "record",
