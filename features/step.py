@@ -153,9 +153,8 @@ class FeaturesComputer(GenericStep):
             self.db.session.add(feature_version)
         for key in result:
             fid = self.get_fid(key)
-            if not fid.isdigit():
+            if fid < 0:
                 continue
-            fid = int(fid)
             feature, created = self.db.query(Feature).get_or_create(
                 filter_by={
                     "oid": oid,
@@ -201,7 +200,10 @@ class FeaturesComputer(GenericStep):
             return 0
         if feature in fid12 or feature.startswith("Power_rate"):
             return 12
-        return feature.rsplit("_", 1)[-1]
+        fid = feature.rsplit("_", 1)[-1]
+        if fid.isdigit():
+            return int(fid)
+        return -99
 
     def convert_nan(self, result):
         """Changes nan values to None
