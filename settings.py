@@ -38,9 +38,9 @@ PRODUCER_CONFIG = {
             {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
             {
-                "name": "features",
+                "name": "features_field",
                 "type": {
-                    "name": "features",
+                    "name": "features_record",
                     "type": "record",
                     "fields": [
                         {"name": "Amplitude_1", "type": "float"},
