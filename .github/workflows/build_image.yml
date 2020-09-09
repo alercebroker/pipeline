@@ -15,7 +15,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=alercebroker/feature_step
+          DOCKER_IMAGE=docker.pkg.github.com/alercebroker/feature_step/feature_step
           VERSION=latest
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
