@@ -214,6 +214,7 @@ class StepTestCase(unittest.TestCase):
     def test_execute_with_producer(self, mock_compute):
         message = {
             "oid": "ZTF1",
+            "candid": 123,
             "detections": [{"candid": 123, "oid": "ZTF1", "mjd": 456, "fid": 1}] * 10,
             "non_detections": [],
             "xmatches": {},

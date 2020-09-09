@@ -42,5 +42,3 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.prep.outputs.tags }}
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.ACCESS_TOKEN }}
