@@ -14,7 +14,7 @@ CONSUMER_CONFIG = {
 }
 
 DB_CONFIG = {
-    "PSQL": {
+    "SQL": {
         "ENGINE": os.getenv("DB_ENGINE", "postgresql"),
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
@@ -31,7 +31,7 @@ PRODUCER_CONFIG = {
     },
     "SCHEMA": {
         'doc': 'Late Classification',
-        'name': 'probabilities + features',
+        'name': 'probabilities_and_features',
         'type': 'record',
         'fields': [
             {'name': 'oid', 'type': 'string'},
