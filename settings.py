@@ -122,6 +122,8 @@ PRODUCER_CONFIG = {
                        {"name": "PercentAmplitude_2", "type": ["float", "null"]},
                        {"name": "Period_band_1", "type": ["float", "null"]},
                        {"name": "Period_band_2", "type": ["float", "null"]},
+                       {"name": "delta_period_1", "type": ["float", "null"]},
+                       {"name": "delta_period_2", "type": ["float", "null"]},
                        {"name": "Period_fit", "type": ["float", "null"]},
                        {"name": "Power_rate_1/2", "type": ["float", "null"]},
                        {"name": "Power_rate_1/3", "type": ["float", "null"]},
