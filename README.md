@@ -6,3 +6,7 @@ In order to characterize this variability, some of the existing methods use mach
 In this document we present a library with a compilation of some of the existing light-curve features. The main goal is to create a collaborative and open tool where every user can characterize or analyze an astronomical photometric database while also contributing to the library by adding new features. However, it is important to highlight that this library is not restricted to the astronomical field and could also be applied to any kind of time series.  
 
 Our vision is to be capable of analyzing and comparing light-curves from all the available astronomical catalogs in a standard and universal way. This would facilitate and make more efficient tasks as modeling, classification, data cleaning, outlier detection and data analysis in general. Consequently, when studying light-curves, astronomers and data analysts would be on the same wavelength and would not have the necessity to find a way of comparing or matching different features. In order to achieve this goal, the library should be run in every existent survey (MACHO, EROS, OGLE, Catalina, Pan-STARRS, etc) and future surveys (LSST) and the results should be ideally shared in the same open way as this library.
+
+
+Added features description are in Alert Classification for the ALeRCE Broker System: The Light Curve Classifier
+https://arxiv.org/abs/2008.03311
