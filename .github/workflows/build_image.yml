@@ -15,7 +15,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=docker.pkg.github.com/alercebroker/feature_step/feature_step
+          DOCKER_IMAGE=ghcr.io/alercebroker/feature_step/feature_step
           VERSION=latest
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
@@ -32,7 +32,7 @@ jobs:
       - name: Login to GitHub Packages Docker Registry
         uses: docker/login-action@v1
         with:
-          registry: docker.pkg.github.com
+          registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.ACCESS_TOKEN }}
       - name: Push to GitHub Packages
