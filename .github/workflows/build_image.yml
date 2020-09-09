@@ -12,21 +12,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Checkout late_classifier
-        uses: actions/checkout@v2
-        with:
-          repository: alercebroker/late_classifier
-          token: ${{ secrets.ACCESS_TOKEN }}
-          ref: paper_paula_new_db
-          path: late_classifier
-      - name: Checkout turbofats
-        uses: actions/checkout@v2
-        with:
-          repository: alercebroker/turbo-fats
-          token: ${{ secrets.ACCESS_TOKEN }}
-          ref: paper_paula
-          path: turbo-fats
-
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
