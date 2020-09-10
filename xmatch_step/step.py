@@ -77,7 +77,6 @@ class XmatchStep(GenericStep):
 
 		result['catid'] = "allwise"
 		res_arr = result.to_dict(orient='records')
-
 		for d in res_arr:
 			filter = {
 				"oid": d["oid"]
@@ -95,7 +94,6 @@ class XmatchStep(GenericStep):
 			data = self.cast_xmatch(d)
 			xmatch, created = self.driver.session.query().get_or_create(Xmatch, filter_by=filter, **data)
 
-		return xmatch, created
 
 	def _produce(self,messages):
 		for message in messages:
