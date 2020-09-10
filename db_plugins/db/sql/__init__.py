@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, MetaData, update
 from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import insert
 from ..generic import DatabaseConnection, BaseQuery, Pagination
 
 MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DB_NAME", "ENGINE"}
@@ -52,14 +53,15 @@ class SQLQuery(BaseQuery, Query):
         model = self._entities[0].mapper.class_ if self._entities else model
         result = self.session.query(model).filter_by(**filter_by).first()
         created = False
-        if result:
+        if result is not None:
             return result, created
 
         try:
             kwargs.update(filter_by)
-            instance = model(kwargs)
+            instance = model(**kwargs)
             self.session.add(instance)
             self.session.commit()
+            result = instance
             created = True
         except:
             self.session.rollback()
@@ -68,18 +70,15 @@ class SQLQuery(BaseQuery, Query):
 
         return result, created
 
-    def update(self, instance, args):
+    def update(self, instance, attr):
         """
         Updates an object
-
         Parameter
         -----------
-
         instance : Model
             Object to be updated
         args : dict
             Attributes updated
-
         Returns
         ----------
         instance
@@ -103,6 +102,9 @@ class SQLQuery(BaseQuery, Query):
         session: Session
             Session instance
         """
+
+        if objects is None or len(objects) == 0:
+            return
 
         model = self._entities[0].mapper.class_ if self._entities else model
         engine = self.session.get_bind()
