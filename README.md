@@ -17,7 +17,7 @@ Installing *apf*
 *apf* installation can be done with *pip*
 
 ``` {.sourceCode .bash}
-pip install apf
+pip install apf_base
 ```
 
 This will install the *apf* python package and *apf* command line
