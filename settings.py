@@ -295,11 +295,11 @@ XMATCH_CONFIG = {
 DB_CONFIG = {
     "SQL": {
         "ENGINE": "postgresql",
-        "HOST": "18.223.221.83",
-        "USER": "xmatch_step_dev",
-        "PASSWORD": "alerce_@xmatchy!",
+        "HOST": os.environ["DB_HOST"],
+        "USER": os.environ["DB_USER"],
+        "PASSWORD": os.environ["DB_PASSWORD"],
         "PORT": 5432,
-        "DB_NAME": "new_pipeline_ts"
+        "DB_NAME":  os.environ["DB_NAME"]
     }
 }
 
@@ -308,9 +308,6 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
 	"PRODUCER_CONFIG" : PRODUCER_CONFIG,
 	"XMATCH_CONFIG" : XMATCH_CONFIG,
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev")
-    # "ES_CONFIG": ES_CONFIG,    #Enables metrics for step
-    # "N_PROCESS": 4,            # Number of process for multiprocess script
-    # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
+    "STEP_VERSION": os.getenv("STEP_VERSION", "xmatch-dev")
 }
 
