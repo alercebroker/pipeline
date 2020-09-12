@@ -110,7 +110,9 @@ class KafkaConsumer(GenericConsumer):
         self.config["PARAMS"]["enable.auto.commit"] = False
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
-        self.logger.info(f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}")
+        self.logger.info(
+            f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}"
+        )
         self.dynamic_topic = False
         if self.config.get("TOPICS"):
             self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
@@ -133,7 +135,7 @@ class KafkaConsumer(GenericConsumer):
 
     def __del__(self):
         self.logger.info("Shutting down Consumer")
-        if hasattr(self, 'consumer'):
+        if hasattr(self, "consumer"):
             self.consumer.close()
 
     def _deserialize_message(self, message):
@@ -200,8 +202,10 @@ class KafkaConsumer(GenericConsumer):
             deserialized = []
             for message in messages:
                 if message.error():
-                    self.logger.error(Exception(f"Error in kafka stream: {message.error()}"))
-                    continue
+                    if message.error().name() == "_PARTITION_EOF":
+                        self.logger.info("PARTITION_EOF: No more messages")
+                        return
+                    raise Exception(f"Error in kafka stream: {message.error()}")
 
                 message = self._deserialize_message(message)
                 deserialized.append(message)
