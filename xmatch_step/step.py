@@ -140,7 +140,6 @@ class XmatchStep(GenericStep):
                 Xmatch, filter_by=filter, **data
             )
 
-        return xmatch, created
 
     def _produce(self, messages):
         for message in messages:
