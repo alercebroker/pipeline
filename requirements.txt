@@ -3,4 +3,4 @@ pandas==1.0.3
 astropy==3.2.1
 git+https://github.com/alercebroker/cds_xmatch_client.git
 -e git+https://git@github.com/alercebroker/APF@develop#egg=APF
--e git+https://git@github.com/alercebroker/db-plugins@xmatchdb#egg=db-plugins
+-e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
