@@ -1053,11 +1053,51 @@ STEP_METADATA = {
     "STEP_COMMENTS": "",
 }
 
+METRICS_CONFIG = {
+    "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "PARAMS": {
+        "PARAMS": {"bootstrap.servers": "localhost:9092"},
+        "TOPIC": "logstash",
+        "SCHEMA": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "http://example.com/example.json",
+            "type": "object",
+            "title": "The root schema",
+            "description": "The root schema comprises the entire JSON document.",
+            "default": {},
+            "examples": [
+                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+            ],
+            "required": ["timestamp_sent", "timestamp_received"],
+            "properties": {
+                "timestamp_sent": {
+                    "$id": "#/properties/timestamp_sent",
+                    "type": "string",
+                    "title": "The timestamp_sent schema",
+                    "description": "Timestamp sent refers to the time at which a message is sent.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+                "timestamp_received": {
+                    "$id": "#/properties/timestamp_received",
+                    "type": "string",
+                    "title": "The timestamp_received schema",
+                    "description": "Timestamp received refers to the time at which a message is received.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
+}
+
 ## Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
     "STEP_METADATA": STEP_METADATA,
+    "METRICS_CONFIG": METRICS_CONFIG,
     # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
 }
