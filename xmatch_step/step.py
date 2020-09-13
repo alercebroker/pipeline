@@ -116,10 +116,10 @@ class XmatchStep(GenericStep):
         res_arr = result.to_dict(orient="records")
 
         self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_ID"]},
-            name= self.config["STEP_NAME"],
-            version=self.config["STEP_VERSION"],
-            comments=self.config["STEP_COMMENTS"],
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+            name= self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=datetime.datetime.now(),
         )
 

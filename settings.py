@@ -1046,14 +1046,18 @@ DB_CONFIG = {
     }
 }
 
+STEP_METADATA = {
+    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
+    "STEP_ID": os.getenv("STEP_VERSION", "dev"),
+    "STEP_NAME": os.getenv("STEP_VERSION", "dev"),
+    "STEP_COMMENTS": "",
+}
+
 ## Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_VERSION", "dev"),
-    "STEP_NAME": os.getenv("STEP_VERSION", "dev"),
-    "STEP_COMMENTS": ""
+    "STEP_METADATA": STEP_METADATA,
     # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
 }
