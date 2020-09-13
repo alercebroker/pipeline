@@ -156,9 +156,17 @@ SCHEMA = {
         {"name": "oid", "type": "string"},
         {"name": "candid", "type": "long"},
         {"name": "detections", "type": DETECTIONS},
-        {"name": "non_detections", "type": NON_DETECTIONS,},
+        {
+            "name": "non_detections",
+            "type": NON_DETECTIONS,
+        },
         {"name": "xmatches", "type": ["string", "null"]},
         {"name": "fid", "type": "int"},
-        {"name": "metadata", "type": METADATA_2,},
+        {
+            "name": "metadata",
+            "type": METADATA_2,
+        },
+        {"name": "preprocess_step_id", "type": "string"},
+        {"name": "preprocess_step_version", "type": "string"},
     ],
 }
