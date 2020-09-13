@@ -7,15 +7,18 @@ import logging
 import pandas as pd
 import scipy.stats as sstats
 import numpy as np
+import datetime
 
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import (
-                    Object,
-                    Probability,
-                    Taxonomy
-                    )
+    Object,
+    Probability,
+    Taxonomy,
+    Step,
+)
 
 import numexpr
+
 
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used to process
@@ -29,6 +32,7 @@ class LateClassifier(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
+
     base_name = "lc_classifier"
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
@@ -64,8 +68,9 @@ class LateClassifier(GenericStep):
         features = pd.DataFrame.from_records([features])
         return features
 
-
-    def get_probability(self, oid, class_name, classifier, version, probability, ranking):
+    def get_probability(
+        self, oid, class_name, classifier, version, probability, ranking
+    ):
         """Get single probability instace from the database.
 
         Parameters
@@ -96,14 +101,13 @@ class LateClassifier(GenericStep):
             "classifier_name": classifier,
             "classifier_version": version,
         }
-        data = {
-            "probability": probability,
-            "ranking": ranking
-        }
-        return self.driver.session.query().get_or_create(Probability, filter_by=filters, **data)
+        data = {"probability": probability, "ranking": ranking}
+        return self.driver.session.query().get_or_create(
+            Probability, filter_by=filters, **data
+        )
 
     def set_taxonomy(self, classes, classifier_name, classifier_version):
-        """ Save the class taxonomy if it doesn't exists.
+        """Save the class taxonomy if it doesn't exists.
 
         Parameters
         ----------
@@ -117,14 +121,14 @@ class LateClassifier(GenericStep):
         """
         filters = {
             "classifier_name": classifier_name,
-            "classifier_version": classifier_version
+            "classifier_version": classifier_version,
         }
-        data = {
-            "classes" : classes
-        }
-        return self.driver.session.query().get_or_create(Taxonomy,filter_by=filters,**data)
+        data = {"classes": classes}
+        return self.driver.session.query().get_or_create(
+            Taxonomy, filter_by=filters, **data
+        )
 
-    def get_ranking(self,probabilities):
+    def get_ranking(self, probabilities):
         """Given a dictionary of probabilities, get the ranking relative to the biggest probability.
 
         Parameters
@@ -157,18 +161,28 @@ class LateClassifier(GenericStep):
 
         """
         probabilities = []
-        classifier_name = self.base_name if suffix is None else f"{self.base_name}_{suffix}"
+        classifier_name = (
+            self.base_name if suffix is None else f"{self.base_name}_{suffix}"
+        )
         ranking = self.get_ranking(dictionary)
-        self.set_taxonomy(classes=list(dictionary.keys()), classifier_name=classifier_name, classifier_version=self.model.MODEL_VERSION_NAME)
-        for (class_name, probability,rank) in zip(dictionary.keys(),dictionary.values(), ranking):
+        self.set_taxonomy(
+            classes=list(dictionary.keys()),
+            classifier_name=classifier_name,
+            classifier_version=self.model.MODEL_VERSION_NAME,
+        )
+        for (class_name, probability, rank) in zip(
+            dictionary.keys(), dictionary.values(), ranking
+        ):
             probability = float(probability)
             rank = int(rank)
-            prob, created = self.get_probability(oid = oid,
-                                                 class_name = class_name,
-                                                 classifier = classifier_name,
-                                                 version = self.model.MODEL_VERSION_NAME,
-                                                 probability = probability,
-                                                 ranking = rank)
+            prob, created = self.get_probability(
+                oid=oid,
+                class_name=class_name,
+                classifier=classifier_name,
+                version=self.model.MODEL_VERSION_NAME,
+                probability=probability,
+                ranking=rank,
+            )
             prob.probability = probability
             prob.ranking = rank
 
@@ -195,7 +209,6 @@ class LateClassifier(GenericStep):
         final = result["probabilities"]
         prob_tmp = self.insert_dict(oid, final)
         probabilities.extend(prob_tmp)
-
 
         hierarchical = result["hierarchical"]
         top_probabilities = hierarchical["top"]
@@ -231,11 +244,20 @@ class LateClassifier(GenericStep):
         missing_features = self.features_required.difference(set(features.columns))
 
         if len(missing_features) != 0:
-            self.logger.info(f"[{oid}] Missing {len(missing_features)} Features: {missing_features}")
+            self.logger.info(
+                f"[{oid}] Missing {len(missing_features)} Features: {missing_features}"
+            )
         else:
             self.logger.info(f"[{oid}] Processing")
             result = self.model.predict_in_pipeline(features)
             probabilities = self.insert_db(result, oid)
+            self.driver.query(Step).get_or_create(
+                filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+                name=self.config["STEP_METADATA"]["STEP_NAME"],
+                version=self.config["STEP_METADATA"]["STEP_NAME"],
+                comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+                date=datetime.datetime.now(),
+            )
             new_message = {
                 "oid": oid,
                 "features": message["features"],
