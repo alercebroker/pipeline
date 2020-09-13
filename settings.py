@@ -22,6 +22,7 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
+        # "enable.partition.eof": True
     },
 }
 
@@ -258,18 +259,57 @@ PRODUCER_CONFIG = {
     },
 }
 
-# ES_CONFIG = {
-#    "INDEX_PREFIX": os.environ["ES_PREFIX"],
-#    "host": os.environ["ES_NETWORK_HOST"],
-#    "port": os.environ["ES_NETWORK_PORT"]
-# }
+METRICS_CONFIG = {
+    "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "PARAMS": {
+        "PARAMS": {"bootstrap.servers": "localhost:9092"},
+        "TOPIC": "logstash",
+        "SCHEMA": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "http://example.com/example.json",
+            "type": "object",
+            "title": "The root schema",
+            "description": "The root schema comprises the entire JSON document.",
+            "default": {},
+            "examples": [
+                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+            ],
+            "required": ["timestamp_sent", "timestamp_received"],
+            "properties": {
+                "timestamp_sent": {
+                    "$id": "#/properties/timestamp_sent",
+                    "type": "string",
+                    "title": "The timestamp_sent schema",
+                    "description": "Timestamp sent refers to the time at which a message is sent.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+                "timestamp_received": {
+                    "$id": "#/properties/timestamp_received",
+                    "type": "string",
+                    "title": "The timestamp_received schema",
+                    "description": "Timestamp received refers to the time at which a message is received.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
+}
+
+STEP_METADATA = {
+    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
+    "STEP_ID": os.getenv("STEP_ID", "features"),
+    "STEP_NAME": os.getenv("STEP_NAME", "features"),
+    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
+    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev")
+}
 
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "DB_CONFIG": DB_CONFIG,
-    # "ES_CONFIG": ES_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "FEATURE_VERSION": FEATURE_VERSION,
-    "STEP_VERSION": STEP_VERSION,
-    "STEP_VERSION_PREPROCESS": "v1",
+    "METRICS_CONFIG": METRICS_CONFIG,
+    "STEP_METADATA": STEP_METADATA,
 }

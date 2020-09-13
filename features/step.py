@@ -117,7 +117,7 @@ class FeaturesComputer(GenericStep):
         features = features.astype(float)
         return features
 
-    def insert_db(self, oid, result, date=None):
+    def insert_db(self, oid, result, preprocess_id, date=None):
         """Insert the `dict` result in database.
         Consider:
             - object: Refer with oid
@@ -136,17 +136,17 @@ class FeaturesComputer(GenericStep):
 
         """
         feature_step, created = self.db.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_VERSION"]},
-            name="features",
-            version=self.config["FEATURE_VERSION"],
-            comments="",
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["FEATURE_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=date or datetime.datetime.now(),
         )
         feature_version, created = self.db.query(FeatureVersion).get_or_create(
             filter_by={
-                "version": self.config["FEATURE_VERSION"],
-                "step_id_feature": self.config["STEP_VERSION"],
-                "step_id_preprocess": self.config["STEP_VERSION_PREPROCESS"],
+                "version": self.config["STEP_METADATA"]["FEATURE_VERSION"],
+                "step_id_feature": self.config["STEP_METADATA"]["STEP_ID"],
+                "step_id_preprocess": preprocess_id,
             }
         )
         if created:
@@ -241,7 +241,7 @@ class FeaturesComputer(GenericStep):
         if type(features) is pd.Series:
             features = pd.DataFrame([features])
         result = self.convert_nan(features.loc[oid].to_dict())
-        self.insert_db(oid, result)
+        self.insert_db(oid, result, message["preprocess_step_id"])
         if self.producer:
             out_message = {"features": result, "candid": message["candid"], "oid": oid}
             self.producer.produce(out_message)

@@ -37,10 +37,3 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.prep.outputs.tags }}
-      # - name: Push to github
-      #   run: |
-      #     # new login with new container registry url and PAT
-      #     echo ${{ secrets.ACCESS_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-      #     # new container registry urls added
-      #     docker build . --tag ${{ steps.prep.outputs.tags }} --cache-from ${{ steps.prep.outputs.tags }}
-      #     docker push ${{ steps.prep.outputs.tags }}
