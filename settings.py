@@ -21,7 +21,6 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
     },
-    "DIRECTORY_PATH": os.environ["AVRO_PATH"],
 }
 
 
