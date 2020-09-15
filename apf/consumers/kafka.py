@@ -213,7 +213,8 @@ class KafkaConsumer(GenericConsumer):
             self.messages = messages
             messages = []
             if num_messages == 1:
-                yield deserialized[0]
+                if len(deserialized) == 1:
+                    yield deserialized[0]
             else:
                 yield deserialized
 
