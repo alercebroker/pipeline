@@ -7,4 +7,4 @@ class GenericProducerTest(unittest.TestCase):
 
     def test_produce(self):
         comp = self.component(self.params)
-        msj = comp.produce({'key':'value', 'int':1})
+        msj = comp.produce({'key':'value', 'int':1}, key="test")
