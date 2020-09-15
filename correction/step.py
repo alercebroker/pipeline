@@ -161,7 +161,7 @@ class Correction(GenericStep):
         self.producer = Producer(config["PRODUCER_CONFIG"])
         self.driver = SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
-        self.version = config["STEP_VERSION"]
+        self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.logger.info(f"CORRECTION {self.version}")
         #Storing step_id
         self.driver.query(Step).get_or_create(

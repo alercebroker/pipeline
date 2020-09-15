@@ -33,11 +33,18 @@ class StepTest(unittest.TestCase):
         PRODUCER_CONFIG={
             "CLASS": 'apf.producers.GenericProducer'
         }
+
+        STEP_METADATA = {
+            "STEP_VERSION": "dev",
+            "STEP_ID": "preprocess",
+            "STEP_NAME": "preprocess",
+            "STEP_COMMENTS": "",
+        }
         step = Correction(consumer=AVROFileConsumer(CONSUMER_CONFIG),
                           config={
                             "DB_CONFIG": DB_CONFIG,
                             "PRODUCER_CONFIG":PRODUCER_CONFIG,
-                            "STEP_VERSION": "test"
+                            "STEP_METADATA": STEP_METADATA
                           }
                 )
         step.start()
