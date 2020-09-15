@@ -36,6 +36,8 @@ import logging
 import numbers
 import datetime
 
+
+#TODO: Delete when merge with collision management
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import Insert
 
@@ -161,6 +163,15 @@ class Correction(GenericStep):
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_VERSION"]
         self.logger.info(f"CORRECTION {self.version}")
+        #Storing step_id
+        self.driver.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+            date=datetime.datetime.now(),
+        )
+        self.driver.session.commit()
 
     def get_object(self, alert: dict) -> Object:
         data = {"oid": alert["objectId"]}
@@ -550,13 +561,6 @@ class Correction(GenericStep):
             self.set_basic_stats(light_curve["detections"], obj)
 
         # Write in database
-        self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
         self.driver.session.commit()
         self.logger.info(
             f'[{message["objectId"]}-{message["candid"]}] Messages processed'
@@ -572,4 +576,4 @@ class Correction(GenericStep):
             "preprocess_step_id": self.config["STEP_METADATA"]["STEP_ID"],
             "preprocess_step_version": self.config["STEP_METADATA"]["STEP_VERSION"],
         }
-        self.producer.produce(write)
+        self.producer.produce(write, key = message["objectId"])
