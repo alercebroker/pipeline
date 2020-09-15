@@ -43,8 +43,8 @@ STEP_METADATA = {
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "PARAMS": {
-        "PARAMS": {"bootstrap.servers": os.getenv["METRICS_HOST"]},
-        "TOPIC": os.getenv["METRICS_TOPIC"],
+        "PARAMS": {"bootstrap.servers": os.environ["METRICS_HOST"]},
+        "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
             "$id": "http://example.com/example.json",
