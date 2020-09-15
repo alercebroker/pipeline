@@ -1,5 +1,4 @@
 astropy>=4.0
-elasticsearch>=7.6.0
 pandas>=0.25.3
 -e git+https://git@github.com/alercebroker/APF@develop#egg=APF
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
