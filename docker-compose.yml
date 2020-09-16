@@ -25,3 +25,5 @@ services:
       - LOGGING_DEBUG=True
       - CLASSIFIER_NAME=late
       - TAXONOMY_NAME=v1
+      - METRICS_HOST=
+      - METRICS_TOPIC=

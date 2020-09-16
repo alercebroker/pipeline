@@ -35,6 +35,7 @@ PRODUCER_CONFIG = {
         'type': 'record',
         'fields': [
             {'name': 'oid', 'type': 'string'},
+            {"name": "candid", "type": "long"},
             FEATURES_SCHEMA,
             {
                 'name': 'late_classification',
@@ -84,8 +85,8 @@ PRODUCER_CONFIG = {
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "PARAMS": {
-        "PARAMS": {"bootstrap.servers": "localhost:9092"},
-        "TOPIC": "logstash",
+        "PARAMS": {"bootstrap.servers": os.environ["METRICS_HOST"]},
+        "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
             "$id": "http://example.com/example.json",

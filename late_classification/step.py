@@ -53,6 +53,13 @@ class LateClassifier(GenericStep):
         self.producer = Producer(config["PRODUCER_CONFIG"])
         self.driver = SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
+        self.driver.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_NAME"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+            date=datetime.datetime.now(),
+        )
 
     def _format_features(self, features):
         """Format a message that correspond features `dict`.
@@ -251,19 +258,14 @@ class LateClassifier(GenericStep):
             self.logger.info(f"[{oid}] Processing")
             result = self.model.predict_in_pipeline(features)
             probabilities = self.insert_db(result, oid)
-            self.driver.query(Step).get_or_create(
-                filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-                name=self.config["STEP_METADATA"]["STEP_NAME"],
-                version=self.config["STEP_METADATA"]["STEP_NAME"],
-                comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-                date=datetime.datetime.now(),
-            )
+
             new_message = {
                 "oid": oid,
+                "candid": message["candid"],
                 "features": message["features"],
                 "late_classification": result,
             }
             self.logger.info(f"[{oid}] Processed")
-            self.producer.produce(new_message)
+            self.producer.produce(new_message, key = oid)
             self.logger.info(f"[{oid}] Produced")
             self.driver.session.commit()
