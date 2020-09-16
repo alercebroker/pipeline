@@ -15,6 +15,10 @@ def init_sql(config):
     db.create_db()
     db.session.close()
     os.chdir(MIGRATIONS_PATH)
+    try:
+        os.makedirs(os.getcwd()+"/migrations/versions")
+    except FileExistsError:
+        pass
     alembic.config.main(["stamp", "head"])
 
 
