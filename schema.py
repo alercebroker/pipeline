@@ -160,7 +160,7 @@ SCHEMA = {
             "name": "non_detections",
             "type": NON_DETECTIONS,
         },
-        {"name": "xmatches", "type": [XMATCH, "null"], "default": "null"}
+        {"name": "xmatches", "type": [XMATCH, "null"], "default": "null"},
         {"name": "fid", "type": "int"},
         {
             "name": "metadata",
