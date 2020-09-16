@@ -54,6 +54,15 @@ class FeaturesComputer(GenericStep):
         else:
             self.producer = None
 
+
+        _ = self.db.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["FEATURE_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+            date=date or datetime.datetime.now(),
+        )
+
     def preprocess_detections(self, detections):
         """Format a section of Kafka message that correspond of detections to `pandas.DataFrame`.
         This method take the key *detections* and use `json_normalize` to transform it to a DataFrame. After that
@@ -135,13 +144,6 @@ class FeaturesComputer(GenericStep):
         fid : pd.DataFrame
 
         """
-        feature_step, created = self.db.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["FEATURE_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=date or datetime.datetime.now(),
-        )
         feature_version, created = self.db.query(FeatureVersion).get_or_create(
             filter_by={
                 "version": self.config["STEP_METADATA"]["FEATURE_VERSION"],
@@ -244,4 +246,4 @@ class FeaturesComputer(GenericStep):
         self.insert_db(oid, result, message["preprocess_step_id"])
         if self.producer:
             out_message = {"features": result, "candid": message["candid"], "oid": oid}
-            self.producer.produce(out_message)
+            self.producer.produce(out_message, key=oid)

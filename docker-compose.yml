@@ -22,3 +22,5 @@ services:
       - DB_PASSWORD=
       - DB_PORT=
       - DB_NAME=
+      - METRICS_HOST=
+      - METRICS_TOPIC=
