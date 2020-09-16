@@ -53,8 +53,9 @@ class FeaturesComputer(GenericStep):
             self.producer = producer or KafkaProducer(prod_config)
         else:
             self.producer = None
+
         self.db.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
             version=self.config["STEP_METADATA"]["FEATURE_VERSION"],
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
