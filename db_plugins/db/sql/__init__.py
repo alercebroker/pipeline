@@ -63,7 +63,7 @@ class SQLQuery(BaseQuery, Query):
             self.session.commit()
             result = instance
             created = True
-        except:
+        except IntegrityError:
             self.session.rollback()
             result = self.session.query(model).filter_by(**filter_by).first()
             created = False
