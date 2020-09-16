@@ -47,7 +47,7 @@ class XmatchStep(GenericStep):
         self.producer = Producer(config["PRODUCER_CONFIG"])
         self.driver = SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
-        self.version = config["STEP_VERSION"]
+        self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.logger.info(f"XMATCH {self.version}")
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
@@ -143,7 +143,7 @@ class XmatchStep(GenericStep):
 
     def _produce(self, messages):
         for message in messages:
-            self.producer.produce(message)
+            self.producer.produce(message, key=message["objectId"])
 
     def execute(self, messages):
         array = []
