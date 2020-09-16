@@ -84,6 +84,7 @@ class GenericStep:
 
         """
         if self.metrics_sender:
+            metrics["source"] = self.__class__.__name__
             self.metrics_sender.send_metrics(metrics)
 
     @abstractmethod
