@@ -1,7 +1,7 @@
-# TODO define more generic xmatch schema
-XMATCH = {}
-# TODO define more generic metadata schema
-METADATA = {}
+XMATCH = {
+    "type": "map",
+    "values": {"type": "map", "values": ["string", "float", "null"]},
+}
 
 DETECTIONS = {
     "type": "array",
@@ -57,7 +57,7 @@ NON_DETECTIONS = {
     },
 }
 
-METADATA_2 = {
+METADATA = {
     "name": "metadata",
     "type": "record",
     "fields": [
@@ -160,7 +160,7 @@ SCHEMA = {
             "name": "non_detections",
             "type": NON_DETECTIONS,
         },
-        {"name": "xmatches", "type": ["string", "null"]},
+        {"name": "xmatches", "type": [XMATCH, "null"], "default": "null"}
         {"name": "fid", "type": "int"},
         {
             "name": "metadata",
