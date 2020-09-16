@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, load_only, scoped_session, Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import insert
 from ..generic import DatabaseConnection, BaseQuery, Pagination
+from sqlalchemy.exc import IntegrityError
 
 MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DB_NAME", "ENGINE"}
 
