@@ -341,7 +341,7 @@ class Correction(GenericStep):
                 return True
         return False
 
-    def check_candid_in_db(self, candid):
+    def check_candid_in_db(self, oid,candid):
         query = self.driver.query(Detection.oid,Detection.candid).filter_by(oid=oid,candid=candid)
         result = query.scalar()
         exists = result is not None
@@ -364,7 +364,7 @@ class Correction(GenericStep):
                     prv_non_detections.append(non_detection)
             else:
                 self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["candid"]):
+                if not self.already_exists(prv, light_curve["detections"], ["candid"]) and not self.check_candid_in_db(prv["oid"],prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
                     dataquality = self.add_dataquality(prv,create=False)
                     dataquality["oid"] = obj.oid
