@@ -22,7 +22,8 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"smallest"
+        "auto.offset.reset":"smallest",
+        "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
 }
 
