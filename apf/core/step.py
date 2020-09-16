@@ -41,6 +41,7 @@ class GenericStep:
         if self.config.get("METRICS_CONFIG"):
             Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", KafkaMetricsProducer))
             self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
+            self.partition_key = self.config["METRICS_CONFIG"].get("PARTITION_KEY", "candid")
 
     def send_metrics(self, **metrics):
         """Send Metrics to an Kafka topic.
@@ -109,6 +110,7 @@ class GenericStep:
             self.metrics["timestamp_sent"] = datetime.datetime.now(
                 datetime.timezone.utc
             )
-            if "candid" in self.message:
-                self.metrics["candid"] = str(self.message["candid"])
-                self.send_metrics(**self.metrics)
+            self.metrics["execution_time"] = (self.metrics["timestamp_sent"]  - self.metrics["timestamp_received"]).total_seconds()
+            if self.partition_key in self.message:
+                self.metrics[self.partition_key] = str(self.partition_key)
+            self.send_metrics(**self.metrics)
