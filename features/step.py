@@ -53,14 +53,12 @@ class FeaturesComputer(GenericStep):
             self.producer = producer or KafkaProducer(prod_config)
         else:
             self.producer = None
-
-
-        _ = self.db.query(Step).get_or_create(
+        self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
             version=self.config["STEP_METADATA"]["FEATURE_VERSION"],
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=date or datetime.datetime.now(),
+            date=datetime.datetime.now(),
         )
 
     def preprocess_detections(self, detections):
@@ -126,7 +124,7 @@ class FeaturesComputer(GenericStep):
         features = features.astype(float)
         return features
 
-    def insert_db(self, oid, result, preprocess_id, date=None):
+    def insert_db(self, oid, result, preprocess_id):
         """Insert the `dict` result in database.
         Consider:
             - object: Refer with oid
