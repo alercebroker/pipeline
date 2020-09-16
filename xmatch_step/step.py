@@ -49,6 +49,14 @@ class XmatchStep(GenericStep):
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_VERSION"]
         self.logger.info(f"XMATCH {self.version}")
+        self.driver.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+            name= self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+            date=datetime.datetime.now(),
+        )
+
 
     def _extract_coordinates(self, message: dict):
         record = {
@@ -114,14 +122,6 @@ class XmatchStep(GenericStep):
 
         result["catid"] = "allwise"
         res_arr = result.to_dict(orient="records")
-
-        self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name= self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
 
         for d in res_arr:
             filter = {"oid": d["oid"]}
