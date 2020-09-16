@@ -4,14 +4,16 @@
 
 Light curve correction from detections of ZTF data stream.
 
-- `isdiffpos`: Apply sign in raw data. `isdiffpos` from stream is `"t"`,  `"f"`, `"1"` or `"-1"`. We cast the value to `1` or `-1`.
+- `isdiffpos`: Apply sign in raw data. `isdiffpos` from stream is `"t"`, `"f"`, `"1"` or `"-1"`. We cast the value to `1` or `-1`.
 - Correct magnitude: Calculate this correction for `magpsf` and `magap`.
 - Correct sigma magnitude: Calculate this correction for `sigmagpsf` and `sigmagap`.
 
 #### Previous steps:
+
 - None
 
 #### Next steps:
+
 - [LC Features step](https://github.com/alercebroker/feature_step)
 - [LC Statistics](https://github.com/alercebroker/magnitude_statistics_step)
 
@@ -20,29 +22,31 @@ Light curve correction from detections of ZTF data stream.
 This step interact with some tables of `new_pipeline` database.
 
 ### Select:
+
 - The function [`get_ligthcurve`](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L202) select detections and non-detections of an object.
 
 ### Insert:
+
 - New detection.
 - New non-detection(s).
+- Metadata: Solar System (ss_ztf), Panstarr (ps1_ztf), Gaia (gaia_ztf), Reference (reference), Magnitude Statistics (magstats)
 
 ## Previous conditions
 
 No special conditions, only connection to kafka, database and elasticsearch.
 
 ## Version
+
 - **0.0.2:**
 	- Added unittests.
 	- Changed KafkaProducer as hardcoded producer to configurable through settings.py.
 
 - **0.0.1:**
-	- Use of APF.
-	- Implementation of functions to correct magnitudes.
-	- Possible enhance:
-		- [X] Use of `astropy` to convert `jd` to `mjd`.
-		- [X] Optimization in [for-loop](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L146).
+	- Use of APF. - Implementation of functions to correct magnitudes.
+	- Possible enhance: - [X] Use of `astropy` to convert `jd` to `mjd`. - [X] Optimization in [for-loop](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L146).
 
 ## Libraries used
+
 - APF
 - Numpy
 - Astropy
@@ -83,10 +87,10 @@ Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProduc
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 
-### Elasticsearch setup
-- `ES_PREFIX`: Enables the indexing of term prefixes to speed up prefix searches. e.g: `ztf_pipeline`
-- `ES_NETWORK_HOST`: Elasticsearch host.
-- `ES_NETWORK_PORT`: Elasticsearch port.
+### Metrics setup
+
+- `METRICS_HOST`: Kafka brokers to send the metrics.
+- `METRICS_TOPIC`: Topic to save the metrics.
 
 ## Stream
 
@@ -97,9 +101,8 @@ This step require a consumer and producer.
 [Documentation of ZTF Avro schema.](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html)
 [Avsc files](https://github.com/ZwickyTransientFacility/ztf-avro-alert/tree/master/schema)
 
-
-
 ### Output schema
+
 ```Python
 {
   "doc": "Lightcurve",
@@ -226,6 +229,7 @@ This step require a consumer and producer.
 ```
 
 ## Build docker image
+
 For use this step, first you must build the image of docker. After that you can run the step for use it.
 
 ```bash
@@ -235,12 +239,15 @@ docker build -t correction_step:0.0.1 .
 ## Run step
 
 ### Run container of docker
+
 You can use a `docker run` command, you must set all environment variables.
+
 ```bash
 docker run --name my_correction_step -e DB_HOST=myhost -e [... all env ...] -d correction_step:0.0.1
 ```
 
 ### Run docker-compose
+
 Also you can edit the environment variables in [`docker-compose.yml`](https://github.com/alercebroker/correction_step/blob/master/docker-compose.yml) file. After that use `docker-compose up` command. This run only one container.
 
 ```bash

@@ -1,8 +1,8 @@
-version: '3'
+version: "3"
 services:
   correction:
-    image: 'docker.pkg.github.com/alercebroker/correction_step/correction_step:0.0.1'
-    restart: 'always'
+    image: "docker.pkg.github.com/alercebroker/correction_step/correction_step:0.0.1"
+    restart: "always"
     environment:
       - DB_HOST=
       - DB_USER=
@@ -20,3 +20,5 @@ services:
       - ES_NETWORK_PORT=
       - LOGGING_DEBUG=False
       - N_PROCESS=
+      - METRICS_HOST=
+      - METRICS_TOPIC=
