@@ -37,16 +37,6 @@ import numbers
 import datetime
 
 
-#TODO: Delete when merge with collision management
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.expression import Insert
-
-
-@compiles(Insert)
-def prefix_inserts(insert, compiler, **kw):
-    return compiler.visit_insert(insert, **kw) + " ON CONFLICT DO NOTHING"
-
-
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide="ignore")
 
@@ -163,7 +153,7 @@ class Correction(GenericStep):
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.logger.info(f"CORRECTION {self.version}")
-        #Storing step_id
+        # Storing step_id
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -174,8 +164,10 @@ class Correction(GenericStep):
         self.driver.session.commit()
 
     def get_object(self, alert: dict) -> Object:
-        data = {"oid": alert["objectId"]}
-        return self.driver.session.query().get_or_create(Object, filter_by=data)
+
+        data = self.get_object_values(alert)
+        filter_by = {"oid": alert["objectId"]}
+        return self.driver.query().get_or_create(Object, filter_by=filter_by, **data)
 
     def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
         data = {
@@ -196,16 +188,14 @@ class Correction(GenericStep):
         filters = {"candid": candidate["candid"]}
         data = {**candidate_params}
         if create:
-            self.driver.session.query().get_or_create(
-                Dataquality, filter_by=filters, **data
-            )
+            self.driver.query().get_or_create(Dataquality, filter_by=filters, **data)
         else:
             return {**filters, **data}
 
     def get_detection(self, candidate: dict) -> Detection:
         filters = {"candid": candidate["candid"], "oid": candidate["oid"]}
         data = self.cast_detection(candidate)
-        detection, created = self.driver.session.query().get_or_create(
+        detection, created = self.driver.query().get_or_create(
             Detection, filter_by=filters, **data
         )
         dataquality = self.add_dataquality(candidate)
@@ -222,7 +212,7 @@ class Correction(GenericStep):
         filters = {
             "oid": message["objectId"],
         }
-        ps1, created = self.driver.session.query().get_or_create(
+        ps1, created = self.driver.query().get_or_create(
             Ps1_ztf, filter_by=filters, **message_params
         )
         if not created:
@@ -260,7 +250,7 @@ class Correction(GenericStep):
             **message_params,
         }
         filters = {"oid": message["objectId"], "rfid": message["candidate"]["rfid"]}
-        reference, created = self.driver.session.query().get_or_create(
+        reference, created = self.driver.query().get_or_create(
             Reference, filter_by=filters, **data
         )
         return reference
@@ -277,7 +267,7 @@ class Correction(GenericStep):
         }
         if data["neargaia"] is None:
             return
-        gaia, created = self.driver.session.query().get_or_create(
+        gaia, created = self.driver.query().get_or_create(
             Gaia_ztf, filter_by=filters, **data
         )
 
@@ -292,34 +282,35 @@ class Correction(GenericStep):
 
         return gaia
 
-    def set_magstats_values(self, result: dict, magstat: MagStats) -> MagStats:
-        magstat.stellar = result.stellar
-        magstat.corrected = result.corrected
-        magstat.ndet = int(result.ndet)
-        magstat.ndubious = int(result.ndubious)
-        magstat.dmdt_first = result.dmdt_first
-        magstat.dm_first = result.dm_first
-        magstat.sigmadm_first = result.sigmadm_first
-        magstat.dt_first = result.dt_first
-        magstat.magmean = result.magpsf_mean
-        magstat.magmedian = result.magpsf_median
-        magstat.magmax = result.magpsf_max
-        magstat.magmin = result.magpsf_min
-        magstat.magsigma = result.sigmapsf  # I dont know this one
-        magstat.maglast = result.magpsf_last
-        magstat.magfirst = result.magpsf_first
-        magstat.magmean_corr = result.magpsf_corr_mean
-        magstat.magmedian_corr = result.magpsf_corr_median
-        magstat.magmax_corr = result.magpsf_corr_max
-        magstat.magmin_corr = result.magpsf_corr_min
-        magstat.magsigma_corr = result.sigmapsf_corr  # This doesn't exists
-        magstat.maglast_corr = result.magpsf_corr_last
-        magstat.magfirst_corr = result.magpsf_corr_first
-        magstat.firstmjd = result.first_mjd
-        magstat.lastmjd = result.last_mjd
-        magstat.step_id_corr = self.version
+    def get_magstats_values(self, result: dict) -> dict:
+        data = {}
+        data["stellar"] = result.stellar
+        data["corrected"] = result.corrected
+        data["ndet"] = int(result.ndet)
+        data["ndubious"] = int(result.ndubious)
+        data["dmdt_first"] = result.dmdt_first
+        data["dm_first"] = result.dm_first
+        data["sigmadm_first"] = result.sigmadm_first
+        data["dt_first"] = result.dt_first
+        data["magmean"] = result.magpsf_mean
+        data["magmedian"] = result.magpsf_median
+        data["magmax"] = result.magpsf_max
+        data["magmin"] = result.magpsf_min
+        data["magsigma"] = result.sigmapsf  # I dont know this one
+        data["maglast"] = result.magpsf_last
+        data["magfirst"] = result.magpsf_first
+        data["magmean_corr"] = result.magpsf_corr_mean
+        data["magmedian_corr"] = result.magpsf_corr_median
+        data["magmax_corr"] = result.magpsf_corr_max
+        data["magmin_corr"] = result.magpsf_corr_min
+        data["magsigma_corr"] = result.sigmapsf_corr  # This doesn't exists
+        data["maglast_corr"] = result.magpsf_corr_last
+        data["magfirst_corr"] = result.magpsf_corr_first
+        data["firstmjd"] = result.first_mjd
+        data["lastmjd"] = result.last_mjd
+        data["step_id_corr"] = self.version
 
-        return MagStats
+        return data
 
     def get_metadata(self, message: dict):
         ps1_ztf = self.get_ps1(message)
@@ -375,24 +366,32 @@ class Correction(GenericStep):
             )
         all_stats = concat([new_stats, new_stats_dmdt])
         filters = {"oid": message["objectId"], "fid": message["candidate"]["fid"]}
-        magStats, created = self.driver.session.query().get_or_create(
-            MagStats, filter_by=filters
+        data = self.get_magstats_values(all_stats)
+        magStats, created = self.driver.query().get_or_create(
+            MagStats, filter_by=filters, **data
         )
-        self.set_magstats_values(all_stats, magStats)
 
-    def set_object_values(self, alert: dict, obj: Object) -> Object:
-        obj.ndethist = alert["candidate"]["ndethist"]
-        obj.ncovhist = alert["candidate"]["ncovhist"]
-        obj.mjdstarthist = alert["candidate"]["jdstarthist"] - 2400000.5
-        obj.mjdendhist = alert["candidate"]["jdendhist"] - 2400000.5
-        obj.firstmjd = alert["candidate"]["jd"] - 2400000.5
-        obj.lastmjd = obj.firstmjd
-        obj.ndet = 1
-        obj.deltamjd = 0
-        obj.meanra = alert["candidate"]["ra"]
-        obj.meandec = alert["candidate"]["dec"]
-        obj.step_id_corr = self.version
-        return obj
+    def get_object_values(
+        self,
+        alert: dict,
+    ) -> dict:
+
+        data = {}
+        data["ndethist"] = alert["candidate"]["ndethist"]
+        data["ncovhist"] = alert["candidate"]["ncovhist"]
+        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
+        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
+        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
+        data["lastmjd"] = data["firstmjd"]
+        data["ndet"] = 1
+        data["deltajd"] = 0
+        data["meanra"] = alert["candidate"]["ra"]
+        data["meandec"] = alert["candidate"]["dec"]
+        data["step_id_corr"] = self.version
+        data["corrected"] = False
+        data["stellar"] = False
+
+        return data
 
     def preprocess_alert(self, alert: dict, is_prv_candidate=False) -> None:
         if is_prv_candidate:
@@ -446,7 +445,7 @@ class Correction(GenericStep):
         return False
 
     def check_candid_in_db(self, oid, candid):
-        query = self.driver.session.query(Detection.oid, Detection.candid).filter_by(
+        query = self.driver.query(Detection.oid, Detection.candid).filter_by(
             oid=oid, candid=candid
         )
         result = query.scalar()
@@ -487,24 +486,16 @@ class Correction(GenericStep):
                     prv_dataquality.append(dataquality)
 
         # Insert data to database
-        self.driver.session.query().bulk_insert(prv_detections, Detection)
-        self.driver.session.query().bulk_insert(prv_dataquality, Dataquality)
-        self.driver.session.query().bulk_insert(prv_non_detections, NonDetection)
+        self.driver.query().bulk_insert(prv_detections, Detection)
+        self.driver.query().bulk_insert(prv_dataquality, Dataquality)
+        self.driver.query().bulk_insert(prv_non_detections, NonDetection)
 
     def process_lightcurve(self, alert: dict, obj: Object) -> dict:
         # Setting identifier of object to detection
         alert["candidate"]["oid"] = obj.oid
         detection, created = self.get_detection(alert["candidate"])
         light_curve = self.get_light_curve(obj)
-        if created:
-            detection = detection.__dict__
-            del detection["_sa_instance_state"]
-            light_curve["detections"].append(detection)
 
-        else:
-            self.logger.warning(
-                f"[{obj.oid}-{detection.candid}] Detection already exists"
-            )
         # Compute and analyze previous candidates
         if "prv_candidates" in alert:
             self.process_prv_candidates(
@@ -533,17 +524,26 @@ class Correction(GenericStep):
         obj.sigmara = detections["ra"].std()
         obj.sigmadec = detections["dec"].mean()
         obj.corrected = detections["corrected"].all()
-        obj.deltamjd = obj.lastmjd - obj.firstmjd
+        obj.deltajd = obj.lastmjd - obj.firstmjd
 
     def execute(self, message):
+
         self.logger.info(
             f'[{message["objectId"]}-{message["candid"]}] Processing message'
         )
         obj, created = self.get_object(message)
         self.preprocess_alert(message)
-        # First observation of the object
-        if created:
-            self.set_object_values(message, obj)
+
+        self.do_correction(message["candidate"], obj, inplace=True)
+        light_curve = self.process_lightcurve(message, obj)
+        metadata = self.get_metadata(message)
+        magstats = self.get_magstats(
+            message,
+            light_curve,
+            ps1=metadata["ps1"],
+            ss=metadata["ss"],
+            reference=metadata["reference"],
+        )
 
         self.do_correction(message["candidate"], obj, inplace=True)
         light_curve = self.process_lightcurve(message, obj)
@@ -560,7 +560,6 @@ class Correction(GenericStep):
         if len(light_curve["detections"]) > 1:
             self.set_basic_stats(light_curve["detections"], obj)
 
-        # Write in database
         self.driver.session.commit()
         self.logger.info(
             f'[{message["objectId"]}-{message["candid"]}] Messages processed'
@@ -576,4 +575,4 @@ class Correction(GenericStep):
             "preprocess_step_id": self.config["STEP_METADATA"]["STEP_ID"],
             "preprocess_step_version": self.config["STEP_METADATA"]["STEP_VERSION"],
         }
-        self.producer.produce(write, key = message["objectId"])
+        self.producer.produce(write, key=message["objectId"])
