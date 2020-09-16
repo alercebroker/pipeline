@@ -2,7 +2,7 @@ FROM python:3.6-slim
 
 RUN apt-get update && \
   apt-get upgrade -y && \
-  apt-get install -y --no-install-recommends git && \
+  apt-get install -y --no-install-recommends git build-essential && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
