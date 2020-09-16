@@ -12,15 +12,10 @@ LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation-
+
+
+
 CONSUMER_CONFIG = {
-    "TOPIC_STRATEGY": {
-        "CLASS": "apf.core.topic_management.DailyTopicStrategy",
-        "PARAMS": {
-            "topic_format": "ztf_%s_programid1",
-            "date_format": "%Y%m%d",
-            "change_hour": 23,
-        },
-    },
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -28,6 +23,20 @@ CONSUMER_CONFIG = {
     "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
     "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
 }
+
+if os.getenv("TOPIC_STRATEGY"):
+    CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
+        "CLASS": "apf.core.topic_management.DailyTopicStrategy",
+        "PARAMS": {
+            "topic_format": "ztf_%s_programid1",
+            "date_format": "%Y%m%d",
+            "change_hour": 23,
+        },
+    }
+elif os.getenv("CONSUMER_TOPICS"):
+    CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+else:
+    raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
 PRV_CANDIDATE = {
     "name": "ztf.alert.prv_candidate",
