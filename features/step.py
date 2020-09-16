@@ -149,8 +149,6 @@ class FeaturesComputer(GenericStep):
                 "step_id_preprocess": preprocess_id,
             }
         )
-        if created:
-            self.db.session.add(feature_version)
         for key in result:
             fid = self.get_fid(key)
             if fid < 0:
