@@ -71,7 +71,7 @@ class SQLQuery(BaseQuery, Query):
 
         return result, created
 
-    def update(self, instance, attr):
+    def update(self, instance, args):
         """
         Updates an object
         Parameter
