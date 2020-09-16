@@ -9,7 +9,8 @@ CONSUMER_CONFIG = {
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
-        "group.id": os.environ["CONSUMER_GROUP_ID"]
+        "group.id": os.environ["CONSUMER_GROUP_ID"],
+        "auto.offset.reset":"smallest"
     }
 }
 
@@ -85,7 +86,9 @@ PRODUCER_CONFIG = {
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "PARAMS": {
-        "PARAMS": {"bootstrap.servers": os.environ["METRICS_HOST"]},
+        "PARAMS": {
+            "bootstrap.servers": os.environ["METRICS_HOST"],
+            "auto.offset.reset":"smallest"},
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
