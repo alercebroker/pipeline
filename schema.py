@@ -164,7 +164,7 @@ SCHEMA = {
         {"name": "fid", "type": "int"},
         {
             "name": "metadata",
-            "type": METADATA_2,
+            "type": METADATA,
         },
         {"name": "preprocess_step_id", "type": "string"},
         {"name": "preprocess_step_version", "type": "string"},
