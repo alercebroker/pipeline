@@ -207,17 +207,17 @@ class KafkaConsumer(GenericConsumer):
                         return
                     self.logger.exception(f"Error in kafka stream: {message.error()}")
                     continue
-
-                message = self._deserialize_message(message)
-                deserialized.append(message)
+                else:
+                    message = self._deserialize_message(message)
+                    deserialized.append(message)
 
             self.messages = messages
             messages = []
-            if num_messages == 1:
-                if len(deserialized) == 1:
+            if len(deserialized) > 0:
+                if num_messages == 1:
                     yield deserialized[0]
-            else:
-                yield deserialized
+                else:
+                    yield deserialized
 
     def commit(self):
         for message in self.messages:
