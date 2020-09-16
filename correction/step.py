@@ -225,35 +225,6 @@ class Correction(GenericStep):
 
         return data
 
-    #def set_magstats_values(self,result: dict,magstat: MagStats) -> MagStats:
-    #    magstat.stellar = result.stellar
-    #    magstat.corrected = result.corrected
-    #    magstat.ndet = int(result.ndet)
-    #    magstat.ndubious = int(result.ndubious)
-    #    magstat.dmdt_first = result.dmdt_first
-    #    magstat.dm_first = result.dm_first
-    #    magstat.sigmadm_first = result.sigmadm_first
-    #    magstat.dt_first = result.dt_first
-    #    magstat.magmean = result.magpsf_mean
-    #    magstat.magmedian = result.magpsf_median
-    #    magstat.magmax = result.magpsf_max
-    #    magstat.magmin = result.magpsf_min
-    #    magstat.magsigma = result.sigmapsf #I dont know this one
-    #    magstat.maglast = result.magpsf_last
-    #    magstat.magfirst = result.magpsf_first
-    #    magstat.magmean_corr = result.magpsf_corr_mean
-    #    magstat.magmedian_corr = result.magpsf_corr_median
-    #    magstat.magmax_corr = result.magpsf_corr_max
-    #    magstat.magmin_corr = result.magpsf_corr_min
-    #    magstat.magsigma_corr = result.sigmapsf_corr #This doesn't exists
-    #    magstat.maglast_corr = result.magpsf_corr_last
-    #    magstat.magfirst_corr = result.magpsf_corr_first
-    #    magstat.firstmjd = result.first_mjd
-    #    magstat.lastmjd = result.last_mjd
-    #    magstat.step_id_corr = self.version
-
-    #    return MagStats
-
     def get_metadata(self,message: dict):
         ps1_ztf = self.get_ps1(message)
         ss_ztf = self.get_ss(message)
@@ -306,21 +277,6 @@ class Correction(GenericStep):
         }
         data = self.get_magstats_values(all_stats)
         magStats, created = self.driver.query().get_or_create(MagStats,filter_by=filters,**data)
-
-
-    #def set_object_values(self, alert: dict, obj: Object) -> Object:
-    #    obj.ndethist = alert["candidate"]["ndethist"]
-    #    obj.ncovhist = alert["candidate"]["ncovhist"]
-    #    obj.mjdstarthist = alert["candidate"]["jdstarthist"] - 2400000.5
-    #    obj.mjdendhist = alert["candidate"]["jdendhist"] - 2400000.5
-    #    obj.firstmjd = alert["candidate"]["jd"] - 2400000.5
-    #    obj.lastmjd = obj.firstmjd
-    #    obj.ndet = 1
-    #    obj.deltamjd = 0
-    #    obj.meanra = alert["candidate"]["ra"]
-    #    obj.meandec = alert["candidate"]["dec"]
-    #    obj.step_id_corr = self.version
-    #    return obj
 
     def get_object_values(self, alert: dict, ) -> dict:
 
@@ -386,7 +342,7 @@ class Correction(GenericStep):
         return False
 
     def check_candid_in_db(self, candid):
-        query = self.driver.query(Detection.candid).filter_by(candid=candid)
+        query = self.driver.query(Detection.oid,Detection.candid).filter_by(oid=oid,candid=candid)
         result = query.scalar()
         exists = result is not None
         return exists
@@ -429,14 +385,6 @@ class Correction(GenericStep):
         detection, created = self.get_detection(alert["candidate"])
         light_curve = self.get_light_curve(obj)
 
-        #if created:
-        #    detection = detection.__dict__
-        #    del detection["_sa_instance_state"]
-        #    light_curve["detections"].append(detection)
-
-        #else:
-            #self.logger.warning(f"[{obj.oid}-{detection.candid}] Detection already exists")
-
         # Compute and analyze previous candidates
         if "prv_candidates" in alert:
             self.process_prv_candidates(alert["prv_candidates"], obj, detection["candid"], light_curve)
@@ -467,10 +415,6 @@ class Correction(GenericStep):
         self.logger.info(f'[{message["objectId"]}-{message["candid"]}] Processing message')
         obj, created = self.get_object(message)
         self.preprocess_alert(message)
-
-        # First observation of the object
-        #if created:
-        #self.set_object_values(message, obj)
 
         self.do_correction(message["candidate"], obj, inplace=True)
         light_curve = self.process_lightcurve(message, obj)
