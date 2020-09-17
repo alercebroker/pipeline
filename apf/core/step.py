@@ -38,6 +38,8 @@ class GenericStep:
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
         self.metrics_sender = None
+        self.partition_key = None
+
         if self.config.get("METRICS_CONFIG"):
             Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", KafkaMetricsProducer))
             self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
