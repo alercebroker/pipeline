@@ -12,11 +12,15 @@ class DateTimeEncoder(json.JSONEncoder):
                 return obj.isoformat()
 
 class KafkaMetricsProducer:
-    def __init__(self, config):
+    def __init__(self, config, producer=None):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
-        self.producer = Producer(self.config["PARAMS"])
+        if producer is not None:
+                self.producer = producer
+        else:
+                self.producer = Producer(self.config["PARAMS"])
+        self.time_encoder = self.config.get("TIME_ENCODER_CLASS", DateTimeEncoder)
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
             self.logger.info(f'Producing metrics to {self.config["TOPIC"]}')
@@ -36,7 +40,7 @@ class KafkaMetricsProducer:
 
     
     def send_metrics(self, metrics):
-        metrics = json.dumps(metrics, cls=DateTimeEncoder).encode("utf-8")
+        metrics = json.dumps(metrics, cls=self.time_encoder).encode("utf-8")
 
         if self.config.get("TOPIC_STRATEGY"):
             self.topic = self.topic_strategy.get_topics()
