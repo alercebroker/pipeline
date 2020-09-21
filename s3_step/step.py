@@ -6,6 +6,8 @@ import math
 import datetime
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import Step
+import boto3
+from botocore.config import Config
 
 
 class S3Step(GenericStep):
@@ -32,34 +34,20 @@ class S3Step(GenericStep):
             date=datetime.datetime.now(),
         )
 
+    def get_object_url(self, bucket_name, candid):
+        return "https://{}.s3.amazonaws.com/{}.avro".format(bucket_name, candid)
+
+
+    def upload_file(self, f, candid, bucket_name):
+        config = Config(region_name=self.config["STORAGE"]["REGION_NAME"])
+        s3 = boto3.client('s3', config=config)
+        object_name = "{}.avro".format(candid)
+        s3.upload_fileobj(f, bucket_name, object_name)
+        return self.get_object_url(bucket_name, candid)
+
+
     def execute(self, message):
         self.logger.debug(message["objectId"])
         f = io.BytesIO(self.consumer.messages[0].value())
-        year, month, day = self.jd_to_date(message["candidate"]["jd"])
-        date = "{}{}{}".format(year, month, int(day))
-        upload_file(
-            f, date, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"])
-        
-    def jd_to_date(self, jd):
-        jd = jd + 0.5
-        F, I = math.modf(jd)
-        I = int(I)
-        A = math.trunc((I - 1867216.25)/36524.25)
-        if I > 2299160:
-            B = I + 1 + A - math.trunc(A / 4.)
-        else:
-            B = I
-        C = B + 1524
-        D = math.trunc((C - 122.1) / 365.25)
-        E = math.trunc(365.25 * D)
-        G = math.trunc((C - E) / 30.6001)
-        day = C - E + F - math.trunc(30.6001 * G)
-        if G < 13.5:
-            month = G - 1
-        else:
-            month = G - 13
-        if month > 2.5:
-            year = D - 4716
-        else:
-            year = D - 4715
-        return year, month, day
+        self.upload_file(
+            f, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"])

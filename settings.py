@@ -74,7 +74,7 @@ STEP_METADATA = {
     "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev")
 }
 
-STORAGE_CONFIG = {"BUCKET_NAME": os.environ["BUCKET_NAME"]}
+STORAGE_CONFIG = {"BUCKET_NAME": os.environ["BUCKET_NAME"], "REGION_NAME": os.environ["REGION_NAME"]}
 
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
