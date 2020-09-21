@@ -19,7 +19,7 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"smallest",
+        "auto.offset.reset": "smallest",
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
 }
@@ -30,7 +30,8 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
+            "auto.offset.reset": "smallest",
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
@@ -71,10 +72,15 @@ STEP_METADATA = {
     "STEP_ID": os.getenv("STEP_ID", "features"),
     "STEP_NAME": os.getenv("STEP_NAME", "features"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev")
+    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
 }
 
-STORAGE_CONFIG = {"BUCKET_NAME": os.environ["BUCKET_NAME"], "REGION_NAME": os.environ["REGION_NAME"]}
+STORAGE_CONFIG = {
+    "BUCKET_NAME": os.environ["BUCKET_NAME"],
+    "REGION_NAME": os.environ["REGION_NAME"],
+    "AWS_ACCESS_KEY": os.environ["AWS_ACCESS_KEY"],
+    "AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"],
+}
 
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 

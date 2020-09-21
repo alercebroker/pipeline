@@ -21,7 +21,14 @@ class S3Step(GenericStep):
 
     """
 
-    def __init__(self, consumer=None, config=None, db_connection=None, level=logging.INFO, **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        db_connection=None,
+        level=logging.INFO,
+        **step_args
+    ):
         super().__init__(consumer, config=config, level=level)
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
@@ -36,17 +43,19 @@ class S3Step(GenericStep):
     def get_object_url(self, bucket_name, candid):
         return "https://{}.s3.amazonaws.com/{}.avro".format(bucket_name, candid)
 
-
     def upload_file(self, f, candid, bucket_name):
-        config = Config(region_name=self.config["STORAGE"]["REGION_NAME"])
-        s3 = boto3.client('s3', config=config)
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=self.config["STORAGE"]["AWS_ACCESS_KEY"],
+            aws_secret_access_key=self.config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
+        )
         object_name = "{}.avro".format(candid)
         s3.upload_fileobj(f, bucket_name, object_name)
         return self.get_object_url(bucket_name, candid)
-
 
     def execute(self, message):
         self.logger.debug(message["objectId"])
         f = io.BytesIO(self.consumer.messages[0].value())
         self.upload_file(
-            f, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"])
+            f, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"]
+        )
