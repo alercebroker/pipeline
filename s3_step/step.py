@@ -1,7 +1,6 @@
 from apf.core.step import GenericStep
 import logging
 import io
-from .s3 import upload_file
 import math
 import datetime
 from db_plugins.db.sql import SQLConnection
