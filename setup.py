@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 
 setup(
    name='apf_base',
-   version="0.0.2",
+   version="0.0.3",
    description='ALeRCE Alert Processing Framework.',
    author='ALeRCE Team',
    author_email='contact@alerce.online',

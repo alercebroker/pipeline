@@ -205,17 +205,19 @@ class KafkaConsumer(GenericConsumer):
                     if message.error().name() == "_PARTITION_EOF":
                         self.logger.info("PARTITION_EOF: No more messages")
                         return
-                    raise Exception(f"Error in kafka stream: {message.error()}")
-
-                message = self._deserialize_message(message)
-                deserialized.append(message)
+                    self.logger.exception(f"Error in kafka stream: {message.error()}")
+                    continue
+                else:
+                    message = self._deserialize_message(message)
+                    deserialized.append(message)
 
             self.messages = messages
             messages = []
-            if num_messages == 1:
-                yield deserialized[0]
-            else:
-                yield deserialized
+            if len(deserialized) > 0:
+                if num_messages == 1:
+                    yield deserialized[0]
+                else:
+                    yield deserialized
 
     def commit(self):
         for message in self.messages:

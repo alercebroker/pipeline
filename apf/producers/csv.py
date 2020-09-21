@@ -16,7 +16,7 @@ class CSVProducer(GenericProducer):
     def __init__(self,config):
         super().__init__(config=config)
 
-    def produce(self,message=None):
+    def produce(self,message=None, **kwargs):
         """Produce Message to a CSV File.
 
         Doesn't add the header
