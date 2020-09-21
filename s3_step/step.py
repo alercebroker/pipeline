@@ -48,6 +48,7 @@ class S3Step(GenericStep):
             "s3",
             aws_access_key_id=self.config["STORAGE"]["AWS_ACCESS_KEY"],
             aws_secret_access_key=self.config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
+            region_name=self.config["STORAGE"]["REGION_NAME"],
         )
         object_name = "{}.avro".format(candid)
         s3.upload_fileobj(f, bucket_name, object_name)
