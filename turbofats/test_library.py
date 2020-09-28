@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
-from .Feature import FeatureSpace
+from .FeatureSpace import FeatureSpace
 import numpy as np
-from .import_lc_cluster import ReadLC_MACHO
-from .PreprocessLC import Preprocess_LC
-from .alignLC import Align_LC
 import os.path
 import tarfile
 import sys

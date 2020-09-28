@@ -1,14 +1,13 @@
-import os,sys,time
-import numpy as np
+from abc import ABC, abstractmethod
 
-class Base:
 
-    def __init__(self):
-        self.category='all'
+class Base(ABC):
+    def __init__(self, shared_data):
+        self.shared_data = shared_data
 
+    @abstractmethod
     def fit(self, data):
         pass
-        #return self
 
     def is1d(self):
         return True

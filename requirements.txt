@@ -1,5 +1,9 @@
-P4J>=0.27
 scipy
 matplotlib
 GPy
 P4J
+numba
+statsmodels
+setuptools
+numpy
+requests

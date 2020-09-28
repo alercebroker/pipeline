@@ -11,7 +11,7 @@ import multiprocessing as mp
 import pytest
 
 
-from turbofats.Feature import FeatureSpace
+from turbofats.FeatureSpace import FeatureSpace
 
 ts_path = "/Users/JonathanWihl/Desktop/FATS 2.0/CSSAllVarPhot.csv"
 ts_save_path = "lcs.pkl"

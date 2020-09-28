@@ -1,4 +1,4 @@
-from turbofats import NewFeatureSpace
+from turbofats import FeatureSpace
 import numpy as np
 import pandas as pd
 import time
@@ -9,7 +9,7 @@ lc_g = lc_data[lc_data.fid == 1]
 lc_r = lc_data[lc_data.fid == 2]
 lc_g_np = lc_g[['magpsf_corr', 'mjd', 'sigmapsf_corr']].values.T
 
-feature_space = NewFeatureSpace(['IAR_phi'])
+feature_space = FeatureSpace(['IAR_phi'])
 
 times = []
 for i in range(10000):

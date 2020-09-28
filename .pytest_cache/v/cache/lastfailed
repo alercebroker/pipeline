@@ -1,6 +1,0 @@
-{
-  "FATS/test_library.py::test_Std": true,
-  "FATS/test_library.py::test_Stetson": true,
-  "build/lib/FATS/test_library.py::test_Period_Psi": true,
-  "build/lib/FATS/test_library.py::test_Stetson": true
-}
