@@ -163,9 +163,7 @@ class FeaturesComputer(GenericStep):
                 },
                 value=result[key],
             )
-            if created:
-                self.db.session.add(feature)
-            else:
+            if not created:
                 self.db.query().update(feature, {"value": feature.value})
         self.db.session.commit()
 
