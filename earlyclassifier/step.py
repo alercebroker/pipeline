@@ -5,8 +5,9 @@ from apf.core.step import GenericStep
 import sys
 import requests
 import operator
-from apf.db.sql.models import Classifier, Class, Classification, AstroObject
-from apf.db.sql import get_or_create, get_session, update, add_to_database
+import datetime
+from db_plugins.db.sql.models import Object, Probability, Step
+from db_plugins.db.sql import SQLConnection
 
 
 class EarlyClassifier(GenericStep):
@@ -21,23 +22,34 @@ class EarlyClassifier(GenericStep):
 
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        db_connection=None,
+        request_session=None,
+        level=logging.INFO,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
-        self.session = get_session(config["DB_CONFIG"])
-        fby = {
-            "name": "early"
-        }
-        self.classifier, created = get_or_create(self.session, Classifier, fby)
-        add_to_database(self.session, self.classifier)
-        self.requests_session = requests.Session()
+        self.db = db_connection or SQLConnection()
+        self.db.connect(self.config["DB_CONFIG"]["SQL"])
+        self.db.query(Step).get_or_create(
+            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_VERSION"],
+            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
+            date=datetime.datetime.now(),
+        )
+        self.requests_session = request_session or requests.Session()
 
     def execute(self, message):
-        oid = message['objectId']
+        oid = message["objectId"]
 
         metadata_stream = io.StringIO()
-        metadata = message['candidate']
+        metadata = message["candidate"]
         metadata_df = pd.Series(metadata)
-        metadata_df['oid'] = oid
+        metadata_df["oid"] = oid
         metadata_df = metadata_df.to_frame().transpose()
         metadata_df.to_csv(metadata_stream, index=False)
 
@@ -45,49 +57,86 @@ class EarlyClassifier(GenericStep):
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
         files = {
-            'cutoutScience': io.BytesIO(science),
-            'cutoutTemplate': io.BytesIO(template),
-            'cutoutDifference':  io.BytesIO(difference),
-            'metadata': metadata_stream.getvalue()
+            "cutoutScience": io.BytesIO(science),
+            "cutoutTemplate": io.BytesIO(template),
+            "cutoutDifference": io.BytesIO(difference),
+            "metadata": metadata_stream.getvalue(),
         }
         work = False
         retries = 0
-        while not work and retries < self.config["n_retry"]:
+        while not work and retries < self.config["N_RETRY"]:
             try:
-                resp = self.requests_session.post(self.config["clf_api"], files=files)
+                resp = self.requests_session.post(self.config["API_URL"], files=files)
                 work = True
             except requests.exceptions.RequestException as e:
                 self.logger.warning(
-                    "Connection failed ({}), retrying...".format(str(e)))
+                    "Connection failed ({}), retrying...".format(str(e))
+                )
                 retries += 1
 
         if not work:
-            self.logger.error(
-                "Connection does not respond")
+            self.logger.error("Connection does not respond")
             sys.exit("Connection error")
 
         probabilities = resp.json()
-        print(probabilities)
-        if "status" not in probabilities:
-            predicted_class = max(probabilities.items(), key=operator.itemgetter(1))[0]
-            fby = {"oid": message["objectId"]}
-            astro_object, _ = get_or_create(self.session, AstroObject, fby)
-            classifications = [astro_object]
-            fby = {"name": predicted_class}
-            class_instance, _ = get_or_create(self.session, Class, fby)
-            fby = {"class_name": predicted_class, "classifier_name": self.classifier.name,
-                   "astro_object": astro_object.oid}
-            args = {
-                "probability": probabilities[predicted_class],
-                "probabilities": probabilities
+
+        if probabilities["status"] == "SUCCESS":
+            object_data = self.get_default_object_values(message)
+            self.insert_db(probabilities["probabilities"], oid, object_data)
+
+    def insert_db(self, probabilities, oid, object_data):
+        probabilities = self.get_ranking(probabilities)
+        obj, _ = self.db.query(Object).get_or_create(
+            filter_by={"oid": oid}, **object_data
+        )
+        for prob in probabilities:
+            filter_by = {
+                "oid": oid,
+                "class_name": prob,
+                "classifier_name": self.config["STEP_METADATA"]["CLASSIFIER_NAME"],
+                "classifier_version": self.config["STEP_METADATA"][
+                    "CLASSIFIER_VERSION"
+                ],
             }
-            classification, created = get_or_create(
-                self.session, Classification, fby, **args)
+            prob_data = {
+                "probability": probabilities[prob]["probability"],
+                "ranking": probabilities[prob]["ranking"],
+            }
+            probability, created = self.db.query(Probability).get_or_create(
+                filter_by=filter_by,
+                **prob_data,
+            )
             if not created:
-                update(classification, args)
-            classifications.append(class_instance)
-            classifications.append(classification)
-            add_to_database(self.session, classifications)
-        else:
-            self.logger.debug(
-                f"Object {message['objectId']}: {probabilities['content']}")
+                self.logger.info("Probability already exists. Skipping insert")
+                break
+
+    def get_ranking(self, probabilities):
+        sorted_classes = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
+        for x in range(len(sorted_classes)):
+            probabilities[sorted_classes[x][0]] = {
+                "probability": probabilities[sorted_classes[x][0]],
+                "ranking": x + 1,
+            }
+        return probabilities
+
+    def get_default_object_values(
+        self,
+        alert: dict,
+    ) -> dict:
+
+        data = {}
+        data["ndethist"] = alert["candidate"]["ndethist"]
+        data["ncovhist"] = alert["candidate"]["ncovhist"]
+        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
+        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
+        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
+        data["lastmjd"] = data["firstmjd"]
+        data["ndet"] = 1
+        data["deltajd"] = 0
+        data["meanra"] = alert["candidate"]["ra"]
+        data["meandec"] = alert["candidate"]["dec"]
+        data["step_id_corr"] = "0.0.0"
+        data["corrected"] = False
+        data["stellar"] = False
+
+        return data
