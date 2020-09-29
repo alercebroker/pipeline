@@ -146,7 +146,7 @@ There are 2 files needed to configure a step.
     #settings.py
     CONSUMER_CONFIG = {
       "CLASS": "apf.consumers.CSVConsumer",
-      "FILE_PATH": "https://assets.alerce.online/tutorials/alerce-workshop-sep/pandas-sql/detections.csv",
+      "FILE_PATH": "https://raw.githubusercontent.com/alercebroker/APF/develop/docs/source/_static/example/detections.csv",
       "OTHER_ARGS": {
           "index_col": "oid"
       }
