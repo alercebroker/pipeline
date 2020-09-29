@@ -15,7 +15,7 @@ pip install -e .
 
 # Using MHPS
 
-```
+```python
 import pandas as pd
 import mhps
 
