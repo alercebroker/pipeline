@@ -86,15 +86,8 @@ class XmatchStep(GenericStep):
 
         return messages
 
-    def cast_allwise(self, wise_match: dict) -> dict:
-        return {
-            key: wise_match[key] for key in ALLWISE_KEYS if key in wise_match.keys()
-        }
+    def save_xmatch(self, result, df_object):
 
-    def cast_xmatch(self, match: dict) -> dict:
-        return {key: match[key] for key in XMATCH_KEYS if key in match.keys()}
-
-    def save_xmatch(self, result):
         result = result.rename(
             {
                 "AllWISE": "oid_catalog",
@@ -120,38 +113,64 @@ class XmatchStep(GenericStep):
             axis="columns",
         )
 
-        result["catid"] = "allwise"
-        res_arr = result.to_dict(orient="records")
+        object_data = df_object[ df_object.oid.isin( result.oid ) ]
 
-        for d in res_arr:
-            filter = {"oid": d["oid"]}
-            object, created = self.driver.session.query().get_or_create(
-                Object, filter_by=filter
-            )
-            filter = {"oid_catalog": d["oid_catalog"]}
-            data = self.cast_allwise(d)
-            allwise, created = self.driver.session.query().get_or_create(
-                Allwise, filter_by=filter, **data
-            )
+        #bulk insert to object table
+        array = object_data.to_dict(orient="records")
+        self.driver.query(Object).bulk_insert(array)
 
-            filter = {"oid": d["oid"]}
-            data = self.cast_xmatch(d)
-            xmatch, created = self.driver.session.query().get_or_create(
-                Xmatch, filter_by=filter, **data
-            )
+        # bulk insert to allwise table
+        data = result.drop(['oid', 'dist'], axis=1)
+        array = data.to_dict(orient='records')
+        self.driver.query(Allwise).bulk_insert(array)
 
+        #bulk insert to xmatch table
+        result['catid'] = 'allwise'
+        data = result[ ['oid','oid_catalog','dist','catid'] ]
+        array = data.to_dict(orient='records')
+        self.driver.query(Xmatch).bulk_insert(array)
+
+
+
+    def get_default_object_values(
+        self,
+        alert: dict,
+    ) -> dict:
+
+        data = { "oid" : alert["objectId"] }
+        data["ndethist"] = alert["candidate"]["ndethist"]
+        data["ncovhist"] = alert["candidate"]["ncovhist"]
+        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
+        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
+        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
+        data["lastmjd"] = data["firstmjd"]
+        data["ndet"] = 1
+        data["deltajd"] = 0
+        data["meanra"] = alert["candidate"]["ra"]
+        data["meandec"] = alert["candidate"]["dec"]
+        data["step_id_corr"] = "0.0.0"
+        data["corrected"] = False
+        data["stellar"] = False
+
+        return data
 
     def _produce(self, messages):
         for message in messages:
             self.producer.produce(message, key=message["objectId"])
 
     def execute(self, messages):
+
         array = []
+        object_array = []
         for m in messages:
             record = self._extract_coordinates(m)
             array.append(record)
 
+            record = self.get_default_object_values(m)
+            object_array.append(record)
+
         df = pd.DataFrame(array, columns=["oid", "ra", "dec"])
+        object_df = pd.DataFrame(object_array)
 
         # xmatch
         catalog = self.xmatch_config["CATALOG"]
@@ -167,10 +186,7 @@ class XmatchStep(GenericStep):
         )
 
         # Write in database
-
-        self.save_xmatch(result)
-        self.driver.session.commit()
+        self.save_xmatch(result,object_df)
 
         messages = self._format_result(messages, df, result)
-
         self._produce(messages)
