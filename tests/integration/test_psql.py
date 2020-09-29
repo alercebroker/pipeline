@@ -24,7 +24,6 @@ class PSQLIntegrationTest(unittest.TestCase):
         self.client = docker.from_env()
         self.container = self.client.containers.run(
             image="postgres",
-            name="test",
             environment=[
                 "POSTGRES_USER=postgres",
                 "POSTGRES_PASSWORD=password",
