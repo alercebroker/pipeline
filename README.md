@@ -1,7 +1,7 @@
 Alert Processing Framework (*apf*)
 ================================================
 
-[![Documentation Status](https://readthedocs.org/projects/apf/badge/?version=latest)](https://apf.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/apf/badge/?version=latest)](https://apf.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/alercebroker/APF/branch/master/graph/badge.svg)](https://codecov.io/gh/alercebroker/APF)
 
 
 *apf* is a framework developed to create a dockerized pipeline to
@@ -39,11 +39,31 @@ complex logic.
 
 
 <p align="center">
-  <img src="doc/source/\_static/images/apf-flow.png">
+  <img src="docs/source/_static/images/apf-flow.png">
 </p>
 
 
 This generic step greatly reduce the development of each component of
 the pipeline and make it easier to test each component separately.
 
-A quick-start guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).
+
+*apf* features
+==============
+
+- Automatic Metric Sender (KafkaMetrics)
+- Automatic Code Generation (`apf new-step <step_name>`)
+- Multiple Consumer Plugins:
+  - Kafka
+  - AVRO
+  - CSV
+  - JSON
+- Producers:
+  - Kafka
+  - CSV
+- Metrics:
+  - Kafka
+
+*apf* Quickstart
+===================
+
+A **quick-start** guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).
