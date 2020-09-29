@@ -7,6 +7,7 @@ API_URL = os.environ["API_URL"]
 
 DB_CONFIG = {
     "SQL": {
+        "ENGINE": "postgresql",
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
