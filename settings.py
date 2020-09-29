@@ -3,10 +3,9 @@
 ##################################################
 import os
 
-API_URL = os.environ["API_URL"]
-
 DB_CONFIG = {
     "SQL": {
+        "ENGINE": "postgres",
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
@@ -64,8 +63,7 @@ CONSUMER_CONFIG = {
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "smallest",
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
-    },
-    "DIRECTORY_PATH": "/home/diego/ALeRCE/pipeline/tutorial_pipeline/ztf_sample/"
+    }
 }
 
 STEP_METADATA = {
@@ -73,7 +71,7 @@ STEP_METADATA = {
     "STEP_ID": os.getenv("STEP_ID", "stamp_classification"),
     "STEP_NAME": os.getenv("STEP_NAME", "stamp_classification"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "CLASSIFIER_NAME": os.getenv("CLASSIFIER_NAME", "stamp_classifier")
+    "CLASSIFIER_NAME": os.getenv("CLASSIFIER_NAME", "stamp_classifier"),
     "CLASSIFIER_VERSION": os.getenv("CLASSIFIER_VERSION", "0.0.0")
 }
 
@@ -82,7 +80,6 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "N_RETRY": os.getenv("N_RETRY", 5),
-    "API_URL": f"http://{API_URL}:5000/get_classification",
 }
 
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)

@@ -130,3 +130,6 @@ dmypy.json
 
 # PyCharm config
 .idea/
+
+model
+model.zip
