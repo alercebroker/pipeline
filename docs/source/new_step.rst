@@ -18,13 +18,13 @@ To install *apf* run
 
 .. code-block:: bash
 
-    pip install apf
+    pip install apf_base
 
 This will install the package and a command line script.
 
 .. code-block:: bash
 
-    apf [-h] command
+    apf [--help] command
 
 2. Creating base step
 ----------------------
@@ -35,7 +35,7 @@ To create this base run
 
 .. code-block:: bash
 
-    apf newstep example_step
+    apf new-step example_step
 
 This command will create the following file tree
 
@@ -83,7 +83,7 @@ For this example we will just log the message changing the execution code to
       self.logger.info(message)
 
 
-Here :attr:`self.logger` is the default logger from :class:`apf.core.GenericStep`.
+Here :attr:`self.logger` is the default logger (`logging.Logger`) from :class:`apf.core.GenericStep`.
 
 Then we can go to `scripts/run_step.py` or `scripts/run_multiprocess.py`
 this scripts runs the step, here we can define the consumers, producers and other plugins used in the *step*.
@@ -96,15 +96,15 @@ The basic `run_step.py` comes with the following
     if "CLASS" in CONSUMER_CONFIG:
         Consumer = get_class(CONSUMER_CONFIG["CLASS"])
     else:
-        from apf.consumers import GenericConsumer as Consumer
+        from apf.consumers import KafkaConsumer as Consumer
 
     consumer = Consumer(config=CONSUMER_CONFIG)
     step = ExampleTest(consumer,config=STEP_CONFIG,level=level)
     step.start()
 
 
-The :class:`GenericConsumer` can be changed to another consumer, for example a :class:`apf.consumers.CSVConsumer`
-to read a *CSV* file or :class:`apf.consumers.KafkaConsumer` to process an Apache Kafka topic, also the default
+The :class:`apf.consumers.KafkaConsumer` can be changed to another consumer, for example a :class:`apf.consumers.CSVConsumer`
+to read a *CSV* file or :class:`apf.consumers.JSONConsumer` to process a JSON file, the default
 consumer can be overridden in the `settings.py` file.
 
 .. code-block:: python
@@ -135,11 +135,22 @@ There are 2 files needed to configure a step.
 
     #settings.py
     CONSUMER_CONFIG = {}  #Consumer configuration
-    DB_CONFIG = {}        #DB Config
     STEP_CONFIG = {
-      "DB_CONFIG": DB_CONFIG
+      "N_PROCESS" # Number of prcesses on multi-process script.
     }                     #Step Configuration
 
+  We will test our step with a CSVConsumer
+
+  .. code-block:: python
+
+    #settings.py
+    CONSUMER_CONFIG = {
+      "CLASS": "apf.consumers.CSVConsumer",
+      "FILE_PATH": "https://assets.alerce.online/tutorials/alerce-workshop-sep/pandas-sql/detections.csv",
+      "OTHER_ARGS": {
+          "index_col": "oid"
+      }
+    }
 
 2- `requirements.txt`
 
@@ -154,6 +165,9 @@ There are 2 files needed to configure a step.
 
     #requirements.txt
     apf==<version>
+
+  By default the *apf* package is already on the requirements file, so for this tutorial we will skip this step.
+
 
 
 5. Running the step locally
@@ -180,6 +194,16 @@ To run the step dockerized, first we need to build the step
 
   docker build -t example_step .
   docker run --rm --name example_step example_step
+
+
+Assuming that *apf* is already installed we can test our new step with
+
+.. code-block:: bash
+
+  python scripts/run_step.py
+
+This will show each row from the CSV file.
+
 
 .. note::
    Try using another `Consumer` configure it and run it locally to check it works. For example a `CSVConsumer` or a `JSONConsumer`

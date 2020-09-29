@@ -46,7 +46,24 @@ complex logic.
 This generic step greatly reduce the development of each component of
 the pipeline and make it easier to test each component separately.
 
-Creating a New Step
+
+*apf* features
+==============
+
+- Automatic Metric Sender (KafkaMetrics)
+- Automatic Code Generation (`apf new-step <step_name>`)
+- Multiple Consumer Plugins:
+  - Kafka
+  - AVRO
+  - CSV
+  - JSON
+- Producers:
+  - Kafka
+  - CSV
+- Metrics:
+  - Kafka
+
+*apf* Quickstart
 ===================
 
-A quick-start guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).
+A **quick-start** guide to create a new step can be found [here](https://apf.readthedocs.io/en/latest/new_step.html).

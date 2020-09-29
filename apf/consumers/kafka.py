@@ -10,8 +10,10 @@ class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
     By default :class:`KafkaConsumer` uses a manual commit strategy to avoid data loss on errors.
+
     This strategy can be disabled completly adding `"COMMIT":False` to the `STEP_CONFIG` variable
-    in the step's `settings.py` file.
+    in the step's `settings.py` file, this can be useful for step testing because Kafka doesn't save
+    the messages that already were processed.
 
     **Example:**
 
@@ -23,58 +25,66 @@ class KafkaConsumer(GenericConsumer):
             #useful for testing/debugging.
         }
 
+
     Parameters
-    ----------
+    -----------
+
     TOPICS: list
-            List of topics to consume.
 
-            **Example:**
+        List of topics to consume.
 
-            Subscribe to a fixed list of topics:
+        **Example:**
 
-            .. code-block:: python
+        Subscribe to a fixed list of topics:
 
-                #settings.py
-                CONSUMER_CONFIG = { ...
-                    "TOPICS": ["topic1", "topic2"]
-                }
+        .. code-block:: python
 
-            Using `confluent_kafka` syntax we can subscribe to a pattern
+            #settings.py
+            CONSUMER_CONFIG = { ...
+            "TOPICS": ["topic1", "topic2"]
+            }
 
-            .. code-block:: python
+        Using `confluent_kafka` syntax we can subscribe to a pattern
 
-                #settings.py
-                CONSUMER_CONFIG = { ...
-                    "TOPICS": ["^topic*"]
-                }
+        .. code-block:: python
 
-            More on pattern subscribe `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
+            #settings.py
+            CONSUMER_CONFIG = { ...
+            "TOPICS": ["^topic*"]
+            }
+
+        More on pattern subscribe `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
+
 
     TOPIC_STRATEGY: dict
-            Parameters to configure a topic strategy instead of a fixed topic list.
+        Parameters to configure a topic strategy instead of a fixed topic list.
 
-            The required parameters are:
+        The required parameters are:
 
-            - *CLASS*: `apf.core.topic_management.GenericTopicStrategy` class to be used.
-            - *PARAMS*: Parameters passed to *CLASS* object.
+        - *CLASS*: `apf.core.topic_management.GenericTopicStrategy` class to be used.
+        - *PARAMS*: Parameters passed to *CLASS* object.
 
-            **Example:**
+        **Example:**
 
-            A topic strategy that updates on 23 hours UTC every day.
+        A topic strategy that updates on 23 hours UTC every day.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                #settings.py
-                CONSUMER_CONFIG = { ...
-                    "TOPIC_STRATEGY": {
-                        "CLASS": "apf.core.topic_management.DailyTopicStrategy",
-                        "PARAMS": {
-                            "topic_format": ["ztf_%s_programid1", "ztf_%s_programid3"],
-                            "date_format": "%Y%m%d",
-                            "change_hour": 23
-                        }
-                    }
-                }
+            #settings.py
+            CONSUMER_CONFIG = { ...
+             "TOPIC_STRATEGY": {
+              "CLASS": "apf.core.topic_management"+\\
+                        "DailyTopicStrategy",
+              "PARAMS": {
+                "topic_format": [
+                    "ztf_%s_programid1",
+                    "ztf_%s_programid3"
+                    ],
+                "date_format": "%Y%m%d",
+                "change_hour": 23
+               }
+              }
+            }
 
     PARAMS: dict
         Parameters passed to :class:`confluent_kafka.Consumer`
@@ -101,7 +111,7 @@ class KafkaConsumer(GenericConsumer):
                     'ssl.keystore.password': '<keystore password>'
                 }
             }
-
+        all supported `confluent_kafka` parameters can be found `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
     """
 
     def __init__(self, config):

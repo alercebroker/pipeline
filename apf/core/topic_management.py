@@ -22,7 +22,7 @@ class Topic:
 
 
 class DailyTopicStrategy(GenericTopicStrategy):
-    """ Gives a KafkaConsumer a new topic every day ().
+    """ Gives a KafkaConsumer a new topic every day. (For more information check the :class:`apf.consumers.KafkaConsumer`)
 
     Parameters
     ----------
