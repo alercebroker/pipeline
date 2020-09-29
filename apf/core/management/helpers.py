@@ -74,7 +74,7 @@ def new_step(name):
         try:
             version = apf.__version__
         except AttributeError:
-            version = '0.0.0'
+            version = '1.0.0'
         f.write(requirements_template.render(
             apf_version=version, develop=(dev == "develop")))
 
