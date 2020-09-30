@@ -1,5 +1,4 @@
 from apf.consumers.generic import GenericConsumer
-from confluent_kafka import Consumer
 
 import fastavro
 import os
@@ -10,7 +9,7 @@ class AVROFileConsumer(GenericConsumer):
     """Consume from a AVRO Files Directory.
 
     **Example:**
-    
+
     .. code-block:: python
 
         #settings.py
@@ -38,7 +37,6 @@ class AVROFileConsumer(GenericConsumer):
         else:
             num_messages = 1
 
-        batch = 0
         msjs = []
         for file in files:
             self.logger.debug(f"Reading File: {file}")

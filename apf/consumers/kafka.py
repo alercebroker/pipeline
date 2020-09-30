@@ -53,7 +53,8 @@ class KafkaConsumer(GenericConsumer):
             "TOPICS": ["^topic*"]
             }
 
-        More on pattern subscribe `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
+        More on pattern subscribe
+        `here <http://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.Consumer.subscribe>`_
 
 
     TOPIC_STRATEGY: dict
@@ -111,7 +112,8 @@ class KafkaConsumer(GenericConsumer):
                     'ssl.keystore.password': '<keystore password>'
                 }
             }
-        all supported `confluent_kafka` parameters can be found `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
+        all supported `confluent_kafka` parameters can be found
+        `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
     """
 
     def __init__(self, config):
@@ -172,6 +174,18 @@ class KafkaConsumer(GenericConsumer):
         self.logger.info(f"Suscribing to {self.topics}")
         self.consumer.subscribe(self.topics)
 
+    def set_basic_config(self, num_messages, timeout):
+        if "consume.messages" in self.config:
+            num_messages = self.config["consume.messages"]
+        elif "NUM_MESSAGES" in self.config:
+            num_messages = self.config["NUM_MESSAGES"]
+
+        if "consume.timeout" in self.config:
+            timeout = self.config["consume.timeout"]
+        elif "TIMEOUT" in self.config:
+            timeout = self.config["TIMEOUT"]
+        return num_messages, timeout
+
     def consume(self, num_messages=1, timeout=60):
         """
         Consumes `num_messages` messages from the specified topic.
@@ -190,15 +204,8 @@ class KafkaConsumer(GenericConsumer):
             Seconds to wait when consuming messages. Raises exception if doesn't get the messages after
             specified time
         """
-        if "consume.messages" in self.config:
-            num_messages = self.config["consume.messages"]
-        elif "NUM_MESSAGES" in self.config:
-            num_messages = self.config["NUM_MESSAGES"]
+        num_messages, timeout = self.set_basic_config(num_messages, timeout)
 
-        if "consume.timeout" in self.config:
-            timeout = self.config["consume.timeout"]
-        elif "TIMEOUT" in self.config:
-            timeout = self.config["TIMEOUT"]
         messages = []
         while True:
             if self.dynamic_topic:

@@ -1,1 +1,1 @@
-{% if develop %}-e git://github.com/alercebroker/APF.git#egg=apf{% else %}apf_base=={{version}}{% endif %}
+apf_base=={{apf_version}}

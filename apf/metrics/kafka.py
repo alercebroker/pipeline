@@ -1,15 +1,16 @@
 from confluent_kafka import Producer
 import datetime
-import io
 import json
 import importlib
 import logging
 
+
 class DateTimeEncoder(json.JSONEncoder):
-        #Override the default method
-        def default(self, obj):
-            if isinstance(obj, (datetime.date, datetime.datetime)):
-                return obj.isoformat()
+    # Override the default method
+    def default(self, obj):
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+
 
 class KafkaMetricsProducer:
     def __init__(self, config, producer=None):
@@ -17,9 +18,9 @@ class KafkaMetricsProducer:
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
         if producer is not None:
-                self.producer = producer
+            self.producer = producer
         else:
-                self.producer = Producer(self.config["PARAMS"])
+            self.producer = Producer(self.config["PARAMS"])
         self.time_encoder = self.config.get("TIME_ENCODER_CLASS", DateTimeEncoder)
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
@@ -38,7 +39,6 @@ class KafkaMetricsProducer:
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f"Producing to {self.topic}")
 
-    
     def send_metrics(self, metrics):
         metrics = json.dumps(metrics, cls=self.time_encoder).encode("utf-8")
 

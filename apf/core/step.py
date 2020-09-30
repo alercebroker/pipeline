@@ -4,7 +4,6 @@ from apf.consumers import GenericConsumer
 from apf.metrics import KafkaMetricsProducer
 from apf.core import get_class
 
-import time
 import logging
 import datetime
 
@@ -113,7 +112,8 @@ class GenericStep:
             self.metrics["timestamp_sent"] = datetime.datetime.now(
                 datetime.timezone.utc
             )
-            self.metrics["execution_time"] = (self.metrics["timestamp_sent"]  - self.metrics["timestamp_received"]).total_seconds()
+            time_difference = self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
+            self.metrics["execution_time"] = time_difference.total_seconds()
             if self.partition_key in self.message:
                 self.metrics[self.partition_key] = str(self.partition_key)
             self.send_metrics(**self.metrics)

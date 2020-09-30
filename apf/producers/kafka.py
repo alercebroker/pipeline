@@ -5,8 +5,6 @@ import fastavro
 import io
 import importlib
 
-import json
-
 
 class KafkaProducer(GenericProducer):
     """Kafka Single Topic Producer.
@@ -42,11 +40,13 @@ class KafkaProducer(GenericProducer):
                 "PRODUCER_CONFIG": PRODUCER_CONFIG
             }
 
-        If multiple producers are required, the varible inside `STEP_CONFIG` can be changed to "PRODUCER1_CONFIG", "PRODUCER2_CONFIG", etc.
+        If multiple producers are required, the varible inside `STEP_CONFIG`
+        can be changed to "PRODUCER1_CONFIG", "PRODUCER2_CONFIG", etc.
 
     TOPIC_STRATEGY: dict
 
-        Using a topic strategy instead of a fixed topic. Similar to the consumers topic strategy, the required parameters are:
+        Using a topic strategy instead of a fixed topic.
+        Similar to the consumers topic strategy, the required parameters are:
 
         - *CLASS*: `apf.core.topic_management.GenericTopicStrategy` class to be used.
         - *PARAMS*: Parameters passed to *CLASS* object.
@@ -74,7 +74,8 @@ class KafkaProducer(GenericProducer):
             }
 
     SCHEMA: dict
-        AVRO Output Schema `(AVRO Schema Definition) <https://avro.apache.org/docs/current/gettingstartedpython.html#Defining+a+schema>`_
+        AVRO Output Schema
+        `(AVRO Schema Definition) <https://avro.apache.org/docs/current/gettingstartedpython.html#Defining+a+schema>`_
 
         **Example:**
 
@@ -135,7 +136,6 @@ class KafkaProducer(GenericProducer):
                 self.logger.info("Calling poll to empty queue and producing again")
                 self.producer.poll(10)
                 self.producer.produce(topic, value=message, **kwargs)
-
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
