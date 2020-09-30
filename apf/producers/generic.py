@@ -1,16 +1,17 @@
-from abc import abstractmethod,ABCMeta
+from abc import ABCMeta
 import logging
+
 
 class GenericProducer():
     """Generic Producer for Alert Processing Framework."""
     __metaclass__ = ABCMeta
 
-    def __init__(self,config=None):
+    def __init__(self, config=None):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
 
-    def produce(self,message = None, **kwargs):
+    def produce(self, message=None, **kwargs):
         """Send a message after processing.
 
         Parameters
