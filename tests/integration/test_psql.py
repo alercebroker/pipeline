@@ -15,6 +15,7 @@ from earlyclassifier.step import (
 import earlyclassifier
 import os
 from settings import DB_CONFIG
+import random
 
 FILE_PATH = os.path.dirname(__file__)
 
@@ -22,6 +23,8 @@ FILE_PATH = os.path.dirname(__file__)
 class PSQLIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.client = docker.from_env()
+        port = random.randint(5430,5450)
+        DB_CONFIG["SQL"]["PORT"] = port
         self.container = self.client.containers.run(
             image="postgres",
             environment=[
@@ -30,7 +33,7 @@ class PSQLIntegrationTest(unittest.TestCase):
                 "POSTGRES_DB=test",
             ],
             detach=True,
-            ports={"5432/tcp": 5432},
+            ports={"5432/tcp": port},
         )
         time.sleep(5)
         subprocess.run(
