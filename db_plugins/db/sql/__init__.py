@@ -18,10 +18,6 @@ def settings_map(config):
 
 class SQLQuery(BaseQuery, Query):
 
-    def __init__(self, base=None, **kwargs):
-        super().__init__(**kwargs)
-        self.Base = base or Base
-
     def check_exists(self, model=None, filter_by=None):
         """
         Check if record exists in database.
@@ -113,8 +109,9 @@ class SQLQuery(BaseQuery, Query):
             return
 
         model = self._entities[0].mapper.class_ if self._entities else model
-        table = self.Base.metadata.tables[ model.__tablename__]
+        table = model.__table__
         insert_stmt = insert(table)
+        engine = self.session.get_bind()
         columns = table.primary_key.columns
         names = [ c.name for c in columns.values() ]
         do_nothing_stmt = insert_stmt.on_conflict_do_nothing(
