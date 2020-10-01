@@ -17,6 +17,11 @@ def settings_map(config):
     return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
 class SQLQuery(BaseQuery, Query):
+
+    def __init__(self, base=None, **kwargs):
+        super().__init__(**kwargs)
+        self.Base = base or Base
+
     def check_exists(self, model=None, filter_by=None):
         """
         Check if record exists in database.
@@ -108,10 +113,7 @@ class SQLQuery(BaseQuery, Query):
             return
 
         model = self._entities[0].mapper.class_ if self._entities else model
-        engine = self.session.get_bind()
-        meta_data = MetaData()
-        meta_data.reflect(bind=engine)
-        table = meta_data.tables[ model.__tablename__]
+        table = self.Base.metadata.tables[ model.__tablename__]
         insert_stmt = insert(table)
         columns = table.primary_key.columns
         names = [ c.name for c in columns.values() ]
