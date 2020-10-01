@@ -43,7 +43,11 @@ class SQLConnectionTest(unittest.TestCase):
         pass
 
     def test_connect_scoped(self):
-        pass
+        session_options = self.session_options
+        session_options["autoflush"] = False
+        self.db.connect(self.config, session_options=session_options, use_scoped=True)
+        self.assertIsNotNone(self.db.engine)
+        self.assertIsNotNone(self.db.session)
 
     def test_create_session(self):
         engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
@@ -53,7 +57,14 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertIsNotNone(self.db.session)
 
     def test_create_scoped_session(self):
-        pass
+        engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
+        session_options = self.session_options
+        session_options["autoflush"] = False
+        Session = sessionmaker(bind=engine, **session_options)
+        self.db.Session = Session
+        self.db.Base = Base
+        self.db.create_scoped_session()
+        self.assertIsNotNone(self.db.session)
 
     def test_create_db(self):
         engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
@@ -67,7 +78,8 @@ class SQLConnectionTest(unittest.TestCase):
         engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
         self.db.engine = engine
         self.db.Base = Base
-        self.db.create_db()
+        self.db.Base.metadata.create_all(bind=self.db.engine)
+        self.db.drop_db()
         inspector = Inspector.from_engine(engine)
         self.assertEqual(len(inspector.get_table_names()), 0)
 
