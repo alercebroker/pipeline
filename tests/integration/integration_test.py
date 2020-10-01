@@ -5,7 +5,7 @@ from db_plugins.db.sql import (
     SQLQuery,
     Pagination,
     create_engine,
-    Base
+    Base,
 )
 from sqlalchemy.engine.reflection import Inspector
 import unittest
@@ -30,10 +30,9 @@ class SQLConnectionTest(unittest.TestCase):
         }
         self.db = SQLConnection()
 
-    @classmethod
-    def tearDownClass(self):
-        self.db.drop_db()
-        self.db.session.close()
+    def tearDown(self):
+        if self.db.Base and self.db.engine:
+            self.Base.metadata.drop_all(bind=self.db.engine)
 
     def test_connect_not_scoped(self, mock_create_session):
         pass
