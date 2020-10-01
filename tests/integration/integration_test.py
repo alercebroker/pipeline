@@ -34,10 +34,10 @@ class SQLConnectionTest(unittest.TestCase):
         if self.db.Base and self.db.engine:
             self.Base.metadata.drop_all(bind=self.db.engine)
 
-    def test_connect_not_scoped(self, mock_create_session):
+    def test_connect_not_scoped(self):
         pass
 
-    def test_connect_scoped(self, mock_create_session):
+    def test_connect_scoped(self):
         pass
 
     def test_create_session(self):
