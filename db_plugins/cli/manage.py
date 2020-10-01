@@ -9,8 +9,8 @@ MANAGE_PATH = os.path.dirname(os.path.abspath(__file__))
 MIGRATIONS_PATH = os.path.abspath(os.path.join(MANAGE_PATH, "../db/sql/"))
 
 
-def init_sql(config):
-    db = SQLConnection()
+def init_sql(config, db=None):
+    db = db or SQLConnection()
     db.connect(config=config)
     db.create_db()
     db.session.close()

@@ -9,7 +9,7 @@ Database Plugins for ALeRCE documentation
 *db_plugins* is an ORM style library created to interact with different databases. The main feature of these plugins is to provide an interface for database querying, reducing the amount of code and helping to decouple components.
 
 Installing *db_plugins*
-====================
+=======================
 
 *db_plugins* installation can be done with *pip*. You can clone the repository and then
 
@@ -17,11 +17,11 @@ Installing *db_plugins*
 
       pip install .
 
-or you can install it directly from github
+or you can install it from Python Package Index
 
 .. code-block:: bash
 
-    pip install git+https://github.com/alercebroker/db-plugins.git
+    pip install db-plugins
 
 Documentation
 =============

@@ -8,7 +8,7 @@ Database Plugins for ALeRCE documentation
 *db_plugins* is an ORM style library created to interact with different databases. The main feature of these plugins is to provide an interface for database querying, reducing the amount of code and helping to decouple components.
 
 Installing *db_plugins*
-====================
+=======================
 
 *db_plugins* installation can be done with *pip*. You can clone the repository and then
 
@@ -239,6 +239,6 @@ we use ``session.add`` or ``session.add_all`` methods
 
 
 DatabaseConnection documentation
-+++++++++++++++++
+++++++++++++++++++++++++++++++++
 
 

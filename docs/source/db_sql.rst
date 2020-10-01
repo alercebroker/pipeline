@@ -1,9 +1,13 @@
 Initialize database
 ++++++++++++++++++++
 Before you connect to your database, make sure you initialize it first.
-To do that execute the following command from your step root folder
+To do that execute the following command from a directory containing a ``settings.py`` file.
 
-``dbp initdb``
+You can also privide the settings directory with ``--settings_path``.
+
+.. code:: bash
+
+   dbp initdb
 
 When you run this command with an empty database it will create the
 following schema:
@@ -51,21 +55,26 @@ Set database Connection
 
 .. code:: ipython3
 
-    from db_plugins.db import SQLDatabase
-    from db_plugins.db.sql.models import *
+   from db_plugins.db.sql import SQLConnection
+   from db_plugins.db.sql.models import *
 
 .. code:: ipython3
 
     db_config = {
-        "SQL": "sqlite:///:memory:"
+        "SQL": {
+          "ENGINE": "postgresql",
+          "HOST": "host",
+          "USER": "username",
+          "PASSWORD": "pwd",
+          "PORT": 5432, # postgresql tipically runs on port 5432. Notice that we use an int here.
+          "DB_NAME": "database",
+        }
     }
-
-The URL used here follows this format: `dialect[+driver]://user:password@host/dbname[?key=value..]`
 
 .. code:: ipython3
 
-    db = SQLDatabase()
-    db.connect(config=db_config)
+    db = SQLConnection()
+    db.connect(config=db_config["SQL"])
 
 The above code will create a connection to the database wich
 we will later use to store objects.
@@ -75,91 +84,71 @@ Create model instances
 
 Use get_or_create function to get an instance of a model. The instance
 will be an object from the database if it already exists or it will
-create a new instance. **This object is not yet added to the database**
-
-.. code:: python
-
-   instance, created = db.session.query().get_or_create(Model,args)
+create a new instance.
 
 .. code:: ipython3
 
-    model_args = {
-        "oid":"ZTFid",
-        "nobs":1,
-        "lastmjd":1,
-        "meanra":1,
-        "meandec":1,
-        "sigmara":1,
-        "sigmadec":1,
-        "deltajd":1,
-        "firstmjd":1
-    }
+    oid = "ZTF_OID"
+    model_args = {}
+    model_args["ndethist"] = 0
+    model_args["ncovhist"] = 0
+    model_args["mjdstarthist"] = 0.0
+    model_args["mjdendhist"] = 0.0
+    model_args["firstmjd"] = 0.0
+    model_args["lastmjd"] = 0.0
+    model_args["ndet"] = 0
+    model_args["deltajd"] = 0.0
+    model_args["meanra"] = 0.0
+    model_args["meandec"] = 0.0
+    model_args["step_id_corr"] = "v1.0.0"
+    model_args["corrected"] = False
+    model_args["stellar"] = False
 
 .. code:: ipython3
 
-    obj, created = db.session.query().get_or_create(AstroObject, **model_args)
+    obj, created = db.query(Object).get_or_create(filter_by={"oid": oid}, **model_args)
     print(obj, "created: " + str(created))
 
 ``<AstroObject(oid='ZTFid')> created: False``
 
+In the above example we use the object id as a filter since it is the primary key of the Object model. Notice that ``get_or_create`` can receive the model as a parameter or it can inherit it from the ``query`` parameter.
 
-Add related models
-++++++++++++++++++
+The **important** part is that ``model_args`` should contain all attributes of the table.
 
-Lets say for example that we want to create a class that belongs to a
-taxonomy.
-
-.. code:: ipython3
-
-    class_, created = db.session.query().get_or_create(Class, name="Super Nova", acronym="SN")
-    class_
-
-``<Class(name='Super Nova', acronym='SN')>``
-
-
-
-.. code:: ipython3
-
-    taxonomy, created = db.session.query().get_or_create(Taxonomy, name="Example")
-    print(taxonomy, "created: " + str(created))
-    class_.taxonomies.append(taxonomy)
-
-``<Taxonomy(name='Example')> created: False``
-
-.. code:: ipython3
-
-    class_.taxonomies
-
-``[<Taxonomy(name='Example')>, <Taxonomy(name='Example')>]``
-
-
-.. code:: ipython3
-
-    taxonomy.classes
-
-``[<Class(name='Super Nova', acronym='SN')>]``
-
-
-
-As you can see, adding a model works both sides.
-
-When we add a taxonomy to a class it also means that a class is added to
-the taxonomy.
-
-Add objects to the database
+Add multiple objects to the database
 ++++++++++++++++++++++++++++
 
-All our instanced objects are not yet added to the database. To do that
-we use ``session.add`` or ``session.add_all`` methods
+If you need to insert multiple objects at once, there is a faster way than using ``get_or_create`` multiple times. You can use the ``bulk_insert`` method.
+
+It will take a list of dictionaries where each dictionary has all the attributes for a table as keys.
 
 .. code:: ipython3
 
-    db.session.add(class_)
-    db.session.commit()
+   db.query(Detection).bulk_insert(prv_detections)
 
+
+Where prv_detections is a list of dict where each dict contains information to populate Detection table.
+
+Update instances
+++++++++++++++++
+
+There is a particularity when you make updates to instances. Let's say that we have an object instance and we want to change its lastmjd.
+
+.. code:: ipython3
+
+   obj = db.query(Object).get_or_create(filter_by={"oid": "ZTF123"})
+
+   obj = db.query().update(obj, {"lastmjd": 12345})
+
+After updating the instance you have to commit the changes. This is done in the following way:
+
+.. code:: python
+
+   db.session.commit()
 
 DatabaseConnection documentation
-+++++++++++++++++
+++++++++++++++++++++++++++++++++
 
-.. autoclass:: db_plugins.db SQLDatabase
+.. autoclass:: db_plugins.db.sql.SQLConnection
+    :members:
 

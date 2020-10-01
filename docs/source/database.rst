@@ -1,13 +1,17 @@
-Database
+Database Connection
 =============
-ALeRCE Database module is a tool that will help you connect services like APIs and pipeline steps to a database. It works by using models that provide main operations in an abstract environment, so that you don't have to code specific database queries and instead use python classes to interact with the database.
+*db_plugins* is an ORM style library created to interact with different databases. The main feature of these plugins is to provide an interface for database querying, reducing the amount of code and helping to decouple components.
 
 
 1. Plugins
 ------------
 ALeRCE integrates with databases through plugins. Each plugin is supposed to provide functionality for a specific database engine.
 
-The design concept is that there are generic models that contain attributes and some methods but these are implemented in each plugin individually. For example, a PostgreSQL database will have underlying differences with a non relational database on how queries are made or on how objects are inserted, but on the higher level layer we use models with same functions so that it behaves in the same way no matter what engine is being used. This also provides the option to change database engines without having to change the application structure too much.
+The design concept is that there are multiple database connections but all of them share the same interface so that connecting to any provided engine is done in a similar way.
+
+This provides a way to connect and query different database engines using the same methods and classes, for example a database connection `db` has a `query` method that returns a `BaseQuery` object that has methods for inserting, updating or getting paginated results from a SQL database, but it also works the same way for a Mongodb database.
+
+This also provides the option to change database engines without having to change the application structure too much.
 
 2. Database Initialization
 --------------------------
@@ -19,7 +23,12 @@ Here is and example on the params used with the SQL plugin:
 
     DB_CONFIG: {
         "SQL": {
-            "SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"
+          "ENGINE": "postgresql",
+          "HOST": "host",
+          "USER": "username",
+          "PASSWORD": "pwd",
+          "PORT": 5432, # postgresql tipically runs on port 5432. Notice that we use an int here.
+          "DB_NAME": "database",
         }
     }
 

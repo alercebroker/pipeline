@@ -10,11 +10,14 @@ MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DB_NAME", "ENGINE"}
 Base = declarative_base()
 from db_plugins.db.sql import models
 
+
 def satisfy_keys(config_keys):
     return MAP_KEYS.difference(config_keys)
 
+
 def settings_map(config):
     return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+
 
 class SQLQuery(BaseQuery, Query):
     def check_exists(self, model=None, filter_by=None):
@@ -111,16 +114,14 @@ class SQLQuery(BaseQuery, Query):
         engine = self.session.get_bind()
         meta_data = MetaData()
         meta_data.reflect(bind=engine)
-        table = meta_data.tables[ model.__tablename__]
+        table = meta_data.tables[model.__tablename__]
         insert_stmt = insert(table)
         columns = table.primary_key.columns
-        names = [ c.name for c in columns.values() ]
-        do_nothing_stmt = insert_stmt.on_conflict_do_nothing(
-	    	index_elements=names
-	    )
-        engine.execute(do_nothing_stmt,objects)
+        names = [c.name for c in columns.values()]
+        do_nothing_stmt = insert_stmt.on_conflict_do_nothing(index_elements=names)
+        engine.execute(do_nothing_stmt, objects)
 
-    def paginate(self, page=1, per_page=10, count=True,  max_results = 50000):
+    def paginate(self, page=1, per_page=10, count=True, max_results=50000):
         """
         Returns pagination object with the results
 
@@ -142,7 +143,7 @@ class SQLQuery(BaseQuery, Query):
         if not count:
             total = None
         else:
-            total = self.order_by(None).limit(max_results+1).count()
+            total = self.order_by(None).limit(max_results + 1).count()
         return Pagination(self, page, per_page, total, items)
 
     def find_one(self, model=None, filter_by={}):
@@ -188,24 +189,56 @@ class SQLQuery(BaseQuery, Query):
 
 
 class SQLConnection(DatabaseConnection):
-    def __init__(self):
-        self.config = None
-        self.engine = None
-        self.Base = None
-        self.Session = None
-        self.session = None
+    def __init__(self, config=None, engine=None, Base=None, Session=None, session=None):
+        self.config = config
+        self.engine = engine
+        self.Base = Base
+        self.Session = Session
+        self.session = session
 
     def connect(
         self, config, base=None, session_options=None, use_scoped=False, scope_func=None
     ):
+        """
+        Establishes connection to a database and initializes a session.
+
+        Parameters
+        ----------
+        config : dict
+            Database configuration. For example:
+
+            .. code-block:: python
+
+                "SQL": {
+                    "ENGINE": "postgresql",
+                    "HOST": "host",
+                    "USER": "username",
+                    "PASSWORD": "pwd",
+                    "PORT": 5432, # postgresql tipically runs on port 5432. Notice that we use an int here.
+                    "DB_NAME": "database",
+                }
+        base : sqlalchemy.ext.declarative.declarative_base()
+            Base class used by sqlalchemy to create tables
+        session_options : dict
+            Options passed to sessionmaker
+        use_scoped : Boolean
+            Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.
+            Read more about scoped sessions at: `<https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped>`_
+        scope_func : function
+            A function which serves as the scope for the session. The session will live only in the scope of that function.
+        """
+
         self.config = config
         if len(satisfy_keys(set(config.keys()))) == 0:
             self.config["SQLALCHEMY_DATABASE_URL"] = settings_map(self.config)
-        self.engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
+        self.engine = self.engine or create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
         self.Base = base or Base
         session_options = session_options or {}
         session_options["query_cls"] = SQLQuery
-        self.Session = sessionmaker(bind=self.engine, **session_options)
+        if self.Session is not None:
+            self.Session = self.Session
+        else:
+            self.Session = sessionmaker(bind=self.engine, **session_options)
         if not use_scoped:
             self.create_session()
         else:
@@ -225,4 +258,23 @@ class SQLConnection(DatabaseConnection):
         self.Base.metadata.drop_all(bind=self.engine)
 
     def query(self, *args):
+        """
+        Creates a BaseQuery object that allows you to query the database using the SQLAlchemy API,
+        or using the BaseQuery methods like ``get_or_create``
+
+        Parameters
+        ----------
+        args : tuple
+            Args you can pass to SQLALchemy Query class, for example a model.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            # Using SQLAlchemy API
+            db_conn.query(Probability).all()
+            # Using db-plugins
+            db_conn.query(Probability).find(filter_by=**filters)
+            db_conn.query().get_or_create(model=Object, filter_by=**filters)
+        """
         return self.session.query(*args)
