@@ -88,8 +88,8 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertEqual(len(inspector.get_table_names()), 0)
 
     def test_query(self):
-        query = self.db.query()
-        print(query)
+        query = self.db.query(models.Object)
+        self.assertIsInstance(query, SQLQuery)
 
 
 class SQLQueryTest(unittest.TestCase):
