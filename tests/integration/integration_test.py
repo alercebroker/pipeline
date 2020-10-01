@@ -50,7 +50,7 @@ class SQLConnectionTest(unittest.TestCase):
         Session = sessionmaker(bind=engine, **self.session_options)
         self.db.Session = Session
         self.db.create_session()
-        self.assertIsInstance(self.db.session, Session)
+        self.assertIsNotNone(self.db.session)
 
     def test_create_scoped_session(self):
         pass
