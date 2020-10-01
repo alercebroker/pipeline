@@ -40,7 +40,9 @@ class SQLConnectionTest(unittest.TestCase):
             self.db.Base.metadata.drop_all(bind=self.db.engine)
 
     def test_connect_not_scoped(self):
-        pass
+        self.db.connect(self.config, session_options=session_options, use_scoped=False)
+        self.assertIsNotNone(self.db.engine)
+        self.assertIsNotNone(self.db.session)
 
     def test_connect_scoped(self):
         session_options = self.session_options
@@ -84,7 +86,8 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertEqual(len(inspector.get_table_names()), 0)
 
     def test_query(self):
-        pass
+        query = self.db.query()
+        print(query)
 
 
 class SQLQueryTest(unittest.TestCase):
