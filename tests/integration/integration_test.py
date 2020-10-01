@@ -85,8 +85,7 @@ class SQLConnectionTest(unittest.TestCase):
         self.db.Base.metadata.create_all(bind=self.db.engine)
         self.db.drop_db()
         inspector = Inspector.from_engine(engine)
-        print(inspector.get_table_names())
-        self.assertEqual(len(inspector.get_table_names()), 1)
+        self.assertEqual(len(inspector.get_table_names()), 0)
 
     def test_query(self):
         query = self.db.query(models.Object)
