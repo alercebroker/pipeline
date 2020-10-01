@@ -6,6 +6,7 @@ from db_plugins.db.sql import (
     Pagination,
     create_engine,
     Base,
+    sessionmaker,
 )
 from sqlalchemy.engine.reflection import Inspector
 import unittest
@@ -28,6 +29,10 @@ class SQLConnectionTest(unittest.TestCase):
         self.config = {
             "SQLALCHEMY_DATABASE_URL": f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
         }
+        self.session_options = {
+            "autocommit": False,
+            "autoflush": True,
+        }
         self.db = SQLConnection()
 
     def tearDown(self):
@@ -41,7 +46,11 @@ class SQLConnectionTest(unittest.TestCase):
         pass
 
     def test_create_session(self):
-        pass
+        engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
+        Session = sessionmaker(bind=engine, **self.session_options)
+        self.db.Session = Session
+        self.db.create_session()
+        self.assertIsInstance(self.db.session, Session)
 
     def test_create_scoped_session(self):
         pass
@@ -52,10 +61,15 @@ class SQLConnectionTest(unittest.TestCase):
         self.db.Base = Base
         self.db.create_db()
         inspector = Inspector.from_engine(engine)
-        print(inspector.get_table_names())
+        self.assertGreater(len(inspector.get_table_names()), 0)
 
     def test_drop_db(self):
-        pass
+        engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
+        self.db.engine = engine
+        self.db.Base = Base
+        self.db.create_db()
+        inspector = Inspector.from_engine(engine)
+        self.assertEqual(len(inspector.get_table_names()), 0)
 
     def test_query(self):
         pass
