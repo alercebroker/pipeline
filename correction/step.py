@@ -164,42 +164,34 @@ class Correction(GenericStep):
         self.driver.session.commit()
 
     def get_object(self, alert: dict) -> Object:
-
         data = self.get_object_values(alert)
         filter_by = {"oid": alert["objectId"]}
         return self.driver.query().get_or_create(Object, filter_by=filter_by, **data)
 
-    def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
-        data = {
-            "oid": object_id,
-            "mjd": prv_candidate["mjd"],
-            "diffmaglim": prv_candidate["diffmaglim"],
-            "fid": prv_candidate["fid"],
-        }
-        return data
 
     def cast_detection(self, candidate: dict) -> dict:
         return {key: candidate[key] for key in DET_KEYS if key in candidate.keys()}
+
+    def get_detection(self, candidate: dict) -> Detection:
+        filters = {"candid": candidate["candid"], "oid": candidate["oid"]}
+        data = self.cast_detection(candidate)
+        detection, created = self.driver.query().get_or_create(
+        Detection, filter_by=filters, **data
+        )
+        dataquality = self.add_dataquality(candidate)
+        return detection, created
 
     def add_dataquality(self, candidate: dict, create=True):
         candidate_params = {}
         for key in DATAQUALITY_KEYS:
             candidate_params[key] = candidate.get(key)
-        filters = {"candid": candidate["candid"]}
+        filters = {"oid": candidate["oid"], "candid": candidate["candid"]}
         data = {**candidate_params}
         if create:
             self.driver.query().get_or_create(Dataquality, filter_by=filters, **data)
         else:
             return {**filters, **data}
 
-    def get_detection(self, candidate: dict) -> Detection:
-        filters = {"candid": candidate["candid"], "oid": candidate["oid"]}
-        data = self.cast_detection(candidate)
-        detection, created = self.driver.query().get_or_create(
-            Detection, filter_by=filters, **data
-        )
-        dataquality = self.add_dataquality(candidate)
-        return detection, created
 
     def get_ps1(self, message: dict) -> Ps1_ztf:
         message_params = {}
@@ -296,14 +288,14 @@ class Correction(GenericStep):
         data["magmedian"] = result.magpsf_median
         data["magmax"] = result.magpsf_max
         data["magmin"] = result.magpsf_min
-        data["magsigma"] = result.sigmapsf  # I dont know this one
+        data["magsigma"] = result.sigmapsf
         data["maglast"] = result.magpsf_last
         data["magfirst"] = result.magpsf_first
         data["magmean_corr"] = result.magpsf_corr_mean
         data["magmedian_corr"] = result.magpsf_corr_median
         data["magmax_corr"] = result.magpsf_corr_max
         data["magmin_corr"] = result.magpsf_corr_min
-        data["magsigma_corr"] = result.sigmapsf_corr  # This doesn't exists
+        data["magsigma_corr"] = result.sigmapsf_corr
         data["maglast_corr"] = result.magpsf_corr_last
         data["magfirst_corr"] = result.magpsf_corr_first
         data["firstmjd"] = result.first_mjd
@@ -452,6 +444,25 @@ class Correction(GenericStep):
         exists = result is not None
         return exists
 
+    def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
+        data = {
+            "oid": object_id,
+            "mjd": prv_candidate["mjd"],
+            "diffmaglim": prv_candidate["diffmaglim"],
+            "fid": prv_candidate["fid"],
+        }
+        return data
+
+
+    def insert_prv_detections(self,prv_detections):
+        self.driver.query().bulk_insert(prv_detections, Detection)
+
+    def insert_prv_data_quality(self,prv_dataquality):
+        self.driver.query().bulk_insert(prv_dataquality, Dataquality)
+
+    def insert_prv_non_detections(self,prv_non_detections):
+        self.driver.query().bulk_insert(prv_non_detections, NonDetection)
+
     def process_prv_candidates(
         self, prv_candidates: dict, obj: Object, parent_candid: str, light_curve: dict
     ) -> None:
@@ -477,18 +488,19 @@ class Correction(GenericStep):
                     prv, light_curve["detections"], ["candid"]
                 ) and not self.check_candid_in_db(obj.oid, prv["candid"]):
                     self.do_correction(prv, obj, inplace=True)
-                    dataquality = self.add_dataquality(prv, create=False)
-                    dataquality["oid"] = obj.oid
                     prv["oid"] = obj.oid
                     prv["parent_candid"] = parent_candid
+                    dataquality = self.add_dataquality(prv, create=False)
+                    dataquality["oid"] = obj.oid
                     light_curve["detections"].append(prv)
                     prv_detections.append(prv)
                     prv_dataquality.append(dataquality)
 
         # Insert data to database
-        self.driver.query().bulk_insert(prv_detections, Detection)
-        self.driver.query().bulk_insert(prv_dataquality, Dataquality)
-        self.driver.query().bulk_insert(prv_non_detections, NonDetection)
+        # Separated by type for code debugging
+        self.insert_prv_detections(prv_detections)
+        self.insert_prv_data_quality(prv_dataquality)
+        self.insert_prv_non_detections(prv_non_detections)
 
     def process_lightcurve(self, alert: dict, obj: Object) -> dict:
         # Setting identifier of object to detection
