@@ -1,13 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Tests
+name: UnitTests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ integration_tests ]
   pull_request:
-    branches: [ master ]
+    branches: [ integration_tests ]
 
 jobs:
   build:
@@ -23,13 +23,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install black pytest coverage
+        pip install black pytest coverage alchemy_mock
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Black Code Formatter
       uses: lgeiger/black-action@v1.0.1
     - name: Test with pytest
       run: |
-        coverage run --source db_plugins --omit db_plugins/db/sql/serializers.py -m pytest
+        coverage run --source db_plugins --omit db_plugins/db/sql/serializers.py -m pytest tests/unittest/
         coverage xml
     - name: Codecov
       uses: codecov/codecov-action@v1

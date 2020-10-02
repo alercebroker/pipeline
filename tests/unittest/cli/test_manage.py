@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from db_plugins.cli import manage
 from click.testing import CliRunner
 import os
@@ -11,11 +12,21 @@ class TestManage(unittest.TestCase):
     runner = CliRunner()
     settings_path = "."
 
-    def test_initdb(self):
+    @mock.patch("db_plugins.db.sql.SQLConnection", autospec=True)
+    @mock.patch("os.makedirs")
+    def test_init_sql(self, mock_makedirs, mock_connection):
         alembic.config.main = MagicMock()
+        session = mock.MagicMock()
+        mock_connection.session = session
+        manage.init_sql({"SQLALCHEMY_DATABASE_URL": ""}, db=mock_connection)
+        mock_connection.connect.assert_called()
+        alembic.config.main.assert_called()
+
+    @mock.patch("db_plugins.cli.manage.init_sql")
+    def test_initdb(self, mock_init_sql):
         result = self.runner.invoke(manage.initdb)
         assert result.exit_code == 0
-        alembic.config.main.assert_called()
+        mock_init_sql.assert_called()
         assert (
             "Database created with credentials from {}".format(self.settings_path)
             in result.output
