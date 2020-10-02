@@ -34,6 +34,7 @@ jobs:
         unzip model.zip -d model
         pip install pytest coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f model/requirements.txt ]; then pip install -r model/requirements.txt; fi
     - name: Test with pytest
       run: |
         coverage run --source earlyclassifier -m pytest -x -s tests/unittest/

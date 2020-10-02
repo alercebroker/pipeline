@@ -53,6 +53,7 @@ jobs:
           unzip model.zip -d model
           pip install pytest 
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f model/requirements.txt ]; then pip install -r model/requirements.txt; fi
       - name: Test with pytest
         run: |
           python -m pytest -x -s tests/integration/
