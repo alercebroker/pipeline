@@ -5,9 +5,9 @@ name: UnitTests
 
 on:
   push:
-    branches: [ integration_tests ]
+    branches: [ main ]
   pull_request:
-    branches: [ integration_tests ]
+    branches: [ main ]
 
 jobs:
   build:
