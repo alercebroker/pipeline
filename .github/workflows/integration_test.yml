@@ -3,10 +3,10 @@ name: IntegrationTest
 on:
   push:
     branches:
-      - integration_tests
+      - main
   pull_request:
     branches:
-      - integration_tests
+      - main
 
 jobs:
   build:
