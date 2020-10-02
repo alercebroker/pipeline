@@ -3,11 +3,19 @@ import io
 import pandas as pd
 from apf.core.step import GenericStep
 import sys
+import os
 import requests
 import operator
 import datetime
 from db_plugins.db.sql.models import Object, Probability, Step
 from db_plugins.db.sql import SQLConnection
+
+
+DIRNAME = os.path.dirname(__file__)
+MODEL = os.path.join(DIRNAME, "../model")
+sys.path.append(MODEL)
+
+from deployment import StampClassifier
 
 
 class EarlyClassifier(GenericStep):
@@ -37,6 +45,7 @@ class EarlyClassifier(GenericStep):
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
         self.requests_session = request_session or requests.Session()
+        self.model = StampClassifier()
 
     def insert_step_metadata(self):
         self.db.query(Step).get_or_create(
@@ -47,56 +56,31 @@ class EarlyClassifier(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def execute(self, message):
-        """
-        Processes a message. It uses the model predict method to get probabilities
-        and then inserts them in the database.
 
-        Parameters
-        ----------
-        message : dict
-            A dictionary containing alert information with the stamps for
-            science, template and difference
-        """
+    def get_probabilities(self,message):
         oid = message["objectId"]
-
-        metadata_stream = io.StringIO()
-        metadata = message["candidate"]
-        metadata_df = pd.Series(metadata)
-        metadata_df["oid"] = oid
-        metadata_df = metadata_df.to_frame().transpose()
-        metadata_df.to_csv(metadata_stream, index=False)
-
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
-        files = {
-            "cutoutScience": io.BytesIO(science),
-            "cutoutTemplate": io.BytesIO(template),
-            "cutoutDifference": io.BytesIO(difference),
-            "metadata": metadata_stream.getvalue(),
-        }
-        work = False
-        retries = 0
-        while not work and retries < self.config["N_RETRY"]:
-            try:
-                resp = self.requests_session.post(self.config["API_URL"], files=files)
-                work = True
-            except requests.exceptions.RequestException as e:
-                self.logger.warning(
-                    "Connection failed ({}), retrying...".format(str(e))
-                )
-                retries += 1
+        df = pd.DataFrame([{
+            "science": science,
+            "template": template,
+            "diff": difference,
+            **message["candidate"]
+        }], index = [oid])
+        try:
+            probabilities = self.model.execute(df).iloc[0].to_dict()
+        except Exception as e:
+            self.logger.critical(str(e))
+            probabilities = None
+        return probabilities
 
-        if not work:
-            self.logger.error("Connection does not respond")
-            sys.exit("Connection error")
-
-        probabilities = resp.json()
-
-        if probabilities["status"] == "SUCCESS":
+    def execute(self, message):
+        oid = message["objectId"]
+        probabilities = self.get_probabilities(message)
+        if probabilities is not None:
             object_data = self.get_default_object_values(message)
-            self.insert_db(probabilities["probabilities"], oid, object_data)
+            self.insert_db(probabilities, oid, object_data)
 
     def insert_db(self, probabilities, oid, object_data):
         """
