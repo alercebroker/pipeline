@@ -42,6 +42,12 @@ class EarlyClassifier(GenericStep):
         super().__init__(consumer, config=config, level=level)
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
+        if not step_args.get("test_mode", False):
+            self.insert_step_metadata()
+        self.requests_session = request_session or requests.Session()
+        self.model = StampClassifier()
+
+    def insert_step_metadata(self):
         self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -49,7 +55,7 @@ class EarlyClassifier(GenericStep):
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=datetime.datetime.now(),
         )
-        self.model = StampClassifier()
+
 
     def get_probabilities(self,message):
         oid = message["objectId"]
@@ -77,6 +83,28 @@ class EarlyClassifier(GenericStep):
             self.insert_db(probabilities, oid, object_data)
 
     def insert_db(self, probabilities, oid, object_data):
+        """
+        Inserts probabilities returned by the stam classifier into the database.
+
+        Parameters
+        ----------
+        probabilities : dict
+            Should contain the probability name as key and probability as value.
+            Something like:
+            {
+                "AGN": 1,
+                "SN": 2,
+                "bogus": 3,
+                "asteroid": 4,
+                "VS": 5,
+            }
+        oid : str
+            Object ID of the object that is being classified. It is used to search
+            the database for a specific object and get its instance
+        object_data : dict
+            Values to use if the object needs to be created. Keys in this dictionary
+            should have every attribute of the object table other than `oid`
+        """
         probabilities = self.get_ranking(probabilities)
         obj, _ = self.db.query(Object).get_or_create(
             filter_by={"oid": oid}, **object_data
@@ -103,6 +131,35 @@ class EarlyClassifier(GenericStep):
                 break
 
     def get_ranking(self, probabilities):
+        """
+        Transforms the probabilities dictionary returned by the model to a dictionary
+        that has the probability and ranking for each class.
+
+        Parameters
+        ----------
+        probabilities : dict
+            Something like:
+            {
+                "AGN": 1,
+                "SN": 2,
+                "bogus": 3,
+                "asteroid": 4,
+                "VS": 5,
+            }
+        Return
+        ------
+        probabilities : dict
+            A dictionary with probability and ranking for each class.
+            Something like:
+            {
+                "AGN": {"probability": 1, "ranking": 5},
+                "SN": {"probability": 2, "ranking": 4},
+                "bogus": {"probability": 3, "ranking": 3},
+                "asteroid": {"probability": 4, "ranking": 2},
+                "VS": {"probability": 5, "ranking": 1},
+            }
+
+        """
         sorted_classes = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
         for x in range(len(sorted_classes)):
             probabilities[sorted_classes[x][0]] = {
@@ -115,6 +172,19 @@ class EarlyClassifier(GenericStep):
         self,
         alert: dict,
     ) -> dict:
+        """
+        Returns default values for creating an `object` in the database
+
+        Parameters
+        ----------
+        alert : dict
+            The whole alert from the stream that has the `candidate` key.
+
+        Return
+        ------
+        data : dict
+            Dictionary with default values for an object
+        """
 
         data = {}
         data["ndethist"] = alert["candidate"]["ndethist"]

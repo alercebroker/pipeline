@@ -5,7 +5,7 @@ import os
 
 DB_CONFIG = {
     "SQL": {
-        "ENGINE": "postgres",
+        "ENGINE": "postgresql",
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
@@ -63,7 +63,7 @@ CONSUMER_CONFIG = {
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "smallest",
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
-    }
+    },
 }
 
 STEP_METADATA = {
@@ -72,7 +72,7 @@ STEP_METADATA = {
     "STEP_NAME": os.getenv("STEP_NAME", "stamp_classification"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
     "CLASSIFIER_NAME": os.getenv("CLASSIFIER_NAME", "stamp_classifier"),
-    "CLASSIFIER_VERSION": os.getenv("CLASSIFIER_VERSION", "0.0.0")
+    "CLASSIFIER_VERSION": os.getenv("CLASSIFIER_VERSION", "0.0.0"),
 }
 
 STEP_CONFIG = {
