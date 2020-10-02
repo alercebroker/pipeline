@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          unzip /app/model.zip -d /app/model
+          unzip model.zip -d model
           pip install pytest 
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Test with pytest
