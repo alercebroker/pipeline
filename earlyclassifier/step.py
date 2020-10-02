@@ -34,6 +34,11 @@ class EarlyClassifier(GenericStep):
         super().__init__(consumer, config=config, level=level)
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
+        if not step_args.get("test_mode", False):
+            self.insert_step_metadata()
+        self.requests_session = request_session or requests.Session()
+
+    def insert_step_metadata(self):
         self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -41,7 +46,6 @@ class EarlyClassifier(GenericStep):
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=datetime.datetime.now(),
         )
-        self.requests_session = request_session or requests.Session()
 
     def execute(self, message):
         """

@@ -40,6 +40,7 @@ class EarlyClassifierTest(unittest.TestCase):
             config=self.step_config,
             db_connection=self.mock_database_connection,
             request_session=self.mock_session,
+            test_mode=True,
         )
 
     @mock.patch("earlyclassifier.step.EarlyClassifier.insert_db")

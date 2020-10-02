@@ -1,7 +1,6 @@
 import unittest
 from unittest import mock
 import subprocess
-import docker
 import time
 from earlyclassifier.step import (
     EarlyClassifier,
@@ -14,34 +13,26 @@ from earlyclassifier.step import (
 )
 import earlyclassifier
 import os
-from settings import DB_CONFIG
 import random
 
 FILE_PATH = os.path.dirname(__file__)
 
 
 class PSQLIntegrationTest(unittest.TestCase):
-    def setUp(self):
-        self.client = docker.from_env()
-        port = random.randint(5430,5450)
-        DB_CONFIG["SQL"]["PORT"] = port
-        self.container = self.client.containers.run(
-            image="postgres",
-            environment=[
-                "POSTGRES_USER=postgres",
-                "POSTGRES_PASSWORD=password",
-                "POSTGRES_DB=test",
-            ],
-            detach=True,
-            ports={"5432/tcp": port},
-        )
-        time.sleep(5)
-        subprocess.run(
-            [f'dbp initdb --settings_path {os.path.join(FILE_PATH, "settings.py")}'],
-            shell=True,
-        )
+    @classmethod
+    def setUpClass(self):
+        db_config = {
+            "SQL": {
+                "ENGINE": "postgresql",
+                "HOST": "localhost",
+                "USER": "postgres",
+                "PASSWORD": "postgres",
+                "PORT": 5432,
+                "DB_NAME": "postgres",
+            }
+        }
         self.step_config = {
-            "DB_CONFIG": DB_CONFIG,
+            "DB_CONFIG": db_config,
             "STEP_METADATA": {
                 "STEP_ID": "",
                 "STEP_NAME": "",
@@ -57,7 +48,15 @@ class PSQLIntegrationTest(unittest.TestCase):
         self.step = EarlyClassifier(
             config=self.step_config,
             request_session=self.mock_session,
+            test_mode=True
         )
+
+    @classmethod
+    def tearDownClass(self):
+        self.step.db.drop_db()
+        self.step.db.session.close()
+
+    def setUp(self):
         self.message = {
             "objectId": "ZTF1",
             "candidate": {
@@ -73,15 +72,15 @@ class PSQLIntegrationTest(unittest.TestCase):
             "cutoutScience": {"stampData": b""},
             "cutoutDifference": {"stampData": b""},
         }
+        self.step.db.create_db()
 
     def tearDown(self):
         self.step.db.session.close()
-        time.sleep(5)
-        self.container.stop()
-        self.container.remove()
+        self.step.db.drop_db()
 
     def test_insert_step_metadata(self):
-        self.assertEqual(len( self.step.db.query(Step).all() ), 1)
+        self.step.insert_step_metadata()
+        self.assertEqual(len(self.step.db.query(Step).all()), 1)
 
     def test_insert_db(self):
         probabilities = {
