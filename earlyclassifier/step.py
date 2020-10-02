@@ -36,6 +36,7 @@ class EarlyClassifier(GenericStep):
         config=None,
         db_connection=None,
         request_session=None,
+        stamp_classifier=None,
         level=logging.INFO,
         **step_args,
     ):
@@ -45,7 +46,7 @@ class EarlyClassifier(GenericStep):
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
         self.requests_session = request_session or requests.Session()
-        self.model = StampClassifier()
+        self.model = stamp_classifier or StampClassifier()
 
     def insert_step_metadata(self):
         self.db.query(Step).get_or_create(

@@ -6,8 +6,8 @@ from earlyclassifier.step import (
     requests,
     SQLConnection,
     Probability,
+    StampClassifier,
 )
-import earlyclassifier
 
 
 class MockResponse:
@@ -35,16 +35,21 @@ class EarlyClassifierTest(unittest.TestCase):
             "N_RETRY": 5,
         }
         self.mock_database_connection = mock.create_autospec(SQLConnection)
-        self.mock_session = mock.create_autospec(earlyclassifier.step.requests.Session)
+        self.mock_session = mock.create_autospec(requests.Session)
+        self.mock_stamp_classifier = mock.create_autospec(StampClassifier)
         self.step = EarlyClassifier(
             config=self.step_config,
             db_connection=self.mock_database_connection,
             request_session=self.mock_session,
+            stamp_classifier=self.mock_stamp_classifier,
             test_mode=True,
         )
 
     @mock.patch("earlyclassifier.step.EarlyClassifier.insert_db")
     def test_execute(self, insert_mock):
+        self.step.model.execute.return_value.iloc.__getitem__.return_value.to_dict.return_value = (
+            {}
+        )
         message = {
             "objectId": "ZTF1",
             "candidate": {
