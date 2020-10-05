@@ -82,10 +82,10 @@ Credentials of AWS.
 - `DB_NAME`: Database name: e.g: `postgres`
 
 ### Step metadata
-`STEP_VERSION`: Current version of the step. e.g: `1.0.0`
-`STEP_ID`: Unique identifier for the step. e.g: `S3`
-`STEP_NAME`: Name of the step. e.g: `S3`
-`STEP_COMMENTS`: Comments of the specific version.
+- `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
+- `STEP_ID`: Unique identifier for the step. e.g: `S3`
+- `STEP_NAME`: Name of the step. e.g: `S3`
+- `STEP_COMMENTS`: Comments of the specific version.
 
 
 ## Stream
