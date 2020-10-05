@@ -1,5 +1,8 @@
 name: build_image
-on: [push]
+on:
+  release:
+    types:
+      - published
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Packages
