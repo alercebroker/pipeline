@@ -1,13 +1,15 @@
 version: '3'
 services:
   s3_storage:
-    image: 's3_step:latest'
-    restart: 'always'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # restart: 'always'
     environment:
       - CONSUMER_TOPICS=
       - CONSUMER_SERVER=
       - CONSUMER_GROUP_ID=
-      - ES_PREFIX =
+      - ES_PREFIX=
       - ES_NETWORK_HOST=
       - ES_NETWORK_PORT=
       - BUCKET_NAME=
