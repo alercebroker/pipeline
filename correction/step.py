@@ -21,7 +21,7 @@ from db_plugins.db.sql.serializers import (
 )
 from db_plugins.db.sql import SQLConnection
 from lc_correction.compute import (
-    apply_correction,
+    apply_correction_df,
     is_dubious,
     apply_mag_stats,
     do_dmdt,
@@ -29,7 +29,7 @@ from lc_correction.compute import (
 )
 from astropy.time import Time
 from pandas import DataFrame, Series, concat
-
+import pandas as pd
 
 import numpy as np
 import logging
@@ -163,428 +163,246 @@ class Correction(GenericStep):
         )
         self.driver.session.commit()
 
-    def get_object(self, alert: dict) -> Object:
-        data = self.get_object_values(alert)
-        filter_by = {"oid": alert["objectId"]}
-        return self.driver.query().get_or_create(Object, filter_by=filter_by, **data)
+    def preprocess_detections(self, detections, is_prv_candidate=False) -> None:
+        detections["mjd"] = detections["jd"] - 2400000.5
+        detections["has_stamp"] = True
+        detections["step_id_corr"] = self.version
+        return detections
 
+    def remove_stamps(self, alerts):
+        for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
+            del alerts[k]
 
-    def cast_detection(self, candidate: dict) -> dict:
-        return {key: candidate[key] for key in DET_KEYS if key in candidate.keys()}
+    def do_correction(self, detections, inplace=False) -> dict:
+        corrected = detections.groupby(["objectId", "fid"]).apply(apply_correction_df)
+        corrected.reset_index(inplace=True)
+        return corrected
 
-    def get_detection(self, candidate: dict) -> Detection:
-        filters = {"candid": candidate["candid"], "oid": candidate["oid"]}
-        data = self.cast_detection(candidate)
-        detection, created = self.driver.query().get_or_create(
-        Detection, filter_by=filters, **data
-        )
-        dataquality = self.add_dataquality(candidate)
-        return detection, created
+    def get_objects(self, oids):
+        query = self.driver.query(Object).filter(Object.oid.in_(oids))
+        return pd.read_sql(query.statement,self.driver.engine)
 
-    def add_dataquality(self, candidate: dict, create=True):
-        candidate_params = {}
-        for key in DATAQUALITY_KEYS:
-            candidate_params[key] = candidate.get(key)
-        filters = {"oid": candidate["oid"], "candid": candidate["candid"]}
-        data = {**candidate_params}
-        if create:
-            self.driver.query().get_or_create(Dataquality, filter_by=filters, **data)
-        else:
-            return {**filters, **data}
+    def get_detections(self,oids):
+        query = self.driver.query(Detection).filter(Detection.oid.in_(oids))
+        return pd.read_sql(query.statement,self.driver.engine)
 
+    def get_non_detections(self,oids):
+        query = self.driver.query(NonDetection).filter(Detection.oid.in_(oids))
+        return pd.read_sql(query.statement,self.driver.engine)
 
-    def get_ps1(self, message: dict) -> Ps1_ztf:
-        message_params = {}
-        for key in PS1_KEYS:
-            message_params[key] = message["candidate"][key]
-        for i in range(1, 4):
-            unique_close = f"unique{i}"
-            message_params[unique_close] = True
+    def get_lightcurves(self, oids):
+        light_curves = {}
+        light_curves["detections"] = self.get_detections(oids)
+        light_curves["non_detections"] = self.get_non_detections(oids)
+        return light_curves
 
-        filters = {
-            "oid": message["objectId"],
-        }
-        ps1, created = self.driver.query().get_or_create(
-            Ps1_ztf, filter_by=filters, **message_params
-        )
-        if not created:
+    def get_ps1(self, oids):
+        query = self.driver.query(Ps1_ztf).filter(Ps1_ztf.oid.in_(oids))
+        return pd.read_sql(query.statement, self.driver.engine)
 
-            for i in range(1, 4):
-                objectidps = f"objectidps{i}"
-                if not self.check_equal(
-                    getattr(ps1, objectidps), message_params[objectidps]
-                ):
-                    unique_close = f"unique{i}"
-                    setattr(ps1, unique_close, False)
+    def get_ss(self, oids):
+        query = self.driver.query(Ss_ztf).filter(Ss_ztf.oid.in_(oids))
+        return pd.read_sql(query.statement, self.driver.engine)
 
-        return ps1
+    def get_reference(self, oids):
+        query = self.driver.query(Reference).filter(Reference.oid.in_(oids))
+        return pd.read_sql(query.statement, self.driver.engine)
 
-    def get_ss(self, message: dict) -> Ss_ztf:
-        params = {"oid": message["objectId"]}
-        data = {
-            "candid": message["candid"],
-            "ssdistnr": message["candidate"]["ssdistnr"],
-            "ssmagnr": message["candidate"]["ssmagnr"],
-            "ssnamenr": message["candidate"]["ssnamenr"],
-        }
-        ss, created = self.driver.session.query().get_or_create(
-            Ss_ztf, filter_by=params, **data
-        )
-        return ss
+    def get_gaia(self, oids):
+        query = self.driver.query(Gaia_ztf).filter(Gaia_ztf.oid.in_(oids))
+        return pd.read_sql(query.statement, self.driver.engine)
 
-    def get_reference(self, message: dict) -> Reference:
-        message_params = {}
-        for key in REFERENCE_KEYS:
-            message_params[key] = message["candidate"][key]
-        data = {
-            "mjdstartref": message["candidate"]["jdstartref"] - 2400000.5,
-            "mjdendref": message["candidate"]["jdendref"] - 2400000.5,
-            **message_params,
-        }
-        filters = {"oid": message["objectId"], "rfid": message["candidate"]["rfid"]}
-        reference, created = self.driver.query().get_or_create(
-            Reference, filter_by=filters, **data
-        )
-        return reference
+    def get_metadata(self, oids):
+        metadata = {}
+        metadata["ps1_ztf"] = self.get_ps1(oids)
+        metadata["ss_ztf"] = self.get_ss(oids)
+        metadata["reference"] = self.get_reference(oids)
+        metadata["gaia"] = self.get_gaia(oids)
+        return metadata
 
-    def get_gaia(self, message: dict) -> Gaia_ztf:
-        filters = {"oid": message["objectId"]}
-        data = {
-            "candid": message["candid"],
-            "neargaia": message["candidate"].get("neargaia"),
-            "neargaiabright": message["candidate"].get("neargaiabright"),
-            "maggaia": message["candidate"].get("maggaia"),
-            "maggaiabright": message["candidate"].get("maggaiabright"),
-            "unique1": True,
-        }
-        if data["neargaia"] is None:
-            return
-        gaia, created = self.driver.query().get_or_create(
-            Gaia_ztf, filter_by=filters, **data
-        )
+    def get_magstats(self, light_curves, metadata):
+        pass
 
-        if not created:
-            if (
-                not self.check_equal(gaia.neargaia, data["neargaia"])
-                and not self.check_equal(gaia.neargaiabright, data["neargaiabright"])
-                and not self.check_equal(gaia.maggaia, data["maggaia"])
-                and not self.check_equal(gaia.maggaiabright, data["maggaiabright"])
-            ):
-                gaia.unique1 = False
-
-        return gaia
-
-    def get_magstats_values(self, result: dict) -> dict:
-        data = {}
-        data["stellar"] = result.stellar
-        data["corrected"] = result.corrected
-        data["ndet"] = int(result.ndet)
-        data["ndubious"] = int(result.ndubious)
-        data["dmdt_first"] = result.dmdt_first
-        data["dm_first"] = result.dm_first
-        data["sigmadm_first"] = result.sigmadm_first
-        data["dt_first"] = result.dt_first
-        data["magmean"] = result.magpsf_mean
-        data["magmedian"] = result.magpsf_median
-        data["magmax"] = result.magpsf_max
-        data["magmin"] = result.magpsf_min
-        data["magsigma"] = result.sigmapsf
-        data["maglast"] = result.magpsf_last
-        data["magfirst"] = result.magpsf_first
-        data["magmean_corr"] = result.magpsf_corr_mean
-        data["magmedian_corr"] = result.magpsf_corr_median
-        data["magmax_corr"] = result.magpsf_corr_max
-        data["magmin_corr"] = result.magpsf_corr_min
-        data["magsigma_corr"] = result.sigmapsf_corr
-        data["maglast_corr"] = result.magpsf_corr_last
-        data["magfirst_corr"] = result.magpsf_corr_first
-        data["firstmjd"] = result.first_mjd
-        data["lastmjd"] = result.last_mjd
-        data["step_id_corr"] = self.version
-
-        return data
-
-    def get_metadata(self, message: dict):
-        ps1_ztf = self.get_ps1(message)
-        ss_ztf = self.get_ss(message)
-        reference = self.get_reference(message)
-        gaia = self.get_gaia(message)
-        return {"ps1": ps1_ztf, "ss": ss_ztf, "reference": reference, "gaia": gaia}
-
-    def prepare_metadata(self, metadata):
-        return {
-            "ps1": Ps1_ztfSchema().dump(metadata["ps1"]),
-            "ss": Ss_ztfSchema().dump(metadata["ss"]),
-            "reference": ReferenceSchema().dump(metadata["reference"]),
-            "gaia": Gaia_ztfSchema().dump(metadata["gaia"]),
-        }
-
-    def get_magstats(
-        self,
-        message: dict,
-        light_curve: list,
-        ss: Ss_ztf,
-        ps1: Ps1_ztf,
-        reference: Reference,
-    ) -> MagStats:
-
-        detections = DataFrame(light_curve["detections"])
-        non_detections = DataFrame(light_curve["non_detections"])
-        detections.index = detections.candid
-        detections_fid = detections[detections.fid == message["candidate"]["fid"]]
-
-        new_stats = apply_mag_stats(
-            detections_fid,
-            distnr=ss.ssdistnr,
-            distpsnr1=ps1.distpsnr1,
-            sgscore1=ps1.sgscore1,
-            chinr=reference.chinr,
-            sharpnr=reference.sharpnr,
-        )
-
-        if len(non_detections) > 0:
-            non_detections_fid = non_detections[
-                non_detections.fid == message["candidate"]["fid"]
-            ]
-            new_stats_dmdt = do_dmdt(non_detections_fid, new_stats)
-        else:
-            new_stats_dmdt = Series(
-                {
-                    "dmdt_first": np.nan,
-                    "dm_first": np.nan,
-                    "sigmadm_first": np.nan,
-                    "dt_first": np.nan,
-                }
-            )
-        all_stats = concat([new_stats, new_stats_dmdt])
-        filters = {"oid": message["objectId"], "fid": message["candidate"]["fid"]}
-        data = self.get_magstats_values(all_stats)
-        magStats, created = self.driver.query().get_or_create(
-            MagStats, filter_by=filters, **data
-        )
-
-    def get_object_values(
-        self,
-        alert: dict,
-    ) -> dict:
-
-        data = {}
-        data["ndethist"] = alert["candidate"]["ndethist"]
-        data["ncovhist"] = alert["candidate"]["ncovhist"]
-        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
-        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
-        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
-        data["lastmjd"] = data["firstmjd"]
-        data["ndet"] = 1
-        data["deltajd"] = 0
-        data["meanra"] = alert["candidate"]["ra"]
-        data["meandec"] = alert["candidate"]["dec"]
-        data["step_id_corr"] = self.version
-        data["corrected"] = False
-        data["stellar"] = False
-
-        return data
-
-    def preprocess_alert(self, alert: dict, is_prv_candidate=False) -> None:
-        if is_prv_candidate:
-            alert["mjd"] = alert["jd"] - 2400000.5
-            alert["isdiffpos"] = 1 if alert["isdiffpos"] in ["t", "1"] else -1
-            alert["corrected"] = alert["distnr"] < DISTANCE_THRESHOLD
-            alert["candid"] = alert["candid"]
-            alert["has_stamp"] = False
-            alert["step_id_corr"] = self.version
-        else:
-            alert["candidate"]["mjd"] = alert["candidate"]["jd"] - 2400000.5
-            alert["candidate"]["isdiffpos"] = (
-                1 if alert["candidate"]["isdiffpos"] in ["t", "1"] else -1
-            )
-            alert["candidate"]["corrected"] = (
-                alert["candidate"]["distnr"] < DISTANCE_THRESHOLD
-            )
-            alert["candidate"]["candid"] = alert["candidate"]["candid"]
-            alert["candidate"]["has_stamp"] = True
-            alert["candidate"]["step_id_corr"] = self.version
-            for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
-                alert.pop(k, None)
-
-    def do_correction(self, candidate: dict, obj: Object, inplace=False) -> dict:
-        values = apply_correction(candidate)
-        result = dict(zip(COR_KEYS, values))
-        corr_magstats = candidate["corrected"]
-        first_mjd = obj.firstmjd
-        for det in obj.detections:
-            if first_mjd == det.mjd:
-                corr_magstats = det["corrected"]
-        candidate["dubious"] = bool(
-            is_dubious(candidate["corrected"], candidate["isdiffpos"], corr_magstats)
-        )
-        if inplace:
-            candidate.update(result)
-        return result
-
-    def check_equal(self, value_1, value_2):
-        if isinstance(value_1, numbers.Number):
-            return abs(value_2 - value_1) < 1e-5
-        else:
-            return value_1 == value_2
-
-    def already_exists(
-        self, candidate: dict, candidates_list: list, keys: list
-    ) -> bool:
-        for cand in candidates_list:
-            if all([self.check_equal(candidate[k], cand[k]) for k in keys]):
-                return True
-        return False
-
-    def check_candid_in_db(self, oid, candid):
-        query = self.driver.query(Detection.oid, Detection.candid).filter_by(
-            oid=oid, candid=candid
-        )
-        result = query.scalar()
-        exists = result is not None
-        return exists
-
-    def cast_non_detection(self, object_id: str, prv_candidate: dict) -> dict:
-        data = {
+    def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
+        non_detection = {
             "oid": object_id,
-            "mjd": prv_candidate["mjd"],
-            "diffmaglim": prv_candidate["diffmaglim"],
-            "fid": prv_candidate["fid"],
+            "mjd": candidate["mjd"],
+            "diffmaglim": candidate["diffmaglim"],
+            "fid": candidate["fid"],
         }
-        return data
+        return non_detection
 
+    def get_prv_candidates(self, alert):
+        prv_candidates = alert["prv_candidates"]
+        candid = alert["candid"]
+        oid = alert["objectId"]
 
-    def insert_prv_detections(self,prv_detections):
-        self.driver.query().bulk_insert(prv_detections, Detection)
+        detections = []
+        non_detections = []
 
-    def insert_prv_data_quality(self,prv_dataquality):
-        self.driver.query().bulk_insert(prv_dataquality, Dataquality)
-
-    def insert_prv_non_detections(self,prv_non_detections):
-        self.driver.query().bulk_insert(prv_non_detections, NonDetection)
-
-    def process_prv_candidates(
-        self, prv_candidates: dict, obj: Object, parent_candid: str, light_curve: dict
-    ) -> None:
-        prv_non_detections = []
-        prv_detections = []
-        prv_dataquality = []
         if prv_candidates is None:
-            return
-        for prv in prv_candidates:
-            is_non_detection = prv["candid"] is None
-            prv["mjd"] = prv["jd"] - 2400000.5
+            return pd.DataFrame([]), pd.DataFrame([])
+        else:
+            for candidate in prv_candidates:
+                is_non_detection = candidate["candid"] is None
+                candidate["mjd"] = candidate["jd"] - 2400000.5
 
             if is_non_detection:
-                non_detection = self.cast_non_detection(obj.oid, prv)
-                if not self.already_exists(
-                    non_detection, light_curve["non_detections"], ["mjd"]
-                ):
-                    light_curve["non_detections"].append(non_detection)
-                    prv_non_detections.append(non_detection)
+                non_detection = self.cast_non_detection(oid, candidate)
+                non_detections.append(non_detection)
             else:
-                self.preprocess_alert(prv, is_prv_candidate=True)
-                if not self.already_exists(
-                    prv, light_curve["detections"], ["candid"]
-                ) and not self.check_candid_in_db(obj.oid, prv["candid"]):
-                    self.do_correction(prv, obj, inplace=True)
-                    prv["oid"] = obj.oid
-                    prv["parent_candid"] = parent_candid
-                    dataquality = self.add_dataquality(prv, create=False)
-                    dataquality["oid"] = obj.oid
-                    light_curve["detections"].append(prv)
-                    prv_detections.append(prv)
-                    prv_dataquality.append(dataquality)
+                candidate["parent_candid"] = candid
+                candidate["has_stamp"] = False
+                candidate["oid"] = oid
+                candidate["objectId"] = oid # Used in correction
+                candidate["step_id_corr"] = self.version
+                detections.append(candidate)
 
-        # Insert data to database
-        # Separated by type for code debugging
-        self.insert_prv_detections(prv_detections)
-        self.insert_prv_data_quality(prv_dataquality)
-        self.insert_prv_non_detections(prv_non_detections)
+        return pd.DataFrame(detections), pd.DataFrame(non_detections)
 
-    def process_lightcurve(self, alert: dict, obj: Object) -> dict:
-        # Setting identifier of object to detection
-        alert["candidate"]["oid"] = obj.oid
-        detection, created = self.get_detection(alert["candidate"])
-        light_curve = self.get_light_curve(obj)
 
-        # Compute and analyze previous candidates
-        if "prv_candidates" in alert:
-            self.process_prv_candidates(
-                alert["prv_candidates"], obj, detection["candid"], light_curve
-            )
 
-        return light_curve
 
-    def get_light_curve(self, obj: Object) -> dict:
-        detections = obj.detections
-        non_detections = obj.non_detections
-        return {
-            "detections": list(map(lambda x: {k: x[k] for k in DET_KEYS}, detections)),
-            "non_detections": list(
-                map(lambda x: {k: x[k] for k in NON_DET_KEYS}, non_detections)
-            ),
-        }
+    def process_lightcurves(self, detections, alerts):
+        oids = detections.oid.values
 
-    def set_basic_stats(self, detections: list, obj: Object) -> None:
-        detections = DataFrame.from_dict(detections)
-        obj.ndet = len(detections)
-        obj.lastmjd = detections["mjd"].max()
-        obj.firstmjd = detections["mjd"].min()
-        obj.meanra = detections["ra"].mean()
-        obj.meandec = detections["dec"].mean()
-        obj.sigmara = detections["ra"].std()
-        obj.sigmadec = detections["dec"].mean()
-        obj.corrected = detections["corrected"].all()
-        obj.deltajd = obj.lastmjd - obj.firstmjd
+        detections["parent_candid"] = None
+        detections["has_stamp"] = True
+        filtered_detections = detections[DET_KEYS].copy()
+        filtered_detections["new"] = True
 
-    def execute(self, message):
+        light_curves = self.get_lightcurves(oids)
+        light_curves["detections"]["new"] = False
+        light_curves["non_detections"]["new"] = False
 
-        self.logger.info(
-            f'[{message["objectId"]}-{message["candid"]}] Processing message'
-        )
-        obj, created = self.get_object(message)
-        self.preprocess_alert(message)
+        # Removing already on db, similar to drop duplicates
+        index_detections = pd.MultiIndex.from_frame(filtered_detections[["oid", "candid"]])
+        index_light_curve_detections = pd.MultiIndex.from_frame(
+                                    light_curves["detections"][["oid", "candid"]]
+                                )
+        index_light_curve_non_detections = pd.MultiIndex.from_frame(
+                                    light_curves["detections"][["oid", "candid"]]
+                                )
+        already_on_db = index_detections.isin(index_light_curve_detections)
+        filtered_detections = filtered_detections[~already_on_db]
+        light_curves["detections"] = pd.concat([light_curves["detections"], filtered_detections])
 
-        self.do_correction(message["candidate"], obj, inplace=True)
-        light_curve = self.process_lightcurve(message, obj)
-        metadata = self.get_metadata(message)
-        magstats = self.get_magstats(
-            message,
-            light_curve,
-            ps1=metadata["ps1"],
-            ss=metadata["ss"],
-            reference=metadata["reference"],
-        )
 
-        self.do_correction(message["candidate"], obj, inplace=True)
-        light_curve = self.process_lightcurve(message, obj)
-        metadata = self.get_metadata(message)
-        magstats = self.get_magstats(
-            message,
-            light_curve,
-            ps1=metadata["ps1"],
-            ss=metadata["ss"],
-            reference=metadata["reference"],
-        )
+        prv_detections = []
+        prv_non_detections = []
+        for _,alert in alerts.iterrows():
+            if "prv_candidates" in alert:
+                alert_prv_detections, alert_prv_non_detections = self.get_prv_candidates(alert)
+                prv_detections.append(alert_prv_detections)
+                prv_non_detections.append(alert_prv_non_detections)
+        prv_detections = pd.concat(prv_detections)
+        prv_non_detections = pd.concat(prv_non_detections)
 
-        # When the object + prv_candidates > 1
-        if len(light_curve["detections"]) > 1:
-            self.set_basic_stats(light_curve["detections"], obj)
+        if len(prv_detections) > 0:
 
-        self.driver.session.commit()
-        self.logger.info(
-            f'[{message["objectId"]}-{message["candid"]}] Messages processed'
-        )
-        write = {
-            "oid": message["objectId"],
-            "candid": message["candid"],
-            "detections": light_curve["detections"],
-            "non_detections": light_curve["non_detections"],
-            "xmatches": message.get("xmatches"),
-            "fid": message["candidate"]["fid"],
-            "metadata": self.prepare_metadata(metadata),
-            "preprocess_step_id": self.config["STEP_METADATA"]["STEP_ID"],
-            "preprocess_step_version": self.config["STEP_METADATA"]["STEP_VERSION"],
-        }
-        self.producer.produce(write, key=message["objectId"])
+            prv_detections.drop_duplicates(["oid","candid"], inplace=True)
+
+            # Checking if its already on the database
+            index_prv_detections = pd.MultiIndex.from_frame(prv_detections[["oid", "candid"]])
+            already_on_db = index_prv_detections.isin(index_light_curve_detections)
+            prv_detections = prv_detections[~already_on_db]
+
+            # Doing correction
+            prv_detections = self.do_correction(prv_detections)
+            current_keys = [key for key in DET_KEYS if key in prv_detections.columns]
+            prv_detections = prv_detections[current_keys].copy()
+            prv_detections["new"] = True
+            light_curves["detections"] = pd.concat([light_curves["detections"], prv_detections])
+        #
+        # if len(prv_non_detections) > 0:
+        #     index_prv_non_detections = pd.MultiIndex.from_frame(prv_detections[["oid", "candid"]])
+        return light_curves
+
+
+    def process_objects(self, objects, light_curves, alerts):
+        new_objects = ~light_curves["detections"]["oid"].isin(objects.oid)
+
+        detections_new =  light_curves["detections"][new_objects]
+        detections_old = light_curves["detections"][~new_objects]
+
+        if len(detections_new) > 0:
+            self.insert_new_objects(detections_new, alerts)
+        #if len(detections_old) > 0:
+        # self.update_old_objects(detections_old, objects)
+
+    def get_object_data(self,oid, detections, alerts):
+        mjd_detections = detections.sort_values("mjd")
+        mjd_alerts = alerts.sort_values("mjd")
+        first_alert = mjd_alerts.iloc[0]
+        first_detection = mjd_detections.iloc[0]
+        firstmjd = mjd_detections["mjd"].min()
+        lastmjd = mjd_detections["mjd"].max()
+
+        new_object = {
+            "oid": oid,
+            "ndethist": int(first_alert["ndethist"]),
+            "ncovhist": int(first_alert["ncovhist"]),
+            "mjdstarthist": float(first_alert["jdstarthist"] - 2400000.5),
+            "mjdendhist": float(first_alert["jdendhist"] - 2400000.5),
+            "corrected": mjd_detections["corrected"].all(),
+            #"stellar": ??
+            "ndet": len(mjd_detections),
+            # "g-r_max":
+            # "g-r_max_corr":
+            # "g-r_mean":
+            # "g-r_mean_corr":
+            "meanra": float(mjd_detections["ra"].mean()),
+            "meandec": float(mjd_detections["dec"].mean()),
+            "sigmara": float(mjd_detections["ra"].std()),
+            "sigmadec": float(mjd_detections["dec"].std()),
+            "deltajd": float(lastmjd - firstmjd),
+            "firstmjd": float(firstmjd),
+            "lastmjd": float(lastmjd),
+            "step_id_corr": self.version
+            }
+        return new_object
+
+
+    def insert_new_objects(self, detections, alerts):
+        oids = alerts.oid.values
+        self.logger.info(f"Inserting new objects ({len(oids)} objects)")
+        new_objects = []
+        for oid in oids:
+            new_obj = self.get_object_data(oid, detections[detections.oid == oid], alerts[alerts.oid == oid])
+            new_objects.append(new_obj)
+        self.driver.query().bulk_insert(new_objects, Object)
+
+    def insert_detections(self, detections):
+        self.logger.info(f"Inserting {len(detections)} new detections")
+        detections.drop(columns=["new"], inplace=True)
+        detections = detections.where(pd.notnull(detections), None)
+        dict_detections = detections.to_dict('records')
+        self.driver.query().bulk_insert(dict_detections, Detection)
+
+    def execute(self, messages):
+        # Transforming to a dataframe
+        alerts = pd.DataFrame(messages)
+
+        # Removing stamps
+        self.remove_stamps(alerts)
+
+        # Getting just the detections
+        detections = pd.DataFrame(list(alerts["candidate"]))
+        detections["objectId"] = alerts["objectId"]
+        detections = self.preprocess_detections(detections)
+        corrected = self.do_correction(detections)
+        corrected.rename(columns={"objectId":"oid"}, inplace=True)
+        del detections
+
+        light_curves = self.process_lightcurves(corrected, alerts)
+
+        self.logger.info(light_curves["detections"])
+
+        objects = self.get_objects(corrected["oid"].values)
+        metadata = self.get_metadata(corrected["oid"].values)
+
+        self.process_objects(objects, light_curves, corrected)
+
+        new_detections = light_curves["detections"]["new"]
+        self.insert_detections(light_curves["detections"][new_detections])
+        raise
