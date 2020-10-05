@@ -72,7 +72,6 @@ STEP_METADATA = {
     "STEP_ID": os.getenv("STEP_ID", "features"),
     "STEP_NAME": os.getenv("STEP_NAME", "features"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
 }
 
 STORAGE_CONFIG = {
