@@ -36,6 +36,9 @@ class S3Step(GenericStep):
             self.insert_step_metadata()
 
     def insert_step_metadata(self):
+        """
+        Inserts step version and other metadata to step table.
+        """
         self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -45,9 +48,45 @@ class S3Step(GenericStep):
         )
 
     def get_object_url(self, bucket_name, candid):
+        """
+        Formats a valid s3 url for an avro file given a bucket and candid.
+        The format for saving avros on s3 is <candid>.avro and they are
+        all stored in the root directory of the bucket.
+
+        Parameters
+        ----------
+        bucket_name : str
+            name of the bucket
+        candid : int
+            candid of the avro to be stored
+        """
         return "https://{}.s3.amazonaws.com/{}.avro".format(bucket_name, candid)
 
     def upload_file(self, f, candid, bucket_name):
+        """
+        Uploads a avro file to s3 storage
+
+        You have to configure STORAGE settings in the step. A dictionary like this is required:
+
+        .. code-block:: python
+
+            STEP_CONFIG = {
+                "STORAGE": {
+                    "AWS_ACCESS_KEY": "",
+                    "AWS_SECRET_ACCESS_KEY": "",
+                    "REGION_NAME": "",
+                }
+            }
+
+        Parameters
+        ----------
+        f : file-like object
+            Readable file like object that will be uploaded
+        candid : int
+            candid of the avro file. Avro files are stored using avro as object name
+        bucket_name : str
+            name of the s3 bucket
+        """
         s3 = boto3.client(
             "s3",
             aws_access_key_id=self.config["STORAGE"]["AWS_ACCESS_KEY"],
