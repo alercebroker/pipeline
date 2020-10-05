@@ -1,3 +1,4 @@
+![unittest](https://github.com/alercebroker/s3_step/workflows/unittest/badge.svg?branch=main) ![integration_test](https://github.com/alercebroker/s3_step/workflows/integration_test/badge.svg?branch=main)
 # S3 Upload
 
 ## Description
