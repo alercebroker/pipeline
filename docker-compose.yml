@@ -4,14 +4,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # restart: 'always'
     environment:
       - CONSUMER_TOPICS=
       - CONSUMER_SERVER=
       - CONSUMER_GROUP_ID=
-      - ES_PREFIX=
-      - ES_NETWORK_HOST=
-      - ES_NETWORK_PORT=
       - BUCKET_NAME=
       - AWS_ACCESS_KEY_ID=
       - AWS_SECRET_ACCESS_KEY=
+      - DB_ENGINE=
+      - DB_HOST=
+      - DB_USER=
+      - DB_PASSWORD=
+      - DB_PORT=
+      - DB_NAME=
+      - STEP_VERSION=
+      - STEP_ID=
+      - STEP_NAME=
+      -STEP_COMMENTS=
