@@ -63,22 +63,23 @@ class FeaturesComputer(GenericStep):
         )
 
     def preprocess_detections(self, detections):
-        """Format a section of Kafka message that correspond of detections to `pandas.DataFrame`.
-        This method take the key *detections* and use `json_normalize` to transform it to a DataFrame. After that
-        rename some columns, put object_id like index and preprocess this detections.
-        **Example:**
-
-        Parameters
-        ----------
-        message : dict
-            Message deserialized of Kafka.
-        oid : string
-            Object identifier of all detections
+        """
+        Preprocess detections. As of version 1.0.0 it only converts detections to dataframe.
         """
         detections = self.create_detections_dataframe(detections)
         return detections
 
     def create_detections_dataframe(self, detections):
+        """Format detections to `pandas.DataFrame`.
+        This method take detections in dict form and use `json_normalize` to transform it to a DataFrame. After that
+        rename some columns and object_id as index.
+        **Example:**
+
+        Parameters
+        ----------
+        detections : dict
+            dict with detections as they come from the preprocess step.
+        """
         detections = json_normalize(detections)
         detections.rename(
             columns={
@@ -91,12 +92,36 @@ class FeaturesComputer(GenericStep):
         return detections
 
     def preprocess_non_detections(self, non_detections):
+        """
+        Convert non detections to dataframe.
+
+        Parameters
+        ----------
+        non_detections : dict
+            non_detections as they come from preprocess step
+        """
         return json_normalize(non_detections)
 
     def preprocess_xmatches(self, xmatches):
+        """
+        As of version 1.0.0 it does no preprocess operations on xmatches.
+
+        Parameters
+        ----------
+        xmatches : dict
+            xmatches as they come from preprocess step
+        """
         return xmatches
 
     def preprocess_metadata(self, metadata):
+        """
+        As of version 1.0.0 it does no preprocess operations on alert metadata.
+
+        Parameters
+        ----------
+        metadata : dict
+            metadata as they come from preprocess step
+        """
         return metadata
 
     def compute_features(self, detections, non_detections, metadata, xmatches):
@@ -168,6 +193,23 @@ class FeaturesComputer(GenericStep):
         self.db.session.commit()
 
     def get_fid(self, feature):
+        """
+        Gets the band number (fid) of a feature.
+        Most features include the fid in the name as a sufix after '_' (underscore) character.
+        Some features don't include the fid in their name but are known to be asociated with a specific band or multiband.
+        This method considers all of these cases and the possible return values are:
+
+        - 0: for wise features and sgscore
+        - 12: for multiband features or power_rate
+        - 1: for fid = 1
+        - 2 for fid = 2
+        - -99 if there is no known band for the feature
+
+        Parameters
+        ----------
+        feature : str
+            name of the feature
+        """
         fid0 = [
             "W1",
             "W1-W2",
