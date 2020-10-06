@@ -25,8 +25,13 @@ class StepTestCase(unittest.TestCase):
             "DB_CONFIG": {"SQL": {}},
             "PRODUCER_CONFIG": {"fake": "fake"},
             "FEATURE_VERSION": "v1",
-            "STEP_VERSION": "1.0-test",
-            "STEP_VERSION_PREPROCESS": "1.0-test",
+            "STEP_METADATA": {
+                "STEP_VERSION": "feature",
+                "STEP_ID": "feature",
+                "STEP_NAME": "feature",
+                "STEP_COMMENTS": "feature",
+                "FEATURE_VERSION": "1.0-test",
+            }
         }
         self.mock_database_connection = mock.create_autospec(SQLConnection)
         self.mock_database_connection.session = mock.create_autospec(MockSession)
@@ -37,6 +42,7 @@ class StepTestCase(unittest.TestCase):
             features_computer=self.mock_custom_hierarchical_extractor,
             db_connection=self.mock_database_connection,
             producer=self.mock_producer,
+            test_mode=True
         )
 
     @mock.patch.object(FeaturesComputer, "create_detections_dataframe")
@@ -87,10 +93,9 @@ class StepTestCase(unittest.TestCase):
     def test_insert_db_doesnt_exist(self):
         oid = "ZTF1"
         features = {"testfeature_1": 1}
-        version = self.step_config["FEATURE_VERSION"]
-        feature_id = self.step_config["STEP_VERSION"]
-        preprocess_id = self.step_config["STEP_VERSION_PREPROCESS"]
-        date = datetime.datetime.now()
+        version = self.step_config["STEP_METADATA"]["FEATURE_VERSION"]
+        feature_id = self.step_config["STEP_METADATA"]["STEP_VERSION"]
+        preprocess_id = "correction"
         mock_feature_version = mock.create_autospec(FeatureVersion)
         mock_feature_version.version = version
         mock_feature_version.value = 1
@@ -98,16 +103,9 @@ class StepTestCase(unittest.TestCase):
             mock_feature_version,
             False,
         )
-        self.step.insert_db(oid, features, date=date)
+        self.step.insert_db(oid, features, preprocess_id)
         self.mock_database_connection.query().get_or_create.assert_has_calls(
             [
-                mock.call(
-                    filter_by={"step_id": feature_id},
-                    name="features",
-                    version=version,
-                    comments="",
-                    date=date,
-                ),
                 mock.call(
                     filter_by={
                         "version": version,
@@ -132,26 +130,18 @@ class StepTestCase(unittest.TestCase):
     def test_insert_db_exist(self):
         oid = "ZTF1"
         features = {"testfeature_1": 1}
-        version = self.step_config["FEATURE_VERSION"]
-        feature_id = self.step_config["STEP_VERSION"]
-        preprocess_id = self.step_config["STEP_VERSION_PREPROCESS"]
-        date = datetime.datetime.now()
+        version = self.step_config["STEP_METADATA"]["FEATURE_VERSION"]
+        feature_id = self.step_config["STEP_METADATA"]["STEP_VERSION"]
+        preprocess_id = "correction"
         mock_feature_version = mock.create_autospec(FeatureVersion)
         mock_feature_version.version = version
         self.mock_database_connection.query().get_or_create.return_value = (
             mock_feature_version,
             True,
         )
-        self.step.insert_db(oid, features, date)
+        self.step.insert_db(oid, features, preprocess_id)
         self.mock_database_connection.query().get_or_create.assert_has_calls(
             [
-                mock.call(
-                    filter_by={"step_id": feature_id},
-                    name="features",
-                    version=version,
-                    comments="",
-                    date=date,
-                ),
                 mock.call(
                     filter_by={
                         "version": version,
@@ -173,6 +163,10 @@ class StepTestCase(unittest.TestCase):
         self.mock_database_connection.query().update.assert_not_called()
         self.mock_database_connection.session.commit.assert_called_once()
 
+    def test_insert_step_metadata(self):
+        self.step.insert_step_metadata()
+        self.step.db.query().get_or_create.assert_called_once()
+
     def test_get_fid(self):
         feature = "W1"
         fid = self.step.get_fid(feature)
@@ -192,6 +186,7 @@ class StepTestCase(unittest.TestCase):
             "non_detections": [],
             "xmatches": "",
             "metadata": {},
+            "preprocess_step_id": "preprocess",
         }
         self.step.execute(message)
         mock_compute.assert_not_called()
@@ -219,6 +214,7 @@ class StepTestCase(unittest.TestCase):
             "non_detections": [],
             "xmatches": {},
             "metadata": {},
+            "preprocess_step_id": "preprocess",
         }
         df = pd.DataFrame({"oid": ["ZTF1"] * 10, "feat_1": [1] * 10})
         df.set_index("oid", inplace=True)
