@@ -1,6 +1,6 @@
 # LC Correction (preprocess) step
 
-Last update: 2020/10/02
+Last update: 2020/10/06
 
 ## Description
 
@@ -96,7 +96,7 @@ Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProduc
 
 ## Environment variables
 
-### Database setup
+### DB setup
 
 - `DB_HOST`: Database host for connection.
 - `DB_USER`: Database user for read/write (requires these permission).
@@ -115,10 +115,12 @@ Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProduc
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 
-### Metrics setup
+### Step metadata
 
-- `METRICS_HOST`: Kafka brokers to send the metrics.
-- `METRICS_TOPIC`: Topic to save the metrics.
+- `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
+- `STEP_ID`: Unique identifier for the step. e.g: `S3`
+- `STEP_NAME`: Name of the step. e.g: `S3`
+- `STEP_COMMENTS`: Comments of the specific version.
 
 ## Stream
 
@@ -271,7 +273,7 @@ docker build -t correction_step:version .
 You can use a `docker run` command, you must set all environment variables.
 
 ```bash
-docker run --name my_correction_step -e DB_HOST=myhost -e [... all env ...] -d correction_step:0.0.1
+docker run --name my_step -e DB_HOST=myhost -e [... all env ...] -d correction_step:version
 ```
 
 ### Run docker-compose
@@ -289,3 +291,27 @@ docker-compose up -d --scale correction_step=n
 ```
 
 **Note:** Use `docker-compose down` for stop all containers.
+
+### Run the released image
+
+For each release an image is uploaded to ghcr.io that you can use instead of building your own. To do that replace docker-compose.yml or the docker run command with this image:
+
+```bash
+docker pull ghcr.io/alercebroker/correction_step:latest
+```
+
+## Local Installation
+
+### Requirements
+
+To install the required packages run
+
+```bash
+pip install -r requirements.txt
+```
+
+After that you can modify the logic of the step in [step.py](https://github.com/alercebroker/correction_step/blob/main/correction/step.py) and run 
+
+```
+python scripts/run_step.py
+```
