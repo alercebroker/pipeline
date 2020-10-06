@@ -164,9 +164,9 @@ class Correction(GenericStep):
         self.driver.session.commit()
 
     def preprocess_detections(self, detections, is_prv_candidate=False) -> None:
-        detections["mjd"] = detections["jd"] - 2400000.5
-        detections["has_stamp"] = True
-        detections["step_id_corr"] = self.version
+        detections.loc[:,"mjd"] = detections["jd"] - 2400000.5
+        detections.loc[:,"has_stamp"] = True
+        detections.loc[:,"step_id_corr"] = self.version
         return detections
 
     def remove_stamps(self, alerts):
@@ -174,8 +174,13 @@ class Correction(GenericStep):
             del alerts[k]
 
     def do_correction(self, detections, inplace=False) -> dict:
-        corrected = detections.groupby(["objectId", "fid"]).apply(apply_correction_df)
+        fid = detections.fid.values
+        candid = detections.candid.values
+        corrected = apply_correction_df(detections)
         corrected.reset_index(inplace=True)
+
+        corrected.loc[:, "fid"] = fid
+        corrected.loc[:, "candid"] = candid
         return corrected
 
     def get_objects(self, oids):
@@ -187,7 +192,7 @@ class Correction(GenericStep):
         return pd.read_sql(query.statement,self.driver.engine)
 
     def get_non_detections(self,oids):
-        query = self.driver.query(NonDetection).filter(Detection.oid.in_(oids))
+        query = self.driver.query(NonDetection).filter(NonDetection.oid.in_(oids))
         return pd.read_sql(query.statement,self.driver.engine)
 
     def get_lightcurves(self, oids):
@@ -260,16 +265,13 @@ class Correction(GenericStep):
 
         return pd.DataFrame(detections), pd.DataFrame(non_detections)
 
-
-
-
     def process_lightcurves(self, detections, alerts):
         oids = detections.oid.values
 
-        detections["parent_candid"] = None
-        detections["has_stamp"] = True
-        filtered_detections = detections[DET_KEYS].copy()
-        filtered_detections["new"] = True
+        detections.loc[:,"parent_candid"] = None
+        detections.loc[:, "has_stamp"] = True
+        filtered_detections = detections.loc[:, DET_KEYS]
+        filtered_detections.loc[:,"new"] = True
 
         light_curves = self.get_lightcurves(oids)
         light_curves["detections"]["new"] = False
@@ -278,9 +280,6 @@ class Correction(GenericStep):
         # Removing already on db, similar to drop duplicates
         index_detections = pd.MultiIndex.from_frame(filtered_detections[["oid", "candid"]])
         index_light_curve_detections = pd.MultiIndex.from_frame(
-                                    light_curves["detections"][["oid", "candid"]]
-                                )
-        index_light_curve_non_detections = pd.MultiIndex.from_frame(
                                     light_curves["detections"][["oid", "candid"]]
                                 )
         already_on_db = index_detections.isin(index_light_curve_detections)
@@ -299,44 +298,88 @@ class Correction(GenericStep):
         prv_non_detections = pd.concat(prv_non_detections)
 
         if len(prv_detections) > 0:
-
             prv_detections.drop_duplicates(["oid","candid"], inplace=True)
-
-            # Checking if its already on the database
+            # Checking if already on the database
             index_prv_detections = pd.MultiIndex.from_frame(prv_detections[["oid", "candid"]])
             already_on_db = index_prv_detections.isin(index_light_curve_detections)
             prv_detections = prv_detections[~already_on_db]
 
             # Doing correction
             prv_detections = self.do_correction(prv_detections)
+
+            #Getting columns
             current_keys = [key for key in DET_KEYS if key in prv_detections.columns]
-            prv_detections = prv_detections[current_keys].copy()
-            prv_detections["new"] = True
+            prv_detections = prv_detections.loc[:, current_keys]
+            prv_detections.loc[:,"new"] = True
             light_curves["detections"] = pd.concat([light_curves["detections"], prv_detections])
-        #
-        # if len(prv_non_detections) > 0:
-        #     index_prv_non_detections = pd.MultiIndex.from_frame(prv_detections[["oid", "candid"]])
+
+        if len(prv_non_detections) > 0:
+            # Using round 5 to have 5 decimals of precision
+            prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
+            light_curves["non_detections"].loc[:, "round_mjd"] = light_curves["non_detections"]["mjd"].round(5)
+
+            prv_non_detections.drop_duplicates(["oid","fid", "round_mjd"])
+
+            # Checking if already on the database
+            index_prv_non_detections = pd.MultiIndex.from_frame(prv_non_detections[["oid", "fid", "round_mjd"]])
+            index_light_curve_non_detections = pd.MultiIndex.from_frame(
+                                                light_curves["non_detections"][["oid", "fid", "round_mjd"]]
+                                            )
+            already_on_db = index_prv_non_detections.isin(index_light_curve_non_detections)
+            prv_non_detections = prv_non_detections[~already_on_db]
+
+            # Dropping auxiliary column
+            light_curves["non_detections"].drop(columns=["round_mjd"], inplace=True)
+            prv_non_detections.drop(columns=["round_mjd"], inplace=True)
+            prv_non_detections.loc[:, "new"] = True
+            light_curves["non_detections"] = pd.concat([light_curves["non_detections"], prv_non_detections])
+
         return light_curves
 
 
     def process_objects(self, objects, light_curves, alerts):
+
         new_objects = ~light_curves["detections"]["oid"].isin(objects.oid)
+        new_alerts = ~alerts["oid"].isin(objects.oid)
 
         detections_new =  light_curves["detections"][new_objects]
         detections_old = light_curves["detections"][~new_objects]
 
         if len(detections_new) > 0:
-            self.insert_new_objects(detections_new, alerts)
+            self.insert_new_objects(detections_new, alerts[new_alerts])
+
         #if len(detections_old) > 0:
         # self.update_old_objects(detections_old, objects)
+
+    def get_colors(self, g_band, r_band):
+        g_max = g_band.min() if len(g_band) > 0 else np.nan
+        r_max = r_band.min() if len(r_band) > 0 else np.nan
+        g_mean = g_band.mean() if len(g_band) > 0 else np.nan
+        r_mean = r_band.mean() if len(r_band) > 0 else np.nan
+
+        g_r_max = g_max - r_max
+        g_r_mean = g_mean - r_mean
+
+        g_r_max = float(g_r_max) if not np.isnan(g_r_max) else None
+        g_r_mean = float(g_r_mean) if not np.isnan(g_r_mean) else None
+        return g_r_max, g_r_mean
+
 
     def get_object_data(self,oid, detections, alerts):
         mjd_detections = detections.sort_values("mjd")
         mjd_alerts = alerts.sort_values("mjd")
+
         first_alert = mjd_alerts.iloc[0]
         first_detection = mjd_detections.iloc[0]
         firstmjd = mjd_detections["mjd"].min()
         lastmjd = mjd_detections["mjd"].max()
+        g_band_mag = mjd_detections[mjd_detections.fid == 1]['magpsf'].values
+        r_band_mag = mjd_detections[mjd_detections.fid == 2]['magpsf'].values
+        g_band_mag_corr = mjd_detections[mjd_detections.fid == 1]['magpsf_corr'].values
+        r_band_mag_corr = mjd_detections[mjd_detections.fid == 2]['magpsf_corr'].values
+
+        g_r_max, g_r_mean = self.get_colors(g_band_mag, r_band_mag)
+        g_r_max_corr, g_r_mean_corr = self.get_colors(g_band_mag_corr, r_band_mag_corr)
 
         new_object = {
             "oid": oid,
@@ -345,12 +388,11 @@ class Correction(GenericStep):
             "mjdstarthist": float(first_alert["jdstarthist"] - 2400000.5),
             "mjdendhist": float(first_alert["jdendhist"] - 2400000.5),
             "corrected": mjd_detections["corrected"].all(),
-            #"stellar": ??
             "ndet": len(mjd_detections),
-            # "g-r_max":
-            # "g-r_max_corr":
-            # "g-r_mean":
-            # "g-r_mean_corr":
+            "g-r_max": g_r_max,
+            "g-r_max_corr": g_r_mean,
+            "g-r_mean": g_r_max_corr,
+            "g-r_mean_corr": g_r_mean_corr,
             "meanra": float(mjd_detections["ra"].mean()),
             "meandec": float(mjd_detections["dec"].mean()),
             "sigmara": float(mjd_detections["ra"].std()),
@@ -358,6 +400,7 @@ class Correction(GenericStep):
             "deltajd": float(lastmjd - firstmjd),
             "firstmjd": float(firstmjd),
             "lastmjd": float(lastmjd),
+            # "stellar":
             "step_id_corr": self.version
             }
         return new_object
@@ -374,13 +417,20 @@ class Correction(GenericStep):
 
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
-        detections.drop(columns=["new"], inplace=True)
+        # detections.drop(columns=["new"], inplace=True)
         detections = detections.where(pd.notnull(detections), None)
         dict_detections = detections.to_dict('records')
         self.driver.query().bulk_insert(dict_detections, Detection)
 
+    def insert_non_detections(self,non_detections):
+        self.logger.info(f"Inserting {len(non_detections)} new non_detections")
+        # non_detections.drop(columns=["new"], inplace=True)
+        non_detections = non_detections.where(pd.notnull(non_detections), None)
+        dict_non_detections = non_detections.to_dict('records')
+        self.driver.query().bulk_insert(dict_non_detections, NonDetection)
+
     def execute(self, messages):
-        # Transforming to a dataframe
+        # Casting to a dataframe
         alerts = pd.DataFrame(messages)
 
         # Removing stamps
@@ -388,21 +438,22 @@ class Correction(GenericStep):
 
         # Getting just the detections
         detections = pd.DataFrame(list(alerts["candidate"]))
-        detections["objectId"] = alerts["objectId"]
+        detections.loc[:, "objectId"] = alerts["objectId"]
+        detections.loc[:, "oid"] = alerts["objectId"]
         detections = self.preprocess_detections(detections)
         corrected = self.do_correction(detections)
-        corrected.rename(columns={"objectId":"oid"}, inplace=True)
         del detections
 
         light_curves = self.process_lightcurves(corrected, alerts)
-
-        self.logger.info(light_curves["detections"])
+        del alerts
 
         objects = self.get_objects(corrected["oid"].values)
         metadata = self.get_metadata(corrected["oid"].values)
-
         self.process_objects(objects, light_curves, corrected)
+        del corrected
 
         new_detections = light_curves["detections"]["new"]
-        self.insert_detections(light_curves["detections"][new_detections])
-        raise
+        self.insert_detections(light_curves["detections"].loc[new_detections])
+        new_non_detections = light_curves["non_detections"]["new"]
+        self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
+        del light_curves
