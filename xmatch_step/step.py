@@ -34,29 +34,41 @@ XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]
 
 
 class XmatchStep(GenericStep):
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        level=logging.INFO,
+        db_connection=None,
+        xmatch_client=None,
+        producer=None,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
 
         self.xmatch_config = config["XMATCH_CONFIG"]
-        self.xmatch_client = XmatchClient()
+        self.xmatch_client = xmatch_client or XmatchClient()
 
         if "CLASS" in config["PRODUCER_CONFIG"]:
             Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
         else:
             Producer = KafkaProducer
-        self.producer = Producer(config["PRODUCER_CONFIG"])
-        self.driver = SQLConnection()
+        self.producer = producer or Producer(config["PRODUCER_CONFIG"])
+        self.driver = db_connection or SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.logger.info(f"XMATCH {self.version}")
+        if not step_args.get("test_mode", False):
+            self.insert_step_metadata()
+
+    def insert_step_metadata(self):
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name= self.config["STEP_METADATA"]["STEP_NAME"],
+            name=self.config["STEP_METADATA"]["STEP_NAME"],
             version=self.config["STEP_METADATA"]["STEP_VERSION"],
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=datetime.datetime.now(),
         )
-
 
     def _extract_coordinates(self, message: dict):
         record = {
@@ -113,31 +125,29 @@ class XmatchStep(GenericStep):
             axis="columns",
         )
 
-        object_data = df_object[ df_object.oid.isin( result.oid ) ]
+        object_data = df_object[df_object.oid.isin(result.oid)]
 
-        #bulk insert to object table
+        # bulk insert to object table
         array = object_data.to_dict(orient="records")
         self.driver.query(Object).bulk_insert(array)
 
         # bulk insert to allwise table
-        data = result.drop(['oid', 'dist'], axis=1)
-        array = data.to_dict(orient='records')
+        data = result.drop(["oid", "dist"], axis=1)
+        array = data.to_dict(orient="records")
         self.driver.query(Allwise).bulk_insert(array)
 
-        #bulk insert to xmatch table
-        result['catid'] = 'allwise'
-        data = result[ ['oid','oid_catalog','dist','catid'] ]
-        array = data.to_dict(orient='records')
+        # bulk insert to xmatch table
+        result["catid"] = "allwise"
+        data = result[["oid", "oid_catalog", "dist", "catid"]]
+        array = data.to_dict(orient="records")
         self.driver.query(Xmatch).bulk_insert(array)
-
-
 
     def get_default_object_values(
         self,
         alert: dict,
     ) -> dict:
 
-        data = { "oid" : alert["objectId"] }
+        data = {"oid": alert["objectId"]}
         data["ndethist"] = alert["candidate"]["ndethist"]
         data["ncovhist"] = alert["candidate"]["ncovhist"]
         data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
@@ -159,7 +169,6 @@ class XmatchStep(GenericStep):
             self.producer.produce(message, key=message["objectId"])
 
     def execute(self, messages):
-
         array = []
         object_array = []
         for m in messages:
@@ -186,7 +195,7 @@ class XmatchStep(GenericStep):
         )
 
         # Write in database
-        self.save_xmatch(result,object_df)
+        self.save_xmatch(result, object_df)
 
         messages = self._format_result(messages, df, result)
         self._produce(messages)
