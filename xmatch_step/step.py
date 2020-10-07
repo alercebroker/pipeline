@@ -62,6 +62,24 @@ class XmatchStep(GenericStep):
             self.insert_step_metadata()
 
     def insert_step_metadata(self):
+        """
+        Inserts step metadata like version and step name.
+        Some config is required:
+
+        .. code-block:: python
+
+            #settings.py
+        
+            STEP_CONFIG = {
+                STEP_METADATA = {
+                    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
+                    "STEP_ID": os.getenv("STEP_VERSION", "dev"),
+                    "STEP_NAME": os.getenv("STEP_VERSION", "dev"),
+                    "STEP_COMMENTS": "",
+                }
+            }
+
+        """
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -71,6 +89,19 @@ class XmatchStep(GenericStep):
         )
 
     def _extract_coordinates(self, message: dict):
+        """
+        Get ra, dec and oid from alert message.
+
+        Poarameters
+        -----------
+        message : dict
+            ztf alert message from stream
+
+        Returns
+        -------
+        record : dict
+            a dict with oid, ra and dec keys
+        """
         record = {
             "oid": message["objectId"],
             "ra": message["candidate"]["ra"],
@@ -79,7 +110,6 @@ class XmatchStep(GenericStep):
         return record
 
     def _format_result(self, msgs, input, result):
-
         messages = []
         # objects without xmatch
         without_result = input[~input["oid_in"].isin(result["oid_in"])]["oid_in"].values
