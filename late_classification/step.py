@@ -41,12 +41,13 @@ class LateClassifier(GenericStep):
                  level=logging.INFO,
                  db_connection=None,
                  producer=None,
+                 model=None,
                  **step_args):
         super().__init__(consumer, config=config, level=level)
 
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        self.model = HierarchicalRandomForest({})
+        self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
         self.features_required = set(self.model.feature_list)
