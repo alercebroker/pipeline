@@ -35,7 +35,13 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+    def __init__(self,
+                 consumer=None,
+                 config=None,
+                 level=logging.INFO,
+                 db_connection=None,
+                 producer=None,
+                 **step_args):
         super().__init__(consumer, config=config, level=level)
 
         numexpr.utils.set_num_threads(1)
@@ -48,15 +54,19 @@ class LateClassifier(GenericStep):
         if "CLASS" in config["PRODUCER_CONFIG"]:
             Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
         else:
-            Producer = KafkaProducer
+            Producer = producer or KafkaProducer
 
         self.producer = Producer(config["PRODUCER_CONFIG"])
-        self.driver = SQLConnection()
+        self.driver = db_connection or SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
+        if not step_args.get("test_mode", False):
+            self.insert_step_metadata()
+
+    def insert_step_metadata(self):
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_NAME"],
+            version=self.config["STEP_METADATA"]["STEP_VERSION"],
             comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
             date=datetime.datetime.now(),
         )
@@ -69,7 +79,7 @@ class LateClassifier(GenericStep):
 
         Parameters
         ----------
-        message : dict
+        features : dict
             Message deserialized of Kafka.
         """
         features = pd.DataFrame.from_records([features])

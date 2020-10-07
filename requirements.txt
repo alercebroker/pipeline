@@ -1,7 +1,7 @@
-scipy
-numpy
-pandas
+apf-base==1.0.0
 numexpr
--e git+https://git@github.com/alercebroker/APF@develop#egg=APF
+numpy~=1.17.0
+scipy~=1.3.1
+pandas
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
 -e git+https://git@github.com/alercebroker/late_classifier@paper_paula_new_db#egg=late_classifier

@@ -3,7 +3,8 @@
 ## Description
 
 - Classification with [`Hierarchical RF`](https://github.com/alercebroker/late_classifier/blob/master/late_classifier/classifier/hierarchical_rf/model.py) model.
-- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). - Version 1.0.0 of model from Light Curve Classification Paper.
+- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). - Version 1.0.1 of model from Light Curve Classification Paper.
+- Do inference of features of light curve and store result. 
 - If lack of some feature, so it isn't classify.
 
 #### Previous steps:
@@ -23,9 +24,10 @@
 
 ## Version
 
-- **0.0.1:** - Use of APF. - Use of [Late Classifier Library](https://github.com/alercebroker/late_classifier).
-- **0.0.2:** - Added `db-plugins` instead of `apf.db`, using new `Probability` and `Taxonomy` tables.
-
+- **0.0.1:** Use of APF. - Use of [Late Classifier Library](https://github.com/alercebroker/late_classifier).
+- **0.0.2:** Added `db-plugins` instead of `apf.db`, using new `Probability` and `Taxonomy` tables.
+- **1.0.0:** Update documentation and test step.
+ 
 ## Libraries used
 
 - APF
@@ -135,7 +137,7 @@
 For use this step, first you must build the image of docker. After that you can run the step for use it.
 
 ```bash
-docker build -t late_classification_step:0.0.1 .
+docker build -t late_classification_step:latest .
 ```
 
 ## Run step
@@ -145,7 +147,7 @@ docker build -t late_classification_step:0.0.1 .
 You can use a `docker run` command, you must set all environment variables.
 
 ```bash
-docker run --name my_lc_class_step -e DB_NAME=myhost -e [... all env ...] -d late_classification_step:0.0.1
+docker run --name my_step -e DB_NAME=myhost -e [... all env ...] -d late_classification_step:latest
 ```
 
 ### Run docker-compose
@@ -163,3 +165,19 @@ docker-compose up -d --scale late_classification=32
 ```
 
 **Note:** Use `docker-compose down` for stop all containers.
+
+## Local Installation
+
+### Requirements
+
+To install the required packages run
+
+```bash
+pip install -r requirements.txt
+```
+
+After that you can modify the logic of the step in [step.py](https://github.com/alercebroker/late_classification_step/blob/master/late_classification/step.py) and run
+
+```bash
+python scripts/run_step.py
+```

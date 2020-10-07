@@ -1,5 +1,5 @@
 ##################################################
-#       features   Settings File
+#       Late Classifier Settings File
 ##################################################
 import os
 from features_schema import FEATURES_SCHEMA
