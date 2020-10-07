@@ -7,14 +7,6 @@ import os
 ## Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
-## Other parameters that can be passed are defined here
-# https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch
-
-## Consumer configuration
-### Each consumer has different parameters and can be found in the documentation-
-
-
-
 CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
