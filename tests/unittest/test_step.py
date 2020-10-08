@@ -214,6 +214,7 @@ PREDICTION = {
     "class": "E",
 }
 
+
 class MockSession:
     def commit(self):
         pass
@@ -223,6 +224,7 @@ class MockSession:
 
     def query(self):
         return mock.create_autospec(SQLQuery)()
+
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
@@ -243,6 +245,7 @@ class StepTestCase(unittest.TestCase):
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_model = mock.create_autospec(HierarchicalRandomForest)
         self.mock_model.feature_list = CORRECT_MESSAGE["features"].keys()
+        self.mock_model.MODEL_VERSION_NAME = "test"
         self.step = LateClassifier(
             config=self.step_config,
             db_connection=self.mock_database_connection,
@@ -307,11 +310,33 @@ class StepTestCase(unittest.TestCase):
         self.assertEqual(instance, "instance")
         self.assertEqual(created, "created")
 
-    def test_insert_dict(self):
-        pass
+    @mock.patch.object(LateClassifier, "set_taxonomy")
+    @mock.patch.object(LateClassifier, "get_probability")
+    def test_insert_dict(self, mock_get_probability, mock_set_taxonomy):
+        mock_get_probability.return_value = (mock.MagicMock, "created")
+        probabilities_dict = PREDICTION["probabilities"]
+        oid = CORRECT_MESSAGE["oid"]
+        probabilities = self.step.insert_dict(oid, probabilities_dict, "test")
+        mock_set_taxonomy.assert_called_with(
+            classes=list(probabilities_dict.keys()),
+            classifier_name="lc_classifier_test",
+            classifier_version="test",
+        )
+        self.assertEqual(
+            len(mock_get_probability.mock_calls), len(probabilities_dict.keys())
+        )
+        self.assertEqual(
+            probabilities,
+            [mock_get_probability.return_value[0]] * len(probabilities_dict.keys()),
+        )
 
-    def test_insert_db(self):
-        pass
+    @mock.patch.object(LateClassifier, "insert_dict")
+    def test_insert_db(self, mock_insert_dict):
+        mock_insert_dict.return_value = ["ok"]
+        result = PREDICTION
+        oid = CORRECT_MESSAGE["oid"]
+        probabilities = self.step.insert_db(result, oid)
+        self.assertEqual(len(probabilities), 5)
 
     @mock.patch.object(LateClassifier, "insert_db")
     def test_execute_missing_features(self, mock_insert):
@@ -333,4 +358,6 @@ class StepTestCase(unittest.TestCase):
             "features": CORRECT_MESSAGE["features"],
             "late_classification": PREDICTION,
         }
-        self.step.producer.produce.assert_called_with(new_message, key=new_message["oid"])
+        self.step.producer.produce.assert_called_with(
+            new_message, key=new_message["oid"]
+        )
