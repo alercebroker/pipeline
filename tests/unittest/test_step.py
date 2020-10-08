@@ -242,6 +242,7 @@ class StepTestCase(unittest.TestCase):
         self.mock_database_connection.session = mock.create_autospec(MockSession)
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_model = mock.create_autospec(HierarchicalRandomForest)
+        self.mock_model.feature_list = CORRECT_MESSAGE["features"].keys()
         self.step = LateClassifier(
             config=self.step_config,
             db_connection=self.mock_database_connection,
@@ -312,9 +313,24 @@ class StepTestCase(unittest.TestCase):
     def test_insert_db(self):
         pass
 
-    @mock.patch.object(LateClassifier, "insert_db") #TODO
+    @mock.patch.object(LateClassifier, "insert_db")
     def test_execute_missing_features(self, mock_insert):
+        self.step.features_required = set("not_empty")
         self.step.execute(CORRECT_MESSAGE)
-        self.mock_model.predict_in_pipeline.assert_not_called()
+        self.step.model.predict_in_pipeline.assert_not_called()
         mock_insert.assert_not_called()
-        self.mock_producer.produce.assert_not_called()
+        self.step.producer.produce.assert_not_called()
+
+    @mock.patch.object(LateClassifier, "insert_db")
+    def test_execute_no_missing_features(self, mock_insert):
+        self.step.model.predict_in_pipeline.return_value = PREDICTION
+        self.step.execute(CORRECT_MESSAGE)
+        self.step.model.predict_in_pipeline.assert_called()
+        mock_insert.assert_called_with(PREDICTION, CORRECT_MESSAGE["oid"])
+        new_message = {
+            "oid": CORRECT_MESSAGE["oid"],
+            "candid": CORRECT_MESSAGE["candid"],
+            "features": CORRECT_MESSAGE["features"],
+            "late_classification": PREDICTION,
+        }
+        self.step.producer.produce.assert_called_with(new_message, key=new_message["oid"])
