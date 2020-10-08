@@ -24,7 +24,8 @@ from lc_correction.compute import (
     apply_correction_df,
     is_dubious,
     apply_mag_stats,
-    do_dmdt,
+    do_dmdt_df,
+    apply_object_stats_df,
     DISTANCE_THRESHOLD,
 )
 from astropy.time import Time
@@ -35,6 +36,7 @@ import numpy as np
 import logging
 import numbers
 import datetime
+import warnings
 
 from sqlalchemy.sql.expression import bindparam
 
@@ -168,6 +170,35 @@ OBJECT_UPDATE_PARAMS = [
     "lastmjd",
     "step_id_corr",
 ]
+MAGSTATS_KEYS = [
+    "oid",
+    "fid",
+    "stellar",
+    "corrected",
+    "ndet",
+    "ndubious",
+    "dmdt_first",
+    "dm_first",
+    "sigmadm_first",
+    "dt_first",
+    "magmean",
+    "magmedian",
+    "magmax",
+    "magmin",
+    "magsigma",
+    "maglast",
+    "magfirst",
+    "magmean_corr",
+    "magmedian_corr",
+    "magmax_corr",
+    "magmin_corr",
+    "magsigma_corr",
+    "maglast_corr",
+    "magfirst_corr",
+    "firstmjd",
+    "lastmjd",
+    "step_id_corr"
+]
 
 OBJECT_UPDATE_PARAMS_STMT = dict(zip(OBJECT_UPDATE_PARAMS,map(bindparam,OBJECT_UPDATE_PARAMS)))
 
@@ -206,15 +237,50 @@ class Correction(GenericStep):
         )
         self.driver.session.commit()
 
+
+    def remove_stamps(self, alerts):
+        for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
+            del alerts[k]
+
+    def preprocess_metadata(self, metadata, detections):
+        metadata["ps1_ztf"] = self.preprocess_ps1(metadata["ps1_ztf"], detections)
+        metadata["ss_ztf"] = self.preprocess_ss(metadata["ss_ztf"], detections)
+        metadata["reference"] = self.preprocess_reference(metadata["reference"], detections)
+        metadata["gaia"] = self.preprocess_gaia(metadata["gaia"], detections)
+        return metadata
+
+    def preprocess_objects(self, objects, light_curves, alerts, magstats):
+        oids = objects.oid.unique()
+        apply_last_alert = lambda x: self.get_last_alert(x)
+        last_alerts = alerts.groupby('oid', sort=False).apply(apply_last_alert)
+
+        detections = light_curves["detections"]
+        detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
+        detections_last_alert["objectId"] = detections_last_alert.oid
+        detections_last_alert.drop_duplicates("oid",inplace=True)
+        magstats["objectId"] = magstats.oid
+
+        new_objects = apply_object_stats_df(detections_last_alert, magstats, step_name=self.version)
+        new_objects.reset_index(inplace=True)
+        new_names = dict([(col,col.replace("-", "_")) for col in new_objects.columns if "-" in col])
+
+        new_objects.rename(columns={"objectId":"oid", **new_names}, inplace=True)
+        new_objects["new"] = ~new_objects.oid.isin(oids)
+        new_objects["deltajd"] = new_objects["lastmjd"] - new_objects["firstmjd"]
+
+        detections_last_alert.drop(columns=["objectId"], inplace=True)
+        magstats.drop(columns=["objectId"], inplace=True)
+        return new_objects
+
     def preprocess_detections(self, detections, is_prv_candidate=False) -> None:
         detections.loc[:,"mjd"] = detections["jd"] - 2400000.5
         detections.loc[:,"has_stamp"] = True
         detections.loc[:,"step_id_corr"] = self.version
         return detections
 
-    def remove_stamps(self, alerts):
-        for k in ["cutoutDifference", "cutoutScience", "cutoutTemplate"]:
-            del alerts[k]
+    def preprocess_dataquality(self, detections):
+        dataquality = detections.loc[:,detections.columns.isin(DATAQUALITY_KEYS)]
+        return dataquality
 
     def do_correction(self, detections, inplace=False) -> dict:
         fid = detections.fid.values
@@ -224,6 +290,44 @@ class Correction(GenericStep):
         corrected.loc[:, "fid"] = fid
         corrected.loc[:, "candid"] = candid
         return corrected
+
+    def do_dubious(self,df):
+        min_corr = df.groupby(["oid", "fid"], sort=False).apply(self.get_first_corrected)
+        min_corr.name = "first_corrected"
+        df = df.join(min_corr, on=["oid", "fid"])
+        df.loc[:,"dubious"] = is_dubious(df.corrected, df.isdiffpos, df.first_corrected)
+        df.drop(columns=["first_corrected"], inplace=True)
+        return df
+
+    def do_magstats(self, light_curves, metadata, magstats):
+        magstats_index = pd.MultiIndex.from_frame(magstats[["oid", "fid"]])
+        detections = light_curves["detections"]
+        non_detections = light_curves["non_detections"]
+        ps1 = metadata["ps1_ztf"][["oid","distpsnr1","sgscore1"]]
+        ps1.set_index("oid",inplace=True)
+        ref = metadata["reference"][["oid", "rfid", "chinr","sharpnr"]]
+        ref.set_index(["oid","rfid"],inplace=True)
+        det_ps1 = detections.join(ps1, on="oid", rsuffix="ps1")
+        det_ps1_ref = det_ps1.join(ref, on=["oid","rfid"], rsuffix="ref")
+        det_ps1_ref.reset_index(inplace=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            new_magstats = det_ps1_ref.groupby(["oid","fid"], sort=False).apply(apply_mag_stats)
+        new_magstats.reset_index(inplace=True)
+        new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
+        new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
+
+        return new_magstats
+
+    def do_dmdt(self, light_curves, magstats):
+        non_detections = light_curves["non_detections"]
+        non_detections["objectId"] = non_detections["oid"]
+        magstats["objectId"] = magstats["oid"]
+        dmdt = do_dmdt_df(magstats, non_detections)
+
+        non_detections.drop(columns=["objectId"],inplace=True)
+        magstats.drop(columns=["objectId"],inplace=True)
+        return dmdt
 
     def get_objects(self, oids):
         query = self.driver.query(Object).filter(Object.oid.in_(oids))
@@ -271,15 +375,6 @@ class Correction(GenericStep):
         query = self.driver.query(MagStats).filter(MagStats.oid.in_(oids))
         return pd.read_sql(query.statement, self.driver.engine)
 
-    def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
-        non_detection = {
-            "oid": object_id,
-            "mjd": candidate["mjd"],
-            "diffmaglim": candidate["diffmaglim"],
-            "fid": candidate["fid"],
-        }
-        return non_detection
-
     def get_prv_candidates(self, alert):
         prv_candidates = alert["prv_candidates"]
         candid = alert["candid"]
@@ -308,7 +403,16 @@ class Correction(GenericStep):
 
         return pd.DataFrame(detections), pd.DataFrame(non_detections)
 
-    def process_lightcurves(self, detections, alerts):
+    def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
+        non_detection = {
+            "oid": object_id,
+            "mjd": candidate["mjd"],
+            "diffmaglim": candidate["diffmaglim"],
+            "fid": candidate["fid"],
+        }
+        return non_detection
+
+    def preprocess_lightcurves(self, detections, alerts):
         oids = detections.oid.values
 
         detections.loc[:,"parent_candid"] = None
@@ -381,99 +485,68 @@ class Correction(GenericStep):
 
         return light_curves
 
-
-    def process_objects(self, objects, light_curves, alerts):
-
-        new_objects = ~light_curves["detections"]["oid"].isin(objects.oid)
-        new_alerts = ~alerts["oid"].isin(objects.oid)
-
-        detections_new =  light_curves["detections"][new_objects]
-        detections_old = light_curves["detections"][~new_objects]
-
-        if len(detections_new) > 0:
-            self.insert_new_objects(detections_new, alerts[new_alerts])
-
-        if len(detections_old) > 0:
-            self.update_old_objects(detections_old,alerts[~new_alerts])
-
-    def process_ps1(self, metadata, detections):
+    def preprocess_ps1(self, metadata, detections):
         oids = metadata.oid.unique()
+        metadata["new"] = False
+        for i in range(1,4):
+            metadata[f"update{i}"] = False
         new_metadata = ~detections.oid.isin(oids)
         new_values = detections.loc[new_metadata,detections.columns.isin(PS1_KEYS)]
         old_values = detections.loc[~new_metadata,detections.columns.isin(PS1_KEYS)]
 
         if len(new_values) > 0:
-            self.logger.info(f"Inserting {len(new_values)} PS1 Metadata")
-            new_values = new_values.where(pd.notnull(new_values), None)
+            new_values.loc[:, "new"] = True
+            new_values.drop_duplicates(["oid"], inplace=True)
             for i in range(1,4):
-                new_values[f"unique{i}"] = True
-
-            dict_new_values = new_values.to_dict('records')
-            self.driver.query().bulk_insert(dict_new_values, Ps1_ztf)
+                new_values.loc[:, f"unique{i}"] = True
+                new_values.loc[:, f"update{i}"] = False
         if len(old_values) > 0:
-            self.logger.info(f"{len(old_values)} PS1 Metadata to be checked")
             join_metadata = old_values.join(metadata.set_index("oid"), on="oid", rsuffix="_old")
             for i in range(1,4):
-                updates = []
                 difference = join_metadata[
-                                (join_metadata[f"objectidps{i}"] != join_metadata[f"objectidps{i}_old"]) & join_metadata[f"unique{i}"]
-                            ]
-                for oid in difference.oid:
-                    updates.append({"_oid": oid, f"unique{i}": False})
-                if len(updates) > 0:
-                    self.logger.info(f"Updating {len(updates)} PS1 unique{i} metadata")
-                    stmt = Ps1_ztf.__table__.update().\
-                            where(Ps1_ztf.oid == bindparam('_oid')).\
-                            values({f"unique{i}": bindparam(f'unique{i}')})
-                    self.driver.engine.execute(stmt, updates)
+                            (join_metadata[f"objectidps{i}"] != join_metadata[f"objectidps{i}_old"]) & join_metadata[f"unique{i}"]
+                        ]
+                metadata[f"update{i}"] = metadata.oid.isin(difference.oid)
 
         return pd.concat([metadata, new_values])
 
-    def process_ss(self, metadata, detections):
+    def preprocess_ss(self, metadata, detections):
         oids = metadata.oid.unique()
+        metadata["new"] = False
         new_metadata = ~detections.oid.isin(oids)
         new_values = detections.loc[new_metadata,detections.columns.isin(SS_KEYS)]
-        if len(new_values) > 0:
-            self.logger.info(f"Inserting {len(new_values)} Solar System Metadata")
-            new_values = new_values.where(pd.notnull(new_values), None)
-            dict_new_values = new_values.to_dict('records')
-            self.driver.query().bulk_insert(dict_new_values, Ss_ztf)
+        new_values.loc[:,"new"] = True
+
         return pd.concat([metadata, new_values])
 
 
-    def process_reference(self,metadata, detections):
+    def preprocess_reference(self,metadata, detections):
         oids = metadata.oid.unique()
+        metadata["new"] = False
         index_metadata = pd.MultiIndex.from_frame(metadata[["oid", "rfid"]])
         index_detections = pd.MultiIndex.from_frame(detections[["oid", "rfid"]])
         already_on_db = index_detections.isin(index_metadata)
         detections["mjdstartref"] = detections["jdstartref"] - 2400000.5
         detections["mjdendref"] = detections["jdendref"] - 2400000.5
         new_values = detections.loc[~already_on_db, detections.columns.isin(REFERENCE_KEYS)]
-        if len(new_values) > 0:
-            self.logger.info(f"Inserting {len(new_values)} References")
-            new_values = new_values.where(pd.notnull(new_values), None)
-            dict_new_values = new_values.to_dict('records')
-            self.driver.query().bulk_insert(dict_new_values, Reference)
+        new_values.loc[:, "new"] = True
 
         return pd.concat([metadata, new_values])
 
-    def process_gaia(self, metadata, detections):
+    def preprocess_gaia(self, metadata, detections):
         oids = metadata.oid.unique()
+        metadata[f"update1"] = False
         new_metadata = ~detections.oid.isin(oids)
         new_values = detections.loc[new_metadata,detections.columns.isin(GAIA_KEYS)]
         old_values = detections.loc[~new_metadata,detections.columns.isin(GAIA_KEYS)]
 
         if len(new_values) > 0:
-            self.logger.info(f"Inserting {len(new_values)} Gaia Metadata")
-            new_values = new_values.where(pd.notnull(new_values), None)
             new_values[f"unique1"] = True
-            dict_new_values = new_values.to_dict('records')
-            self.driver.query().bulk_insert(dict_new_values, Gaia_ztf)
+            new_values[f"update1"] = False
+
 
         if len(old_values) > 0:
-            self.logger.info(f"{len(old_values)} Gaia Metadata to be checked")
             join_metadata = old_values.join(metadata.set_index("oid"), on="oid", rsuffix="_old")
-            updates = []
             difference = join_metadata[
                             ~np.isclose(join_metadata["neargaia"], join_metadata[f"neargaia_old"]) &\
                             ~np.isclose(join_metadata["neargaiabright"], join_metadata[f"neargaiabright_old"]) &\
@@ -481,25 +554,10 @@ class Correction(GenericStep):
                             ~np.isclose(join_metadata["maggaiabright"], join_metadata[f"maggaiabright_old"]) &\
                              join_metadata[f"unique1"]
                         ]
-            for oid in difference.oid:
-                updates.append({"_oid": oid, f"unique1": False})
-            if len(updates) > 0:
-                self.logger.info(f"Updating {len(updates)} Gaia unique1 metadata")
-                stmt = Ps1_ztf.__table__.update().\
-                        where(Ps1_ztf.oid == bindparam('_oid')).\
-                        values({f"unique1": bindparam(f'unique1')})
-                self.driver.engine.execute(stmt, updates)
+            metadata[f"update1"] = metadata.oid.isin(difference.oid)
 
 
         return pd.concat([metadata, new_values])
-
-
-    def process_metadata(self, metadata, detections):
-        metadata["ps1_ztf"] = self.process_ps1(metadata["ps1_ztf"], detections)
-        metadata["ss_ztf"] = self.process_ss(metadata["ss_ztf"], detections)
-        metadata["reference"] = self.process_reference(metadata["reference"], detections)
-        metadata["gaia"] = self.process_gaia(metadata["gaia"], detections)
-        return metadata
 
     def get_colors(self, g_band, r_band):
         g_max = g_band.min() if len(g_band) > 0 else np.nan
@@ -515,11 +573,11 @@ class Correction(GenericStep):
     def get_last_alert(self, alerts):
         last_alert = alerts.candid.values.argmax()
         filtered_alerts = alerts.loc[:,["oid","ndethist","ncovhist","jdstarthist","jdendhist"]]
-        return filtered_alerts.iloc[last_alert]
+        last_alert = filtered_alerts.iloc[last_alert]
+        return last_alert
 
     def get_object_data(self, detections):
-        first_detection_position = detections.candid.values.argmin()
-        first_detection = detections.iloc[first_detection_position]
+        first_detection = detections.iloc[0]
         firstmjd = detections.mjd.min()
         lastmjd = detections.mjd.max()
         g_band_mag = detections[detections.fid == 1]['magpsf'].values
@@ -557,21 +615,10 @@ class Correction(GenericStep):
         query = self.driver.query(Dataquality).filter(Dataquality.candid.in_(candids))
         return pd.read_sql(query.statement, self.driver.engine)
 
-    def preprocess_dataquality(self, detections):
-        dataquality = detections.loc[:,detections.columns.isin(DATAQUALITY_KEYS)]
-        return dataquality
-
-    def insert_new_objects(self, detections, alerts):
-        oids = alerts.oid.unique()
-        self.logger.info(f"Inserting {len(oids)} new objects")
-        apply_last_alert = lambda x: self.get_last_alert(x)
-        last_alerts = alerts.groupby('oid', sort=False).apply(apply_last_alert)
-        detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
-        apply_get_object_data = lambda x: self.get_object_data(x)
-        new_objects = detections_last_alert.groupby('oid', sort=False).apply(apply_get_object_data)
-        new_objects.reset_index(inplace=True)
-        dict_new_objects = new_objects.to_dict('records')
-        self.driver.query().bulk_insert(dict_new_objects, Object)
+    def get_first_corrected(self, df):
+        min_candid = df.candid.values.argmin()
+        first_corr = df.corrected.iloc[min_candid]
+        return first_corr
 
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
@@ -597,56 +644,35 @@ class Correction(GenericStep):
         dict_dataquality = dataquality.to_dict('records')
         self.driver.query().bulk_insert(dict_dataquality, Dataquality)
 
-    def get_first_corrected(self, df):
-        min_candid = df.candid.values.argmin()
-        first_corr = df.corrected.iloc[min_candid]
-        return first_corr
+
+    def insert_objects(self, objects):
+        new_objects = objects["new"]
+        objects.drop_duplicates(["oid"],inplace=True)
+        objects.drop(columns=["new"], inplace=True)
+
+        to_insert = objects[new_objects]
+        to_update = objects[~new_objects]
+
+        if len(to_insert) > 0:
+            self.logger.info(f"Inserting {len(to_insert)} new objects")
+            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.to_csv("/app/performace/to_insert.csv")
+            to_insert.to_pickle("/app/performace/to_insert.pkl")
+
+            dict_to_insert = to_insert.to_dict('records')
+            self.driver.query().bulk_insert(dict_to_insert, Object)
+
+        if len(to_update) > 0:
+            self.logger.info(f"Updating {len(to_update)} new objects")
+            to_update = to_update.where(pd.notnull(to_update), None)
+            to_update.rename(columns={"oid":"_oid"}, inplace=True)
+            dict_to_update = to_update.to_dict('records')
+            stmt = Object.__table__.update().\
+                    where(Object.oid == bindparam('_oid')).\
+                    values(OBJECT_UPDATE_PARAMS_STMT)
+            self.driver.engine.execute(stmt, dict_to_update)
 
 
-    def update_dubious(self,df):
-        min_corr = df.groupby(["oid", "fid"], sort=False).apply(self.get_first_corrected)
-        min_corr.name = "first_corrected"
-        df = df.join(min_corr, on=["oid", "fid"])
-        df.loc[:,"dubious"] = is_dubious(df.corrected, df.isdiffpos, df.first_corrected)
-        df.drop(columns=["first_corrected"], inplace=True)
-        return df
-
-    def update_old_objects(self, detections, alerts):
-        oids = alerts.oid.unique()
-        self.logger.info(f"Inserting {len(oids)} new objects")
-
-        # Getting last alert
-        apply_last_alert = lambda x: self.get_last_alert(x)
-        last_alerts = alerts.groupby('oid', sort=False).apply(apply_last_alert)
-        # Joining with detections
-        detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
-        apply_get_object_data = lambda x: self.get_object_data(x)
-
-        # Getting detections info
-        new_data = detections_last_alert.groupby('oid', sort=False).apply(apply_get_object_data)
-        new_data.reset_index(inplace=True)
-
-        # Renaming column for insert
-        new_data.rename(columns={"oid":"_oid"}, inplace=True)
-
-        dict_new_data = new_data.to_dict('records')
-        stmt = Object.__table__.update().\
-                where(Object.oid == bindparam('_oid')).\
-                values(OBJECT_UPDATE_PARAMS_STMT)
-        self.driver.engine.execute(stmt, dict_new_data)
-
-    # def do_magstats(self, light_curves, metadata):
-    #     detections = light_curves["detections"]
-    #     non_detections = light_curves["non_detections"]
-    #     ps1 = metadata["ps1_ztf"][["oid","distpsnr1","sgscore1"]]
-    #     ps1.set_index("oid",inplace=True)
-    #     ref = metadata["reference"][["oid", "rfid", "mjdstartref", "chinr","sharpnr"]]
-    #     ref.set_index(["oid","rfid"],inplace=True)
-    #     unique_ref = ref.sort_values('mjdstartref', ascending=False).drop_duplicates(["oid", "rfid"])
-    #     det_ps1 = detections.join(ps1, on="oid", rsuffix="ps1")
-    #     det_ps1_ref = det_ps1.join(unique_ref, on=["oid","rfid"], rsuffix="ref")
-    #     magstats = det_ps1_ref.groupby(["oid","fid"], sort=False).apply(apply_mag_stats)
-    #     return magstats
 
     def _produce(xmatch, metadata, light_curve):
         pass
@@ -663,10 +689,12 @@ class Correction(GenericStep):
         #     }
         #     self._produce(["xmatches"], )
         pass
+
     def execute(self, messages):
+        self.logger.info(f"Processing {len(messages)} alerts")
+
         # Casting to a dataframe
         alerts = pd.DataFrame(messages)
-
         # Removing stamps
         self.remove_stamps(alerts)
 
@@ -678,31 +706,36 @@ class Correction(GenericStep):
         corrected = self.do_correction(detections)
         # Index was changed to candid in do_correction
         detections.reset_index(inplace=True)
-
         new_dataquality = self.preprocess_dataquality(detections)
 
         # Getting data from database, and processing prv_candidates
-        light_curves = self.process_lightcurves(corrected, alerts)
+        light_curves = self.preprocess_lightcurves(corrected, alerts)
 
         # Update dubious
-        light_curves["detections"] = self.update_dubious(light_curves["detections"])
+        light_curves["detections"] = self.do_dubious(light_curves["detections"])
 
         # Getting other tables
         objects = self.get_objects(corrected["oid"].unique())
         metadata = self.get_metadata(corrected["oid"].unique())
         magstats = self.get_magstats(corrected["oid"].unique())
+        metadata = self.preprocess_metadata(metadata, detections)
+        new_magstats = self.do_magstats(light_curves, metadata, magstats)
+        dmdt = self.do_dmdt(light_curves, new_magstats)
+        new_stats = new_magstats.join(dmdt, on=["oid", "fid"])
+        objects = self.preprocess_objects(objects, light_curves, detections, new_stats)
 
         # Insert new objects and update old objects
-        self.process_objects(objects, light_curves, corrected)
-        new_detections = light_curves["detections"]["new"]
-        self.insert_detections(light_curves["detections"].loc[new_detections])
-        self.insert_dataquality(new_dataquality)
-        new_non_detections = light_curves["non_detections"]["new"]
-        self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
-        metadata = self.process_metadata(metadata, detections)
-        # new_magstats = self.do_magstats(light_curves, metadata)
+        self.insert_objects(objects)
 
-        self.produce(alerts, light_curves, metadata)
+        # new_detections = light_curves["detections"]["new"]
+        # self.insert_detections(light_curves["detections"].loc[new_detections])
+        # self.insert_dataquality(new_dataquality)
+        # new_non_detections = light_curves["non_detections"]["new"]
+        # self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
+
+        # self.produce(alerts, light_curves, metadata)
+
+        raise
 
         del alerts
         del detections
