@@ -12,8 +12,16 @@ class DateTimeEncoder(json.JSONEncoder):
             return obj.isoformat()
 
 
-class KafkaMetricsProducer:
+class GenericMetricsProducer:
+    def __init__(self, config):
+        self.config = config
+
+    def send_metrics(self, metrics):
+        pass
+
+class KafkaMetricsProducer(GenericMetricsProducer):
     def __init__(self, config, producer=None):
+        super().__init__(config)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
