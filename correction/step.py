@@ -337,6 +337,7 @@ class Correction(GenericStep):
         new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
         new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
         new_magstats["step_id_corr"] = self.version
+        new_magstats.drop_duplicates(["oid", "fid"], inplace=True)
 
         return new_magstats
 
@@ -345,7 +346,6 @@ class Correction(GenericStep):
         non_detections["objectId"] = non_detections["oid"]
         magstats["objectId"] = magstats["oid"]
         dmdt = do_dmdt_df(magstats, non_detections)
-
         non_detections.drop(columns=["objectId"],inplace=True)
         magstats.drop(columns=["objectId"],inplace=True)
         return dmdt
@@ -499,6 +499,7 @@ class Correction(GenericStep):
                                             )
             already_on_db = index_prv_non_detections.isin(index_light_curve_non_detections)
             prv_non_detections = prv_non_detections[~already_on_db]
+            prv_non_detections.drop_duplicates(inplace=True)
 
             if len(prv_non_detections) > 0:
                 # Dropping auxiliary column
@@ -792,6 +793,17 @@ class Correction(GenericStep):
 
         n_messages = 0
         for oid in oids:
+            detections = light_curves["detections"].loc[[oid]]
+
+            max_detections = max([
+                            (detections.fid == 1).sum() ,
+                            (detections.fid == 2).sum()
+                            ])
+            if max_detections < MIN_DETECTIONS_TO_PRODUCE:
+                continue
+
+            detections = detections.where(pd.notnull(detections), None)
+            detections.reset_index(inplace=True)
             oid_metdata = {
                 "ps1_ztf": metadata["ps1_ztf"].loc[oid],
                 "ss_ztf": metadata["ss_ztf"].loc[oid],
@@ -799,19 +811,10 @@ class Correction(GenericStep):
             }
             oid_alerts = alerts.loc[[oid]]
             oid_candid = oid_alerts.candid.to_list()
-
-            detections = light_curves["detections"].loc[[oid]]
-            detections = detections.where(pd.notnull(detections), None)
-            detections.reset_index(inplace=True)
-            max_detections = detections.groupby("fid").apply(len).max()
-            if max_detections < MIN_DETECTIONS_TO_PRODUCE:
-                continue
-
             detections = detections.to_dict('records')
 
-
             non_detections = light_curves["non_detections"].loc[[oid]] if oid in light_curves["non_detections"].index else pd.DataFrame([])
-            non_detections = non_detections.where(pd.notnull(non_detections), None)
+            # non_detections = non_detections.where(pd.notnull(non_detections), None)
             non_detections.reset_index(inplace=True)
             non_detections = non_detections.to_dict('records')
 
