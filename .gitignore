@@ -131,3 +131,5 @@ dmypy.json
 *.avro
 
 src/
+
+.idea/

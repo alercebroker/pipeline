@@ -1,4 +1,6 @@
-# LC Correction
+# LC Correction (preprocess) step
+
+Last update: 2020/10/06
 
 ## Description
 
@@ -7,6 +9,33 @@ Light curve correction from detections of ZTF data stream.
 - `isdiffpos`: Apply sign in raw data. `isdiffpos` from stream is `"t"`, `"f"`, `"1"` or `"-1"`. We cast the value to `1` or `-1`.
 - Correct magnitude: Calculate this correction for `magpsf` and `magap`.
 - Correct sigma magnitude: Calculate this correction for `sigmagpsf` and `sigmagap`.
+- Process and check previous candidates.
+
+Get magnitude statistics from light curve corrected (each band).
+
+- Max, min, mean, median of magnitude and sigma (both corrected).
+- First and last detection.
+- Number of detections.
+- Number of dubious correction.
+- Get dm/dt.
+
+
+Get object statistics:
+
+- Number of total detections.
+- Discovery date.
+- Last date of observation to object.
+- Mean of RA and Dec.
+- If object was corrected.
+- And more.
+
+
+Get metadata respect to:
+
+- Gaia information from ZTF.
+- Solar system information from ZTF.
+- Pan-STARRS information form ZTF.
+- Reference information from ZTF.
 
 #### Previous steps:
 
@@ -15,15 +44,14 @@ Light curve correction from detections of ZTF data stream.
 #### Next steps:
 
 - [LC Features step](https://github.com/alercebroker/feature_step)
-- [LC Statistics](https://github.com/alercebroker/magnitude_statistics_step)
 
 ## Database interactions
 
-This step interact with some tables of `new_pipeline` database.
 
 ### Select:
 
-- The function [`get_ligthcurve`](https://github.com/alercebroker/correction_step/blob/master/correction/step.py#L202) select detections and non-detections of an object.
+- Query for get the light curve (detections and non detections).
+- Query if object exists in database.
 
 ### Insert:
 
@@ -47,9 +75,9 @@ No special conditions, only connection to kafka, database and elasticsearch.
 
 ## Libraries used
 
-- APF
-- Numpy
 - Astropy
+- Numpy
+- [APF](https://github.com/alercebroker/APF)
 - [LC Correction](https://github.com/alercebroker/lc_correction)
 - [DB Plugins](https://github.com/alercebroker/db-plugins)
 
@@ -68,7 +96,7 @@ Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProduc
 
 ## Environment variables
 
-### Database setup
+### DB setup
 
 - `DB_HOST`: Database host for connection.
 - `DB_USER`: Database user for read/write (requires these permission).
@@ -87,10 +115,12 @@ Use an `apf.producer.GenericProducer` type class, i.e. `apf.producer.KafkaProduc
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 
-### Metrics setup
+### Step metadata
 
-- `METRICS_HOST`: Kafka brokers to send the metrics.
-- `METRICS_TOPIC`: Topic to save the metrics.
+- `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
+- `STEP_ID`: Unique identifier for the step. e.g: `S3`
+- `STEP_NAME`: Name of the step. e.g: `S3`
+- `STEP_COMMENTS`: Comments of the specific version.
 
 ## Stream
 
@@ -233,7 +263,7 @@ This step require a consumer and producer.
 For use this step, first you must build the image of docker. After that you can run the step for use it.
 
 ```bash
-docker build -t correction_step:0.0.1 .
+docker build -t correction_step:version .
 ```
 
 ## Run step
@@ -243,7 +273,7 @@ docker build -t correction_step:0.0.1 .
 You can use a `docker run` command, you must set all environment variables.
 
 ```bash
-docker run --name my_correction_step -e DB_HOST=myhost -e [... all env ...] -d correction_step:0.0.1
+docker run --name my_step -e DB_HOST=myhost -e [... all env ...] -d correction_step:version
 ```
 
 ### Run docker-compose
@@ -257,7 +287,31 @@ docker-compose up -d
 If you want scale this container, you must set a number of containers to run.
 
 ```bash
-docker-compose up -d --scale correction_step=32
+docker-compose up -d --scale correction_step=n
 ```
 
 **Note:** Use `docker-compose down` for stop all containers.
+
+### Run the released image
+
+For each release an image is uploaded to ghcr.io that you can use instead of building your own. To do that replace docker-compose.yml or the docker run command with this image:
+
+```bash
+docker pull ghcr.io/alercebroker/correction_step:latest
+```
+
+## Local Installation
+
+### Requirements
+
+To install the required packages run
+
+```bash
+pip install -r requirements.txt
+```
+
+After that you can modify the logic of the step in [step.py](https://github.com/alercebroker/correction_step/blob/main/correction/step.py) and run 
+
+```
+python scripts/run_step.py
+```
