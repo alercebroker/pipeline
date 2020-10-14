@@ -1,7 +1,6 @@
 from abc import abstractmethod
 
 from apf.consumers import GenericConsumer
-from apf.metrics import KafkaMetricsProducer
 from apf.core import get_class
 
 import logging
@@ -32,20 +31,23 @@ class GenericStep:
     def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
-        self.config = config
+        if config:
+            self.config = config
+        else:
+            self.config = {}
         self.consumer = GenericConsumer() if consumer is None else consumer
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
         self.metrics_sender = None
-        self.partition_key = None
+        self.extra_metrics = []
 
         if self.config.get("METRICS_CONFIG"):
-            Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", KafkaMetricsProducer))
+            Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS", "apf.metrics.KafkaMetricsProducer"))
             self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
-            self.partition_key = self.config["METRICS_CONFIG"].get("PARTITION_KEY", "candid")
+            self.extra_metrics = self.config["METRICS_CONFIG"].get("EXTRA_METRICS", ["candid"])
 
     def send_metrics(self, **metrics):
-        """Send Metrics to an Kafka topic.
+        """Send Metrics with a metrics producer.
 
         For this method to work the `METRICS_CONFIG` variable has to be set in the `STEP_CONFIG`
         variable.
@@ -100,6 +102,88 @@ class GenericStep:
         """
         pass
 
+    def get_value(self, message, params):
+        """ Get values from a massage and process it to create a new metric.
+
+        Parameters
+        ----------
+        message : dict
+            Dict-like message to be processed
+
+        params : str, dict
+            String of the value key or dict with the following:
+
+            - 'key': str
+                Must have parameter, has to be in the message.
+            - 'alias': str
+                New key returned, this can be used to standarize some message keys.
+            - 'format': callable
+                Function to be call on the message value.
+
+        Returns
+        -------
+        new_key, value
+            Aliased key and processed value.
+
+        """
+        if isinstance(params, str):
+            return params, message.get(params)
+        elif isinstance(params, dict):
+            if "key" not in params:
+                raise KeyError("'key' in parameteres not found")
+
+            val = message.get(params['key'])
+            if "format" in params:
+                if not callable(params["format"]):
+                    raise ValueError("'format' parameter must be a calleable.")
+                else:
+                    val = params["format"](val)
+            if "alias" in params:
+                if isinstance(params["alias"], str):
+                    return params["alias"], val
+                else:
+                    raise ValueError("'alias' parameter must be a string.")
+            else:
+                return params["key"], val
+
+    def get_extra_metrics(self, message):
+        """Generate extra metrics from the EXTRA_METRICS metrics configuration.
+
+        Parameters
+        ----------
+        message : dict, list
+            Dict-like message to be processed or list of dict-like messages
+
+        Returns
+        -------
+        dict
+            Dictionary with extra metrics from the messages.
+
+        """
+        # Is the message is a list then the metrics are
+        # added to an array of values.
+        if isinstance(message, list):
+            extra_metrics = {}
+            for msj in message:
+                for metric in self.extra_metrics:
+                    aliased_metric, value = self.get_value(msj, metric)
+                    # Checking if the metric exists
+                    if aliased_metric not in extra_metrics:
+                        extra_metrics[aliased_metric] = []
+                    if value:
+                        extra_metrics[aliased_metric].append(value)
+            extra_metrics["n_messages"] = len(message)
+
+        # If not they are only added as a single value.
+        else:
+            extra_metrics = {}
+            for metric in self.extra_metrics:
+                aliased_metric, value = self.get_value(message, metric)
+                if value:
+                    extra_metrics[aliased_metric] = value
+            extra_metrics["n_messages"] = 1
+        return extra_metrics
+
     def start(self):
         """Start running the step."""
         for self.message in self.consumer.consume():
@@ -114,6 +198,7 @@ class GenericStep:
             )
             time_difference = self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
             self.metrics["execution_time"] = time_difference.total_seconds()
-            if self.partition_key in self.message:
-                self.metrics[self.partition_key] = str(self.partition_key)
+            if self.extra_metrics:
+                extra_metrics = self.get_extra_metrics(self.message)
+                self.metrics.update(extra_metrics)
             self.send_metrics(**self.metrics)

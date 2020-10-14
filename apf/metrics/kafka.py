@@ -1,21 +1,32 @@
+from apf.metrics import GenericMetricsProducer
+from apf.metrics import DateTimeEncoder
 from confluent_kafka import Producer
-import datetime
+from apf.core import get_class
+
 import json
-import importlib
-import logging
 
 
-class DateTimeEncoder(json.JSONEncoder):
-    # Override the default method
-    def default(self, obj):
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
+class KafkaMetricsProducer(GenericMetricsProducer):
+    """Write metrics in a Kafka Topic.
 
+    Useful for high-throughput distributed metrics, a complex architecture can be build using
+    Apache Kafka as a queue and writing the metrics inside a time series data store, for example
+    Prometheus, InfluxDB or Elasticsearch.
 
-class KafkaMetricsProducer:
+    Parameters
+    ----------
+    config : dict.
+        Parameters passed to the producer.
+
+        - PARAMS: Parameters passed to :class:`apf.producer.KafkaProducer`.
+        - TOPIC: List of topics to produce, for example ['metrics'].
+
+    producer : apf.producers.GenericProducer
+        An apf producer, by default is :class:`apf.producer.KafkaProducer`.
+
+    """
     def __init__(self, config, producer=None):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(f"Creating {self.__class__.__name__}")
+        super().__init__(config)
         self.config = config
         if producer is not None:
             self.producer = producer
@@ -28,10 +39,7 @@ class KafkaMetricsProducer:
             self.topic = [self.config["TOPIC"]]
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
-            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
-                ".", 1
-            )
-            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
+            TopicStrategy = get_class(self.config["TOPIC_STRATEGY"]["CLASS"])
             self.topic_strategy = TopicStrategy(
                 **self.config["TOPIC_STRATEGY"]["PARAMS"]
             )
