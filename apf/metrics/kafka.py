@@ -1,29 +1,14 @@
+from apf.metrics import GenericMetricsProducer
+from apf.metrics import DateTimeEncoder
 from confluent_kafka import Producer
-import datetime
+from apf.core import get_class
+
 import json
-import importlib
-import logging
 
-
-class DateTimeEncoder(json.JSONEncoder):
-    # Override the default method
-    def default(self, obj):
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
-
-
-class GenericMetricsProducer:
-    def __init__(self, config):
-        self.config = config
-
-    def send_metrics(self, metrics):
-        pass
 
 class KafkaMetricsProducer(GenericMetricsProducer):
     def __init__(self, config, producer=None):
         super().__init__(config)
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
         if producer is not None:
             self.producer = producer
@@ -36,10 +21,7 @@ class KafkaMetricsProducer(GenericMetricsProducer):
             self.topic = [self.config["TOPIC"]]
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
-            module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
-                ".", 1
-            )
-            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
+            TopicStrategy = get_class(self.config["TOPIC_STRATEGY"]["CLASS"])
             self.topic_strategy = TopicStrategy(
                 **self.config["TOPIC_STRATEGY"]["PARAMS"]
             )
