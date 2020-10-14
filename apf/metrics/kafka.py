@@ -7,6 +7,24 @@ import json
 
 
 class KafkaMetricsProducer(GenericMetricsProducer):
+    """Write metrics in a Kafka Topic.
+
+    Useful for high-throughput distributed metrics, a complex architecture can be build using
+    Apache Kafka as a queue and writing the metrics inside a time series data store, for example
+    Prometheus, InfluxDB or Elasticsearch.
+
+    Parameters
+    ----------
+    config : dict.
+        Parameters passed to the producer.
+
+        - PARAMS: Parameters passed to :class:`apf.producer.KafkaProducer`.
+        - TOPIC: List of topics to produce, for example ['metrics'].
+
+    producer : apf.producers.GenericProducer
+        An apf producer, by default is :class:`apf.producer.KafkaProducer`.
+
+    """
     def __init__(self, config, producer=None):
         super().__init__(config)
         self.config = config

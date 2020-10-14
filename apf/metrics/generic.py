@@ -17,4 +17,11 @@ class GenericMetricsProducer:
         self.logger.info(f"Creating {self.__class__.__name__}")
 
     def send_metrics(self, metrics):
+        """Write metrics into a data store or other metrics system.
+
+        Parameters
+        ----------
+        metrics : dict
+            Metrics to be written.
+        """
         pass

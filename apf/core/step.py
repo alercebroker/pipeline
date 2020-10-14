@@ -47,7 +47,7 @@ class GenericStep:
             self.extra_metrics = self.config["METRICS_CONFIG"].get("EXTRA_METRICS", ["candid"])
 
     def send_metrics(self, **metrics):
-        """Send Metrics to an Kafka topic.
+        """Send Metrics with a metrics producer.
 
         For this method to work the `METRICS_CONFIG` variable has to be set in the `STEP_CONFIG`
         variable.
@@ -103,7 +103,7 @@ class GenericStep:
         pass
 
     def get_value(self, message, params):
-        """
+        """ Get values from a massage and process it to create a new metric.
 
         Parameters
         ----------
@@ -112,12 +112,13 @@ class GenericStep:
 
         params : str, dict
             String of the value key or dict with the following:
+
             - 'key': str
-            Must have parameter, has to be in the message.
+                Must have parameter, has to be in the message.
             - 'alias': str
-            New key returned, this can be used to standarize some message keys.
+                New key returned, this can be used to standarize some message keys.
             - 'format': callable
-            Function to be call on the message value.
+                Function to be call on the message value.
 
         Returns
         -------
