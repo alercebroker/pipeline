@@ -1,7 +1,6 @@
 from abc import abstractmethod
 
 from apf.consumers import GenericConsumer
-from apf.metrics import KafkaMetricsProducer
 from apf.core import get_class
 
 import logging
@@ -102,7 +101,6 @@ class GenericStep:
             Dict-like message to be processed or list of dict-like messages
         """
         pass
-
 
     def get_value(self, message, params):
         """
