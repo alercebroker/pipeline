@@ -118,7 +118,7 @@ class GenericStep:
             Must have parameter, has to be in the message.
             - 'alias': str
             New key returned, this can be used to standarize some message keys.
-            - 'process': callable
+            - 'format': callable
             Function to be call on the message value.
 
         Returns
@@ -134,11 +134,11 @@ class GenericStep:
                 raise KeyError("'key' in parameteres not found")
 
             val = message.get(params['key'])
-            if "process" in params:
-                if not callable(params["process"]):
-                    raise ValueError("'process' parameter must be a calleable.")
+            if "format" in params:
+                if not callable(params["format"]):
+                    raise ValueError("'format' parameter must be a calleable.")
                 else:
-                    val = params["process"](val)
+                    val = params["format"](val)
             if "alias" in params:
                 if isinstance(params["alias"], str):
                     return params["alias"], val
@@ -165,11 +165,12 @@ class GenericStep:
         # added to an array of values.
         if isinstance(message, list):
             extra_metrics = {}
-            for metric in self.extra_metrics:
-                extra_metrics[metric] = []
             for msj in message:
                 for metric in self.extra_metrics:
                     aliased_metric, value = self.get_value(msj, metric)
+                    # Checking if the metric exists
+                    if aliased_metric not in extra_metrics:
+                        extra_metrics[aliased_metric] = []
                     if value:
                         extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)

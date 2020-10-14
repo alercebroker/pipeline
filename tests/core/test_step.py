@@ -23,7 +23,7 @@ def test_get_batch_extra_metrics():
         "METRICS_CONFIG":{
             "CLASS": "apf.metrics.GenericMetricsProducer",
             "PARAMS": {},
-            "EXTRA_METRICS": ["oid", "candid"]
+            "EXTRA_METRICS": ["oid", "candid", {"key": "candid", "alias": "str_candid", "format": lambda x: str(x)}]
         }
     }
     message = [{"oid": "TEST", "candid": 1}, {"oid": "TEST2"}, {"candid": 3}]
@@ -62,7 +62,7 @@ def test_get_value():
     assert( aliased_metric == "new_oid")
     assert(value == "TEST")
 
-    aliased_metric, value = gs.get_value(message, {"key":"oid", "process": lambda x: x[0]})
+    aliased_metric, value = gs.get_value(message, {"key":"oid", "format": lambda x: x[0]})
     assert( aliased_metric == "oid")
     assert(value == "T")
 
@@ -70,7 +70,7 @@ def test_get_value():
         gs.get_value(message, {})
 
     with pytest.raises(ValueError):
-        gs.get_value(message, {"key": "oid", "process": "test"})
+        gs.get_value(message, {"key": "oid", "format": "test"})
 
     with pytest.raises(ValueError):
-        gs.get_value(message, {"key": "oid", "alias": 1})    
+        gs.get_value(message, {"key": "oid", "alias": 1})
