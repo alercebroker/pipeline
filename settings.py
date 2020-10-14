@@ -85,6 +85,10 @@ PRODUCER_CONFIG = {
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "EXTRA_METRICS": [
+        {"key": "candid", "format": lambda x: str(x)},
+        "oid"
+    ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
