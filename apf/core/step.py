@@ -104,6 +104,49 @@ class GenericStep:
         pass
 
 
+    def get_value(self, message, params):
+        """
+
+        Parameters
+        ----------
+        message : dict
+            Dict-like message to be processed
+
+        params : str, dict
+            String of the value key or dict with the following:
+            - 'key': str
+            Must have parameter, has to be in the message.
+            - 'alias': str
+            New key returned, this can be used to standarize some message keys.
+            - 'process': callable
+            Function to be call on the message value.
+
+        Returns
+        -------
+        new_key, value
+            Aliased key and processed value.
+
+        """
+        if isinstance(params, str):
+            return params, message.get(params)
+        elif isinstance(params, dict):
+            if "key" not in params:
+                raise KeyError("'key' in parameteres not found")
+
+            val = message.get(params['key'])
+            if "process" in params:
+                if not callable(params["process"]):
+                    raise ValueError("'process' parameter must be a calleable.")
+                else:
+                    val = params["process"](val)
+            if "alias" in params:
+                if isinstance(params["alias"], str):
+                    return params["alias"], val
+                else:
+                    raise ValueError("'alias' parameter must be a string.")
+            else:
+                return params["key"], val
+
     def get_extra_metrics(self, message):
         """Generate extra metrics from the EXTRA_METRICS metrics configuration.
 
@@ -126,18 +169,18 @@ class GenericStep:
                 extra_metrics[metric] = []
             for msj in message:
                 for metric in self.extra_metrics:
-                    value = msj.get(metric)
+                    aliased_metric, value = self.get_value(msj, metric)
                     if value:
-                        extra_metrics[metric].append(value)
+                        extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)
 
         # If not they are only added as a single value.
         else:
             extra_metrics = {}
             for metric in self.extra_metrics:
-                value = message.get(metric)
+                aliased_metric, value = self.get_value(message, metric)
                 if value:
-                    extra_metrics[metric] = value
+                    extra_metrics[aliased_metric] = value
             extra_metrics["n_messages"] = 1
         return extra_metrics
 

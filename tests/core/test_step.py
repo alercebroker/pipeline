@@ -1,5 +1,5 @@
 from apf.core.step import GenericStep
-
+import pytest
 
 def test_get_single_extra_metrics():
     config = {
@@ -33,3 +33,44 @@ def test_get_batch_extra_metrics():
     assert type(extra_metrics["oid"]) is list
     assert type(extra_metrics["candid"]) is list
     assert type(extra_metrics["n_messages"]) is int
+
+
+def test_get_value():
+    config = {
+        "METRICS_CONFIG":{
+            "CLASS": "apf.metrics.GenericMetricsProducer",
+            "PARAMS": {},
+            "EXTRA_METRICS": ["oid", "candid"]
+        }
+    }
+    message = {"oid": "TEST", "candid": 1}
+    gs = GenericStep(config=config)
+
+    aliased_metric, value = gs.get_value(message, "oid")
+    assert( aliased_metric == "oid")
+    assert(value == "TEST")
+
+    aliased_metric, value = gs.get_value(message, "candid")
+    assert( aliased_metric == "candid")
+    assert(value == 1)
+
+    aliased_metric, value = gs.get_value(message, {"key":"oid"})
+    assert( aliased_metric == "oid")
+    assert(value == "TEST")
+
+    aliased_metric, value = gs.get_value(message, {"key":"oid", "alias": "new_oid"})
+    assert( aliased_metric == "new_oid")
+    assert(value == "TEST")
+
+    aliased_metric, value = gs.get_value(message, {"key":"oid", "process": lambda x: x[0]})
+    assert( aliased_metric == "oid")
+    assert(value == "T")
+
+    with pytest.raises(KeyError):
+        gs.get_value(message, {})
+
+    with pytest.raises(ValueError):
+        gs.get_value(message, {"key": "oid", "process": "test"})
+
+    with pytest.raises(ValueError):
+        gs.get_value(message, {"key": "oid", "alias": 1})    
