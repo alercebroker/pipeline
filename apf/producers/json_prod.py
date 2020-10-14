@@ -1,6 +1,5 @@
 from apf.producers.generic import GenericProducer
 import json
-from io import StringIO
 
 
 class JSONProducer(GenericProducer):

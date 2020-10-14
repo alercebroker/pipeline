@@ -1,6 +1,4 @@
 from apf.consumers.generic import GenericConsumer
-
-import io
 import pandas as pd
 
 

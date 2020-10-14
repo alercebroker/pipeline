@@ -46,8 +46,10 @@ Documentation
 
 .. toctree::
   new_step
+  basic_metrics
   profiling
   core
   consumers
   producers
+  metrics
   :maxdepth: 2
