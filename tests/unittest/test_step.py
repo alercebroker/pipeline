@@ -304,7 +304,7 @@ class StepTest(unittest.TestCase):
         candidate["oid"] = oid
         self.assertEqual(res, candidate)
 
-    # @unittest.skip
+    @unittest.skip
     @mock.patch.object(Correction, "get_lightcurves")
     @mock.patch.object(Correction, "get_prv_candidates")
     def test_preprocess_lightcurves(self, mock_get_prv_candidates, mock_get_lightcurves):
