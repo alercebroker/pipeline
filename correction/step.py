@@ -142,7 +142,7 @@ OBJECT_UPDATE_PARAMS = [
     "mjdstarthist",
     "mjdendhist",
     "corrected",
-    # "stellar",
+    "stellar",
     "ndet",
     "g_r_max",
     "g_r_mean",
@@ -281,7 +281,7 @@ class Correction(GenericStep):
         detections = light_curves["detections"]
         detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
         detections_last_alert["objectId"] = detections_last_alert.oid
-        detections_last_alert.drop_duplicates("oid", inplace=True)
+        detections_last_alert.drop_duplicates("candid",inplace=True)
         magstats["objectId"] = magstats.oid
 
         new_objects = apply_object_stats_df(
@@ -294,10 +294,11 @@ class Correction(GenericStep):
 
         new_objects.rename(columns={"objectId": "oid", **new_names}, inplace=True)
         new_objects["new"] = ~new_objects.oid.isin(oids)
-        new_objects["deltajd"] = new_objects["lastmjd"] - new_objects["firstmjd"]
+        new_objects["deltajd"] = new_objects["deltamjd"]
 
         detections_last_alert.drop(columns=["objectId"], inplace=True)
         magstats.drop(columns=["objectId"], inplace=True)
+
         return new_objects
 
     def preprocess_detections(self, detections, is_prv_candidate=False) -> None:
@@ -692,8 +693,7 @@ class Correction(GenericStep):
         if len(to_insert) > 0:
             self.logger.info(f"Inserting {len(to_insert)} new objects")
             to_insert = to_insert.where(pd.notnull(to_insert), None)
-
-            dict_to_insert = to_insert.to_dict("records")
+            dict_to_insert = to_insert.to_dict('records')
             self.driver.query().bulk_insert(dict_to_insert, Object)
 
         if len(to_update) > 0:
@@ -710,7 +710,7 @@ class Correction(GenericStep):
 
     def insert_ss(self, metadata):
         new_metadata = metadata["new"]
-        to_insert = metadata[new_metadata]
+        to_insert = metadata.loc[new_metadata]
         self.logger.info(f"Inserting {len(to_insert)} Solar System Metadata")
         if len(to_insert) > 0:
             to_insert = to_insert.where(pd.notnull(to_insert), None)
@@ -899,9 +899,10 @@ class Correction(GenericStep):
             non_detections.reset_index(inplace=True)
             non_detections = non_detections.to_dict("records")
 
-            oid_xmatches = oid_alerts.xmatches[
-                ~oid_alerts.index.duplicated(keep="first")
-            ].iloc[0]
+            if "xmatches" in oid_alerts.columns:
+                oid_xmatches =  oid_alerts.xmatches[~oid_alerts.index.duplicated(keep='first')].iloc[0]
+            else:
+                oid_xmatches = None
 
             write = {
                 "oid": oid,
