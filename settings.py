@@ -22,6 +22,8 @@ CONSUMER_CONFIG = {
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset":"beginning"
     },
+    "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
+    "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
 }
 
 
@@ -43,6 +45,10 @@ STEP_METADATA = {
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "EXTRA_METRICS": [
+        {"key": "candid", "format": lambda x: str(x)},
+        {"key": "objectId", "alias": "oid"}
+    ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
