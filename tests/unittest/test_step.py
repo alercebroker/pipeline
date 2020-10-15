@@ -409,8 +409,8 @@ class StepTest(unittest.TestCase):
         self.step.driver.query().bulk_insert.assert_called_once()
 
     def test_insert_gaia_new(self):
-        gaia[0]["new"] = True
         metadata = pd.DataFrame(gaia)
+        metadata.loc[:, ["new"]] = True
         self.step.insert_ss(metadata)
         self.step.driver.query().bulk_insert.assert_called_once()
 
@@ -430,8 +430,8 @@ class StepTest(unittest.TestCase):
         self.step.driver.engine.execute.assert_not_called()
 
     def test_insert_ps1_new(self):
-        ps1[0]["new"] = True
         metadata = pd.DataFrame(ps1)
+        metadata.loc[:, ["new"]] = True
         self.step.insert_ps1(metadata)
         self.step.driver.query().bulk_insert.assert_called_once()
 
