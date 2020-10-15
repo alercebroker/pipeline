@@ -281,7 +281,7 @@ class Correction(GenericStep):
         detections = light_curves["detections"]
         detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
         detections_last_alert["objectId"] = detections_last_alert.oid
-        detections_last_alert.drop_duplicates("candid",inplace=True)
+        detections_last_alert.drop_duplicates("candid", inplace=True)
         magstats["objectId"] = magstats.oid
 
         new_objects = apply_object_stats_df(
@@ -693,7 +693,7 @@ class Correction(GenericStep):
         if len(to_insert) > 0:
             self.logger.info(f"Inserting {len(to_insert)} new objects")
             to_insert = to_insert.where(pd.notnull(to_insert), None)
-            dict_to_insert = to_insert.to_dict('records')
+            dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Object)
 
         if len(to_update) > 0:
@@ -900,7 +900,9 @@ class Correction(GenericStep):
             non_detections = non_detections.to_dict("records")
 
             if "xmatches" in oid_alerts.columns:
-                oid_xmatches =  oid_alerts.xmatches[~oid_alerts.index.duplicated(keep='first')].iloc[0]
+                oid_xmatches = oid_alerts.xmatches[
+                    ~oid_alerts.index.duplicated(keep="first")
+                ].iloc[0]
             else:
                 oid_xmatches = None
 
