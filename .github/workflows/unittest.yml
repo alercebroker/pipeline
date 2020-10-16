@@ -29,7 +29,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        coverage run --source late_classification -m pytest -x -s tests/unittest/
+        coverage run --source lc_classification -m pytest -x -s tests/unittest/
         coverage xml
     - name: Codecov
       uses: codecov/codecov-action@v1
