@@ -4,7 +4,7 @@ import numpy as np
 
 from unittest import mock
 from db_plugins.db.sql.models import Step, Object, Probability
-from late_classification.step import LateClassifier, KafkaProducer
+from lc_classification.step import LateClassifier, KafkaProducer
 
 
 class PSQLIntegrationTest(unittest.TestCase):

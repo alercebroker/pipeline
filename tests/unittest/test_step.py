@@ -2,7 +2,7 @@ import unittest
 import datetime
 from db_plugins.db.sql import SQLQuery
 from unittest import mock
-from late_classification.step import (
+from lc_classification.step import (
     LateClassifier,
     SQLConnection,
     KafkaProducer,
@@ -356,7 +356,7 @@ class StepTestCase(unittest.TestCase):
             "oid": CORRECT_MESSAGE["oid"],
             "candid": CORRECT_MESSAGE["candid"],
             "features": CORRECT_MESSAGE["features"],
-            "late_classification": PREDICTION,
+            "lc_classification": PREDICTION,
         }
         self.step.producer.produce.assert_called_with(
             new_message, key=new_message["oid"]

@@ -1,7 +1,7 @@
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from late_classifier.classifier.models import HierarchicalRandomForest, PICKLE_PATH
+from lc_classifier.classifier.models import HierarchicalRandomForest, PICKLE_PATH
 
 import logging
 import pandas as pd
@@ -274,7 +274,7 @@ class LateClassifier(GenericStep):
                 "oid": oid,
                 "candid": message["candid"],
                 "features": message["features"],
-                "late_classification": result,
+                "lc_classification": result,
             }
             self.logger.info(f"[{oid}] Processed")
             self.producer.produce(new_message, key = oid)

@@ -19,7 +19,7 @@ logging.basicConfig(level=level,
                     format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
-from late_classification import LateClassifier
+from lc_classification import LateClassifier
 from apf.core import get_class
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])

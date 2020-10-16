@@ -116,7 +116,7 @@ STEP_CONFIG = {
         {"name": "candid", "type": "long"},
         FEATURES_SCHEMA,
         {
-            'name': 'late_classification',
+            'name': 'lc_classification',
             'type': {
                 'type': 'record',
                 'name': 'late_record',

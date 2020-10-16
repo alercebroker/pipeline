@@ -39,7 +39,7 @@ PRODUCER_CONFIG = {
             {"name": "candid", "type": "long"},
             FEATURES_SCHEMA,
             {
-                'name': 'late_classification',
+                'name': 'lc_classification',
                 'type': {
                     'type': 'record',
                     'name': 'late_record',
@@ -130,7 +130,7 @@ METRICS_CONFIG = {
 
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "late_classification"),
+    "STEP_ID": os.getenv("STEP_ID", "lc_classification"),
     "STEP_NAME": os.getenv("STEP_NAME", "late classification"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
 }

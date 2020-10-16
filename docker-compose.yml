@@ -17,7 +17,7 @@ services:
       - CONSUMER_TOPICS=features
       - CONSUMER_SERVER=localhost:9092
       - CONSUMER_GROUP_ID=late_steps
-      - PRODUCER_TOPIC=late_classification
+      - PRODUCER_TOPIC=lc_classification
       - PRODUCER_SERVER=localhost:9092
       - ES_PREFIX=ztf_pipeline
       - ES_NETWORK_HOST=localhost
