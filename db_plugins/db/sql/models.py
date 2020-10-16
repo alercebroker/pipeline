@@ -140,7 +140,7 @@ class Xmatch(Base):
     __tablename__ = "xmatch"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    catid = Column(String, nullable=False)
+    catid = Column(String, primary_key=True)
     oid_catalog = Column(String, nullable=False)
     dist = Column(Float(precision=53), nullable=False)
     class_catalog = Column(String)
