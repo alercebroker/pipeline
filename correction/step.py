@@ -282,12 +282,14 @@ class Correction(GenericStep):
         detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
         detections_last_alert["objectId"] = detections_last_alert.oid
         detections_last_alert.drop_duplicates("candid", inplace=True)
+        detections_last_alert.reset_index(inplace=True)
         magstats["objectId"] = magstats.oid
 
         new_objects = apply_object_stats_df(
             detections_last_alert, magstats, step_name=self.version
         )
         new_objects.reset_index(inplace=True)
+        
         new_names = dict(
             [(col, col.replace("-", "_")) for col in new_objects.columns if "-" in col]
         )
@@ -449,6 +451,7 @@ class Correction(GenericStep):
         return non_detection
 
     def preprocess_lightcurves(self, detections, alerts):
+        alerts.to_csv("alerts.csv")
         oids = detections.oid.values
 
         detections.loc[:, "parent_candid"] = None
@@ -483,10 +486,9 @@ class Correction(GenericStep):
                 ) = self.get_prv_candidates(alert)
                 prv_detections.append(alert_prv_detections)
                 prv_non_detections.append(alert_prv_non_detections)
-        prv_detections = pd.concat(prv_detections)
-        prv_non_detections = pd.concat(prv_non_detections)
 
         if len(prv_detections) > 0:
+            prv_detections = pd.concat(prv_detections)
             prv_detections.drop_duplicates(["oid", "candid"], inplace=True)
             # Checking if already on the database
             index_prv_detections = pd.MultiIndex.from_frame(
@@ -513,6 +515,7 @@ class Correction(GenericStep):
                 )
 
         if len(prv_non_detections) > 0:
+            prv_non_detections = pd.concat(prv_non_detections)
             # Using round 5 to have 5 decimals of precision
             prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
             light_curves["non_detections"].loc[:, "round_mjd"] = light_curves[

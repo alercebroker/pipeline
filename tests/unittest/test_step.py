@@ -23,8 +23,6 @@ from dataquality import dataquality as input_dataquality
 FILE_PATH = os.path.dirname(__file__)
 
 
-
-
 class MockSession:
     def commit(self):
         pass
@@ -36,7 +34,9 @@ class StepTest(unittest.TestCase):
         Set settings and initialize step with mocks.
         """
         self.alert_candidate = pd.read_csv(FILE_PATH + "/alert_candidate.csv")
-        self.alert = pd.read_csv(FILE_PATH + "/alert.csv", header=None, index_col=0, squeeze=True)
+        self.alert = pd.read_csv(
+            FILE_PATH + "/alert.csv", header=None, index_col=0, squeeze=True
+        )
         self.alert.prv_candidates = self.alert.prv_candidates.replace("'", '"')
         config = {
             "DB_CONFIG": {"SQL": {}},
@@ -304,18 +304,112 @@ class StepTest(unittest.TestCase):
         candidate["oid"] = oid
         self.assertEqual(res, candidate)
 
-    @unittest.skip
+    # @unittest.skip
     @mock.patch.object(Correction, "get_lightcurves")
     @mock.patch.object(Correction, "get_prv_candidates")
-    def test_preprocess_lightcurves(self, mock_get_prv_candidates, mock_get_lightcurves):
-        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv", header=None)
+    @mock.patch.object(Correction, "do_correction")
+    def test_preprocess_lightcurves_no_prv_detections(
+        self, mock_do_correction, mock_get_prv_candidates, mock_get_lightcurves
+    ):
+        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv")
         detections = pd.DataFrame(input_detections_not_db)
         light_curves = {
             "detections": pd.DataFrame(input_detections),
-            "non_detections": pd.DataFrame(input_non_detections)
+            "non_detections": pd.DataFrame(input_non_detections),
+        }
+        self.alert = self.alert.drop(columns=["prv_candidates"])
+        mock_get_lightcurves.return_value = light_curves
+        res = self.step.preprocess_lightcurves(detections, self.alert)
+        mock_get_prv_candidates.assert_not_called()
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.keys()), ["detections", "non_detections"])
+
+    @mock.patch.object(Correction, "get_lightcurves")
+    @mock.patch.object(Correction, "get_prv_candidates")
+    @mock.patch.object(Correction, "do_correction")
+    def test_preprocess_lightcurves_with_prv_detections_already_on_db(
+        self, mock_do_correction, mock_get_prv_candidates, mock_get_lightcurves
+    ):
+        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv")
+        detections = pd.DataFrame(input_detections_not_db)
+        non_detections = pd.DataFrame(input_non_detections)
+        light_curves = {
+            "detections": pd.DataFrame(input_detections),
+            "non_detections": pd.DataFrame(input_non_detections),
         }
         mock_get_lightcurves.return_value = light_curves
-        self.step.preprocess_lightcurves(detections, self.alert)
+        mock_get_prv_candidates.return_value = (detections, non_detections)
+        res = self.step.preprocess_lightcurves(detections, self.alert)
+        mock_do_correction.assert_not_called()
+
+    @mock.patch.object(Correction, "get_lightcurves")
+    @mock.patch.object(Correction, "get_prv_candidates")
+    @mock.patch.object(Correction, "do_correction")
+    def test_preprocess_lightcurves_with_prv_detections_not_on_db(
+        self, mock_do_correction, mock_get_prv_candidates, mock_get_lightcurves
+    ):
+        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv")
+        detections = pd.DataFrame(input_detections_not_db)
+        new_detections = pd.DataFrame(input_detections_not_db)
+        non_detections = pd.DataFrame(input_non_detections)
+        light_curves = {
+            "detections": pd.DataFrame(input_detections),
+            "non_detections": pd.DataFrame(input_non_detections),
+        }
+        mock_get_lightcurves.return_value = light_curves
+        self.alert.prv_candidates = [eval(self.alert.prv_candidates.loc[0])]
+        new_detections.at[0, "candid"] = 123
+        mock_get_prv_candidates.return_value = (new_detections, non_detections)
+        mock_do_correction.return_value = detections
+        res = self.step.preprocess_lightcurves(detections, self.alert)
+        mock_do_correction.assert_called()
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.keys()), ["detections", "non_detections"])
+
+    @mock.patch.object(Correction, "get_lightcurves")
+    @mock.patch.object(Correction, "get_prv_candidates")
+    @mock.patch.object(Correction, "do_correction")
+    def test_preprocess_lightcurves_prv_non_detections_already_on_db(
+        self, mock_do_correction, mock_get_prv_candidates, mock_get_lightcurves
+    ):
+        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv")
+        detections = pd.DataFrame(input_detections_not_db)
+        non_detections = pd.DataFrame(input_non_detections)
+        light_curves = {
+            "detections": pd.DataFrame(input_detections),
+            "non_detections": pd.DataFrame(input_non_detections),
+        }
+        mock_get_lightcurves.return_value = light_curves
+        mock_get_prv_candidates.return_value = (detections, non_detections)
+        res = self.step.preprocess_lightcurves(detections, self.alert)
+        mock_get_prv_candidates.assert_called()
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.keys()), ["detections", "non_detections"])
+
+
+    @mock.patch.object(Correction, "get_lightcurves")
+    @mock.patch.object(Correction, "get_prv_candidates")
+    @mock.patch.object(Correction, "do_correction")
+    def test_preprocess_lightcurves_prv_non_detections_not_on_db(
+        self, mock_do_correction, mock_get_prv_candidates, mock_get_lightcurves
+    ):
+        self.alert = pd.read_csv(FILE_PATH + "/alerts.csv")
+        detections = pd.DataFrame(input_detections_not_db)
+        non_detections = pd.DataFrame(input_non_detections)
+        new_non_detections = pd.DataFrame(input_non_detections)
+        light_curves = {
+            "detections": pd.DataFrame(input_detections),
+            "non_detections": pd.DataFrame(input_non_detections),
+        }
+        mock_get_lightcurves.return_value = light_curves
+        new_non_detections.at[0, "fid"] = 5
+        new_non_detections.at[0, "round_mjd"] = 123
+        new_non_detections.at[0, "oid"] = "oid"
+        mock_get_prv_candidates.return_value = (detections, new_non_detections)
+        res = self.step.preprocess_lightcurves(detections, self.alert)
+        mock_get_prv_candidates.assert_called()
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.keys()), ["detections", "non_detections"])
 
     def test_preprocess_ps1(self):
         metadata = pd.DataFrame(ps1)
@@ -348,7 +442,6 @@ class StepTest(unittest.TestCase):
         ].iloc[0]
         result = self.step.get_last_alert(alerts)
         pd.testing.assert_series_equal(result, expected)
-
 
     @mock.patch("correction.pd.read_sql")
     def test_get_dataquality(self, mock_read_sql):
@@ -385,6 +478,7 @@ class StepTest(unittest.TestCase):
 
     def test_insert_objects_new(self):
         objs = pd.DataFrame(output_objects)
+        objs.loc[:, ["new"]] = True
         self.step.insert_objects(objs)
         self.step.driver.query().bulk_insert.assert_called_once()
 
@@ -486,7 +580,7 @@ class StepTest(unittest.TestCase):
         self.alert["xmatches"] = [pd.DataFrame()]
         light_curves = {
             "detections": pd.DataFrame(input_detections),
-            "non_detections": pd.DataFrame(input_non_detections)
+            "non_detections": pd.DataFrame(input_non_detections),
         }
         metadata = {
             "ps1_ztf": pd.DataFrame(ps1),
