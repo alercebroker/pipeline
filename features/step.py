@@ -10,7 +10,7 @@ from apf.producers import KafkaProducer
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import FeatureVersion, Object, Feature, Step
 
-from late_classifier.features.custom import CustomStreamHierarchicalExtractor
+from lc_classifier.features.custom import CustomStreamHierarchicalExtractor
 
 from pandas.io.json import json_normalize
 
