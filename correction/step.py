@@ -973,7 +973,7 @@ class Correction(GenericStep):
 
         alerts.to_csv("alerts.csv")
 
-        # self.produce(alerts, light_curves, metadata)
+        self.produce(alerts, light_curves, metadata)
 
         del alerts
         del detections
