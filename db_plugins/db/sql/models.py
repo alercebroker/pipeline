@@ -220,7 +220,7 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     __tablename__ = "non_detection"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    fid = Column(Integer, primary_key=True)
+    fid = Column(Integer)
     mjd = Column(Float(precision=53), primary_key=True)
     diffmaglim = Column(Float)
     __table_args__ = (
@@ -410,5 +410,3 @@ class Pipeline(Base, generic.AbstractPipeline):
     step_id_out = Column(String)
     step_id_stamp = Column(String)
     date = Column(DateTime, nullable=False)
-
-
