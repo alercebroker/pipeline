@@ -971,8 +971,6 @@ class Correction(GenericStep):
         self.insert_metadata(metadata)
         self.insert_magstats(new_stats)
 
-        alerts.to_csv("alerts.csv")
-
         self.produce(alerts, light_curves, metadata)
 
         del alerts
