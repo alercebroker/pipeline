@@ -451,7 +451,6 @@ class Correction(GenericStep):
         return non_detection
 
     def preprocess_lightcurves(self, detections, alerts):
-        alerts.to_csv("alerts.csv")
         oids = detections.oid.values
 
         detections.loc[:, "parent_candid"] = None
