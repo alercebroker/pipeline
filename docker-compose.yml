@@ -1,24 +1,26 @@
 version: "3"
 services:
   correction:
-    image: "docker.pkg.github.com/alercebroker/correction_step/correction_step:0.0.1"
-    restart: "always"
+    build: .
     environment:
-      - DB_HOST=
-      - DB_USER=
-      - DB_PASSWORD=
-      - DB_PORT=
-      - DB_NAME=
-      - CONSUMER_TOPICS=
-      - CONSUMER_SERVER=
-      - CONSUMER_GROUP_ID=
-      - AVRO_PATH=
-      - PRODUCER_TOPIC=
-      - PRODUCER_SERVER=
-      - ES_PREFIX=
-      - ES_NETWORK_HOST=
-      - ES_NETWORK_PORT=
-      - LOGGING_DEBUG=False
-      - N_PROCESS=
-      - METRICS_HOST=
-      - METRICS_TOPIC=
+      - DB_ENGINE=postgres
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - CONSUMER_TOPICS=xmatch
+      - CONSUMER_SERVER=${CONSUMER_SERVER}
+      - CONSUMER_GROUP_ID=correction_consumer
+      - PRODUCER_TOPIC=correction
+      - PRODUCER_SERVER=${PRODUCER_SERVER}
+      - STEP_VERSION=correction_1.0.1
+      - METRICS_HOST=${METRICS_HOST}
+      - METRICS_TOPIC=${METRICS_TOPIC}
+      - CONSUME_TIMEOUT=60
+      - CONSUME_MESSAGES=1000
+    # volumes:
+    #   - ./:/app
+    # stdin_open: true
+    # tty: true
+    # command: /bin/bash

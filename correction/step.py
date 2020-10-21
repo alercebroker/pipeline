@@ -289,7 +289,7 @@ class Correction(GenericStep):
             detections_last_alert, magstats, step_name=self.version
         )
         new_objects.reset_index(inplace=True)
-        
+
         new_names = dict(
             [(col, col.replace("-", "_")) for col in new_objects.columns if "-" in col]
         )
@@ -662,13 +662,13 @@ class Correction(GenericStep):
 
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
-        detections = detections.where(pd.notnull(detections), None)
+        detections.replace({np.nan, None}, inplace=True)
         dict_detections = detections.to_dict("records")
         self.driver.query().bulk_insert(dict_detections, Detection)
 
     def insert_non_detections(self, non_detections):
         self.logger.info(f"Inserting {len(non_detections)} new non_detections")
-        non_detections = non_detections.where(pd.notnull(non_detections), None)
+        non_detections.replace({np.nan, None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
 
@@ -680,7 +680,7 @@ class Correction(GenericStep):
         dataquality = dataquality[~already_on_db]
         self.logger.info(f"Inserting {len(dataquality)} new dataquality")
 
-        dataquality = dataquality.where(pd.notnull(dataquality), None)
+        dataquality.replace({np.nan, None}, inplace=True)
         dict_dataquality = dataquality.to_dict("records")
         self.driver.query().bulk_insert(dict_dataquality, Dataquality)
 
@@ -694,13 +694,13 @@ class Correction(GenericStep):
 
         if len(to_insert) > 0:
             self.logger.info(f"Inserting {len(to_insert)} new objects")
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Object)
 
         if len(to_update) > 0:
             self.logger.info(f"Updating {len(to_update)} objects")
-            to_update = to_update.where(pd.notnull(to_update), None)
+            to_update.replace({np.nan, None}, inplace=True)
             to_update.rename(columns={"oid": "_oid"}, inplace=True)
             dict_to_update = to_update.to_dict("records")
             stmt = (
@@ -715,7 +715,7 @@ class Correction(GenericStep):
         to_insert = metadata.loc[new_metadata]
         self.logger.info(f"Inserting {len(to_insert)} Solar System Metadata")
         if len(to_insert) > 0:
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Ss_ztf)
 
@@ -724,7 +724,7 @@ class Correction(GenericStep):
         to_insert = metadata[new_metadata]
         self.logger.info(f"Inserting {len(to_insert)} References")
         if len(to_insert) > 0:
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Reference)
 
@@ -735,7 +735,7 @@ class Correction(GenericStep):
 
         self.logger.info(f"Inserting {len(to_insert)} Gaia Metadata")
         if len(to_insert) > 0:
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Gaia_ztf)
 
@@ -743,7 +743,7 @@ class Correction(GenericStep):
         if len(to_update) > 0:
             updates = to_update[to_update.update1]
             if len(updates) > 0:
-                updates = updates.where(pd.notnull(updates), None)
+                updates.replace({np.nan, None}, inplace=True)
                 updates = updates[["oid", "unique1"]]
                 updates.rename(columns={"oid": "_oid"}, inplace=True)
                 dict_updates = updates.to_dict("records")
@@ -764,7 +764,7 @@ class Correction(GenericStep):
 
         self.logger.info(f"Inserting {len(to_insert)} PS1 Metadata")
         if len(to_insert) > 0:
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Ps1_ztf)
 
@@ -774,7 +774,7 @@ class Correction(GenericStep):
                 to_update.update1 | to_update.update2 | to_update.update3
             ]
             if len(updates) > 0:
-                updates = updates.where(pd.notnull(updates), None)
+                updates.replace({np.nan, None}, inplace=True)
                 updates = updates[["oid", "unique1", "unique2", "unique3"]]
                 updates.rename(columns={"oid": "_oid"}, inplace=True)
                 dict_updates = updates.to_dict("records")
@@ -807,13 +807,13 @@ class Correction(GenericStep):
 
         self.logger.info(f"Inserting {len(to_insert)} MagStats")
         if len(to_insert) > 0:
-            to_insert = to_insert.where(pd.notnull(to_insert), None)
+            to_insert.replace({np.nan, None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, MagStats)
 
         self.logger.info(f"Updating {len(to_update)} MagStats")
         if len(to_update) > 0:
-            to_update = to_update.where(pd.notnull(to_update), None)
+            to_update.replace({np.nan, None}, inplace=True)
             to_update.rename(
                 columns={"oid": "_oid", "fid": "_fid", **MAGSTATS_TRANSLATE},
                 inplace=True,
@@ -881,7 +881,7 @@ class Correction(GenericStep):
             if max_detections < MIN_DETECTIONS_TO_PRODUCE:
                 continue
 
-            detections = detections.where(pd.notnull(detections), None)
+            detections.replace({np.nan, None}, inplace=True)
             detections.reset_index(inplace=True)
             oid_metdata = {
                 "ps1_ztf": metadata["ps1_ztf"].loc[oid],
@@ -897,7 +897,6 @@ class Correction(GenericStep):
                 if oid in light_curves["non_detections"].index
                 else pd.DataFrame([])
             )
-            # non_detections = non_detections.where(pd.notnull(non_detections), None)
             non_detections.reset_index(inplace=True)
             non_detections = non_detections.to_dict("records")
 
