@@ -19,8 +19,8 @@ services:
       - METRICS_TOPIC=${METRICS_TOPIC}
       - CONSUME_TIMEOUT=60
       - CONSUME_MESSAGES=1000
-    volumes:
-      - ./:/app
+    # volumes:
+    #   - ./:/app
     # stdin_open: true
     # tty: true
     # command: /bin/bash
