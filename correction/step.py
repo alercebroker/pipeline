@@ -373,10 +373,12 @@ class Correction(GenericStep):
         return pd.read_sql(query.statement, self.driver.engine)
 
     def get_detections(self, oids):
+        detections = []
         query = self.driver.query(Detection).filter(Detection.oid.in_(oids))
         return pd.read_sql(query.statement, self.driver.engine)
 
     def get_non_detections(self, oids):
+        non_detections = []
         query = self.driver.query(NonDetection).filter(NonDetection.oid.in_(oids))
         return pd.read_sql(query.statement, self.driver.engine)
 
@@ -433,7 +435,7 @@ class Correction(GenericStep):
                     non_detection = self.cast_non_detection(oid, candidate)
                     non_detections.append(non_detection)
                 else:
-                    candidate["parent_candid"] = candid
+                    candidate["parent_candid"] = np.nan
                     candidate["has_stamp"] = False
                     candidate["oid"] = oid
                     candidate["objectId"] = oid  # Used in correction
@@ -474,7 +476,7 @@ class Correction(GenericStep):
         already_on_db = index_detections.isin(index_light_curve_detections)
         filtered_detections = filtered_detections[~already_on_db]
         light_curves["detections"] = pd.concat(
-            [light_curves["detections"], filtered_detections]
+            [light_curves["detections"], filtered_detections], ignore_index = True
         )
 
         prv_detections = []
@@ -489,7 +491,7 @@ class Correction(GenericStep):
                 prv_non_detections.append(alert_prv_non_detections)
 
         if len(prv_detections) > 0:
-            prv_detections = pd.concat(prv_detections)
+            prv_detections = pd.concat(prv_detections, ignore_index = True)
             prv_detections.drop_duplicates(["oid", "candid"], inplace=True)
             # Checking if already on the database
             index_prv_detections = pd.MultiIndex.from_frame(
@@ -512,11 +514,11 @@ class Correction(GenericStep):
                 prv_detections = prv_detections.loc[:, current_keys]
                 prv_detections.loc[:, "new"] = True
                 light_curves["detections"] = pd.concat(
-                    [light_curves["detections"], prv_detections]
+                    [light_curves["detections"], prv_detections], ignore_index = True
                 )
 
         if len(prv_non_detections) > 0:
-            prv_non_detections = pd.concat(prv_non_detections)
+            prv_non_detections = pd.concat(prv_non_detections, ignore_index = True)
             # Using round 5 to have 5 decimals of precision
             prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
             light_curves["non_detections"].loc[:, "round_mjd"] = light_curves[
@@ -544,7 +546,7 @@ class Correction(GenericStep):
                 prv_non_detections.drop(columns=["round_mjd"], inplace=True)
                 prv_non_detections.loc[:, "new"] = True
                 light_curves["non_detections"] = pd.concat(
-                    [light_curves["non_detections"], prv_non_detections]
+                    [light_curves["non_detections"], prv_non_detections] , ignore_index = True
                 )
 
         return light_curves
@@ -579,7 +581,7 @@ class Correction(GenericStep):
                 metadata[f"unique{i}"] = False
                 metadata[f"update{i}"] = metadata.oid.isin(difference.oid).astype(bool)
 
-        return pd.concat([metadata, new_values])
+        return pd.concat([metadata, new_values], ignore_index = True)
 
     def preprocess_ss(self, metadata, detections):
         oids = metadata.oid.unique()
