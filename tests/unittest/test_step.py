@@ -276,8 +276,8 @@ class StepTest(unittest.TestCase):
         alert_cpy = self.alert.copy(deep=True)
         alert_cpy.prv_candidates = eval(alert_cpy.prv_candidates)
         x, y = self.step.get_prv_candidates(alert_cpy)
-        self.assertIsInstance(x, pd.DataFrame)
-        self.assertIsInstance(y, pd.DataFrame)
+        self.assertIsInstance(x, list)
+        self.assertIsInstance(y, list)
         self.assertEqual(len(x) + len(y), 73)
 
     @mock.patch.object(Correction, "cast_non_detection")
@@ -338,7 +338,7 @@ class StepTest(unittest.TestCase):
             "non_detections": pd.DataFrame(input_non_detections),
         }
         mock_get_lightcurves.return_value = light_curves
-        mock_get_prv_candidates.return_value = (detections, non_detections)
+        mock_get_prv_candidates.return_value = (detections.to_dict('records'), non_detections.to_dict('records'))
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_do_correction.assert_not_called()
 
@@ -359,7 +359,7 @@ class StepTest(unittest.TestCase):
         mock_get_lightcurves.return_value = light_curves
         self.alert.prv_candidates = [eval(self.alert.prv_candidates.loc[0])]
         new_detections.at[0, "candid"] = 123
-        mock_get_prv_candidates.return_value = (new_detections, non_detections)
+        mock_get_prv_candidates.return_value = (new_detections.to_dict('records'), non_detections.to_dict('records'))
         mock_do_correction.return_value = detections
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_do_correction.assert_called()
@@ -380,7 +380,7 @@ class StepTest(unittest.TestCase):
             "non_detections": pd.DataFrame(input_non_detections),
         }
         mock_get_lightcurves.return_value = light_curves
-        mock_get_prv_candidates.return_value = (detections, non_detections)
+        mock_get_prv_candidates.return_value = (detections.to_dict('records'), non_detections.to_dict('records'))
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_get_prv_candidates.assert_called()
         self.assertIsInstance(res, dict)
@@ -405,7 +405,7 @@ class StepTest(unittest.TestCase):
         new_non_detections.at[0, "fid"] = 5
         new_non_detections.at[0, "round_mjd"] = 123
         new_non_detections.at[0, "oid"] = "oid"
-        mock_get_prv_candidates.return_value = (detections, new_non_detections)
+        mock_get_prv_candidates.return_value = (detections.to_dict('records'), new_non_detections.to_dict('records'))
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_get_prv_candidates.assert_called()
         self.assertIsInstance(res, dict)

@@ -386,6 +386,7 @@ class Correction(GenericStep):
         light_curves = {}
         light_curves["detections"] = self.get_detections(oids)
         light_curves["non_detections"] = self.get_non_detections(oids)
+        self.logger.info(f"Light Curves: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections")
         return light_curves
 
     def get_ps1(self, oids):
@@ -442,7 +443,7 @@ class Correction(GenericStep):
                     candidate["step_id_corr"] = self.version
                     detections.append(candidate)
 
-        return pd.DataFrame(detections), pd.DataFrame(non_detections)
+        return detections, non_detections
 
     def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
         non_detection = {
@@ -487,11 +488,11 @@ class Correction(GenericStep):
                     alert_prv_detections,
                     alert_prv_non_detections,
                 ) = self.get_prv_candidates(alert)
-                prv_detections.append(alert_prv_detections)
-                prv_non_detections.append(alert_prv_non_detections)
+                prv_detections.extend(alert_prv_detections)
+                prv_non_detections.extend(alert_prv_non_detections)
 
         if len(prv_detections) > 0:
-            prv_detections = pd.concat(prv_detections, ignore_index = True)
+            prv_detections = pd.DataFrame(prv_detections)
             prv_detections.drop_duplicates(["oid", "candid"], inplace=True)
             # Checking if already on the database
             index_prv_detections = pd.MultiIndex.from_frame(
@@ -518,7 +519,7 @@ class Correction(GenericStep):
                 )
 
         if len(prv_non_detections) > 0:
-            prv_non_detections = pd.concat(prv_non_detections, ignore_index = True)
+            prv_non_detections = pd.DataFrame(prv_non_detections)
             # Using round 5 to have 5 decimals of precision
             prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
             light_curves["non_detections"].loc[:, "round_mjd"] = light_curves[
