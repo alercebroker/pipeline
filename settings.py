@@ -15,14 +15,28 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
-    "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "smallest",
+        "auto.offset.reset": "beginning",
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
+        'max.poll.interval.ms' : 3600000
     },
 }
+
+if os.getenv("TOPIC_STRATEGY_FORMAT"):
+    CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
+        "CLASS": "apf.core.topic_management.DailyTopicStrategy",
+        "PARAMS": {
+            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
+            "date_format": "%Y%m%d",
+            "change_hour": 23,
+        },
+    }
+elif os.getenv("CONSUMER_TOPICS"):
+    CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+else:
+    raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
 
 METRICS_CONFIG = {
