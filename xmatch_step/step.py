@@ -69,7 +69,7 @@ class XmatchStep(GenericStep):
         .. code-block:: python
 
             #settings.py
-        
+
             STEP_CONFIG = {
                 STEP_METADATA = {
                     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
@@ -199,6 +199,7 @@ class XmatchStep(GenericStep):
             self.producer.produce(message, key=message["objectId"])
 
     def execute(self, messages):
+        self.logger.info(f"Processing {len(messages)} alerts")
         array = []
         object_array = []
         for m in messages:
@@ -220,12 +221,15 @@ class XmatchStep(GenericStep):
         input_type = "pandas"
         output_type = "pandas"
 
+        self.logger.info(f"Getting xmatches")
         result = self.xmatch_client.execute(
             df, input_type, catalog_alias, columns, selection, output_type, radius
         )
 
         # Write in database
+        self.logger.info(f"Writing xmatches in DB")
         self.save_xmatch(result, object_df)
 
         messages = self._format_result(messages, df, result)
+        self.logger.info(f"Producing messages")
         self._produce(messages)
