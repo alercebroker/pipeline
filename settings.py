@@ -11,17 +11,18 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"smallest"
+        "auto.offset.reset":"beginning",
+        'max.poll.interval.ms' : 3600000
     },
     "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
     "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
 }
 
-if os.getenv("TOPIC_STRATEGY"):
-    CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
+if os.getenv("TOPIC_STRATEGY_FORMAT"):
+    CONSUMER_CONFIG["TOPIC_STRATEGY_FORMAT"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
-            "topic_format": "ztf_%s_programid1",
+            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
             "date_format": "%Y%m%d",
             "change_hour": 23,
         },
