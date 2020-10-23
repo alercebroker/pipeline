@@ -12,7 +12,7 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset":"beginning",
-        'max.poll.interval.ms' : 3600000
+        'max.poll.interval.ms' : 3600000,
     },
     "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
     "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
