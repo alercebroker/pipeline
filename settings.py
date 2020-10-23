@@ -19,7 +19,7 @@ CONSUMER_CONFIG = {
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
-    CONSUMER_CONFIG["TOPIC_STRATEGY_FORMAT"] = {
+    CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
             "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
