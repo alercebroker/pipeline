@@ -629,14 +629,14 @@ class Correction(GenericStep):
                 metadata.set_index("oid"), on="oid", rsuffix="_old"
             )
             is_the_same_gaia = np.isclose(
-                join_metadata["maggaia"],
-                join_metadata[f"maggaia_old"],
+                join_metadata["maggaia"].astype(np.float),
+                join_metadata[f"maggaia_old"].astype(np.float),
                 rtol=tol,
                 atol=tol,
                 equal_nan=True,
             ) & np.isclose(
-                join_metadata["maggaiabright"],
-                join_metadata[f"maggaiabright_old"],
+                join_metadata["maggaiabright"].astype(np.float),
+                join_metadata[f"maggaiabright_old"].astype(np.float),
                 rtol=tol,
                 atol=tol,
                 equal_nan=True,
@@ -668,6 +668,7 @@ class Correction(GenericStep):
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
         detections = detections.where(detections.notnull(),None)
+        dict_detections = detections.to_dict("records")
         self.driver.query().bulk_insert(dict_detections, Detection)
 
     def insert_non_detections(self, non_detections):
