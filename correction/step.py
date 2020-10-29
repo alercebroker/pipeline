@@ -667,8 +667,7 @@ class Correction(GenericStep):
 
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
-        detections.replace({np.nan: None}, inplace=True)
-        dict_detections = detections.to_dict("records")
+        detections = detections.where(detections.notnull(),None)
         self.driver.query().bulk_insert(dict_detections, Detection)
 
     def insert_non_detections(self, non_detections):
