@@ -66,46 +66,6 @@ class FeaturesComputer(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def preprocess_detections(self, detections):
-        """
-        Preprocess detections. As of version 1.0.0 it only converts detections to dataframe.
-        """
-        detections = self.create_detections_dataframe(detections)
-        return detections
-
-    def create_detections_dataframe(self, detections):
-        """Format detections to `pandas.DataFrame`.
-        This method take detections in dict form and use `json_normalize` to transform it to a DataFrame. After that
-        rename some columns and object_id as index.
-        **Example:**
-
-        Parameters
-        ----------
-        detections : dict
-            dict with detections as they come from the preprocess step.
-        """
-        detections = json_normalize(detections)
-        detections.rename(
-            columns={
-                "alert.sgscore1": "sgscore1",
-                "alert.isdiffpos": "isdiffpos",
-            },
-            inplace=True,
-        )
-        detections.set_index("oid", inplace=True)
-        return detections
-
-    def preprocess_non_detections(self, non_detections):
-        """
-        Convert non detections to dataframe.
-
-        Parameters
-        ----------
-        non_detections : dict
-            non_detections as they come from preprocess step
-        """
-        return json_normalize(non_detections)
-
     def preprocess_xmatches(self, xmatches):
         """
         As of version 1.0.0 it does no preprocess operations on xmatches.
@@ -267,24 +227,66 @@ class FeaturesComputer(GenericStep):
                     cleaned_results[key] = result[key]
         return cleaned_results
 
-    def execute(self, message):
-        oid = message["oid"]
-        detections = self.preprocess_detections(message["detections"])
-        non_detections = self.preprocess_non_detections(message["non_detections"])
-        xmatches = self.preprocess_xmatches(message["xmatches"])
-        metadata = self.preprocess_metadata(message["metadata"])
-        if len(detections) < 6:
-            self.logger.debug(f"{oid} Object has less than 6 detections")
-            return
-        self.logger.debug(f"{oid} Object has enough detections. Calculating Features")
+    def execute(self, messages):
+        self.logger.info(f"Processing {len(messages)} messages.")
+
+        self.logger.info("Getting batch alert data")
+        alert_data = pd.DataFrame([
+                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
+                for message in messages ])
+        self.logger.info(f"Find {len(alert_data.oid.unique())} Objects.")
+
+
+        self.logger.info("Getting detections and non_detections")
+        detections = []
+        non_detections = []
+        metadata = []
+        xmatches = []
+
+        for message in messages:
+            detections.extend(message.get("detections", []))
+            non_detections.extend(message.get("non_detections", []))
+            metadata.append({
+                        "oid": message["oid"],
+                        "candid": message["candid"],
+                        "sgscore1": message["metadata"]["ps1"]["sgscore1"]
+                        })
+
+            if "xmatches" in message and message["xmatches"] is not None:
+                allwise = message["xmatches"].get("allwise")
+                xmatch_values = {
+                    "W1mag": allwise["W1mag"],
+                    "W2mag": allwise["W2mag"],
+                    "W3mag": allwise["W3mag"]
+                }
+
+            else:
+                xmatch_values = {
+                    "W1mag": np.nan,
+                    "W2mag": np.nan,
+                    "W3mag": np.nan
+                }
+            xmatches.append({
+                        "oid": message["oid"],
+                        "candid": message["candid"],
+                        **xmatch_values
+            })
+
+
+        metadata = pd.DataFrame(metadata)
+        xmatches = pd.DataFrame(xmatches)
+        detections = pd.DataFrame(detections)
+        non_detections = pd.DataFrame(non_detections)
+        detections.drop_duplicates(["oid", "candid"], inplace=True)
+        non_detections.drop_duplicates(["oid", "mjd", "fid"], inplace=True)
+        detections.set_index("oid", inplace=True)
+        non_detections.set_index("oid", inplace=True)
+
+        self.logger.info(f"Calculating features")
         features = self.compute_features(detections, non_detections, metadata, xmatches)
-        if len(features) <= 0:
-            self.logger.debug(f"No features for {oid}")
-            return
-        if type(features) is pd.Series:
-            features = pd.DataFrame([features])
-        result = self.convert_nan(features.loc[oid].to_dict())
-        self.insert_db(oid, result, message["preprocess_step_id"])
-        if self.producer:
-            out_message = {"features": result, "candid": message["candid"], "oid": oid}
-            self.producer.produce(out_message, key=oid)
+
+        self.logger.info(f"Features calculated: {features.shape}")
+
+        # if self.producer:
+        #     out_message = {"features": result, "candid": message["candid"], "oid": oid}
+        #     self.producer.produce(out_message, key=oid)
