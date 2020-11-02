@@ -37,7 +37,7 @@ class StepTestCase(unittest.TestCase):
         bucket_name = self.step_config["STORAGE"]["BUCKET_NAME"]
         candid = 123
         url = self.step.get_object_url(bucket_name, candid)
-        self.assertEqual(url, "https://fake_bucket.s3.amazonaws.com/123.avro")
+        self.assertEqual(url, "https://fake_bucket.s3.amazonaws.com/321.avro")
 
     @mock.patch("boto3.client")
     def test_upload_file(self, mock_client):
@@ -51,7 +51,7 @@ class StepTestCase(unittest.TestCase):
             aws_secret_access_key=self.step_config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
             region_name=self.step_config["STORAGE"]["REGION_NAME"]
         )
-        mock_client().upload_fileobj.assert_called_with(f,bucket_name, f"{candid}.avro")
+        mock_client().upload_fileobj.assert_called_with(f,bucket_name, f"{321}.avro")
 
     @mock.patch("s3_step.S3Step.upload_file")
     def test_execute(self, mock_upload):

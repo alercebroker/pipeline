@@ -60,7 +60,8 @@ class S3Step(GenericStep):
         candid : int
             candid of the avro to be stored
         """
-        return "https://{}.s3.amazonaws.com/{}.avro".format(bucket_name, candid)
+        reverse_candid = self.reverse_candid(candid)
+        return "https://{}.s3.amazonaws.com/{}.avro".format(bucket_name, reverse_candid)
 
     def upload_file(self, f, candid, bucket_name):
         """
@@ -93,9 +94,24 @@ class S3Step(GenericStep):
             aws_secret_access_key=self.config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
             region_name=self.config["STORAGE"]["REGION_NAME"],
         )
-        object_name = "{}.avro".format(candid)
+        reverse_candid = self.reverse_candid(candid)
+        object_name = "{}.avro".format(reverse_candid)
         s3.upload_fileobj(f, bucket_name, object_name)
         return self.get_object_url(bucket_name, candid)
+
+    def reverse_candid(self, candid):
+        """
+        Returns reverse digits of the candid
+
+        Parameters
+        ----------
+        candid : int or str
+            original candid to be reversed
+        """
+        reversed = str(candid)[::-1]
+        return reversed
+
+
 
     def execute(self, message):
         self.logger.debug(message["objectId"])
