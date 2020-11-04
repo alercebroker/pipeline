@@ -220,7 +220,7 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     __tablename__ = "non_detection"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
-    fid = Column(Integer)
+    fid = Column(Integer, primary_key=True)
     mjd = Column(Float(precision=53), primary_key=True)
     diffmaglim = Column(Float)
     __table_args__ = (
