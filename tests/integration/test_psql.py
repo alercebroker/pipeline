@@ -13,8 +13,10 @@ from features.step import (
     Step,
 )
 from db_plugins.db.sql.models import Object
+import pytest
 
 
+@pytest.mark.usefixtures("psql_service")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
