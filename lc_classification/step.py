@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.stats as sstats
 import numpy as np
 import datetime
+from sqlalchemy.sql.expression import bindparam
 
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import (
@@ -72,174 +73,128 @@ class LateClassifier(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def _format_features(self, features):
-        """Format a message that correspond features `dict`.
-        This method take the keys and values, transform it to DataFrame. After that
-        rename some columns for make this readable for classifier.
-        **Example:**
+    def get_ranking(self, df):
+        ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
+        return ranking
 
-        Parameters
-        ----------
-        features : dict
-            Message deserialized of Kafka.
-        """
-        features = pd.DataFrame.from_records([features])
-        return features
+    def stack_df(self,df,ranking):
+        df = df.stack()
+        ranking = ranking.stack()
+        df.rename("probability", inplace=True)
+        ranking.rename("ranking", inplace=True)
+        result = pd.concat([df,ranking], axis=1)
+        result.index.names = ["oid", "class_name"]
+        result.reset_index(inplace=True)
+        return result
 
-    def get_probability(
-        self, oid, class_name, classifier, version, probability, ranking
-    ):
-        """Get single probability instace from the database.
+    def get_classifier_name(self,suffix=None):
+        return self.base_name if suffix is None else f"{self.base_name}_{suffix}"
 
-        Parameters
-        ----------
-        oid : str
-            Object unique identifier.
-        class_name : str
-            Class name.
-        classifier : str
-            Classifier name.
-        version : str
-            Classifier version.
-        probability : float
-            Probability asigned by the Classifier to the class.
-        ranking : int
-            Position relative to the biggest probability.
+    def process_results(self, tree_probabilities):
+        probabilities = tree_probabilities["probabilities"]
+        top = tree_probabilities["hierarchical"]["top"]
+        children = tree_probabilities["hierarchical"]["children"]
 
-        Returns
-        -------
-            Probability, created
-                The probability object itself and if was created or not.
+        top_ranking = self.get_ranking(top)
+        probabilities_ranking = self.get_ranking(probabilities)
 
+        top_result = self.stack_df(top, top_ranking)
+        probabilities_result = self.stack_df(probabilities, probabilities_ranking)
 
-        """
-        filters = {
-            "oid": oid,
-            "class_name": class_name,
-            "classifier_name": classifier,
-            "classifier_version": version,
-        }
-        data = {"probability": probability, "ranking": ranking}
-        return self.driver.session.query().get_or_create(
-            Probability, filter_by=filters, **data
+        probabilities_result["classifier_name"] = self.get_classifier_name()
+        top_result["classifier_name"] = self.get_classifier_name("top")
+
+        results = [top_result, probabilities_result]
+        for key in children:
+            child_ranking = self.get_ranking(children[key])
+            child_result = self.stack_df(children[key], child_ranking)
+            child_result["classifier_name"] = self.get_classifier_name(key.lower())
+            results.append(child_result)
+
+        results = pd.concat(results)
+        results["classifier_version"] = self.model.MODEL_VERSION_NAME
+        return results
+
+    def get_on_db(self, oids):
+        query = (
+            self.driver.query(Probability.oid)
+            .filter(Probability.oid.in_(oids))
+            .filter(Probability.classifier_version == self.model.MODEL_VERSION_NAME)
+            .distinct()
         )
+        return pd.read_sql(query.statement, self.driver.engine).oid.values
 
-    def set_taxonomy(self, classes, classifier_name, classifier_version):
-        """Save the class taxonomy if it doesn't exists.
+    def insert_db(self,results, oids):
+        on_db = self.get_on_db(oids)
+        results.set_index("oid", inplace=True)
+        already_on_db = results.index.isin(on_db)
+        to_insert = results[~already_on_db]
+        to_update = results[already_on_db]
 
-        Parameters
-        ----------
-        classes : list[array]
-            List of classes.
-        classifier_name : str
-            Classifier Name.
-        classifier_version : str
-            Classifier Version.
+        if len(to_insert) > 0:
+            self.logger.info(f"Inserting {len(to_insert)} new probabilities")
+            to_insert.replace({np.nan: None}, inplace=True)
+            to_insert.reset_index(inplace=True)
+            dict_to_insert = to_insert.to_dict('records')
+            self.driver.query().bulk_insert(dict_to_insert, Probability)
 
-        """
-        filters = {
-            "classifier_name": classifier_name,
-            "classifier_version": classifier_version,
-        }
-        data = {"classes": classes}
-        return self.driver.session.query().get_or_create(
-            Taxonomy, filter_by=filters, **data
-        )
-
-    def get_ranking(self, probabilities):
-        """Given a dictionary of probabilities, get the ranking relative to the biggest probability.
-
-        Parameters
-        ----------
-        probabilities : dict
-            Dictionary of `'class': probability` used to calculate the ranking.
-
-        Returns
-        -------
-        list
-            Array of positions.
-
-        """
-        values = probabilities.values()
-        values = list(values)
-        values = np.array(values)
-        return sstats.rankdata(-values, method="dense")
-
-    def insert_dict(self, oid, dictionary, suffix=None):
-        """Insert and updates probabilities.
-
-        Parameters
-        ----------
-        oid : str
-            Object id.
-        dictionary : dict
-            Probabilities in a `'class': probability` format.
-        suffix : str
-            Suffix for the classifier_name (i.e. late_classifier[_top]).
-
-        """
-        probabilities = []
-        classifier_name = (
-            self.base_name if suffix is None else f"{self.base_name}_{suffix}"
-        )
-        ranking = self.get_ranking(dictionary)
-        self.set_taxonomy(
-            classes=list(dictionary.keys()),
-            classifier_name=classifier_name,
-            classifier_version=self.model.MODEL_VERSION_NAME,
-        )
-        for (class_name, probability, rank) in zip(
-            dictionary.keys(), dictionary.values(), ranking
-        ):
-            probability = float(probability)
-            rank = int(rank)
-            prob, created = self.get_probability(
-                oid=oid,
-                class_name=class_name,
-                classifier=classifier_name,
-                version=self.model.MODEL_VERSION_NAME,
-                probability=probability,
-                ranking=rank,
+        if len(to_update) > 0:
+            self.logger.info(f"Updating {len(to_update)} features")
+            to_update.replace({np.nan: None}, inplace=True)
+            to_update.reset_index(inplace=True)
+            to_update.rename(columns={
+                                "oid": "_oid",
+                                "classifier_name": "_classifier_name",
+                                "classifier_version": "_classifier_version",
+                                "class_name":"_class_name",
+                                "probability":"_probability",
+                                "ranking":"_ranking"},inplace=True)
+            dict_to_update = to_update.to_dict('records')
+            stmt = (
+                Probability.__table__.update()
+                .where(Probability.oid == bindparam("_oid"))
+                .where(Probability.classifier_name == bindparam("_classifier_name"))
+                .where(Probability.classifier_version == bindparam("_classifier_version"))
+                .where(Probability.class_name == bindparam("_class_name"))
+                .values(
+                    probability=bindparam("_probability"),
+                    ranking=bindparam("_ranking")
+                )
             )
-            prob.probability = probability
-            prob.ranking = rank
+            self.driver.engine.execute(stmt, dict_to_update)
 
-            probabilities.append(prob)
-        return probabilities
+    def get_oid_tree(self, tree, oid):
+        tree_oid = {}
+        for key in tree:
+            data = tree[key]
+            if type(data) is pd.DataFrame:
+                tree_oid[key] = data.loc[oid].to_dict()
+            elif type(data) is pd.Series:
+                tree_oid[key] = data.loc[oid]
+            elif type(data) is dict:
+                tree_oid[key] = self.get_oid_tree(data, oid)
+        return tree_oid
 
-    def insert_db(self, result, oid):
-        """Iterate over the late_classifier results and insert into the database.
+    def produce(self, alert_data, features, tree_probabilities):
+        features.drop(columns=["candid"], inplace=True)
+        features.replace({np.nan:None}, inplace=True)
+        alert_data.sort_values("candid", ascending=False, inplace=True)
+        alert_data.drop_duplicates("oid", inplace=True)
+        for idx,row in alert_data.iterrows():
+            oid = row.oid
+            candid = row.candid
+            features_oid = features.loc[oid].to_dict()
 
-        Parameters
-        ----------
-        result : dict
-            Hierarchical tree of results.
-        oid : str
-            Object Id.
+            tree_oid = self.get_oid_tree(tree_probabilities, oid)
+            write = {
+                "oid": oid,
+                "candid": candid,
+                "features": features_oid,
+                "lc_classification": tree_oid
+            }
+            self.producer.produce(write, key=oid)
 
-        Returns
-        -------
-        type
-            Description of returned object.
-
-        """
-        probabilities = []
-        final = result["probabilities"]
-        prob_tmp = self.insert_dict(oid, final)
-        probabilities.extend(prob_tmp)
-
-        hierarchical = result["hierarchical"]
-        top_probabilities = hierarchical["top"]
-        prob_tmp = self.insert_dict(oid, top_probabilities, "top")
-        probabilities.extend(prob_tmp)
-
-        for child in hierarchical["children"]:
-            child_probabilities = hierarchical["children"][child]
-            prob_tmp = self.insert_dict(oid, child_probabilities, child.lower())
-            probabilities.extend(prob_tmp)
-        return probabilities
-
-    def execute(self, message):
+    def execute(self, messages):
         """Run the classification.
         1.- Get the features and transform them to a pd.DataFrame.
         2.- Check if there are missing features.
@@ -257,26 +212,32 @@ class LateClassifier(GenericStep):
             Current object data, it must have the features and object id.
 
         """
-        oid = message["oid"]
-        features = self._format_features(message["features"])
+        self.logger.info(f"Processing {len(messages)} messages.")
+        self.logger.info("Getting batch alert data")
+        alert_data = pd.DataFrame([
+                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
+                for message in messages ])
+        features = pd.DataFrame([message["features"] for message in messages])
+        features["oid"] = alert_data.oid
+        features["candid"] = alert_data.candid
+        features.sort_values("candid", ascending=False, inplace=True)
+        features.drop_duplicates("oid", inplace=True)
+        self.logger.info(f"Found {len(features)} Features.")
         missing_features = self.features_required.difference(set(features.columns))
 
-        if len(missing_features) != 0:
-            self.logger.info(
-                f"[{oid}] Missing {len(missing_features)} Features: {missing_features}"
-            )
-        else:
-            self.logger.info(f"[{oid}] Processing")
-            result = self.model.predict_in_pipeline(features)
-            probabilities = self.insert_db(result, oid)
+        if len(missing_features) > 0:
+            self.logger.critical()
+            raise KeyError(f"Corrupted Batch: missing some features ({missing_features})")
 
-            new_message = {
-                "oid": oid,
-                "candid": message["candid"],
-                "features": message["features"],
-                "lc_classification": result,
-            }
-            self.logger.info(f"[{oid}] Processed")
-            self.producer.produce(new_message, key = oid)
-            self.logger.info(f"[{oid}] Produced")
-            self.driver.session.commit()
+        self.logger.info("Doing inference")
+        features.set_index("oid", inplace=True)
+        tree_probabilities = self.model.predict_in_pipeline(features)
+
+        self.logger.info("Processing results")
+        db_results = self.process_results(tree_probabilities)
+
+        self.logger.info("Inserting/Updating results on database")
+        self.insert_db(db_results, features.index.values)
+
+        self.logger.info("Producing messages")
+        self.produce(alert_data, features, tree_probabilities)
