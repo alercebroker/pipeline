@@ -1,20 +1,17 @@
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from lc_classifier.classifier.models import HierarchicalRandomForest, PICKLE_PATH
+from lc_classifier.classifier.models import HierarchicalRandomForest
 
 import logging
 import pandas as pd
-import scipy.stats as sstats
 import numpy as np
 import datetime
 from sqlalchemy.sql.expression import bindparam
 
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import (
-    Object,
     Probability,
-    Taxonomy,
     Step,
 )
 
@@ -77,17 +74,17 @@ class LateClassifier(GenericStep):
         ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
         return ranking
 
-    def stack_df(self,df,ranking):
+    def stack_df(self, df, ranking):
         df = df.stack()
         ranking = ranking.stack()
         df.rename("probability", inplace=True)
         ranking.rename("ranking", inplace=True)
-        result = pd.concat([df,ranking], axis=1)
+        result = pd.concat([df, ranking], axis=1)
         result.index.names = ["oid", "class_name"]
         result.reset_index(inplace=True)
         return result
 
-    def get_classifier_name(self,suffix=None):
+    def get_classifier_name(self, suffix=None):
         return self.base_name if suffix is None else f"{self.base_name}_{suffix}"
 
     def process_results(self, tree_probabilities):
@@ -124,7 +121,7 @@ class LateClassifier(GenericStep):
         )
         return pd.read_sql(query.statement, self.driver.engine).oid.values
 
-    def insert_db(self,results, oids):
+    def insert_db(self, results, oids):
         on_db = self.get_on_db(oids)
         results.set_index("oid", inplace=True)
         already_on_db = results.index.isin(on_db)
@@ -146,9 +143,9 @@ class LateClassifier(GenericStep):
                                 "oid": "_oid",
                                 "classifier_name": "_classifier_name",
                                 "classifier_version": "_classifier_version",
-                                "class_name":"_class_name",
-                                "probability":"_probability",
-                                "ranking":"_ranking"},inplace=True)
+                                "class_name": "_class_name",
+                                "probability": "_probability",
+                                "ranking": "_ranking"},inplace=True)
             dict_to_update = to_update.to_dict('records')
             stmt = (
                 Probability.__table__.update()
@@ -177,10 +174,10 @@ class LateClassifier(GenericStep):
 
     def produce(self, alert_data, features, tree_probabilities):
         features.drop(columns=["candid"], inplace=True)
-        features.replace({np.nan:None}, inplace=True)
+        features.replace({np.nan: None}, inplace=True)
         alert_data.sort_values("candid", ascending=False, inplace=True)
         alert_data.drop_duplicates("oid", inplace=True)
-        for idx,row in alert_data.iterrows():
+        for idx, row in alert_data.iterrows():
             oid = row.oid
             candid = row.candid
             features_oid = features.loc[oid].to_dict()
@@ -193,6 +190,19 @@ class LateClassifier(GenericStep):
                 "lc_classification": tree_oid
             }
             self.producer.produce(write, key=oid)
+
+    def message_to_df(self, messages):
+        return pd.DataFrame([
+                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
+                for message in messages])
+
+    def features_to_df(self, alert_data, messages):
+        features = pd.DataFrame([message["features"] for message in messages])
+        features["oid"] = alert_data.oid
+        features["candid"] = alert_data.candid
+        features.sort_values("candid", ascending=False, inplace=True)
+        features.drop_duplicates("oid", inplace=True)
+        return features
 
     def execute(self, messages):
         """Run the classification.
@@ -208,36 +218,25 @@ class LateClassifier(GenericStep):
 
         Parameters
         ----------
-        message : dict-like
+        messages : dict-like
             Current object data, it must have the features and object id.
 
         """
         self.logger.info(f"Processing {len(messages)} messages.")
         self.logger.info("Getting batch alert data")
-        alert_data = pd.DataFrame([
-                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
-                for message in messages ])
-        features = pd.DataFrame([message["features"] for message in messages])
-        features["oid"] = alert_data.oid
-        features["candid"] = alert_data.candid
-        features.sort_values("candid", ascending=False, inplace=True)
-        features.drop_duplicates("oid", inplace=True)
+        alert_data = self.message_to_df(messages)
+        features = self.features_to_df(alert_data, messages)
         self.logger.info(f"Found {len(features)} Features.")
         missing_features = self.features_required.difference(set(features.columns))
 
         if len(missing_features) > 0:
-            self.logger.critical()
             raise KeyError(f"Corrupted Batch: missing some features ({missing_features})")
-
         self.logger.info("Doing inference")
         features.set_index("oid", inplace=True)
         tree_probabilities = self.model.predict_in_pipeline(features)
-
         self.logger.info("Processing results")
         db_results = self.process_results(tree_probabilities)
-
         self.logger.info("Inserting/Updating results on database")
         self.insert_db(db_results, features.index.values)
-
         self.logger.info("Producing messages")
         self.produce(alert_data, features, tree_probabilities)
