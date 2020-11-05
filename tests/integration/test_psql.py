@@ -1,13 +1,14 @@
 import unittest
 import numpy as np
 import pickle
-
+import pytest
 
 from unittest import mock
 from db_plugins.db.sql.models import Step, Object, Probability
 from lc_classification.step import LateClassifier, KafkaProducer
 
 
+@pytest.mark.usefixtures("psql_service")
 class PSQLIntegrationTest(unittest.TestCase):
 
     @classmethod
