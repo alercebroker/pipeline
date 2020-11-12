@@ -82,7 +82,8 @@ class KafkaConsumer(GenericConsumer):
                     "ztf_%s_programid3"
                     ],
                 "date_format": "%Y%m%d",
-                "change_hour": 23
+                "change_hour": 23,
+                "retention_days": 8,
                }
               }
             }
