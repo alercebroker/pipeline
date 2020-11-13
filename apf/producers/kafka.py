@@ -134,7 +134,7 @@ class KafkaProducer(GenericProducer):
             except BufferError as e:
                 self.logger.info(f"Error producing message: {e}")
                 self.logger.info("Calling poll to empty queue and producing again")
-                self.producer.poll(10)
+                self.producer.flush()
                 self.producer.produce(topic, value=message, **kwargs)
 
     def __del__(self):
