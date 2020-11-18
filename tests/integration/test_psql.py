@@ -2,10 +2,21 @@ import unittest
 from unittest import mock
 import subprocess
 import time
-from features.step import FeaturesComputer, KafkaProducer, Step, Feature, FeatureVersion
+from features.step import (
+    FeaturesComputer,
+    CustomStreamHierarchicalExtractor,
+    KafkaProducer,
+    pd,
+    np,
+    Feature,
+    FeatureVersion,
+    Step,
+)
 from db_plugins.db.sql.models import Object
+import pytest
 
 
+@pytest.mark.usefixtures("psql_service")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -70,8 +81,16 @@ class PSQLIntegrationTest(unittest.TestCase):
         self.assertEqual(len(self.step.db.query(Step).all()), 1)
 
     def test_insert_db(self):
-        oid = "oid"
-        features = {"test_1": 0}
+        oid = "ZTF1"
+        features = pd.DataFrame(
+            {
+                "oid": ["ZTF1"],
+                "feature_1": [123],
+                "feature_2": [456],
+                "not_a_feature": [-1],
+            }
+        )
+        features.set_index("oid", inplace=True)
         preprocess_id = "pre"
         obj = Object(oid=oid)
         self.step.db.session.add(obj)
@@ -85,6 +104,57 @@ class PSQLIntegrationTest(unittest.TestCase):
             "FEATURE_VERSION": "feature",
         }
         self.step.insert_step_metadata()
-        self.step.insert_db(oid, features, preprocess_id)
-        self.assertEqual(len(self.step.db.query(Feature).all()), 1)
+        self.step.insert_feature_version(preprocess_id)
+        self.step.add_to_db(features)
+        self.assertEqual(len(self.step.db.query(Feature).all()), 3)
+        self.assertEqual(len(self.step.db.query(FeatureVersion).all()), 1)
+
+    def test_insert_db_with_nan(self):
+        oid = "ZTF1"
+        features = pd.DataFrame(
+            {
+                "oid": ["ZTF1"],
+                "feature_1": [123],
+                "feature_2": [np.nan],
+                "not_a_feature": [-1],
+            }
+        )
+        features.set_index("oid", inplace=True)
+        preprocess_id = "pre"
+        obj = Object(oid=oid)
+        self.step.db.session.add(obj)
+        self.step.db.session.commit()
+        self.step.insert_step_metadata()
+        self.step.config["STEP_METADATA"] = {
+            "STEP_ID": preprocess_id,
+            "STEP_NAME": "preprocess",
+            "STEP_VERSION": "test",
+            "STEP_COMMENTS": "",
+            "FEATURE_VERSION": "feature",
+        }
+        self.step.insert_step_metadata()
+        self.step.insert_feature_version(preprocess_id)
+        self.step.add_to_db(features)
+        self.assertEqual(len(self.step.db.query(Feature).all()), 3)
+        self.assertEqual(len(self.step.db.query(FeatureVersion).all()), 1)
+
+    def test_insert_db_empty(self):
+        oid = "ZTF1"
+        features = pd.DataFrame()
+        preprocess_id = "pre"
+        obj = Object(oid=oid)
+        self.step.db.session.add(obj)
+        self.step.db.session.commit()
+        self.step.insert_step_metadata()
+        self.step.config["STEP_METADATA"] = {
+            "STEP_ID": preprocess_id,
+            "STEP_NAME": "preprocess",
+            "STEP_VERSION": "test",
+            "STEP_COMMENTS": "",
+            "FEATURE_VERSION": "feature",
+        }
+        self.step.insert_step_metadata()
+        self.step.insert_feature_version(preprocess_id)
+        self.step.add_to_db(features)
+        self.assertEqual(len(self.step.db.query(Feature).all()), 0)
         self.assertEqual(len(self.step.db.query(FeatureVersion).all()), 1)
