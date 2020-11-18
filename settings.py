@@ -24,11 +24,11 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset":"beginning",
+        "max.poll.interval.ms": 3600000, 
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
-    'max.poll.interval.ms' : 6000000
 }
 
 PRODUCER_CONFIG = {

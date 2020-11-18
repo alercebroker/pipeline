@@ -247,11 +247,9 @@ class FeaturesComputer(GenericStep):
         if self.producer:
             alert_data.set_index("oid", inplace=True)
             alert_data.drop_duplicates(inplace=True, keep="last")
-            features = features.join(alert_data)
             for oid, features_oid in features.iterrows():
                 features_oid.replace({np.nan: None}, inplace=True)
-                candid = features_oid.candid
-                features_oid.drop(labels=["candid"],inplace=True)
+                candid = alert_data.loc[oid].candid
                 features_dict = features_oid.to_dict()
                 out_message = {"features": features_dict, "oid": oid, "candid": candid}
                 self.producer.produce(out_message, key=oid)
