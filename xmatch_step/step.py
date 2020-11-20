@@ -103,6 +103,7 @@ class XmatchStep(GenericStep):
             a dict with oid, ra and dec keys
         """
         record = {
+            "candid": message["candid"],
             "oid": message["objectId"],
             "ra": message["candidate"]["ra"],
             "dec": message["candidate"]["dec"],
@@ -208,9 +209,11 @@ class XmatchStep(GenericStep):
 
             record = self.get_default_object_values(m)
             object_array.append(record)
-
-        df = pd.DataFrame(array, columns=["oid", "ra", "dec"])
+        df = pd.DataFrame(array, columns=["candid", "oid", "ra", "dec"])
         object_df = pd.DataFrame(object_array)
+
+        df.drop_duplicates(subset=["candid"], inplace=True)
+        object_df.drop_duplicates(subset=["oid"], inplace=True)
 
         # xmatch
         catalog = self.xmatch_config["CATALOG"]
