@@ -11,7 +11,9 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset":"smallest"
-    }
+    },
+    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
 DB_CONFIG = {

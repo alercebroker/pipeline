@@ -1,7 +1,8 @@
 import unittest
-import datetime
+import pickle
 from db_plugins.db.sql import SQLQuery
 from unittest import mock
+from db_plugins.db.sql.models import Taxonomy
 from lc_classification.step import (
     LateClassifier,
     SQLConnection,
@@ -9,7 +10,6 @@ from lc_classification.step import (
     pd,
     np,
     Probability,
-    Taxonomy,
     HierarchicalRandomForest,
 )
 
@@ -253,6 +253,14 @@ class StepTestCase(unittest.TestCase):
             model=self.mock_model,
             test_mode=True,
         )
+        self.batch = [CORRECT_MESSAGE.copy() for _ in range(10)]
+
+        for i, b in enumerate(self.batch):
+            self.batch[i]['oid'] = i
+            self.batch[i]['candid'] = b['candid'] + str(i)
+
+        with open("tests/unittest/response_batch.pickle", "rb") as f:
+            self.prediction = pickle.load(f)
 
     def tearDown(self):
         del self.step
@@ -261,103 +269,30 @@ class StepTestCase(unittest.TestCase):
         self.step.insert_step_metadata()
         self.step.driver.query().get_or_create.assert_called_once()
 
-    def test_format_features(self):
-        self.assertEqual(dict, type(CORRECT_MESSAGE["features"]))
-        formatted = self.step._format_features(CORRECT_MESSAGE["features"])
-        self.assertEqual(pd.DataFrame, type(formatted))
-
     def test_get_ranking(self):
-        known_ranking = [9, 8, 6, 10, 7, 2, 4, 1, 10, 3, 5, 10, 10, 10, 10]
-        ranking = self.step.get_ranking(PREDICTION["probabilities"])
-        self.assertEqual(list(ranking), known_ranking)
+        ranking = self.step.get_ranking(self.prediction["hierarchical"]["top"])
+        self.assertEqual(list(ranking["Periodic"]), [1] * 10)
+        self.assertEqual(list(ranking["Transient"]), [3] * 10)
+        self.assertEqual(list(ranking["Stochastic"]), [2] * 10)
 
-    def test_get_probability(self):
-        self.mock_database_connection.session.query().get_or_create.return_value = (
-            "instance",
-            "created",
-        )
-        instance, created = self.step.get_probability(
-            "oid", "class", "classifier", "version", "proba", "ranking"
-        )
-        self.mock_database_connection.session.query().get_or_create.assert_called_with(
-            Probability,
-            filter_by={
-                "oid": "oid",
-                "class_name": "class",
-                "classifier_name": "classifier",
-                "classifier_version": "version",
-            },
-            probability="proba",
-            ranking="ranking",
-        )
-        self.assertEqual(instance, "instance")
-        self.assertEqual(created, "created")
-
-    def test_set_taxonomy(self):
-        self.mock_database_connection.session.query().get_or_create.return_value = (
-            "instance",
-            "created",
-        )
-        instance, created = self.step.set_taxonomy([], "classifier", "version")
-        self.mock_database_connection.session.query().get_or_create.assert_called_with(
-            Taxonomy,
-            filter_by={
-                "classifier_name": "classifier",
-                "classifier_version": "version",
-            },
-            classes=[],
-        )
-        self.assertEqual(instance, "instance")
-        self.assertEqual(created, "created")
-
-    @mock.patch.object(LateClassifier, "set_taxonomy")
-    @mock.patch.object(LateClassifier, "get_probability")
-    def test_insert_dict(self, mock_get_probability, mock_set_taxonomy):
-        mock_get_probability.return_value = (mock.MagicMock, "created")
-        probabilities_dict = PREDICTION["probabilities"]
-        oid = CORRECT_MESSAGE["oid"]
-        probabilities = self.step.insert_dict(oid, probabilities_dict, "test")
-        mock_set_taxonomy.assert_called_with(
-            classes=list(probabilities_dict.keys()),
-            classifier_name="lc_classifier_test",
-            classifier_version="test",
-        )
-        self.assertEqual(
-            len(mock_get_probability.mock_calls), len(probabilities_dict.keys())
-        )
-        self.assertEqual(
-            probabilities,
-            [mock_get_probability.return_value[0]] * len(probabilities_dict.keys()),
-        )
-
-    @mock.patch.object(LateClassifier, "insert_dict")
+    @mock.patch.object(LateClassifier, "insert_db")
     def test_insert_db(self, mock_insert_dict):
         mock_insert_dict.return_value = ["ok"]
         result = PREDICTION
         oid = CORRECT_MESSAGE["oid"]
         probabilities = self.step.insert_db(result, oid)
-        self.assertEqual(len(probabilities), 5)
+        self.assertEqual(len(probabilities), 1)
 
     @mock.patch.object(LateClassifier, "insert_db")
-    def test_execute_missing_features(self, mock_insert):
+    def execute_missing_features(self, mock_insert):
         self.step.features_required = set("not_empty")
-        self.step.execute(CORRECT_MESSAGE)
+        self.step.execute([CORRECT_MESSAGE])
         self.step.model.predict_in_pipeline.assert_not_called()
         mock_insert.assert_not_called()
         self.step.producer.produce.assert_not_called()
 
     @mock.patch.object(LateClassifier, "insert_db")
     def test_execute_no_missing_features(self, mock_insert):
-        self.step.model.predict_in_pipeline.return_value = PREDICTION
-        self.step.execute(CORRECT_MESSAGE)
+        self.step.model.predict_in_pipeline.return_value = self.prediction
+        self.step.execute(self.batch)
         self.step.model.predict_in_pipeline.assert_called()
-        mock_insert.assert_called_with(PREDICTION, CORRECT_MESSAGE["oid"])
-        new_message = {
-            "oid": CORRECT_MESSAGE["oid"],
-            "candid": CORRECT_MESSAGE["candid"],
-            "features": CORRECT_MESSAGE["features"],
-            "lc_classification": PREDICTION,
-        }
-        self.step.producer.produce.assert_called_with(
-            new_message, key=new_message["oid"]
-        )

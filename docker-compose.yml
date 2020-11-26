@@ -1,29 +1,27 @@
 version: "3"
 services:
-  late_classification:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ".:/app"
-    network_mode: host
-    # restart: "always"
+  lc_classification:
+    build: .
     environment:
-      - DB_HOST=localhost
-      - DB_USER=postgres
-      - DB_PASSWORD=docker
+      - DB_ENGINE=postgres
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=5432
-      - DB_NAME=test
+      - DB_NAME=${DB_NAME}
       - CONSUMER_TOPICS=features
-      - CONSUMER_SERVER=localhost:9092
-      - CONSUMER_GROUP_ID=late_steps
-      - PRODUCER_TOPIC=lc_classification
-      - PRODUCER_SERVER=localhost:9092
-      - ES_PREFIX=ztf_pipeline
-      - ES_NETWORK_HOST=localhost
-      - ES_NETWORK_PORT=9200
-      - LOGGING_DEBUG=True
-      - CLASSIFIER_NAME=late
-      - TAXONOMY_NAME=v1
-      - METRICS_HOST=
-      - METRICS_TOPIC=
+      - CONSUMER_SERVER=${CONSUMER_SERVER}
+      - CONSUMER_GROUP_ID=lc_classification_consumer_batch
+      - PRODUCER_TOPIC=lc_classification_batch
+      - PRODUCER_SERVER=${PRODUCER_SERVER}
+      - STEP_VERSION=lc_classification.0.1_dev
+      - FEATURE_VERSION=lc_classification.0.1_dev
+      - METRICS_HOST=${METRICS_HOST}
+      - METRICS_TOPIC=${METRICS_TOPIC}
+      - CONSUME_TIMEOUT=60
+      - CONSUME_MESSAGES=1000
+    volumes:
+      - ./:/app
+    stdin_open: true
+    tty: true
+    command: /bin/bash
