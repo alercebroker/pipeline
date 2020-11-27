@@ -1,9 +1,9 @@
 #include "functions.h"
 
-double _conv (int N, double *a,double *time1,double *b1,double *b2,double *mask,double c1,double c2,long d,double dtmin){
+float _conv (int N, float *a,float *time1,float *b1,float *b2,float *mask,float c1,float c2,long d,float dtmin){
 
   int ci,cj,ck,csize,k,imax1,kmax;
-  double norm1,norm2,normf,num[N],t,dt1,min,max;
+  float norm1,norm2,normf,num[N],t,dt1,min,max;
 
 
   for (ci=0;ci<d;ci++){
@@ -66,11 +66,11 @@ double _conv (int N, double *a,double *time1,double *b1,double *b2,double *mask,
 }
 
 
-void _statistics(int N, double *flux, double* mag, double *magerr, double* time, double *mask,
-                 double mag0, double t1,double t2, double epsilon, double dt, double mean,
-                 double *Ik2_low_freq,double *Ik2_high_freq,int *nonzero,int *PN_flag){
-  double rateG1[N],rateG2[N],maskG2[N],maskG1[N];
-  double kr,sigma1,sigma2,norm,PN, Ik, fluxerr,Ik2;
+void _statistics(int N, float *flux, float* mag, float *magerr, float* time, float *mask,
+                 float mag0, float t1,float t2, float epsilon, float dt, float mean,
+                 float *Ik2_low_freq,float *Ik2_high_freq,int *nonzero,int *PN_flag){
+  float rateG1[N],rateG2[N],maskG2[N],maskG1[N];
+  float kr,sigma1,sigma2,norm,PN, Ik, fluxerr,Ik2;
   int imax,k;
 
   kr=1.0/t1;
@@ -137,11 +137,11 @@ void _statistics(int N, double *flux, double* mag, double *magerr, double* time,
 }
 
 
-long _sigma_clip(double *flux, double *flag, double mean, double var, double *new_mean, double *new_var, long num){
+long _sigma_clip(float *flux, float *flag, float mean, float var, float *new_mean, float *new_var, long num){
 
   long i,new_num,new_new_num;
-  double sigma,flux2;
-  double new_mean_value, new_var_value, new_new_mean_value,new_sigma;
+  float sigma,flux2;
+  float new_mean_value, new_var_value, new_new_mean_value,new_sigma;
 
   new_num=0;
   flux2=new_mean_value=0.0;

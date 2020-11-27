@@ -10,11 +10,11 @@
 # define pi 3.1415
 # define E 2.718281828
 
-double _conv (int N, double *a,double *time1, double *b1,double *b2,double *mask,double c1,double c2,long d,double dtmin);
+float _conv (int N, float *a,float *time1, float *b1,float *b2,float *mask,float c1,float c2,long d,float dtmin);
 
-long _sigma_clip(double *flux, double *flag, double mean, double var, double *new_mean, double *new_var, long num);
+long _sigma_clip(float *flux, float *flag, float mean, float var, float *new_mean, float *new_var, long num);
 
-void _statistics(int N, double *flux, double* mag, double *magerr, double* time, double *mask,
-                 double mag0, double t1,double t2, double epsilon, double dt, double mean,
-                 double *Ik2_low_freq,double *Ik2_high_freq,int *nonzero,int *PN_flag);
+void _statistics(int N, float *flux, float* mag, float *magerr, float* time, float *mask,
+                 float mag0, float t1,float t2, float epsilon, float dt, float mean,
+                 float *Ik2_low_freq,float *Ik2_high_freq,int *nonzero,int *PN_flag);
 #endif
