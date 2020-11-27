@@ -239,4 +239,4 @@ class KafkaConsumer(GenericConsumer):
 
     def commit(self):
         for message in self.messages:
-            self.consumer.commit(message)
+            self.consumer.commit(message, asynchronous=False)
