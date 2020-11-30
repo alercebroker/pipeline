@@ -2,7 +2,7 @@ numpy
 Cython
 matplotlib
 GPy
-apf-base==1.0.1
+apf-base==1.0.2
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/db-plugins.git#egg=db-plugins
 -e git+https://github.com/alercebroker/lc_classifier#egg=lc_classifier
