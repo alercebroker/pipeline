@@ -1,5 +1,5 @@
 astropy>=4.0
 pandas>=0.25.3
-apf_base==1.0.1
+apf_base==1.0.2
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
 -e git+https://git@github.com/alercebroker/lc_correction@feature/optimization#egg=lc_correction
