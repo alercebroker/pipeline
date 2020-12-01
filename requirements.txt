@@ -1,9 +1,9 @@
-numpy
-Cython
+numpy>=1.16.0
 matplotlib
 GPy
 apf-base==1.0.2
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
--e git+https://github.com/alercebroker/db-plugins.git#egg=db-plugins
+-e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
+-e git+https://github.com/alercebroker/db-plugins.git#egg=db_plugins
 -e git+https://github.com/alercebroker/lc_classifier#egg=lc_classifier
 -e git+https://github.com/alercebroker/P4J.git#egg=P4J
