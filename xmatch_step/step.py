@@ -69,7 +69,7 @@ class XmatchStep(GenericStep):
         .. code-block:: python
 
             #settings.py
-        
+
             STEP_CONFIG = {
                 STEP_METADATA = {
                     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
@@ -198,10 +198,15 @@ class XmatchStep(GenericStep):
         for message in messages:
             self.producer.produce(message, key=message["objectId"])
 
+    def convert_null_to_none(self, columns, d):
+        if d["drb"] == "null":
+            d["drb"] = None
+
     def execute(self, messages):
         array = []
         object_array = []
         for m in messages:
+            self.convert_null_to_none(["drb"], m["candidate"])
             record = self._extract_coordinates(m)
             array.append(record)
 

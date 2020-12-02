@@ -94,3 +94,9 @@ class StepTest(unittest.TestCase):
         self.step.start()
         save_xmatch_mock.assert_called()
         self.step.producer.produce.assert_called()
+
+    def test_convert_null_to_none(self):
+        message = {"candidate": {"drb": "null"}}
+        expected = {"candidate": {"drb": None}}
+        self.step.convert_null_to_none(["drb"], message["candidate"])
+        self.assertEqual(message, expected)
