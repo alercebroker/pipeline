@@ -268,7 +268,9 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "produce")
     @mock.patch.object(FeaturesComputer, "add_to_db")
     @mock.patch.object(FeaturesComputer, "insert_feature_version")
-    def test_execute_with_producer(self, insert_feature_version, add_to_db, produce, compute_features):
+    def test_execute_with_producer(
+        self, insert_feature_version, add_to_db, produce, compute_features
+    ):
         messages = [
             {
                 "oid": "ZTF1",
@@ -290,7 +292,9 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "produce")
     @mock.patch.object(FeaturesComputer, "add_to_db")
     @mock.patch.object(FeaturesComputer, "insert_feature_version")
-    def test_execute_duplicates(self, insert_feature_version, add_to_db, produce, compute_features):
+    def test_execute_duplicates(
+        self, insert_feature_version, add_to_db, produce, compute_features
+    ):
         message1 = {
             "oid": "ZTF1",
             "candid": 123,
@@ -314,3 +318,15 @@ class StepTestCase(unittest.TestCase):
         mock_feature_version.version = self.step_config["FEATURE_VERSION"]
         self.step.execute(messages)
         produce.assert_called_once()
+
+    def test_produce(self):
+        alert_data = pd.DataFrame({"oid": ["OID", "OID"], "candid": [123, 123]})
+        features = pd.DataFrame({"oid": ["OID"], "feature1": 1, "feature2": 2})
+        features.set_index("oid", inplace=True)
+        self.step.produce(features, alert_data)
+        expected_message = {
+            "features": {"feature1": 1, "feature2": 2},
+            "oid": "OID",
+            "candid": 123,
+        }
+        self.step.producer.produce.assert_called_with(expected_message, key="OID")

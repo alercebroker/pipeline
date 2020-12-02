@@ -180,7 +180,9 @@ class FeaturesComputer(GenericStep):
         to_update.columns = out_columns
         to_update["fid"] = to_update["name"].apply(apply_get_fid)
         to_update["version"] = self.feature_version.version
-        to_update["name"] = to_update["name"].apply(lambda x: self.check_feature_name(x))
+        to_update["name"] = to_update["name"].apply(
+            lambda x: self.check_feature_name(x)
+        )
         to_update.rename(
             columns={
                 "oid": "_oid",
