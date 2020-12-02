@@ -130,48 +130,50 @@ class XmatchStep(GenericStep):
         return messages
 
     def save_xmatch(self, result, df_object):
+        
+        if len(result) > 0:
 
-        result = result.rename(
-            {
-                "AllWISE": "oid_catalog",
-                "RAJ2000": "ra",
-                "DEJ2000": "dec",
-                "W1mag": "w1mpro",
-                "W2mag": "w2mpro",
-                "W3mag": "w3mpro",
-                "W4mag": "w4mpro",
-                "e_W1mag": "w1sigmpro",
-                "e_W2mag": "w2sigmpro",
-                "e_W3mag": "w3sigmpro",
-                "e_W4mag": "w4sigmpro",
-                "Jmag": "j_m_2mass",
-                "Hmag": "h_m_2mass",
-                "Kmag": "k_m_2mass",
-                "e_Jmag": "j_msig_2mass",
-                "e_Hmag": "h_msig_2mass",
-                "e_Kmag": "k_msig_2mass",
-                "oid_in": "oid",
-                "angDist": "dist",
-            },
-            axis="columns",
-        )
+            result = result.rename(
+                {
+                    "AllWISE": "oid_catalog",
+                    "RAJ2000": "ra",
+                    "DEJ2000": "dec",
+                    "W1mag": "w1mpro",
+                    "W2mag": "w2mpro",
+                    "W3mag": "w3mpro",
+                    "W4mag": "w4mpro",
+                    "e_W1mag": "w1sigmpro",
+                    "e_W2mag": "w2sigmpro",
+                    "e_W3mag": "w3sigmpro",
+                    "e_W4mag": "w4sigmpro",
+                    "Jmag": "j_m_2mass",
+                    "Hmag": "h_m_2mass",
+                    "Kmag": "k_m_2mass",
+                    "e_Jmag": "j_msig_2mass",
+                    "e_Hmag": "h_msig_2mass",
+                    "e_Kmag": "k_msig_2mass",
+                    "oid_in": "oid",
+                    "angDist": "dist",
+                },
+                axis="columns",
+            )
 
-        object_data = df_object[df_object.oid.isin(result.oid)]
+            object_data = df_object[df_object.oid.isin(result.oid)]
 
-        # bulk insert to object table
-        array = object_data.to_dict(orient="records")
-        self.driver.query(Object).bulk_insert(array)
+            # bulk insert to object table
+            array = object_data.to_dict(orient="records")
+            self.driver.query(Object).bulk_insert(array)
 
-        # bulk insert to allwise table
-        data = result.drop(["oid", "dist"], axis=1)
-        array = data.to_dict(orient="records")
-        self.driver.query(Allwise).bulk_insert(array)
+            # bulk insert to allwise table
+            data = result.drop(["oid", "dist"], axis=1)
+            array = data.to_dict(orient="records")
+            self.driver.query(Allwise).bulk_insert(array)
 
-        # bulk insert to xmatch table
-        result["catid"] = "allwise"
-        data = result[["oid", "oid_catalog", "dist", "catid"]]
-        array = data.to_dict(orient="records")
-        self.driver.query(Xmatch).bulk_insert(array)
+            # bulk insert to xmatch table
+            result["catid"] = "allwise"
+            data = result[["oid", "oid_catalog", "dist", "catid"]]
+            array = data.to_dict(orient="records")
+            self.driver.query(Xmatch).bulk_insert(array)
 
     def get_default_object_values(
         self,
