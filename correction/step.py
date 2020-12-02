@@ -360,6 +360,8 @@ class Correction(GenericStep):
         return new_magstats
 
     def do_dmdt(self, light_curves, magstats):
+        if len(light_curves["non_detections"] == 0):
+            return pd.DataFrame()
         non_detections = light_curves["non_detections"]
         non_detections["objectId"] = non_detections["oid"]
         magstats["objectId"] = magstats["oid"]
@@ -386,7 +388,9 @@ class Correction(GenericStep):
         light_curves = {}
         light_curves["detections"] = self.get_detections(oids)
         light_curves["non_detections"] = self.get_non_detections(oids)
-        self.logger.info(f"Light Curves: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections")
+        self.logger.info(
+            f"Light Curves: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections"
+        )
         return light_curves
 
     def get_ps1(self, oids):
@@ -477,7 +481,7 @@ class Correction(GenericStep):
         already_on_db = index_detections.isin(index_light_curve_detections)
         filtered_detections = filtered_detections[~already_on_db]
         light_curves["detections"] = pd.concat(
-            [light_curves["detections"], filtered_detections], ignore_index = True
+            [light_curves["detections"], filtered_detections], ignore_index=True
         )
 
         prv_detections = []
@@ -515,7 +519,7 @@ class Correction(GenericStep):
                 prv_detections = prv_detections.loc[:, current_keys]
                 prv_detections.loc[:, "new"] = True
                 light_curves["detections"] = pd.concat(
-                    [light_curves["detections"], prv_detections], ignore_index = True
+                    [light_curves["detections"], prv_detections], ignore_index=True
                 )
 
         if len(prv_non_detections) > 0:
@@ -547,7 +551,8 @@ class Correction(GenericStep):
                 prv_non_detections.drop(columns=["round_mjd"], inplace=True)
                 prv_non_detections.loc[:, "new"] = True
                 light_curves["non_detections"] = pd.concat(
-                    [light_curves["non_detections"], prv_non_detections] , ignore_index = True
+                    [light_curves["non_detections"], prv_non_detections],
+                    ignore_index=True,
                 )
 
         return light_curves
@@ -582,7 +587,7 @@ class Correction(GenericStep):
                 metadata[f"unique{i}"] = False
                 metadata[f"update{i}"] = metadata.oid.isin(difference.oid).astype(bool)
 
-        return pd.concat([metadata, new_values], ignore_index = True)
+        return pd.concat([metadata, new_values], ignore_index=True)
 
     def preprocess_ss(self, metadata, detections):
         oids = metadata.oid.unique()
@@ -667,7 +672,7 @@ class Correction(GenericStep):
 
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
-        detections = detections.where(detections.notnull(),None)
+        detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
         self.driver.query().bulk_insert(dict_detections, Detection)
 
@@ -963,7 +968,7 @@ class Correction(GenericStep):
         magstats = self.get_magstats(corrected["oid"].unique())
         metadata = self.preprocess_metadata(metadata, detections)
 
-        #Getting new magstats
+        # Getting new magstats
         self.logger.info(f"Calculating new magnitude statistics")
         new_magstats = self.do_magstats(light_curves, metadata, magstats)
         dmdt = self.do_dmdt(light_curves, new_magstats)

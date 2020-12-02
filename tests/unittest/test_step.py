@@ -173,6 +173,15 @@ class StepTest(unittest.TestCase):
         light_curves = {"non_detections": non_dets}
         magstats = pd.DataFrame(input_stats_from_db)
         res = self.step.do_dmdt(light_curves, magstats)
+        self.assertGreaterEqual(len(res), 0)
+
+    @mock.patch("correction.step.do_dmdt_df")
+    def test_do_dmdt_empty(self, mock_do_dmdt_df):
+        non_dets = pd.DataFrame(columns=["oid", "fid"])
+        light_curves = {"non_detections": non_dets}
+        magstats = pd.DataFrame(input_stats_from_db)
+        res = self.step.do_dmdt(light_curves, magstats)
+        self.assertEqual(len(res), 0)
 
     @mock.patch("correction.step.pd.read_sql")
     def test_get_objects(self, mock_read_sql):
@@ -338,7 +347,10 @@ class StepTest(unittest.TestCase):
             "non_detections": pd.DataFrame(input_non_detections),
         }
         mock_get_lightcurves.return_value = light_curves
-        mock_get_prv_candidates.return_value = (detections.to_dict('records'), non_detections.to_dict('records'))
+        mock_get_prv_candidates.return_value = (
+            detections.to_dict("records"),
+            non_detections.to_dict("records"),
+        )
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_do_correction.assert_not_called()
 
@@ -359,7 +371,10 @@ class StepTest(unittest.TestCase):
         mock_get_lightcurves.return_value = light_curves
         self.alert.prv_candidates = [eval(self.alert.prv_candidates.loc[0])]
         new_detections.at[0, "candid"] = 123
-        mock_get_prv_candidates.return_value = (new_detections.to_dict('records'), non_detections.to_dict('records'))
+        mock_get_prv_candidates.return_value = (
+            new_detections.to_dict("records"),
+            non_detections.to_dict("records"),
+        )
         mock_do_correction.return_value = detections
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_do_correction.assert_called()
@@ -380,12 +395,14 @@ class StepTest(unittest.TestCase):
             "non_detections": pd.DataFrame(input_non_detections),
         }
         mock_get_lightcurves.return_value = light_curves
-        mock_get_prv_candidates.return_value = (detections.to_dict('records'), non_detections.to_dict('records'))
+        mock_get_prv_candidates.return_value = (
+            detections.to_dict("records"),
+            non_detections.to_dict("records"),
+        )
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_get_prv_candidates.assert_called()
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.keys()), ["detections", "non_detections"])
-
 
     @mock.patch.object(Correction, "get_lightcurves")
     @mock.patch.object(Correction, "get_prv_candidates")
@@ -405,7 +422,10 @@ class StepTest(unittest.TestCase):
         new_non_detections.at[0, "fid"] = 5
         new_non_detections.at[0, "round_mjd"] = 123
         new_non_detections.at[0, "oid"] = "oid"
-        mock_get_prv_candidates.return_value = (detections.to_dict('records'), new_non_detections.to_dict('records'))
+        mock_get_prv_candidates.return_value = (
+            detections.to_dict("records"),
+            new_non_detections.to_dict("records"),
+        )
         res = self.step.preprocess_lightcurves(detections, self.alert)
         mock_get_prv_candidates.assert_called()
         self.assertIsInstance(res, dict)
@@ -592,5 +612,5 @@ class StepTest(unittest.TestCase):
         self.step.producer.produce.assert_called_once()
 
     # def test_execute(self):
-        # self.step.driver.engine = mock.Mock()
-        # self.step.start()
+    # self.step.driver.engine = mock.Mock()
+    # self.step.start()
