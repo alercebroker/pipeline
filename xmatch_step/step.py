@@ -103,6 +103,7 @@ class XmatchStep(GenericStep):
             a dict with oid, ra and dec keys
         """
         record = {
+            "candid": message["candid"],
             "oid": message["objectId"],
             "ra": message["candidate"]["ra"],
             "dec": message["candidate"]["dec"],
@@ -129,48 +130,50 @@ class XmatchStep(GenericStep):
         return messages
 
     def save_xmatch(self, result, df_object):
+        
+        if len(result) > 0:
 
-        result = result.rename(
-            {
-                "AllWISE": "oid_catalog",
-                "RAJ2000": "ra",
-                "DEJ2000": "dec",
-                "W1mag": "w1mpro",
-                "W2mag": "w2mpro",
-                "W3mag": "w3mpro",
-                "W4mag": "w4mpro",
-                "e_W1mag": "w1sigmpro",
-                "e_W2mag": "w2sigmpro",
-                "e_W3mag": "w3sigmpro",
-                "e_W4mag": "w4sigmpro",
-                "Jmag": "j_m_2mass",
-                "Hmag": "h_m_2mass",
-                "Kmag": "k_m_2mass",
-                "e_Jmag": "j_msig_2mass",
-                "e_Hmag": "h_msig_2mass",
-                "e_Kmag": "k_msig_2mass",
-                "oid_in": "oid",
-                "angDist": "dist",
-            },
-            axis="columns",
-        )
+            result = result.rename(
+                {
+                    "AllWISE": "oid_catalog",
+                    "RAJ2000": "ra",
+                    "DEJ2000": "dec",
+                    "W1mag": "w1mpro",
+                    "W2mag": "w2mpro",
+                    "W3mag": "w3mpro",
+                    "W4mag": "w4mpro",
+                    "e_W1mag": "w1sigmpro",
+                    "e_W2mag": "w2sigmpro",
+                    "e_W3mag": "w3sigmpro",
+                    "e_W4mag": "w4sigmpro",
+                    "Jmag": "j_m_2mass",
+                    "Hmag": "h_m_2mass",
+                    "Kmag": "k_m_2mass",
+                    "e_Jmag": "j_msig_2mass",
+                    "e_Hmag": "h_msig_2mass",
+                    "e_Kmag": "k_msig_2mass",
+                    "oid_in": "oid",
+                    "angDist": "dist",
+                },
+                axis="columns",
+            )
 
-        object_data = df_object[df_object.oid.isin(result.oid)]
+            object_data = df_object[df_object.oid.isin(result.oid)]
 
-        # bulk insert to object table
-        array = object_data.to_dict(orient="records")
-        self.driver.query(Object).bulk_insert(array)
+            # bulk insert to object table
+            array = object_data.to_dict(orient="records")
+            self.driver.query(Object).bulk_insert(array)
 
-        # bulk insert to allwise table
-        data = result.drop(["oid", "dist"], axis=1)
-        array = data.to_dict(orient="records")
-        self.driver.query(Allwise).bulk_insert(array)
+            # bulk insert to allwise table
+            data = result.drop(["oid", "dist"], axis=1)
+            array = data.to_dict(orient="records")
+            self.driver.query(Allwise).bulk_insert(array)
 
-        # bulk insert to xmatch table
-        result["catid"] = "allwise"
-        data = result[["oid", "oid_catalog", "dist", "catid"]]
-        array = data.to_dict(orient="records")
-        self.driver.query(Xmatch).bulk_insert(array)
+            # bulk insert to xmatch table
+            result["catid"] = "allwise"
+            data = result[["oid", "oid_catalog", "dist", "catid"]]
+            array = data.to_dict(orient="records")
+            self.driver.query(Xmatch).bulk_insert(array)
 
     def get_default_object_values(
         self,
@@ -203,6 +206,7 @@ class XmatchStep(GenericStep):
             d["drb"] = None
 
     def execute(self, messages):
+        self.logger.info(f"Processing {len(messages)} alerts")
         array = []
         object_array = []
         for m in messages:
@@ -212,9 +216,11 @@ class XmatchStep(GenericStep):
 
             record = self.get_default_object_values(m)
             object_array.append(record)
-
-        df = pd.DataFrame(array, columns=["oid", "ra", "dec"])
+        df = pd.DataFrame(array, columns=["candid", "oid", "ra", "dec"])
         object_df = pd.DataFrame(object_array)
+
+        df.drop_duplicates(subset=["candid"], inplace=True)
+        object_df.drop_duplicates(subset=["oid"], inplace=True)
 
         # xmatch
         catalog = self.xmatch_config["CATALOG"]
@@ -225,12 +231,15 @@ class XmatchStep(GenericStep):
         input_type = "pandas"
         output_type = "pandas"
 
+        self.logger.info(f"Getting xmatches")
         result = self.xmatch_client.execute(
             df, input_type, catalog_alias, columns, selection, output_type, radius
         )
 
         # Write in database
+        self.logger.info(f"Writing xmatches in DB")
         self.save_xmatch(result, object_df)
 
         messages = self._format_result(messages, df, result)
+        self.logger.info(f"Producing messages")
         self._produce(messages)
