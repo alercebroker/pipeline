@@ -238,5 +238,4 @@ class KafkaConsumer(GenericConsumer):
                     yield deserialized
 
     def commit(self):
-        for message in self.messages:
-            self.consumer.commit(message, asynchronous=False)
+        self.consumer.commit(asynchronous=False)

@@ -38,8 +38,9 @@ class KafkaConsumerMock(unittest.TestCase):
         messages = [MessageMock(self.error)]*num_messages
         return messages
 
-    def commit(self, message):
-        self.assertIsInstance(message,MessageMock)
+    def commit(self, message=None, asynchronous=False):
+        if message is not None:
+            self.assertIsInstance(message,MessageMock)
 
     def unsubscribe(self):
         pass
