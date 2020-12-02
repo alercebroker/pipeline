@@ -360,7 +360,7 @@ class Correction(GenericStep):
         return new_magstats
 
     def do_dmdt(self, light_curves, magstats):
-        if len(light_curves["non_detections"] == 0):
+        if len(light_curves["non_detections"]) == 0:
             return pd.DataFrame()
         non_detections = light_curves["non_detections"]
         non_detections["objectId"] = non_detections["oid"]
@@ -932,6 +932,8 @@ class Correction(GenericStep):
         self.logger.info(f"{n_messages} Messages Produced")
 
     def execute(self, messages):
+        global MAGSTATS_UPDATE_KEYS
+        global MAGSTATS_UPDATE_KEYS_STMT
         self.logger.info(f"Processing {len(messages)} alerts")
 
         # Casting to a dataframe
@@ -972,7 +974,22 @@ class Correction(GenericStep):
         self.logger.info(f"Calculating new magnitude statistics")
         new_magstats = self.do_magstats(light_curves, metadata, magstats)
         dmdt = self.do_dmdt(light_curves, new_magstats)
-        new_stats = new_magstats.join(dmdt, on=["oid", "fid"])
+        self.backup_magstats_keys = False
+        if len(dmdt) > 0:
+            new_stats = new_magstats.join(dmdt, on=["oid", "fid"])
+        else:
+            new_stats = new_magstats
+            self.MAGSTATS_UPDATE_KEYS_backup = MAGSTATS_UPDATE_KEYS.copy()
+            self.MAGSTATS_UPDATE_KEYS_STMT_backup = MAGSTATS_UPDATE_KEYS_STMT.copy()
+            self.backup_magstats_keys = True
+            MAGSTATS_UPDATE_KEYS.remove("dmdt_first")
+            MAGSTATS_UPDATE_KEYS.remove("dm_first")
+            MAGSTATS_UPDATE_KEYS.remove("dt_first")
+            MAGSTATS_UPDATE_KEYS.remove("sigmadm_first")
+            MAGSTATS_UPDATE_KEYS_STMT = dict(
+                zip(MAGSTATS_UPDATE_KEYS, map(bindparam, MAGSTATS_UPDATE_KEYS))
+            )
+
         objects = self.preprocess_objects(objects, light_curves, detections, new_stats)
 
         # Insert new objects and update old objects
@@ -993,3 +1010,6 @@ class Correction(GenericStep):
         del detections
         del corrected
         del light_curves
+        if self.backup_magstats_keys:
+            MAGSTATS_UPDATE_KEYS = self.MAGSTATS_UPDATE_KEYS_backup
+            MAGSTATS_UPDATE_KEYS_STMT = self.MAGSTATS_UPDATE_KEYS_STMT_backup
