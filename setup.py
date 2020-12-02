@@ -22,6 +22,8 @@ setup(
     author_email="contact@alerce.online",
     packages=find_namespace_packages(include=["apf.*"]),
     scripts=["scripts/apf"],
+    package_data={'': ['*.txt', 'Dockerfile']},
+    include_package_data=True,
     install_requires=required_packages,
     build_requires=required_packages,
     project_urls={
