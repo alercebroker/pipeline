@@ -12,6 +12,9 @@ from features.step import (
     FeatureVersion,
 )
 from db_plugins.db.sql import SQLQuery
+import os
+
+FILE_PATH = os.path.dirname(__file__)
 
 
 class MockSession:
@@ -330,3 +333,13 @@ class StepTestCase(unittest.TestCase):
             "candid": 123,
         }
         self.step.producer.produce.assert_called_with(expected_message, key="OID")
+
+    def test_produce_with_candid_series(self):
+        alert_data = pd.read_csv(
+            FILE_PATH + "/../examples/alert_data_with_duplicates.csv"
+        )
+        features = pd.read_csv(
+            FILE_PATH + "/../examples/features_with_candid_problem.csv"
+        )
+        features.set_index("oid", inplace=True)
+        self.step.produce(features, alert_data)
