@@ -257,9 +257,9 @@ class XmatchStep(GenericStep):
 
         else:
             self.logger.error(
-                "Retrieving xmatch from the client unsuccessful after {self.retries}"
+                f"Retrieving xmatch from the client unsuccessful after {self.retries}. Shutting down."
             )
-            return
+            raise Exception(f"Could not retrieve xmatch from CDS after {self.retries}.")
 
         # Write in database
         self.logger.info(f"Writing xmatches in DB")
