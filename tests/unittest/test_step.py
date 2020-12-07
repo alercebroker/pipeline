@@ -68,6 +68,8 @@ class StepTest(unittest.TestCase):
                     "STEP_COMMENTS": "xmatch",
                 },
                 "XMATCH_CONFIG": XMATCH_CONFIG,
+                "RETRIES": 3,
+                "RETRY_INTERVAL": 1,
             },
             db_connection=mock_db_connection,
             xmatch_client=mock_xmatch_client,
@@ -94,6 +96,14 @@ class StepTest(unittest.TestCase):
         self.step.start()
         save_xmatch_mock.assert_called()
         self.step.producer.produce.assert_called()
+
+    @mock.patch("xmatch_step.XmatchStep.save_xmatch")
+    def test_execute_with_error(self, save_xmatch):
+        self.step.xmatch_client.execute.side_effect = mock.Mock(
+            side_effect=Exception("Error")
+        )
+        self.step.start()
+        save_xmatch.assert_not_called()
 
     def test_convert_null_to_none(self):
         message = {"candidate": {"drb": "null"}}

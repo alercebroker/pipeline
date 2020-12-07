@@ -2,4 +2,4 @@ requests==2.23.0
 pandas==1.0.3
 git+https://github.com/alercebroker/cds_xmatch_client.git
 git+https://git@github.com/alercebroker/APF#egg=apf
--e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
+git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
