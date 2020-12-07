@@ -130,7 +130,7 @@ class XmatchStep(GenericStep):
         return messages
 
     def save_xmatch(self, result, df_object):
-        
+
         if len(result) > 0:
 
             result = result.rename(
@@ -157,8 +157,10 @@ class XmatchStep(GenericStep):
                 },
                 axis="columns",
             )
+            object_oid = df_object.oid
+            result_oid = result.oid
 
-            object_data = df_object[df_object.oid.isin(result.oid)]
+            object_data = df_object[object_oid.isin(result_oid)]
 
             # bulk insert to object table
             array = object_data.to_dict(orient="records")
