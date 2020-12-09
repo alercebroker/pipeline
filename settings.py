@@ -1109,7 +1109,7 @@ STEP_CONFIG = {
     "XMATCH_CONFIG": XMATCH_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "RETRIES": os.getenv("RETRIES", 3),
-    "RETRY_INTERVAL": os.getenv("RETRY_INTERVAL", 1)
+    "RETRIES": int(os.getenv("RETRIES", 3)),
+    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", 1))
     # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
 }
