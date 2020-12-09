@@ -11,11 +11,11 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"beginning",
-        'max.poll.interval.ms' : 3600000,
+        "auto.offset.reset": "beginning",
+        "max.poll.interval.ms": 3600000,
     },
-    "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
-    "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
+    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
@@ -1060,13 +1060,14 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
-        {"key": "objectId", "alias": "oid"}
+        {"key": "objectId", "alias": "oid"},
     ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
-        "TOPIC":  os.environ["METRICS_TOPIC"],
+            "auto.offset.reset": "smallest",
+        },
+        "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
             "$id": "http://example.com/example.json",
@@ -1108,5 +1109,7 @@ STEP_CONFIG = {
     "XMATCH_CONFIG": XMATCH_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "RETRIES": int(os.getenv("RETRIES", 3)),
+    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", 1))
     # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
 }

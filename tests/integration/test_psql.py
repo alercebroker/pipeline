@@ -80,6 +80,8 @@ class PSQLTest(unittest.TestCase):
                     "STEP_COMMENTS": "xmatch",
                 },
                 "XMATCH_CONFIG": XMATCH_CONFIG,
+                "RETRIES": 3,
+                "RETRY_INTERVAL": 1,
             },
             xmatch_client=mock_xmatch_client,
             producer=mock_producer,
@@ -97,7 +99,6 @@ class PSQLTest(unittest.TestCase):
     def tearDown(self):
         self.step.driver.session.close()
         self.step.driver.drop_db()
-
 
     def test_insert_step_metadata(self):
         self.step.insert_step_metadata()

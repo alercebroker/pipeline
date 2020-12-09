@@ -8,7 +8,7 @@ import pandas as pd
 import logging
 import datetime
 import os
-
+import time
 from db_plugins.db.sql import SQLConnection
 
 ALLWISE_KEYS = [
@@ -58,6 +58,8 @@ class XmatchStep(GenericStep):
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.logger.info(f"XMATCH {self.version}")
+        self.retries = config["RETRIES"]
+        self.retry_interval = config["RETRY_INTERVAL"]
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
 
@@ -130,7 +132,7 @@ class XmatchStep(GenericStep):
         return messages
 
     def save_xmatch(self, result, df_object):
-        
+
         if len(result) > 0:
 
             result = result.rename(
@@ -157,8 +159,10 @@ class XmatchStep(GenericStep):
                 },
                 axis="columns",
             )
+            object_oid = df_object.oid
+            result_oid = result.oid
 
-            object_data = df_object[df_object.oid.isin(result.oid)]
+            object_data = df_object[object_oid.isin(result_oid)]
 
             # bulk insert to object table
             array = object_data.to_dict(orient="records")
@@ -202,7 +206,7 @@ class XmatchStep(GenericStep):
             self.producer.produce(message, key=message["objectId"])
 
     def convert_null_to_none(self, columns, d):
-        if d["drb"] == "null":
+        if d.get("drb") == "null":
             d["drb"] = None
 
     def execute(self, messages):
@@ -232,9 +236,32 @@ class XmatchStep(GenericStep):
         output_type = "pandas"
 
         self.logger.info(f"Getting xmatches")
-        result = self.xmatch_client.execute(
-            df, input_type, catalog_alias, columns, selection, output_type, radius
-        )
+        for i in range(self.retries):
+            try:
+                result = self.xmatch_client.execute(
+                    df,
+                    input_type,
+                    catalog_alias,
+                    columns,
+                    selection,
+                    output_type,
+                    radius,
+                )
+            except Exception as e:
+                self.logger.warning(f"CDS xmatch client returned with error {e}")
+                time.sleep(self.retry_interval)
+                self.logger.warning("Retrying request")
+                continue
+            else:
+                break
+
+        else:
+            self.logger.error(
+                f"Retrieving xmatch from the client unsuccessful after {self.retries} retries. Shutting down."
+            )
+            raise Exception(
+                f"Could not retrieve xmatch from CDS after {self.retries} retries."
+            )
 
         # Write in database
         self.logger.info(f"Writing xmatches in DB")
