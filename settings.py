@@ -14,8 +14,8 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
         "max.poll.interval.ms": 3600000,
     },
-    "consume.timeout": os.getenv("CONSUME_TIMEOUT", 10),
-    "consume.messages": os.getenv("CONSUME_MESSAGES", 1000),
+    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
