@@ -102,8 +102,9 @@ class StepTest(unittest.TestCase):
         self.step.xmatch_client.execute.side_effect = mock.Mock(
             side_effect=Exception("Error")
         )
-        self.step.start()
-        save_xmatch.assert_not_called()
+        with self.assertRaises(Exception):
+            self.step.start()
+            save_xmatch.assert_not_called()
 
     def test_convert_null_to_none(self):
         message = {"candidate": {"drb": "null"}}
