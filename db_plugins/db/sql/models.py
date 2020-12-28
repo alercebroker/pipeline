@@ -212,7 +212,7 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     lastmjd = Column(Float(precision=53))
     step_id_corr = Column(String, nullable=False)
     saturation_rate = Column(Float(precision=53))
-    reference_change = Column(Boolean)
+
 
     __table_args__ = (
         Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
