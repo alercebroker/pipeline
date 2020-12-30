@@ -13,7 +13,7 @@ from sqlalchemy import (
     DateTime,
     UniqueConstraint,
     ForeignKeyConstraint,
-    text
+    text,
 )
 from sqlalchemy.orm import relationship
 from .. import generic
@@ -25,6 +25,7 @@ class Commons:
     def __getitem__(self, field):
         return self.__dict__[field]
 
+
 class Step(Base, generic.AbstractStep):
     __tablename__ = "step"
 
@@ -33,6 +34,7 @@ class Step(Base, generic.AbstractStep):
     version = Column(String, nullable=False)
     comments = Column(String, nullable=False)
     date = Column(DateTime, nullable=False)
+
 
 class Object(Base, generic.AbstractObject):
     __tablename__ = "object"
@@ -57,6 +59,8 @@ class Object(Base, generic.AbstractObject):
     firstmjd = Column(Float(precision=53))
     lastmjd = Column(Float(precision=53))
     step_id_corr = Column(String)
+    diffpos = Column(Boolean)
+    reference_change = Column(Boolean)
 
     __table_args__ = (
         Index("ix_object_ndet", "ndet", postgresql_using="btree"),
@@ -72,7 +76,9 @@ class Object(Base, generic.AbstractObject):
     non_detections = relationship("NonDetection", order_by="NonDetection.mjd")
     detections = relationship("Detection", order_by="Detection.mjd")
     features = relationship("Feature")
-    probabilities = relationship("Probability", uselist=True, order_by="Probability.classifier_name")
+    probabilities = relationship(
+        "Probability", uselist=True, order_by="Probability.classifier_name"
+    )
 
     def get_lightcurve(self):
         return {
@@ -82,7 +88,6 @@ class Object(Base, generic.AbstractObject):
 
     def __repr__(self):
         return "<Object(oid='%s')>" % (self.oid)
-
 
 
 class Taxonomy(Base):
@@ -105,7 +110,12 @@ class Probability(Base):
         Index("ix_probabilities_oid", "oid", postgresql_using="hash"),
         Index("ix_probabilities_probability", "probability", postgresql_using="btree"),
         Index("ix_probabilities_ranking", "ranking", postgresql_using="btree"),
-        Index("ix_classification_rank1", "ranking", postgresql_where=ranking==1, postgresql_using="btree")
+        Index(
+            "ix_classification_rank1",
+            "ranking",
+            postgresql_where=ranking == 1,
+            postgresql_using="btree",
+        ),
     )
 
 
@@ -131,9 +141,7 @@ class Feature(Base):
         String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
     )
 
-    __table_args__ = (
-        Index("ix_feature_oid_2", "oid", postgresql_using="hash"),
-    )
+    __table_args__ = (Index("ix_feature_oid_2", "oid", postgresql_using="hash"),)
 
 
 class Xmatch(Base):
@@ -145,6 +153,7 @@ class Xmatch(Base):
     dist = Column(Float(precision=53), nullable=False)
     class_catalog = Column(String)
     period = Column(Float(precision=53))
+
 
 class Allwise(Base):
     __tablename__ = "allwise"
@@ -171,6 +180,7 @@ class Allwise(Base):
         Index("ix_allwise_dec", "dec", postgresql_using="btree"),
         Index("ix_allwise_ra", "ra", postgresql_using="btree"),
     )
+
 
 class MagStats(Base, generic.AbstractMagnitudeStatistics):
     __tablename__ = "magstat"
@@ -202,6 +212,8 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     firstmjd = Column(Float(precision=53))
     lastmjd = Column(Float(precision=53))
     step_id_corr = Column(String, nullable=False)
+    saturation_rate = Column(Float(precision=53))
+
 
     __table_args__ = (
         Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),
@@ -223,9 +235,7 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     fid = Column(Integer, primary_key=True)
     mjd = Column(Float(precision=53), primary_key=True)
     diffmaglim = Column(Float)
-    __table_args__ = (
-        Index("ix_non_detection_oid", "oid", postgresql_using="hash"),
-    )
+    __table_args__ = (Index("ix_non_detection_oid", "oid", postgresql_using="hash"),)
 
 
 class Detection(Base, generic.AbstractDetection, Commons):
@@ -262,11 +272,10 @@ class Detection(Base, generic.AbstractDetection, Commons):
     has_stamp = Column(Boolean, nullable=False)
     step_id_corr = Column(String, nullable=False)
 
-    __table_args__ = (
-        Index("ix_ndetection_oid", "oid", postgresql_using="hash"),
-    )
+    __table_args__ = (Index("ix_ndetection_oid", "oid", postgresql_using="hash"),)
 
     dataquality = relationship("Dataquality")
+
     def __repr__(self):
         return "<Detection(candid='%i', fid='%i', oid='%s')>" % (
             self.candid,
@@ -311,10 +320,10 @@ class Dataquality(Base, generic.AbstractDataquality):
     clrrms = Column(Float)
     exptime = Column(Float)
 
-    __table_args__ = (ForeignKeyConstraint([candid, oid],
-                                           [Detection.candid, Detection.oid]),
-                      {})
-
+    __table_args__ = (
+        ForeignKeyConstraint([candid, oid], [Detection.candid, Detection.oid]),
+        {},
+    )
 
 
 class Gaia_ztf(Base, generic.AbstractGaia_ztf):
@@ -395,9 +404,7 @@ class Reference(Base, generic.AbstractReference):
     mjdendref = Column(Float(precision=53), nullable=False)
     nframesref = Column(Integer, nullable=False)
 
-    __table_args__ = (
-        Index("ix_reference_fid", "fid", postgresql_using="btree"),
-    )
+    __table_args__ = (Index("ix_reference_fid", "fid", postgresql_using="btree"),)
 
 
 class Pipeline(Base, generic.AbstractPipeline):
