@@ -60,6 +60,7 @@ class Object(Base, generic.AbstractObject):
     lastmjd = Column(Float(precision=53))
     step_id_corr = Column(String)
     diffpos = Column(Boolean)
+    reference_change = Column(Boolean)
 
     __table_args__ = (
         Index("ix_object_ndet", "ndet", postgresql_using="btree"),
