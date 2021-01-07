@@ -26,6 +26,8 @@ from lc_correction.compute import (
     apply_mag_stats,
     do_dmdt_df,
     apply_object_stats_df,
+    get_flag_saturation,
+    get_flag_reference,
     DISTANCE_THRESHOLD,
 )
 from astropy.time import Time
@@ -40,7 +42,7 @@ import warnings
 
 from sqlalchemy.sql.expression import bindparam
 
-
+pd.options.mode.chained_assignment = None
 logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide="ignore")
 
@@ -359,6 +361,19 @@ class Correction(GenericStep):
 
         return new_magstats
 
+    def do_flags(self, detections, reference):
+        diffpos = detections.groupby("oid").apply(lambda x: x.isdiffpos.min() > 0)
+        firstmjd = detections.groupby("oid").apply(lambda x: x.mjd.min())
+        firstmjd.name = "firstmjd"
+        saturation_rate = detections.groupby(["oid","fid"]).apply(get_flag_saturation)
+        saturation_rate.name = "saturation_rate"
+
+        reference_mjd = reference.join(firstmjd, on="oid")
+        reference_change = reference_mjd.groupby("oid").apply(lambda x: get_flag_reference(x,  x.firstmjd.values[0]))
+
+        return pd.DataFrame({"diffpos": diffpos, "reference_change": reference_change}), saturation_rate
+
+
     def do_dmdt(self, light_curves, magstats):
         if len(light_curves["non_detections"]) == 0:
             return pd.DataFrame()
@@ -464,8 +479,9 @@ class Correction(GenericStep):
 
         detections.loc[:, "parent_candid"] = None
         detections.loc[:, "has_stamp"] = True
-        filtered_detections = detections.loc[:, DET_KEYS]
+        filtered_detections = detections.loc[:, detections.columns.isin(DET_KEYS)]
         filtered_detections.loc[:, "new"] = True
+
 
         light_curves = self.get_lightcurves(oids)
         light_curves["detections"]["new"] = False
@@ -510,6 +526,7 @@ class Correction(GenericStep):
 
             # Doing correction
             if len(prv_detections) > 0:
+                prv_detections["jdendref"] = np.nan
                 prv_detections = self.do_correction(prv_detections)
 
                 #   Getting columns
@@ -973,6 +990,12 @@ class Correction(GenericStep):
         # Getting new magstats
         self.logger.info(f"Calculating new magnitude statistics")
         new_magstats = self.do_magstats(light_curves, metadata, magstats)
+
+        # Getting flags
+        self.logger.info(f"Calculating flags")
+        obj_flags, magstat_flags = self.do_flags(light_curves["detections"], metadata["reference"])
+
+        self.logger.info(f"Calculating dmdt")
         dmdt = self.do_dmdt(light_curves, new_magstats)
         self.backup_magstats_keys = False
         if len(dmdt) > 0:
@@ -991,6 +1014,21 @@ class Correction(GenericStep):
             )
 
         objects = self.preprocess_objects(objects, light_curves, detections, new_stats)
+
+
+        self.logger.info(f"Setting objects flags")
+        #Setting flags in objects
+        objects.set_index("oid", inplace=True)
+        objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
+        objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
+        objects.reset_index(inplace=True)
+
+        self.logger.info("Setting Magstats flags")
+        #Setting flags in magstasts
+        new_stats.set_index(["oid","fid"],inplace=True)
+        new_stats.loc[magstat_flags.index, "saturation_rate"] = magstat_flags
+        new_stats.reset_index(inplace=True)
+
 
         # Insert new objects and update old objects
         self.insert_objects(objects)

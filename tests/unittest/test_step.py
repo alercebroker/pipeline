@@ -611,6 +611,13 @@ class StepTest(unittest.TestCase):
         self.step.produce(self.alert, light_curves, metadata)
         self.step.producer.produce.assert_called_once()
 
+    def test_flags(self):
+        detections = pd.DataFrame(input_detections)
+        refs = pd.DataFrame(reference)
+        obj_flags, magstat_flags = self.step.do_flags(detections, refs)
+        self.assertEqual(list(obj_flags.columns), ["diffpos", "reference_change"])
+        self.assertEqual(magstat_flags.name, "saturation_rate")
+
     # def test_execute(self):
     # self.step.driver.engine = mock.Mock()
     # self.step.start()
