@@ -139,7 +139,7 @@ class LateClassifier(GenericStep):
             self.driver.query().bulk_insert(dict_to_insert, Probability)
 
         if len(to_update) > 0:
-            self.logger.info(f"Updating {len(to_update)} features")
+            self.logger.info(f"Updating {len(to_update)} probabilities")
             to_update.replace({np.nan: None}, inplace=True)
             to_update.reset_index(inplace=True)
             to_update.rename(columns={
