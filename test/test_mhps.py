@@ -26,3 +26,14 @@ class TestMHPS(unittest.TestCase):
         result = mhps.statistics(mag.values, magerr.values, time.values, self.t1, self.t2)
         result = np.array(result)
         self.assertEqual(len(result), 5)
+
+    def test_zero_raise(self):
+        data = self.df[self.df.fid == 2]
+        mag = np.zeros_like(data.magpsf_corr)
+        magerr = data.sigmapsf_corr
+        time = data.mjd
+        result = mhps.statistics(mag, magerr.values, time.values, self.t1, self.t2)
+        result = np.array(result)
+        self.assertEqual(len(result), 5)
+        for i in range(5):
+            self.assertTrue(np.isnan(result[i]))

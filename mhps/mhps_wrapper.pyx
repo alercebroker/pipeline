@@ -56,8 +56,15 @@ def statistics(mag,
  mag = np.array(mag, dtype=np.float32)
  magerr = np.array(magerr, dtype=np.float32)
  time = np.array(time, dtype=np.float32)
- return _statistics32(mag,magerr,time,t1,t2,mag0,epsilon,dt,threshold_sigma)
 
+ if len(mag) != len(magerr) and len(magerr) != len(time):
+  raise ValueError("mag, magerr and time array should be the same size")
+
+ try:
+  return _statistics32(mag,magerr,time,t1,t2,mag0,epsilon,dt,threshold_sigma)
+ except ZeroDivisionError:
+  return np.nan, np.nan, np.nan, np.nan, np.nan 
+  
 def _statistics32(np.ndarray[float, ndim=1, mode="c"] mag,
   np.ndarray[float, ndim=1, mode="c"] magerr,
   np.ndarray[float, ndim=1, mode="c"] time,

@@ -35,3 +35,6 @@ ratio,low,high,non_zero, PN_flag = mhps.statistics(mag.values,
                                                    time.values,
                                                    t1,t2)
 ```
+# Known issues
+
+Some times the algorithm gets an `ZeroDivisionException` this will return all values as numpy NaN (`np.nan`).
