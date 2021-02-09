@@ -279,11 +279,12 @@ class Correction(GenericStep):
         oids = objects.oid.unique()
         apply_last_alert = lambda x: self.get_last_alert(x)
         last_alerts = alerts.groupby("oid", sort=False).apply(apply_last_alert)
+        last_alerts.drop(columns=["oid"], inplace=True)
 
         detections = light_curves["detections"]
-        detections_last_alert = detections.join(last_alerts, on="oid", rsuffix="alert")
+        detections_last_alert = detections.join(last_alerts, on="oid")
         detections_last_alert["objectId"] = detections_last_alert.oid
-        detections_last_alert.drop_duplicates("candid", inplace=True)
+        detections_last_alert.drop_duplicates(["candid", "oid"], inplace=True)
         detections_last_alert.reset_index(inplace=True)
         magstats["objectId"] = magstats.oid
 
