@@ -64,9 +64,10 @@ class EarlyClassifier(GenericStep):
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
         df = pd.DataFrame([{
-            "science": science,
-            "template": template,
-            "diff": difference,
+            "oid": oid,
+            "cutoutScience": science,
+            "cutoutTemplate": template,
+            "cutoutDifference": difference,
             **message["candidate"]
         }], index = [oid])
         try:
