@@ -45,9 +45,8 @@ class FeatureSpace(object):
             return df
 
         oid = lightcurve.index.values[0]
-        lightcurve = lightcurve.copy()
         if not is_sorted(lightcurve['mjd'].values):
-            lightcurve.sort_values('mjd', inplace=True)
+            lightcurve = lightcurve.sort_values('mjd')
             
         lightcurve_array = self.__lightcurve_to_array(lightcurve)
                     
