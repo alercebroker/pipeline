@@ -713,7 +713,8 @@ class Q31(Base):
 
     def fit(self, data):
         magnitude = data[0]
-        return np.percentile(magnitude, 75) - np.percentile(magnitude, 25)
+        percentiles = np.percentile(magnitude, (25, 75))
+        return percentiles[1] - percentiles[0]
 
 
 class Q31_color(Base):
@@ -726,8 +727,8 @@ class Q31_color(Base):
         aligned_magnitude2 = data[5]
         N = len(aligned_magnitude)
         b_r = aligned_magnitude[:N] - aligned_magnitude2[:N]
-
-        return np.percentile(b_r, 75) - np.percentile(b_r, 25)
+        percentiles = np.percentile(b_r, (25, 75))
+        return percentiles[1] - percentiles[0]
 
 
 class AndersonDarling(Base):
@@ -794,8 +795,7 @@ class Gskew(Base):
     def fit(self, data):
         magnitude = np.array(data[0])
         median_mag = np.median(magnitude)
-        F_3_value = np.percentile(magnitude, 3)
-        F_97_value = np.percentile(magnitude, 97)
+        F_3_value, F_97_value = np.percentile(magnitude, (3, 97))
 
         return (np.median(magnitude[magnitude <= F_3_value]) +
                 np.median(magnitude[magnitude >= F_97_value])

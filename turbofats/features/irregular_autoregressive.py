@@ -64,8 +64,9 @@ class IAR_phi(Base):
         if np.sum(error) == 0:
             error = np.zeros(len(magnitude))
 
-        ynorm = (magnitude-np.mean(magnitude))/np.sqrt(np.var(magnitude, ddof=1))
-        deltanorm = error/np.sqrt(np.var(magnitude, ddof=1))
+        std = np.std(magnitude, ddof=1)
+        ynorm = (magnitude-np.mean(magnitude)) / std
+        deltanorm = error / std
 
         out = minimize_scalar(
             self.IAR_phi_kalman,
