@@ -1,12 +1,13 @@
 import unittest
+import pandas as pd
 from unittest import mock
 from earlyclassifier.step import (
     EarlyClassifier,
-    datetime,
     requests,
     SQLConnection,
     Probability,
     StampClassifier,
+    FULL_ASTEROID_PROBABILITY
 )
 
 
@@ -46,10 +47,7 @@ class EarlyClassifierTest(unittest.TestCase):
         )
 
     @mock.patch("earlyclassifier.step.EarlyClassifier.insert_db")
-    def test_execute(self, insert_mock):
-        self.step.model.execute.return_value.iloc.__getitem__.return_value.to_dict.return_value = (
-            {}
-        )
+    def test_execute(self, insert_mock: unittest.mock.Mock):
         message = {
             "objectId": "ZTF1",
             "candidate": {
@@ -60,17 +58,19 @@ class EarlyClassifierTest(unittest.TestCase):
                 "jd": 2400000.5,
                 "ra": 0,
                 "dec": 0,
+                "ssdistnr": -999.0,
+                "sgscore1": 0.0,
+                "distpsnr1": 1,
+                "isdiffpos": 1
             },
             "cutoutTemplate": {"stampData": b""},
             "cutoutScience": {"stampData": b""},
             "cutoutDifference": {"stampData": b""},
         }
-        self.step.requests_session.post.return_value = MockResponse(
-            {"status": "SUCCESS", "probabilities": {}}, 200
-        )
+        self.step.model.execute.return_value = pd.DataFrame({'SN': [1, 2], 'asteroid': [3, 4]})
         self.step.execute(message)
         insert_mock.assert_called_with(
-            self.step.requests_session.post.return_value.json_data["probabilities"],
+            {'SN': 1, 'asteroid': 3},
             message["objectId"],
             {
                 "ndethist": 0,
@@ -187,3 +187,77 @@ class EarlyClassifierTest(unittest.TestCase):
             ):
                 test_pass = True
         self.assertTrue(test_pass)
+
+    @mock.patch("earlyclassifier.step.EarlyClassifier.insert_db")
+    def test_asteroid_inference(self, insert_db: unittest.mock.Mock):
+        message = {
+            "objectId": "ZTFtest",
+            "candidate": {
+                "ndethist": 0,
+                "ncovhist": 0,
+                "jdstarthist": 2400000.5,
+                "jdendhist": 2400000.5,
+                "jd": 2400000.5,
+                "ra": 0,
+                "dec": 0,
+                "ssdistnr": 1
+            },
+            "cutoutTemplate": {"stampData": b""},
+            "cutoutScience": {"stampData": b""},
+            "cutoutDifference": {"stampData": b""},
+        }
+        self.step.execute(message)
+        insert_db.assert_called_with(FULL_ASTEROID_PROBABILITY,
+                                     message["objectId"],
+                                     {
+                                        "ndethist": 0,
+                                        "ncovhist": 0,
+                                        "mjdstarthist": 0.0,
+                                        "mjdendhist": 0.0,
+                                        "firstmjd": 0.0,
+                                        "lastmjd": 0.0,
+                                        "ndet": 1,
+                                        "deltajd": 0,
+                                        "meanra": 0.0,
+                                        "meandec": 0.0,
+                                        "step_id_corr": "0.0.0",
+                                        "corrected": False,
+                                        "stellar": False,
+                                     })
+
+    def test_sn_must_be_saved(self):
+        message = {
+            "objectId": "test",
+            "candidate": {
+                "isdiffpos": 1,
+                "sgscore1": 0.6,
+                "distpsnr1": 1
+            }
+        }
+        # If object has the necessary conditions must be saved
+        probabilities = {"SN": 1, "asteroid": 0, "bogus": 0}
+        response = self.step.sn_must_be_saved(message, probabilities)
+        self.assertTrue(response)
+
+        # If object has not the necessary conditions must not be saved
+        message["candidate"]["isdiffpos"] = 0
+        response = self.step.sn_must_be_saved(message, probabilities)
+        self.assertTrue(not response)
+
+        # If object has not the necessary conditions must not be saved
+        message["candidate"]["isdiffpos"] = 1
+        message["candidate"]["distpsnr1"] = 0.4
+        message["candidate"]["sgscore1"] = 0.6
+        response = self.step.sn_must_be_saved(message, probabilities)
+        self.assertTrue(not response)
+
+        # If object has the necessary conditions must be saved
+        message["candidate"]["distpsnr1"] = 0.1
+        message["candidate"]["sgscore1"] = 0.5
+        response = self.step.sn_must_be_saved(message, probabilities)
+        self.assertTrue(response)
+
+        # If object is not a SN must be saved
+        probabilities = {"SN": 0, "asteroid": 1, "bogus": 0}
+        response = self.step.sn_must_be_saved(message, probabilities)
+        self.assertTrue(response)

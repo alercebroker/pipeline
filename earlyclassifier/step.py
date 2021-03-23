@@ -1,12 +1,11 @@
-import logging
-import io
-import pandas as pd
-from apf.core.step import GenericStep
 import sys
 import os
+import logging
 import requests
-import operator
 import datetime
+import pandas as pd
+
+from apf.core.step import GenericStep
 from db_plugins.db.sql.models import Object, Probability, Step
 from db_plugins.db.sql import SQLConnection
 
@@ -16,6 +15,15 @@ MODEL = os.path.join(DIRNAME, "../model")
 sys.path.append(MODEL)
 
 from deployment import StampClassifier
+
+
+FULL_ASTEROID_PROBABILITY = {
+    "AGN": 0,
+    "SN": 0,
+    "bogus": 0,
+    "asteroid": 1,
+    "VS": 0,
+}
 
 
 class EarlyClassifier(GenericStep):
@@ -43,12 +51,13 @@ class EarlyClassifier(GenericStep):
         super().__init__(consumer, config=config, level=level)
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
         self.requests_session = request_session or requests.Session()
         self.model = stamp_classifier or StampClassifier()
 
-    def insert_step_metadata(self):
+        if not step_args.get("test_mode", False):
+            self.insert_step_metadata()
+
+    def insert_step_metadata(self) -> None:
         self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -57,8 +66,38 @@ class EarlyClassifier(GenericStep):
             date=datetime.datetime.now(),
         )
 
+    def is_asteroid(self, message: dict) -> bool:
+        """
+        Verifies if the candidate is an asteroid using conditions reported by the survey
+        Parameters:
+            message: dict
+                The whole alert from the stream that has the `candidate` key.
 
-    def get_probabilities(self,message):
+        Returns:
+            bool
+                False if ssdistnr is -999.0 else true
+
+        """
+        # return ssdistnr != -999.0 and
+        return message["candidate"]["ssdistnr"] != -999.0
+
+    def sn_must_be_saved(self, message: dict, probabilities: dict) -> bool:
+        if max(probabilities, key=probabilities.get) == "SN":
+            msg = f"Object {message['objectId']} is classified as SN. "
+            candidate = message["candidate"]
+            if candidate["isdiffpos"] in ["f", 0]:
+                msg += "But has a ifdiffpos positive"
+                self.logger.info(msg)
+                return False
+            if candidate["sgscore1"] > 0.5 and candidate["distpsnr1"] < 1:
+                msg += "But is near a star"
+                self.logger.info(msg)
+                return False
+        return True
+
+    def get_probabilities(self, message: dict) -> dict:
+        if self.is_asteroid(message):
+            return FULL_ASTEROID_PROBABILITY
         oid = message["objectId"]
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
@@ -69,22 +108,18 @@ class EarlyClassifier(GenericStep):
             "cutoutTemplate": template,
             "cutoutDifference": difference,
             **message["candidate"]
-        }], index = [oid])
+        }], index=[oid])
         try:
             probabilities = self.model.execute(df).iloc[0].to_dict()
         except Exception as e:
             self.logger.critical(str(e))
             probabilities = None
+
+        if probabilities is not None and not self.sn_must_be_saved(message, probabilities):
+            probabilities = None
         return probabilities
 
-    def execute(self, message):
-        oid = message["objectId"]
-        probabilities = self.get_probabilities(message)
-        if probabilities is not None:
-            object_data = self.get_default_object_values(message)
-            self.insert_db(probabilities, oid, object_data)
-
-    def insert_db(self, probabilities, oid, object_data):
+    def insert_db(self, probabilities, oid, object_data) -> None:
         """
         Inserts probabilities returned by the stam classifier into the database.
 
@@ -108,9 +143,8 @@ class EarlyClassifier(GenericStep):
             should have every attribute of the object table other than `oid`
         """
         probabilities = self.get_ranking(probabilities)
-        obj, _ = self.db.query(Object).get_or_create(
-            filter_by={"oid": oid}, **object_data
-        )
+        obj, _ = self.db.query(Object).get_or_create(filter_by={"oid": oid}, **object_data)
+
         for prob in probabilities:
             filter_by = {
                 "oid": oid,
@@ -132,7 +166,7 @@ class EarlyClassifier(GenericStep):
                 self.logger.info("Probability already exists. Skipping insert")
                 break
 
-    def get_ranking(self, probabilities):
+    def get_ranking(self, probabilities) -> dict:
         """
         Transforms the probabilities dictionary returned by the model to a dictionary
         that has the probability and ranking for each class.
@@ -170,10 +204,7 @@ class EarlyClassifier(GenericStep):
             }
         return probabilities
 
-    def get_default_object_values(
-        self,
-        alert: dict,
-    ) -> dict:
+    def get_default_object_values(self, alert: dict,) -> dict:
         """
         Returns default values for creating an `object` in the database
 
@@ -187,20 +218,36 @@ class EarlyClassifier(GenericStep):
         data : dict
             Dictionary with default values for an object
         """
-
-        data = {}
-        data["ndethist"] = alert["candidate"]["ndethist"]
-        data["ncovhist"] = alert["candidate"]["ncovhist"]
-        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
-        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
-        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
+        data = {
+            "ndethist": alert["candidate"]["ndethist"],
+            "ncovhist": alert["candidate"]["ncovhist"],
+            "mjdstarthist": alert["candidate"]["jdstarthist"] - 2400000.5,
+            "mjdendhist": alert["candidate"]["jdendhist"] - 2400000.5,
+            "firstmjd": alert["candidate"]["jd"] - 2400000.5,
+            "ndet": 1, "deltajd": 0,
+            "meanra": alert["candidate"]["ra"],
+            "meandec": alert["candidate"]["dec"],
+            "step_id_corr": "0.0.0",
+            "corrected": False,
+            "stellar": False
+        }
         data["lastmjd"] = data["firstmjd"]
-        data["ndet"] = 1
-        data["deltajd"] = 0
-        data["meanra"] = alert["candidate"]["ra"]
-        data["meandec"] = alert["candidate"]["dec"]
-        data["step_id_corr"] = "0.0.0"
-        data["corrected"] = False
-        data["stellar"] = False
-
         return data
+
+    def execute(self, message: dict) -> None:
+        """
+        Do model inference and insert of results in database
+
+        Parameters
+        ----------
+        message : dict
+            The whole alert from the stream that has the `candidate` key.
+        Return
+        ------
+        None
+        """
+        oid = message["objectId"]
+        probabilities = self.get_probabilities(message)
+        if probabilities is not None:
+            object_data = self.get_default_object_values(message)
+            self.insert_db(probabilities, oid, object_data)
