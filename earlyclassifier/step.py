@@ -78,8 +78,22 @@ class EarlyClassifier(GenericStep):
                 False if ssdistnr is -999.0 else true
 
         """
-        # return ssdistnr != -999.0 and sgscore <= 0.5 and rb >= 0.5 and sigmapsf <= 1
+        # return ssdistnr != -999.0 and
         return message["candidate"]["ssdistnr"] != -999.0
+
+    def sn_must_be_saved(self, message: dict, probabilities: dict) -> bool:
+        if max(probabilities, key=probabilities.get) == "SN":
+            msg = f"Object {message['objectId']} is classified as SN. "
+            candidate = message["candidate"]
+            if candidate["isdiffpos"] in ["f", 0]:
+                msg += "But has a ifdiffpos positive"
+                self.logger.info(msg)
+                return False
+            if candidate["sgscore1"] > 0.5 and candidate["distpsnr1"] < 1:
+                msg += "But is near a star"
+                self.logger.info(msg)
+                return False
+        return True
 
     def get_probabilities(self, message: dict) -> dict:
         if self.is_asteroid(message):
@@ -99,6 +113,9 @@ class EarlyClassifier(GenericStep):
             probabilities = self.model.execute(df).iloc[0].to_dict()
         except Exception as e:
             self.logger.critical(str(e))
+            probabilities = None
+
+        if probabilities is not None and not self.sn_must_be_saved(message, probabilities):
             probabilities = None
         return probabilities
 
