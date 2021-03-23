@@ -97,7 +97,7 @@ class EarlyClassifier(GenericStep):
 
     def get_probabilities(self, message: dict) -> dict:
         if self.is_asteroid(message):
-            return FULL_ASTEROID_PROBABILITY
+            return FULL_ASTEROID_PROBABILITY.copy()
         oid = message["objectId"]
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
@@ -142,6 +142,7 @@ class EarlyClassifier(GenericStep):
             Values to use if the object needs to be created. Keys in this dictionary
             should have every attribute of the object table other than `oid`
         """
+        self.logger.info(probabilities)
         probabilities = self.get_ranking(probabilities)
         obj, _ = self.db.query(Object).get_or_create(filter_by={"oid": oid}, **object_data)
 
