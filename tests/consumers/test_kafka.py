@@ -3,7 +3,7 @@ from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient, NewTopic
 import unittest
 from unittest import mock
-from confluent_kafka import Producer, TopicPartition
+from confluent_kafka import Producer, TopicPartition, KafkaException
 import fastavro
 import random
 import io
@@ -28,8 +28,12 @@ class MessageMock():
 class KafkaConsumerMock(unittest.TestCase):
     error = None
 
-    def __init__(self, error=False):
+    def __init__(self, error=False, commit_error=False, max_retries = None):
         self.error = error
+        self.commit_error = commit_error
+        self.max_retries = max_retries
+        if self.max_retries:
+            self.retries = 0
 
     def subscribe(self,args):
         self.assertIsInstance(args, list)
@@ -39,6 +43,13 @@ class KafkaConsumerMock(unittest.TestCase):
         return messages
 
     def commit(self, message=None, asynchronous=False):
+        if self.max_retries:
+            self.retries +=1
+        if self.max_retries and self.retries == self.max_retries:
+            return 
+        if self.commit_error:
+            raise KafkaException()
+
         if message is not None:
             self.assertIsInstance(message,MessageMock)
 
@@ -104,7 +115,18 @@ class TestKafkaConsumer(GenericConsumerTest, unittest.TestCase):
     def test_consume_error(self,mock_consumer):
         comp = self.component(self.params)
         self.assertRaises(Exception,next,comp.consume())
+    
+    @mock.patch('apf.consumers.kafka.Consumer', return_value=KafkaConsumerMock(commit_error=True))
+    def test_commit_error(self,mock_consumer):
+        with self.assertRaises(KafkaException):
+            comp = self.component(self.params)
+            comp.commit()
 
+    
+    @mock.patch('apf.consumers.kafka.Consumer', return_value=KafkaConsumerMock(commit_error=True, max_retries=2))
+    def test_commit_retry(self,mock_consumer):
+        comp = self.component(self.params)
+        comp.commit()
 
 @mock.patch('apf.consumers.kafka.Consumer', return_value=KafkaConsumerMock())
 class TestKafkaConsumerDynamicTopic(unittest.TestCase):
