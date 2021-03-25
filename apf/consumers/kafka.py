@@ -1,5 +1,5 @@
 from apf.consumers.generic import GenericConsumer
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, KafkaException
 
 import fastavro
 import io
@@ -123,6 +123,9 @@ class KafkaConsumer(GenericConsumer):
         self.config["PARAMS"]["enable.auto.commit"] = False
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
+
+        self.max_retries = int(self.config.get("COMMIT_RETRY", 5))
+
         self.logger.info(
             f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}"
         )
@@ -238,4 +241,16 @@ class KafkaConsumer(GenericConsumer):
                     yield deserialized
 
     def commit(self):
-        self.consumer.commit(asynchronous=False)
+        retries = 0
+        commited = False
+
+        while not commited:
+            try:
+                self.consumer.commit(asynchronous=False)
+                commited = True
+            except KafkaException as e:
+                retries += 1
+
+                # Rasing the same error
+                if retries == self.max_retries:
+                    raise e

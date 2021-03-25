@@ -60,7 +60,7 @@ class DailyTopicStrategy(GenericTopicStrategy):
         for topic in self.topics:
             delta = now - topic.date
             if delta.days >= self.retention_days:
-                self.topics = self.topics[-self.retention_days :]
+                self.topics = self.topics[-self.retention_days:]
 
     def get_topics(self):
         """Get list of topics updated to the current date.
