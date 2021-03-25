@@ -10,7 +10,6 @@ class JSONProducer(GenericProducer):
     FILE_PATH: :py:class:`str`
         Output JSON File Path.
     """
-
     def __init__(self, config):
         super().__init__(config=config)
 

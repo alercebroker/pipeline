@@ -124,7 +124,7 @@ class KafkaConsumer(GenericConsumer):
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
 
-        self.max_retries = int(self.config.get("COMMIT_RETRY",5))
+        self.max_retries = int(self.config.get("COMMIT_RETRY", 5))
 
         self.logger.info(
             f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}"
@@ -251,8 +251,6 @@ class KafkaConsumer(GenericConsumer):
             except KafkaException as e:
                 retries += 1
 
-                #Rasing the same error
+                # Rasing the same error
                 if retries == self.max_retries:
                     raise e
-            
-
