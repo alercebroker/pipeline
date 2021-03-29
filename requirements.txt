@@ -1,7 +1,7 @@
 numpy>=1.16.0
 matplotlib
 GPy
-apf-base==1.0.2
+apf-base==1.0.3
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
 -e git+https://github.com/alercebroker/db-plugins.git#egg=db_plugins
