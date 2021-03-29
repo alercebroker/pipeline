@@ -1,2 +1,2 @@
-apf-base==1.0.2
+apf-base==1.0.3
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db-plugins
