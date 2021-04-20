@@ -1,7 +1,7 @@
 scipy
 matplotlib
 GPy
-P4J
+-e git+https://github.com/alercebroker/P4J.git#egg=P4J
 numba
 statsmodels
 setuptools
