@@ -34,7 +34,6 @@ class WatchlistStep(GenericStep):
         self.users_db_connection.connect(config["users_db_config"]["SQL"])
 
     def execute(self, messages: list):
-        print(messages)
         candids = [message["candid"] for message in messages]
         coordinates = self.get_coordinates(candids)
         matches = self.match_user_targets(coordinates)
@@ -60,11 +59,11 @@ class WatchlistStep(GenericStep):
         WITH positions (ra, dec, oid, candid) AS (
             VALUES %s
         )
-        SELECT positions.oid, positions.candid, targets.id FROM targets, positions
+        SELECT positions.oid, positions.candid, watchlist_target.id FROM watchlist_target, positions
         WHERE ST_DWITHIN(
             ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035) ,
-            ST_SetSRID(ST_MakePoint(targets.ra, targets.dec), 4035),
-            degrees_to_meters(targets.sr), true);
+            ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
+            degrees_to_meters(watchlist_target.sr), true);
         """
             % str_values
         )
@@ -80,7 +79,7 @@ class WatchlistStep(GenericStep):
         )
         query = (
             """
-        INSERT INTO match (target, object_id, candid, date) VALUES %s;
+        INSERT INTO watchlist_match (target, object_id, candid, date) VALUES %s;
         """
             % str_values
         )

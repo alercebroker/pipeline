@@ -45,7 +45,7 @@ def produce_message(config):
             fo.seek(0)
             producer.produce(topic, value=fo.read())
             producer.flush(30)
-            producer.seek(0)
+            fo.seek(0)
             print(f"produced to {topic} {fo.read()}")
     except Exception as e:
         print(f"failed to produce to topic: {e}")
@@ -53,7 +53,6 @@ def produce_message(config):
 
 def consume_message(config):
     consumer = KafkaConsumer(config)
-    print(consumer.config)
     messages = 0
     max_messages = 1
     for msg in consumer.consume():
@@ -68,7 +67,6 @@ def is_responsive_kafka(url):
     for topic, f in fs.items():
         try:
             f.result()
-            print("kafka ready")
             return True
         except Exception as e:
             return False
@@ -98,7 +96,6 @@ def is_responsive_alerts_database(url):
             password="postgres",
         )
         conn.close()
-        print("alert db ready")
         return True
     except:
         return False
@@ -171,7 +168,6 @@ def is_responsive_users_database(docker_ip, port):
             port=port,
         )
         conn.close()
-        print("users db ready")
         return True
     except:
         return False

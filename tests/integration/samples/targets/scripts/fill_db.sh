@@ -6,20 +6,20 @@ set -e
 # Creating tables
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE EXTENSION postgis;
-    CREATE TABLE targets (
+    CREATE TABLE watchlist_target (
         id INTEGER PRIMARY KEY,
         ra DOUBLE PRECISION,
         dec DOUBLE PRECISION,
         sr DOUBLE PRECISION
     );
-    CREATE TABLE match (
+    CREATE TABLE watchlist_match (
         id SERIAL,
-        target INTEGER REFERENCES targets(id),
+        target INTEGER REFERENCES watchlist_target(id),
         object_id VARCHAR(20),
         candid VARCHAR(200),
         date TIMESTAMP
     );
-    COPY targets (id, ra, dec, sr) FROM '/data/targets.csv' DELIMITER ',' CSV;
+    COPY watchlist_target (id, ra, dec, sr) FROM '/data/targets.csv' DELIMITER ',' CSV;
 
     CREATE FUNCTION degrees_to_meters(degrees DOUBLE PRECISION)
     RETURNS DOUBLE PRECISION
