@@ -74,6 +74,6 @@ class TestStep:
         )
         step.start()
         matches = self.users_db_connection.session.execute(
-            "SELECT * FROM match;"
+            "SELECT * FROM watchlist_match;"
         ).fetchall()
         assert len(matches) == 1
