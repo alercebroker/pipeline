@@ -4,7 +4,7 @@ from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection
 from db_plugins.db.sql import SQLConnection
 import datetime
-
+BASE_RADIUS=926.588599428685
 
 class WatchlistStep(GenericStep):
     """WatchlistStep Description
@@ -37,8 +37,17 @@ class WatchlistStep(GenericStep):
         candids = [message["candid"] for message in messages]
         coordinates = self.get_coordinates(candids)
         matches = self.match_user_targets(coordinates)
-        if len(matches):
+        matches = self.filter_matches(matches)
+        if len(matches) > 0:
             self.insert_matches(matches)
+
+    def filter_matches(self, matches: List[Tuple]) -> List[Tuple]:
+        filtered_matches = []
+        for match in matches:
+            # Cheking radius vs distance
+            if matches[-1] <= matches[-2]:
+                filtered_matches.append(match)
+        return filtered_matches
 
     def get_coordinates(self, candids: List[int]) -> List[Tuple]:
         radecs = (
@@ -55,15 +64,26 @@ class WatchlistStep(GenericStep):
             [f"({val[0]}, {val[1]}, '{val[2]}', '{val[3]}')" for val in coordinates]
         )
         query = (
-            """
+            f"""
         WITH positions (ra, dec, oid, candid) AS (
             VALUES %s
         )
-        SELECT positions.oid, positions.candid, watchlist_target.id FROM watchlist_target, positions
+        SELECT
+        positions.oid,
+        positions.candid,
+        watchlist_target.id,
+        watchlist_target.radius,
+        meters_to_degrees(ST_DISTANCE(
+          ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
+          ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035),
+          true
+          )
+        ) AS distance
+        FROM watchlist_target, positions
         WHERE ST_DWITHIN(
             ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035) ,
             ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
-            degrees_to_meters(watchlist_target.sr), true);
+            {BASE_RADIUS}, true);
         """
             % str_values
         )
