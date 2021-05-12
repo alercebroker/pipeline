@@ -4,7 +4,7 @@ from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection
 from db_plugins.db.sql import SQLConnection
 import datetime
-BASE_RADIUS=926.588599428685
+BASE_RADIUS=30/3600
 
 class WatchlistStep(GenericStep):
     """WatchlistStep Description
@@ -35,19 +35,13 @@ class WatchlistStep(GenericStep):
 
     def execute(self, messages: list):
         candids = [message["candid"] for message in messages]
+        self.logger.info(candids)
         coordinates = self.get_coordinates(candids)
+        self.logger.info(coordinates)
         matches = self.match_user_targets(coordinates)
-        matches = self.filter_matches(matches)
+        self.logger.info(matches)
         if len(matches) > 0:
             self.insert_matches(matches)
-
-    def filter_matches(self, matches: List[Tuple]) -> List[Tuple]:
-        filtered_matches = []
-        for match in matches:
-            # Cheking radius vs distance
-            if matches[-1] <= matches[-2]:
-                filtered_matches.append(match)
-        return filtered_matches
 
     def get_coordinates(self, candids: List[int]) -> List[Tuple]:
         radecs = (
@@ -64,26 +58,18 @@ class WatchlistStep(GenericStep):
             [f"({val[0]}, {val[1]}, '{val[2]}', '{val[3]}')" for val in coordinates]
         )
         query = (
-            f"""
-        WITH positions (ra, dec, oid, candid) AS (
-            VALUES %s
-        )
-        SELECT
-        positions.oid,
-        positions.candid,
-        watchlist_target.id,
-        watchlist_target.radius,
-        meters_to_degrees(ST_DISTANCE(
-          ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
-          ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035),
-          true
-          )
-        ) AS distance
-        FROM watchlist_target, positions
-        WHERE ST_DWITHIN(
-            ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035) ,
-            ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
-            {BASE_RADIUS}, true);
+        f"""
+            WITH positions (ra, dec, oid, candid) AS (
+                    VALUES
+                    %s
+            )
+            SELECT
+            positions.oid,
+            positions.candid,
+            watchlist_target.id
+            FROM watchlist_target, positions
+            WHERE q3c_join(positions.ra, positions.dec,watchlist_target.ra, watchlist_target.dec, {BASE_RADIUS})
+            AND q3c_dist(positions.ra, positions.dec, watchlist_target.ra, watchlist_target.dec) < watchlist_target.radius
         """
             % str_values
         )

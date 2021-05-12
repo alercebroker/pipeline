@@ -5,7 +5,7 @@ set -e
 
 # Creating tables
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE EXTENSION postgis;
+    CREATE EXTENSION q3c;
     CREATE TABLE watchlist_target (
         id INTEGER PRIMARY KEY,
         ra DOUBLE PRECISION,
@@ -20,31 +20,4 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         date TIMESTAMP
     );
     COPY watchlist_target (id, ra, dec, radius) FROM '/data/targets.csv' DELIMITER ',' CSV;
-
-    CREATE FUNCTION degrees_to_meters(degrees DOUBLE PRECISION)
-    RETURNS DOUBLE PRECISION
-    LANGUAGE plpgsql
-    AS '
-    DECLARE
-       EARTH_RADIUS_METERS constant numeric := 6371008.77141506;
-       meters DOUBLE PRECISION;
-    begin
-      SELECT (2 * PI() * EARTH_RADIUS_METERS * degrees) / 360 INTO meters;
-      RETURN meters;
-    end;
-    ';
-
-    CREATE FUNCTION meters_to_degrees(meters DOUBLE PRECISION)
-    RETURNS DOUBLE PRECISION
-    LANGUAGE plpgsql
-    AS
-    '
-    DECLARE
-       EARTH_RADIUS_METERS constant numeric := 6371008.77141506;
-       degrees DOUBLE PRECISION;
-    begin
-      SELECT (meters * 360) / (2* PI() * EARTH_RADIUS_METERS) INTO degrees;
-      RETURN degrees;
-    end;
-    ';
 EOSQL
