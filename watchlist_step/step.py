@@ -28,18 +28,15 @@ class WatchlistStep(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.alerts_db_connection = alerts_db_connection
+        self.alerts_db_connection = alerts_db_connection or SQLConnection()
         self.alerts_db_connection.connect(config["alert_db_config"]["SQL"])
-        self.users_db_connection = users_db_connection
+        self.users_db_connection = users_db_connection or SQLConnection()
         self.users_db_connection.connect(config["users_db_config"]["SQL"])
 
     def execute(self, messages: list):
         candids = [message["candid"] for message in messages]
-        self.logger.info(candids)
         coordinates = self.get_coordinates(candids)
-        self.logger.info(coordinates)
         matches = self.match_user_targets(coordinates)
-        self.logger.info(matches)
         if len(matches) > 0:
             self.insert_matches(matches)
 
@@ -85,8 +82,9 @@ class WatchlistStep(GenericStep):
         )
         query = (
             """
-        INSERT INTO watchlist_match (target, object_id, candid, date) VALUES %s;
+        INSERT INTO watchlist_match (target_id, object_id, candid, date) VALUES %s;
         """
             % str_values
         )
         self.users_db_connection.session.execute(query)
+        self.users_db_connection.session.commit()
