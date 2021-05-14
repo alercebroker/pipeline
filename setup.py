@@ -1,18 +1,9 @@
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
-from codecs import open  # To use a consistent encoding
-
-
-# Get the long description from the relevant file
-def readme():
-    with open('README.rst') as f:
-        return f.read()
-
 
 setup(
     name='turbofats',
-    version='0.1',
-    description='Library with compilation of features for time series',
-    long_description=readme(),
+    version='2.0.0',
+    description='Library with some features for astronomical time series',
     url='https://github.com/alercebroker/turbo-fats',
     download_url='https://github.com/alercebroker/turbo-fats',
     author='ALeRCE Team',
