@@ -19,7 +19,7 @@ class FeatureSpace(object):
         self.feature_names = []
         self.shared_data = {}
         if data_column_names is None:
-            self.data_column_names = ['magpsf_corr', 'mjd', 'sigmapsf_corr']
+            self.data_column_names = ['magnitude', 'time', 'error']
         else:
             self.data_column_names = data_column_names
 
@@ -45,8 +45,8 @@ class FeatureSpace(object):
             return df
 
         oid = lightcurve.index.values[0]
-        if not is_sorted(lightcurve['mjd'].values):
-            lightcurve = lightcurve.sort_values('mjd')
+        if not is_sorted(lightcurve[self.data_column_names[1]].values):
+            lightcurve = lightcurve.sort_values(self.data_column_names[1])
             
         lightcurve_array = self.__lightcurve_to_array(lightcurve)
                     

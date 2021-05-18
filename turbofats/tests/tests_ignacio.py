@@ -44,7 +44,10 @@ class TestNewFeatureSpace(unittest.TestCase):
             'IAR_phi',
             'LinearTrend'
         ]
-        new_feature_space = FeatureSpace(feature_list)
+        new_feature_space = FeatureSpace(
+            feature_list,
+            data_column_names=['magpsf_corr', 'mjd', 'sigmapsf_corr']
+        )
         features = new_feature_space.calculate_features(self.lc_g)
         print(features.iloc[0])
         expected_mean = 17.371986

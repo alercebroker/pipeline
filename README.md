@@ -2,7 +2,16 @@
 
 Based on the Feature Analysis for Time Series [FATS](https://github.com/isadoranun/FATS) package, adds performance improvements and new features.
 
-The description of the new features is available in *Alert Classification for the ALeRCE Broker System: The Light Curve Classifier*
+ALeRCE extension of the FATS library, based on 
+https://github.com/isadoranun/FATS and https://github.com/jonwihl/FATS-2.0, both 
+under MIT Licence.
+
+This library is meant for ALeRCE internal use only. If you want to compute 
+light curve features please check https://github.com/alercebroker/lc_classifier
+which is a more complete and well documented library.
+
+The description of the new features is available in *Alert Classification for
+the ALeRCE Broker System: The Light Curve Classifier*
 https://arxiv.org/abs/2008.03311
 
 ## Installing Turbo Fats
