@@ -6,7 +6,8 @@ from turbofats.Base import Base
 @jit(nopython=True)
 def SFarray(jd, mag, err):
     """
-    calculate an array with (m(ti)-m(tj)), whit (err(t)^2+err(t+tau)^2) and another with tau=dt
+    Calculates an array with (m(ti)-m(tj)), with (err(t)^2+err(t+tau)^2) and
+    another with tau=dt
 
     inputs:
     jd: julian days array
@@ -65,7 +66,7 @@ class SF_ML_amplitude(Base):
         bins = 10**logbins
         return bins
 
-    def SF_formula(self, jd, mag, errmag, nbin=0.1, bmin=5, bmax=2000):
+    def sf_formula(self, jd, mag, errmag, nbin=0.1, bmin=5, bmax=2000):
         dtarray, dmagarray, sigmaarray = SFarray(jd, mag, errmag)
         ndt = np.where((dtarray <= 365) & (dtarray >= 5))
         dtarray = dtarray[ndt]
@@ -76,7 +77,6 @@ class SF_ML_amplitude(Base):
 
         sf_list = []
         tau_list = []
-        numobj_list = []
 
         for i in range(0, len(bins)-1):
             n = np.where((dtarray >= bins[i]) & (dtarray < bins[i+1]))
@@ -85,18 +85,16 @@ class SF_ML_amplitude(Base):
                 dmag1 = (dmagarray[n])**2
                 derr1 = (sigmaarray[n])
                 sf = (dmag1-derr1)
-                sff = np.sqrt(np.mean(sf))
+                mean_sf = np.mean(sf)
+                if mean_sf < 0:
+                    continue
+                sff = np.sqrt(mean_sf)
                 sf_list.append(sff)
-                numobj_list.append(nobjbin)
                 # central tau for the bin
                 tau_list.append((bins[i]+bins[i+1])*0.5)
 
         SF = np.array(sf_list)
-        nob = np.array(numobj_list)
         tau = np.array(tau_list)
-        nn = np.where((nob > 0) & (SF > -99))
-        tau = tau[nn]
-        SF = SF[nn]
 
         if len(SF) < 2:
             tau = np.array([-99])
@@ -109,10 +107,10 @@ class SF_ML_amplitude(Base):
         t = data[1]
         err = data[2]
 
-        tau, sf = self.SF_formula(t, mag, err)
+        tau, sf = self.sf_formula(t, mag, err)
 
-        if tau[0] == -99:
-            A = -0.5
+        if sf[0] == -99:
+            a = -0.5
             gamma = -0.5
 
         else:
@@ -122,27 +120,23 @@ class SF_ML_amplitude(Base):
             y = y[np.where((tau <= 0.5) & (tau > 0.01))]
             try:
                 coefficients = np.polyfit(x, y, 1)
-                A = 10**(coefficients[1])
+                a = 10**(coefficients[1])
                 gamma = coefficients[0]
 
-                if A < 0.005:
-                    A = 0.0
+                if a < 0.005:
+                    a = 0.0
                     gamma = 0.0
-                elif A > 15:
-                    A = 15
-                if gamma > 3:
-                    gamma = 3
-                elif gamma < -0.5:
-                    gamma = -0.5
+                elif a > 15:
+                    a = 15
+
+                gamma = np.clip(gamma, -0.5, 3.0)
 
             except:
-                A = -0.5
+                a = -0.5
                 gamma = -0.5
 
-        A_sf = A
-        g_sf = gamma
-        self.shared_data['g_sf'] = g_sf
-        return A_sf
+        self.shared_data['g_sf'] = gamma
+        return a
 
 
 class SF_ML_gamma(Base):
@@ -154,5 +148,5 @@ class SF_ML_gamma(Base):
         try:
             g_sf = self.shared_data['g_sf']
             return g_sf
-        except:
-            print("error: please run SF_amplitude first to generate values for SF_gamma")
+        except KeyError:
+            raise Exception("Please run SF_amplitude first to generate values for SF_gamma")
