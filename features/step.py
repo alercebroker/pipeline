@@ -1,4 +1,3 @@
-import time
 import logging
 import datetime
 import warnings
@@ -9,10 +8,7 @@ from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import FeatureVersion, Object, Feature, Step
-
 from lc_classifier.features.custom import CustomStreamHierarchicalExtractor
-
-from pandas.io.json import json_normalize
 from sqlalchemy.sql.expression import bindparam
 
 warnings.filterwarnings("ignore")
@@ -57,6 +53,12 @@ class FeaturesComputer(GenericStep):
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
 
+    def get_objects(self, oids):
+        query = self.db.query(Object).filter(Object.oid.in_(oids))
+        data = pd.read_sql(query.statement, self.db.engine)
+        data.set_index("oid", inplace=True)
+        return data
+
     def insert_step_metadata(self):
         self.db.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
@@ -66,7 +68,7 @@ class FeaturesComputer(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def compute_features(self, detections, non_detections, metadata, xmatches):
+    def compute_features(self, detections, non_detections, metadata, xmatches, objects):
         """Compute Hierarchical-Features in detections and non detections to `dict`.
 
         **Example:**
@@ -81,15 +83,18 @@ class FeaturesComputer(GenericStep):
             Metadata from the alert with other catalogs info
         xmatches : pandas.DataFrame
             Xmatches data from xmatch step
+        objects : pandas.DataFrame
+            Data information of each object
         """
         features = self.features_computer.compute_features(
             detections,
             non_detections=non_detections,
             metadata=metadata,
             xmatches=xmatches,
+            objects=objects,
         )
-        features.replace([np.inf, -np.inf], np.nan, inplace=True)
         features = features.astype(float)
+        features.replace([np.inf, -np.inf], np.nan, inplace=True)
         return features
 
     def get_fid(self, feature):
@@ -155,7 +160,7 @@ class FeaturesComputer(GenericStep):
         query = (
             self.db.query(Feature.oid)
             .filter(Feature.oid.in_(oids))
-            .filter(Feature.version == self.config["STEP_METADATA"]["STEP_VERSION"])
+            .filter(Feature.version == self.feature_version.version)
             .distinct()
         )
         return pd.read_sql(query.statement, self.db.engine).oid.values
@@ -248,7 +253,6 @@ class FeaturesComputer(GenericStep):
         to_insert = result.loc[~already_on_db]
         to_update = result.loc[already_on_db]
         apply_get_fid = lambda x: self.get_fid(x)
-
         if len(to_update) > 0:
             self.update_db(to_update, out_columns, apply_get_fid)
         if len(to_insert) > 0:
@@ -336,8 +340,10 @@ class FeaturesComputer(GenericStep):
                 for message in messages
             ]
         )
-        unique_oid = len(alert_data.oid.unique())
-        self.logger.info(f"Found {unique_oid} Objects.")
+        unique_oid = alert_data.oid.unique()
+        qty_oid = len(unique_oid)
+
+        self.logger.info(f"Found {qty_oid} Objects.")
 
         self.logger.info("Getting detections and non_detections")
 
@@ -345,7 +351,9 @@ class FeaturesComputer(GenericStep):
             messages
         )
 
-        if unique_oid < len(messages):
+        objects = self.get_objects(unique_oid)
+
+        if qty_oid < len(messages):
             self.delete_duplicates(detections, non_detections)
 
         if len(detections):
@@ -354,8 +362,7 @@ class FeaturesComputer(GenericStep):
             non_detections.set_index("oid", inplace=True)
 
         self.logger.info(f"Calculating features")
-        features = self.compute_features(detections, non_detections, metadata, xmatches)
-
+        features = self.compute_features(detections, non_detections, metadata, xmatches, objects)
         self.logger.info(f"Features calculated: {features.shape}")
         if len(features) > 0:
             self.add_to_db(features)
