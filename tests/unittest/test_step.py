@@ -63,23 +63,26 @@ class StepTestCase(unittest.TestCase):
         non_detections = pd.DataFrame()
         metadata = pd.DataFrame()
         xmatches = pd.DataFrame()
+        objects = pd.DataFrame()
         self.mock_custom_hierarchical_extractor.compute_features.return_value = (
             pd.DataFrame()
         )
         features = self.step.compute_features(
-            detections, non_detections, metadata, xmatches
+            detections, non_detections, metadata, xmatches, objects
         )
         self.mock_custom_hierarchical_extractor.compute_features.assert_called_with(
             detections,
             non_detections=non_detections,
             metadata=metadata,
             xmatches=xmatches,
+            objects=objects,
         )
         self.assertIsInstance(features, pd.DataFrame)
 
     @mock.patch.object(pd, "read_sql")
     def test_get_on_db(self, read_sql):
         features = pd.DataFrame()
+        self.step.feature_version = FeatureVersion()
         self.step.get_on_db(features)
         read_sql.assert_called_once()
 
@@ -271,8 +274,9 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "produce")
     @mock.patch.object(FeaturesComputer, "add_to_db")
     @mock.patch.object(FeaturesComputer, "insert_feature_version")
+    @mock.patch.object(FeaturesComputer, "get_objects")
     def test_execute_with_producer(
-        self, insert_feature_version, add_to_db, produce, compute_features
+        self, get_objects, insert_feature_version, add_to_db, produce, compute_features
     ):
         messages = [
             {
@@ -295,8 +299,9 @@ class StepTestCase(unittest.TestCase):
     @mock.patch.object(FeaturesComputer, "produce")
     @mock.patch.object(FeaturesComputer, "add_to_db")
     @mock.patch.object(FeaturesComputer, "insert_feature_version")
+    @mock.patch.object(FeaturesComputer, "get_objects")
     def test_execute_duplicates(
-        self, insert_feature_version, add_to_db, produce, compute_features
+        self, get_objects, insert_feature_version, add_to_db, produce, compute_features
     ):
         message1 = {
             "oid": "ZTF1",
