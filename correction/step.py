@@ -456,7 +456,7 @@ class Correction(GenericStep):
                     non_detection = self.cast_non_detection(oid, candidate)
                     non_detections.append(non_detection)
                 else:
-                    candidate["parent_candid"] = np.nan
+                    candidate["parent_candid"] = candid
                     candidate["has_stamp"] = False
                     candidate["oid"] = oid
                     candidate["objectId"] = oid  # Used in correction
