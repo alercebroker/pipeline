@@ -11,7 +11,7 @@ DETECTIONS = {
         "fields": [
             {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
-            {"name": "mjd", "type": "float"},
+            {"name": "mjd", "type": "double"},
             {"name": "fid", "type": "int"},
             {"name": "pid", "type": "float"},
             {"name": "diffmaglim", "type": "float"},
@@ -50,7 +50,7 @@ NON_DETECTIONS = {
         "type": "record",
         "fields": [
             {"name": "oid", "type": "string"},
-            {"name": "mjd", "type": "float"},
+            {"name": "mjd", "type": "double"},
             {"name": "diffmaglim", "type": "float"},
             {"name": "fid", "type": "int"},
         ],
