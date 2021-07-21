@@ -84,6 +84,7 @@ SCHEMA = {
                    {"name": "MedianBRP_1", "type": ["float", "null"]},
                    {"name": "MedianBRP_2", "type": ["float", "null"]},
                    {"name": "Multiband_period", "type": ["float", "null"]},
+                   {"name": "PPE", "type": ["float", "null"]},
                    {"name": "PairSlopeTrend_1", "type": ["float", "null"]},
                    {"name": "PairSlopeTrend_2", "type": ["float", "null"]},
                    {"name": "PercentAmplitude_1", "type": ["float", "null"]},
