@@ -1,6 +1,6 @@
 apf-base==1.0.3
 numexpr
-numpy~=1.16.0
+numpy
 scipy~=1.5.2
 pandas
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db_plugins
