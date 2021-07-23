@@ -4,4 +4,4 @@ numpy~=1.16.0
 scipy~=1.5.2
 pandas
 -e git+https://git@github.com/alercebroker/db-plugins#egg=db_plugins
--e git+https://github.com/alercebroker/lc_classifier.git@1.2.1-P#egg=lc_classifier
+-e git+https://github.com/alercebroker/lc_classifier.git@1.2.2-P#egg=lc_classifier
