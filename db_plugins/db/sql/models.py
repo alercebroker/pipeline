@@ -18,7 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from .. import generic
 
-from db_plugins.db.sql import Base
+from db_plugins.db.sql.connection import Base
 
 
 class Commons:
