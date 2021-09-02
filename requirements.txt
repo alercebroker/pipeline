@@ -1,1 +1,3 @@
-apf_base==1.0.0
+apf_base==1.0.3
+numpy
+pymongo
