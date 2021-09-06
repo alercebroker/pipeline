@@ -6,6 +6,7 @@ import datetime
 import pandas as pd
 
 from apf.core.step import GenericStep
+from apf.producers import KafkaProducer
 from db_plugins.db.sql.models import Object, Probability, Step
 from db_plugins.db.sql import SQLConnection
 
@@ -45,6 +46,7 @@ class EarlyClassifier(GenericStep):
         db_connection=None,
         request_session=None,
         stamp_classifier=None,
+        producer=None,
         level=logging.INFO,
         **step_args,
     ):
@@ -53,6 +55,9 @@ class EarlyClassifier(GenericStep):
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
         self.requests_session = request_session or requests.Session()
         self.model = stamp_classifier or StampClassifier()
+        self.producer = None
+        if config.get("PRODUCER_CONFIG", False) or producer is not None:
+            self.producer = producer or KafkaProducer(config = config["PRODUCER_CONFIG"])
 
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
@@ -235,6 +240,14 @@ class EarlyClassifier(GenericStep):
         data["lastmjd"] = data["firstmjd"]
         return data
 
+    def produce(self, objectId, candid, probabilities):
+
+        output = {}
+        output['objectId'] = objectId
+        output['candid'] = candid
+        output['probabilities'] = probabilities
+        self.producer.produce(output, key=objectId)
+
     def execute(self, message: dict) -> None:
         """
         Do model inference and insert of results in database
@@ -248,7 +261,12 @@ class EarlyClassifier(GenericStep):
         None
         """
         oid = message["objectId"]
+        candid = message["candidate"]["candid"]
         probabilities = self.get_probabilities(message)
         if probabilities is not None:
             object_data = self.get_default_object_values(message)
             self.insert_db(probabilities, oid, object_data)
+        
+        if self.producer:
+            self.produce(oid, candid, probabilities)
+        

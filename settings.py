@@ -65,7 +65,7 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "smallest",
-        'max.poll.interval.ms' : 3600000,
+        "max.poll.interval.ms": 3600000,
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
 }
@@ -84,6 +84,47 @@ elif os.getenv("CONSUMER_TOPICS"):
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
+PRODUCER_CONFIG = {
+    "TOPIC_STRATEGY": {
+        "PARAMS": {
+            "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
+            "date_format": os.environ["PRODUCER_DATE_FORMAT"],
+            "change_hour": os.environ["PRODUCER_CHANGE_HOUR"],
+            "retention_days": os.environ["PRODUCER_RETENTION_DAYS"],
+        },
+        "CLASS": os.getenv(
+            "PRODUCER_TOPIC_STRATEGY_CLASS",
+            "apf.core.topic_management.DailyTopicStrategy",
+        ),
+    },
+    "PARAMS": {
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+    },
+    "SCHEMA": {
+        "doc": "Early Classification",
+        "name": "stamp_probabilities",
+        "type": "record",
+        "fields": [
+            {"name": "objectId", "type": "string"},
+            {"name": "candid", "type": "string"},
+            {
+                "name": "probabilities",
+                "type": {
+                    "name": "probabilities",
+                    "type": "record",
+                    "fields": [
+                        {"name": "SN", "type": "float"},
+                        {"name": "AGN", "type": "float"},
+                        {"name": "VS", "type": "float"},
+                        {"name": "asteroid", "type": "float"},
+                        {"name": "bogus", "type": "float"},
+                    ],
+                },
+            },
+        ],
+    },
+}
+
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
     "STEP_ID": os.getenv("STEP_ID", "stamp_classification"),
@@ -98,6 +139,7 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "N_RETRY": os.getenv("N_RETRY", 5),
+    "PRODUCER_CONFIG": PRODUCER_CONFIG,
 }
 
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
