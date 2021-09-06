@@ -10,7 +10,7 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"smallest"
+        "auto.offset.reset": "smallest",
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
@@ -22,79 +22,78 @@ DB_CONFIG = {
         "HOST": os.environ["DB_HOST"],
         "USER": os.environ["DB_USER"],
         "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.getenv("DB_PORT",5432)),
-        "DB_NAME": os.environ["DB_NAME"]
+        "PORT": int(os.getenv("DB_PORT", 5432)),
+        "DB_NAME": os.environ["DB_NAME"],
     }
 }
 
 PRODUCER_CONFIG = {
-    "TOPIC": os.environ["PRODUCER_TOPIC"],
+    "TOPIC_STRATEGY": {
+        "PARAMS": {
+            "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
+            "date_format": os.environ["PRODUCER_DATE_FORMAT"],
+            "change_hour": os.environ["PRODUCER_CHANGE_HOUR"],
+            "retention_days": os.environ["PRODUCER_RETENTION_DAYS"],
+        },
+        "CLASS": os.getenv(
+            "PRODUCER_TOPIC_STRATEGY_CLASS",
+            "apf.core.topic_management.DailyTopicStrategy",
+        ),
+    },
     "PARAMS": {
-        'bootstrap.servers': os.environ["PRODUCER_SERVER"],
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "SCHEMA": {
-        'doc': 'Late Classification',
-        'name': 'probabilities_and_features',
-        'type': 'record',
-        'fields': [
-            {'name': 'oid', 'type': 'string'},
+        "doc": "Late Classification",
+        "name": "probabilities_and_features",
+        "type": "record",
+        "fields": [
+            {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
             FEATURES_SCHEMA,
             {
-                'name': 'lc_classification',
-                'type': {
-                    'type': 'record',
-                    'name': 'late_record',
-                    'fields': [
+                "name": "lc_classification",
+                "type": {
+                    "type": "record",
+                    "name": "late_record",
+                    "fields": [
                         {
-                            'name': 'probabilities',
-                            'type': {
-                                'type': 'map',
-                                'values': ['float'],
-                            }
+                            "name": "probabilities",
+                            "type": {
+                                "type": "map",
+                                "values": ["float"],
+                            },
                         },
+                        {"name": "class", "type": "string"},
                         {
-                            'name': 'class',
-                            'type': 'string'
-                        },
-                        {
-                            'name': 'hierarchical',
-                            'type':
-                            {
-                                'name': 'root',
-                                'type': 'map',
-                                'values': [
+                            "name": "hierarchical",
+                            "type": {
+                                "name": "root",
+                                "type": "map",
+                                "values": [
+                                    {"type": "map", "values": "float"},
                                     {
-                                        'type': 'map',
-                                        'values': 'float'
+                                        "type": "map",
+                                        "values": {"type": "map", "values": "float"},
                                     },
-                                    {
-                                        'type': 'map',
-                                        'values': {
-                                            'type': 'map',
-                                            'values': 'float'
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    }
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
 }
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
-        "oid"
-    ],
+    "EXTRA_METRICS": [{"key": "candid", "format": lambda x: str(x)}, "oid"],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
+            "auto.offset.reset": "smallest",
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
