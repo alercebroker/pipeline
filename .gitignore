@@ -133,3 +133,5 @@ dmypy.json
 
 model
 model.zip
+
+.vscode
