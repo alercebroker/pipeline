@@ -99,6 +99,10 @@ PRODUCER_CONFIG = {
     },
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+        "security.protocol": os.getenv("PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"),
+        "sasl.mechanism": os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"),
+        "sasl.username": os.environ["PRODUCER_SASL_USERNAME"],
+        "sasl.password": os.environ["PRODUCER_SASL_PASSWORD"],
     },
     "SCHEMA": {
         "doc": "Early Classification",
