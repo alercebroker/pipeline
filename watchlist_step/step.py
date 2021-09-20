@@ -4,7 +4,7 @@ from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection
 from db_plugins.db.sql import SQLConnection
 import datetime
-
+BASE_RADIUS=30/3600
 
 class WatchlistStep(GenericStep):
     """WatchlistStep Description
@@ -28,16 +28,16 @@ class WatchlistStep(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.alerts_db_connection = alerts_db_connection
+        self.alerts_db_connection = alerts_db_connection or SQLConnection()
         self.alerts_db_connection.connect(config["alert_db_config"]["SQL"])
-        self.users_db_connection = users_db_connection
+        self.users_db_connection = users_db_connection or SQLConnection()
         self.users_db_connection.connect(config["users_db_config"]["SQL"])
 
     def execute(self, messages: list):
         candids = [message["candid"] for message in messages]
         coordinates = self.get_coordinates(candids)
         matches = self.match_user_targets(coordinates)
-        if len(matches):
+        if len(matches) > 0:
             self.insert_matches(matches)
 
     def get_coordinates(self, candids: List[int]) -> List[Tuple]:
@@ -55,15 +55,18 @@ class WatchlistStep(GenericStep):
             [f"({val[0]}, {val[1]}, '{val[2]}', '{val[3]}')" for val in coordinates]
         )
         query = (
-            """
-        WITH positions (ra, dec, oid, candid) AS (
-            VALUES %s
-        )
-        SELECT positions.oid, positions.candid, watchlist_target.id FROM watchlist_target, positions
-        WHERE ST_DWITHIN(
-            ST_SetSRID(ST_MakePoint(positions.ra, positions.dec), 4035) ,
-            ST_SetSRID(ST_MakePoint(watchlist_target.ra, watchlist_target.dec), 4035),
-            degrees_to_meters(watchlist_target.sr), true);
+        f"""
+            WITH positions (ra, dec, oid, candid) AS (
+                    VALUES
+                    %s
+            )
+            SELECT
+            positions.oid,
+            positions.candid,
+            watchlist_target.id
+            FROM watchlist_target, positions
+            WHERE q3c_join(positions.ra, positions.dec,watchlist_target.ra, watchlist_target.dec, {BASE_RADIUS})
+            AND q3c_dist(positions.ra, positions.dec, watchlist_target.ra, watchlist_target.dec) < watchlist_target.radius
         """
             % str_values
         )
@@ -79,8 +82,9 @@ class WatchlistStep(GenericStep):
         )
         query = (
             """
-        INSERT INTO watchlist_match (target, object_id, candid, date) VALUES %s;
+        INSERT INTO watchlist_match (target_id, object_id, candid, date) VALUES %s;
         """
             % str_values
         )
         self.users_db_connection.session.execute(query)
+        self.users_db_connection.session.commit()

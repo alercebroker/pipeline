@@ -35,7 +35,7 @@ services:
       - 5432:5432
 
   users_db:
-    image: postgis/postgis
+    build: docker/postgres
     environment:
       - POSTGRES_PASSWORD=password
     ports:
@@ -43,4 +43,3 @@ services:
     volumes:
       - ./samples/targets/scripts:/docker-entrypoint-initdb.d
       - ./samples/targets/data:/data
-
