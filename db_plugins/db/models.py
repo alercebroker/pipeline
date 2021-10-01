@@ -17,8 +17,8 @@ class Object():
 class Detection():
     __tablename__ = "detection"
 
-    alerce_id = None
-    survey_id = None
+    aid = None
+    sid = None
     candid = None
     mjd = None
     fid = None
@@ -33,7 +33,7 @@ class Detection():
         return "<Detection(candid='%i', fid='%i', aid='%s')>" % (
             self.candid,
             self.fid,
-            self.alerce_id,
+            self.aid,
         )
 
 class NonDetection():

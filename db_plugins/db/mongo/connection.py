@@ -5,6 +5,7 @@ from ..generic import DatabaseConnection, DatabaseCreator, BaseQuery
 MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DATABASE"}
 
 class MongoDatabaseCreator(DatabaseCreator):
+    @classmethod
     def create_database(self) -> DatabaseConnection:
         return MongoConnection()
 
