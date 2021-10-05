@@ -32,8 +32,8 @@ PRODUCER_CONFIG = {
         "PARAMS": {
             "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
             "date_format": os.environ["PRODUCER_DATE_FORMAT"],
-            "change_hour": os.environ["PRODUCER_CHANGE_HOUR"],
-            "retention_days": os.environ["PRODUCER_RETENTION_DAYS"],
+            "change_hour": int(os.environ["PRODUCER_CHANGE_HOUR"]),
+            "retention_days": int(os.environ["PRODUCER_RETENTION_DAYS"]),
         },
         "CLASS": os.getenv(
             "PRODUCER_TOPIC_STRATEGY_CLASS",
