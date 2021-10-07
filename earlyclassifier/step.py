@@ -253,7 +253,7 @@ class EarlyClassifier(GenericStep):
         data["lastmjd"] = data["firstmjd"]
         return data
 
-    def format_output_probabilities(probs):
+    def format_output_probabilities(self, probs):
         formatted_dict = {}
         for key in probs:
             formatted_dict[key] = probs[key]["probability"]
@@ -264,7 +264,7 @@ class EarlyClassifier(GenericStep):
         output = {}
         output["objectId"] = objectId
         output["candid"] = candid
-        output["probabilities"] = self.format_output_probabilities()
+        output["probabilities"] = self.format_output_probabilities(probabilities)
         self.producer.produce(output, key=objectId)
 
     def execute(self, message: dict) -> None:
