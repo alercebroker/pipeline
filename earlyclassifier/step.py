@@ -57,7 +57,7 @@ class EarlyClassifier(GenericStep):
         self.model = stamp_classifier or StampClassifier()
         self.producer = None
         if config.get("PRODUCER_CONFIG", False) or producer is not None:
-            self.producer = producer or KafkaProducer(config = config["PRODUCER_CONFIG"])
+            self.producer = producer or KafkaProducer(config=config["PRODUCER_CONFIG"])
 
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
@@ -107,20 +107,27 @@ class EarlyClassifier(GenericStep):
         template = message["cutoutTemplate"]["stampData"]
         science = message["cutoutScience"]["stampData"]
         difference = message["cutoutDifference"]["stampData"]
-        df = pd.DataFrame([{
-            "oid": oid,
-            "cutoutScience": science,
-            "cutoutTemplate": template,
-            "cutoutDifference": difference,
-            **message["candidate"]
-        }], index=[oid])
+        df = pd.DataFrame(
+            [
+                {
+                    "oid": oid,
+                    "cutoutScience": science,
+                    "cutoutTemplate": template,
+                    "cutoutDifference": difference,
+                    **message["candidate"],
+                }
+            ],
+            index=[oid],
+        )
         try:
             probabilities = self.model.execute(df).iloc[0].to_dict()
         except Exception as e:
             self.logger.critical(str(e))
             probabilities = None
 
-        if probabilities is not None and not self.sn_must_be_saved(message, probabilities):
+        if probabilities is not None and not self.sn_must_be_saved(
+            message, probabilities
+        ):
             probabilities = None
         return probabilities
 
@@ -149,7 +156,9 @@ class EarlyClassifier(GenericStep):
         """
         self.logger.info(probabilities)
         probabilities = self.get_ranking(probabilities)
-        obj, _ = self.db.query(Object).get_or_create(filter_by={"oid": oid}, **object_data)
+        obj, _ = self.db.query(Object).get_or_create(
+            filter_by={"oid": oid}, **object_data
+        )
 
         for prob in probabilities:
             filter_by = {
@@ -210,7 +219,10 @@ class EarlyClassifier(GenericStep):
             }
         return probabilities
 
-    def get_default_object_values(self, alert: dict,) -> dict:
+    def get_default_object_values(
+        self,
+        alert: dict,
+    ) -> dict:
         """
         Returns default values for creating an `object` in the database
 
@@ -230,22 +242,29 @@ class EarlyClassifier(GenericStep):
             "mjdstarthist": alert["candidate"]["jdstarthist"] - 2400000.5,
             "mjdendhist": alert["candidate"]["jdendhist"] - 2400000.5,
             "firstmjd": alert["candidate"]["jd"] - 2400000.5,
-            "ndet": 1, "deltajd": 0,
+            "ndet": 1,
+            "deltajd": 0,
             "meanra": alert["candidate"]["ra"],
             "meandec": alert["candidate"]["dec"],
             "step_id_corr": "0.0.0",
             "corrected": False,
-            "stellar": False
+            "stellar": False,
         }
         data["lastmjd"] = data["firstmjd"]
         return data
 
+    def format_output_probabilities(probs):
+        formatted_dict = {}
+        for key in probs:
+            formatted_dict[key] = probs[key]["probability"]
+        return formatted_dict
+
     def produce(self, objectId, candid, probabilities):
 
         output = {}
-        output['objectId'] = objectId
-        output['candid'] = candid
-        output['probabilities'] = probabilities
+        output["objectId"] = objectId
+        output["candid"] = candid
+        output["probabilities"] = self.format_output_probabilities()
         self.producer.produce(output, key=objectId)
 
     def execute(self, message: dict) -> None:
@@ -266,7 +285,6 @@ class EarlyClassifier(GenericStep):
         if probabilities is not None:
             object_data = self.get_default_object_values(message)
             self.insert_db(probabilities, oid, object_data)
-        
-        if self.producer:
-            self.produce(oid, candid, probabilities)
-        
+
+            if self.producer:
+                self.produce(oid, candid, probabilities)
