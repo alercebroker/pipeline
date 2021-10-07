@@ -110,7 +110,7 @@ PRODUCER_CONFIG = {
         "type": "record",
         "fields": [
             {"name": "objectId", "type": "string"},
-            {"name": "candid", "type": "string"},
+            {"name": "candid", "type": "long"},
             {
                 "name": "probabilities",
                 "type": {
