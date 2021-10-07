@@ -131,7 +131,7 @@ class EarlyClassifier(GenericStep):
             probabilities = None
         return probabilities
 
-    def insert_db(self, probabilities, oid, object_data) -> None:
+    def insert_db(self, probs, oid, object_data) -> None:
         """
         Inserts probabilities returned by the stam classifier into the database.
 
@@ -154,8 +154,8 @@ class EarlyClassifier(GenericStep):
             Values to use if the object needs to be created. Keys in this dictionary
             should have every attribute of the object table other than `oid`
         """
-        self.logger.info(probabilities)
-        probabilities = self.get_ranking(probabilities)
+        self.logger.info(probs)
+        probabilities = self.get_ranking(probs)
         obj, _ = self.db.query(Object).get_or_create(
             filter_by={"oid": oid}, **object_data
         )
@@ -253,18 +253,12 @@ class EarlyClassifier(GenericStep):
         data["lastmjd"] = data["firstmjd"]
         return data
 
-    def format_output_probabilities(self, probs):
-        formatted_dict = {}
-        for key in probs:
-            formatted_dict[key] = probs[key]["probability"]
-        return formatted_dict
-
     def produce(self, objectId, candid, probabilities):
 
         output = {}
         output["objectId"] = objectId
         output["candid"] = candid
-        output["probabilities"] = self.format_output_probabilities(probabilities)
+        output["probabilities"] = probabilities
         self.producer.produce(output, key=objectId)
 
     def execute(self, message: dict) -> None:

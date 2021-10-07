@@ -50,10 +50,7 @@ class EarlyClassifierTest(unittest.TestCase):
         )
 
     @mock.patch("earlyclassifier.step.EarlyClassifier.insert_db")
-    @mock.patch("earlyclassifier.step.EarlyClassifier.produce")
-    def test_execute(
-        self, producer_mock: unittest.mock.Mock, insert_mock: unittest.mock.Mock
-    ):
+    def test_execute(self, insert_mock: unittest.mock.Mock):
         message = {
             "objectId": "ZTF1",
             "candidate": {
@@ -97,7 +94,14 @@ class EarlyClassifierTest(unittest.TestCase):
                 "stellar": False,
             },
         )
-        producer_mock.assert_called_with("ZTF1", 1, {"SN": 1, "asteroid": 3})
+        self.mock_producer.produce.assert_called_with(
+            {
+                "objectId": "ZTF1",
+                "candid": 1,
+                "probabilities": {"SN": 1, "asteroid": 3},
+            },
+            key="ZTF1",
+        )
 
     def test_insert_db_doesnt_exist(self):
         probabilities = {
@@ -277,6 +281,7 @@ class EarlyClassifierTest(unittest.TestCase):
     def test_produce(self):
         self.step.produce("ZTF1", 1, {})
         self.mock_producer.produce.assert_called()
+
 
 class EarlyClassifierWithoutProducerTest(unittest.TestCase):
     def setUp(self):
