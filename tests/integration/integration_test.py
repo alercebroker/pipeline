@@ -1,13 +1,12 @@
 from db_plugins.db.sql import (
     models,
-    Pagination,
     SQLConnection,
     SQLQuery,
-    Pagination,
     create_engine,
     Base,
     sessionmaker,
 )
+from db_plugins.db.generic import Pagination
 from sqlalchemy.engine.reflection import Inspector
 import unittest
 import json

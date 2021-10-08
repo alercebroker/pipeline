@@ -129,6 +129,27 @@ class SQLQuery(BaseQuery, Query):
             total = self.order_by(None).limit(max_results + 1).count()
         return Pagination(self, page, per_page, total, items)
 
+    def find(self, model=None, filter_by={}, paginate=True):
+        """
+        Finds list of items of the specified model.
+        If there are too many items a timeout can happen.
+        Parameters
+        -----------
+        model : Model
+            Class of the model to be retrieved
+        filter_by : dict
+            attributes used to find objects in the database
+        paginate : bool
+            whether to get a paginated result or not
+        """
+        model = self._entities[0].mapper.class_ if self._entities else model
+        query = self.session.query(model) if not self._entities else self
+        query = query.filter_by(**filter_by)
+        if paginate:
+            return query.paginate()
+        else:
+            return query.all()
+
     def find_one(self, model=None, filter_by={}):
         """
         Finds one item of the specified model.
