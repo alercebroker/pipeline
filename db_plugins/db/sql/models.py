@@ -18,7 +18,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from .. import generic
 
-from db_plugins.db.sql import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 
 class Commons:
@@ -213,7 +215,6 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     lastmjd = Column(Float(precision=53))
     step_id_corr = Column(String, nullable=False)
     saturation_rate = Column(Float(precision=53))
-
 
     __table_args__ = (
         Index("ix_magstats_dmdt_first", "dmdt_first", postgresql_using="btree"),

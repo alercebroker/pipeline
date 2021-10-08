@@ -1,4 +1,4 @@
-from db_plugins.db.sql import SQLConnection, satisfy_keys, settings_map
+from db_plugins.db.sql.connection import SQLConnection, satisfy_keys, settings_map
 import alembic.config
 import click
 import sys
@@ -16,7 +16,7 @@ def init_sql(config, db=None):
     db.session.close()
     os.chdir(MIGRATIONS_PATH)
     try:
-        os.makedirs(os.getcwd()+"/migrations/versions")
+        os.makedirs(os.getcwd() + "/migrations/versions")
     except FileExistsError:
         pass
     alembic.config.main(["stamp", "head"])
@@ -35,8 +35,9 @@ def initdb(settings_path):
     sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
     from settings import DB_CONFIG
 
+    db_config = DB_CONFIG["SQL"]
+
     if "SQL" in DB_CONFIG:
-        db_config = DB_CONFIG["SQL"]
         required_key = satisfy_keys(set(db_config.keys()))
         if len(required_key) == 0:
             db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
@@ -44,9 +45,14 @@ def initdb(settings_path):
         if "SQLALCHEMY_DATABASE_URL" in db_config:
             init_sql(db_config)
         else:
-            raise Exception(f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}")
+            raise Exception(
+                f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}"
+            )
 
         click.echo("Database created with credentials from {}".format(settings_path))
+    elif "MONGO" in DB_CONFIG:
+        pass
+
     else:
         raise Exception("Invalid settings file")
 
