@@ -1,11 +1,18 @@
-from sqlalchemy.orm import Query
-from sqlalchemy.dialects.postgresql import insert
+from pymongo.errors import WriteConcernError, WriteError
+
 from ..generic import BaseQuery, Pagination
-from sqlalchemy.exc import IntegrityError
 
+class MongoQuery(BaseQuery):
 
-class SQLQuery(BaseQuery, Query):
-    def check_exists(self, model=None, filter_by=None):
+    def __init__(self, connection, collection=None, **kwargs):
+        """Get / create a Mongo collection.
+
+        Raises :class:`TypeError` if `name` is not
+        """
+        self.__connection = connection
+        self.__collection = collection
+
+    def check_exists(self, collection=None, filter_by={}):
         """
         Check if record exists in database.
 
@@ -17,11 +24,10 @@ class SQLQuery(BaseQuery, Query):
         :returns: True if object exists else False
 
         """
-        model = self._entities[0].mapper.class_ if self._entities else model
-        query = self.session.query(model) if not self._entities else self
-        return self.session.query(query.filter_by(**filter_by).exists()).scalar()
+        self.__collection = self.__collection if self.__collection else collection
+        return self.__collection.count_documents(filter_by, limit=1) != 0
 
-    def get_or_create(self, model=None, filter_by=None, **kwargs):
+    def get_or_create(self, collection=None, filter_by=None, **kwargs):
         """
         Initializes a model by creating it or getting it from the database if it exists
         Parameters
@@ -39,25 +45,24 @@ class SQLQuery(BaseQuery, Query):
         instance, created
             Tuple with the instanced object and wether it was created or not
         """
-        model = self._entities[0].mapper.class_ if self._entities else model
-        result = self.session.query(model).filter_by(**filter_by).first()
+
+        self.__collection = self.__collection if self.__collection else collection
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+        result = mycolObj.find_one(filter_by)
         created = False
         if result is not None:
             return result, created
 
         try:
             kwargs.update(filter_by)
-            instance = model(**kwargs)
-            self.session.add(instance)
-            self.session.commit()
-            result = instance
+            result = mycolObj.insertOne(kwargs)
             created = True
-        except IntegrityError:
-            self.session.rollback()
-            result = self.session.query(model).filter_by(**filter_by).first()
+        except Exception as e:
+            print("An exception occurred ::", e)
             created = False
 
         return result, created
+
 
     def update(self, instance, args):
         """
@@ -73,11 +78,14 @@ class SQLQuery(BaseQuery, Query):
         instance
             The updated object instance
         """
-        for key in args.keys():
-            setattr(instance, key, args[key])
+
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+
+        mycolObj.update_one(instance, args)
+
         return instance
 
-    def bulk_insert(self, objects, model=None):
+    def bulk_insert(self, objects, collection=None):
         """
         Inserts multiple objects to the database improving performance
 
@@ -91,23 +99,18 @@ class SQLQuery(BaseQuery, Query):
         session: Session
             Session instance
         """
-
         if objects is None or len(objects) == 0:
             return
 
-        model = self._entities[0].mapper.class_ if self._entities else model
-        table = model.__table__
-        insert_stmt = insert(table)
-        engine = self.session.get_bind()
-        columns = table.primary_key.columns
-        names = [c.name for c in columns.values()]
-        do_nothing_stmt = insert_stmt.on_conflict_do_nothing(index_elements=names)
-        engine.execute(do_nothing_stmt, objects)
+        self.__collection = self.__collection if self.__collection else collection
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+        mycolObj.insert_many(objects)
+
 
     def paginate(self, page=1, per_page=10, count=True, max_results=50000):
         """
         Returns pagination object with the results
-
+        https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
         Parameters
         -----------
 
@@ -122,14 +125,24 @@ class SQLQuery(BaseQuery, Query):
             page = 1
         if per_page < 0:
             per_page = 10
-        items = self.limit(per_page).offset((page - 1) * per_page).all()
+
+        # Calculate number of documents to skip
+        skips = per_page * (page - 1)
+
+        # Skip and limit
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+        cursor = mycolObj.find().skip(skips).limit(per_page)
+
+        # Return documents
+        items = [x for x in cursor]
         if not count:
             total = None
         else:
-            total = self.order_by(None).limit(max_results + 1).count()
+            all_docs = mycolObj.count_documents()
+            total = all_docs if all_docs < max_results else max_results
         return Pagination(self, page, per_page, total, items)
 
-    def find_one(self, model=None, filter_by={}):
+    def find_one(self, collection=None, filter_by={}):
         """
         Finds one item of the specified model.
 
@@ -143,11 +156,12 @@ class SQLQuery(BaseQuery, Query):
         filter_by : dict
             attributes used to find object in the database
         """
-        model = self._entities[0].mapper.class_ if self._entities else model
-        query = self.session.query(model) if not self._entities else self
-        return query.filter_by(**filter_by).one_or_none()
 
-    def find_all(self, model=None, filter_by={}, paginate=True):
+        self.__collection = self.__collection if self.__collection else collection
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+        return mycolObj.find_one(filter_by)
+
+    def find_all(self, collection=None, filter_by={}, paginate=True):
         """
         Finds list of items of the specified model.
 
@@ -162,10 +176,11 @@ class SQLQuery(BaseQuery, Query):
         paginate : bool
             whether to get a paginated result or not
         """
-        model = self._entities[0].mapper.class_ if self._entities else model
-        query = self.session.query(model) if not self._entities else self
-        query = query.filter_by(**filter_by)
+
+        self.__collection = self.__collection if self.__collection else collection
+        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+
         if paginate:
-            return query.paginate()
+            return self.paginate()
         else:
-            return query.all()
+            return mycolObj.find(filter_by)

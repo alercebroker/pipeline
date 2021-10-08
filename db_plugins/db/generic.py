@@ -1,6 +1,20 @@
 import abc
 from math import ceil
 
+class DatabaseCreator(abc.ABC):
+    """
+    The Creator class declares the factory method that is supposed to return an
+    object of a Product class. The Creator's subclasses usually provide the
+    implementation of this method.
+    """
+
+    @abc.abstractmethod
+    def create_database(self):
+        """
+        Note that the Creator may also provide some default implementation of
+        the factory method.
+        """
+        pass
 
 class DatabaseConnection(abc.ABC):
     """
@@ -36,6 +50,15 @@ class DatabaseConnection(abc.ABC):
         """
         pass
 
+
+def new_DBConnection(creator: DatabaseCreator) -> DatabaseConnection:
+    """
+    The client code works with an instance of a concrete creator, albeit through
+    its base interface. As long as the client keeps working with the creator via
+    the base interface, you can pass it any creator's subclass.
+    """
+
+    return creator.create_database()
 
 class BaseQuery(abc.ABC):
     @abc.abstractmethod
@@ -74,20 +97,20 @@ class BaseQuery(abc.ABC):
         """
         pass
 
-    # @abc.abstractmethod
-    # def find_all(self):
-    #     """
-    #     Retrieves all items from the result of this query
-    #     """
-    #     pass
+    @abc.abstractmethod
+    def find_all(self):
+     """
+     Retrieves all items from the result of this query
+     """
+     pass
 
-    # @abc.abstractmethod
-    # def find_one(self):
-    #     """
-    #     Retrieves only one item from the result of this query.
-    #     Returns None if result is empty.
-    #     """
-    #     pass
+    @abc.abstractmethod
+    def find_one(self):
+     """
+     Retrieves only one item from the result of this query.
+     Returns None if result is empty.
+     """
+     pass
 
 
 class Pagination:

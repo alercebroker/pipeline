@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine, inspect, MetaData, update
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, scoped_session
-from ..generic import DatabaseConnection, BaseQuery, Pagination
-from db_plugins.db.sql.query import SQLQuery
-from db_plugins.db.sql.models import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+from .query import SQLQuery
+from ..generic import DatabaseConnection, DatabaseCreator
+from .models import Base
 
 MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DB_NAME", "ENGINE"}
 
@@ -13,6 +15,11 @@ def satisfy_keys(config_keys):
 
 def settings_map(config):
     return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+
+
+class SQLDatabaseCreator(DatabaseCreator):
+    def create_database(self) -> DatabaseConnection:
+        return SQLConnection()
 
 
 class SQLConnection(DatabaseConnection):
