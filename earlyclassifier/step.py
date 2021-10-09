@@ -212,12 +212,13 @@ class EarlyClassifier(GenericStep):
 
         """
         sorted_classes = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
+        probs_with_ranking = {}
         for x in range(len(sorted_classes)):
-            probabilities[sorted_classes[x][0]] = {
+            probs_with_ranking[sorted_classes[x][0]] = {
                 "probability": probabilities[sorted_classes[x][0]],
                 "ranking": x + 1,
             }
-        return probabilities
+        return probs_with_ranking
 
     def get_default_object_values(
         self,
