@@ -20,3 +20,10 @@ class SurveyParser(abc.ABC):
         Note that the Creator may also provide some default implementation of the factory method.
         """
         pass
+
+    @abc.abstractmethod
+    def can_parse(self, message: dict) -> bool:
+        """
+        Note that the Creator may also provide some default implementation of the factory method.
+        """
+        pass

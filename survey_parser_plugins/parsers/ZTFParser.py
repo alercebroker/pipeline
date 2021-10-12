@@ -32,3 +32,7 @@ class ZTFParser(SurveyParser):
     @classmethod
     def get_source(cls):
         return cls._source
+
+    @classmethod
+    def can_parse(cls, message: dict) -> bool:
+        return 'publisher' in message.keys() and cls._source in message["publisher"]
