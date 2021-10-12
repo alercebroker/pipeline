@@ -1,3 +1,6 @@
+[![codecov](https://codecov.io/gh/alercebroker/survey-parser-plugins/branch/main/graph/badge.svg?token=SEvXaWgJz8)](https://codecov.io/gh/alercebroker/survey-parser-plugins)
+
+
 # Survey Parser Plugins
 
 Tool to unify content of messages of different surveys for the multi-stream processing.
