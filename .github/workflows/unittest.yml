@@ -1,0 +1,41 @@
+name: unittest
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get -y install libsnappy-dev
+        python -m pip install --upgrade pip
+        pip install pytest coverage
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -e .
+    - name: Test with pytest
+      run: |
+        coverage run --source survey_parser_plugins -m pytest -x -s tests/
+        coverage xml
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests

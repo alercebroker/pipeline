@@ -15,7 +15,7 @@ class ParserSelector:
         if parser.get_source() not in self.parsers.keys():
             self.parsers.update({parser.get_source(): parser})
 
-    def delete_parser(self, parser: SurveyParser) -> None:
+    def remove_parser(self, parser: SurveyParser) -> None:
         if parser.get_source() in self.parsers.keys():
             del self.parsers[parser.get_source()]
 
@@ -35,8 +35,8 @@ class ParserSelector:
 
 
 class ALeRCEParser(ParserSelector):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, extra_fields=False):
+        super().__init__(extra_fields=extra_fields)
         self.parsers = {
             "ATLAS": ATLASParser,
             "ZTF": ZTFParser,
