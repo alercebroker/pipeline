@@ -67,3 +67,10 @@ The main idea is to recover the useful fields for the massive data processing. T
 
 The parsers receive a list of messages (dictionaries in python) and return a list of dictionaries with the selected key-value.
 
+## Develop set up
+
+If you want does some modifications on source code, install package as develop in your system.
+
+```
+pip install -e .
+```
