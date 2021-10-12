@@ -21,6 +21,20 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
+if os.getenv("TOPIC_STRATEGY_FORMAT"):
+    CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
+        "CLASS": "apf.core.topic_management.DailyTopicStrategy",
+        "PARAMS": {
+            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
+            "date_format": "%Y%m%d",
+            "change_hour": 23,
+        },
+    }
+elif os.getenv("CONSUMER_TOPICS"):
+    CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+else:
+    raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
+
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
