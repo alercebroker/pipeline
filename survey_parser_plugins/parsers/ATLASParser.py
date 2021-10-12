@@ -5,11 +5,11 @@ class ATLASParser(SurveyParser):
     _source = "ATLAS"
 
     @classmethod
-    def parse_message(cls, message: dict) -> dict:
+    def parse_message(cls, message: dict, extra_fields: bool = False) -> dict:
         return {
             "alerce_id": "objectId",
             "survey_id": "objectId",
-            # "candid": "candid",
+            "candid": "candid",
             "mjd": "mjd",
             # "fid": "fid",
             "ra": "RA",

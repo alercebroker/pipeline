@@ -3,9 +3,10 @@ from survey_parser_plugins.core import SurveyParser
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
+    _exclude_keys = ["candid", "jd", "fid", "ra", "dec", "rb", "magpsf", "sigmapsf", "aimage", "bimage"]
 
     @classmethod
-    def parse_message(cls, message):
+    def parse_message(cls, message, extra_fields=False):
         oid = message["objectId"]
         message = message["candidate"].copy()
         return {
@@ -21,6 +22,11 @@ class ZTFParser(SurveyParser):
             "sigmag": message["sigmapsf"],
             "aimage": message["aimage"],
             "bimage": message["bimage"],
+            "extra_fields": {
+                k: message[k]
+                for k in message.keys()
+                if k not in cls._exclude_keys
+            } if extra_fields else None
         }
 
     @classmethod
