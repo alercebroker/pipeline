@@ -10,7 +10,6 @@ class ZTFParser(SurveyParser):
         oid = message["objectId"]
         message = message["candidate"].copy()
         return {
-            "alerce_id": oid,
             "survey_id": oid,
             "candid": message['candid'],
             "mjd": message['jd'] - 2400000.5,

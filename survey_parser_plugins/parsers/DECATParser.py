@@ -22,13 +22,12 @@ class DECATParser(SurveyParser):
         oid = message["objectid"]
         message = message["sources"].copy()
         return [{
-            "alerce_id": oid,
             "survey_id": oid,
             "candid": msg['sourceid'],
             "mjd": msg['mjd'],
             "fid": cls._get_filter(msg['filter']),
-            "ra": msg['ra'],
-            "dec": msg['dec'],
+            "ra": float(msg['ra']),
+            "dec": float(msg['dec']),
             "rb": msg['rb'],
             "mag": msg['mag'],
             "sigmag": msg["magerr"],

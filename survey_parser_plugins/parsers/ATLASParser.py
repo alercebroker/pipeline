@@ -7,13 +7,12 @@ class ATLASParser(SurveyParser):
     @classmethod
     def parse_message(cls, message: dict, extra_fields: bool = False) -> dict:
         return {
-            "alerce_id": "objectId",
             "survey_id": "objectId",
             "candid": "candid",
             "mjd": "mjd",
             # "fid": "fid",
-            "ra": "RA",
-            "dec": "Dec",
+            "ra": 0,
+            "dec": 0,
             # "rb": "rb",
             "mag": "Mag",
             "sigmag": "Dmag",
