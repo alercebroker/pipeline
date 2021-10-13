@@ -19,28 +19,31 @@ class DECATParser(SurveyParser):
 
     @classmethod
     def parse_message(cls, message, extra_fields=False):
-        oid = message["objectid"]
-        message = message["sources"].copy()
-        return [{
-            "survey_id": oid,
-            "candid": msg['sourceid'],
-            "mjd": msg['mjd'],
-            "fid": cls._get_filter(msg['filter']),
-            "ra": float(msg['ra']),
-            "dec": float(msg['dec']),
-            "rb": msg['rb'],
-            "mag": msg['mag'],
-            "sigmag": msg["magerr"],
-            "aimage": None,
-            "bimage": None,
-            "extra_fields": {
-                k: msg[k]
-                for k in msg.keys()
-                if k not in cls._exclude_keys
-            } if extra_fields else None
-        }
-            for msg in message
-        ]
+        try:
+            oid = message["objectid"]
+            message = message["sources"].copy()
+            return [{
+                "survey_id": oid,
+                "candid": msg['sourceid'],
+                "mjd": msg['mjd'],
+                "fid": cls._get_filter(msg['filter']),
+                "ra": float(msg['ra']),
+                "dec": float(msg['dec']),
+                "rb": msg['rb'],
+                "mag": msg['mag'],
+                "sigmag": msg["magerr"],
+                "aimage": None,
+                "bimage": None,
+                "extra_fields": {
+                    k: msg[k]
+                    for k in msg.keys()
+                    if k not in cls._exclude_keys
+                } if extra_fields else None
+            }
+                for msg in message
+            ]
+        except KeyError:
+            raise KeyError("This parser can't parse message")
 
     @classmethod
     def get_source(cls):

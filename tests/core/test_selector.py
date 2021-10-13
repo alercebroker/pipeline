@@ -25,11 +25,13 @@ class TestParserSelector(unittest.TestCase):
     def test_empty_parser(self):
         parser = ParserSelector(extra_fields=False)
         self.assertEqual(parser.parsers, set())
+        self.assertEqual(parser.__repr__(), str(set()))
 
     def test_register_parser(self):
         parser = ParserSelector(extra_fields=False)
         parser.register_parser(ATLASParser)
         self.assertTrue(ATLASParser in parser.parsers)
+        self.assertEqual(parser.__repr__(), str({ATLASParser}))
 
     def test_remove_parser(self):
         parser = ParserSelector(extra_fields=False)
@@ -48,6 +50,15 @@ class TestParserSelector(unittest.TestCase):
 
         self.assertEqual(len(response_1), len(self._ztf_sample))
         self.assertEqual(len(response_2), len(self._atlas_sample))
+
+        with self.assertRaises(Exception) as context:
+            parser.parse([
+                {"bad": "title"},
+                {"oo": "asdasda"}
+            ])
+
+        self.assertIsInstance(context.exception, Exception)
+
 
 
 class TestALeRCEParser(unittest.TestCase):
