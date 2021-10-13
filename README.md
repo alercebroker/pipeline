@@ -7,58 +7,25 @@ Tool to unify content of messages of different surveys for the multi-stream proc
 
 The basic generic schema is (in progress):
 
-```yml
-Entities:
-  Object:
-    - alerce_id: str
-    - survey_id: str
-    - lastmjd: float
-    - firstmjd: float
-    - meanra: float
-    - meandec: float
-    - sigmara: float
-    - sigmadec: float
-  Detection:
-    - alerce_id: str
-    - survey_id: str
-    - candid : str
-    - mjd : float
-    - fid : int
-    - ra : float
-    - dec : float
-    - rb: float
-    - mag: float
-    - sigmag: float
-    - extra_fields: JSON
-  Non-Detection:
-    - alerce_id: str
-    - survey_id: str
-    - mjd: float
-    - diffmaglim: float
-    - fid: int
-    - extra_fields: JSON
-  Classification:
-    - alerce_id: str
-    - survey_id: str
-    - classifier_name: str
-    - classifier_version: str
-    - class_name: str
-    - probabilty: float
-    - ranking: JSON
-    - probabilities: JSON
-    - last_updated: date
-    - created_on: date
-  Features:
-    - alerce_id: str
-    - survey_id: str
-    - features: JSON
-    - created_on: date
-    - last_updated: date
-  Xmatch:
-    - alerce_id: str
-    - survey_id: str
-    - catalog_name: str
-    - catalog_id: str
+```python
+@dataclass
+class GenericAlert:
+    survey_id: str
+    candid: int
+    mjd: float
+    fid: int
+    ra: float
+    dec: float
+    rb: float
+    mag: float
+    sigmag: float
+    aimage: float
+    bimage: float
+    xpos: float
+    ypos: float
+    alerce_id: int = None
+    extra_fields: dict = field(default_factory=dict)
+
 ```
 
 The main idea is to recover the useful fields for the massive data processing. The parsers are responsible for filtering only useful information from sources:

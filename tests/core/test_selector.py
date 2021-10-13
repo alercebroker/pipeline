@@ -60,7 +60,6 @@ class TestParserSelector(unittest.TestCase):
         self.assertIsInstance(context.exception, Exception)
 
 
-
 class TestALeRCEParser(unittest.TestCase):
     def setUp(self) -> None:
         self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]

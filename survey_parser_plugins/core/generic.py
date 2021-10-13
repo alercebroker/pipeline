@@ -1,5 +1,5 @@
 import abc
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -8,6 +8,7 @@ class GenericAlert:
     Class for keeping track of an alert of astronomical surveys.
     """
     survey_id: str
+    survey_name: str
     candid: int
     mjd: float
     fid: int
@@ -16,7 +17,12 @@ class GenericAlert:
     rb: float
     mag: float
     sigmag: float
+    aimage: float or None
+    bimage: float or None
+    xpos: float or None
+    ypos: float or None
     alerce_id: int = None
+    extra_fields: dict = field(default_factory=dict)
 
 
 class SurveyParser(abc.ABC):

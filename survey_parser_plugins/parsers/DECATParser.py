@@ -24,25 +24,28 @@ class DECATParser(SurveyParser):
             oid = message["objectid"]
             message = message["sources"].copy()
             return [GenericAlert(
-                oid,
-                msg['sourceid'],
-                msg['mjd'],
-                cls._get_filter(msg['filter']),
-                msg['ra'],
-                msg['dec'],
-                msg['rb'],
-                msg['mag'],
-                msg["magerr"],
+                survey_id=oid,
+                survey_name=cls._source,
+                candid=msg['sourceid'],
+                mjd=msg['mjd'],
+                fid=cls._get_filter(msg['filter']),
+                ra=msg['ra'],
+                dec=msg['dec'],
+                rb=msg['rb'],
+                mag=msg['mag'],
+                sigmag=msg["magerr"],
+                aimage=None,
+                bimage=None,
+                xpos=None,
+                ypos=None,
+                extra_fields={
+                        k: msg[k]
+                        for k in msg.keys()
+                        if k not in cls._exclude_keys
+                    } if extra_fields else {}
                 )
                 for msg in message
             ]
-            #     "aimage": None,
-            #     "bimage": None,
-            #     "extra_fields": {
-            #         k: msg[k]
-            #         for k in msg.keys()
-            #         if k not in cls._exclude_keys
-            #     } if extra_fields else None
         except KeyError:
             raise KeyError("This parser can't parse message")
 
