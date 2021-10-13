@@ -2,7 +2,8 @@ import os
 from fastavro import reader
 import unittest
 
-from survey_parser_plugins.parsers import ATLASParser, ZTFParser
+from survey_parser_plugins.core import GenericAlert
+from survey_parser_plugins.parsers import ATLASParser
 
 FILE_PATH = os.path.dirname(__file__)
 ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ATLAS_samples")
@@ -31,10 +32,18 @@ class TestATLASParser(unittest.TestCase):
         self.assertFalse(response)
 
     def test_parse(self):
-        pass
+        atlas_message = self._ztf_sample[0]
+        is_parseable = ATLASParser.can_parse(atlas_message)
+        if is_parseable:
+            response = ATLASParser.parse_message(atlas_message)
+            self.assertIsInstance(response, GenericAlert)
 
     def test_bad_message(self):
-        pass
+        ztf_message = self._ztf_sample[0]
+        with self.assertRaises(KeyError) as context:
+            ATLASParser.parse_message(ztf_message)
+        self.assertIsInstance(context.exception, Exception)
 
     def test_get_source(self):
-        pass
+        self.assertEqual(ATLASParser.get_source(), "ATLAS")
+        self.assertNotEqual(ATLASParser.get_source(), "ATLAZX")

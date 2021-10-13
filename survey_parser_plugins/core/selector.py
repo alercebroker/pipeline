@@ -7,7 +7,6 @@ from survey_parser_plugins.core.id_generator import id_generator
 class ParserSelector:
     def __init__(self, alerce_id=True):
         self.parsers = set()
-        self.extra_fields = extra_fields
         self.alerce_id = alerce_id
 
     def __repr__(self):

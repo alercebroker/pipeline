@@ -29,10 +29,9 @@ class SurveyParser(abc.ABC):
     _source = None
 
     @abc.abstractmethod
-    def parse_message(self, message: dict, extra_fields: bool = False) -> dict:
+    def parse_message(self, message: GenericAlert) -> GenericAlert:
         """
         :param message: A single message from an astronomical survey. Typically this corresponds a dict.
-        :param extra_fields: Boolean than indicates if the parser get all remained data on a field called 'extra_fields'
 
         Note that the Creator may also provide some default implementation of the factory method.
         """
@@ -50,12 +49,13 @@ class SurveyParser(abc.ABC):
         """
 
     @classmethod
-    def _generic_alert_message(cls, message: dict,
-        generic_alert_message_key_mapping: dict) -> dict:
+    def _generic_alert_message(cls, message: dict, generic_alert_message_key_mapping: dict) -> dict:
         generic_alert_message = {}
         for key, value in generic_alert_message_key_mapping.items():
-            # if None
-            generic_alert_message[key] = message[value]
+            if value is None:
+                generic_alert_message[key] = None
+            else:
+                generic_alert_message[key] = message[value]
 
         generic_alert_message["extra_fields"] = {
             k: message[k]

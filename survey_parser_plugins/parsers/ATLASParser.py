@@ -3,15 +3,13 @@ from survey_parser_plugins.core import GenericAlert, SurveyParser
 
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
-    _exclude_keys = ["candid", "mjd", "RA", "Dec", "Mag", "Dmag",
-                     "Major", "Minor", "X", "Y"]
     _generic_alert_message_key_mapping = {
         "candid": "candid",
         "mjd": "mjd",
         "fid": None,
         "ra": "RA",
         "dec": "Dec",
-        "rb": "rb",
+        "rb": None,
         "mag": "Mag",
         "sigmag": "Dmag",
         "aimage": "Major",

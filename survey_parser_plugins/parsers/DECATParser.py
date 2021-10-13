@@ -14,7 +14,7 @@ class DECATParser(SurveyParser):
     _exclude_keys = []
 
     @classmethod
-    def _get_filter(self, fid) -> int:
+    def _get_filter(cls, fid) -> int:
         fid = fid[0]
         return MAP_FID[fid]
 
@@ -38,11 +38,6 @@ class DECATParser(SurveyParser):
                 bimage=None,
                 xpos=None,
                 ypos=None,
-                extra_fields={
-                        k: msg[k]
-                        for k in msg.keys()
-                        if k not in cls._exclude_keys
-                    } if extra_fields else {}
                 )
                 for msg in message
             ]

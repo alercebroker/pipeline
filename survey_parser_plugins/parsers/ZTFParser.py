@@ -23,14 +23,12 @@ class ZTFParser(SurveyParser):
         try:
             oid = message["objectId"]
             message = message["candidate"].copy()
-            generic_alert_message = cls._generic_alert_message(
-                message, cls._generic_alert_message_key_mapping)
+            generic_alert_message = cls._generic_alert_message(message, cls._generic_alert_message_key_mapping)
             # inclusion of extra attributes
             generic_alert_message['survey_id'] = oid
             generic_alert_message['survey_name'] = cls._source
             # attributes modification
-            generic_alert_message['mjd'] = generic_alert_message[
-                                               'mjd'] - 2400000.5
+            generic_alert_message['mjd'] = generic_alert_message['mjd'] - 2400000.5
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
