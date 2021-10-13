@@ -2,6 +2,7 @@ import os
 from fastavro import reader
 import unittest
 
+from survey_parser_plugins.core import GenericAlert
 from survey_parser_plugins.parsers import DECATParser
 
 FILE_PATH = os.path.dirname(__file__)
@@ -37,7 +38,7 @@ class TestDECATParser(unittest.TestCase):
             response = DECATParser.parse_message(decat_message)
             self.assertIsInstance(response, list)
             for i in response:
-                self.assertIsInstance(i, dict)
+                self.assertIsInstance(i, GenericAlert)
 
     def test_bad_message(self):
         atlas_message = self._atlas_sample[0]

@@ -2,6 +2,7 @@ import os
 from fastavro import reader
 import unittest
 
+from survey_parser_plugins.core import GenericAlert
 from survey_parser_plugins.parsers import ZTFParser
 
 FILE_PATH = os.path.dirname(__file__)
@@ -35,7 +36,7 @@ class TestZTFParser(unittest.TestCase):
         is_parseable = ZTFParser.can_parse(ztf_message)
         if is_parseable:
             response = ZTFParser.parse_message(ztf_message)
-            self.assertIsInstance(response, dict)
+            self.assertIsInstance(response, GenericAlert)
 
     def test_bad_message(self):
         atlas_message = self._atlas_sample[0]

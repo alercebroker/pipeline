@@ -1,4 +1,22 @@
 import abc
+from dataclasses import dataclass
+
+
+@dataclass
+class GenericAlert:
+    """
+    Class for keeping track of an alert of astronomical surveys.
+    """
+    survey_id: str
+    candid: int
+    mjd: float
+    fid: int
+    ra: float
+    dec: float
+    rb: float
+    mag: float
+    sigmag: float
+    alerce_id: int = None
 
 
 class SurveyParser(abc.ABC):

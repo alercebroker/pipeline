@@ -1,4 +1,5 @@
-from survey_parser_plugins.core import SurveyParser
+from survey_parser_plugins.core import GenericAlert, SurveyParser
+from typing import List
 
 MAP_FID = {
     "g": 1,
@@ -18,35 +19,35 @@ class DECATParser(SurveyParser):
         return MAP_FID[fid]
 
     @classmethod
-    def parse_message(cls, message, extra_fields=False):
+    def parse_message(cls, message, extra_fields=False) -> List[GenericAlert]:
         try:
             oid = message["objectid"]
             message = message["sources"].copy()
-            return [{
-                "survey_id": oid,
-                "candid": msg['sourceid'],
-                "mjd": msg['mjd'],
-                "fid": cls._get_filter(msg['filter']),
-                "ra": float(msg['ra']),
-                "dec": float(msg['dec']),
-                "rb": msg['rb'],
-                "mag": msg['mag'],
-                "sigmag": msg["magerr"],
-                "aimage": None,
-                "bimage": None,
-                "extra_fields": {
-                    k: msg[k]
-                    for k in msg.keys()
-                    if k not in cls._exclude_keys
-                } if extra_fields else None
-            }
+            return [GenericAlert(
+                oid,
+                msg['sourceid'],
+                msg['mjd'],
+                cls._get_filter(msg['filter']),
+                msg['ra'],
+                msg['dec'],
+                msg['rb'],
+                msg['mag'],
+                msg["magerr"],
+                )
                 for msg in message
             ]
+            #     "aimage": None,
+            #     "bimage": None,
+            #     "extra_fields": {
+            #         k: msg[k]
+            #         for k in msg.keys()
+            #         if k not in cls._exclude_keys
+            #     } if extra_fields else None
         except KeyError:
             raise KeyError("This parser can't parse message")
 
     @classmethod
-    def get_source(cls):
+    def get_source(cls) -> str:
         return cls._source
 
     @classmethod
