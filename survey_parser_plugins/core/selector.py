@@ -40,8 +40,8 @@ class ParserSelector:
 
 
 class ALeRCEParser(ParserSelector):
-    def __init__(self, extra_fields=False):
-        super().__init__(extra_fields=extra_fields)
+    def __init__(self, extra_fields=False, alerce_id=True):
+        super().__init__(extra_fields=extra_fields, alerce_id=alerce_id)
         self.parsers = {
             ATLASParser,
             # DECATParser,
