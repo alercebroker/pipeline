@@ -50,7 +50,7 @@ For use this package only instance a ParseSelector and register some survey's pa
 from survey_parser_plugins.core import ParserSelector
 from survey_parser_plugins.parsers import ATLASParser
 
-my_parser = ParserSelector(extra_fields=True, alerce_id=True)
+my_parser = ParserSelector(alerce_id=True)
 
 """ 
 - extra_fields indicates if the parser store more data from alerts in a key called 'extra_fields'
@@ -71,7 +71,7 @@ Also, we have a custom parsed named `ALeRCEParser` that use all survey's parser 
 ```python
 from survey_parser_plugins.core import ALeRCEParser
 
-my_parser = ALeRCEParser(extra_fields=True, alerce_id=True)
+my_parser = ALeRCEParser(alerce_id=True)
 
 .
 .
@@ -80,7 +80,7 @@ my_parser = ALeRCEParser(extra_fields=True, alerce_id=True)
 messages_parsed = my_parser.parse(multi_stream_alerts)
 ```
 
-An output example of ALeRCEParser can be (with `extra_fields=False`):
+An output example of ALeRCEParser can be:
 
 ```json
 [

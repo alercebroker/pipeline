@@ -5,7 +5,7 @@ from survey_parser_plugins.core.id_generator import id_generator
 
 
 class ParserSelector:
-    def __init__(self, extra_fields=False, alerce_id=True):
+    def __init__(self, alerce_id=True):
         self.parsers = set()
         self.extra_fields = extra_fields
         self.alerce_id = alerce_id
@@ -41,8 +41,8 @@ class ParserSelector:
 
 
 class ALeRCEParser(ParserSelector):
-    def __init__(self, extra_fields=False, alerce_id=True):
-        super().__init__(extra_fields=extra_fields, alerce_id=alerce_id)
+    def __init__(self, alerce_id=True):
+        super().__init__(alerce_id=alerce_id)
         self.parsers = {
             ATLASParser,
             ZTFParser

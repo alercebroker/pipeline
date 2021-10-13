@@ -41,7 +41,7 @@ class TestZTFParser(unittest.TestCase):
     def test_bad_message(self):
         atlas_message = self._atlas_sample[0]
         with self.assertRaises(KeyError) as context:
-            ZTFParser.parse_message(atlas_message, extra_fields=True)
+            ZTFParser.parse_message(atlas_message)
         self.assertIsInstance(context.exception, Exception)
 
     def test_get_source(self):

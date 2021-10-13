@@ -23,25 +23,25 @@ class TestParserSelector(unittest.TestCase):
         self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
 
     def test_empty_parser(self):
-        parser = ParserSelector(extra_fields=False)
+        parser = ParserSelector()
         self.assertEqual(parser.parsers, set())
         self.assertEqual(parser.__repr__(), str(set()))
 
     def test_register_parser(self):
-        parser = ParserSelector(extra_fields=False)
+        parser = ParserSelector()
         parser.register_parser(ATLASParser)
         self.assertTrue(ATLASParser in parser.parsers)
         self.assertEqual(parser.__repr__(), str({ATLASParser}))
 
     def test_remove_parser(self):
-        parser = ParserSelector(extra_fields=False)
+        parser = ParserSelector()
         parser.register_parser(ATLASParser)
         self.assertTrue(ATLASParser in parser.parsers)
         parser.remove_parser(ATLASParser)
         self.assertEqual(parser.parsers, set())
 
     def test_parser(self):
-        parser = ParserSelector(extra_fields=False)
+        parser = ParserSelector()
         parser.register_parser(ATLASParser)
         parser.register_parser(ZTFParser)
 
@@ -67,12 +67,12 @@ class TestALeRCEParser(unittest.TestCase):
         self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
 
     def test_init(self):
-        parser = ALeRCEParser(extra_fields=False)
+        parser = ALeRCEParser()
         self.assertTrue(ATLASParser in parser.parsers)
         self.assertTrue(ZTFParser in parser.parsers)
 
     def test_parser(self):
-        parser = ALeRCEParser(extra_fields=False)
+        parser = ALeRCEParser()
 
         response_1 = parser.parse(self._ztf_sample)
         # response_2 = parser.parse(self._decat_sample)

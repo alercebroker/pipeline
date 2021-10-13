@@ -48,3 +48,18 @@ class SurveyParser(abc.ABC):
         """
         Note that the Creator may also provide some default implementation of the factory method.
         """
+
+    @classmethod
+    def _generic_alert_message(cls, message: dict,
+        generic_alert_message_key_mapping: dict) -> dict:
+        generic_alert_message = {}
+        for key, value in generic_alert_message_key_mapping.items():
+            # if None
+            generic_alert_message[key] = message[value]
+
+        generic_alert_message["extra_fields"] = {
+            k: message[k]
+            for k in message.keys()
+            if k not in generic_alert_message_key_mapping.values()
+        }
+        return generic_alert_message

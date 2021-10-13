@@ -43,7 +43,7 @@ class TestDECATParser(unittest.TestCase):
     def test_bad_message(self):
         atlas_message = self._atlas_sample[0]
         with self.assertRaises(KeyError) as context:
-            DECATParser.parse_message(atlas_message, extra_fields=True)
+            DECATParser.parse_message(atlas_message)
         self.assertIsInstance(context.exception, Exception)
 
     def test_get_source(self):

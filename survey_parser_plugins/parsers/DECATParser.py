@@ -19,7 +19,7 @@ class DECATParser(SurveyParser):
         return MAP_FID[fid]
 
     @classmethod
-    def parse_message(cls, message, extra_fields=False) -> List[GenericAlert]:
+    def parse_message(cls, message) -> List[GenericAlert]:
         try:
             oid = message["objectid"]
             message = message["sources"].copy()

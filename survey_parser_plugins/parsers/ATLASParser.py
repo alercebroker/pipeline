@@ -5,33 +5,32 @@ class ATLASParser(SurveyParser):
     _source = "ATLAS"
     _exclude_keys = ["candid", "mjd", "RA", "Dec", "Mag", "Dmag",
                      "Major", "Minor", "X", "Y"]
+    _generic_alert_message_key_mapping = {
+        "candid": "candid",
+        "mjd": "mjd",
+        "fid": None,
+        "ra": "RA",
+        "dec": "Dec",
+        "rb": "rb",
+        "mag": "Mag",
+        "sigmag": "Dmag",
+        "aimage": "Major",
+        "bimage": "Minor",
+        "xpos": "X",
+        "ypos": "Y",
+    }
 
     @classmethod
-    def parse_message(cls, message: dict, extra_fields: bool = False) -> GenericAlert:
+    def parse_message(cls, message: dict) -> GenericAlert:
         try:
-            oid = message['objectId']
-            message = message['candidate'].copy()
-            return GenericAlert(
-                survey_id=oid,
-                survey_name=cls._source,
-                candid=message['candid'],
-                mjd=message['mjd'],
-                fid=-1,
-                ra=message['RA'],
-                dec=message['Dec'],
-                rb=-1,
-                mag=message['Mag'],
-                sigmag=message['Dmag'],
-                aimage=message['Major'],
-                bimage=message['Minor'],
-                xpos=message['X'],
-                ypos=message['Y'],
-                extra_fields={
-                    k: message[k]
-                    for k in message.keys()
-                    if k not in cls._exclude_keys
-                    } if extra_fields else {}
-                )
+            oid = message["objectId"]
+            message = message["candidate"].copy()
+            generic_alert_message = cls._generic_alert_message(
+                message, cls._generic_alert_message_key_mapping)
+            # inclusion of extra attributes
+            generic_alert_message['survey_id'] = oid
+            generic_alert_message['survey_name'] = cls._source
+            return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
 

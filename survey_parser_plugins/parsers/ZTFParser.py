@@ -3,34 +3,35 @@ from survey_parser_plugins.core import GenericAlert, SurveyParser
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
-    _exclude_keys = ["candid", "jd", "fid", "ra", "dec", "rb", "magpsf", "sigmapsf", "aimage", "bimage"]
+    _generic_alert_message_key_mapping = {
+        "candid": "candid",
+        "mjd": "jd",
+        "fid": "fid",
+        "ra": "ra",
+        "dec": "dec",
+        "rb": "rb",
+        "mag": "magpsf",
+        "sigmag": "sigmapsf",
+        "aimage": "aimage",
+        "bimage": "bimage",
+        "xpos": "xpos",
+        "ypos": "ypos",
+    }
 
     @classmethod
-    def parse_message(cls, message, extra_fields=False) -> GenericAlert:
+    def parse_message(cls, message) -> GenericAlert:
         try:
             oid = message["objectId"]
             message = message["candidate"].copy()
-            return GenericAlert(
-                survey_id=oid,
-                survey_name=cls._source,
-                candid=message['candid'],
-                mjd=message['jd'] - 2400000.5,
-                fid=message['fid'],
-                ra=message['ra'],
-                dec=message['dec'],
-                rb=message['rb'],
-                mag=message['magpsf'],
-                sigmag=message["sigmapsf"],
-                aimage=message['aimage'],
-                bimage=message['bimage'],
-                xpos=message['xpos'],
-                ypos=message["ypos"],
-                extra_fields={
-                    k: message[k]
-                    for k in message.keys()
-                    if k not in cls._exclude_keys
-                    } if extra_fields else {}
-                )
+            generic_alert_message = cls._generic_alert_message(
+                message, cls._generic_alert_message_key_mapping)
+            # inclusion of extra attributes
+            generic_alert_message['survey_id'] = oid
+            generic_alert_message['survey_name'] = cls._source
+            # attributes modification
+            generic_alert_message['mjd'] = generic_alert_message[
+                                               'mjd'] - 2400000.5
+            return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
 
@@ -40,4 +41,5 @@ class ZTFParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'publisher' in message.keys() and cls._source in message["publisher"]
+        return 'publisher' in message.keys() and cls._source in message[
+            "publisher"]
