@@ -6,7 +6,6 @@ def id_generator(ra: float, dec: float) -> int:
     :param dec: declination in degrees
     :return: alerce id
     """
-    print(ra, dec)
     # 19 Digit ID - two spare at the end for up to 100 duplicates
     id = 1000000000000000000
 

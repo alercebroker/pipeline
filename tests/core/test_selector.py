@@ -7,7 +7,7 @@ from survey_parser_plugins.parsers import ATLASParser, ZTFParser
 
 FILE_PATH = os.path.dirname(__file__)
 ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ATLAS_samples")
-DECAT_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/DECAT_samples")
+# DECAT_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/DECAT_samples")
 ZTF_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ZTF_samples")
 
 
@@ -53,7 +53,7 @@ class TestParserSelector(unittest.TestCase):
 class TestALeRCEParser(unittest.TestCase):
     def setUp(self) -> None:
         self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]
-        self._decat_sample = [get_content(os.path.join(DECAT_DATA_PATH, f)) for f in os.listdir(DECAT_DATA_PATH)]
+        # self._decat_sample = [get_content(os.path.join(DECAT_DATA_PATH, f)) for f in os.listdir(DECAT_DATA_PATH)]
         self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
 
     def test_init(self):
@@ -65,9 +65,9 @@ class TestALeRCEParser(unittest.TestCase):
         parser = ALeRCEParser(extra_fields=False)
 
         response_1 = parser.parse(self._ztf_sample)
-        response_2 = parser.parse(self._decat_sample)
+        # response_2 = parser.parse(self._decat_sample)
         response_3 = parser.parse(self._atlas_sample)
 
         self.assertEqual(len(response_1), len(self._ztf_sample))
-        self.assertEqual(len(response_2), len(self._decat_sample))
+        # self.assertEqual(len(response_2), len(self._decat_sample))
         self.assertEqual(len(response_3), len(self._atlas_sample))
