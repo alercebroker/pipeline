@@ -259,15 +259,18 @@ class GenericSaveStep(GenericStep):
     """
 
     def get_objects(self, oids):
-        objects = self.driver.query(Object).filter(model=Object,field="_id", op="in", values=oids)
+        filter_by = {"_id": {"$in": oids.tolist()}}
+        objects = self.driver.query(Object).find_all(collection=Object, filter_by=filter_by, paginate=False)
         return pd.DataFrame(objects,columns = OBJ_KEYS)
 
     def get_detections(self, oids):
-        detections = self.driver.query(Detection).filter(model=Detection,field="aid", op="in", values=oids)
+        filter_by = {"aid": {"$in": oids.tolist()}}
+        detections = self.driver.query(Detection).find_all(collection=Detection, filter_by=filter_by, paginate=False)
         return pd.DataFrame(detections,columns = DET_KEYS)
 
     def get_non_detections(self, oids):
-        non_detections = self.driver.query(NonDetection).filter(model=NonDetection, field="aid", op="in", values=oids)
+        filter_by = {"aid": {"$in": oids.tolist()}}
+        non_detections = self.driver.query(NonDetection).find_all(collection=NonDetection, filter_by=filter_by, paginate=False)
         return pd.DataFrame(non_detections)
 
     def remove_stamps(self, alerts):
@@ -294,7 +297,7 @@ class GenericSaveStep(GenericStep):
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
             for object in dict_to_update:
-                self.driver.query().update(object["aid"], object, Object)
+                self.driver.query().update(Object,filter_by={"_id": object["aid"]}, replacement=object)
             
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
