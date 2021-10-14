@@ -4,6 +4,8 @@ from apf.core import get_class
 from apf.producers import KafkaProducer
 import sys
 sys.path.insert(0, '../../../../')
+from survey_parser_plugins import ALeRCEParser
+from survey_parser_plugins.parsers import ATLASParser
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.models import (
@@ -275,8 +277,7 @@ class GenericSaveStep(GenericStep):
 
     def remove_stamps(self, alerts):
         #TODO añadir cutoutTemplate a atlas alerts
-        for k in ["cutoutDifference", "cutoutScience"]:#, "cutoutTemplate"]:
-            del alerts[k]
+        del alerts["stamps"]
     
     def insert_objects(self, objects):
         new_objects = objects["new"]
@@ -411,13 +412,13 @@ class GenericSaveStep(GenericStep):
 
         return detections, non_detections
 
-    def preprocess_lightcurves(self, detections, alerts):
+    def preprocess_lightcurves(self, alerts):
 
-        oids = detections.aid.values
+        oids = alerts.aid.values
 
-        detections.loc[:, "parent_candid"] = None
-        detections.loc[:, "has_stamp"] = True
-        filtered_detections = detections.loc[:, detections.columns.isin(DET_KEYS)]
+        alerts.loc[:, "parent_candid"] = None
+        alerts.loc[:, "has_stamp"] = True
+        filtered_detections = alerts.loc[:, alerts.columns.isin(DET_KEYS)]
         filtered_detections.loc[:, "new"] = True
 
         light_curves = self.get_lightcurves(oids)
@@ -440,7 +441,7 @@ class GenericSaveStep(GenericStep):
         prv_detections = []
         prv_non_detections = []
         for _, alert in alerts.iterrows():
-            if "prv_candidates" in alert:
+            if "prv_candidates" in alert.extra_fields:
                 (
                     alert_prv_detections,
                     alert_prv_non_detections,
@@ -517,8 +518,10 @@ class GenericSaveStep(GenericStep):
         # Casting to a dataframe
         self.logger.info(f"Preprocessing alerts")
 
-        self.parser.parse(messages)
-        alerts = pd.DataFrame(messages)
+        parser = ALeRCEParser()
+        response = parser.parse(messages)
+
+        alerts = pd.DataFrame(response)
         alerts.drop_duplicates("candid", inplace=True)
         alerts.reset_index(inplace=True)
         # Removing stamps
@@ -526,23 +529,19 @@ class GenericSaveStep(GenericStep):
 
         # Getting just the detections
         self.logger.info(f"Doing correction to detections")
-        detections = pd.DataFrame(list(alerts["candidate"]))
-        detections.loc[:, "sid"] = alerts["surveyId"]
-        detections.loc[:, "aid"] = alerts["alerceId"]
-        detections.loc[:, "oid"] = alerts["objectId"]
 
         #corrected = self.do_correction(detections)
         # Index was changed to candid in do_correction
-        detections.reset_index(inplace=True)
+        alerts.reset_index(inplace=True)
 
         # Getting data from database, and processing prv_candidates
         self.logger.info(f"Processing light curves")
-        light_curves = self.preprocess_lightcurves(detections, alerts)
+        light_curves = self.preprocess_lightcurves(alerts)
 
         # Getting other tables
-        objects = self.get_objects(detections["aid"].unique())
+        objects = self.get_objects(alerts["aid"].unique())
 
-        objects = self.preprocess_objects(objects, light_curves, detections)
+        objects = self.preprocess_objects(objects, light_curves, alerts)
 
         self.logger.info(f"Setting objects flags")
         # Setting flags in objects
@@ -559,5 +558,4 @@ class GenericSaveStep(GenericStep):
         #self.produce(alerts, light_curves)
 
         del alerts
-        del detections
         del light_curves
