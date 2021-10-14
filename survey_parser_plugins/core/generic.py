@@ -7,8 +7,8 @@ class GenericAlert:
     """
     Class for keeping track of an alert of astronomical surveys.
     """
-    oid: str  # name of object's survey
-    sid: str  # identifier of survey (name)
+    oid: str  # name of object (name from survey)
+    sid: str  # identifier of survey (name of survey)
     candid: int
     mjd: float
     fid: int
@@ -21,7 +21,7 @@ class GenericAlert:
     bimage: float or None
     xpos: float or None
     ypos: float or None
-    aid: int = None  # alerce id to the object
+    aid: int = None  # alerce id of the object
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 
@@ -43,11 +43,20 @@ class SurveyParser(abc.ABC):
     @abc.abstractmethod
     def can_parse(self, message: dict) -> bool:
         """
+        :param message: message of any survey.
         Note that the Creator may also provide some default implementation of the factory method.
         """
 
     @classmethod
     def _generic_alert_message(cls, message: dict, generic_alert_message_key_mapping: dict) -> dict:
+        """
+        Create the generic content from any survey. Also add `extra_fields` key with all data that isn't generic key.
+
+        :param message: message of any survey.
+        :param generic_alert_message_key_mapping: dictionary with the mapping from GenericAlert to survey schema.
+        for example {"generic_key": "survey_key"}. If the survey hasn't some key from generic schema, put None.
+        :return:
+        """
         generic_alert_message = {}
         for key, value in generic_alert_message_key_mapping.items():
             if value is None:
@@ -64,8 +73,16 @@ class SurveyParser(abc.ABC):
 
     @classmethod
     def get_source(cls) -> str:
+        """
+
+        :return: source of the parser.
+        """
         return cls._source
 
     @classmethod
     def get_key_mapping(cls) -> dict:
+        """
+
+        :return: dictionary for map raw message to generic alerts.
+        """
         return cls._generic_alert_message_key_mapping
