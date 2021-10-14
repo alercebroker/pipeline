@@ -25,6 +25,9 @@ class GenericAlert:
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 
+    def __getitem__(self, item):
+        return self.__getattribute__(item)
+
 
 class SurveyParser(abc.ABC):
     _source = None
