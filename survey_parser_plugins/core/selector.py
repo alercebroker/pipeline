@@ -32,8 +32,7 @@ class ParserSelector:
                 if self.alerce_id:
                     self.add_alerce_id(parsed)
                 return parsed
-        else:
-            raise Exception("This message can't be parsed")
+        raise Exception("This message can't be parsed")
 
     def parse(self, messages: List[dict]) -> List[GenericAlert]:
         return list(map(self._parse, messages))

@@ -44,9 +44,6 @@ class DECATParser(SurveyParser):
         except KeyError:
             raise KeyError("This parser can't parse message")
 
-    @classmethod
-    def get_source(cls) -> str:
-        return cls._source
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:

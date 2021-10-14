@@ -23,10 +23,12 @@ class GenericAlert:
     ypos: float or None
     alerce_id: int = None
     extra_fields: dict = field(default_factory=dict)
+    stamps: dict = field(default_factory=dict)
 
 
 class SurveyParser(abc.ABC):
     _source = None
+    _generic_alert_message_key_mapping = {}
 
     @abc.abstractmethod
     def parse_message(self, message: GenericAlert) -> GenericAlert:
@@ -35,13 +37,6 @@ class SurveyParser(abc.ABC):
 
         Note that the Creator may also provide some default implementation of the factory method.
         """
-
-    @abc.abstractmethod
-    def get_source(self) -> str:
-        """
-        Note that the Creator may also provide some default implementation of the factory method.
-        """
-
     @abc.abstractmethod
     def can_parse(self, message: dict) -> bool:
         """
@@ -63,3 +58,11 @@ class SurveyParser(abc.ABC):
             if k not in generic_alert_message_key_mapping.values()
         }
         return generic_alert_message
+
+    @classmethod
+    def get_source(cls) -> str:
+        return cls._source
+
+    @classmethod
+    def get_key_mapping(cls) -> dict:
+        return cls._generic_alert_message_key_mapping

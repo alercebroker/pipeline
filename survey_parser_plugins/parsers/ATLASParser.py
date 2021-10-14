@@ -19,22 +19,27 @@ class ATLASParser(SurveyParser):
     }
 
     @classmethod
-    def parse_message(cls, message: dict) -> GenericAlert:
+    def parse_message(cls, message) -> GenericAlert:
         try:
             oid = message["objectId"]
-            message = message["candidate"].copy()
-            generic_alert_message = cls._generic_alert_message(
-                message, cls._generic_alert_message_key_mapping)
+            # get stamps
+            stamps = {
+                "cutoutScience": message["cutoutScience"]["stampData"],
+                "cutoutDifference": message["cutoutDifference"]["stampData"]
+            }
+
+            candidate = message["candidate"]
+            generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
+
             # inclusion of extra attributes
             generic_alert_message['survey_id'] = oid
             generic_alert_message['survey_name'] = cls._source
+            # inclusion of stamps
+            generic_alert_message["stamps"] = stamps
+            # attributes modification
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
-
-    @classmethod
-    def get_source(cls):
-        return cls._source
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
