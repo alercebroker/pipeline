@@ -24,8 +24,8 @@ class DECATParser(SurveyParser):
             oid = message["objectid"]
             message = message["sources"].copy()
             return [GenericAlert(
-                survey_id=oid,
-                survey_name=cls._source,
+                oid=oid,
+                sid=cls._source,
                 candid=msg['sourceid'],
                 mjd=msg['mjd'],
                 fid=cls._get_filter(msg['filter']),

@@ -32,8 +32,8 @@ class ATLASParser(SurveyParser):
             generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
 
             # inclusion of extra attributes
-            generic_alert_message['survey_id'] = oid
-            generic_alert_message['survey_name'] = cls._source
+            generic_alert_message['oid'] = oid
+            generic_alert_message['sid'] = cls._source
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification

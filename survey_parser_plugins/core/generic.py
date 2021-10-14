@@ -7,8 +7,8 @@ class GenericAlert:
     """
     Class for keeping track of an alert of astronomical surveys.
     """
-    survey_id: str
-    survey_name: str
+    oid: str  # name of object's survey
+    sid: str  # identifier of survey (name)
     candid: int
     mjd: float
     fid: int
@@ -21,7 +21,7 @@ class GenericAlert:
     bimage: float or None
     xpos: float or None
     ypos: float or None
-    alerce_id: int = None
+    aid: int = None  # alerce id to the object
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 

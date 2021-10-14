@@ -14,7 +14,7 @@ class ParserSelector:
 
     @classmethod
     def add_alerce_id(cls, message: GenericAlert) -> GenericAlert:
-        message.alerce_id = id_generator(message.ra, message.dec)
+        message.aid = id_generator(message.ra, message.dec)
         return message
 
     def register_parser(self, parser: SurveyParser) -> None:
