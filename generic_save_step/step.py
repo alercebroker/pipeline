@@ -20,7 +20,8 @@ import pandas as pd
 
 OBJ_KEYS = ["aid", "sid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
 DET_KEYS = ["aid", "sid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
-NON_DET_KEYS = ["aid", "sid", "mjd", "diffmaglim", "fid", "extra_fields"]
+NON_DET_KEYS = ["oid", "sid", "mjd", "diffmaglim", "fid"]
+
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
 OBJECT_UPDATE_PARAMS = [
@@ -273,7 +274,7 @@ class GenericSaveStep(GenericStep):
     def get_non_detections(self, oids):
         filter_by = {"aid": {"$in": oids.tolist()}}
         non_detections = self.driver.query(NonDetection).find_all(collection=NonDetection, filter_by=filter_by, paginate=False)
-        return pd.DataFrame(non_detections)
+        return pd.DataFrame(non_detections,columns = NON_DET_KEYS)
 
     def remove_stamps(self, alerts):
         #TODO añadir cutoutTemplate a atlas alerts
@@ -307,6 +308,12 @@ class GenericSaveStep(GenericStep):
         for object in dict_detections:
             del object['new']
         self.driver.query().bulk_insert(dict_detections, Detection)
+
+    def insert_non_detections(self, non_detections):
+        self.logger.info(f"Inserting {len(non_detections)} new non_detections")
+        non_detections.replace({np.nan: None}, inplace=True)
+        dict_non_detections = non_detections.to_dict("records")
+        self.driver.query().bulk_insert(dict_non_detections, NonDetection)
 
     def apply_objstats_from_correction(self, df):
         response = {}
@@ -383,10 +390,19 @@ class GenericSaveStep(GenericStep):
         )
         return light_curves
 
+    def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
+        non_detection = {
+            "oid": object_id,
+            "mjd": candidate["mjd"],
+            "diffmaglim": candidate["diffmaglim"],
+            "fid": candidate["fid"],
+        }
+        return non_detection
+
     def get_prv_candidates(self, alert):
-        prv_candidates = alert["prv_candidates"]
+        prv_candidates = alert["extra_fields"]["prv_candidates"]
         candid = alert["candid"]
-        oid = alert["objectId"]
+        oid = alert["oid"]
 
         detections = []
         non_detections = []
@@ -465,7 +481,7 @@ class GenericSaveStep(GenericStep):
             # Doing correction
             if len(prv_detections) > 0:
                 prv_detections["jdendref"] = np.nan
-                prv_detections = self.do_correction(prv_detections)
+                # prv_detections = self.do_correction(prv_detections)
 
                 #   Getting columns
                 current_keys = [
@@ -481,9 +497,7 @@ class GenericSaveStep(GenericStep):
             prv_non_detections = pd.DataFrame(prv_non_detections)
             # Using round 5 to have 5 decimals of precision
             prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
-            light_curves["non_detections"].loc[:, "round_mjd"] = light_curves[
-                "non_detections"
-            ]["mjd"].round(5)
+            light_curves["non_detections"].loc[:, "round_mjd"] = light_curves["non_detections"]["mjd"].round(5)
 
             prv_non_detections.drop_duplicates(["oid", "fid", "round_mjd"])
 
@@ -554,6 +568,8 @@ class GenericSaveStep(GenericStep):
         self.insert_objects(objects)
         new_detections = light_curves["detections"]["new"]
         self.insert_detections(light_curves["detections"].loc[new_detections])
+        new_non_detections = light_curves["non_detections"]["new"]
+        self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
 
         #self.produce(alerts, light_curves)
 
