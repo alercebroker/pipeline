@@ -1,8 +1,10 @@
 import abc
 from math import ceil
 
+
 class DatabaseCreator(abc.ABC):
-    """
+    """Abstract DatabaseConnection creator class.
+
     The Creator class declares the factory method that is supposed to return an
     object of a Product class. The Creator's subclasses usually provide the
     implementation of this method.
@@ -10,111 +12,102 @@ class DatabaseCreator(abc.ABC):
 
     @abc.abstractmethod
     def create_database(self):
-        """
+        """Abstract factory method.
+
         Note that the Creator may also provide some default implementation of
         the factory method.
         """
         pass
 
+
 class DatabaseConnection(abc.ABC):
-    """
+    """Abstract DatabaseConnection class.
+
     Main database connection interface declares common functionality
     to all databases
     """
 
     @abc.abstractmethod
     def connect(self):
-        """
-        Initiates the database connection.
-        """
+        """Initiate the database connection."""
         pass
 
     @abc.abstractmethod
     def create_db(self):
-        """
-        Creates database collections or tables
-        """
+        """Create database collections or tables."""
         pass
 
     @abc.abstractmethod
     def drop_db(self):
-        """
-        Removes database collections or tables
-        """
+        """Remove database collections or tables."""
         pass
 
     @abc.abstractmethod
     def query(self, *args):
-        """
-        Gets a query object
-        """
+        """Get a query object."""
         pass
 
 
 def new_DBConnection(creator: DatabaseCreator) -> DatabaseConnection:
-    """
-    The client code works with an instance of a concrete creator, albeit through
-    its base interface. As long as the client keeps working with the creator via
-    the base interface, you can pass it any creator's subclass.
-    """
+    """Create a new database connection.
 
+    The client code works with an instance of a concrete creator,
+    albeit through its base interface. As long as the client keeps working with
+    the creator via the base interface, you can pass it any creator's subclass.
+    """
     return creator.create_database()
 
+
 class BaseQuery(abc.ABC):
+    """Abstract Query class."""
+
     @abc.abstractmethod
     def check_exists(self, model, filter_by):
-        """
-        Checks if a model exists in the database
-        """
+        """Check if a model exists in the database."""
         pass
 
     @abc.abstractmethod
     def get_or_create(self, model, filter_by, **kwargs):
-        """
-        Creates a model if it doesn't exist in the database.
+        """Create a model if it doesn't exist in the database.
+
         It always returns a model instance and whether it was created or not.
         """
         pass
 
     @abc.abstractmethod
     def update(self, instance, args):
-        """
-        Updates a model instance with specified args
-        """
+        """Update a model instance with specified args."""
         pass
 
     @abc.abstractmethod
     def paginate(self, page=1, per_page=10, count=True):
-        """
-        Returns a pagination object from this query
-        """
+        """Return a pagination object from this query."""
         pass
 
     @abc.abstractmethod
     def bulk_insert(self, objects, model):
-        """
-        Inserts multiple objects to the database
-        """
+        """Insert multiple objects to the database."""
         pass
 
     @abc.abstractmethod
     def find_all(self):
-     """
-     Retrieves all items from the result of this query
-     """
-     pass
+        """Retrieve all items from the result of this query."""
+        pass
 
     @abc.abstractmethod
     def find_one(self):
-     """
-     Retrieves only one item from the result of this query.
-     Returns None if result is empty.
-     """
-     pass
+        """Retrieve only one item from the result of this query.
+
+        Returns None if result is empty.
+        """
+        pass
 
 
 class Pagination:
+    """Paginate responses from the database."""
+
     def __init__(self, query, page, per_page, total, items):
+        """Set attributes from args."""
         self.query = query
         self.page = page
         self.per_page = per_page
@@ -123,7 +116,7 @@ class Pagination:
 
     @property
     def pages(self):
-        """The total number of pages"""
+        """Get total number of pages."""
         if self.per_page == 0 or self.total is None:
             pages = 0
         else:
@@ -131,7 +124,7 @@ class Pagination:
         return pages
 
     def prev(self):
-        """Returns a :class:`Pagination` object for the previous page."""
+        """Return a :class:`Pagination` object for the previous page."""
         assert (
             self.query is not None
         ), "a query object is required for this method to work"
@@ -139,18 +132,18 @@ class Pagination:
 
     @property
     def prev_num(self):
-        """Number of the previous page."""
+        """Get number of the previous page."""
         if not self.has_prev:
             return None
         return self.page - 1
 
     @property
     def has_prev(self):
-        """True if a previous page exists"""
+        """Check if a previous page exists."""
         return self.page > 1
 
     def next(self):
-        """Returns a :class:`Pagination` object for the next page."""
+        """Return a :class:`Pagination` object for the next page."""
         assert (
             self.query is not None
         ), "a query object is required for this method to work"
@@ -158,98 +151,19 @@ class Pagination:
 
     @property
     def has_next(self):
-        """True if a next page exists."""
+        """Check if a next page exists."""
         return self.page < self.pages
 
     @property
     def next_num(self):
-        """Number of the next page"""
+        """Get number of the next page."""
         if not self.has_next:
             return None
         return self.page + 1
 
 
-class AbstractClass:
-    """
-    Abstract Class model
-
-    Attributes
-    ----------
-    name : str
-        the class name
-    acronym : str
-        the short class name
-    """
-
-    name = None
-    acronym = None
-
-    def get_taxonomies(self):
-        """
-        Gets the taxonomies that the class instance belongs to
-        """
-        pass
-
-    def get_classifications(self):
-        """
-        Gets all classifications with the class
-        """
-        pass
-
-
-class AbstractTaxonomy:
-    """
-    Abstract Taxonomy model
-
-    Attributes
-    ----------
-    name : str
-        the taxonomy name
-    """
-
-    name = None
-
-    def get_classes(self):
-        """
-        Gets the classes that a taxonomy uses
-        """
-        pass
-
-    def get_classifiers(self):
-        """
-        Gets the classifiers using the taxonomy
-        """
-        pass
-
-
-class AbstractClassifier:
-    """
-    Abstract Classifier model
-
-    Attributes
-    ----------
-    name : str
-        name of the classifier
-    """
-
-    name = None
-
-    def get_classifications(self):
-        """
-        Gets classifications done by the classifier
-        """
-        pass
-
-    def get_taxonomy(self):
-        """
-        Gets the taxonomy the classifier is using
-        """
-        pass
-
-
 class AbstractObject:
-    """
-    Abstract Object model
+    """Abstract Object model.
 
     Attributes
     ----------
@@ -294,74 +208,13 @@ class AbstractObject:
     lastmjd = None
     step_id_corr = None
 
-    def get_classifications(self):
-        """
-        Gets all classifications on the object
-        """
-        pass
-
-    def get_magnitude_statistics(self):
-        """
-        Gets magnitude statistics for the object
-        """
-        pass
-
-    def get_xmatches(self):
-        """
-        Gets crossmatch information for the object
-        """
-        pass
-
-    def get_features(self):
-        """
-        Gets features associated with the object
-        """
-        pass
-
-    def get_detections(self):
-        """
-        Gets all detections of the object
-        """
-        pass
-
-    def get_non_detections(self):
-        """
-        Gets all non_detections of the object
-        """
-        pass
-
     def get_lightcurve(self):
-        """
-        Gets the lightcurve of the object
-        """
-        pass
-
-
-class AbstractXmatch:
-    """
-    Abstract Crossmatch model
-
-    Attributes
-    ----------
-    catalog_id : str
-        name identifying the catalog
-    catalog_object_id : str
-        the catalog's name identifier for the object
-    """
-
-    catalog_id = None
-    catalog_object_id = None
-
-    def get_object(self):
-        """
-        Gets the object referring to the crossmatch
-        """
+        """Get the lightcurve of the object."""
         pass
 
 
 class AbstractMagnitudeStatistics:
-    """
-    Abstract Magnitude Statistics model
+    """Abstract Magnitude Statistics model.
 
     Attributes
     ----------
@@ -406,65 +259,9 @@ class AbstractMagnitudeStatistics:
     lastmjd = None
     step_id_corr = None
 
-    def get_object(self):
-        """
-        Gets the object associated with the stats
-        """
-        pass
-
-
-class AbstractClassification:
-    """
-    Abstract Classification model
-
-    Attributes
-    ----------
-    class_name : str
-        name of the class
-    probability : float
-        probability of the classification
-    probabilities : json
-        probabilities for each class
-    """
-
-    probability = None
-    probabilities = None
-
-    def get_class(self):
-        """
-        Gets the class of the classification
-        """
-        pass
-
-    def get_object(self):
-        """
-        Gets the object classifified
-        """
-        pass
-
-    def get_classifier(self):
-        """
-        Gets the classifier used
-        """
-        pass
-
-
-class AbstractFeatures:
-    """
-    Abstract Features model
-
-    Attributes
-    ---------
-    version : str
-        name of the version used for features
-    """
-
-    version = None
-
 
 class AbstractNonDetection:
-    """
-    Abstract model for non detections
+    """Abstract model for non detections.
 
     Attributes
     ----------
@@ -480,16 +277,9 @@ class AbstractNonDetection:
     diffmaglim = None
     fid = None
 
-    def get_object(self):
-        """
-        Gets the object related
-        """
-        pass
-
 
 class AbstractDetection:
-    """
-    Abstract model for detections
+    """Abstract model for detections.
 
     Attributes
     ----------
@@ -557,48 +347,10 @@ class AbstractDetection:
     has_stamp = None
     step_id_corr = None
 
-    def get_object(self):
-        """
-        Gets the object related
-        """
-        pass
-
-class AbstractOutlierDetector:
-    """
-    Abstract class for outlier detection models
-
-    Attributes
-    ------------
-    name : str
-        a name for identifying the model
-    """
-
-    name = None
-
-    def get_outlier_scores(self):
-        """
-        Gets all the outlier scores produced by the detector
-        """
-        pass
-
-
-class AbstractOutlierScore:
-    """
-    Abstract class for outlier scores
-
-    Attributes
-    ----------
-    score : float
-        the main metric for identifying outliers
-    scores : json
-        other scoring metrics for outliers
-    """
-
-    score = None
-    scores = None
-
 
 class AbstractDataquality:
+    """Abstract Dataquality model."""
+
     candid = None
     oid = None
     fid = None
@@ -634,6 +386,7 @@ class AbstractDataquality:
 
 
 class AbstractGaia_ztf:
+    """Abstract Gaia model."""
 
     oid = None
     candid = None
@@ -645,6 +398,7 @@ class AbstractGaia_ztf:
 
 
 class AbstractSs_ztf:
+    """Abstract ss_ztf model."""
 
     oid = None
     candid = None
@@ -654,6 +408,7 @@ class AbstractSs_ztf:
 
 
 class AbstractPs1_ztf:
+    """Abstract ps1_ztf model."""
 
     oid = None
     candid = None
@@ -683,6 +438,7 @@ class AbstractPs1_ztf:
 
 
 class AbstractReference:
+    """Abstract reference model."""
 
     oid = None
     rfid = None
@@ -702,6 +458,7 @@ class AbstractReference:
 
 
 class AbstractPipeline:
+    """Abstract pipeline model."""
 
     pipeline_id = None
     step_id_corr = None
@@ -713,6 +470,7 @@ class AbstractPipeline:
 
 
 class AbstractStep:
+    """Abstract Step model."""
 
     step_id = None
     name = None

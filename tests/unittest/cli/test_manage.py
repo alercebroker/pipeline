@@ -23,10 +23,27 @@ class TestManage(unittest.TestCase):
         alembic.config.main.assert_called()
 
     @mock.patch("db_plugins.cli.manage.init_sql")
-    def test_initdb(self, mock_init_sql):
+    def test_initdb_sql(self, mock_init_sql):
         result = self.runner.invoke(manage.initdb)
         assert result.exit_code == 0
         mock_init_sql.assert_called()
+        assert (
+            "Database created with credentials from {}".format(self.settings_path)
+            in result.output
+        )
+
+
+    @mock.patch("db_plugins.db.mongo.MongoConnection", autospec=True)
+    def test_init_mongo(self, mock_connection):
+        manage.init_mongo({"MONGO": {"USER": "", "HOST": "", "PASSWORD":"", "PORT":"", "DATABASE":""}}, db=mock_connection)
+        mock_connection.connect.assert_called()
+
+
+    @mock.patch("db_plugins.cli.manage.init_mongo")
+    def test_initdb_mongo(self, mock_init_mongo):
+        result = self.runner.invoke(manage.initdb)
+        assert result.exit_code == 0
+        mock_init_mongo.assert_called()
         assert (
             "Database created with credentials from {}".format(self.settings_path)
             in result.output

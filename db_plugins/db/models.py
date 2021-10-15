@@ -1,5 +1,9 @@
+"""Abstract Model definitions."""
 
-class Object():
+
+class Object:
+    """Abstract Object class."""
+
     __tablename__ = "object"
 
     alerce_id = None
@@ -11,10 +15,10 @@ class Object():
     sigmara = None
     sigmadec = None
 
-    def __repr__(self):
-        return "<Object(aid='%s')>" % (self.alerce_id)
 
-class Detection():
+class Detection:
+    """Abstract Detection class."""
+
     __tablename__ = "detection"
 
     aid = None
@@ -29,14 +33,10 @@ class Detection():
     sigmag = None
     extra_fields = None
 
-    def __repr__(self):
-        return "<Detection(candid='%i', fid='%i', aid='%s')>" % (
-            self.candid,
-            self.fid,
-            self.aid,
-        )
 
-class NonDetection():
+class NonDetection:
+    """Abstract NonDetection class."""
+
     __tablename__ = "non_detection"
 
     alerce_id = None
@@ -46,7 +46,10 @@ class NonDetection():
     fid = None
     extra_fields = None
 
-class Classification():
+
+class Classification:
+    """Abstract Classification class."""
+
     __tablename__ = "classification"
 
     alerce_id = None
@@ -60,7 +63,10 @@ class Classification():
     last_updated = None
     created_on = None
 
-class Features():
+
+class Features:
+    """Abstract Features class."""
+
     __tablename__ = "features"
 
     alerce_id = None
@@ -69,7 +75,10 @@ class Features():
     created_on = None
     last_updated = None
 
-class Xmatch():
+
+class Xmatch:
+    """Abstract Xmatch class."""
+
     __tablename__ = "xmatch"
 
     alerce_id = None

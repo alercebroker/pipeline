@@ -3,20 +3,16 @@ from sqlalchemy import (
     Integer,
     BigInteger,
     String,
-    Table,
     ForeignKey,
     Float,
     Boolean,
-    JSON,
     ARRAY,
     Index,
     DateTime,
-    UniqueConstraint,
     ForeignKeyConstraint,
-    text,
 )
 from sqlalchemy.orm import relationship
-from .. import generic
+from db_plugins.db import generic
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -83,6 +79,7 @@ class Object(Base, generic.AbstractObject):
     )
 
     def get_lightcurve(self):
+        """Get the lightcurve of the object."""
         return {
             "detections": self.detections,
             "non_detections": self.non_detections,

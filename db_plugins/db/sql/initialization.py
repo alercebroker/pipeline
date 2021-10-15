@@ -20,9 +20,8 @@ def init_sql_database(config, db=None):
 
 
 def init(DB_CONFIG):
-    db_config = DB_CONFIG["SQL"]
-
     if "SQL" in DB_CONFIG:
+        db_config = DB_CONFIG["SQL"]
         required_key = satisfy_keys(set(db_config.keys()))
         if len(required_key) == 0:
             db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
