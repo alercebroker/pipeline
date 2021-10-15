@@ -1,7 +1,7 @@
 from typing import List
-from survey_parser_plugins.core.generic import GenericAlert, SurveyParser
-from survey_parser_plugins.parsers import ATLASParser, ZTFParser
-from survey_parser_plugins.core.id_generator import id_generator
+from .generic import GenericAlert, SurveyParser
+from ..parsers import ATLASParser, ZTFParser
+from .id_generator import id_generator
 
 
 class ParserSelector:

@@ -1,4 +1,4 @@
-from survey_parser_plugins.core import GenericAlert, SurveyParser
+from ..core import GenericAlert, SurveyParser
 
 
 class ZTFParser(SurveyParser):
