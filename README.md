@@ -5,12 +5,13 @@
 
 Tool to unify content of messages of different surveys for the multi-stream processing.
 
-The basic generic schema is (in progress):
+The generic schema is:
 
 ```python
 @dataclass
 class GenericAlert:
-    survey_id: str
+    oid: str
+    sid: str
     candid: int
     mjd: float
     fid: int
@@ -23,16 +24,19 @@ class GenericAlert:
     bimage: float
     xpos: float
     ypos: float
-    alerce_id: int = None
+    aid: int = None
     extra_fields: dict = field(default_factory=dict)
-
+    stamps: dict = field(default_factory=dict)
 ```
+
+Where `extra_fields` is a dictionary that has the complement of data that is not generic, that is, the rest of the data that comes from the alert.
+The `stamps` is a dictionary with respective cutouts.
 
 The main idea is to recover the useful fields for the massive data processing. The parsers are responsible for filtering only useful information from sources:
 - ATLAS (version 0.0.1. Since 2021/10/12)
 - ZTF (version 0.0.1. Since 2021/10/12)
 
-The parsers receive a list of messages (dictionaries in python) and return a list of dictionaries with the selected key-value.
+The parsers receive a list of messages (messages = dictionaries in python) and return a list of dictionaries with the selected key-value.
 
 ## Developer set up
 
@@ -44,7 +48,7 @@ pip install -e .
 
 ## Usage
 
-For use this package only instance a ParseSelector and register some survey's parser developed by ALeRCE team. The example of below, show you how to use a basic parser that use ATLASParse.
+For use this package only instance a ParseSelector and register some survey's parser developed by ALeRCE team. The example of below, show you how to use a basic parser that use ATLASParser.
 
 ```python
 from survey_parser_plugins.core import ParserSelector
@@ -96,7 +100,8 @@ An output example of ALeRCEParser can be:
     "sigmag": 0.12155136466026306,
     "aimage": 0.39500001072883606,
     "bimage": 0.3700000047683716,
-    "extra_fields": null,
+    "extra_fields": {...},
+    "stamps": {...},
     "alerce_id": 1001112300121616800
   }, 
   {
@@ -111,7 +116,8 @@ An output example of ALeRCEParser can be:
     "sigmag": 0.19233156740665436,
     "aimage": 0.7319999933242798,
     "bimage": 0.6520000100135803,
-    "extra_fields": null,
+    "extra_fields": {...},
+    "stamps": {...},
     "alerce_id": 1000915631022957000
   }
 ]
