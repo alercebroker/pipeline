@@ -6,8 +6,8 @@ class Object:
 
     __tablename__ = "object"
 
-    alerce_id = None
-    survey_id = None
+    aid = None
+    sid = None
     lastmjd = None
     firstmjd = None
     meanra = None
@@ -39,8 +39,8 @@ class NonDetection:
 
     __tablename__ = "non_detection"
 
-    alerce_id = None
-    survey_id = None
+    aid = None
+    sid = None
     mjd = None
     diffmaglim = None
     fid = None

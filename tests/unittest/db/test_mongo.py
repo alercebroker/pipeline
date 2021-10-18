@@ -1,1 +1,2 @@
-class MongoConnectionTest
+class MongoConnectionTest:
+    pass

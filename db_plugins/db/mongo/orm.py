@@ -18,6 +18,21 @@ class Metadata:
         client.drop_database(self.database)
 
 
+class ModelMetadata:
+    def __init__(self, tablename: str, fields: dict, indexes: list):
+        self.tablename = tablename
+        self.fields = fields
+        self.indexes = indexes
+
+    def __repr__(self):
+        dict_repr = {
+            "tablename": self.tablename,
+            "fields": self.fields,
+            "indexes": self.indexes,
+        }
+        return str(dict_repr)
+
+
 class BaseMetaClass(type):
     """Metaclass for Base model class that creates mappings."""
 
@@ -27,26 +42,20 @@ class BaseMetaClass(type):
         """Create class with mappings and other metadata."""
         if name == "Base":
             return type.__new__(cls, name, bases, attrs)
-        indexes = []
-        tablename = name
-        fields = {}
-        class_dict = {}
+        class_dict = {"_meta": ModelMetadata(name, {}, [])}
         for k, v in attrs.items():
             if k == "__table_args__":
                 for arg in v:
                     if isinstance(arg, IndexModel):
-                        indexes.append(arg)
+                        class_dict["_meta"].indexes.append(arg)
             if k == "__tablename__":
-                tablename = v
+                class_dict["_meta"].tablename = v
             if isinstance(v, Field):
-                fields[v.name] = v
+                class_dict["_meta"].fields[k] = v
 
-        class_dict["__indexes__"] = indexes
-        class_dict["__fields__"] = fields
-        class_dict["__tablename__"] = tablename
-        cls.metadata.collections[tablename] = {
-            "indexes": indexes,
-            "fields": fields,
+        cls.metadata.collections[class_dict["_meta"].tablename] = {
+            "indexes": class_dict["_meta"].indexes,
+            "fields": class_dict["_meta"].fields,
         }
         return type.__new__(cls, name, bases, class_dict)
 
@@ -55,12 +64,14 @@ def base_creator():
     """Create a Base class for declarative model definition."""
 
     class Base(dict, metaclass=BaseMetaClass):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, **kwargs):
             model = {}
-            for field in self.__fields__:
+            for field in self._meta.fields:
                 try:
-                    if isinstance(self.__fields__[field], SpecialField):
-                        model[field] = self.__fields__[field].callback(**kwargs)
+                    if isinstance(self._meta.fields[field], SpecialField):
+                        model[field] = self._meta.fields[field].callback(
+                            Model=self.__class__, **kwargs
+                        )
                     else:
                         model[field] = kwargs[field]
                 except KeyError:
@@ -69,21 +80,7 @@ def base_creator():
                             self.__class__.__name__, field
                         )
                     )
-            super(Base, self).__init__(*args, **model)
-
-        def __getattr__(self, key):
-            try:
-                return self[key]
-            except KeyError:
-                raise AttributeError(
-                    "{} has no attribute {}".format(
-                        self.__class__.__name__,
-                        key,
-                    )
-                )
-
-        def __setattr__(self, key, value):
-            self[key] = value
+            super(Base, self).__init__(**model)
 
         def __str__(self):
             return dict.__str__(self)
@@ -95,11 +92,11 @@ def base_creator():
 
 
 class Field:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
+        pass
 
 
 class SpecialField(Field):
-    def __init__(self, name, callback):
-        super(SpecialField, self).__init__(name)
+    def __init__(self, callback):
+        super(SpecialField, self).__init__()
         self.callback = callback

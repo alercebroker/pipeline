@@ -11,7 +11,19 @@ from db_plugins.db.mongo.orm import base_creator, Field, SpecialField
 Base = base_creator()
 
 
-class Object(Base, generic_models.Object):
+def create_extra_fields(Model, **kwargs):
+    if "extra_fields" in kwargs:
+        return kwargs["extra_fields"]
+    else:
+        for field in Model._meta.fields:
+            try:
+                kwargs.pop(field)
+            except (KeyError):
+                pass
+        return kwargs
+
+
+class Object(generic_models.Object, Base):
     """Mongo implementation of the Object class.
 
     Contains definitions of indexes and custom attributes like loc.
@@ -23,25 +35,57 @@ class Object(Base, generic_models.Object):
             "coordinates": [kwargs["meanra"], kwargs["meandec"]],
         }
 
-    alerce_id = Field("alerce_id")
-    survey_id = Field("survey_id")
-    lastmjd = Field("lastmjd")
-    firstmjd = Field("firstmjd")
-    loc = SpecialField("loc", loc_definition)
-    meanra = Field("meanra")
-    meandec = Field("meandec")
+    aid = Field()
+    sid = Field()
+    lastmjd = Field()
+    firstmjd = Field()
+    loc = SpecialField(loc_definition)
+    meanra = Field()
+    meandec = Field()
+    extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
-        IndexModel([("alerce_id", TEXT)]),
-        IndexModel([("survey_id", TEXT)]),
+        IndexModel([("aid", TEXT)]),
+        IndexModel([("sid", TEXT)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
         IndexModel([("meanra", ASCENDING)]),
         IndexModel([("meandec", ASCENDING)]),
     ]
+    __tablename__ = "object"
 
 
-class Detection(Base):
-    some_attr = None
-    __table_args__ = [IndexModel([("some_attr", TEXT)])]
+class Detection(Base, generic_models.Detection):
+
+    aid = Field()
+    sid = Field()
+    candid = Field()
+    mjd = Field()
+    fid = Field()
+    ra = Field()
+    dec = Field()
+    rb = Field()
+    mag = Field()
+    sigmag = Field()
+    extra_fields = SpecialField(create_extra_fields)
+    __table_args__ = [IndexModel([("aid", TEXT)])]
+    __tablename__ = "detection"
+
+
+class NonDetection(Base, generic_models.NonDetection):
+
+    aid = Field()
+    sid = Field()
+    mjd = Field()
+    diffmaglim = Field()
+    fid = Field()
+    extra_fields = SpecialField(create_extra_fields)
+
+    __table_args__ = [
+        IndexModel([("aid", TEXT)]),
+        IndexModel([("sid", TEXT)]),
+        IndexModel([("mjd", DESCENDING)]),
+        IndexModel([("fid", ASCENDING)]),
+    ]
+    __tablename__ = "non_detection"
