@@ -18,6 +18,15 @@ class ATLASParser(SurveyParser):
         "ypos": "Y",
     }
 
+    _fid_mapper = {
+        "g": 1,
+        "r": 2,
+        "i": 3,
+        "c": 4,
+        "o": 5,
+        "H": 6
+    }
+
     @classmethod
     def parse_message(cls, message) -> GenericAlert:
         try:
@@ -34,6 +43,8 @@ class ATLASParser(SurveyParser):
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
             generic_alert_message['sid'] = cls._source
+            generic_alert_message['aid'] = oid
+            generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification

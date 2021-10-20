@@ -54,8 +54,6 @@ class ParserSelector:
         for parser in self.parsers:
             if parser.can_parse(message):
                 parsed = parser.parse_message(message)
-                if self.alerce_id:
-                    self.add_alerce_id(parsed)
                 return parsed
         raise Exception("This message can't be parsed")
 
@@ -70,8 +68,8 @@ class ParserSelector:
 
 
 class ALeRCEParser(ParserSelector):
-    def __init__(self, alerce_id=True):
-        super().__init__(alerce_id=alerce_id)
+    def __init__(self):
+        super().__init__()
         self.parsers = {
             ATLASParser,
             ZTFParser
