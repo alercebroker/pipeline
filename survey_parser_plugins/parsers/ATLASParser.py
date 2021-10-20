@@ -44,7 +44,8 @@ class ATLASParser(SurveyParser):
             generic_alert_message['oid'] = oid
             generic_alert_message['sid'] = cls._source
             generic_alert_message['aid'] = oid
-            generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
+            if "filter" in candidate.keys():
+                generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification

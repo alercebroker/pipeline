@@ -1,6 +1,7 @@
 from ..core import GenericAlert, SurveyParser
 from ..core.id_generator import id_generator
 
+
 class ZTFParser(SurveyParser):
     _source = "ZTF"
     _generic_alert_message_key_mapping = {

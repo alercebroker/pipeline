@@ -12,17 +12,6 @@ class ParserSelector:
     def __repr__(self):
         return str(self.parsers)
 
-    @classmethod
-    def add_alerce_id(cls, alert: GenericAlert) -> GenericAlert:
-        """
-        Compute alerce_id and put on generic alert.
-
-        :param alert: GenericAlert of ALeRCE.
-        :return: GenericAlert with alerce id.
-        """
-        alert.aid = id_generator(alert.ra, alert.dec)
-        return alert
-
     def register_parser(self, parser: SurveyParser) -> None:
         """
         Add a parser to Selector.
