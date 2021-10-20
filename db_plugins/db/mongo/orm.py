@@ -82,6 +82,10 @@ def base_creator():
                     )
             super(Base, self).__init__(**model)
 
+        @classmethod
+        def set_database(cls, database):
+            cls.metadata.database = database
+
         def __str__(self):
             return dict.__str__(self)
 

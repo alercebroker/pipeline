@@ -1,35 +1,81 @@
-from pymongo.errors import WriteConcernError, WriteError
+from db_plugins.db.generic import BaseQuery, Pagination
+from db_plugins.db.mongo.models import Base
+from pymongo.collection import Collection as PymongoCollection
 
-from ..generic import BaseQuery, Pagination
 
-class MongoQuery(BaseQuery):
-
-    def __init__(self, connection, collection=None, **kwargs):
+def constructor_creator(collection_class):
+    def constructor(self, database, model: Base = None, *args, **kwargs):
         """Get / create a Mongo collection.
 
         Raises :class:`TypeError` if `name` is not
         """
-        self.__connection = connection
-        self.__collection = collection
+        self.model = model
+        self.initialized_collection = False
+        self._db = database
+        if "name" in kwargs:
+            # Ignore model and use pure pymongo API
+            collection_class.__init__(
+                self,
+                database=database,
+                *args,
+                **kwargs,
+            )
+            self.initialized_collection = True
+        elif model:
+            # Using custom ORM API
+            self.init_collection(model, **kwargs)
+            self.initialized_collection = True
 
-    def check_exists(self, collection=None, filter_by={}):
-        """
-        Check if record exists in database.
+    return constructor
 
-        :param session: The connection session
-        :param model: The class of the model to be instantiated
-        :param dict filter_by: attributes used to find object in the database
-        :param dict kwargs: attributes used to create the object that are not used in filter_by
 
-        :returns: True if object exists else False
+def init_collection_creator(collection_class):
+    def init_collection(self, model, **kwargs):
+        if self.initialized_collection:
+            return
+        if model:
+            self.model = model
+            collection_class.__init__(
+                self,
+                name=model._meta.tablename,
+                database=self._db,
+                **kwargs,
+            )
+            # get rid of temporary attribute
+            self.__delattr__("_db")
+            self.initialized_collection = True
+            return
+        if not self.model:
+            self.raise_collection_not_found_error()
 
-        """
-        self.__collection = self.__collection if self.__collection else collection
-        return self.__collection.count_documents(filter_by, limit=1) != 0
+    return init_collection
 
-    def get_or_create(self, collection=None, filter_by=None, **kwargs):
-        """
-        Initializes a model by creating it or getting it from the database if it exists
+
+def check_exists(
+    self,
+    model: Base = None,
+    filter_by={},
+):
+    """
+    Check if record exists in database.
+
+    :param session: The connection session
+    :param model: The class of the model to be instantiated
+    :param dict filter_by: attributes used to find object in the database
+    :param dict kwargs: attributes used to create the object that are not
+    used in filter_by
+
+    :returns: True if object exists else False
+
+    """
+    self.init_collection(model)
+    return self.count_documents(filter_by, limit=1) != 0
+
+
+def get_or_create_creator(collection_class):
+    def get_or_create(self, filter_by={}, model: Base = None, **kwargs):
+        """Initialize a model by creating it or getting it from the database.
+
         Parameters
         ----------
         session : Session
@@ -45,28 +91,30 @@ class MongoQuery(BaseQuery):
         instance, created
             Tuple with the instanced object and wether it was created or not
         """
-
-        self.__collection = self.__collection if self.__collection else collection
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
-        result = mycolObj.find_one(filter_by)
+        self.init_collection(model)
+        result = collection_class.find_one(self, filter_by)
         created = False
         if result is not None:
             return result, created
 
         try:
             kwargs.update(filter_by)
-            result = mycolObj.insertOne(kwargs)
+            model_instance = self.model(**filter_by)
+            result = self.insert_one(model_instance)
             created = True
         except Exception as e:
-            print("An exception occurred ::", e)
+            raise AttributeError(e)
             created = False
 
         return result, created
 
+    return get_or_create
 
+
+def update_creator(collection_class):
     def update(self, instance, args):
-        """
-        Updates an object
+        """Update an object.
+
         Parameter
         -----------
         instance : Model
@@ -78,20 +126,18 @@ class MongoQuery(BaseQuery):
         instance
             The updated object instance
         """
+        self.init_collection(instance)
+        return collection_class.update_one(self, instance, args)
 
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+    return update
 
-        mycolObj.update_one(instance, args)
 
-        return instance
-
-    def bulk_insert(self, objects, collection=None):
-        """
-        Inserts multiple objects to the database improving performance
+def bulk_insert_creator(collection_class):
+    def bulk_insert(self, objects, model=None):
+        """Insert multiple objects to the database improving performance.
 
         Parameters
         -----------
-
         objects : list
             Objects to be added
         model: Model
@@ -102,49 +148,50 @@ class MongoQuery(BaseQuery):
         if objects is None or len(objects) == 0:
             return
 
-        self.__collection = self.__collection if self.__collection else collection
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
-        mycolObj.insert_many(objects)
+        self.init_collection(model)
+        objects = [self.model(**obj) for obj in objects]
+        return collection_class.insert_many(self, objects)
+
+    return bulk_insert
 
 
-    def paginate(self, page=1, per_page=10, count=True, max_results=50000):
-        """
-        Returns pagination object with the results
-        https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
-        Parameters
-        -----------
+def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50000):
+    """Return pagination object with the results.
 
-        page : int
-            page or offset of the query
-        per_page : int
-            number of items per each result page
-        count : bool
-            whether to count total elements in query
-        """
-        if page < 1:
-            page = 1
-        if per_page < 0:
-            per_page = 10
+    https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
+    Parameters
+    -----------
+    page : int
+        page or offset of the query
+    per_page : int
+        number of items per each result page
+    count : bool
+        whether to count total elements in query
+    """
+    if page < 1:
+        page = 1
+    if per_page < 0:
+        per_page = 10
 
-        # Calculate number of documents to skip
-        skips = per_page * (page - 1)
+    # Calculate number of documents to skip
+    skips = per_page * (page - 1)
 
-        # Skip and limit
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
-        cursor = mycolObj.find().skip(skips).limit(per_page)
+    # Skip and limit
+    cursor = self.find(filter_by).skip(skips).limit(per_page)
 
-        # Return documents
-        items = [x for x in cursor]
-        if not count:
-            total = None
-        else:
-            all_docs = mycolObj.count_documents()
-            total = all_docs if all_docs < max_results else max_results
-        return Pagination(self, page, per_page, total, items)
+    # Return documents
+    items = [x for x in cursor]
+    if not count:
+        total = None
+    else:
+        all_docs = self.count_documents()
+        total = all_docs if all_docs < max_results else max_results
+    return Pagination(self, page, per_page, total, items)
 
-    def find_one(self, collection=None, filter_by={}):
-        """
-        Finds one item of the specified model.
+
+def find_one_creator(collection_class):
+    def find_one(self, filter_by={}, model: Base = None):
+        """Find one item of the specified model.
 
         If there are more than one item an error occurs.
         If there are no items, then it returns None
@@ -156,14 +203,15 @@ class MongoQuery(BaseQuery):
         filter_by : dict
             attributes used to find object in the database
         """
+        self.init_collection(model)
+        return collection_class.find_one(self, filter_by)
 
-        self.__collection = self.__collection if self.__collection else collection
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
-        return mycolObj.find_one(filter_by)
+    return find_one
 
-    def find_all(self, collection=None, filter_by={}, paginate=True):
-        """
-        Finds list of items of the specified model.
+
+def find_all_creator(collection_class):
+    def find_all(self, model: Base = None, filter_by={}, paginate=True):
+        """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.
 
@@ -176,11 +224,46 @@ class MongoQuery(BaseQuery):
         paginate : bool
             whether to get a paginated result or not
         """
-
-        self.__collection = self.__collection if self.__collection else collection
-        mycolObj = self.__connection.db.__getitem__(self.__collection.__tablename__)
+        self.init_collection(model)
 
         if paginate:
-            return self.paginate()
+            return self.paginate(filter_by)
         else:
-            return mycolObj.find(filter_by)
+            return collection_class.find(self, filter_by)
+
+    return find_all
+
+
+def raise_collection_not_found_error(self):
+    class CollectionNotFound(Exception):
+        pass
+
+    raise CollectionNotFound(
+        "You should provide model argument to either the MongoQuery instance or this method call"
+    )
+
+
+def __repr__(self):
+    if not self.initialized_collection:
+        return f"MongoQuery(model={self.model})"
+    else:
+        return super().__repr__()
+
+
+def mongo_query_creator(collection_class=PymongoCollection) -> BaseQuery:
+    class_dict = {
+        "__init__": constructor_creator(collection_class),
+        "init_collection": init_collection_creator(collection_class),
+        "check_exists": check_exists,
+        "get_or_create": get_or_create_creator(collection_class),
+        "update": update_creator(collection_class),
+        "bulk_insert": bulk_insert_creator(collection_class),
+        "paginate": paginate,
+        "find_one": find_one_creator(collection_class),
+        "find_all": find_all_creator(collection_class),
+    }
+    return type(
+        "MongoQuery",
+        (collection_class, BaseQuery),
+        class_dict,
+    )

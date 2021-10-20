@@ -17,7 +17,7 @@ class DatabaseCreator(abc.ABC):
         Note that the Creator may also provide some default implementation of
         the factory method.
         """
-        pass
+        raise NotImplementedError()
 
 
 class DatabaseConnection(abc.ABC):
@@ -30,22 +30,22 @@ class DatabaseConnection(abc.ABC):
     @abc.abstractmethod
     def connect(self):
         """Initiate the database connection."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def create_db(self):
         """Create database collections or tables."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def drop_db(self):
         """Remove database collections or tables."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def query(self, *args):
         """Get a query object."""
-        pass
+        raise NotImplementedError()
 
 
 def new_DBConnection(creator: DatabaseCreator) -> DatabaseConnection:
@@ -64,7 +64,7 @@ class BaseQuery(abc.ABC):
     @abc.abstractmethod
     def check_exists(self, model, filter_by):
         """Check if a model exists in the database."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_or_create(self, model, filter_by, **kwargs):
@@ -72,35 +72,35 @@ class BaseQuery(abc.ABC):
 
         It always returns a model instance and whether it was created or not.
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def update(self, instance, args):
         """Update a model instance with specified args."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def paginate(self, page=1, per_page=10, count=True):
         """Return a pagination object from this query."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def bulk_insert(self, objects, model):
         """Insert multiple objects to the database."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def find_all(self):
         """Retrieve all items from the result of this query."""
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def find_one(self):
+    def find_one(self, filter_by={}, model=None, **kwargs):
         """Retrieve only one item from the result of this query.
 
         Returns None if result is empty.
         """
-        pass
+        raise NotImplementedError()
 
 
 class Pagination:
