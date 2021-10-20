@@ -1,4 +1,5 @@
 import os
+from schema import SCHEMA
 ##################################################
 #       atlas_id_step   Settings File
 ##################################################
@@ -28,7 +29,13 @@ CONSUMER_CONFIG = {
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
 }
 
-PRODUCER_CONFIG = {}
+PRODUCER_CONFIG = {
+    "TOPIC": os.environ["PRODUCER_TOPIC"],
+    "PARAMS": {
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+    },
+    "SCHEMA": SCHEMA
+}
 
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),

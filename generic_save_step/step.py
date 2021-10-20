@@ -1,5 +1,6 @@
 from apf.core.step import GenericStep
 from apf.core import get_class
+from apf.producers import KafkaProducer
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.models import Object, Detection, NonDetection
@@ -114,9 +115,10 @@ class GenericSaveStep(GenericStep):
         super().__init__(consumer, config=config, level=level)
         
         if "CLASS" in config["PRODUCER_CONFIG"]:
-            producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-        elif not producer:
-            producer = (config["PRODUCER_CONFIG"])
+            producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+            producer = producer_class(config["PRODUCER_CONFIG"])
+        elif "PARAMS" in config["PRODUCER_CONFIG"]:
+            producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
         self.producer = producer
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
@@ -126,34 +128,63 @@ class GenericSaveStep(GenericStep):
         self.prv_candidates_processor = Processor(ZTFPrvCandidatesStrategy())
         self.detections_corrector = Corrector(ZTFCorrectionStrategy())
 
-    """
-    def insert_step_metadata(self):
-        self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
-        self.driver.session.commit()
-    """
-
     def get_objects(self, oids: List[str or int]):
+        """
+
+        Parameters
+        ----------
+        oids
+
+        Returns
+        -------
+
+        """
         filter_by = {"_id": {"$in": oids}}
         objects = self.driver.query(Object).find_all(collection=Object, filter_by=filter_by, paginate=False)
         return pd.DataFrame(objects, columns=OBJ_KEYS)
 
     def get_detections(self, oids: List[str or int]):
+        """
+
+        Parameters
+        ----------
+        oids
+
+        Returns
+        -------
+
+        """
         filter_by = {"aid": {"$in": oids}}
         detections = self.driver.query(Detection).find_all(collection=Detection, filter_by=filter_by, paginate=False)
         return pd.DataFrame(detections, columns=DET_KEYS)
 
     def get_non_detections(self, oids: List[str or int]):
+        """
+
+        Parameters
+        ----------
+        oids
+
+        Returns
+        -------
+
+        """
         filter_by = {"aid": {"$in": oids}}
         non_detections = self.driver.query(NonDetection).find_all(collection=NonDetection, filter_by=filter_by, paginate=False)
         return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
 
-    def insert_objects(self, objects):
+    def insert_objects(self, objects: pd.DataFrame):
+        """
+
+        Parameters
+        ----------
+        objects
+
+        Returns
+        -------
+
+        """
+        objects = objects.copy()
         objects.drop_duplicates(["aid"], inplace=True)
         new_objects = objects["new"]
         objects.drop(columns=["new"], inplace=True)
@@ -173,26 +204,45 @@ class GenericSaveStep(GenericStep):
             dict_to_update = to_update.to_dict("records")
             for obj in dict_to_update:
                 self.driver.query().update(Object, filter_by={"_id": obj["aid"]}, replacement=obj)
-            
-    def insert_detections(self, detections):
+
+    def insert_detections(self, detections: pd.DataFrame):
+        """
+
+        Parameters
+        ----------
+        detections
+
+        Returns
+        -------
+
+        """
         self.logger.info(f"Inserting {len(detections)} new detections")
         detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
-        for object in dict_detections:
-            del object['new']
         self.driver.query().bulk_insert(dict_detections, Detection)
 
-    def insert_non_detections(self, non_detections):
+    def insert_non_detections(self, non_detections: pd.DataFrame):
+        """
+
+        Parameters
+        ----------
+        non_detections
+
+        Returns
+        -------
+
+        """
         self.logger.info(f"Inserting {len(non_detections)} new non_detections")
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
 
-    def apply_objstats_from_correction(self, df):
+    @classmethod
+    def apply_objs_stats_from_correction(cls, df):
         response = {}
         df_mjd = df.mjd
-        idxmin = df_mjd.values.argmin()
-        df_min = df.iloc[idxmin]
+        idx_min = df_mjd.values.argmin()
+        df_min = df.iloc[idx_min]
         df_ra = df.ra
         df_dec = df.dec
         response["meanra"] = df_ra.mean()
@@ -234,7 +284,7 @@ class GenericSaveStep(GenericStep):
         detections_last_alert.drop_duplicates(["candid", "aid"], inplace=True)
         detections_last_alert.reset_index(inplace=True)
 
-        new_objects = detections_last_alert.groupby("aid").apply(self.apply_objstats_from_correction)
+        new_objects = detections_last_alert.groupby("aid").apply(self.apply_objs_stats_from_correction)
         new_objects.reset_index(inplace=True)
 
         new_names = dict(
@@ -397,6 +447,37 @@ class GenericSaveStep(GenericStep):
         response = pd.concat(response, ignore_index=True)
         return response
 
+    def produce(self, alerts: pd.DataFrame, light_curves: dict) -> None:
+        object_ids = alerts["oid"].unique().tolist()
+        self.logger.info(f"Checking {len(object_ids)} messages")
+
+        light_curves["detections"].drop(columns=["new"], inplace=True)
+        light_curves["non_detections"].drop(columns=["new"], inplace=True)
+
+        n_messages = 0
+        for oid in object_ids:
+            candid = alerts[alerts["oid"] == oid]["candid"].values[-1]
+            aid = alerts[alerts["oid"] == oid]["aid"].values[-1]
+            mask_detections = light_curves["detections"]["oid"] == oid
+            detections = light_curves["detections"][mask_detections]
+            detections.replace({np.nan: None}, inplace=True)
+            detections = detections.to_dict("records")
+
+            mask_non_detections = light_curves["detections"]["oid"] == oid
+            non_detections = light_curves["non_detections"][mask_non_detections]
+            non_detections = non_detections.to_dict("records")
+
+            output_message = {
+                "aid": str(aid),
+                "oid": str(oid),
+                "candid": candid,
+                "detections": detections,
+                "non_detections": non_detections,
+            }
+            self.producer.produce(output_message, key=oid)
+            n_messages += 1
+        self.logger.info(f"{n_messages} messages Produced")
+
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
 
@@ -419,22 +500,28 @@ class GenericSaveStep(GenericStep):
         detections = self.correct(detections)
         # Concat new and old detections and non detections.
         light_curves = self.preprocess_lightcurves(detections, non_dets_from_prv_candidates)
-
         # Get unique alerce ids (maybe can be object id from survey) for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
         self.logger.info(f"Setting objects flags")
-        # Insert new objects and update old objects
+        # Insert new objects and update old objects on database
         self.insert_objects(objects)
+
         new_detections = light_curves["detections"]["new"]
-        self.insert_detections(light_curves["detections"].loc[new_detections])
+        new_detections = light_curves["detections"][new_detections]
+        new_detections.drop(columns=["new"], inplace=True)
+        self.insert_detections(new_detections)
+
         new_non_detections = light_curves["non_detections"]["new"]
-        self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
+        new_non_detections = light_curves["non_detections"][new_non_detections]
+        new_non_detections.drop(columns=["new"], inplace=True)
+        self.insert_non_detections(new_non_detections)
 
-        # self.produce(alerts, light_curves)
-
+        # Finally produce the lightcurves
+        if self.producer:
+            self.produce(alerts, light_curves)
         del alerts
         del light_curves
         del objects
