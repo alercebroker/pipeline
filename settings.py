@@ -3,25 +3,25 @@ import os
 #       atlas_id_step   Settings File
 ##################################################
 
-## Set the global logging level to debug
+# Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
 DB_CONFIG = {
     "HOST": os.environ["DB_HOST"],
-    "USER": os.environ["DB_USER"],
-    "PASSWORD": os.environ["DB_PASSWORD"],
+    "USER": os.getenv("DB_USER", None),
+    "PASSWORD": os.getenv("DB_PASSWORD", None),
     "PORT":  int(os.environ["DB_PORT"]),
     "DATABASE": os.environ["DB_NAME"],
 }
 
-## Consumer configuration
-### Each consumer has different parameters and can be found in the documentation
+# Consumer configuration
+# Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers":  os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
-        'max.poll.interval.ms' : 3600000
+        'max.poll.interval.ms': 3600000
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
@@ -37,7 +37,7 @@ STEP_METADATA = {
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
 }
 
-## Step Configuration
+# Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     # "COMMIT": False,           #Disables commit, useful to debug a KafkaConsumer

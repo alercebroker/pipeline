@@ -1,26 +1,30 @@
 from apf.core.step import GenericStep
-import logging
 from apf.core import get_class
-from apf.producers import KafkaProducer
-import sys
-sys.path.insert(0, '../../../../')
-from survey_parser_plugins import ALeRCEParser
-from survey_parser_plugins.parsers import ATLASParser
 
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.models import (
-    Object,
-    Detection,
-    NonDetection,
-)
+from db_plugins.db.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
+
+from .utils.prv_candidates.processor import Processor
+from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import ZTFPrvCandidatesStrategy
+from .utils.correction.corrector import Corrector
+from .utils.correction.strategies.ztf_correction_strategy import ZTFCorrectionStrategy
+
+
+from survey_parser_plugins import ALeRCEParser
+
+from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
+import logging
+import sys
+sys.path.insert(0, '../../../../')
+
 
 OBJ_KEYS = ["aid", "sid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
 DET_KEYS = ["aid", "sid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
-NON_DET_KEYS = ["oid", "sid", "mjd", "diffmaglim", "fid"]
+NON_DET_KEYS = ["aid", "oid", "sid", "mjd", "diffmaglim", "fid"]
 
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
@@ -93,132 +97,6 @@ MAGSTATS_UPDATE_KEYS = [
     "step_id_corr",
 ]
 
-class GeneratorID:
-    @classmethod
-    def generate_aid(self, ra, dec):
-        # 19 Digit ID - two spare at the end for up to 100 duplicates
-        id = 1000000000000000000
-
-        # 2013-11-15 KWS Altered code to fix the negative RA problem
-        if ra < 0.0:
-            ra += 360.0
-
-        if ra > 360.0:
-            ra -= 360.0
-
-        # Calculation assumes Decimal Degrees:
-
-        ra_hh = int(ra / 15)
-        ra_mm = int((ra / 15 - ra_hh) * 60)
-        ra_ss = int(((ra / 15 - ra_hh) * 60 - ra_mm) * 60)
-        ra_ff = int((((ra / 15 - ra_hh) * 60 - ra_mm) * 60 - ra_ss) * 100)
-
-        if dec >= 0:
-            h = 1
-        else:
-            h = 0
-            dec = dec * -1
-
-        dec_deg = int(dec)
-        dec_mm = int((dec - dec_deg) * 60)
-        dec_ss = int(((dec - dec_deg) * 60 - dec_mm) * 60)
-        dec_f = int(((((dec - dec_deg) * 60 - dec_mm) * 60) - dec_ss) * 10)
-
-        id += (ra_hh * 10000000000000000)
-        id += (ra_mm * 100000000000000)
-        id += (ra_ss * 1000000000000)
-        id += (ra_ff * 10000000000)
-
-        id += (h * 1000000000)
-        id += (dec_deg * 10000000)
-        id += (dec_mm * 100000)
-        id += (dec_ss * 1000)
-        id += (dec_f * 100)
-
-        return id
-
-class ParserSelector:
-    parsers=[]
-
-    def registerParser(self, parser):
-        self.parsers.append(parser)
-
-    def parse(self, alerts):
-        for parser in self.parsers:
-            if parser.canParseFile(alerts):
-                return parser.parse(alerts)
-
-import abc
-class ParserGeneric(abc.ABC):
-    @abc.abstractmethod
-    def parse(self):
-        """
-        Note that the Creator may also provide some default implementation of
-        the factory method.
-        """
-        pass
-
-    @abc.abstractmethod
-    def canParseFile(self):
-        """
-        Note that the Creator may also provide some default implementation of
-        the factory method.
-        """
-        pass
-
-class ParserATLAS(ParserGeneric):
-    source = "ATLAS"
-
-    @classmethod
-    def parse(self, messages):
-        for eachdict in messages:
-            eachdict['candidate']['ra'] = eachdict['candidate']['RA']
-            del eachdict['candidate']['RA']
-            eachdict['candidate']['dec'] = eachdict['candidate']['Dec']
-            del eachdict['candidate']['Dec']
-            eachdict['candidate']['xpos'] = eachdict['candidate']['X']
-            del eachdict['candidate']['X']
-            eachdict['candidate']['ypos'] = eachdict['candidate']['Y']
-            del eachdict['candidate']['Y']
-            eachdict['candidate']['mag'] = eachdict['candidate']['Mag']
-            del eachdict['candidate']['Mag']
-            eachdict['candidate']['sigmag'] = eachdict['candidate']['Dmag']
-            del eachdict['candidate']['Dmag']
-            eachdict['candidate']['aimage'] = eachdict['candidate']['Major']
-            del eachdict['candidate']['Major']
-            eachdict['candidate']['bimage'] = eachdict['candidate']['Minor']
-            del eachdict['candidate']['Minor']
-            eachdict['surveyId'] = self.source
-            eachdict['alerceId'] = eachdict['objectId']
-        return messages
-
-    @classmethod
-    def canParseFile(self, messages):
-        for eachdict in messages:
-            if eachdict['publisher'] == self.source:
-                return True
-
-class ParserZTF(ParserGeneric):
-    source = "ZTF"
-
-    @classmethod
-    def parse(self, messages):
-        for eachdict in messages:
-            eachdict['surveyId'] = eachdict['objectId']
-            eachdict['alerceId'] = GeneratorID.generate_aid(eachdict['ra'],eachdict['dec'])
-            eachdict['mjd'] = eachdict["jd"] - 2400000.5
-            eachdict['surveyId'] = self.source
-            eachdict['candidate']['mag'] = eachdict['candidate']['magpsf']
-            del eachdict['candidate']['magpsf']
-            eachdict['candidate']['sigmag'] = eachdict['candidate']['sigmapsf']
-            del eachdict['candidate']['sigmapsf']
-        return messages
-
-    @classmethod
-    def canParseFile(self, messages):
-        for eachdict in messages:
-            if eachdict['publisher'] == self.source:
-                return True
 
 class GenericSaveStep(GenericStep):
     """GenericSaveStep Description
@@ -231,23 +109,22 @@ class GenericSaveStep(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    parser = ParserSelector()
 
-    def __init__(self, consumer = None, config = None, level = logging.INFO, producer=None, db_connection=None,
-                 **step_args):
-        super().__init__(consumer,config=config, level=level)
+    def __init__(self, consumer=None, config=None, level=logging.INFO, producer=None, db_connection=None, **step_args):
+        super().__init__(consumer, config=config, level=level)
         
         if "CLASS" in config["PRODUCER_CONFIG"]:
-            Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-        else:
-            Producer = KafkaProducer
+            producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+        elif not producer:
+            producer = (config["PRODUCER_CONFIG"])
 
-        self.producer = producer# or Producer(config["PRODUCER_CONFIG"])
+        self.producer = producer
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
         self.driver.connect(config["DB_CONFIG"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
-        self.logger.info(f"SAVE {self.version}")
-        self.parser.registerParser(ParserATLAS)
+        self.parser = ALeRCEParser()
+        self.prv_candidates_processor = Processor(ZTFPrvCandidatesStrategy())
+        self.detections_corrector = Corrector(ZTFCorrectionStrategy())
 
     """
     def insert_step_metadata(self):
@@ -261,28 +138,24 @@ class GenericSaveStep(GenericStep):
         self.driver.session.commit()
     """
 
-    def get_objects(self, oids):
-        filter_by = {"_id": {"$in": oids.tolist()}}
+    def get_objects(self, oids: List[str or int]):
+        filter_by = {"_id": {"$in": oids}}
         objects = self.driver.query(Object).find_all(collection=Object, filter_by=filter_by, paginate=False)
-        return pd.DataFrame(objects,columns = OBJ_KEYS)
+        return pd.DataFrame(objects, columns=OBJ_KEYS)
 
-    def get_detections(self, oids):
-        filter_by = {"aid": {"$in": oids.tolist()}}
+    def get_detections(self, oids: List[str or int]):
+        filter_by = {"aid": {"$in": oids}}
         detections = self.driver.query(Detection).find_all(collection=Detection, filter_by=filter_by, paginate=False)
-        return pd.DataFrame(detections,columns = DET_KEYS)
+        return pd.DataFrame(detections, columns=DET_KEYS)
 
-    def get_non_detections(self, oids):
-        filter_by = {"aid": {"$in": oids.tolist()}}
+    def get_non_detections(self, oids: List[str or int]):
+        filter_by = {"aid": {"$in": oids}}
         non_detections = self.driver.query(NonDetection).find_all(collection=NonDetection, filter_by=filter_by, paginate=False)
-        return pd.DataFrame(non_detections,columns = NON_DET_KEYS)
+        return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
 
-    def remove_stamps(self, alerts):
-        #TODO añadir cutoutTemplate a atlas alerts
-        del alerts["stamps"]
-    
     def insert_objects(self, objects):
-        new_objects = objects["new"]
         objects.drop_duplicates(["aid"], inplace=True)
+        new_objects = objects["new"]
         objects.drop(columns=["new"], inplace=True)
 
         to_insert = objects[new_objects]
@@ -298,8 +171,8 @@ class GenericSaveStep(GenericStep):
             self.logger.info(f"Updating {len(to_update)} objects")
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
-            for object in dict_to_update:
-                self.driver.query().update(Object,filter_by={"_id": object["aid"]}, replacement=object)
+            for obj in dict_to_update:
+                self.driver.query().update(Object, filter_by={"_id": obj["aid"]}, replacement=obj)
             
     def insert_detections(self, detections):
         self.logger.info(f"Inserting {len(detections)} new detections")
@@ -333,15 +206,24 @@ class GenericSaveStep(GenericStep):
         return pd.Series(response)
 
     def get_last_alert(self, alerts):
-        # TODO change mjd to candid
-        last_alert = alerts.mjd.values.argmax()
-        filtered_alerts = alerts.loc[
-                          :, ["aid"]
-                          ]
+        last_alert = alerts["mjd"].values.argmax()
+        filtered_alerts = alerts.loc[:, ["aid"]]
         last_alert = filtered_alerts.iloc[last_alert]
         return last_alert
 
-    def preprocess_objects(self, objects, light_curves, alerts):
+    def preprocess_objects(self, objects: pd.DataFrame, light_curves: dict, alerts: pd.DataFrame):
+        """
+
+        Parameters
+        ----------
+        objects
+        light_curves
+        alerts
+
+        Returns
+        -------
+
+        """
         oids = objects.aid.unique()
         apply_last_alert = lambda x: self.get_last_alert(x)
         last_alerts = alerts.groupby("aid", sort=False).apply(apply_last_alert)
@@ -364,206 +246,186 @@ class GenericSaveStep(GenericStep):
 
         return new_objects
 
-    def preprocess_detections(self, detections):
-        oids = detections.aid.values
-        detectionsDB = self.get_detections(oids)
-
-        index_detections = pd.MultiIndex.from_frame(
-            detections[["oid", "candid"]]
-        )
-        index_light_curve_detections = pd.MultiIndex.from_frame(
-            detectionsDB[["oid", "candid"]]
-        )
-
-        all_detections = pd.concat(
-            [detectionsDB, detections], ignore_index=True
-        )
-
-        return all_detections
-
     def get_lightcurves(self, oids):
-        light_curves = {}
-        light_curves["detections"] = self.get_detections(oids)
-        light_curves["non_detections"] = self.get_non_detections(oids)
+        """
+
+        Parameters
+        ----------
+        oids
+
+        Returns
+        -------
+
+        """
+        light_curves = {
+            "detections": self.get_detections(oids),
+            "non_detections": self.get_non_detections(oids)
+        }
         self.logger.info(
             f"Light Curves: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections"
         )
         return light_curves
 
-    def cast_non_detection(self, object_id: str, candidate: dict) -> dict:
-        non_detection = {
-            "oid": object_id,
-            "mjd": candidate["mjd"],
-            "diffmaglim": candidate["diffmaglim"],
-            "fid": candidate["fid"],
-        }
-        return non_detection
+    def preprocess_lightcurves(self, detections: pd.DataFrame, non_detections: pd.DataFrame) -> dict:
+        """
 
-    def get_prv_candidates(self, alert):
-        prv_candidates = alert["extra_fields"]["prv_candidates"]
-        candid = alert["candid"]
-        oid = alert["oid"]
+        Parameters
+        ----------
+        detections
+        non_detections
 
-        detections = []
-        non_detections = []
+        Returns
+        -------
 
-        if prv_candidates is None:
-            return pd.DataFrame([]), pd.DataFrame([])
-        else:
-            for candidate in prv_candidates:
-                is_non_detection = candidate["candid"] is None
-                # TODO change to ZTF parser
-                candidate["mjd"] = candidate["jd"] - 2400000.5
+        """
+        # Assign a label to difference new detections
+        detections["new"] = True
 
-                if is_non_detection:
-                    non_detection = self.cast_non_detection(oid, candidate)
-                    non_detections.append(non_detection)
-                else:
-                    candidate["parent_candid"] = candid
-                    candidate["has_stamp"] = False
-                    candidate["oid"] = oid
-                    candidate["sid"] = oid  # Used in correction
-                    candidate["step_id_corr"] = self.version
-                    detections.append(candidate)
-
-        return detections, non_detections
-
-    def preprocess_lightcurves(self, alerts):
-
-        oids = alerts.aid.values
-
-        alerts.loc[:, "parent_candid"] = None
-        alerts.loc[:, "has_stamp"] = True
-        filtered_detections = alerts.loc[:, alerts.columns.isin(DET_KEYS)]
-        filtered_detections.loc[:, "new"] = True
-
+        # Get unique oids from new alerts
+        oids = detections["oid"].unique().tolist()
+        # Retrieve old detections and non_detections from database and put new label to false
         light_curves = self.get_lightcurves(oids)
         light_curves["detections"]["new"] = False
         light_curves["non_detections"]["new"] = False
 
-        # Removing already on db, similar to drop duplicates
-        index_detections = pd.MultiIndex.from_frame(
-            filtered_detections[["aid", "candid"]]
-        )
-        index_light_curve_detections = pd.MultiIndex.from_frame(
-            light_curves["detections"][["aid", "candid"]]
-        )
-        already_on_db = index_detections.isin(index_light_curve_detections)
-        filtered_detections = filtered_detections[~already_on_db]
-        light_curves["detections"] = pd.concat(
-            [light_curves["detections"], filtered_detections], ignore_index=True
-        )
+        old_detections = light_curves["detections"]
 
-        prv_detections = []
-        prv_non_detections = []
-        for _, alert in alerts.iterrows():
-            if "prv_candidates" in alert.extra_fields:
-                (
-                    alert_prv_detections,
-                    alert_prv_non_detections,
-                ) = self.get_prv_candidates(alert)
-                prv_detections.extend(alert_prv_detections)
-                prv_non_detections.extend(alert_prv_non_detections)
+        # Remove tuple of [oid, candid] that are new detections and old detections. This is a mask that retrieve
+        # existing tuples on db.
+        unique_keys_detections = ["oid", "candid"]
+        detections_already_on_db = detections[unique_keys_detections].isin(
+            old_detections[unique_keys_detections]).values
+        detections_already_on_db = np.logical_and(detections_already_on_db[:, 0], detections_already_on_db[:, 1])
 
-        if len(prv_detections) > 0:
-            prv_detections = pd.DataFrame(prv_detections)
-            prv_detections.drop_duplicates(["oid", "candid"], inplace=True)
-            # Checking if already on the database
-            index_prv_detections = pd.MultiIndex.from_frame(
-                prv_detections[["oid", "candid"]]
-            )
-            index_light_curve_detections = pd.MultiIndex.from_frame(
-                light_curves["detections"][["oid", "candid"]]
-            )
-            already_on_db = index_prv_detections.isin(index_light_curve_detections)
-            prv_detections = prv_detections[~already_on_db]
+        # Apply mask and get only new detections on detections from stream.
+        new_detections = detections[~detections_already_on_db]
 
-            # Doing correction
-            if len(prv_detections) > 0:
-                prv_detections["jdendref"] = np.nan
-                # prv_detections = self.do_correction(prv_detections)
+        # Get all light curve: only detections since beginning of time
+        light_curves["detections"] = pd.concat([old_detections, new_detections], ignore_index=True)
 
-                #   Getting columns
-                current_keys = [
-                    key for key in DET_KEYS if key in prv_detections.columns
-                ]
-                prv_detections = prv_detections.loc[:, current_keys]
-                prv_detections.loc[:, "new"] = True
-                light_curves["detections"] = pd.concat(
-                    [light_curves["detections"], prv_detections], ignore_index=True
-                )
-
-        if len(prv_non_detections) > 0:
-            prv_non_detections = pd.DataFrame(prv_non_detections)
-            # Using round 5 to have 5 decimals of precision
-            prv_non_detections.loc[:, "round_mjd"] = prv_non_detections["mjd"].round(5)
-            light_curves["non_detections"].loc[:, "round_mjd"] = light_curves["non_detections"]["mjd"].round(5)
-
-            prv_non_detections.drop_duplicates(["oid", "fid", "round_mjd"])
-
-            # Checking if already on the database
-            index_prv_non_detections = pd.MultiIndex.from_frame(
-                prv_non_detections[["oid", "fid", "round_mjd"]]
-            )
-            index_light_curve_non_detections = pd.MultiIndex.from_frame(
-                light_curves["non_detections"][["oid", "fid", "round_mjd"]]
-            )
-            already_on_db = index_prv_non_detections.isin(
-                index_light_curve_non_detections
-            )
-            prv_non_detections = prv_non_detections[~already_on_db]
-            prv_non_detections.drop_duplicates(inplace=True)
-
-            if len(prv_non_detections) > 0:
-                # Dropping auxiliary column
-                light_curves["non_detections"].drop(columns=["round_mjd"], inplace=True)
-                prv_non_detections.drop(columns=["round_mjd"], inplace=True)
-                prv_non_detections.loc[:, "new"] = True
-                light_curves["non_detections"] = pd.concat(
-                    [light_curves["non_detections"], prv_non_detections],
-                    ignore_index=True,
-                )
-
+        non_detections["new"] = True
+        old_non_detections = light_curves["non_detections"]
+        if len(non_detections):
+            # Using round 5 to have 5 decimals of precision to delete duplicates non_detections
+            non_detections["round_mjd"] = non_detections["mjd"].round(5)
+            old_non_detections["round_mjd"] = old_non_detections["mjd"].round(5)
+            # Remove [oid, fid, round_mjd] that are new non_dets and old non_dets.
+            unique_keys_non_detections = ["oid", "fid", "round_mjd"]
+            non_dets_already_on_db = non_detections[unique_keys_non_detections].isin(
+                old_non_detections[unique_keys_non_detections]).values
+            non_dets_already_on_db = np.logical_and(non_dets_already_on_db[:, 0],
+                                                    non_dets_already_on_db[:, 1],
+                                                    non_dets_already_on_db[:, 2])
+            # Apply mask and get only new non detections on non detections from stream.
+            new_non_detections = non_detections[~non_dets_already_on_db]
+            # Get all light curve: only detections since beginning of time
+            non_detections = pd.concat([old_non_detections, new_non_detections], ignore_index=True)
+            non_detections.drop(columns=["round_mjd"], inplace=True)
+            light_curves["non_detections"] = non_detections
         return light_curves
+
+    @classmethod
+    def remove_stamps(cls, alerts: pd.DataFrame) -> None:
+        """
+        Remove a column that contains any survey stamps.
+
+        Parameters
+        ----------
+        alerts:  A pandas DataFrame created from a list of GenericAlerts.
+
+        Returns None
+        -------
+
+        """
+        alerts.drop("stamps", axis=1, inplace=True)
+
+    def process_prv_candidates(self, alerts: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Separate previous candidates from alerts. For use it, the input must be a DataFrame created from a list of
+        GenericAlert. This method use a strategy pattern for extract data from any survey.
+
+        Parameters
+        ----------
+        alerts: A pandas DataFrame created from a list of GenericAlerts.
+
+        Returns A Tuple with detections an non_detections from previous candidates
+        -------
+
+        """
+        # dicto = {
+        #     "ZTF": ZTFPrvCandidatesStrategy()
+        # }
+        data = alerts[["oid", "sid", "candid", "ra", "dec", "extra_fields"]].copy()
+        detections = []
+        non_detections = []
+        for sid, subset_data in data.groupby("sid"):
+            # if sid in dicto.keys():
+            #     self.prv_candidates_processor.strategy = dicto[sid]
+            #     det, non_det = self.prv_candidates_processor.compute(subset_data)
+            #     detections.append(det)
+            #     non_detections.append(non_det)
+            if sid == "ZTF":
+                self.prv_candidates_processor.strategy = ZTFPrvCandidatesStrategy()
+                det, non_det = self.prv_candidates_processor.compute(subset_data)
+                detections.append(det)
+                non_detections.append(non_det)
+            else:
+                pass
+        detections = pd.concat(detections, ignore_index=True) if len(detections) else pd.DataFrame()
+        non_detections = pd.concat(non_detections, ignore_index=True) if len(non_detections) else pd.DataFrame()
+        return detections, non_detections
+
+    def correct(self, detections: pd.DataFrame) -> pd.DataFrame:
+        """
+
+        Parameters
+        ----------
+        detections
+
+        Returns
+        -------
+
+        """
+        response = []
+        for idx, gdf in detections.groupby("sid"):
+            if "ZTF" == idx:
+                self.detections_corrector.strategy = ZTFCorrectionStrategy()
+                corrected = self.detections_corrector.compute(gdf)
+            else:
+                corrected = gdf
+            response.append(corrected)
+        response = pd.concat(response, ignore_index=True)
+        return response
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
 
-        # Casting to a dataframe
-        self.logger.info(f"Preprocessing alerts")
-
-        parser = ALeRCEParser()
-        response = parser.parse(messages)
-
+        response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
-        alerts.drop_duplicates("candid", inplace=True)
-        alerts.reset_index(inplace=True)
-        # Removing stamps
-        self.remove_stamps(alerts)
+        dets_from_prv_candidates, non_dets_from_prv_candidates = self.process_prv_candidates(alerts)
 
-        # Getting just the detections
-        self.logger.info(f"Doing correction to detections")
+        # Concat detections from alerts and detections from previous candidates
+        detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
 
-        #corrected = self.do_correction(detections)
-        # Index was changed to candid in do_correction
-        alerts.reset_index(inplace=True)
+        # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
+        # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
+        # detections.
+        detections.drop_duplicates("candid", inplace=True, keep="first")
 
-        # Getting data from database, and processing prv_candidates
-        self.logger.info(f"Processing light curves")
-        light_curves = self.preprocess_lightcurves(alerts)
+        # Removing stamps columns
+        self.remove_stamps(detections)
 
+        # Do correction to detections from stream
+        detections = self.correct(detections)
+        # Concat new and old detections and non detections.
+        light_curves = self.preprocess_lightcurves(detections, non_dets_from_prv_candidates)
+
+        # Get unique alerce ids (maybe can be object id from survey) for get objects from database
+        unique_aids = alerts["aid"].unique().tolist()
         # Getting other tables
-        objects = self.get_objects(alerts["aid"].unique())
-
+        objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
-
         self.logger.info(f"Setting objects flags")
-        # Setting flags in objects
-        objects.set_index("aid", inplace=True)
-        # objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
-        # objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
-        objects.reset_index(inplace=True)
-
         # Insert new objects and update old objects
         self.insert_objects(objects)
         new_detections = light_curves["detections"]["new"]
@@ -571,7 +433,10 @@ class GenericSaveStep(GenericStep):
         new_non_detections = light_curves["non_detections"]["new"]
         self.insert_non_detections(light_curves["non_detections"].loc[new_non_detections])
 
-        #self.produce(alerts, light_curves)
+        # self.produce(alerts, light_curves)
 
         del alerts
         del light_curves
+        del objects
+        del new_detections
+        del new_non_detections
