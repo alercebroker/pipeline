@@ -10,15 +10,17 @@ ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ATLAS_samples")
 ZTF_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ZTF_samples")
 
 
-def get_content(file_path):
+def get_content(file_path, is_atlas=False):
     with open(file_path, "rb") as f:
         content = reader(f).next()
+        if is_atlas:
+            content["candidate"]["filter"] = 'o'
     return content
 
 
 class TestParserSelector(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]
+        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True) for f in os.listdir(ATLAS_DATA_PATH)]
         self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
 
     def test_empty_parser(self):
@@ -61,7 +63,7 @@ class TestParserSelector(unittest.TestCase):
 
 class TestALeRCEParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]
+        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True) for f in os.listdir(ATLAS_DATA_PATH)]
         self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
 
     def test_init(self):
