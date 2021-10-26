@@ -59,6 +59,4 @@ class ZTFParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        if not ('publisher' in message.keys() and cls._source in message["publisher"]):
-            print(message["candidate"]["candid"])
         return 'publisher' in message.keys() and cls._source in message["publisher"]
