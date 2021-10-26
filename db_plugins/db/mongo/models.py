@@ -35,10 +35,11 @@ class Object(generic_models.Object, Base):
             "coordinates": [kwargs["meanra"], kwargs["meandec"]],
         }
 
-    aid = Field()
-    sid = Field()
+    aid = Field() # ALeRCE candidate id (unique id of object in the ALeRCE database)
+    oid = Field() # Object id should include objects id of all surveys (same survey can provide different object ids)
     lastmjd = Field()
     firstmjd = Field()
+    ndet = Field()
     loc = SpecialField(loc_definition)
     meanra = Field()
     meandec = Field()
@@ -46,7 +47,7 @@ class Object(generic_models.Object, Base):
 
     __table_args__ = [
         IndexModel([("aid", TEXT)]),
-        IndexModel([("sid", TEXT)]),
+        IndexModel([("oid", TEXT)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
@@ -58,8 +59,8 @@ class Object(generic_models.Object, Base):
 
 class Detection(Base, generic_models.Detection):
 
+    tid = Field() # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
     aid = Field()
-    sid = Field()
     candid = Field()
     mjd = Field()
     fid = Field()
@@ -68,6 +69,19 @@ class Detection(Base, generic_models.Detection):
     rb = Field()
     mag = Field()
     sigmag = Field()
+    rfid = Field()
+    e_ra = Field() 
+    e_dec = Field()
+    isdiffpos = Field()
+    magpsf_corr = Field()
+    sigmapsf_corr = Field()
+    sigmapsf_corr_ext = Field()
+    corrected = Field()
+    dubious = Field()
+    parent_candid = Field()
+    has_stamp = Field()
+    step_id_corr = Field()
+    rbversion = Field()
     extra_fields = SpecialField(create_extra_fields)
     __table_args__ = [IndexModel([("aid", TEXT)])]
     __tablename__ = "detection"
@@ -76,7 +90,7 @@ class Detection(Base, generic_models.Detection):
 class NonDetection(Base, generic_models.NonDetection):
 
     aid = Field()
-    sid = Field()
+    tid = Field()
     mjd = Field()
     diffmaglim = Field()
     fid = Field()
@@ -84,7 +98,7 @@ class NonDetection(Base, generic_models.NonDetection):
 
     __table_args__ = [
         IndexModel([("aid", TEXT)]),
-        IndexModel([("sid", TEXT)]),
+        IndexModel([("tid", TEXT)]),
         IndexModel([("mjd", DESCENDING)]),
         IndexModel([("fid", ASCENDING)]),
     ]
