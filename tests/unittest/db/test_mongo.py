@@ -121,7 +121,7 @@ class MongoQueryTest(unittest.TestCase):
         f = self.obj_collection.find_one({"test": "edited"})
         self.assertIsNotNone(f)
 
-    def test_bulk_update(self):
+    def test_bulk_insert(self):
         self.assertEqual(self.obj_collection.count_documents({}), 1)
         self.query.bulk_insert(
             [

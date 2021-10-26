@@ -1,9 +1,13 @@
-from db_plugins.db.sql.connection import SQLConnection, satisfy_keys, settings_map
+from db_plugins.db.sql.connection import (
+    SQLConnection,
+    satisfy_keys,
+    settings_map,
+)
 import alembic.config
 import os
 
 THIS_PATH = os.path.dirname(os.path.abspath(__file__))
-MIGRATIONS_PATH = os.path.abspath(os.path.join(THIS_PATH, "../db/sql/"))
+MIGRATIONS_PATH = os.path.abspath(os.path.join(THIS_PATH, "../sql/"))
 
 
 def init_sql_database(config, db=None):
@@ -19,22 +23,21 @@ def init_sql_database(config, db=None):
     alembic.config.main(["stamp", "head"])
 
 
-def init(DB_CONFIG):
-    if "SQL" in DB_CONFIG:
-        db_config = DB_CONFIG["SQL"]
-        required_key = satisfy_keys(set(db_config.keys()))
-        if len(required_key) == 0:
-            db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
+def init(db_config, db=None):
+    required_key = satisfy_keys(set(db_config.keys()))
+    if len(required_key) == 0:
+        db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
 
-        if "SQLALCHEMY_DATABASE_URL" in db_config:
-            init_sql_database(db_config)
-        else:
-            raise Exception(
-                f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}"
-            )
+    if "SQLALCHEMY_DATABASE_URL" in db_config:
+        init_sql_database(db_config, db=db)
+    else:
+        raise Exception(
+            f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}"
+        )
 
 
 def make_migrations():
+    print("ENTRA")
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = ["--raiseerr", "revision", "--autogenerate", "-m", "tables"]
     alembic.config.main(alembicArgs)
