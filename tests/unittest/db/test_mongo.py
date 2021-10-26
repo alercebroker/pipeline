@@ -106,11 +106,12 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
-                "sid": "test",
+                "oid": "test",
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": "test",
                 "meandec": "test",
+                "ndet": "test"
             }
         )
         self.assertIsNotNone(result)
@@ -127,11 +128,12 @@ class MongoQueryTest(unittest.TestCase):
             [
                 {
                     "aid": "test",
-                    "sid": "test",
+                    "oid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": "test",
                     "meandec": "test",
+                    "ndet": "test"
                 }
                 for i in range(2)
             ]

@@ -72,7 +72,6 @@ class Detection(Base, generic_models.Detection):
     rfid = Field()
     e_ra = Field() 
     e_dec = Field()
-    sigmag = Field()
     isdiffpos = Field()
     magpsf_corr = Field()
     sigmapsf_corr = Field()
@@ -82,7 +81,6 @@ class Detection(Base, generic_models.Detection):
     parent_candid = Field()
     has_stamp = Field()
     step_id_corr = Field()
-    rb = Field()
     rbversion = Field()
     extra_fields = SpecialField(create_extra_fields)
     __table_args__ = [IndexModel([("aid", TEXT)])]

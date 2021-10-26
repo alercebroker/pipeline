@@ -67,7 +67,6 @@ class MongoModelsTest(unittest.TestCase):
             rfid = "rfid",
             e_ra = "e_ra", 
             e_dec = "e_dec",
-            sigmag = "sigmag",
             isdiffpos = "isdiffpos",
             magpsf_corr = "magpsf_corr",
             sigmapsf_corr = "sigmapsf_corr",
@@ -77,7 +76,6 @@ class MongoModelsTest(unittest.TestCase):
             parent_candid = "parent_candid",
             has_stamp = "has_stamp",
             step_id_corr = "step_id_corr",
-            rb = "rb",
             rbversion = "rbversion",
         )
         self.assertIsInstance(d, models.Detection)
@@ -87,7 +85,7 @@ class MongoModelsTest(unittest.TestCase):
     def test_detection_fails_creation(self):
         with self.assertRaises(AttributeError) as e:
             models.Detection()
-        self.assertEqual(str(e.exception), "Detection model needs aid attribute")
+        self.assertEqual(str(e.exception), "Detection model needs tid attribute")
 
     def test_detection_with_extra_fields(self):
         o = models.Detection(
@@ -101,6 +99,9 @@ class MongoModelsTest(unittest.TestCase):
             rb="rb",
             mag="mag",
             sigmag="sigmag",
+            rfid="rfid",
+            e_ra = "e_ra", 
+            e_dec = "e_dec",
             isdiffpos = "isdiffpos",
             magpsf_corr = "magpsf_corr",
             sigmapsf_corr = "sigmapsf_corr",
@@ -110,7 +111,6 @@ class MongoModelsTest(unittest.TestCase):
             parent_candid = "parent_candid",
             has_stamp = "has_stamp",
             step_id_corr = "step_id_corr",
-            rb = "rb",
             rbversion = "rbversion",
             extra="extra",
         )
@@ -126,6 +126,9 @@ class MongoModelsTest(unittest.TestCase):
             rb="rb",
             mag="mag",
             sigmag="sigmag",
+            rfid="rfid",
+            e_ra = "e_ra", 
+            e_dec = "e_dec",
             isdiffpos = "isdiffpos",
             magpsf_corr = "magpsf_corr",
             sigmapsf_corr = "sigmapsf_corr",
@@ -135,7 +138,6 @@ class MongoModelsTest(unittest.TestCase):
             parent_candid = "parent_candid",
             has_stamp = "has_stamp",
             step_id_corr = "step_id_corr",
-            rb = "rb",
             rbversion = "rbversion",
             extra_fields={"extra": "extra"},
         )
