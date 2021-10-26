@@ -1,25 +1,15 @@
-from db_plugins.db.sql import SQLConnection, satisfy_keys, settings_map
-import alembic.config
 import click
 import sys
 import os
-
-
-MANAGE_PATH = os.path.dirname(os.path.abspath(__file__))
-MIGRATIONS_PATH = os.path.abspath(os.path.join(MANAGE_PATH, "../db/sql/"))
-
-
-def init_sql(config, db=None):
-    db = db or SQLConnection()
-    db.connect(config=config)
-    db.create_db()
-    db.session.close()
-    os.chdir(MIGRATIONS_PATH)
-    try:
-        os.makedirs(os.getcwd()+"/migrations/versions")
-    except FileExistsError:
-        pass
-    alembic.config.main(["stamp", "head"])
+from db_plugins.db.sql import (
+    init as init_sql,
+    make_migrations as make_sql_migrations,
+    migrate as migrate_sql,
+)
+from db_plugins.db.mongo.initialization import (
+    init_mongo_database as init_mongo,
+)
+import importlib
 
 
 @click.group()
@@ -29,24 +19,26 @@ def cli():
 
 @cli.command()
 @click.option("--settings_path", default=".", help="settings.py path")
-def initdb(settings_path):
+def initdb(settings_path, db=None):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.dirname(os.path.expanduser(settings_path)))
-    from settings import DB_CONFIG
-
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    settings = importlib.import_module("settings")
+    DB_CONFIG = settings.DB_CONFIG
+    sys.path.pop(-1)
+    del sys.modules["settings"]
     if "SQL" in DB_CONFIG:
-        db_config = DB_CONFIG["SQL"]
-        required_key = satisfy_keys(set(db_config.keys()))
-        if len(required_key) == 0:
-            db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
+        init_sql(DB_CONFIG["SQL"], db)
+        click.echo(
+            "Database created with credentials from {}".format(settings_path)
+        )
 
-        if "SQLALCHEMY_DATABASE_URL" in db_config:
-            init_sql(db_config)
-        else:
-            raise Exception(f"Missing arguments 'SQLALCHEMY_DATABASE_URL' or {required_key}")
+    elif "MONGO" in DB_CONFIG:
+        init_mongo(DB_CONFIG["MONGO"], db)
+        click.echo(
+            "Database created with credentials from {}".format(settings_path)
+        )
 
-        click.echo("Database created with credentials from {}".format(settings_path))
     else:
         raise Exception("Invalid settings file")
 
@@ -56,20 +48,35 @@ def initdb(settings_path):
 def make_migrations(settings_path):
     if not os.path.exists(settings_path):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.abspath(settings_path))
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    settings = importlib.import_module("settings")
+    DB_CONFIG = settings.DB_CONFIG
+    del sys.modules["settings"]
+    sys.path.pop(-1)
+    if "SQL" in DB_CONFIG:
+        make_sql_migrations()
+        click.echo("Migrations made with config from {}".format(settings_path))
 
-    os.chdir(MIGRATIONS_PATH)
-    alembicArgs = ["--raiseerr", "revision", "--autogenerate", "-m", "tables"]
-    alembic.config.main(alembicArgs)
+    else:
+        raise Exception("Invalid settings file")
 
 
 @cli.command()
 @click.option("--settings_path", default=".", help="settings.py path")
 def migrate(settings_path):
-    if not os.path.exists(settings_path):
+    if not os.path.exists(os.path.abspath(settings_path)):
         raise Exception("Settings file not found")
-    sys.path.append(os.path.abspath(settings_path))
+    sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
+    settings = importlib.import_module("settings")
+    DB_CONFIG = settings.DB_CONFIG
+    del sys.modules["settings"]
+    sys.path.pop(-1)
+    if "SQL" in DB_CONFIG:
+        migrate_sql()
+        click.echo(
+            "Migrated database with config from {}".format(settings_path)
+        )
 
-    os.chdir(MIGRATIONS_PATH)
-    alembicArgs = ["--raiseerr", "upgrade", "head"]
-    alembic.config.main(alembicArgs)
+    else:
+        print("ERROR", DB_CONFIG)
+        raise Exception("Invalid settings file")

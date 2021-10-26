@@ -1,4 +1,4 @@
-from db_plugins.db.sql import Base, satisfy_keys, settings_map
+from db_plugins.db.sql.connection import Base, satisfy_keys, settings_map
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
