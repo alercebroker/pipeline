@@ -7,15 +7,12 @@ class ATLASParser(SurveyParser):
         "candid": "candid",
         "mjd": "mjd",
         "fid": None,
+        "pid": None,
         "ra": "RA",
         "dec": "Dec",
         "rb": None,
         "mag": "Mag",
         "sigmag": "Dmag",
-        "aimage": "Major",
-        "bimage": "Minor",
-        "xpos": "X",
-        "ypos": "Y",
     }
 
     _fid_mapper = {
@@ -42,7 +39,7 @@ class ATLASParser(SurveyParser):
 
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
-            generic_alert_message['sid'] = cls._source
+            generic_alert_message['tid'] = cls._source # This must be more exact (for telescopes)
             generic_alert_message['aid'] = oid
             generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
             # inclusion of stamps

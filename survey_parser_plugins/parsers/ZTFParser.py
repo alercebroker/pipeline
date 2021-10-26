@@ -8,15 +8,15 @@ class ZTFParser(SurveyParser):
         "candid": "candid",
         "mjd": "jd",
         "fid": "fid",
+        "pid": "pid",
+        "rfid": "rfid",
         "ra": "ra",
         "dec": "dec",
-        "rb": "rb",
         "mag": "magpsf",
         "sigmag": "sigmapsf",
-        "aimage": "aimage",
-        "bimage": "bimage",
-        "xpos": "xpos",
-        "ypos": "ypos",
+        "isdiffpos": "isdiffpos",
+        "rb": "rb",
+        "rbversion": "rbversion"
     }
 
     @classmethod
@@ -36,12 +36,13 @@ class ZTFParser(SurveyParser):
 
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
-            generic_alert_message['sid'] = cls._source
+            generic_alert_message['tid'] = cls._source
             generic_alert_message['aid'] = id_generator(candidate["ra"], candidate["dec"])
             generic_alert_message["extra_fields"]["prv_candidates"] = prv_candidates
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification
+            generic_alert_message["isdiffpos"] = 1 if generic_alert_message["isdiffpos"] in ["t", "1"] else -1
             generic_alert_message['mjd'] = generic_alert_message['mjd'] - 2400000.5
             return GenericAlert(**generic_alert_message)
         except KeyError:

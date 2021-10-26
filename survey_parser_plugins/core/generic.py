@@ -8,7 +8,8 @@ class GenericAlert:
     Class for keeping track of an alert of astronomical surveys.
     """
     oid: str  # name of object (name from survey)
-    sid: str  # identifier of survey (name of survey)
+    tid: str  # identifier of survey (name of survey)
+    pid: int
     candid: int
     mjd: float
     fid: int
@@ -17,10 +18,11 @@ class GenericAlert:
     rb: float
     mag: float
     sigmag: float
-    aimage: float or None
-    bimage: float or None
-    xpos: float or None
-    ypos: float or None
+    rfid: int = None
+    isdiffpos: int = None
+    sigmara: float = None
+    sigmadec: float = None
+    rbversion: str = None
     aid: int = None  # alerce id of the object
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
