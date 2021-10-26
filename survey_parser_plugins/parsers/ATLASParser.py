@@ -48,6 +48,10 @@ class ATLASParser(SurveyParser):
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification
+            # possible attributes
+            sigmaradec = 0.07
+            generic_alert_message["sigmara"] = candidate["sigmara"] if "sigmara" in candidate else sigmaradec 
+            generic_alert_message["sigmadec"] = candidate["sigmadec"] if "sigmadec" in candidate else sigmaradec 
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
