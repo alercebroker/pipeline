@@ -6,11 +6,14 @@ class ATLASParser(SurveyParser):
     _generic_alert_message_key_mapping = {
         "candid": "candid",
         "mjd": "mjd",
-        "fid": None,
+        "fid": None, # This field is modified below in the code
+        "rfid": None,
+        "isdiffpos": None,
         "pid": None,
         "ra": "RA",
         "dec": "Dec",
         "rb": None,
+        "rbversion": None,
         "mag": "Mag",
         "sigmag": "Dmag",
     }
