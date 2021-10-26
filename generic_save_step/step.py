@@ -23,9 +23,9 @@ import sys
 sys.path.insert(0, '../../../../')
 
 
-OBJ_KEYS = ["aid", "sid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
-DET_KEYS = ["aid", "sid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
-NON_DET_KEYS = ["aid", "oid", "sid", "mjd", "diffmaglim", "fid"]
+OBJ_KEYS = ["aid", "tid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
+DET_KEYS = ["aid", "tid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
+NON_DET_KEYS = ["aid", "oid", "tid", "mjd", "diffmaglim", "fid"]
 
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
@@ -251,7 +251,7 @@ class GenericSaveStep(GenericStep):
         response["sigmadec"] = df_dec.std(ddof=0)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
-        response["sid"] = df_min.sid
+        response["tid"] = df_min.tid
         response["oid"] = df_min.oid
         return pd.Series(response)
 
@@ -405,16 +405,16 @@ class GenericSaveStep(GenericStep):
         # dicto = {
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
-        data = alerts[["oid", "sid", "candid", "ra", "dec", "extra_fields"]].copy()
+        data = alerts[["oid", "tid", "candid", "ra", "dec", "extra_fields"]].copy()
         detections = []
         non_detections = []
-        for sid, subset_data in data.groupby("sid"):
-            # if sid in dicto.keys():
-            #     self.prv_candidates_processor.strategy = dicto[sid]
+        for tid, subset_data in data.groupby("tid"):
+            # if tid in dicto.keys():
+            #     self.prv_candidates_processor.strategy = dicto[tid]
             #     det, non_det = self.prv_candidates_processor.compute(subset_data)
             #     detections.append(det)
             #     non_detections.append(non_det)
-            if sid == "ZTF":
+            if tid == "ZTF":
                 self.prv_candidates_processor.strategy = ZTFPrvCandidatesStrategy()
                 det, non_det = self.prv_candidates_processor.compute(subset_data)
                 detections.append(det)
@@ -437,7 +437,7 @@ class GenericSaveStep(GenericStep):
 
         """
         response = []
-        for idx, gdf in detections.groupby("sid"):
+        for idx, gdf in detections.groupby("tid"):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
@@ -480,7 +480,6 @@ class GenericSaveStep(GenericStep):
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
-
         response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
         dets_from_prv_candidates, non_dets_from_prv_candidates = self.process_prv_candidates(alerts)
@@ -492,7 +491,6 @@ class GenericSaveStep(GenericStep):
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
         detections.drop_duplicates("candid", inplace=True, keep="first")
-
         # Removing stamps columns
         self.remove_stamps(detections)
 
@@ -520,8 +518,8 @@ class GenericSaveStep(GenericStep):
         self.insert_non_detections(new_non_detections)
 
         # Finally produce the lightcurves
-        if self.producer:
-            self.produce(alerts, light_curves)
+        # if self.producer:
+        #     self.produce(alerts, light_curves)
         del alerts
         del light_curves
         del objects
