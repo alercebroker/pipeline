@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from .base_correction_strategy import BaseCorrectionStrategy
-from lc_correction.compute import apply_correction, is_dubious, DISTANCE_THRESHOLD
+from lc_correction.compute import correction, is_dubious, DISTANCE_THRESHOLD
 
 
 class ZTFCorrectionStrategy(BaseCorrectionStrategy):
@@ -30,12 +30,18 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
         df["magpsf"] = detections["mag"]
         df["sigmapsf"] = detections["sigmag"]
         df["isdiffpos"] = detections["isdiffpos"]
+        # Is possible correct that detection?
+        df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
         # Apply formula of correction
-        corrected = df.apply(apply_correction, axis=1, result_type="expand")
+        corrected = df.apply(lambda x: correction(x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos)
+                             if x["corrected"]
+                             else (np.nan, np.nan, np.nan),
+                             axis=1,
+                             result_type="expand")
         corrected.columns = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
-        corrected["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
-        # Create new columns of correction
-        detections[corrected.columns] = corrected
+        corrected["corrected"] = df["corrected"]
+        # Create new columns for correction fields: use sequential index to join.
+        detections = detections.join(corrected)
         # Apply dubious logic
         detections["dubious"] = self.do_dubious(detections)
         del fields

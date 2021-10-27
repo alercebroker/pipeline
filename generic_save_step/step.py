@@ -26,77 +26,7 @@ sys.path.insert(0, '../../../../')
 OBJ_KEYS = ["aid", "tid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
 DET_KEYS = ["aid", "tid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
 NON_DET_KEYS = ["aid", "oid", "tid", "mjd", "diffmaglim", "fid"]
-
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
-
-OBJECT_UPDATE_PARAMS = [
-    "ndethist",
-    "ncovhist",
-    "mjdstarthist",
-    "mjdendhist",
-    "corrected",
-    "stellar",
-    "ndet",
-    "g_r_max",
-    "g_r_mean",
-    "g_r_max_corr",
-    "g_r_mean_corr",
-    "meanra",
-    "meandec",
-    "sigmara",
-    "sigmadec",
-    "deltajd",
-    "firstmjd",
-    "lastmjd",
-    "step_id_corr",
-]
-
-MAGSTATS_TRANSLATE = {
-    "magpsf_mean": "magmean",
-    "magpsf_median": "magmedian",
-    "magpsf_max": "magmax",
-    "magpsf_min": "magmin",
-    "sigmapsf": "magsigma",
-    "magpsf_last": "maglast",
-    "magpsf_first": "magfirst",
-    "magpsf_corr_mean": "magmean_corr",
-    "magpsf_corr_median": "magmedian_corr",
-    "magpsf_corr_max": "magmax_corr",
-    "magpsf_corr_min": "magmin_corr",
-    "sigmapsf_corr": "magsigma_corr",
-    "magpsf_corr_last": "maglast_corr",
-    "magpsf_corr_first": "magfirst_corr",
-    "first_mjd": "firstmjd",
-    "last_mjd": "lastmjd",
-}
-
-MAGSTATS_UPDATE_KEYS = [
-    "stellar",
-    "corrected",
-    "ndet",
-    "ndubious",
-    "dmdt_first",
-    "dm_first",
-    "sigmadm_first",
-    "dt_first",
-    "magmean",
-    "magmedian",
-    "magmax",
-    "magmin",
-    "magsigma",
-    "maglast",
-    "magfirst",
-    "magmean_corr",
-    "magmedian_corr",
-    "magmax_corr",
-    "magmin_corr",
-    "magsigma_corr",
-    "maglast_corr",
-    "magfirst_corr",
-    "firstmjd",
-    "lastmjd",
-    "step_id_corr",
-]
 
 
 class GenericSaveStep(GenericStep):
@@ -236,15 +166,14 @@ class GenericSaveStep(GenericStep):
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
-    
-    def calculate_means_coordinates(self, coordinate, sigma_coordinate):
+
+    @classmethod
+    def calculate_means_coordinates(cls, coordinate: np.ndarray, sigma_coordinate: np.ndarray):
         num_coordinate = np.sum(coordinate/sigma_coordinate)
         den_coordinate = np.sum(1/sigma_coordinate**2)
         mean_coordinate = num_coordinate/den_coordinate
-
         return mean_coordinate
-    
-    
+
     def apply_objs_stats_from_correction(self, df):
         response = {}
         df_mjd = df.mjd
@@ -255,8 +184,8 @@ class GenericSaveStep(GenericStep):
         df_sigmara = df.sigmara
         df_sigmadec = df.sigmadec
 
-        response["meanra"] = self.calculate_means_coordinate(df_ra, df_sigmara)
-        response["meandec"] = self.calculate_means_coordinate(df_dec, df_sigmadec)
+        response["meanra"] = self.calculate_means_coordinates(df_ra, df_sigmara)
+        response["meandec"] = self.calculate_means_coordinates(df_dec, df_sigmadec)
         response["sigmara"] = df_ra.std(ddof=0)
         response["sigmadec"] = df_dec.std(ddof=0)
         response["firstmjd"] = df_mjd.min()
@@ -492,7 +421,15 @@ class GenericSaveStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
+
+        # If is an empiric alert must has stamp
+        alerts["has_stamp"] = True
+
+        # Process previous candidates of each alert
         dets_from_prv_candidates, non_dets_from_prv_candidates = self.process_prv_candidates(alerts)
+
+        # If is an alert from previous candidate hasn't stamps
+        dets_from_prv_candidates["has_stamp"] = False
 
         # Concat detections from alerts and detections from previous candidates
         detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
@@ -500,28 +437,35 @@ class GenericSaveStep(GenericStep):
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
-        detections.drop_duplicates("candid", inplace=True, keep="first")
+        detections.drop_duplicates("candid", inplace=True, keep="first", ignore_index=True)
+
         # Removing stamps columns
         self.remove_stamps(detections)
 
         # Do correction to detections from stream
         detections = self.correct(detections)
+
         # Concat new and old detections and non detections.
         light_curves = self.preprocess_lightcurves(detections, non_dets_from_prv_candidates)
+
         # Get unique alerce ids (maybe can be object id from survey) for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
+
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
         self.logger.info(f"Setting objects flags")
+
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
 
+        # Insert new detections
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
         new_detections.drop(columns=["new"], inplace=True)
         self.insert_detections(new_detections)
 
+        # Insert new now detections
         new_non_detections = light_curves["non_detections"]["new"]
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
@@ -530,6 +474,7 @@ class GenericSaveStep(GenericStep):
         # Finally produce the lightcurves
         # if self.producer:
         #     self.produce(alerts, light_curves)
+
         del alerts
         del light_curves
         del objects

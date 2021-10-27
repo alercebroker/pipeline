@@ -35,10 +35,11 @@ class ZTFPreviousCandidatesParser(SurveyParser):
             prv_content["oid"] = oid
             # prv_content["aid"] = id_generator(prv_content["ra"], prv_content["dec"])
             prv_content["aid"] = message["aid"]
-            prv_content['tid'] = cls._source
+            prv_content["tid"] = cls._source
             # attributes modification
-            prv_content['mjd'] = prv_content['mjd'] - 2400000.5
+            prv_content["mjd"] = prv_content["mjd"] - 2400000.5
             prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
+            prv_content["parent_candid"] = message["parent_candid"]
             return prv_content
         except KeyError:
             raise KeyError("This parser can't parse message")
@@ -71,13 +72,13 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
                         prv["tid"] = tid
                         non_detections.append(prv)
                     else:
-                        prv["parent_candid"] = candid
                         detections.update({
                             prv["candid"]: {
                                 "objectId": oid,
                                 "publisher": tid,
                                 "aid": aid,
-                                "candidate": prv
+                                "candidate": prv,
+                                "parent_candid": candid
                             }
                         })
                 del alert["extra_fields"]["prv_candidates"]
