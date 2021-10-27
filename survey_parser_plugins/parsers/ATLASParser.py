@@ -6,16 +6,16 @@ class ATLASParser(SurveyParser):
     _generic_alert_message_key_mapping = {
         "candid": "candid",
         "mjd": "mjd",
-        "fid": None,
+        "fid": None, # This field is modified below in the code
+        "rfid": None,
+        "isdiffpos": None,
+        "pid": None,
         "ra": "RA",
         "dec": "Dec",
         "rb": None,
+        "rbversion": None,
         "mag": "Mag",
         "sigmag": "Dmag",
-        "aimage": "Major",
-        "bimage": "Minor",
-        "xpos": "X",
-        "ypos": "Y",
     }
 
     _fid_mapper = {
@@ -42,12 +42,16 @@ class ATLASParser(SurveyParser):
 
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
-            generic_alert_message['sid'] = cls._source
+            generic_alert_message['tid'] = cls._source # This must be more exact (for telescopes)
             generic_alert_message['aid'] = oid
             generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification
+            # possible attributes
+            sigmaradec = 0.07
+            generic_alert_message["sigmara"] = candidate["sigmara"] if "sigmara" in candidate else sigmaradec 
+            generic_alert_message["sigmadec"] = candidate["sigmadec"] if "sigmadec" in candidate else sigmaradec 
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")

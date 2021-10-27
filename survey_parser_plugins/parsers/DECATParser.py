@@ -25,7 +25,11 @@ class DECATParser(SurveyParser):
             message = message["sources"].copy()
             return [GenericAlert(
                 oid=oid,
-                sid=cls._source,
+                tid=cls._source,
+                pid="",
+                rfid="",
+                rbversion="",
+                isdiffpos=1,
                 candid=msg['sourceid'],
                 mjd=msg['mjd'],
                 fid=cls._get_filter(msg['filter']),
@@ -34,10 +38,6 @@ class DECATParser(SurveyParser):
                 rb=msg['rb'],
                 mag=msg['mag'],
                 sigmag=msg["magerr"],
-                aimage=None,
-                bimage=None,
-                xpos=None,
-                ypos=None,
                 )
                 for msg in message
             ]
