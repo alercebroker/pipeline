@@ -86,7 +86,7 @@ class MongoConnection(DatabaseConnection):
             ).find({'hello': 'world'})
             # Using db-plugins
             # These two statements are equivalent
-            db_conn.query(Object).get_or_create(filter_by=**filters)
+            db_conn.query(model=Object).get_or_create(filter_by=**filters)
             db_conn.query().get_or_create(model=Object, filter_by=**filters)
         """
         if query_class:

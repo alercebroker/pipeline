@@ -1,5 +1,8 @@
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoConnection, MongoDatabaseCreator
+from db_plugins.db.mongo.connection import (
+    MongoConnection,
+    MongoDatabaseCreator,
+)
 from db_plugins.db.mongo.query import mongo_query_creator
 from db_plugins.db.mongo.models import Object
 import unittest
@@ -34,7 +37,9 @@ class MongoConnectionTest(unittest.TestCase):
 
     def test_create_db(self):
         self.conn.create_db()
-        collections = self.client[self.config["DATABASE"]].list_collection_names()
+        collections = self.client[
+            self.config["DATABASE"]
+        ].list_collection_names()
         expected = ["object", "detection", "non_detection"]
         self.assertEqual(collections, expected)
 
@@ -89,7 +94,9 @@ class MongoQueryTest(unittest.TestCase):
         self.database = client["database"]
         self.obj_collection = self.database["object"]
         self.obj_collection.insert_one({"test": "test"})
-        self.mongo_query_class = mongo_query_creator(mongomock.collection.Collection)
+        self.mongo_query_class = mongo_query_creator(
+            mongomock.collection.Collection
+        )
         self.query = self.mongo_query_class(
             model=Object,
             database=self.database,
@@ -111,15 +118,47 @@ class MongoQueryTest(unittest.TestCase):
                 "lastmjd": "test",
                 "meanra": "test",
                 "meandec": "test",
-                "ndet": "test"
+                "ndet": "test",
             }
         )
         self.assertIsNotNone(result)
         self.assertTrue(created)
 
     def test_update(self):
-        self.query.update({"test": "test"}, {"$set": {"test": "edited"}})
-        f = self.obj_collection.find_one({"test": "edited"})
+        model = Object(
+            aid="aid",
+            oid="oid",
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra="meanra",
+            meandec="meandec",
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model)
+        self.query.update(model, {"oid": "edited"})
+        f = self.obj_collection.find_one({"oid": "edited"})
+        self.assertIsNotNone(f)
+        self.assertEqual(self.query.model, Object)
+
+    def test_bulk_update(self):
+        model = Object(
+            aid="aid",
+            oid="oid",
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra="meanra",
+            meandec="meandec",
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model)
+        self.query.bulk_update([model], [{"oid": "edited"}])
+        f = self.obj_collection.find_one({"oid": "edited"})
+        self.assertIsNotNone(f)
+        # now with filters
+        self.query.bulk_update(
+            [model], [{"oid": "edited2"}], filter_fields=[{"aid": "aid"}]
+        )
+        f = self.obj_collection.find_one({"oid": "edited2"})
         self.assertIsNotNone(f)
 
     def test_bulk_insert(self):
@@ -133,7 +172,7 @@ class MongoQueryTest(unittest.TestCase):
                     "lastmjd": "test",
                     "meanra": "test",
                     "meandec": "test",
-                    "ndet": "test"
+                    "ndet": "test",
                 }
                 for i in range(2)
             ]

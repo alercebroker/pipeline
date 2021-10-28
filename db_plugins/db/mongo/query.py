@@ -1,6 +1,7 @@
 from db_plugins.db.generic import BaseQuery, Pagination
 from db_plugins.db.mongo.models import Base
 from pymongo.collection import Collection as PymongoCollection
+from pymongo import UpdateOne
 
 
 def constructor_creator(collection_class):
@@ -126,10 +127,33 @@ def update_creator(collection_class):
         instance
             The updated object instance
         """
-        self.init_collection(instance)
-        return collection_class.update_one(self, instance, args)
+        model = type(instance)
+        self.init_collection(model)
+        update_op = {"$set": args}
+        return collection_class.update_one(self, instance, update_op)
 
     return update
+
+
+def bulk_update_creator(collection_class):
+    def bulk_update(
+        self, instances: list, args: list, filter_fields: list = []
+    ):
+        model = type(instances[0])
+        self.init_collection(model)
+        requests = []
+        for i, instance in enumerate(instances):
+            requests.append(
+                UpdateOne(
+                    filter_fields[i] if len(filter_fields) > 0 else instance,
+                    {"$set": args[i]},
+                )
+            )
+        return collection_class.bulk_write(
+            self, requests=requests, ordered=False
+        )
+
+    return bulk_update
 
 
 def bulk_insert_creator(collection_class):
@@ -155,7 +179,9 @@ def bulk_insert_creator(collection_class):
     return bulk_insert
 
 
-def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50000):
+def paginate(
+    self, filter_by={}, page=1, per_page=10, count=True, max_results=50000
+):
     """Return pagination object with the results.
 
     https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
@@ -257,6 +283,7 @@ def mongo_query_creator(collection_class=PymongoCollection) -> BaseQuery:
         "check_exists": check_exists,
         "get_or_create": get_or_create_creator(collection_class),
         "update": update_creator(collection_class),
+        "bulk_update": bulk_update_creator(collection_class),
         "bulk_insert": bulk_insert_creator(collection_class),
         "paginate": paginate,
         "find_one": find_one_creator(collection_class),
