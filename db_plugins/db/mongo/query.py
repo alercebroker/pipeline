@@ -126,8 +126,10 @@ def update_creator(collection_class):
         instance
             The updated object instance
         """
-        self.init_collection(instance)
-        return collection_class.update_one(self, instance, args)
+        model = type(instance)
+        self.init_collection(model)
+        update_op = {"$set": args}
+        return collection_class.update_one(self, instance, update_op)
 
     return update
 
@@ -155,7 +157,9 @@ def bulk_insert_creator(collection_class):
     return bulk_insert
 
 
-def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50000):
+def paginate(
+    self, filter_by={}, page=1, per_page=10, count=True, max_results=50000
+):
     """Return pagination object with the results.
 
     https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
