@@ -140,6 +140,27 @@ class MongoQueryTest(unittest.TestCase):
         self.assertIsNotNone(f)
         self.assertEqual(self.query.model, Object)
 
+    def test_bulk_update(self):
+        model = Object(
+            aid="aid",
+            oid="oid",
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra="meanra",
+            meandec="meandec",
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model)
+        self.query.bulk_update([model], [{"oid": "edited"}])
+        f = self.obj_collection.find_one({"oid": "edited"})
+        self.assertIsNotNone(f)
+        # now with filters
+        self.query.bulk_update(
+            [model], [{"oid": "edited2"}], filter_fields=[{"aid": "aid"}]
+        )
+        f = self.obj_collection.find_one({"oid": "edited2"})
+        self.assertIsNotNone(f)
+
     def test_bulk_insert(self):
         self.assertEqual(self.obj_collection.count_documents({}), 1)
         self.query.bulk_insert(
