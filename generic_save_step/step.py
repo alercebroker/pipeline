@@ -7,7 +7,9 @@ from db_plugins.db.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
-from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import ZTFPrvCandidatesStrategy
+from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
+    ZTFPrvCandidatesStrategy,
+)
 from .utils.correction.corrector import Corrector
 from .utils.correction.strategies.ztf_correction_strategy import ZTFCorrectionStrategy
 
@@ -20,11 +22,34 @@ import numpy as np
 import pandas as pd
 import logging
 import sys
-sys.path.insert(0, '../../../../')
+
+sys.path.insert(0, "../../../../")
 
 
-OBJ_KEYS = ["aid", "tid", "oid", "lastmjd", "firstmjd", "meanra", "meandec", "sigmara", "sigmadec"]
-DET_KEYS = ["aid", "tid", "oid", "candid", "mjd", "fid", "ra", "dec", "rb", "mag", "sigmag"]
+OBJ_KEYS = [
+    "aid",
+    "tid",
+    "oid",
+    "lastmjd",
+    "firstmjd",
+    "meanra",
+    "meandec",
+    "sigmara",
+    "sigmadec",
+]
+DET_KEYS = [
+    "aid",
+    "tid",
+    "oid",
+    "candid",
+    "mjd",
+    "fid",
+    "ra",
+    "dec",
+    "rb",
+    "mag",
+    "sigmag",
+]
 NON_DET_KEYS = ["aid", "oid", "tid", "mjd", "diffmaglim", "fid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
@@ -41,9 +66,17 @@ class GenericSaveStep(GenericStep):
 
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO, producer=None, db_connection=None, **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        level=logging.INFO,
+        producer=None,
+        db_connection=None,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
-        
+
         if "CLASS" in config["PRODUCER_CONFIG"]:
             producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
             producer = producer_class(config["PRODUCER_CONFIG"])
@@ -70,7 +103,9 @@ class GenericSaveStep(GenericStep):
 
         """
         filter_by = {"_id": {"$in": oids}}
-        objects = self.driver.query(Object).find_all(collection=Object, filter_by=filter_by, paginate=False)
+        objects = self.driver.query().find_all(
+            model=Object, filter_by=filter_by, paginate=False
+        )
         return pd.DataFrame(objects, columns=OBJ_KEYS)
 
     def get_detections(self, oids: List[str or int]):
@@ -85,7 +120,9 @@ class GenericSaveStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": oids}}
-        detections = self.driver.query(Detection).find_all(collection=Detection, filter_by=filter_by, paginate=False)
+        detections = self.driver.query().find_all(
+            model=Detection, filter_by=filter_by, paginate=False
+        )
         return pd.DataFrame(detections, columns=DET_KEYS)
 
     def get_non_detections(self, oids: List[str or int]):
@@ -100,7 +137,9 @@ class GenericSaveStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": oids}}
-        non_detections = self.driver.query(NonDetection).find_all(collection=NonDetection, filter_by=filter_by, paginate=False)
+        non_detections = self.driver.query().find_all(
+            model=NonDetection, filter_by=filter_by, paginate=False
+        )
         return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
 
     def insert_objects(self, objects: pd.DataFrame):
@@ -132,8 +171,16 @@ class GenericSaveStep(GenericStep):
             self.logger.info(f"Updating {len(to_update)} objects")
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
+            instances = []
+            new_values = []
+            filters = []
             for obj in dict_to_update:
-                self.driver.query().update(Object, filter_by={"_id": obj["aid"]}, replacement=obj)
+                instances.append(Object(obj))
+                new_values.append(obj)
+                filters.append({"_id": obj["ai"]})
+            self.driver.query().bulk_update(
+                instances, new_values, filter_fields=filters
+            )
 
     def insert_detections(self, detections: pd.DataFrame):
         """
@@ -168,10 +215,12 @@ class GenericSaveStep(GenericStep):
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
 
     @classmethod
-    def calculate_means_coordinates(cls, coordinate: np.ndarray, sigma_coordinate: np.ndarray):
-        num_coordinate = np.sum(coordinate/sigma_coordinate)
-        den_coordinate = np.sum(1/sigma_coordinate**2)
-        mean_coordinate = num_coordinate/den_coordinate
+    def calculate_means_coordinates(
+        cls, coordinate: np.ndarray, sigma_coordinate: np.ndarray
+    ):
+        num_coordinate = np.sum(coordinate / sigma_coordinate)
+        den_coordinate = np.sum(1 / sigma_coordinate ** 2)
+        mean_coordinate = num_coordinate / den_coordinate
         return mean_coordinate
 
     def apply_objs_stats_from_correction(self, df):
@@ -200,7 +249,9 @@ class GenericSaveStep(GenericStep):
         last_alert = filtered_alerts.iloc[last_alert]
         return last_alert
 
-    def preprocess_objects(self, objects: pd.DataFrame, light_curves: dict, alerts: pd.DataFrame):
+    def preprocess_objects(
+        self, objects: pd.DataFrame, light_curves: dict, alerts: pd.DataFrame
+    ):
         """
 
         Parameters
@@ -223,7 +274,9 @@ class GenericSaveStep(GenericStep):
         detections_last_alert.drop_duplicates(["candid", "aid"], inplace=True)
         detections_last_alert.reset_index(inplace=True)
 
-        new_objects = detections_last_alert.groupby("aid").apply(self.apply_objs_stats_from_correction)
+        new_objects = detections_last_alert.groupby("aid").apply(
+            self.apply_objs_stats_from_correction
+        )
         new_objects.reset_index(inplace=True)
 
         new_names = dict(
@@ -248,14 +301,16 @@ class GenericSaveStep(GenericStep):
         """
         light_curves = {
             "detections": self.get_detections(oids),
-            "non_detections": self.get_non_detections(oids)
+            "non_detections": self.get_non_detections(oids),
         }
         self.logger.info(
             f"Light Curves: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections"
         )
         return light_curves
 
-    def preprocess_lightcurves(self, detections: pd.DataFrame, non_detections: pd.DataFrame) -> dict:
+    def preprocess_lightcurves(
+        self, detections: pd.DataFrame, non_detections: pd.DataFrame
+    ) -> dict:
         """
 
         Parameters
@@ -282,15 +337,22 @@ class GenericSaveStep(GenericStep):
         # Remove tuple of [oid, candid] that are new detections and old detections. This is a mask that retrieve
         # existing tuples on db.
         unique_keys_detections = ["oid", "candid"]
-        detections_already_on_db = detections[unique_keys_detections].isin(
-            old_detections[unique_keys_detections]).values
-        detections_already_on_db = np.logical_and(detections_already_on_db[:, 0], detections_already_on_db[:, 1])
+        detections_already_on_db = (
+            detections[unique_keys_detections]
+            .isin(old_detections[unique_keys_detections])
+            .values
+        )
+        detections_already_on_db = np.logical_and(
+            detections_already_on_db[:, 0], detections_already_on_db[:, 1]
+        )
 
         # Apply mask and get only new detections on detections from stream.
         new_detections = detections[~detections_already_on_db]
 
         # Get all light curve: only detections since beginning of time
-        light_curves["detections"] = pd.concat([old_detections, new_detections], ignore_index=True)
+        light_curves["detections"] = pd.concat(
+            [old_detections, new_detections], ignore_index=True
+        )
 
         non_detections["new"] = True
         old_non_detections = light_curves["non_detections"]
@@ -300,15 +362,22 @@ class GenericSaveStep(GenericStep):
             old_non_detections["round_mjd"] = old_non_detections["mjd"].round(5)
             # Remove [oid, fid, round_mjd] that are new non_dets and old non_dets.
             unique_keys_non_detections = ["oid", "fid", "round_mjd"]
-            non_dets_already_on_db = non_detections[unique_keys_non_detections].isin(
-                old_non_detections[unique_keys_non_detections]).values
-            non_dets_already_on_db = np.logical_and(non_dets_already_on_db[:, 0],
-                                                    non_dets_already_on_db[:, 1],
-                                                    non_dets_already_on_db[:, 2])
+            non_dets_already_on_db = (
+                non_detections[unique_keys_non_detections]
+                .isin(old_non_detections[unique_keys_non_detections])
+                .values
+            )
+            non_dets_already_on_db = np.logical_and(
+                non_dets_already_on_db[:, 0],
+                non_dets_already_on_db[:, 1],
+                non_dets_already_on_db[:, 2],
+            )
             # Apply mask and get only new non detections on non detections from stream.
             new_non_detections = non_detections[~non_dets_already_on_db]
             # Get all light curve: only detections since beginning of time
-            non_detections = pd.concat([old_non_detections, new_non_detections], ignore_index=True)
+            non_detections = pd.concat(
+                [old_non_detections, new_non_detections], ignore_index=True
+            )
             non_detections.drop(columns=["round_mjd"], inplace=True)
             light_curves["non_detections"] = non_detections
         return light_curves
@@ -328,7 +397,9 @@ class GenericSaveStep(GenericStep):
         """
         alerts.drop("stamps", axis=1, inplace=True)
 
-    def process_prv_candidates(self, alerts: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def process_prv_candidates(
+        self, alerts: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Separate previous candidates from alerts. For use it, the input must be a DataFrame created from a list of
         GenericAlert. This method use a strategy pattern for extract data from any survey.
@@ -360,8 +431,16 @@ class GenericSaveStep(GenericStep):
                 non_detections.append(non_det)
             else:
                 pass
-        detections = pd.concat(detections, ignore_index=True) if len(detections) else pd.DataFrame()
-        non_detections = pd.concat(non_detections, ignore_index=True) if len(non_detections) else pd.DataFrame()
+        detections = (
+            pd.concat(detections, ignore_index=True)
+            if len(detections)
+            else pd.DataFrame()
+        )
+        non_detections = (
+            pd.concat(non_detections, ignore_index=True)
+            if len(non_detections)
+            else pd.DataFrame()
+        )
         return detections, non_detections
 
     def correct(self, detections: pd.DataFrame) -> pd.DataFrame:
@@ -426,7 +505,10 @@ class GenericSaveStep(GenericStep):
         alerts["has_stamp"] = True
 
         # Process previous candidates of each alert
-        dets_from_prv_candidates, non_dets_from_prv_candidates = self.process_prv_candidates(alerts)
+        (
+            dets_from_prv_candidates,
+            non_dets_from_prv_candidates,
+        ) = self.process_prv_candidates(alerts)
 
         # If is an alert from previous candidate hasn't stamps
         dets_from_prv_candidates["has_stamp"] = False
@@ -437,7 +519,9 @@ class GenericSaveStep(GenericStep):
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
-        detections.drop_duplicates("candid", inplace=True, keep="first", ignore_index=True)
+        detections.drop_duplicates(
+            "candid", inplace=True, keep="first", ignore_index=True
+        )
 
         # Removing stamps columns
         self.remove_stamps(detections)
@@ -446,7 +530,9 @@ class GenericSaveStep(GenericStep):
         detections = self.correct(detections)
 
         # Concat new and old detections and non detections.
-        light_curves = self.preprocess_lightcurves(detections, non_dets_from_prv_candidates)
+        light_curves = self.preprocess_lightcurves(
+            detections, non_dets_from_prv_candidates
+        )
 
         # Get unique alerce ids (maybe can be object id from survey) for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
