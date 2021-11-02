@@ -444,7 +444,7 @@ class GenericSaveStep(GenericStep):
                 det, non_det = self.prv_candidates_processor.compute(
                     subset_data
                 )
-            if tid == "ATLAS":
+            elif "ATLAS" in tid:
                 self.prv_candidates_processor.strategy = (
                     AtlasPrvCandidatesStrategy()
                 )
@@ -475,7 +475,7 @@ class GenericSaveStep(GenericStep):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
-            elif "ATLAS" == idx:
+            elif "ATLAS" in idx:
                 self.detections_corrector.strategy = ATLASCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
             else:
@@ -538,17 +538,14 @@ class GenericSaveStep(GenericStep):
         detections = pd.concat(
             [alerts, dets_from_prv_candidates], ignore_index=True
         )
-
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
         detections.drop_duplicates(
             "candid", inplace=True, keep="first", ignore_index=True
         )
-
         # Removing stamps columns
         self.remove_stamps(detections)
-
         # Do correction to detections from stream
         detections = self.correct(detections)
 
