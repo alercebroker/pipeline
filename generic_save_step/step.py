@@ -216,14 +216,12 @@ class GenericSaveStep(GenericStep):
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
 
-    @classmethod
-    def calculate_means_coordinates(
-        cls, coordinate: np.ndarray, sigma_coordinate: np.ndarray
-    ):
+    def calculate_stats_coordinates(self, coordinate, sigma_coordinate):
         num_coordinate = np.sum(coordinate / sigma_coordinate)
         den_coordinate = np.sum(1 / sigma_coordinate ** 2)
         mean_coordinate = num_coordinate / den_coordinate
-        return mean_coordinate
+
+        return mean_coordinate, den_coordinate
 
     def apply_objs_stats_from_correction(self, df):
         response = {}
@@ -235,14 +233,14 @@ class GenericSaveStep(GenericStep):
         df_sigmara = df.sigmara
         df_sigmadec = df.sigmadec
 
-        response["meanra"] = self.calculate_means_coordinates(
-            df_ra, df_sigmara
-        )
-        response["meandec"] = self.calculate_means_coordinates(
-            df_dec, df_sigmadec
-        )
-        response["sigmara"] = df_ra.std(ddof=0)
-        response["sigmadec"] = df_dec.std(ddof=0)
+        (
+            response["meanra"],
+            response["sigmara"],
+        ) = self.calculate_stats_coordinate(df_ra, df_sigmara)
+        (
+            response["meandec"],
+            response["sigmadec"],
+        ) = self.calculate_stats_coordinate(df_dec, df_sigmadec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
