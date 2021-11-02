@@ -5,7 +5,7 @@ from survey_parser_plugins.core import SurveyParser, id_generator
 import pandas as pd
 
 # Keys used on non detections for ZTF
-NON_DET_KEYS = ["aid", "sid", "oid", "mjd", "diffmaglim", "fid"]
+NON_DET_KEYS = ["aid", "tid", "oid", "mjd", "diffmaglim", "fid"]
 
 
 # Implementation a new parser for PreviousCandidates with SurveyParser signs.
@@ -15,15 +15,14 @@ class ZTFPreviousCandidatesParser(SurveyParser):
         "candid": "candid",
         "mjd": "jd",
         "fid": "fid",
+        "pid": "pid",
         "ra": "ra",
         "dec": "dec",
-        "rb": "rb",
         "mag": "magpsf",
         "sigmag": "sigmapsf",
-        "aimage": "aimage",
-        "bimage": "bimage",
-        "xpos": "xpos",
-        "ypos": "ypos",
+        "isdiffpos": "isdiffpos",
+        "rb": "rb",
+        "rbversion": "rbversion"
     }
 
     @classmethod
@@ -36,9 +35,11 @@ class ZTFPreviousCandidatesParser(SurveyParser):
             prv_content["oid"] = oid
             # prv_content["aid"] = id_generator(prv_content["ra"], prv_content["dec"])
             prv_content["aid"] = message["aid"]
-            prv_content['sid'] = cls._source
+            prv_content["tid"] = cls._source
             # attributes modification
-            prv_content['mjd'] = prv_content['mjd'] - 2400000.5
+            prv_content["mjd"] = prv_content["mjd"] - 2400000.5
+            prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
+            prv_content["parent_candid"] = message["parent_candid"]
             return prv_content
         except KeyError:
             raise KeyError("This parser can't parse message")
@@ -60,7 +61,7 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
 
         for index, alert in alerts.iterrows():
             oid = alert["oid"]
-            sid = alert["sid"]
+            tid = alert["tid"]
             aid = id_generator(alert["ra"], alert["dec"])
             candid = alert["candid"]
             if alert["extra_fields"]["prv_candidates"] is not None:
@@ -68,16 +69,16 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
                     if prv['candid'] is None:
                         prv["aid"] = aid
                         prv["oid"] = oid
-                        prv["sid"] = sid
+                        prv["tid"] = tid
                         non_detections.append(prv)
                     else:
-                        prv["parent_candid"] = candid
                         detections.update({
                             prv["candid"]: {
                                 "objectId": oid,
-                                "publisher": sid,
+                                "publisher": tid,
                                 "aid": aid,
-                                "candidate": prv
+                                "candidate": prv,
+                                "parent_candid": candid
                             }
                         })
                 del alert["extra_fields"]["prv_candidates"]
