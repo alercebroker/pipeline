@@ -14,11 +14,9 @@ from .utils.prv_candidates.strategies.atlas_prv_candidates_strategy import (
     AtlasPrvCandidatesStrategy,
 )
 from .utils.correction.corrector import Corrector
-from .utils.correction.strategies.ztf_correction_strategy import (
+from .utils.correction.strategies import (
+    ATLASCorrectionStrategy,
     ZTFCorrectionStrategy,
-)
-from .utils.correction.strategies.atlas_correction_strategy import (
-    AtlasCorrectionStrategy,
 )
 
 
@@ -477,8 +475,8 @@ class GenericSaveStep(GenericStep):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
-            if "ATLAS" == idx:
-                self.detections_corrector.strategy = AtlasCorrectionStrategy()
+            elif "ATLAS" == idx:
+                self.detections_corrector.strategy = ATLASCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
             else:
                 raise ValueError(f"Unknown Survey {idx}")
