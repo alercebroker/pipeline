@@ -179,7 +179,7 @@ class GenericSaveStep(GenericStep):
             for obj in dict_to_update:
                 instances.append(Object(obj))
                 new_values.append(obj)
-                filters.append({"_id": obj["ai"]})
+                filters.append({"_id": obj["aid"]})
             self.driver.query().bulk_update(
                 instances, new_values, filter_fields=filters
             )
