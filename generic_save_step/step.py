@@ -10,9 +10,15 @@ from .utils.prv_candidates.processor import Processor
 from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
     ZTFPrvCandidatesStrategy,
 )
+from .utils.prv_candidates.strategies.atlas_prv_candidates_strategy import (
+    AtlasPrvCandidatesStrategy,
+)
 from .utils.correction.corrector import Corrector
 from .utils.correction.strategies.ztf_correction_strategy import (
     ZTFCorrectionStrategy,
+)
+from .utils.correction.strategies.atlas_correction_strategy import (
+    AtlasCorrectionStrategy,
 )
 
 
@@ -412,9 +418,9 @@ class GenericSaveStep(GenericStep):
     def process_prv_candidates(
         self, alerts: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Separate previous candidates from alerts. For use it, the input must be a DataFrame created from a list of
-        GenericAlert. This method use a strategy pattern for extract data from any survey.
+        """Separate previous candidates from alerts.
+
+        The input must be a DataFrame created from a list of GenericAlert.
 
         Parameters
         ----------
@@ -433,11 +439,6 @@ class GenericSaveStep(GenericStep):
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
-            # if tid in dicto.keys():
-            #     self.prv_candidates_processor.strategy = dicto[tid]
-            #     det, non_det = self.prv_candidates_processor.compute(subset_data)
-            #     detections.append(det)
-            #     non_detections.append(non_det)
             if tid == "ZTF":
                 self.prv_candidates_processor.strategy = (
                     ZTFPrvCandidatesStrategy()
@@ -445,24 +446,23 @@ class GenericSaveStep(GenericStep):
                 det, non_det = self.prv_candidates_processor.compute(
                     subset_data
                 )
-                detections.append(det)
-                non_detections.append(non_det)
+            if tid == "ATLAS":
+                self.prv_candidates_processor.strategy = (
+                    AtlasPrvCandidatesStrategy()
+                )
+                det, non_det = self.prv_candidates_processor.compute(
+                    subset_data
+                )
             else:
-                pass
-        detections = (
-            pd.concat(detections, ignore_index=True)
-            if len(detections)
-            else pd.DataFrame()
-        )
-        non_detections = (
-            pd.concat(non_detections, ignore_index=True)
-            if len(non_detections)
-            else pd.DataFrame()
-        )
+                raise ValueError(f"Unknown Survey {tid}")
+            detections.append(det)
+            non_detections.append(non_det)
+        detections = pd.concat(detections, ignore_index=True)
+        non_detections = pd.concat(non_detections, ignore_index=True)
         return detections, non_detections
 
     def correct(self, detections: pd.DataFrame) -> pd.DataFrame:
-        """
+        """Correct Detections.
 
         Parameters
         ----------
@@ -477,8 +477,11 @@ class GenericSaveStep(GenericStep):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
+            if "ATLAS" == idx:
+                self.detections_corrector.strategy = AtlasCorrectionStrategy()
+                corrected = self.detections_corrector.compute(gdf)
             else:
-                corrected = gdf
+                raise ValueError(f"Unknown Survey {idx}")
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
         return response
@@ -562,7 +565,7 @@ class GenericSaveStep(GenericStep):
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
-        self.logger.info(f"Setting objects flags")
+        self.logger.info("Setting objects flags")
 
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
