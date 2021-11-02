@@ -11,7 +11,9 @@ from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
     ZTFPrvCandidatesStrategy,
 )
 from .utils.correction.corrector import Corrector
-from .utils.correction.strategies.ztf_correction_strategy import ZTFCorrectionStrategy
+from .utils.correction.strategies.ztf_correction_strategy import (
+    ZTFCorrectionStrategy,
+)
 
 
 from survey_parser_plugins import ALeRCEParser
@@ -233,8 +235,12 @@ class GenericSaveStep(GenericStep):
         df_sigmara = df.sigmara
         df_sigmadec = df.sigmadec
 
-        response["meanra"] = self.calculate_means_coordinates(df_ra, df_sigmara)
-        response["meandec"] = self.calculate_means_coordinates(df_dec, df_sigmadec)
+        response["meanra"] = self.calculate_means_coordinates(
+            df_ra, df_sigmara
+        )
+        response["meandec"] = self.calculate_means_coordinates(
+            df_dec, df_sigmadec
+        )
         response["sigmara"] = df_ra.std(ddof=0)
         response["sigmadec"] = df_dec.std(ddof=0)
         response["firstmjd"] = df_mjd.min()
@@ -280,7 +286,11 @@ class GenericSaveStep(GenericStep):
         new_objects.reset_index(inplace=True)
 
         new_names = dict(
-            [(col, col.replace("-", "_")) for col in new_objects.columns if "-" in col]
+            [
+                (col, col.replace("-", "_"))
+                for col in new_objects.columns
+                if "-" in col
+            ]
         )
 
         new_objects.rename(columns={**new_names}, inplace=True)
@@ -359,7 +369,9 @@ class GenericSaveStep(GenericStep):
         if len(non_detections):
             # Using round 5 to have 5 decimals of precision to delete duplicates non_detections
             non_detections["round_mjd"] = non_detections["mjd"].round(5)
-            old_non_detections["round_mjd"] = old_non_detections["mjd"].round(5)
+            old_non_detections["round_mjd"] = old_non_detections["mjd"].round(
+                5
+            )
             # Remove [oid, fid, round_mjd] that are new non_dets and old non_dets.
             unique_keys_non_detections = ["oid", "fid", "round_mjd"]
             non_dets_already_on_db = (
@@ -415,7 +427,9 @@ class GenericSaveStep(GenericStep):
         # dicto = {
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
-        data = alerts[["oid", "tid", "candid", "ra", "dec", "extra_fields"]].copy()
+        data = alerts[
+            ["oid", "tid", "candid", "ra", "dec", "extra_fields"]
+        ].copy()
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
@@ -425,8 +439,12 @@ class GenericSaveStep(GenericStep):
             #     detections.append(det)
             #     non_detections.append(non_det)
             if tid == "ZTF":
-                self.prv_candidates_processor.strategy = ZTFPrvCandidatesStrategy()
-                det, non_det = self.prv_candidates_processor.compute(subset_data)
+                self.prv_candidates_processor.strategy = (
+                    ZTFPrvCandidatesStrategy()
+                )
+                det, non_det = self.prv_candidates_processor.compute(
+                    subset_data
+                )
                 detections.append(det)
                 non_detections.append(non_det)
             else:
@@ -482,7 +500,9 @@ class GenericSaveStep(GenericStep):
             detections = detections.to_dict("records")
 
             mask_non_detections = light_curves["detections"]["oid"] == oid
-            non_detections = light_curves["non_detections"][mask_non_detections]
+            non_detections = light_curves["non_detections"][
+                mask_non_detections
+            ]
             non_detections = non_detections.to_dict("records")
 
             output_message = {
@@ -514,7 +534,9 @@ class GenericSaveStep(GenericStep):
         dets_from_prv_candidates["has_stamp"] = False
 
         # Concat detections from alerts and detections from previous candidates
-        detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
+        detections = pd.concat(
+            [alerts, dets_from_prv_candidates], ignore_index=True
+        )
 
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
