@@ -66,6 +66,8 @@ def base_creator():
     class Base(dict, metaclass=BaseMetaClass):
         def __init__(self, **kwargs):
             model = {}
+            if "_id" in kwargs:
+                model["_id"] = kwargs["_id"]
             for field in self._meta.fields:
                 try:
                     if isinstance(self._meta.fields[field], SpecialField):

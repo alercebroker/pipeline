@@ -124,6 +124,22 @@ class MongoQueryTest(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertTrue(created)
 
+    def test_get_or_create_with_kwargs(self):
+        result, created = self.query.get_or_create(
+            {
+                "aid": "test",
+                "oid": "test",
+                "firstmjd": "test",
+                "lastmjd": "test",
+                "meanra": "test",
+                "meandec": "test",
+                "ndet": "test",
+            },
+            _id="test",
+        )
+        self.assertEqual(result.inserted_id, "test")
+        self.assertTrue(created)
+
     def test_update(self):
         model = Object(
             aid="aid",
