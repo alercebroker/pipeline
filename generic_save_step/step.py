@@ -3,7 +3,7 @@ from apf.core import get_class
 from apf.producers import KafkaProducer
 
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
@@ -173,13 +173,15 @@ class GenericSaveStep(GenericStep):
             self.logger.info(f"Updating {len(to_update)} objects")
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
+            print(dict_to_update)
             instances = []
             new_values = []
             filters = []
             for obj in dict_to_update:
-                instances.append(Object(obj))
+                print(obj)
+                instances.append(Object(**obj))
                 new_values.append(obj)
-                filters.append({"_id": obj["ai"]})
+                filters.append({"_id": obj["aid"]})
             self.driver.query().bulk_update(
                 instances, new_values, filter_fields=filters
             )
@@ -234,8 +236,8 @@ class GenericSaveStep(GenericStep):
         df_sigmara = df.sigmara
         df_sigmadec = df.sigmadec
 
-        response["meanra"], response["sigmara"] = self.calculate_stats_coordinate(df_ra, df_sigmara)
-        response["meandec"], response ["sigmadec"] = self.calculate_stats_coordinate(df_dec, df_sigmadec)
+        response["meanra"], response["sigmara"] = self.calculate_stats_coordinates(df_ra, df_sigmara)
+        response["meandec"], response ["sigmadec"] = self.calculate_stats_coordinates(df_dec, df_sigmadec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
