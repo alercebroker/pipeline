@@ -86,7 +86,7 @@ class Detection(Base, generic_models.Detection):
     step_id_corr = Field()
     rbversion = Field()
     extra_fields = SpecialField(create_extra_fields)
-    __table_args__ = [IndexModel([("aid", TEXT)])]
+    __table_args__ = [IndexModel([("aid", ASCENDING), ("tid", ASCENDING)])]
     __tablename__ = "detection"
 
 
@@ -100,9 +100,6 @@ class NonDetection(Base, generic_models.NonDetection):
     extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
-        IndexModel([("aid", TEXT)]),
-        IndexModel([("tid", TEXT)]),
-        IndexModel([("mjd", DESCENDING)]),
-        IndexModel([("fid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("tid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
