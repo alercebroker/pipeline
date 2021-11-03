@@ -7,11 +7,14 @@ from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
-from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
+from .utils.prv_candidates.strategies import (
+    ATLASPrvCandidatesStrategy,
     ZTFPrvCandidatesStrategy,
 )
+
 from .utils.correction.corrector import Corrector
-from .utils.correction.strategies.ztf_correction_strategy import (
+from .utils.correction.strategies import (
+    ATLASCorrectionStrategy,
     ZTFCorrectionStrategy,
 )
 
@@ -407,9 +410,9 @@ class GenericSaveStep(GenericStep):
     def process_prv_candidates(
         self, alerts: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Separate previous candidates from alerts. For use it, the input must be a DataFrame created from a list of
-        GenericAlert. This method use a strategy pattern for extract data from any survey.
+        """Separate previous candidates from alerts.
+
+        The input must be a DataFrame created from a list of GenericAlert.
 
         Parameters
         ----------
@@ -428,11 +431,6 @@ class GenericSaveStep(GenericStep):
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
-            # if tid in dicto.keys():
-            #     self.prv_candidates_processor.strategy = dicto[tid]
-            #     det, non_det = self.prv_candidates_processor.compute(subset_data)
-            #     detections.append(det)
-            #     non_detections.append(non_det)
             if tid == "ZTF":
                 self.prv_candidates_processor.strategy = (
                     ZTFPrvCandidatesStrategy()
@@ -440,24 +438,23 @@ class GenericSaveStep(GenericStep):
                 det, non_det = self.prv_candidates_processor.compute(
                     subset_data
                 )
-                detections.append(det)
-                non_detections.append(non_det)
+            elif "ATLAS" in tid:
+                self.prv_candidates_processor.strategy = (
+                    ATLASPrvCandidatesStrategy()
+                )
+                det, non_det = self.prv_candidates_processor.compute(
+                    subset_data
+                )
             else:
-                pass
-        detections = (
-            pd.concat(detections, ignore_index=True)
-            if len(detections)
-            else pd.DataFrame()
-        )
-        non_detections = (
-            pd.concat(non_detections, ignore_index=True)
-            if len(non_detections)
-            else pd.DataFrame()
-        )
+                raise ValueError(f"Unknown Survey {tid}")
+            detections.append(det)
+            non_detections.append(non_det)
+        detections = pd.concat(detections, ignore_index=True)
+        non_detections = pd.concat(non_detections, ignore_index=True)
         return detections, non_detections
 
     def correct(self, detections: pd.DataFrame) -> pd.DataFrame:
-        """
+        """Correct Detections.
 
         Parameters
         ----------
@@ -472,8 +469,11 @@ class GenericSaveStep(GenericStep):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
                 corrected = self.detections_corrector.compute(gdf)
+            elif "ATLAS" in idx:
+                self.detections_corrector.strategy = ATLASCorrectionStrategy()
+                corrected = self.detections_corrector.compute(gdf)
             else:
-                corrected = gdf
+                raise ValueError(f"Unknown Survey {idx}")
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
         return response
@@ -532,17 +532,14 @@ class GenericSaveStep(GenericStep):
         detections = pd.concat(
             [alerts, dets_from_prv_candidates], ignore_index=True
         )
-
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
         detections.drop_duplicates(
             "candid", inplace=True, keep="first", ignore_index=True
         )
-
         # Removing stamps columns
         self.remove_stamps(detections)
-
         # Do correction to detections from stream
         detections = self.correct(detections)
 
@@ -557,7 +554,7 @@ class GenericSaveStep(GenericStep):
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
-        self.logger.info(f"Setting objects flags")
+        self.logger.info("Setting objects flags")
 
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
