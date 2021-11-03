@@ -7,12 +7,11 @@ from db_plugins.db.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
-from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
+from .utils.prv_candidates.strategies import (
+    ATLASPrvCandidatesStrategy,
     ZTFPrvCandidatesStrategy,
 )
-from .utils.prv_candidates.strategies.atlas_prv_candidates_strategy import (
-    AtlasPrvCandidatesStrategy,
-)
+
 from .utils.correction.corrector import Corrector
 from .utils.correction.strategies import (
     ATLASCorrectionStrategy,
@@ -446,7 +445,7 @@ class GenericSaveStep(GenericStep):
                 )
             elif "ATLAS" in tid:
                 self.prv_candidates_processor.strategy = (
-                    AtlasPrvCandidatesStrategy()
+                    ATLASPrvCandidatesStrategy()
                 )
                 det, non_det = self.prv_candidates_processor.compute(
                     subset_data
