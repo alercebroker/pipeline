@@ -35,8 +35,10 @@ class Object(generic_models.Object, Base):
             "coordinates": [kwargs["meanra"], kwargs["meandec"]],
         }
 
-    aid = Field() # ALeRCE candidate id (unique id of object in the ALeRCE database)
-    oid = Field() # Object id should include objects id of all surveys (same survey can provide different object ids)
+    aid = Field()  # ALeRCE candidate id (unique id of object in the ALeRCE database)
+    oid = (
+        Field()
+    )  # Object id should include objects id of all surveys (same survey can provide different object ids)
     lastmjd = Field()
     firstmjd = Field()
     ndet = Field()
@@ -46,8 +48,7 @@ class Object(generic_models.Object, Base):
     extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
-        IndexModel([("aid", TEXT)]),
-        IndexModel([("oid", TEXT)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
@@ -59,7 +60,9 @@ class Object(generic_models.Object, Base):
 
 class Detection(Base, generic_models.Detection):
 
-    tid = Field() # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
+    tid = (
+        Field()
+    )  # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
     aid = Field()
     candid = Field()
     mjd = Field()
@@ -70,7 +73,7 @@ class Detection(Base, generic_models.Detection):
     mag = Field()
     sigmag = Field()
     rfid = Field()
-    e_ra = Field() 
+    e_ra = Field()
     e_dec = Field()
     isdiffpos = Field()
     magpsf_corr = Field()
