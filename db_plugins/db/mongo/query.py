@@ -100,7 +100,7 @@ def get_or_create_creator(collection_class):
 
         try:
             kwargs.update(filter_by)
-            model_instance = self.model(**filter_by)
+            model_instance = self.model(**kwargs)
             result = self.insert_one(model_instance)
             created = True
         except Exception as e:
@@ -136,9 +136,7 @@ def update_creator(collection_class):
 
 
 def bulk_update_creator(collection_class):
-    def bulk_update(
-        self, instances: list, args: list, filter_fields: list = []
-    ):
+    def bulk_update(self, instances: list, args: list, filter_fields: list = []):
         model = type(instances[0])
         self.init_collection(model)
         requests = []
@@ -149,9 +147,7 @@ def bulk_update_creator(collection_class):
                     {"$set": args[i]},
                 )
             )
-        return collection_class.bulk_write(
-            self, requests=requests, ordered=False
-        )
+        return collection_class.bulk_write(self, requests=requests, ordered=False)
 
     return bulk_update
 
@@ -179,9 +175,7 @@ def bulk_insert_creator(collection_class):
     return bulk_insert
 
 
-def paginate(
-    self, filter_by={}, page=1, per_page=10, count=True, max_results=50000
-):
+def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50000):
     """Return pagination object with the results.
 
     https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
