@@ -136,7 +136,9 @@ def update_creator(collection_class):
 
 
 def bulk_update_creator(collection_class):
-    def bulk_update(self, instances: list, args: list, filter_fields: list = []):
+    def bulk_update(
+        self, instances: list, args: list, filter_fields: list = []
+    ):
         model = type(instances[0])
         self.init_collection(model)
         requests = []
@@ -147,7 +149,9 @@ def bulk_update_creator(collection_class):
                     {"$set": args[i]},
                 )
             )
-        return collection_class.bulk_write(self, requests=requests, ordered=False)
+        return collection_class.bulk_write(
+            self, requests=requests, ordered=False
+        )
 
     return bulk_update
 
@@ -175,7 +179,15 @@ def bulk_insert_creator(collection_class):
     return bulk_insert
 
 
-def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50000):
+def paginate(
+    self,
+    filter_by={},
+    page=1,
+    per_page=10,
+    count=True,
+    max_results=50000,
+    **kwargs,
+):
     """Return pagination object with the results.
 
     https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
@@ -197,7 +209,7 @@ def paginate(self, filter_by={}, page=1, per_page=10, count=True, max_results=50
     skips = per_page * (page - 1)
 
     # Skip and limit
-    cursor = self.find(filter_by).skip(skips).limit(per_page)
+    cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page)
 
     # Return documents
     items = [x for x in cursor]
@@ -230,7 +242,9 @@ def find_one_creator(collection_class):
 
 
 def find_all_creator(collection_class):
-    def find_all(self, model: Base = None, filter_by={}, paginate=True):
+    def find_all(
+        self, model: Base = None, filter_by={}, paginate=True, **kwargs
+    ):
         """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.
@@ -243,13 +257,16 @@ def find_all_creator(collection_class):
             attributes used to find objects in the database
         paginate : bool
             whether to get a paginated result or not
+        kwargs : dict
+            all other arguments are passed to `paginate` and/or
+            `pymongo.collection.Collection.find`
         """
         self.init_collection(model)
 
         if paginate:
-            return self.paginate(filter_by)
+            return self.paginate(filter_by, **kwargs)
         else:
-            return collection_class.find(self, filter_by)
+            return collection_class.find(self, filter_by, **kwargs)
 
     return find_all
 
