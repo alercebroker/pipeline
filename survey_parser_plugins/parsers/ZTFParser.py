@@ -4,7 +4,7 @@ from ..core.id_generator import id_generator
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
-    _celestial_sigmas = {
+    _celestial_errors = {
         1: 0.065,
         2: 0.085,
     }
@@ -17,7 +17,7 @@ class ZTFParser(SurveyParser):
         "ra": "ra",
         "dec": "dec",
         "mag": "magpsf",
-        "sigmag": "sigmapsf",
+        "e_mag": "sigmapsf",
         "isdiffpos": "isdiffpos",
         "rb": "rb",
         "rbversion": "rbversion"
@@ -50,9 +50,9 @@ class ZTFParser(SurveyParser):
             generic_alert_message['mjd'] = generic_alert_message['mjd'] - 2400000.5
 
             # possible attributes
-            sigmaradec = cls._celestial_sigmas[candidate["fid"]]
-            generic_alert_message["sigmara"] = candidate["sigmara"] if "sigmara" in candidate else sigmaradec 
-            generic_alert_message["sigmadec"] = candidate["sigmadec"] if "sigmadec" in candidate else sigmaradec 
+            e_radec = cls._celestial_errors[candidate["fid"]]
+            generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_radec 
+            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_radec 
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
