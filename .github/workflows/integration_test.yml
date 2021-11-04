@@ -1,16 +1,13 @@
 name: IntegrationTest
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
 
     # Service containers to run with `container-job`
