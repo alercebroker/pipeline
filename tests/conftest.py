@@ -2,7 +2,7 @@ import pytest
 import os
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
-from settings import DB_CONFIG
+from pymongo import MongoClient
 
 
 @pytest.fixture(scope="session")
@@ -12,12 +12,36 @@ def docker_compose_file(pytestconfig):
     )
 
 
+settings = {
+    "HOST": "localhost",
+    "USER": "root",
+    "PASSWORD": "rootpassword",
+    "PORT": 27017,
+    "DATABASE": "admin",
+}
+
+
 def is_responsive_mongo(url):
     try:
-        driver = new_DBConnection(MongoDatabaseCreator)
-        driver.connect(DB_CONFIG)
+        # driver = new_DBConnection(MongoDatabaseCreator)
+        # driver.connect(settings)
+        client = MongoClient(
+            "localhost",
+            27017,
+            username="root",
+            password="rootpassword",
+            authSource="admin",
+        )
+        db = client.test_db
+        db.command(
+            "createUser",
+            "testo",
+            pwd="passu",
+            roles=["dbOwner"],
+        )
         return True
-    except Exception:
+    except Exception as e:
+        print(e)
         return False
 
 

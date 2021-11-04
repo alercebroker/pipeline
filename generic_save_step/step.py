@@ -3,7 +3,7 @@ from apf.core import get_class
 from apf.producers import KafkaProducer
 
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
@@ -79,11 +79,12 @@ class GenericSaveStep(GenericStep):
     ):
         super().__init__(consumer, config=config, level=level)
 
-        if "CLASS" in config["PRODUCER_CONFIG"]:
-            producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-            producer = producer_class(config["PRODUCER_CONFIG"])
-        elif "PARAMS" in config["PRODUCER_CONFIG"]:
-            producer = KafkaProducer(config["PRODUCER_CONFIG"])
+        if not producer and config.get("PRODUCER_CONFIG", False):
+            if "CLASS" in config["PRODUCER_CONFIG"]:
+                producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+                producer = producer_class(config["PRODUCER_CONFIG"])
+            elif "PARAMS" in config["PRODUCER_CONFIG"]:
+                producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
         self.producer = producer
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
@@ -179,7 +180,7 @@ class GenericSaveStep(GenericStep):
             for obj in dict_to_update:
                 instances.append(Object(obj))
                 new_values.append(obj)
-                filters.append({"_id": obj["ai"]})
+                filters.append({"_id": obj["aid"]})
             self.driver.query().bulk_update(
                 instances, new_values, filter_fields=filters
             )
