@@ -51,6 +51,16 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
         detections.reset_index(inplace=True)
         # Apply dubious logic
         detections["dubious"] = self.do_dubious(detections)
+        # Move correction field to extra_fields
+        detections["extra_fields"] = detections.apply(lambda x: {
+            **x["extra_fields"],
+            "magpsf_corr": x["magpsf_corr"],
+            "sigmapsf_corr": x["sigmapsf_corr"],
+            "sigmapsf_corr_ext": x["sigmapsf_corr_ext"],
+            "dubious": x["dubious"]
+        }, axis=1)
+        # Remove correction columns of dataframe
+        detections.drop(columns=["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext", "dubious"], inplace=True)
         del fields
         del df
         del corrected
