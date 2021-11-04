@@ -39,8 +39,8 @@ OBJ_KEYS = [
     "firstmjd",
     "meanra",
     "meandec",
-    "sigmara",
-    "sigmadec",
+    "e_ra",
+    "e_dec",
 ]
 DET_KEYS = [
     "aid",
@@ -53,7 +53,7 @@ DET_KEYS = [
     "dec",
     "rb",
     "mag",
-    "sigmag",
+    "e_g",
 ]
 NON_DET_KEYS = ["aid", "oid", "tid", "mjd", "diffmaglim", "fid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
@@ -221,9 +221,9 @@ class GenericSaveStep(GenericStep):
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
     
-    def calculate_stats_coordinates(self, coordinate, sigma_coordinate):
-        num_coordinate = np.sum(coordinate/sigma_coordinate)
-        den_coordinate = np.sum(1/sigma_coordinate**2)
+    def calculate_stats_coordinates(self, coordinate, e_coordinate):
+        num_coordinate = np.sum(coordinate/e_coordinate)
+        den_coordinate = np.sum(1/e_coordinate**2)
         mean_coordinate = num_coordinate/den_coordinate
 
         return mean_coordinate, den_coordinate
@@ -236,11 +236,11 @@ class GenericSaveStep(GenericStep):
         df_min = df.iloc[idx_min]
         df_ra = df.ra
         df_dec = df.dec
-        df_sigmara = df.sigmara
-        df_sigmadec = df.sigmadec
+        df_e_ra = df.e_ra
+        df_e_dec = df.e_dec
 
-        response["meanra"], response["sigmara"] = self.calculate_stats_coordinates(df_ra, df_sigmara)
-        response["meandec"], response ["sigmadec"] = self.calculate_stats_coordinates(df_dec, df_sigmadec)
+        response["meanra"], response["e_ra"] = self.calculate_stats_coordinates(df_ra, df_e_ra)
+        response["meandec"], response ["e_dec"] = self.calculate_stats_coordinates(df_dec, df_e_dec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid

@@ -103,7 +103,7 @@ class StepTestCase(unittest.TestCase):
             "dec": ["test"],
             "rb": ["test"],
             "mag": ["test"],
-            "sigmag": ["test"],
+            "e_mag": ["test"],
             "rfid": ["test"],
             "e_ra": ["test"],
             "e_dec": ["test"],

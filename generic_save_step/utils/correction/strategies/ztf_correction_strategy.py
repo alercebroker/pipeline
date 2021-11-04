@@ -32,7 +32,7 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
         df.index = detections["candid"]
         # Additional columns for correction
         df["magpsf"] = detections["mag"]
-        df["sigmapsf"] = detections["sigmag"]
+        df["sigmapsf"] = detections["e_mag"]
         df["isdiffpos"] = detections["isdiffpos"]
         # Is possible correct that detection?
         df["corrected"] = (df["distnr"] < DISTANCE_THRESHOLD)
