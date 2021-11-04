@@ -19,7 +19,7 @@ class ZTFPreviousCandidatesParser(SurveyParser):
         "ra": "ra",
         "dec": "dec",
         "mag": "magpsf",
-        "sigmag": "sigmapsf",
+        "e_mag": "sigmapsf",
         "isdiffpos": "isdiffpos",
         "rb": "rb",
         "rbversion": "rbversion"

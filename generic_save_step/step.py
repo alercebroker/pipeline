@@ -3,15 +3,18 @@ from apf.core import get_class
 from apf.producers import KafkaProducer
 
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 
 from .utils.prv_candidates.processor import Processor
-from .utils.prv_candidates.strategies.ztf_prv_candidates_strategy import (
+from .utils.prv_candidates.strategies import (
+    ATLASPrvCandidatesStrategy,
     ZTFPrvCandidatesStrategy,
 )
+
 from .utils.correction.corrector import Corrector
-from .utils.correction.strategies.ztf_correction_strategy import (
+from .utils.correction.strategies import (
+    ATLASCorrectionStrategy,
     ZTFCorrectionStrategy,
 )
 
@@ -36,8 +39,8 @@ OBJ_KEYS = [
     "firstmjd",
     "meanra",
     "meandec",
-    "sigmara",
-    "sigmadec",
+    "e_ra",
+    "e_dec",
 ]
 DET_KEYS = [
     "aid",
@@ -50,7 +53,7 @@ DET_KEYS = [
     "dec",
     "rb",
     "mag",
-    "sigmag",
+    "e_g",
 ]
 NON_DET_KEYS = ["aid", "oid", "tid", "mjd", "diffmaglim", "fid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
@@ -173,11 +176,13 @@ class GenericSaveStep(GenericStep):
             self.logger.info(f"Updating {len(to_update)} objects")
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
+            print(dict_to_update)
             instances = []
             new_values = []
             filters = []
             for obj in dict_to_update:
-                instances.append(Object(obj))
+                print(obj)
+                instances.append(Object(**obj))
                 new_values.append(obj)
                 filters.append({"_id": obj["aid"]})
             self.driver.query().bulk_update(
@@ -215,16 +220,15 @@ class GenericSaveStep(GenericStep):
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
+    
+    def calculate_stats_coordinates(self, coordinate, e_coordinate):
+        num_coordinate = np.sum(coordinate/e_coordinate)
+        den_coordinate = np.sum(1/e_coordinate**2)
+        mean_coordinate = num_coordinate/den_coordinate
 
-    @classmethod
-    def calculate_means_coordinates(
-        cls, coordinate: np.ndarray, sigma_coordinate: np.ndarray
-    ):
-        num_coordinate = np.sum(coordinate / sigma_coordinate)
-        den_coordinate = np.sum(1 / sigma_coordinate ** 2)
-        mean_coordinate = num_coordinate / den_coordinate
-        return mean_coordinate
-
+        return mean_coordinate, den_coordinate
+    
+    
     def apply_objs_stats_from_correction(self, df):
         response = {}
         df_mjd = df.mjd
@@ -232,21 +236,16 @@ class GenericSaveStep(GenericStep):
         df_min = df.iloc[idx_min]
         df_ra = df.ra
         df_dec = df.dec
-        df_sigmara = df.sigmara
-        df_sigmadec = df.sigmadec
+        df_e_ra = df.e_ra
+        df_e_dec = df.e_dec
 
-        response["meanra"] = self.calculate_means_coordinates(
-            df_ra, df_sigmara
-        )
-        response["meandec"] = self.calculate_means_coordinates(
-            df_dec, df_sigmadec
-        )
-        response["sigmara"] = df_ra.std(ddof=0)
-        response["sigmadec"] = df_dec.std(ddof=0)
+        response["meanra"], response["e_ra"] = self.calculate_stats_coordinates(df_ra, df_e_ra)
+        response["meandec"], response ["e_dec"] = self.calculate_stats_coordinates(df_dec, df_e_dec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
         response["oid"] = df_min.oid
+        response["ndet"] = len(df)
         return pd.Series(response)
 
     def get_last_alert(self, alerts):
@@ -412,9 +411,9 @@ class GenericSaveStep(GenericStep):
     def process_prv_candidates(
         self, alerts: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Separate previous candidates from alerts. For use it, the input must be a DataFrame created from a list of
-        GenericAlert. This method use a strategy pattern for extract data from any survey.
+        """Separate previous candidates from alerts.
+
+        The input must be a DataFrame created from a list of GenericAlert.
 
         Parameters
         ----------
@@ -433,36 +432,27 @@ class GenericSaveStep(GenericStep):
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
-            # if tid in dicto.keys():
-            #     self.prv_candidates_processor.strategy = dicto[tid]
-            #     det, non_det = self.prv_candidates_processor.compute(subset_data)
-            #     detections.append(det)
-            #     non_detections.append(non_det)
             if tid == "ZTF":
                 self.prv_candidates_processor.strategy = (
                     ZTFPrvCandidatesStrategy()
                 )
-                det, non_det = self.prv_candidates_processor.compute(
-                    subset_data
+            elif "ATLAS" in tid:
+                self.prv_candidates_processor.strategy = (
+                    ATLASPrvCandidatesStrategy()
                 )
-                detections.append(det)
-                non_detections.append(non_det)
             else:
-                pass
-        detections = (
-            pd.concat(detections, ignore_index=True)
-            if len(detections)
-            else pd.DataFrame()
-        )
-        non_detections = (
-            pd.concat(non_detections, ignore_index=True)
-            if len(non_detections)
-            else pd.DataFrame()
-        )
+                raise ValueError(f"Unknown Survey {tid}")
+            det, non_det = self.prv_candidates_processor.compute(
+                subset_data
+            )
+            detections.append(det)
+            non_detections.append(non_det)
+        detections = pd.concat(detections, ignore_index=True)
+        non_detections = pd.concat(non_detections, ignore_index=True)
         return detections, non_detections
 
     def correct(self, detections: pd.DataFrame) -> pd.DataFrame:
-        """
+        """Correct Detections.
 
         Parameters
         ----------
@@ -476,9 +466,11 @@ class GenericSaveStep(GenericStep):
         for idx, gdf in detections.groupby("tid"):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
-                corrected = self.detections_corrector.compute(gdf)
+            elif "ATLAS" in idx:
+                self.detections_corrector.strategy = ATLASCorrectionStrategy()
             else:
-                corrected = gdf
+                raise ValueError(f"Unknown Survey {idx}")
+            corrected = self.detections_corrector.compute(gdf)
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
         return response
@@ -537,17 +529,14 @@ class GenericSaveStep(GenericStep):
         detections = pd.concat(
             [alerts, dets_from_prv_candidates], ignore_index=True
         )
-
         # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
         # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
         # detections.
         detections.drop_duplicates(
             "candid", inplace=True, keep="first", ignore_index=True
         )
-
         # Removing stamps columns
         self.remove_stamps(detections)
-
         # Do correction to detections from stream
         detections = self.correct(detections)
 
@@ -562,7 +551,7 @@ class GenericSaveStep(GenericStep):
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
-        self.logger.info(f"Setting objects flags")
+        self.logger.info("Setting objects flags")
 
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
