@@ -1,4 +1,5 @@
 from ..core import GenericAlert, SurveyParser
+import numpy as np
 
 
 class ATLASParser(SurveyParser):
@@ -15,7 +16,7 @@ class ATLASParser(SurveyParser):
         "rb": None,
         "rbversion": None,
         "mag": "Mag",
-        "sigmag": "Dmag",
+        "e_mag": "Dmag",
     }
 
     _fid_mapper = {
@@ -49,9 +50,10 @@ class ATLASParser(SurveyParser):
             generic_alert_message["stamps"] = stamps
             # attributes modification
             # possible attributes
-            sigmaradec = 0.07
-            generic_alert_message["sigmara"] = candidate["sigmara"] if "sigmara" in candidate else sigmaradec 
-            generic_alert_message["sigmadec"] = candidate["sigmadec"] if "sigmadec" in candidate else sigmaradec 
+            e_dec = 0.14
+            e_ra = 0.14/abs(np.cos(generic_alert_message["dec"]))
+            generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_ra
+            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_dec 
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")

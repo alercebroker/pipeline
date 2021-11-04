@@ -18,11 +18,11 @@ class GenericAlert:
     rb: float
     rbversion: str
     mag: float
-    sigmag: float
+    e_mag: float
     rfid: int
     isdiffpos: int 
-    sigmara: float = None
-    sigmadec: float = None
+    e_ra: float = None
+    e_dec: float = None
     aid: int = None  # alerce id of the object
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)

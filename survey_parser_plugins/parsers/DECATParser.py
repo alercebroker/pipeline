@@ -37,7 +37,7 @@ class DECATParser(SurveyParser):
                 dec=msg['dec'],
                 rb=msg['rb'],
                 mag=msg['mag'],
-                sigmag=msg["magerr"],
+                e_mag=msg["magerr"],
                 )
                 for msg in message
             ]
