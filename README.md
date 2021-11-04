@@ -10,20 +10,18 @@ The generic schema is:
 ```python
 @dataclass
 class GenericAlert:
-    oid: str
-    sid: str
-    candid: int
+    oid: str # object identifier by telescope. e.g: ZTF20aaelulu
+    tid: str # telescope identifier. e.g: ATLAS-01b
+    candid: int # candidate identifier by telescope: e.g: 100219327768932647823 
     mjd: float
     fid: int
     ra: float
     dec: float
-    rb: float
     mag: float
-    sigmag: float
-    aimage: float
-    bimage: float
-    xpos: float
-    ypos: float
+    e_mag: float
+    isdiffpos: str
+    rb: float
+    rbversion: str
     aid: int = None
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
@@ -31,10 +29,6 @@ class GenericAlert:
 
 Where `extra_fields` is a dictionary that has the complement of data that is not generic, that is, the rest of the data that comes from the alert.
 The `stamps` is a dictionary with respective cutouts.
-
-The main idea is to recover the useful fields for the massive data processing. The parsers are responsible for filtering only useful information from sources:
-- ATLAS (version 0.0.1. Since 2021/10/12)
-- ZTF (version 0.0.1. Since 2021/10/12)
 
 The parsers receive a list of messages (messages = dictionaries in python) and return a list of dictionaries with the selected key-value.
 
