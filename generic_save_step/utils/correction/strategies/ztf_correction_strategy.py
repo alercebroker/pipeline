@@ -26,13 +26,17 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
     def do_correction(self, detections: pd.DataFrame) -> pd.DataFrame:
         # Retrieve some metadata for do correction
         fields = detections["extra_fields"].apply(lambda x: [x["distnr"],  x["magnr"], x["sigmagnr"]])
+        # Create an auxiliary dataframe for correction
         df = pd.DataFrame(list(fields), columns=["distnr", "magnr", "sigmagnr"])
+        # Uses candid like index
+        df.index = detections["candid"]
+        # Additional columns for correction
         df["magpsf"] = detections["mag"]
         df["sigmapsf"] = detections["sigmag"]
         df["isdiffpos"] = detections["isdiffpos"]
         # Is possible correct that detection?
-        df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
-        # Apply formula of correction
+        df["corrected"] = (df["distnr"] < DISTANCE_THRESHOLD)
+        # Apply formula of correction: corrected is the dataframe with response
         corrected = df.apply(lambda x: correction(x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos)
                              if x["corrected"]
                              else (np.nan, np.nan, np.nan),
@@ -40,8 +44,11 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
                              result_type="expand")
         corrected.columns = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
         corrected["corrected"] = df["corrected"]
-        # Create new columns for correction fields: use sequential index to join.
+        # Create new columns for correction fields: use candid index to join.
+        detections = detections.set_index("candid")
         detections = detections.join(corrected)
+        # Reset index and get candid column again
+        detections.reset_index(inplace=True)
         # Apply dubious logic
         detections["dubious"] = self.do_dubious(detections)
         del fields

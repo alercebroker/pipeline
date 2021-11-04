@@ -245,6 +245,7 @@ class GenericSaveStep(GenericStep):
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
         response["oid"] = df_min.oid
+        response["ndet"] = len(df)
         return pd.Series(response)
 
     def get_last_alert(self, alerts):
@@ -435,18 +436,15 @@ class GenericSaveStep(GenericStep):
                 self.prv_candidates_processor.strategy = (
                     ZTFPrvCandidatesStrategy()
                 )
-                det, non_det = self.prv_candidates_processor.compute(
-                    subset_data
-                )
             elif "ATLAS" in tid:
                 self.prv_candidates_processor.strategy = (
                     ATLASPrvCandidatesStrategy()
                 )
-                det, non_det = self.prv_candidates_processor.compute(
-                    subset_data
-                )
             else:
                 raise ValueError(f"Unknown Survey {tid}")
+            det, non_det = self.prv_candidates_processor.compute(
+                subset_data
+            )
             detections.append(det)
             non_detections.append(non_det)
         detections = pd.concat(detections, ignore_index=True)
@@ -468,12 +466,11 @@ class GenericSaveStep(GenericStep):
         for idx, gdf in detections.groupby("tid"):
             if "ZTF" == idx:
                 self.detections_corrector.strategy = ZTFCorrectionStrategy()
-                corrected = self.detections_corrector.compute(gdf)
             elif "ATLAS" in idx:
                 self.detections_corrector.strategy = ATLASCorrectionStrategy()
-                corrected = self.detections_corrector.compute(gdf)
             else:
                 raise ValueError(f"Unknown Survey {idx}")
+            corrected = self.detections_corrector.compute(gdf)
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
         return response
