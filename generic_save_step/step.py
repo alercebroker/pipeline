@@ -176,12 +176,10 @@ class GenericSaveStep(GenericStep):
             self.logger.info(f"Updating {len(to_update)} objects")
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
-            print(dict_to_update)
             instances = []
             new_values = []
             filters = []
             for obj in dict_to_update:
-                print(obj)
                 instances.append(Object(**obj))
                 new_values.append(obj)
                 filters.append({"_id": obj["aid"]})
@@ -227,20 +225,19 @@ class GenericSaveStep(GenericStep):
         mean_coordinate = num_coordinate/den_coordinate
 
         return mean_coordinate, den_coordinate
-    
-    
+
     def apply_objs_stats_from_correction(self, df):
         response = {}
         df_mjd = df.mjd
         idx_min = df_mjd.values.argmin()
         df_min = df.iloc[idx_min]
-        df_ra = df.ra
-        df_dec = df.dec
-        df_e_ra = df.e_ra
-        df_e_dec = df.e_dec
+        df_ra = df["ra"]
+        df_dec = df["dec"]
+        df_e_ra = df["e_ra"]
+        df_e_dec = df["e_dec"]
 
         response["meanra"], response["e_ra"] = self.calculate_stats_coordinates(df_ra, df_e_ra)
-        response["meandec"], response ["e_dec"] = self.calculate_stats_coordinates(df_dec, df_e_dec)
+        response["meandec"], response["e_dec"] = self.calculate_stats_coordinates(df_dec, df_e_dec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
@@ -514,7 +511,7 @@ class GenericSaveStep(GenericStep):
         alerts = pd.DataFrame(response)
 
         # If is an empiric alert must has stamp
-        alerts["has_stamp"] = True
+        alerts.loc[:, "has_stamp"] = True
 
         # Process previous candidates of each alert
         (
@@ -551,17 +548,14 @@ class GenericSaveStep(GenericStep):
         # Getting other tables
         objects = self.get_objects(unique_aids)
         objects = self.preprocess_objects(objects, light_curves, alerts)
-        self.logger.info("Setting objects flags")
-
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
-
-        # Insert new detections
+        # Insert new detections and put step_version
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
+        new_detections.loc[:, "step_id_corr"] = self.version
         new_detections.drop(columns=["new"], inplace=True)
         self.insert_detections(new_detections)
-
         # Insert new now detections
         new_non_detections = light_curves["non_detections"]["new"]
         new_non_detections = light_curves["non_detections"][new_non_detections]

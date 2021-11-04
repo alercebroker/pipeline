@@ -4,5 +4,5 @@ pymongo
 
 
 git+https://github.com/alercebroker/lc_correction
-git+https://github.com/alercebroker/survey-parser-plugins@0.0.3
-git+https://github.com/alercebroker/db-plugins.git
+git+https://github.com/alercebroker/survey-parser-plugins@0.0.4
+git+https://github.com/alercebroker/db-plugins@2.0.1
