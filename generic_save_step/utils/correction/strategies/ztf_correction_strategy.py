@@ -26,13 +26,17 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
     def do_correction(self, detections: pd.DataFrame) -> pd.DataFrame:
         # Retrieve some metadata for do correction
         fields = detections["extra_fields"].apply(lambda x: [x["distnr"],  x["magnr"], x["sigmagnr"]])
+        # Create an auxiliary dataframe for correction
         df = pd.DataFrame(list(fields), columns=["distnr", "magnr", "sigmagnr"])
+        # Uses candid like index
+        df.index = detections["candid"]
+        # Additional columns for correction
         df["magpsf"] = detections["mag"]
-        df["sigmapsf"] = detections["sigmag"]
+        df["sigmapsf"] = detections["e_mag"]
         df["isdiffpos"] = detections["isdiffpos"]
         # Is possible correct that detection?
-        df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
-        # Apply formula of correction
+        df["corrected"] = (df["distnr"] < DISTANCE_THRESHOLD)
+        # Apply formula of correction: corrected is the dataframe with response
         corrected = df.apply(lambda x: correction(x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos)
                              if x["corrected"]
                              else (np.nan, np.nan, np.nan),
@@ -40,10 +44,23 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
                              result_type="expand")
         corrected.columns = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
         corrected["corrected"] = df["corrected"]
-        # Create new columns for correction fields: use sequential index to join.
+        # Create new columns for correction fields: use candid index to join.
+        detections = detections.set_index("candid")
         detections = detections.join(corrected)
+        # Reset index and get candid column again
+        detections.reset_index(inplace=True)
         # Apply dubious logic
         detections["dubious"] = self.do_dubious(detections)
+        # Move correction field to extra_fields
+        detections["extra_fields"] = detections.apply(lambda x: {
+            **x["extra_fields"],
+            "magpsf_corr": x["magpsf_corr"],
+            "sigmapsf_corr": x["sigmapsf_corr"],
+            "sigmapsf_corr_ext": x["sigmapsf_corr_ext"],
+            "dubious": x["dubious"]
+        }, axis=1)
+        # Remove correction columns of dataframe
+        detections.drop(columns=["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext", "dubious"], inplace=True)
         del fields
         del df
         del corrected
