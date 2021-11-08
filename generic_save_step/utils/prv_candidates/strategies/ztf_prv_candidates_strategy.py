@@ -11,6 +11,10 @@ NON_DET_KEYS = ["aid", "tid", "oid", "mjd", "diffmaglim", "fid"]
 # Implementation a new parser for PreviousCandidates with SurveyParser signs.
 class ZTFPreviousCandidatesParser(SurveyParser):
     _source = "ZTF"
+    _celestial_errors = {
+        1: 0.065,
+        2: 0.085,
+    }
     _generic_alert_message_key_mapping = {
         "candid": "candid",
         "mjd": "jd",
@@ -40,6 +44,9 @@ class ZTFPreviousCandidatesParser(SurveyParser):
             prv_content["mjd"] = prv_content["mjd"] - 2400000.5
             prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
             prv_content["parent_candid"] = message["parent_candid"]
+            e_radec = cls._celestial_errors[prv_content["fid"]]
+            prv_content["e_ra"] = prv_content["sigmara"] if "sigmara" in prv_content else e_radec
+            prv_content["e_dec"] = prv_content["sigmadec"] if "sigmadec" in prv_content else e_radec
             return prv_content
         except KeyError:
             raise KeyError("This parser can't parse message")
