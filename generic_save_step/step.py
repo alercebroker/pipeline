@@ -82,11 +82,12 @@ class GenericSaveStep(GenericStep):
     ):
         super().__init__(consumer, config=config, level=level)
 
-        if "CLASS" in config["PRODUCER_CONFIG"]:
-            producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-            producer = producer_class(config["PRODUCER_CONFIG"])
-        elif "PARAMS" in config["PRODUCER_CONFIG"]:
-            producer = KafkaProducer(config["PRODUCER_CONFIG"])
+        if not producer and config.get("PRODUCER_CONFIG", False):
+            if "CLASS" in config["PRODUCER_CONFIG"]:
+                producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
+                producer = producer_class(config["PRODUCER_CONFIG"])
+            elif "PARAMS" in config["PRODUCER_CONFIG"]:
+                producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
         self.producer = producer
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
@@ -223,7 +224,6 @@ class GenericSaveStep(GenericStep):
         num_coordinate = np.sum(coordinates/e_coordinates**2)
         den_coordinate = np.sum(1/e_coordinates**2)
         mean_coordinate = num_coordinate/den_coordinate
-        
         return mean_coordinate, den_coordinate
     
     def compute_meanra(self, ras, e_ras):
