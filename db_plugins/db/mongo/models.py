@@ -32,7 +32,7 @@ class Object(generic_models.Object, Base):
     def loc_definition(**kwargs):
         return {
             "type": "Point",
-            "coordinates": [kwargs["meanra"], kwargs["meandec"]],
+            "coordinates": [kwargs["meanra"] - 180.0, kwargs["meandec"]],
         }
 
     aid = Field()  # ALeRCE candidate id (unique id of object in the ALeRCE database)

@@ -9,14 +9,14 @@ class MongoModelsTest(unittest.TestCase):
             oid="oid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
-            meanra="meanra",
-            meandec="meandec",
+            meanra=100.0,
+            meandec=50.0,
             ndet="ndet"
         )
         self.assertIsInstance(o, models.Object)
         self.assertIsInstance(o, dict)
         self.assertEqual(
-            o["loc"], {"type": "Point", "coordinates": ["meanra", "meandec"]}
+            o["loc"], {"type": "Point", "coordinates": [-80.0, 50]}
         )
         self.assertEqual(
             o._meta.tablename,
@@ -34,8 +34,8 @@ class MongoModelsTest(unittest.TestCase):
             oid="oid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
-            meanra="meanra",
-            meandec="meandec",
+            meanra=100.0,
+            meandec=50.0,
             ndet="ndet",
             extra="extra",
         )
@@ -45,8 +45,8 @@ class MongoModelsTest(unittest.TestCase):
             oid="sid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
-            meanra="meanra",
-            meandec="meandec",
+            meanra=100.0,
+            meandec=50.0,
             ndet="ndet",
             extra_fields={"extra": "extra"},
         )
