@@ -6,7 +6,8 @@ from apf.producers import KafkaProducer
 from generic_save_step.step import GenericSaveStep
 import pandas as pd
 import pickle
-
+import numpy as np
+import pytest
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
@@ -134,7 +135,30 @@ class StepTestCase(unittest.TestCase):
         df_non_detection = pd.DataFrame(non_detection)
         self.step.insert_non_detections(df_non_detection)
         self.step.driver.query().bulk_insert.assert_called()
+
+    def test_compute_meanra_correct(self):
+        df = pd.DataFrame({"ra":[200, 100, 100], "e_ra": [0.1, 0.1, 0.1]})
+        mean_ra, _ = self.step.compute_meanra(df["ra"], df["e_ra"])
+        self.assertGreaterEqual(mean_ra, 0.0)
+        self.assertLessEqual(mean_ra, 360.0)
     
+    def test_compute_meanra_incorrect(self):
+        df = pd.DataFrame({"ra":[-200, -100, -100], "e_ra": [0.1, 0.1, 0.1]})
+        with pytest.raises(ValueError):
+            mean_ra, _ = self.step.compute_meanra(df["ra"], df["e_ra"])
+            
+    
+    def test_compute_meandec_correct(self):
+        df = pd.DataFrame({"dec":[90, 90, 90], "e_dec": [0.1, 0.1, 0.1]})
+        mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
+        self.assertGreaterEqual(mean_dec, -90.0)
+        self.assertLessEqual(mean_dec, 90.0)
+    
+    def test_compute_meandec_incorrect(self):
+        df = pd.DataFrame({"dec":[200, 100, 100], "e_dec": [0.1, 0.1, 0.1]})
+        with pytest.raises(ValueError):
+            mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
+
     def test_execute_with_ZTF_stream(self):
         ZTF_messages = [{
             "objectId": "ZTF1",
@@ -146,8 +170,8 @@ class StepTestCase(unittest.TestCase):
                 "jdstarthist": 2400000.5,
                 "jdendhist": 2400000.5,
                 "jd": 2400000.5,
-                "ra": 0,
-                "dec": 0,
+                "ra": 100,
+                "dec": 90,
                 "ssdistnr": -999.0,
                 "sgscore1": 0.0,
                 "distpsnr1": 1,
@@ -170,8 +194,8 @@ class StepTestCase(unittest.TestCase):
                 "jdstarthist": 2400000.5,
                 "jdendhist": 2400000.5,
                 "jd": 2400000.5,
-                "ra": 0,
-                "dec": 0,
+                "ra": 100,
+                "dec": 90,
                 "ssdistnr": -999.0,
                 "sgscore1": 0.0,
                 "distpsnr1": 1,
@@ -231,8 +255,8 @@ class StepTestCase(unittest.TestCase):
                 "jdstarthist": 2400000.5,
                 "jdendhist": 2400000.5,
                 "jd": 2400000.5,
-                "ra": 0,
-                "dec": 0,
+                "ra": 100,
+                "dec": 90,
                 "ssdistnr": -999.0,
                 "sgscore1": 0.0,
                 "distpsnr1": 1,
