@@ -221,7 +221,7 @@ class GenericSaveStep(GenericStep):
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
     
     def calculate_stats_coordinates(self, coordinate, e_coordinate):
-        num_coordinate = np.sum(coordinate/e_coordinate)
+        num_coordinate = np.sum(coordinate/e_coordinate**2)
         den_coordinate = np.sum(1/e_coordinate**2)
         mean_coordinate = num_coordinate/den_coordinate
         return mean_coordinate, den_coordinate
