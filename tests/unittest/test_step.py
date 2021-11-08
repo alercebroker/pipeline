@@ -139,7 +139,30 @@ class StepTestCase(unittest.TestCase):
         ZTF_messages = [{
             "objectId": "ZTF1",
             "publisher": "ZTF",
-            "prv_candidates": None,
+            "prv_candidates": [{
+                "candid": 2,
+                "ndethist": 0,
+                "ncovhist": 0,
+                "jdstarthist": 2400000.5,
+                "jdendhist": 2400000.5,
+                "jd": 2400000.5,
+                "ra": 0,
+                "dec": 0,
+                "ssdistnr": -999.0,
+                "sgscore1": 0.0,
+                "distpsnr1": 1,
+                "isdiffpos": 1,
+                "rb": 1,
+                "pid": "pid",
+                "fid": 1,
+                "rfid": 100,
+                "magpsf": 20,
+                "sigmapsf": 1,
+                "rbversion": 1,
+                "distnr": 1,
+                "magnr": 1,
+                "sigmagnr": 1,
+            }],
             "candidate": {
                 "candid": 1,
                 "ndethist": 0,
@@ -172,6 +195,66 @@ class StepTestCase(unittest.TestCase):
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
     
+    def test_execute_with_ZTF_stream_non_detections(self):
+        ZTF_messages = [{
+            "objectId": "ZTF1",
+            "publisher": "ZTF",
+            "prv_candidates": [{
+                "candid": None,
+                "ndethist": 0,
+                "ncovhist": 0,
+                "jdstarthist": 2400000.5,
+                "jdendhist": 2400000.5,
+                "jd": 2400000.5,
+                "ra": 0,
+                "dec": 0,
+                "ssdistnr": -999.0,
+                "sgscore1": 0.0,
+                "distpsnr1": 1,
+                "isdiffpos": 1,
+                "rb": 1,
+                "pid": "pid",
+                "diffmaglim": None,
+                "fid": 1,
+                "rfid": 100,
+                "magpsf": 20,
+                "sigmapsf": 1,
+                "rbversion": 1,
+                "distnr": 1,
+                "magnr": 1,
+                "sigmagnr": 1,
+            }],
+            "candidate": {
+                "candid": 1,
+                "ndethist": 0,
+                "ncovhist": 0,
+                "jdstarthist": 2400000.5,
+                "jdendhist": 2400000.5,
+                "jd": 2400000.5,
+                "ra": 0,
+                "dec": 0,
+                "ssdistnr": -999.0,
+                "sgscore1": 0.0,
+                "distpsnr1": 1,
+                "isdiffpos": 1,
+                "rb": 1,
+                "pid": "pid",
+                "fid": 1,
+                "rfid": 100,
+                "magpsf": 20,
+                "sigmapsf": 1,
+                "rbversion": 1,
+                "distnr": 1,
+                "magnr": 1,
+                "sigmagnr": 1,
+            },
+            "cutoutTemplate": {"stampData": b""},
+            "cutoutScience": {"stampData": b""},
+            "cutoutDifference": {"stampData": b""},
+        }]
+        self.step.execute(ZTF_messages)
+        # Verify 3 inserts calls: objects, detections, non_detections
+        assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
     def test_execute_with_ATLAS_stream(self):
         with open("tests/unittest/data/ATLAS_stream.pkl", "rb") as f:
             ATLAS_messages = pickle.load(f)
