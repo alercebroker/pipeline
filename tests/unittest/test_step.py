@@ -1,13 +1,22 @@
 import unittest
+import pytest
+import pandas as pd
+import os
 from unittest import mock
+from fastavro import reader
+
+from apf.producers import KafkaProducer
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoConnection
-from apf.producers import KafkaProducer
 from generic_save_step.step import GenericSaveStep
-import pandas as pd
-import pickle
-import numpy as np
-import pytest
+
+
+# Auxiliary function to read AVRO
+def get_content(file_path):
+    with open(file_path, "rb") as f:
+        content = reader(f).next()
+    return content
+
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
@@ -22,19 +31,12 @@ class StepTestCase(unittest.TestCase):
                 
             },
         }
-        #ADD MONGO CONNECTION
         self.mock_database_connection = mock.create_autospec(MongoConnection)
         self.mock_producer = mock.create_autospec(KafkaProducer)
-        # Inside the step some objects are instantiated, 
-        # we need to set mocks or patch?
-        # ALeRCEParser()
-        # Processor with ZTFPrvCandidatesStrategy
-        # Corrector with ZTFCorrectionStrategy
         self.step = GenericSaveStep(
             config=self.step_config,
             db_connection=self.mock_database_connection,
-            producer=self.mock_producer,
-            test_mode=True,
+            producer=self.mock_producer
         )
     
     def tearDown(self):
@@ -42,20 +44,25 @@ class StepTestCase(unittest.TestCase):
     
     # We need define function for each method in the class?
     def test_get_objects(self):
-        
-        oids=["ZTF1", "ZTF2"]
+        oids = ["ZTF1", "ZTF2"]
         self.step.get_objects(oids)
-        self.step.driver.query().find_all.assert_called_with(model=Object, filter_by={"_id": {"$in": oids}}, paginate=False)
+        self.step.driver.query().find_all.assert_called_with(model=Object,
+                                                             filter_by={"_id": {"$in": oids}},
+                                                             paginate=False)
 
     def test_get_detections(self):
         oids = [12345, 45678]
         self.step.get_detections(oids)
-        self.step.driver.query().find_all.assert_called_with(model=Detection, filter_by={"aid": {"$in": oids}}, paginate=False)
+        self.step.driver.query().find_all.assert_called_with(model=Detection,
+                                                             filter_by={"aid": {"$in": oids}},
+                                                             paginate=False)
     
     def test_get_non_detections(self):
         oids = [12345, 45678]
         self.step.get_non_detections(oids)
-        self.step.driver.query().find_all.assert_called_with(model=NonDetection, filter_by={"aid": {"$in": oids}}, paginate=False)
+        self.step.driver.query().find_all.assert_called_with(model=NonDetection,
+                                                             filter_by={"aid": {"$in": oids}},
+                                                             paginate=False)
     
     def test_insert_objects_without_updates(self):
         objects = {
@@ -68,7 +75,7 @@ class StepTestCase(unittest.TestCase):
             "meandec": [30.0],
             "sigmara": [0.1],
             "sigmadec": [0.2],
-            "extra_fields":[{}], 
+            "extra_fields": [{}],
             "new": [True]
             }
         df_objects = pd.DataFrame(objects)
@@ -96,7 +103,7 @@ class StepTestCase(unittest.TestCase):
 
     def test_insert_detections(self):
         detection = {
-            "tid": ["test"], # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
+            "tid": ["test"],
             "aid": ["test"],
             "candid": ["test"],
             "mjd": ["test"],
@@ -126,7 +133,7 @@ class StepTestCase(unittest.TestCase):
     
     def test_insert_non_detections(self):
         non_detection = {
-            "tid": ["test"], # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
+            "tid": ["test"],
             "aid": ["test"],
             "mjd": ["test"],
             "fid": ["test"],
@@ -137,152 +144,51 @@ class StepTestCase(unittest.TestCase):
         self.step.driver.query().bulk_insert.assert_called()
 
     def test_compute_meanra_correct(self):
-        df = pd.DataFrame({"ra":[200, 100, 100], "e_ra": [0.1, 0.1, 0.1]})
+        df = pd.DataFrame({"ra": [200, 100, 100],
+                           "e_ra": [0.1, 0.1, 0.1]})
         mean_ra, _ = self.step.compute_meanra(df["ra"], df["e_ra"])
         self.assertGreaterEqual(mean_ra, 0.0)
         self.assertLessEqual(mean_ra, 360.0)
     
     def test_compute_meanra_incorrect(self):
-        df = pd.DataFrame({"ra":[-200, -100, -100], "e_ra": [0.1, 0.1, 0.1]})
+        df = pd.DataFrame({"ra": [-200, -100, -100],
+                           "e_ra": [0.1, 0.1, 0.1]})
         with pytest.raises(ValueError):
             mean_ra, _ = self.step.compute_meanra(df["ra"], df["e_ra"])
-            
-    
+
     def test_compute_meandec_correct(self):
-        df = pd.DataFrame({"dec":[90, 90, 90], "e_dec": [0.1, 0.1, 0.1]})
+        df = pd.DataFrame({"dec": [90, 90, 90],
+                           "e_dec": [0.1, 0.1, 0.1]})
         mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
         self.assertGreaterEqual(mean_dec, -90.0)
         self.assertLessEqual(mean_dec, 90.0)
     
     def test_compute_meandec_incorrect(self):
-        df = pd.DataFrame({"dec":[200, 100, 100], "e_dec": [0.1, 0.1, 0.1]})
+        df = pd.DataFrame({"dec": [200, 100, 100],
+                           "e_dec": [0.1, 0.1, 0.1]})
         with pytest.raises(ValueError):
             mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
 
     def test_execute_with_ZTF_stream(self):
-        ZTF_messages = [{
-            "objectId": "ZTF1",
-            "publisher": "ZTF",
-            "prv_candidates": [{
-                "candid": 2,
-                "ndethist": 0,
-                "ncovhist": 0,
-                "jdstarthist": 2400000.5,
-                "jdendhist": 2400000.5,
-                "jd": 2400000.5,
-                "ra": 100,
-                "dec": 90,
-                "ssdistnr": -999.0,
-                "sgscore1": 0.0,
-                "distpsnr1": 1,
-                "isdiffpos": 1,
-                "rb": 1,
-                "pid": "pid",
-                "fid": 1,
-                "rfid": 100,
-                "magpsf": 20,
-                "sigmapsf": 1,
-                "rbversion": 1,
-                "distnr": 1,
-                "magnr": 1,
-                "sigmagnr": 1,
-            }],
-            "candidate": {
-                "candid": 1,
-                "ndethist": 0,
-                "ncovhist": 0,
-                "jdstarthist": 2400000.5,
-                "jdendhist": 2400000.5,
-                "jd": 2400000.5,
-                "ra": 100,
-                "dec": 90,
-                "ssdistnr": -999.0,
-                "sgscore1": 0.0,
-                "distpsnr1": 1,
-                "isdiffpos": 1,
-                "rb": 1,
-                "pid": "pid",
-                "fid": 1,
-                "rfid": 100,
-                "magpsf": 20,
-                "sigmapsf": 1,
-                "rbversion": 1,
-                "distnr": 1,
-                "magnr": 1,
-                "sigmagnr": 1,
-            },
-            "cutoutTemplate": {"stampData": b""},
-            "cutoutScience": {"stampData": b""},
-            "cutoutDifference": {"stampData": b""},
-        }]
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        files = os.listdir(os.path.join(dir_path, "data/ZTF"))
+        ZTF_messages = [get_content(os.path.join(dir_path, "data/ZTF", x)) for x in files]
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
     
     def test_execute_with_ZTF_stream_non_detections(self):
-        ZTF_messages = [{
-            "objectId": "ZTF1",
-            "publisher": "ZTF",
-            "prv_candidates": [{
-                "candid": None,
-                "ndethist": 0,
-                "ncovhist": 0,
-                "jdstarthist": 2400000.5,
-                "jdendhist": 2400000.5,
-                "jd": 2400000.5,
-                "ra": 0,
-                "dec": 0,
-                "ssdistnr": -999.0,
-                "sgscore1": 0.0,
-                "distpsnr1": 1,
-                "isdiffpos": 1,
-                "rb": 1,
-                "pid": "pid",
-                "diffmaglim": None,
-                "fid": 1,
-                "rfid": 100,
-                "magpsf": 20,
-                "sigmapsf": 1,
-                "rbversion": 1,
-                "distnr": 1,
-                "magnr": 1,
-                "sigmagnr": 1,
-            }],
-            "candidate": {
-                "candid": 1,
-                "ndethist": 0,
-                "ncovhist": 0,
-                "jdstarthist": 2400000.5,
-                "jdendhist": 2400000.5,
-                "jd": 2400000.5,
-                "ra": 100,
-                "dec": 90,
-                "ssdistnr": -999.0,
-                "sgscore1": 0.0,
-                "distpsnr1": 1,
-                "isdiffpos": 1,
-                "rb": 1,
-                "pid": "pid",
-                "fid": 1,
-                "rfid": 100,
-                "magpsf": 20,
-                "sigmapsf": 1,
-                "rbversion": 1,
-                "distnr": 1,
-                "magnr": 1,
-                "sigmagnr": 1,
-            },
-            "cutoutTemplate": {"stampData": b""},
-            "cutoutScience": {"stampData": b""},
-            "cutoutDifference": {"stampData": b""},
-        }]
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        files = os.listdir(os.path.join(dir_path, "data/ZTF"))
+        ZTF_messages = [get_content(os.path.join(dir_path, "data/ZTF", x)) for x in files]
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
+
     def test_execute_with_ATLAS_stream(self):
-        with open("tests/unittest/data/ATLAS_stream.pkl", "rb") as f:
-            ATLAS_messages = pickle.load(f)
-        
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        files = os.listdir(os.path.join(dir_path, "data/ATLAS"))
+        ATLAS_messages = [get_content(os.path.join(dir_path, "data/ATLAS", x)) for x in files]
         self.step.execute(ATLAS_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3

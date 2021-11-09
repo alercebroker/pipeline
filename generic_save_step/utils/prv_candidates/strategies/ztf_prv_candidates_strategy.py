@@ -1,6 +1,6 @@
 from .base_prv_candidates_strategy import BasePrvCandidatesStrategy
 from typing import List
-from survey_parser_plugins.core import SurveyParser, id_generator
+from survey_parser_plugins.core import SurveyParser
 
 import pandas as pd
 
@@ -65,11 +65,10 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
     def process_prv_candidates(self, alerts: pd.DataFrame):
         detections = {}
         non_detections = []
-
         for index, alert in alerts.iterrows():
             oid = alert["oid"]
             tid = alert["tid"]
-            aid = id_generator(alert["ra"], alert["dec"])
+            aid = alert["aid"]
             candid = alert["candid"]
             if alert["extra_fields"]["prv_candidates"] is not None:
                 for prv in alert["extra_fields"]["prv_candidates"]:

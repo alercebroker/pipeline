@@ -18,6 +18,8 @@ from .utils.correction.strategies import (
     ZTFCorrectionStrategy,
 )
 
+from .utils.id_generator import SortingHat
+
 
 from survey_parser_plugins import ALeRCEParser
 
@@ -96,6 +98,7 @@ class GenericSaveStep(GenericStep):
         self.parser = ALeRCEParser()
         self.prv_candidates_processor = Processor(ZTFPrvCandidatesStrategy())
         self.detections_corrector = Corrector(ZTFCorrectionStrategy())
+        self.wizard = SortingHat(self.driver)
 
     def get_objects(self, oids: List[str or int]):
         """
@@ -439,7 +442,7 @@ class GenericSaveStep(GenericStep):
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
         data = alerts[
-            ["oid", "tid", "candid", "ra", "dec", "extra_fields"]
+            ["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]
         ].copy()
         detections = []
         non_detections = []
@@ -525,6 +528,8 @@ class GenericSaveStep(GenericStep):
         response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
 
+        # Put name of ALeRCE in alerts
+        alerts = self.wizard.to_name(alerts)
         # If is an empiric alert must has stamp
         alerts.loc[:, "has_stamp"] = True
 
