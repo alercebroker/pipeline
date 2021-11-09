@@ -11,7 +11,7 @@ from settings import *
 level = logging.INFO
 if 'LOGGING_DEBUG' in locals():
     if LOGGING_DEBUG:
-        level=logging.DEBUG
+        level = logging.DEBUG
 
 logging.basicConfig(level=level,
                     format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
