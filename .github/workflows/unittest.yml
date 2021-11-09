@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo apt-get -y install libsnappy-dev
         python -m pip install --upgrade pip
-        pip install python-snappy pytest coverage
+        pip install python-snappy pytest coverage numpy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install -e .
     - name: Test with pytest

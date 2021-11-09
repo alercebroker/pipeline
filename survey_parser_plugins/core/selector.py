@@ -1,7 +1,6 @@
 from typing import List
 from .generic import GenericAlert, SurveyParser
 from ..parsers import ATLASParser, ZTFParser
-from .id_generator import id_generator
 
 
 class ParserSelector:

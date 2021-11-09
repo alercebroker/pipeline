@@ -1,5 +1,4 @@
 from ..core import GenericAlert, SurveyParser
-from ..core.id_generator import id_generator
 
 
 class ZTFParser(SurveyParser):
@@ -41,7 +40,6 @@ class ZTFParser(SurveyParser):
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
             generic_alert_message['tid'] = cls._source
-            generic_alert_message['aid'] = id_generator(candidate["ra"], candidate["dec"])
             generic_alert_message["extra_fields"]["prv_candidates"] = prv_candidates
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps

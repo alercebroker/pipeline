@@ -23,7 +23,6 @@ class GenericAlert:
     isdiffpos: int 
     e_ra: float = None
     e_dec: float = None
-    aid: int = None  # alerce id of the object
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 

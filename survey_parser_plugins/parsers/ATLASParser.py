@@ -44,7 +44,6 @@ class ATLASParser(SurveyParser):
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
             generic_alert_message['tid'] = message["publisher"]
-            generic_alert_message['aid'] = oid
             generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
