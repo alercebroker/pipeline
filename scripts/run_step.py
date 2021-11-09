@@ -18,7 +18,7 @@ logging.basicConfig(level=level,
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
 
-from generic_save_step import GenericSaveStep
+from ingestion import IngestionStep
 from apf.core import get_class
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
@@ -27,5 +27,5 @@ else:
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = GenericSaveStep(consumer,config=STEP_CONFIG,level=level)
+step = IngestionStep(consumer, config=STEP_CONFIG, level=level)
 step.start()

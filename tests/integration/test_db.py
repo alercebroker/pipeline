@@ -2,7 +2,7 @@ import pytest
 import unittest
 from apf.producers.kafka import KafkaProducer
 from unittest import mock
-from generic_save_step.step import GenericSaveStep
+from ingestion_step.step import IngestionStep
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
 import pandas as pd
 
@@ -10,7 +10,7 @@ import pandas as pd
 @pytest.mark.usefixtures("mongo_service")
 class MongoIntegrationTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         db_config = {
             "HOST": "localhost",
             "USER": "testo",
@@ -18,7 +18,7 @@ class MongoIntegrationTest(unittest.TestCase):
             "PORT": 27017,
             "DATABASE": "test_db",
         }
-        self.step_config = {
+        cls.step_config = {
             "DB_CONFIG": db_config,
             "STEP_METADATA": {
                 "STEP_ID": "ingestion",
@@ -27,15 +27,15 @@ class MongoIntegrationTest(unittest.TestCase):
                 "STEP_COMMENTS": "",
             },
         }
-        self.mock_producer = mock.create_autospec(KafkaProducer)
-        self.step = GenericSaveStep(
-            config=self.step_config,
-            producer=self.mock_producer,
+        cls.mock_producer = mock.create_autospec(KafkaProducer)
+        cls.step = IngestionStep(
+            config=cls.step_config,
+            producer=cls.mock_producer,
         )
 
     @classmethod
-    def tearDownClass(self):
-        self.step.driver.drop_db()
+    def tearDownClass(cls):
+        cls.step.driver.drop_db()
 
     def setUp(self):
         self.message = {

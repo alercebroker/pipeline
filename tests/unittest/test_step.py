@@ -8,7 +8,7 @@ from fastavro import reader
 from apf.producers import KafkaProducer
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoConnection
-from generic_save_step.step import GenericSaveStep
+from ingestion_step.step import IngestionStep
 
 
 # Auxiliary function to read AVRO
@@ -33,7 +33,7 @@ class StepTestCase(unittest.TestCase):
         }
         self.mock_database_connection = mock.create_autospec(MongoConnection)
         self.mock_producer = mock.create_autospec(KafkaProducer)
-        self.step = GenericSaveStep(
+        self.step = IngestionStep(
             config=self.step_config,
             db_connection=self.mock_database_connection,
             producer=self.mock_producer

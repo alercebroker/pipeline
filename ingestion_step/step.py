@@ -66,8 +66,8 @@ NON_DET_KEYS = ["aid", "tid", "mjd", "diffmaglim", "fid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
 
 
-class GenericSaveStep(GenericStep):
-    """GenericSaveStep Description
+class IngestionStep(GenericStep):
+    """IngestionStep Description
 
     Parameters
     ----------
