@@ -47,7 +47,7 @@ class StepTestCase(unittest.TestCase):
         oids = ["ZTF1", "ZTF2"]
         self.step.get_objects(oids)
         self.step.driver.query().find_all.assert_called_with(model=Object,
-                                                             filter_by={"_id": {"$in": oids}},
+                                                             filter_by={"aid": {"$in": oids}},
                                                              paginate=False)
 
     def test_get_detections(self):

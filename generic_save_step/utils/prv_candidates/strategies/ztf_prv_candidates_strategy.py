@@ -97,4 +97,5 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
             non_detections["mjd"] = non_detections['jd'] - 2400000.5
             non_detections = non_detections[NON_DET_KEYS]
             non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
+            non_detections.drop(columns=["oid"], inplace=True)
         return detections, non_detections
