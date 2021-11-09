@@ -223,11 +223,26 @@ class GenericSaveStep(GenericStep):
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query().bulk_insert(dict_non_detections, NonDetection)
     
-    def calculate_stats_coordinates(self, coordinate, e_coordinate):
-        num_coordinate = np.sum(coordinate/e_coordinate**2)
-        den_coordinate = np.sum(1/e_coordinate**2)
+    def calculate_stats_coordinates(self, coordinates, e_coordinates):
+        num_coordinate = np.sum(coordinates/e_coordinates**2)
+        den_coordinate = np.sum(1/e_coordinates**2)
         mean_coordinate = num_coordinate/den_coordinate
         return mean_coordinate, den_coordinate
+    
+    def compute_meanra(self, ras, e_ras):
+
+        mean_ra, e_ra = self.calculate_stats_coordinates(ras, e_ras)
+        if 0.0 <= mean_ra <= 360.0:
+            return mean_ra, e_ra
+        else:
+            raise ValueError(f"Mean ra must be between 0 and 360")
+    
+    def compute_meandec(self, decs, e_decs):
+        mean_dec, e_dec = self.calculate_stats_coordinates(decs, e_decs)
+        if -90.0 <= mean_dec <= 90.0:
+            return mean_dec, e_dec
+        else:
+            raise ValueError(f"Mean dec must be between -90 and 90")
 
     def apply_objs_stats_from_correction(self, df):
         response = {}
@@ -238,8 +253,9 @@ class GenericSaveStep(GenericStep):
         df_dec = df["dec"]
         df_e_ra = df["e_ra"]
         df_e_dec = df["e_dec"]
-        response["meanra"], response["e_ra"] = self.calculate_stats_coordinates(df_ra, df_e_ra)
-        response["meandec"], response["e_dec"] = self.calculate_stats_coordinates(df_dec, df_e_dec)
+
+        response["meanra"], response["e_ra"] = self.compute_meanra(df_ra, df_e_ra)
+        response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
