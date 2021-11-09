@@ -105,52 +105,52 @@ class IngestionStep(GenericStep):
         self.detections_corrector = Corrector(ZTFCorrectionStrategy())
         self.wizard = SortingHat(self.driver)
 
-    def get_objects(self, aids: List[str or int]):
+    def get_objects(self, alids: List[str or int]):
         """
 
         Parameters
         ----------
-        aids
+        alids
 
         Returns
         -------
 
         """
-        filter_by = {"aid": {"$in": aids}}
+        filter_by = {"aid": {"$in": alids}}
         objects = self.driver.query().find_all(
             model=Object, filter_by=filter_by, paginate=False
         )
         return pd.DataFrame(objects, columns=OBJ_KEYS)
 
-    def get_detections(self, aids: List[str or int]):
+    def get_detections(self, alids: List[str or int]):
         """
 
         Parameters
         ----------
-        aids
+        alids
 
         Returns
         -------
 
         """
-        filter_by = {"aid": {"$in": aids}}
+        filter_by = {"aid": {"$in": alids}}
         detections = self.driver.query().find_all(
             model=Detection, filter_by=filter_by, paginate=False
         )
         return pd.DataFrame(detections, columns=DET_KEYS)
 
-    def get_non_detections(self, aids: List[str or int]):
+    def get_non_detections(self, alids: List[str or int]):
         """
 
         Parameters
         ----------
-        aids
+        alids
 
         Returns
         -------
 
         """
-        filter_by = {"aid": {"$in": aids}}
+        filter_by = {"aid": {"$in": alids}}
         non_detections = self.driver.query().find_all(
             model=NonDetection, filter_by=filter_by, paginate=False
         )
@@ -278,7 +278,7 @@ class IngestionStep(GenericStep):
 
         """
         # Keep existing objects
-        aids = objects["aid"].unique()
+        alids = objects["aid"].unique()
         detections = light_curves["detections"]
         detections.drop_duplicates(["candid", "aid"], inplace=True, keep="first")
         detections.reset_index(inplace=True, drop=True)
@@ -288,7 +288,7 @@ class IngestionStep(GenericStep):
             self.apply_objs_stats_from_correction
         )
         new_objects.reset_index(inplace=True)
-        new_objects["new"] = ~new_objects["aid"].isin(aids)
+        new_objects["new"] = ~new_objects["aid"].isin(alids)
         return new_objects
 
     def get_lightcurves(self, oids):
@@ -329,9 +329,9 @@ class IngestionStep(GenericStep):
         detections["new"] = True
 
         # Get unique oids from new alerts
-        aids = detections["aid"].unique().tolist()
+        alids = detections["aid"].unique().tolist()
         # Retrieve old detections and non_detections from database and put new label to false
-        light_curves = self.get_lightcurves(aids)
+        light_curves = self.get_lightcurves(alids)
         light_curves["detections"]["new"] = False
         light_curves["non_detections"]["new"] = False
 
@@ -531,10 +531,10 @@ class IngestionStep(GenericStep):
         )
 
         # Get unique alerce ids for get objects from database
-        unique_aids = alerts["aid"].unique().tolist()
+        unique_alids = alerts["aid"].unique().tolist()
 
         # Getting other tables: retrieve existing objects and create new objects
-        objects = self.get_objects(unique_aids)
+        objects = self.get_objects(unique_alids)
         objects = self.preprocess_objects(objects, light_curves)
         # Insert new objects and update old objects on database
         self.insert_objects(objects)
