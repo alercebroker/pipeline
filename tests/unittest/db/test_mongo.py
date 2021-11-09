@@ -116,8 +116,8 @@ class MongoQueryTest(unittest.TestCase):
                 "oid": "test",
                 "firstmjd": "test",
                 "lastmjd": "test",
-                "meanra": "test",
-                "meandec": "test",
+                "meanra": 100.0,
+                "meandec": 50.0,
                 "ndet": "test",
             }
         )
@@ -131,8 +131,8 @@ class MongoQueryTest(unittest.TestCase):
                 "oid": "test",
                 "firstmjd": "test",
                 "lastmjd": "test",
-                "meanra": "test",
-                "meandec": "test",
+                "meanra": 100.0,
+                "meandec": 50.0,
                 "ndet": "test",
             },
             _id="test",
@@ -146,8 +146,8 @@ class MongoQueryTest(unittest.TestCase):
             oid="oid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
-            meanra="meanra",
-            meandec="meandec",
+            meanra=100.0,
+            meandec=50.0,
             ndet="ndet",
         )
         self.obj_collection.insert_one(model)
@@ -162,8 +162,8 @@ class MongoQueryTest(unittest.TestCase):
             oid="oid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
-            meanra="meanra",
-            meandec="meandec",
+            meanra=100.0,
+            meandec=50.0,
             ndet="ndet",
         )
         self.obj_collection.insert_one(model)
@@ -186,8 +186,8 @@ class MongoQueryTest(unittest.TestCase):
                     "oid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
-                    "meanra": "test",
-                    "meandec": "test",
+                    "meanra": 100.0,
+                    "meandec": 50.0,
                     "ndet": "test",
                 }
                 for i in range(2)
