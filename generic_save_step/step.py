@@ -442,7 +442,7 @@ class GenericSaveStep(GenericStep):
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
         data = alerts[
-            ["oid", "tid", "candid", "ra", "dec", "extra_fields"]
+            ["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]
         ].copy()
         detections = []
         non_detections = []
