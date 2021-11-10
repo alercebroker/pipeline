@@ -26,7 +26,6 @@ CONSUMER_CONFIG = {
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
-    "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
