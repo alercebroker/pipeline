@@ -1,3 +1,15 @@
+EXTRA_FIELDS = {
+    "type": "map",
+    "values": [
+      "null",
+      "int",
+      "float",
+      "string",
+      "bytes"
+    ],
+    "default": {}
+}
+
 SCHEMA = {
   "type": "record",
   "doc": "Multi stream alert of any telescope/survey",
@@ -69,10 +81,7 @@ SCHEMA = {
     },
     {
       "name": "extra_fields",
-      "type": {
-        "type": "map",
-        "values": ["null", "int", "float", "string"],
-      }
+      "type": EXTRA_FIELDS,
     },
     {
       "name": "aid",

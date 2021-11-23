@@ -6,12 +6,13 @@ from db_plugins.db.mongo.models import Object
 from db_plugins.db.mongo.connection import MongoConnection
 
 
+# https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
 class SortingHat:
     def __init__(self, db: MongoConnection):
         self.db = db
 
     @classmethod
-    def wgs_scale(cls, lat: float):
+    def wgs_scale(cls, lat: float) -> float:
         """
         Get scaling to convert degrees to meters at a given geodetic latitude (declination)
         :param lat: geodetic latitude (declination)
@@ -30,7 +31,7 @@ class SortingHat:
         arc = rm * angle
         return arc
 
-    def cone_search(self, ra, dec, radius=1.5) -> List[dict]:
+    def cone_search(self, ra: float, dec: float, radius: float = 1.5) -> List[dict]:
         """
         Cone search to database given a ra, dec and radius. Returns a list of objects sorted by distance.
         :param ra: right ascension
@@ -57,11 +58,32 @@ class SortingHat:
                 },
             },
             {
-                "aid": 1
+                "aid": 1  # only return alerce_id
             }
         )
         spatial = [i for i in cursor]
         return spatial
+
+    def oid_query(self, oid: str) -> int or None:
+        """
+        Query to database if the oids has an alerce_id
+        :param oid: oid of any survey
+        :return: existing aid if exists else is None
+        """
+        objects = self.db.query(model=Object)
+        cursor = objects.find(
+            {
+                "oid": oid
+            },
+            {
+                "_id": 0,
+                "aid": 1
+            }
+        )
+        data = [i["aid"] for i in cursor]
+        if len(data):
+            return data[0]
+        return None
 
     @classmethod
     def id_generator(cls, ra: float, dec: float) -> int:
@@ -121,23 +143,36 @@ class SortingHat:
         :return:
         """
         first_alert = group_of_alerts.iloc[0]
-        near_objects = self.cone_search(first_alert["ra"], first_alert["dec"])
-        if len(near_objects):  # Hit: cone search return objects sorted. So first response is closest.
-            aid = near_objects[0]["aid"]
-        else:  # Miss: generate a new ALeRCE identifier
-            aid = self.id_generator(first_alert["ra"], first_alert["dec"])
+        oid = first_alert["oid"]
+        # 1) First Hit: Exists at least one aid to this oid
+        existing_oid = self.oid_query(oid)
+        if existing_oid:
+            aid = existing_oid
+        else:
+            # 2) Second Hit: cone search return objects sorted. So first response is closest.
+            near_objects = self.cone_search(first_alert["ra"], first_alert["dec"])
+            if len(near_objects):
+                aid = near_objects[0]["aid"]
+            # 3) Miss generate a new ALeRCE identifier
+            else:
+                aid = self.id_generator(first_alert["ra"], first_alert["dec"])
         response = {"aid": aid}
         return pd.Series(response)
 
     def to_name(self, alerts: pd.DataFrame) -> pd.DataFrame:
         """
-        Generate an alerce_id to a batch of alerts given its ra, dec and radius.
+        Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.
         :param alerts: Dataframe of alerts
         :return:
         """
-        # Group all alerts with the same oid (is possible get more than 1 alert with same oid in one batch)
+        # Internal cross match here...
+        #####################
+
+        # Interaction with database: group all alerts with the same oid (is possible get more than
+        # 1 alert with same oid in one batch)
         oid_aid = alerts.groupby("oid").apply(self._to_name)
         # Join the tuple oid-aid with batch of alerts
         alerts = alerts.set_index("oid").join(oid_aid)
         alerts.reset_index(inplace=True)
+        alerts["aid"] = alerts["aid"].astype(np.long)
         return alerts

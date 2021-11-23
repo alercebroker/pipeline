@@ -1,4 +1,3 @@
-import numpy as np
 from apf.core.step import GenericStep
 from apf.core import get_class
 from apf.producers import KafkaProducer
@@ -8,7 +7,9 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 from .utils.sorting_hat import SortingHat
 
+import numpy as np
 import pandas as pd
+import pickle
 import logging
 
 
@@ -36,11 +37,19 @@ class SortingHatStep(GenericStep):
         self.wizard = SortingHat(self.driver)
 
     def produce(self, alerts: pd.DataFrame) -> None:
+        """
+        Produce generic alerts to producer with configuration of PRODUCER_CONFIG from settings.py.
+        :param alerts: Dataframe of generic alerts with alerce_id
+        :return:
+        """
         n_messages = 0
         for index, alert in alerts.iterrows():
             alert = alert.to_dict()
-            self.producer.produce(alert, key=str(alert["aid"]))
-            print(alert)
+            for k in alert["extra_fields"].keys():  # transform to bytes if datatype is list
+                if isinstance(alert["extra_fields"][k], list):
+                    alert["extra_fields"][k] = pickle.dumps(alert["extra_fields"][k])
+            # produce alert content with key of candid
+            self.producer.produce(alert, key=str(alert["candid"]))
             n_messages += 1
         self.logger.info(f"{n_messages} messages Produced")
 
@@ -56,8 +65,10 @@ class SortingHatStep(GenericStep):
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
         alerts = self.wizard.to_name(alerts)
-        alerts["aid"] = alerts["aid"].astype(np.long)
+        # Get long representation of alerce_id in pandas
         if self.producer:
             self.produce(alerts)
+        print(alerts[["aid", "oid", "candid"]])
         del alerts
         del messages
+        input("stop")
