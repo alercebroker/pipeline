@@ -12,4 +12,4 @@ class BaseCorrectionStrategy(ABC):
 
     @abstractmethod
     def do_correction(self, detections: pd.DataFrame) -> pd.DataFrame:
-        pass
+        raise NotImplementedError()
