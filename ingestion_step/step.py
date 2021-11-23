@@ -5,9 +5,7 @@ from apf.producers import KafkaProducer
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
-from survey_parser_plugins import ALeRCEParser
 
-from .utils.id_generator import SortingHat
 from .utils.prv_candidates.processor import Processor
 from .utils.prv_candidates.strategies import (
     ATLASPrvCandidatesStrategy,
@@ -48,7 +46,7 @@ DET_KEYS = [
     "has_stamp",
     "parent_candid",
     "corrected",
-    "step_id_corr"
+    "step_id_corr",
 ]
 
 OBJ_KEYS = [
@@ -100,10 +98,8 @@ class IngestionStep(GenericStep):
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
         self.driver.connect(config["DB_CONFIG"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
-        self.parser = ALeRCEParser()
         self.prv_candidates_processor = Processor(ZTFPrvCandidatesStrategy())
         self.detections_corrector = Corrector(ZTFCorrectionStrategy())
-        self.wizard = SortingHat(self.driver)
 
     def get_objects(self, alids: List[str or int]):
         """
@@ -173,7 +169,9 @@ class IngestionStep(GenericStep):
 
         to_insert = objects[new_objects]
         to_update = objects[~new_objects]
-        self.logger.info(f"Inserting {len(to_insert)} and updating {len(to_update)} objects")
+        self.logger.info(
+            f"Inserting {len(to_insert)} and updating {len(to_update)} objects"
+        )
         if len(to_insert) > 0:
             to_insert.replace({np.nan: None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
@@ -227,24 +225,28 @@ class IngestionStep(GenericStep):
 
     @classmethod
     def calculate_stats_coordinates(cls, coordinates, e_coordinates):
-        num_coordinate = np.sum(coordinates/e_coordinates**2)
-        den_coordinate = np.sum(1/e_coordinates**2)
-        mean_coordinate = num_coordinate/den_coordinate
+        num_coordinate = np.sum(coordinates / e_coordinates ** 2)
+        den_coordinate = np.sum(1 / e_coordinates ** 2)
+        mean_coordinate = num_coordinate / den_coordinate
         return mean_coordinate, den_coordinate
-    
+
     def compute_meanra(self, ras, e_ras):
         mean_ra, e_ra = self.calculate_stats_coordinates(ras, e_ras)
         if 0.0 <= mean_ra <= 360.0:
             return mean_ra, e_ra
         else:
-            raise ValueError(f"Mean ra must be between 0 and 360 (given {mean_ra})")
-    
+            raise ValueError(
+                f"Mean ra must be between 0 and 360 (given {mean_ra})"
+            )
+
     def compute_meandec(self, decs, e_decs):
         mean_dec, e_dec = self.calculate_stats_coordinates(decs, e_decs)
         if -90.0 <= mean_dec <= 90.0:
             return mean_dec, e_dec
         else:
-            raise ValueError(f"Mean dec must be between -90 and 90 (given {mean_dec})")
+            raise ValueError(
+                f"Mean dec must be between -90 and 90 (given {mean_dec})"
+            )
 
     def apply_objs_stats_from_correction(self, df):
         response = {}
@@ -256,8 +258,12 @@ class IngestionStep(GenericStep):
         df_e_ra = df["e_ra"]
         df_e_dec = df["e_dec"]
 
-        response["meanra"], response["e_ra"] = self.compute_meanra(df_ra, df_e_ra)
-        response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
+        response["meanra"], response["e_ra"] = self.compute_meanra(
+            df_ra, df_e_ra
+        )
+        response["meandec"], response["e_dec"] = self.compute_meandec(
+            df_dec, df_e_dec
+        )
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
@@ -280,9 +286,12 @@ class IngestionStep(GenericStep):
         # Keep existing objects
         alids = objects["aid"].unique()
         detections = light_curves["detections"]
-        detections.drop_duplicates(["candid", "aid"], inplace=True, keep="first")
+        detections.drop_duplicates(
+            ["candid", "aid"], inplace=True, keep="first"
+        )
         detections.reset_index(inplace=True, drop=True)
-        # New objects referer to: empirical new objects (without detections in the past) and modified objects
+        # New objects referer to: empirical new objects
+        # (without detections in the past) and modified objects
         # (I mean existing objects in database)
         new_objects = detections.groupby("aid").apply(
             self.apply_objs_stats_from_correction
@@ -307,7 +316,10 @@ class IngestionStep(GenericStep):
             "non_detections": self.get_non_detections(oids),
         }
         self.logger.info(
-            f"Light Curves ({len(oids)} objects) of this batch: {len(light_curves['detections'])} detections, {len(light_curves['non_detections'])} non_detections in database "
+            f"Light Curves ({len(oids)} objects) of this batch: "
+            + "{len(light_curves['detections'])} detections,"
+            + " {len(light_curves['non_detections'])}"
+            + "non_detections in database"
         )
         return light_curves
 
@@ -330,19 +342,25 @@ class IngestionStep(GenericStep):
 
         # Get unique oids from new alerts
         alids = detections["aid"].unique().tolist()
-        # Retrieve old detections and non_detections from database and put new label to false
+        # Retrieve old detections and non_detections from database
+        # and put new label to false
         light_curves = self.get_lightcurves(alids)
         light_curves["detections"]["new"] = False
         light_curves["non_detections"]["new"] = False
 
         old_detections = light_curves["detections"]
 
-        # Remove tuple of [aid, candid] that are new detections and old detections. This is a mask that retrieve
+        # Remove tuple of [aid, candid] that are new detections and
+        # old detections. This is a mask that retrieve
         # existing tuples on db.
         unique_keys_detections = ["aid", "candid"]
         # Checking if already on the database
-        index_detections = pd.MultiIndex.from_frame(detections[unique_keys_detections])
-        old_index_detections = pd.MultiIndex.from_frame(old_detections[unique_keys_detections])
+        index_detections = pd.MultiIndex.from_frame(
+            detections[unique_keys_detections]
+        )
+        old_index_detections = pd.MultiIndex.from_frame(
+            old_detections[unique_keys_detections]
+        )
         detections_already_on_db = index_detections.isin(old_index_detections)
         # Apply mask and get only new detections on detections from stream.
         new_detections = detections[~detections_already_on_db]
@@ -354,39 +372,35 @@ class IngestionStep(GenericStep):
         non_detections["new"] = True
         old_non_detections = light_curves["non_detections"]
         if len(non_detections):
-            # Using round 5 to have 5 decimals of precision to delete duplicates non_detections
+            # Using round 5 to have 5 decimals of precision to
+            # delete duplicates non_detections
             non_detections["round_mjd"] = non_detections["mjd"].round(5)
             old_non_detections["round_mjd"] = old_non_detections["mjd"].round(
                 5
             )
-            # Remove [aid, fid, round_mjd] that are new non_dets and old non_dets.
+            # Remove [aid, fid, round_mjd] that are new non_dets
+            # and old non_dets.
             unique_keys_non_detections = ["aid", "fid", "round_mjd"]
             # Checking if already on the database
-            index_non_detections = pd.MultiIndex.from_frame(non_detections[unique_keys_non_detections])
-            old_index_non_detections = pd.MultiIndex.from_frame(old_non_detections[unique_keys_non_detections])
-            non_dets_already_on_db = index_non_detections.isin(old_index_non_detections)
-            # Apply mask and get only new non detections on non detections from stream.
+            index_non_detections = pd.MultiIndex.from_frame(
+                non_detections[unique_keys_non_detections]
+            )
+            old_index_non_detections = pd.MultiIndex.from_frame(
+                old_non_detections[unique_keys_non_detections]
+            )
+            non_dets_already_on_db = index_non_detections.isin(
+                old_index_non_detections
+            )
+            # Apply mask and get only new non detections on
+            # non detections from stream.
             new_non_detections = non_detections[~non_dets_already_on_db]
             # Get all light curve: only detections since beginning of time
-            non_detections = pd.concat([old_non_detections, new_non_detections], ignore_index=True)
+            non_detections = pd.concat(
+                [old_non_detections, new_non_detections], ignore_index=True
+            )
             non_detections.drop(columns=["round_mjd"], inplace=True)
             light_curves["non_detections"] = non_detections
         return light_curves
-
-    @classmethod
-    def remove_stamps(cls, alerts: pd.DataFrame) -> None:
-        """
-        Remove a column that contains any survey stamps.
-
-        Parameters
-        ----------
-        alerts:  A pandas DataFrame created from a list of GenericAlerts.
-
-        Returns None
-        -------
-
-        """
-        alerts.drop("stamps", axis=1, inplace=True)
 
     def process_prv_candidates(
         self, alerts: pd.DataFrame
@@ -422,9 +436,7 @@ class IngestionStep(GenericStep):
                 )
             else:
                 raise ValueError(f"Unknown Survey {tid}")
-            det, non_det = self.prv_candidates_processor.compute(
-                subset_data
-            )
+            det, non_det = self.prv_candidates_processor.compute(subset_data)
             detections.append(det)
             non_detections.append(non_det)
         detections = pd.concat(detections, ignore_index=True)
@@ -454,8 +466,9 @@ class IngestionStep(GenericStep):
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
         # move oid to extra_fields
-        response["extra_fields"] = response.apply(lambda x: {"oid": x["oid"], **x["extra_fields"]},
-                                                  axis=1)
+        response["extra_fields"] = response.apply(
+            lambda x: {"oid": x["oid"], **x["extra_fields"]}, axis=1
+        )
         return response
 
     def produce(self, alerts: pd.DataFrame, light_curves: dict) -> None:
@@ -493,11 +506,8 @@ class IngestionStep(GenericStep):
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
-        response = self.parser.parse(messages)
-        alerts = pd.DataFrame(response)
+        alerts = pd.DataFrame(messages)
 
-        # Put name of ALeRCE in alerts
-        alerts = self.wizard.to_name(alerts)
         # If is an empiric alert must has stamp
         alerts.loc[:, "has_stamp"] = True
 
@@ -514,14 +524,13 @@ class IngestionStep(GenericStep):
         detections = pd.concat(
             [alerts, dets_from_prv_candidates], ignore_index=True
         )
-        # Remove alerts with the same candid duplicated. It may be the case that some candid are repeated or some
-        # detections from prv_candidates share the candid. We use keep='first' for maintain the candid of empiric
-        # detections.
+        # Remove alerts with the same candid duplicated.
+        # It may be the case that some candid are repeated or some
+        # detections from prv_candidates share the candid.
+        # We use keep='first' for maintain the candid of empiric detections.
         detections.drop_duplicates(
             "candid", inplace=True, keep="first", ignore_index=True
         )
-        # Removing stamps columns
-        self.remove_stamps(detections)
         # Do correction to detections from stream
         detections = self.correct(detections)
 
@@ -533,7 +542,8 @@ class IngestionStep(GenericStep):
         # Get unique alerce ids for get objects from database
         unique_alids = alerts["aid"].unique().tolist()
 
-        # Getting other tables: retrieve existing objects and create new objects
+        # Getting other tables: retrieve existing objects
+        # and create new objects
         objects = self.get_objects(unique_alids)
         objects = self.preprocess_objects(objects, light_curves)
         # Insert new objects and update old objects on database
@@ -549,9 +559,6 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
         self.insert_non_detections(new_non_detections)
-        # Finally produce the lightcurves
-        # if self.producer:
-        #     self.produce(alerts, light_curves)
         del alerts
         del light_curves
         del objects
