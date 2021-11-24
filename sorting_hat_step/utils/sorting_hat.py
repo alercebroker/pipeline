@@ -10,7 +10,7 @@ from db_plugins.db.mongo.connection import MongoConnection
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
 class SortingHat:
-    def __init__(self, db: MongoConnection, radius=1.5):
+    def __init__(self, db: MongoConnection, radius: float = 1.5):
         self.radius = radius
         self.db = db
 
