@@ -1,6 +1,5 @@
 from apf.core.step import GenericStep
 from apf.core import get_class
-from apf.producers import KafkaProducer
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
@@ -87,13 +86,6 @@ class IngestionStep(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-
-        if not producer and config.get("PRODUCER_CONFIG", False):
-            if "CLASS" in config["PRODUCER_CONFIG"]:
-                producer_class = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-                producer = producer_class(config["PRODUCER_CONFIG"])
-            elif "PARAMS" in config["PRODUCER_CONFIG"]:
-                producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
         self.producer = producer
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
@@ -471,39 +463,6 @@ class IngestionStep(GenericStep):
             lambda x: {"oid": x["oid"], **x["extra_fields"]}, axis=1
         )
         return response
-
-    def produce(self, alerts: pd.DataFrame, light_curves: dict) -> None:
-        object_ids = alerts["oid"].unique().tolist()
-        self.logger.info(f"Checking {len(object_ids)} messages")
-
-        light_curves["detections"].drop(columns=["new"], inplace=True)
-        light_curves["non_detections"].drop(columns=["new"], inplace=True)
-
-        n_messages = 0
-        for oid in object_ids:
-            candid = alerts[alerts["oid"] == oid]["candid"].values[-1]
-            aid = alerts[alerts["oid"] == oid]["aid"].values[-1]
-            mask_detections = light_curves["detections"]["oid"] == oid
-            detections = light_curves["detections"][mask_detections]
-            detections.replace({np.nan: None}, inplace=True)
-            detections = detections.to_dict("records")
-
-            mask_non_detections = light_curves["detections"]["oid"] == oid
-            non_detections = light_curves["non_detections"][
-                mask_non_detections
-            ]
-            non_detections = non_detections.to_dict("records")
-
-            output_message = {
-                "aid": str(aid),
-                "oid": str(oid),
-                "candid": candid,
-                "detections": detections,
-                "non_detections": non_detections,
-            }
-            self.producer.produce(output_message, key=oid)
-            n_messages += 1
-        self.logger.info(f"{n_messages} messages Produced")
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
