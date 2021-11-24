@@ -7,7 +7,6 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 from .utils.sorting_hat import SortingHat
 
-import numpy as np
 import pandas as pd
 import pickle
 import logging
@@ -68,7 +67,6 @@ class SortingHatStep(GenericStep):
         # Get long representation of alerce_id in pandas
         if self.producer:
             self.produce(alerts)
-        print(alerts[["aid", "oid", "candid"]])
         del alerts
         del messages
-        input("stop")
+        del response

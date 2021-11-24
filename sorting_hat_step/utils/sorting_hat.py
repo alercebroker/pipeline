@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+
+from scipy.spatial import cKDTree
 from typing import List
 
 from db_plugins.db.mongo.models import Object
@@ -8,7 +10,8 @@ from db_plugins.db.mongo.connection import MongoConnection
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
 class SortingHat:
-    def __init__(self, db: MongoConnection):
+    def __init__(self, db: MongoConnection, radius=1.5):
+        self.radius = radius
         self.db = db
 
     @classmethod
@@ -31,15 +34,14 @@ class SortingHat:
         arc = rm * angle
         return arc
 
-    def cone_search(self, ra: float, dec: float, radius: float = 1.5) -> List[dict]:
+    def cone_search(self, ra: float, dec: float) -> List[dict]:
         """
         Cone search to database given a ra, dec and radius. Returns a list of objects sorted by distance.
         :param ra: right ascension
         :param dec: declination
-        :param radius:
         :return:
         """
-        radius = radius / 3600
+        radius = self.radius / 3600
         scaling = self.wgs_scale(dec)
         meter_radius = radius * scaling
         lon, lat = ra - 180., dec
@@ -64,7 +66,7 @@ class SortingHat:
         spatial = [i for i in cursor]
         return spatial
 
-    def oid_query(self, oid: str) -> int or None:
+    def oid_query(self, oid: list) -> int or None:
         """
         Query to database if the oids has an alerce_id
         :param oid: oid of any survey
@@ -73,7 +75,9 @@ class SortingHat:
         objects = self.db.query(model=Object)
         cursor = objects.find(
             {
-                "oid": oid
+                "oid": {
+                    "$in": oid
+                }
             },
             {
                 "_id": 0,
@@ -133,6 +137,29 @@ class SortingHat:
 
         return aid
 
+    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec"):
+        """
+        Do a internal cross match in data input (batch vs batch) to get closest objects. This method uses cKDTree class
+        to get nearest object. Returns a dictionary where assign indexes of the same object. If the output is a empty
+        dictionary indicates that doesn't exists nearest object in the batch.
+        :param data:
+        :param ra_col:
+        :param dec_col:
+        :return:
+        """
+        radius = self.radius / 3600
+        values = data[[ra_col, dec_col]].to_numpy()
+        tree = cKDTree(values)
+        sdm = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")  # get sparse distance matrix
+        same_objects = {}
+        for core, neighbour in zip(sdm.row, sdm.col):
+            if neighbour in same_objects:
+                same_objects[core] = same_objects[neighbour]
+            elif core not in same_objects:
+                same_objects[core] = core
+                same_objects[neighbour] = core
+        return same_objects
+
     def _to_name(self, group_of_alerts: pd.Series) -> pd.Series:
         """
         Generate alerce_id to a group of alerts of the same object. This method has three options:
@@ -142,10 +169,10 @@ class SortingHat:
         :param group_of_alerts: alerts of the same object.
         :return:
         """
+        oids = group_of_alerts["oid"].unique().tolist()
         first_alert = group_of_alerts.iloc[0]
-        oid = first_alert["oid"]
         # 1) First Hit: Exists at least one aid to this oid
-        existing_oid = self.oid_query(oid)
+        existing_oid = self.oid_query(oids)
         if existing_oid:
             aid = existing_oid
         else:
@@ -163,16 +190,17 @@ class SortingHat:
         """
         Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.
         :param alerts: Dataframe of alerts
-        :return:
+        :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
-        # Internal cross match here...
-        #####################
-
-        # Interaction with database: group all alerts with the same oid (is possible get more than
-        # 1 alert with same oid in one batch)
-        oid_aid = alerts.groupby("oid").apply(self._to_name)
-        # Join the tuple oid-aid with batch of alerts
-        alerts = alerts.set_index("oid").join(oid_aid)
-        alerts.reset_index(inplace=True)
+        # Internal cross match that identifies same objects in own batch: create a new column named 'tmp_id'
+        indexes = self.internal_cross_match(alerts)
+        alerts["tmp_id"] = alerts.index.map(lambda x: indexes[x] if x in indexes else x)
+        # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
+        tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
+        # Join the tuple tmp_id-aid with batch of alerts
+        alerts = alerts.set_index("tmp_id").join(tmp_id_aid)
+        # Get alerce_id in long representation
         alerts["aid"] = alerts["aid"].astype(np.long)
+        # Remove column tmp_id (really is a index) for ever
+        alerts.reset_index(inplace=True, drop=True)
         return alerts
