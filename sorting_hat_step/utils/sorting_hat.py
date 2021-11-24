@@ -137,14 +137,13 @@ class SortingHat:
 
         return aid
 
-    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec"):
+    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec") -> pd.DataFrame:
         """
         Do a internal cross match in data input (batch vs batch) to get closest objects. This method uses cKDTree class
-        to get nearest object. Returns a dictionary where assign indexes of the same object. If the output is a empty
-        dictionary indicates that doesn't exists nearest object in the batch.
-        :param data:
-        :param ra_col:
-        :param dec_col:
+        to get nearest object. Returns a new dataframe with another column named tmp_id to reference unique objects
+        :param data: alerts in a dataframe
+        :param ra_col: how the ra column is called in data
+        :param dec_col: how the dec column is called in data
         :return:
         """
         radius = self.radius / 3600
@@ -158,7 +157,8 @@ class SortingHat:
             elif core not in same_objects:
                 same_objects[core] = core
                 same_objects[neighbour] = core
-        return same_objects
+        data["tmp_id"] = data.index.map(lambda x: same_objects[x] if x in same_objects else x)
+        return data
 
     def _to_name(self, group_of_alerts: pd.Series) -> pd.Series:
         """
@@ -193,8 +193,7 @@ class SortingHat:
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
         # Internal cross match that identifies same objects in own batch: create a new column named 'tmp_id'
-        indexes = self.internal_cross_match(alerts)
-        alerts["tmp_id"] = alerts.index.map(lambda x: indexes[x] if x in indexes else x)
+        alerts = self.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
         # Join the tuple tmp_id-aid with batch of alerts
