@@ -52,7 +52,8 @@ class ATLASParser(SurveyParser):
             e_dec = 0.14
             e_ra = 0.14/abs(np.cos(generic_alert_message["dec"]))
             generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_ra
-            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_dec 
+            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_dec
+            generic_alert_message["mag"] = abs(generic_alert_message["mag"])
             return GenericAlert(**generic_alert_message)
         except KeyError:
             raise KeyError("This parser can't parse message")
