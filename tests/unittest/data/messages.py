@@ -10,6 +10,8 @@ def random_ensure_choices(choices, data):
 
 
 def get_ztf_prv_candidates(num_prv_candidates):
+    if not num_prv_candidates:
+        return None
     prv_candidates = []
     for i in range(num_prv_candidates):
         prv_candidates.append(
@@ -79,19 +81,19 @@ def get_ztf_prv_candidates(num_prv_candidates):
     return prv_candidates
 
 
-def get_extra_fields(telescope: str):
+def get_extra_fields(telescope: str, **kwargs):
     if telescope == "ATLAS":
         return {}
     elif telescope == "ZTF":
         return {
-            "distnr": random.choice([None, random.random()]),
-            "magnr": random.choice([None, random.random()]),
-            "sigmagnr": random.choice([None, random.random()]),
-            "prv_candidates": get_ztf_prv_candidates(10),
+            "distnr": random.random(),
+            "magnr": random.random(),
+            "sigmagnr": random.random(),
+            "prv_candidates": get_ztf_prv_candidates(**kwargs),
         }
 
 
-def generate_message(num_messages: int):
+def generate_message(num_messages: int, **kwargs):
     alerts = []
     telescopes = ["ATLAS", "ZTF"]
     for i in range(num_messages):
@@ -111,7 +113,7 @@ def generate_message(num_messages: int):
             "rb": random.random(),
             "rbversion": f"v{i}",
             "aid": random.randint(1000000, 9000000),
-            "extra_fields": get_extra_fields(telescopes[i % 2]),
+            "extra_fields": get_extra_fields(telescopes[i % 2], **kwargs),
         }
         alerts.append(alert)
     return alerts
@@ -142,7 +144,7 @@ def generate_message_atlas(num_messages):
     return alerts
 
 
-def generate_message_ztf(num_messages):
+def generate_message_ztf(num_messages: int, num_prv_candidates: int):
     alerts = []
     for i in range(num_messages):
         alert = {
@@ -160,8 +162,10 @@ def generate_message_ztf(num_messages):
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.random(),
             "rbversion": f"v{i}",
-            "aid": random.randint(100, 200),
-            "extra_fields": get_extra_fields("ZTF"),
+            "aid": str(random.randint(100, 200)),
+            "extra_fields": get_extra_fields(
+                "ZTF", num_prv_candidates=num_prv_candidates
+            ),
         }
         alerts.append(alert)
     return alerts
