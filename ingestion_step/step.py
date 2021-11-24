@@ -47,6 +47,7 @@ DET_KEYS = [
     "parent_candid",
     "corrected",
     "step_id_corr",
+    "extra_fields",
 ]
 
 OBJ_KEYS = [
@@ -185,7 +186,7 @@ class IngestionStep(GenericStep):
             filters = []
             for obj in dict_to_update:
                 instances.append(Object(**obj))
-                new_values.append(obj)
+                new_values.append(Object(**obj))
                 filters.append({"_id": obj["aid"]})
             self.driver.query().bulk_update(
                 instances, new_values, filter_fields=filters
@@ -267,7 +268,7 @@ class IngestionStep(GenericStep):
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
-        response["oid"] = df_min.oid
+        response["oid"] = [d["oid"] for d in df["extra_fields"]]
         response["ndet"] = len(df)
         return pd.Series(response)
 

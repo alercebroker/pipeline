@@ -1,7 +1,6 @@
 import unittest
 import pytest
 import pandas as pd
-import os
 from unittest import mock
 
 from apf.producers import KafkaProducer
@@ -9,7 +8,11 @@ from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.connection import MongoConnection
 from ingestion_step.step import IngestionStep
 
-from data.messages import generate_message_atlas, generate_message_ztf
+from data.messages import (
+    generate_message_atlas,
+    generate_message_ztf,
+    generate_message,
+)
 
 
 class StepTestCase(unittest.TestCase):
@@ -161,13 +164,121 @@ class StepTestCase(unittest.TestCase):
             mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
 
     def test_execute_with_ZTF_stream(self):
-        ZTF_messages = generate_message_ztf(10)
+        ZTF_messages = generate_message_ztf(10, 0)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
 
+    def test_execute_with_ZTF_stream_and_existing_objects(self):
+        ZTF_messages = generate_message_ztf(1, 0)
+
+        def side_effect(*args, **kwargs):
+            if kwargs["model"] == Object:
+                return [
+                    Object(
+                        aid=ZTF_messages[0]["aid"],
+                        oid=["test"],
+                        lastmjd=1,
+                        firstmjd=1,
+                        ndet=1,
+                        meanra=1,
+                        meandec=1,
+                    )
+                ]
+            if kwargs["model"] == Detection:
+                return [
+                    Detection(
+                        tid="ZTF",
+                        aid=ZTF_messages[0]["aid"],
+                        candid=1,
+                        mjd=1,
+                        fid=1,
+                        ra=1,
+                        dec=1,
+                        rb=1,
+                        mag=20,
+                        e_mag=0.1,
+                        rfid=1,
+                        e_ra=0.1,
+                        e_dec=0.1,
+                        isdiffpos=0.1,
+                        corrected=False,
+                        parent_candid=None,
+                        has_stamp=False,
+                        step_id_corr="aaa",
+                        rbversion="ooo",
+                        oid="test",
+                    )
+                ]
+            return []
+
+        self.step.driver.query().find_all.side_effect = side_effect
+        self.step.execute(ZTF_messages)
+        self.step.driver.query().bulk_update.assert_called()
+        for call in self.step.driver.query().bulk_update.mock_calls:
+            name, args, kwargs = call
+            assert args[0] == args[1]
+            assert args[0][0]["oid"] == ["test", "ZTFoid0"]
+
+    def test_execute_with_existing_objects(self):
+        num_messages = 10
+        messages = generate_message(num_messages, num_prv_candidates=0)
+
+        def side_effect(*args, **kwargs):
+            if kwargs["model"] == Object:
+                return [
+                    Object(
+                        aid=messages[0]["aid"],
+                        oid=["test"],
+                        lastmjd=1,
+                        firstmjd=1,
+                        ndet=1,
+                        meanra=1,
+                        meandec=1,
+                    )
+                ]
+            if kwargs["model"] == Detection:
+                return [
+                    Detection(
+                        tid="ZTF",
+                        aid=messages[0]["aid"],
+                        candid=1,
+                        mjd=1,
+                        fid=1,
+                        ra=1,
+                        dec=1,
+                        rb=1,
+                        mag=20,
+                        e_mag=0.1,
+                        rfid=1,
+                        e_ra=0.1,
+                        e_dec=0.1,
+                        isdiffpos=0.1,
+                        corrected=False,
+                        parent_candid=None,
+                        has_stamp=False,
+                        step_id_corr="aaa",
+                        rbversion="ooo",
+                        oid="test",
+                    )
+                ]
+            return []
+
+        self.step.driver.query().find_all.side_effect = side_effect
+        self.step.execute(messages)
+        self.step.driver.query().bulk_update.assert_called()
+        assert len(self.step.driver.query().bulk_update.mock_calls) == 1
+        name, args, kwargs = self.step.driver.query().bulk_update.mock_calls[0]
+        assert args[0] == args[1]
+        assert len(args[0][0]["oid"]) == 2
+        insert_calls = self.step.driver.query().bulk_insert.mock_calls
+        assert len(insert_calls) == 3
+        insert_object_call = insert_calls[0]
+        name, args, kwargs = insert_object_call
+        assert len(args[0]) == num_messages - 1
+
     def test_execute_with_ZTF_stream_non_detections(self):
-        ZTF_messages = generate_message_ztf(10)
+        ZTF_messages = generate_message_ztf(10, 10)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
