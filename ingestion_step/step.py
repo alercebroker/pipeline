@@ -167,6 +167,7 @@ class IngestionStep(GenericStep):
         )
         if len(to_insert) > 0:
             to_insert.replace({np.nan: None}, inplace=True)
+            to_insert["_id"] = to_insert["aid"]
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Object)
 
@@ -260,7 +261,7 @@ class IngestionStep(GenericStep):
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
-        response["oid"] = [d["oid"] for d in df["extra_fields"]]
+        response["oid"] = set([d["oid"] for d in df["extra_fields"]])
         response["ndet"] = len(df)
         return pd.Series(response)
 

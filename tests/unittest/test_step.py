@@ -80,6 +80,10 @@ class StepTestCase(unittest.TestCase):
         self.step.insert_objects(df_objects)
         self.step.driver.query().bulk_insert.assert_called()
         self.step.driver.query().bulk_update.assert_not_called()
+        insert_call = self.step.driver.query().bulk_insert.mock_calls[0]
+        name, args, kwargs = insert_call
+        assert args[1] == Object
+        assert args[0][0]["_id"] == args[0][0]["aid"]
 
     def test_insert_objects_without_inserts(self):
         objects = {
@@ -260,7 +264,29 @@ class StepTestCase(unittest.TestCase):
                         step_id_corr="aaa",
                         rbversion="ooo",
                         oid="test",
-                    )
+                    ),
+                    Detection(
+                        tid="ZTF",
+                        aid=messages[0]["aid"],
+                        candid=2,
+                        mjd=1,
+                        fid=1,
+                        ra=1,
+                        dec=1,
+                        rb=1,
+                        mag=20,
+                        e_mag=0.1,
+                        rfid=1,
+                        e_ra=0.1,
+                        e_dec=0.1,
+                        isdiffpos=0.1,
+                        corrected=False,
+                        parent_candid=None,
+                        has_stamp=False,
+                        step_id_corr="aaa",
+                        rbversion="ooo",
+                        oid="test",
+                    ),
                 ]
             return []
 
