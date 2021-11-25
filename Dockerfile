@@ -5,7 +5,7 @@ RUN pip install numpy
 RUN pip install -r /app/requirements.txt
 
 WORKDIR /app
-COPY sorting_hat_stepp /app
+COPY sorting_hat_step /app
 
 WORKDIR /app/scripts
 
