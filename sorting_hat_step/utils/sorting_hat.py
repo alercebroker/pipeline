@@ -10,28 +10,24 @@ from db_plugins.db.mongo.connection import MongoConnection
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
 class SortingHat:
-    def __init__(self, db: MongoConnection, radius=1.5):
+    def __init__(self, db: MongoConnection, radius: float = 1.5):
         self.radius = radius
         self.db = db
+        # Values from WGS 84
+        self.a = 6378137.000000000000  # Semi-major axis of Earth
+        self.e = 0.081819190842600  # eccentricity
+        self.angle = np.radians(1.0)
 
-    @classmethod
-    def wgs_scale(cls, lat: float) -> float:
+    def wgs_scale(self, lat: float) -> float:
         """
         Get scaling to convert degrees to meters at a given geodetic latitude (declination)
         :param lat: geodetic latitude (declination)
         :return:
         """
-
-        # Values from WGS 84
-        a = 6378137.000000000000  # Semi-major axis of Earth
-        e = 0.081819190842600  # eccentricity
-        angle = np.radians(1.0)
-
         # Compute radius of curvature along meridian (see https://en.wikipedia.org/wiki/Meridian_arc)
-        rm = a * (1 - np.power(e, 2)) / np.power((1 - np.power(e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5)
-
+        rm = self.a * (1 - np.power(self.e, 2)) / np.power((1 - np.power(self.e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5)
         # Compute length of arc at this latitude (meters/degree)
-        arc = rm * angle
+        arc = rm * self.angle
         return arc
 
     def cone_search(self, ra: float, dec: float) -> List[dict]:
@@ -137,14 +133,13 @@ class SortingHat:
 
         return aid
 
-    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec"):
+    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec") -> pd.DataFrame:
         """
         Do a internal cross match in data input (batch vs batch) to get closest objects. This method uses cKDTree class
-        to get nearest object. Returns a dictionary where assign indexes of the same object. If the output is a empty
-        dictionary indicates that doesn't exists nearest object in the batch.
-        :param data:
-        :param ra_col:
-        :param dec_col:
+        to get nearest object. Returns a new dataframe with another column named tmp_id to reference unique objects
+        :param data: alerts in a dataframe
+        :param ra_col: how the ra column is called in data
+        :param dec_col: how the dec column is called in data
         :return:
         """
         radius = self.radius / 3600
@@ -158,9 +153,10 @@ class SortingHat:
             elif core not in same_objects:
                 same_objects[core] = core
                 same_objects[neighbour] = core
-        return same_objects
+        data["tmp_id"] = data.index.map(lambda x: same_objects[x] if x in same_objects else x)
+        return data
 
-    def _to_name(self, group_of_alerts: pd.Series) -> pd.Series:
+    def _to_name(self, group_of_alerts: pd.DataFrame) -> pd.Series:
         """
         Generate alerce_id to a group of alerts of the same object. This method has three options:
         1) First Hit: The alert has an oid existing in database
@@ -193,14 +189,13 @@ class SortingHat:
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
         # Internal cross match that identifies same objects in own batch: create a new column named 'tmp_id'
-        indexes = self.internal_cross_match(alerts)
-        alerts["tmp_id"] = alerts.index.map(lambda x: indexes[x] if x in indexes else x)
+        alerts = self.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
         # Join the tuple tmp_id-aid with batch of alerts
         alerts = alerts.set_index("tmp_id").join(tmp_id_aid)
         # Get alerce_id in long representation
-        alerts["aid"] = alerts["aid"].astype(np.long)
+        alerts["aid"] = alerts["aid"].astype(np.int64)
         # Remove column tmp_id (really is a index) for ever
         alerts.reset_index(inplace=True, drop=True)
         return alerts
