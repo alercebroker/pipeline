@@ -1,8 +1,8 @@
 import unittest
+import pandas as pd
 from unittest import mock
 from unittest.mock import MagicMock
 
-import pandas as pd
 from db_plugins.db.mongo.connection import MongoConnection
 from db_plugins.db.mongo.models import Object
 from sorting_hat_step.utils.sorting_hat import SortingHat
