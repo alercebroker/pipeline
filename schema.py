@@ -25,7 +25,7 @@ SCHEMA = {
     },
     {
       "name": "pid",
-      "type": ["null", "long"]
+      "type": "long"
     },
     {
       "name": "candid",
@@ -49,7 +49,7 @@ SCHEMA = {
     },
     {
       "name": "rb",
-      "type": ["float", "null"]
+      "type": ["null", "float"]
     },
     {
       "name": "rbversion",
