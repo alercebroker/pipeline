@@ -154,13 +154,16 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
 
 def random_sub_samples(samples: int, size: int):
     sequence = []
-    for _ in range(size):
-        if _ == size-1:
-            val = samples - sum(sequence)
-        else:
-            remain = samples - sum(sequence)
-            val = random.randrange(0, remain)
-        sequence.append(val)
+    if samples == 0:
+        sequence = [0 for _ in range(size)]
+    else:
+        for _ in range(size):
+            if _ == size-1:
+                val = samples - sum(sequence)
+            else:
+                remain = samples - sum(sequence)
+                val = random.randrange(0, remain)
+            sequence.append(val)
     return sequence
 
 
