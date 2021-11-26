@@ -52,8 +52,8 @@ class ZTFParser(SurveyParser):
             generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_radec 
             generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_radec 
             return GenericAlert(**generic_alert_message)
-        except KeyError:
-            raise KeyError("This parser can't parse message")
+        except KeyError as e:
+            raise KeyError(f"This parser can't parse message: missing {e} key")
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:

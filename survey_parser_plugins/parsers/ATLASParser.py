@@ -7,10 +7,10 @@ class ATLASParser(SurveyParser):
     _generic_alert_message_key_mapping = {
         "candid": "candid",
         "mjd": "mjd",
-        "fid": None, # This field is modified below in the code
+        "fid": None,  # This field is modified below in the code
         "rfid": None,
-        "isdiffpos": None,
-        "pid": None,
+        "isdiffpos": "isdiffpos",
+        "pid": "pid",
         "ra": "RA",
         "dec": "Dec",
         "rb": None,
@@ -48,15 +48,16 @@ class ATLASParser(SurveyParser):
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification
+            generic_alert_message["isdiffpos"] = 1 if generic_alert_message["isdiffpos"] in ["t", "1"] else -1
+            generic_alert_message["mag"] = abs(generic_alert_message["mag"])
             # possible attributes
             e_dec = 0.14
             e_ra = 0.14/abs(np.cos(generic_alert_message["dec"]))
             generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_ra
             generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_dec
-            generic_alert_message["mag"] = abs(generic_alert_message["mag"])
             return GenericAlert(**generic_alert_message)
-        except KeyError:
-            raise KeyError("This parser can't parse message")
+        except KeyError as e:
+            raise KeyError(f"This parser can't parse message: missing {e} key")
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
