@@ -6,8 +6,8 @@ from survey_parser_plugins.core import GenericAlert
 from survey_parser_plugins.parsers import DECATParser
 
 FILE_PATH = os.path.dirname(__file__)
-ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/ATLAS_samples")
-DECAT_DATA_PATH = os.path.join(FILE_PATH, "../../notebooks/data/DECAT_samples")
+ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../data/ATLAS_samples")
+DECAT_DATA_PATH = os.path.join(FILE_PATH, "../data/DECAT_samples")
 
 
 def get_content(file_path):
