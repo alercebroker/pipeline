@@ -1,11 +1,14 @@
 import numpy as np
 import pandas as pd
+import string
 
 from scipy.spatial import cKDTree
 from typing import List
 
 from db_plugins.db.mongo.models import Object
 from db_plugins.db.mongo.connection import MongoConnection
+
+CHARACTERS = string.ascii_lowercase
 
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
@@ -17,6 +20,7 @@ class SortingHat:
         self.a = 6378137.000000000000  # Semi-major axis of Earth
         self.e = 0.081819190842600  # eccentricity
         self.angle = np.radians(1.0)
+        self.base = len(CHARACTERS)
 
     def wgs_scale(self, lat: float) -> float:
         """
@@ -84,6 +88,34 @@ class SortingHat:
         if len(data):
             return data[0]
         return None
+
+    def encode(self, long_number: int) -> str:
+        """
+        Encode a long number to string in base 24
+
+        :param long_number: id generated from ra dec
+        :return: base 24 of input
+        """
+        representation = []
+        while long_number:
+            char = CHARACTERS[long_number % self.base]
+            long_number = long_number // self.base
+            representation.append(char)
+        representation.reverse()
+        name = ''.join(representation)
+        return name
+
+    def decode(self, name: str):
+        """
+        Decode a string in base 24 to long integer
+
+        :param name: encoded name in base 24
+        :return: decoded name in long integer
+        """
+        i = 0
+        for char in name:
+            i = i * self.base + CHARACTERS.index(char)
+        return i
 
     @classmethod
     def id_generator(cls, ra: float, dec: float) -> int:
