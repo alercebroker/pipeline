@@ -49,11 +49,11 @@ SCHEMA = {
     },
     {
       "name": "rb",
-      "type": ["float", "null"]
+      "type": ["null", "float"]
     },
     {
       "name": "rbversion",
-      "type": "string"
+      "type": ["null", "string"]
     },
     {
       "name": "mag",
@@ -65,7 +65,7 @@ SCHEMA = {
     },
     {
       "name": "rfid",
-      "type": "int"
+      "type": ["null", "int"]
     },
     {
       "name": "isdiffpos",

@@ -7,6 +7,7 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 from .utils.sorting_hat import SortingHat
 
+import numpy as np
 import pandas as pd
 import pickle
 import logging
@@ -42,8 +43,10 @@ class SortingHatStep(GenericStep):
         :return:
         """
         n_messages = 0
+        alerts = alerts.replace({np.nan: None})  # transform np.nan to None (only for produce proposals)
         for index, alert in alerts.iterrows():
             alert = alert.to_dict()
+            alert["rfid"] = None if alert["rfid"] is None else int(alert["rfid"])
             for k in alert["extra_fields"].keys():  # transform to bytes if datatype is list
                 if isinstance(alert["extra_fields"][k], list):
                     alert["extra_fields"][k] = pickle.dumps(alert["extra_fields"][k])
@@ -64,7 +67,6 @@ class SortingHatStep(GenericStep):
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
         alerts = self.wizard.to_name(alerts)
-        # Get long representation of alerce_id in pandas
         if self.producer:
             self.produce(alerts)
         del alerts
