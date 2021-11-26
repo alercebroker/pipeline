@@ -13,16 +13,19 @@ class GenericAlert:
     oid: str # object identifier by telescope. e.g: ZTF20aaelulu
     tid: str # telescope identifier. e.g: ATLAS-01b
     candid: int # candidate identifier by telescope: e.g: 100219327768932647823 
+    pid: int # processing identifier for image
+    rfid: int # processing identifier for reference image to facilitate archive retrieval
     mjd: float
     fid: int
     ra: float
+    e_ra: float # error in right ascension
     dec: float
+    e_dec: float # error in declination
     mag: float
     e_mag: float
     isdiffpos: str
     rb: float
     rbversion: str
-    aid: int = None
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 ```
@@ -48,7 +51,7 @@ For use this package only instance a ParseSelector and register some survey's pa
 from survey_parser_plugins.core import ParserSelector
 from survey_parser_plugins.parsers import ATLASParser
 
-my_parser = ParserSelector(alerce_id=True)
+my_parser = ParserSelector()
 
 """ 
 - extra_fields indicates if the parser store more data from alerts in a key called 'extra_fields'
@@ -69,50 +72,11 @@ Also, we have a custom parsed named `ALeRCEParser` that use all survey's parser 
 ```python
 from survey_parser_plugins.core import ALeRCEParser
 
-my_parser = ALeRCEParser(alerce_id=True)
+my_parser = ALeRCEParser()
 
 .
 .
 .
 
 messages_parsed = my_parser.parse(multi_stream_alerts)
-```
-
-An output example of ALeRCEParser can be:
-
-```json
-[
-  {
-    "survey_id": "ZTF18abwhsum",
-    "candid": 978463981215010000,
-    "mjd": 58732.463981499895,
-    "fid": 2,
-    "ra": 2.8012592,
-    "dec": -12.2713433,
-    "rb": 0.47285714745521545,
-    "mag": 18.53635597229004,
-    "sigmag": 0.12155136466026306,
-    "aimage": 0.39500001072883606,
-    "bimage": 0.3700000047683716,
-    "extra_fields": {...},
-    "stamps": {...},
-    "alerce_id": 1001112300121616800
-  }, 
-  {
-    "survey_id": "ZTF20abrnqnv",
-    "candid": 1324408541315010000,
-    "mjd": 59078.40854169987,
-    "fid": 1,
-    "ra": 2.3151289,
-    "dec": 2.4991734,
-    "rb": 0.9428571462631226,
-    "mag": 20.411144256591797,
-    "sigmag": 0.19233156740665436,
-    "aimage": 0.7319999933242798,
-    "bimage": 0.6520000100135803,
-    "extra_fields": {...},
-    "stamps": {...},
-    "alerce_id": 1000915631022957000
-  }
-]
 ```
