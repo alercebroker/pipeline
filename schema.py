@@ -25,7 +25,7 @@ SCHEMA = {
     },
     {
       "name": "pid",
-      "type": "long"
+      "type": ["null", "long"]
     },
     {
       "name": "candid",
@@ -53,7 +53,7 @@ SCHEMA = {
     },
     {
       "name": "rbversion",
-      "type": "string"
+      "type": ["null", "string"]
     },
     {
       "name": "mag",
@@ -65,7 +65,7 @@ SCHEMA = {
     },
     {
       "name": "rfid",
-      "type": "int"
+      "type": ["null", "int"]
     },
     {
       "name": "isdiffpos",
