@@ -85,7 +85,7 @@ SCHEMA = {
     },
     {
       "name": "aid",
-      "type": "long"
+      "type": "string"
     },
   ]
 }

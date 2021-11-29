@@ -1,11 +1,15 @@
 import numpy as np
 import pandas as pd
+import time
+import string
 
 from scipy.spatial import cKDTree
 from typing import List
 
 from db_plugins.db.mongo.models import Object
 from db_plugins.db.mongo.connection import MongoConnection
+
+CHARACTERS = string.ascii_lowercase
 
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
@@ -17,6 +21,7 @@ class SortingHat:
         self.a = 6378137.000000000000  # Semi-major axis of Earth
         self.e = 0.081819190842600  # eccentricity
         self.angle = np.radians(1.0)
+        self.base = len(CHARACTERS)
 
     def wgs_scale(self, lat: float) -> float:
         """
@@ -25,7 +30,8 @@ class SortingHat:
         :return:
         """
         # Compute radius of curvature along meridian (see https://en.wikipedia.org/wiki/Meridian_arc)
-        rm = self.a * (1 - np.power(self.e, 2)) / np.power((1 - np.power(self.e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5)
+        rm = self.a * (1 - np.power(self.e, 2)) / np.power(
+            (1 - np.power(self.e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5)
         # Compute length of arc at this latitude (meters/degree)
         arc = rm * self.angle
         return arc
@@ -85,6 +91,34 @@ class SortingHat:
             return data[0]
         return None
 
+    def encode(self, long_number: int) -> str:
+        """
+        Encode a long number to string in base 24
+
+        :param long_number: id generated from ra dec
+        :return: base 24 of input
+        """
+        representation = []
+        while long_number:
+            char = CHARACTERS[long_number % self.base]
+            long_number = long_number // self.base
+            representation.append(char)
+        representation.reverse()
+        name = ''.join(representation)
+        return name
+
+    def decode(self, name: str) -> int:
+        """
+        Decode a string in base 24 to long integer
+
+        :param name: encoded name in base 24
+        :return: decoded name in long integer
+        """
+        i = 0
+        for char in name:
+            i = i * self.base + CHARACTERS.index(char)
+        return i
+
     @classmethod
     def id_generator(cls, ra: float, dec: float) -> int:
         """
@@ -130,7 +164,7 @@ class SortingHat:
         aid += (dec_mm * 100000)
         aid += (dec_ss * 1000)
         aid += (dec_f * 100)
-
+        # transform to str
         return aid
 
     def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec") -> pd.DataFrame:
@@ -178,7 +212,10 @@ class SortingHat:
                 aid = near_objects[0]["aid"]
             # 3) Miss generate a new ALeRCE identifier
             else:
-                aid = self.id_generator(first_alert["ra"], first_alert["dec"])
+                aid = self.id_generator(first_alert["ra"], first_alert["dec"])  # this is the long id
+                aid = self.encode(aid)  # this is the long id encoded to string id
+                year = time.strftime('%y')  # get year in short form. e.g: 21 means 2021
+                aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
         response = {"aid": aid}
         return pd.Series(response)
 
@@ -194,8 +231,6 @@ class SortingHat:
         tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
         # Join the tuple tmp_id-aid with batch of alerts
         alerts = alerts.set_index("tmp_id").join(tmp_id_aid)
-        # Get alerce_id in long representation
-        alerts["aid"] = alerts["aid"].astype(np.int64)
         # Remove column tmp_id (really is a index) for ever
         alerts.reset_index(inplace=True, drop=True)
         return alerts

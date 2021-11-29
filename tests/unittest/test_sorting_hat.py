@@ -119,4 +119,27 @@ class SortingHatTestCase(unittest.TestCase):
         self.assertIsInstance(response, pd.DataFrame)
         self.assertIn("aid", response.columns)
         self.assertEqual(len(batch), len(response))
-        pass
+
+    def test_encode(self):
+        # known alerce_id: 'b' -> 1
+        aid_long = 1
+        aid_str = self.sh.encode(aid_long)
+        self.assertIsInstance(aid_str, str)
+        self.assertEqual(aid_str, "b")
+        # a real alerce_id
+        aid_long = 1000000000000000000  # aid example of 19 digits
+        aid_str = self.sh.encode(aid_long)
+        self.assertIsInstance(aid_str, str)
+        self.assertEqual(aid_str, "kmluxinkecojo")
+
+    def test_decode(self):
+        # known alerce_id: 'b' -> 1
+        aid_str = "b"
+        aid_int = self.sh.decode(aid_str)
+        self.assertIsInstance(aid_int, int)
+        self.assertEqual(aid_int, 1)
+        # a real alerce_id
+        aid_str = "kmluxinkecojo"
+        aid_int = self.sh.decode(aid_str)
+        self.assertIsInstance(aid_int, int)
+        self.assertEqual(aid_int, 1000000000000000000)
