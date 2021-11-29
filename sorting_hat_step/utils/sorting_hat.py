@@ -176,18 +176,26 @@ class SortingHat:
         :param dec_col: how the dec column is called in data
         :return:
         """
+        data = data.copy()
         radius = self.radius / 3600
         values = data[[ra_col, dec_col]].to_numpy()
         tree = cKDTree(values)
         sdm = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")  # get sparse distance matrix
-        same_objects = {}
-        for core, neighbour in zip(sdm.row, sdm.col):
-            if neighbour in same_objects:
-                same_objects[core] = same_objects[neighbour]
-            elif core not in same_objects:
-                same_objects[core] = core
-                same_objects[neighbour] = core
-        data["tmp_id"] = data.index.map(lambda x: same_objects[x] if x in same_objects else x)
+        # Get the matrix representation -> rows x cols
+        matrix = sdm.toarray()
+        # Convert matrix to adjacency matrix: 0 indicates no relation and 1 indicates the same object
+        matrix = np.where(matrix == 0, 0, 1)
+        # Put the index as a tmp_id
+        data["tmp_id"] = data.index
+        while matrix.sum():
+            matches = matrix.sum(axis=0)  # get all matches per row
+            max_matches = np.argmax(matches)  # get the row with max matches
+            neighbours = matrix[max_matches, :]  # get all neighbours of the row with max matches
+            neighbours_indexes = np.argwhere(neighbours != 0)  # get indexes of the neighbours
+            neighbours_indexes = neighbours_indexes.reshape(len(neighbours_indexes))  # get array in 1-dimension
+            data.loc[neighbours_indexes, "tmp_id"] = max_matches  # put tmp_id of the neighbours
+            matrix[neighbours_indexes, :] = 0  # turn off neighbours
+            matrix[:, neighbours_indexes] = 0
         return data
 
     def _to_name(self, group_of_alerts: pd.DataFrame) -> pd.Series:
