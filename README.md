@@ -6,6 +6,7 @@
 ![sorting hat]( https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif)
 
 The step of the sorting hat is a step that names the alerts of astronomical survey. The flow of the step is showing in the following image:
+
 ![sorting_hat](doc/sortinghat.png)
 
 1. Internal cross-match: Using a cKDTree we found the closest objects in the batch. Practically the step make an adjacency matrix and mark the neighbours in `1.5` arcsec. This cone search allows to obtain the same objects in the batch and thus perform fewer operations in the database. It also allows you to avoid concurrency problems when naming objects that are the same. 
