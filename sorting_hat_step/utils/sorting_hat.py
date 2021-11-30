@@ -185,15 +185,30 @@ class SortingHat:
         matrix = sdm.toarray()
         # Convert matrix to adjacency matrix: 0 indicates no relation and 1 indicates the same object
         matrix = np.where(matrix == 0, 0, 1)
+
         # Put the index as a tmp_id
         data["tmp_id"] = data.index
-        while matrix.sum():
-            matches = matrix.sum(axis=0)  # get all matches per row
-            max_matches = np.argmax(matches)  # get the row with max matches
-            neighbours = matrix[max_matches, :]  # get all neighbours of the row with max matches
-            neighbours_indexes = np.argwhere(neighbours != 0)  # get indexes of the neighbours
-            neighbours_indexes = neighbours_indexes.reshape(len(neighbours_indexes))  # get array in 1-dimension
-            data.loc[neighbours_indexes, "tmp_id"] = max_matches  # put tmp_id of the neighbours
+        # Get unique object_ids
+        oids = data["oid"].unique()
+        for index, oid in enumerate(oids):  # join the same objects
+            indexes = data[data["oid"] == oid].index  # get all indexes of this oid
+            if len(indexes) > 1:  # if exists an oid with more that 1 occurrences put the same tmp_id
+                data.loc[indexes, "tmp_id"] = index
+                # for remove neighbors get the combination or all indexes of the same object
+                a, b = np.meshgrid(indexes, indexes, sparse=True)
+                # remove in adjacency matrix
+                matrix[a, b] = 0
+
+        while matrix.sum():  # while exists matches
+            matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
+            # get rows with max matches (can be more than 1)
+            max_matches = np.argwhere(matches == matches.max(axis=0)).squeeze()
+            dist_matches = matrix[max_matches].sum(axis=1)  # compute sum of distance of each element in max_matches
+            min_dist = np.argmin(dist_matches)  # get index of min sum of distance
+            node = max_matches[min_dist]  # chosen node: with most matches and the least distance
+            neighbours = matrix[node, :]  # get all neighbours of the node
+            neighbours_indexes = np.flatnonzero(neighbours)  # get indexes of the neighbours
+            data.loc[neighbours_indexes, "tmp_id"] = node  # put tmp_id of the neighbours
             matrix[neighbours_indexes, :] = 0  # turn off neighbours
             matrix[:, neighbours_indexes] = 0
         return data
