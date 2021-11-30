@@ -208,7 +208,7 @@ class SortingHat:
             node = max_matches[min_dist]  # chosen node: with most matches and the least distance
             neighbours = matrix[node, :]  # get all neighbours of the node
             neighbours_indexes = np.flatnonzero(neighbours)  # get indexes of the neighbours
-            data.loc[neighbours_indexes, "tmp_id"] = node  # put tmp_id of the neighbours
+            data.loc[neighbours_indexes, "tmp_id"] = data["tmp_id"][node]  # put tmp_id of the neighbours
             matrix[neighbours_indexes, :] = 0  # turn off neighbours
             matrix[:, neighbours_indexes] = 0
         return data
