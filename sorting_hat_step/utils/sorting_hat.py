@@ -183,8 +183,6 @@ class SortingHat:
         sdm = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")  # get sparse distance matrix
         # Get the matrix representation -> rows x cols
         matrix = sdm.toarray()
-        # Convert matrix to adjacency matrix: 0 indicates no relation and 1 indicates the same object
-        matrix = np.where(matrix == 0, 0, 1)
 
         # Put the index as a tmp_id
         data["tmp_id"] = data.index
