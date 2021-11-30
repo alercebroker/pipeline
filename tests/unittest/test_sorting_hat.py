@@ -50,6 +50,13 @@ class SortingHatTestCase(unittest.TestCase):
         # Check 100 unique tmp_id
         self.assertEqual(len(batch["tmp_id"].unique()), 100)
 
+        # Test with 10 objects where 5 are close
+        example_batch = generate_batch_ra_dec(5, nearest=5)
+        example_batch.loc[[0, 5], "oid"] = "same_object"
+        batch = self.sh.internal_cross_match(example_batch)
+        # Check 100 unique tmp_id
+        self.assertEqual(len(batch["tmp_id"].unique()), 5)
+
     def test_oid_query(self):
         # Mock a response with elements in database
         self.mock_database_connection.query(model=Object).find.return_value = [{"aid": 1}]
