@@ -38,17 +38,43 @@ class SortingHatTestCase(unittest.TestCase):
         aid_3 = self.sh.id_generator(312.12312311, 80.99999991)
         self.assertEqual(aid_3, 1204829541805959900)
 
-    def test_internal_cross_match(self):
+    def test_internal_cross_match_no_closest_objects(self):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
         batch = self.sh.internal_cross_match(example_batch)
         self.assertListEqual(batch.index.tolist(), batch["tmp_id"].to_list())  # The index must be equal to tmp_id
+        self.assertEqual(len(batch["oid"].unique()), 500)
 
-        # Test with 110 objects where 10 are close
-        example_batch = generate_batch_ra_dec(100, nearest=10)
+    def test_internal_cross_match_closest_objects(self):
+        # Test with 10 objects closest
+        example_batch = generate_batch_ra_dec(1, nearest=9)
         batch = self.sh.internal_cross_match(example_batch)
         # Check 100 unique tmp_id
-        self.assertEqual(len(batch["tmp_id"].unique()), 100)
+        self.assertEqual(len(batch["tmp_id"].unique()), 1)
+
+    def test_internal_cross_match_same_oid(self):
+        # Test with 10 objects where 5 are close
+        example_batch = generate_batch_ra_dec(10)
+        example_batch.loc[:, "oid"] = "same_object"
+        batch = self.sh.internal_cross_match(example_batch)
+        self.assertEqual(len(batch["tmp_id"].unique()), 1)
+
+    def test_internal_cross_match_two_objects_with_oid(self):
+        batch_1 = generate_batch_ra_dec(1, nearest=9)
+        batch_1.loc[:, "oid"] = "same_object_1"
+        batch_2 = generate_batch_ra_dec(10)
+        batch_2.loc[:, "oid"] = "same_object_2"
+        batch = pd.concat([batch_1, batch_2], ignore_index=True)
+        batch_xmatched = self.sh.internal_cross_match(batch)
+        self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 2)
+        self.assertEqual(len(batch_xmatched["tmp_id"]), 20)
+
+    def test_internal_cross_match_repeating_oid_and_closest(self):
+        batch = generate_batch_ra_dec(1, nearest=9)
+        batch.loc[:, "oid"] = "same_object_1"
+        batch_xmatched = self.sh.internal_cross_match(batch)
+        self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 1)
+        self.assertEqual(len(batch_xmatched["tmp_id"]), 10)
 
     def test_oid_query(self):
         # Mock a response with elements in database
