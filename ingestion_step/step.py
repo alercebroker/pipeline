@@ -263,7 +263,7 @@ class IngestionStep(GenericStep):
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
-        response["oid"] = set([d["oid"] for d in df["extra_fields"]])
+        response["oid"] = list(set([d["oid"] for d in df["extra_fields"]]))
         response["ndet"] = len(df)
         return pd.Series(response)
 
@@ -313,9 +313,9 @@ class IngestionStep(GenericStep):
         }
         self.logger.info(
             f"Light Curves ({len(oids)} objects) of this batch: "
-            + "{len(light_curves['detections'])} detections,"
-            + " {len(light_curves['non_detections'])}"
-            + "non_detections in database"
+            + f"{len(light_curves['detections'])} detections,"
+            + f" {len(light_curves['non_detections'])}"
+            + " non_detections in database"
         )
         return light_curves
 
@@ -473,7 +473,6 @@ class IngestionStep(GenericStep):
 
         # If is an empiric alert must has stamp
         alerts.loc[:, "has_stamp"] = True
-
         # Process previous candidates of each alert
         (
             dets_from_prv_candidates,

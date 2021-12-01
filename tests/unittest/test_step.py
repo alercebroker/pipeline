@@ -222,7 +222,7 @@ class StepTestCase(unittest.TestCase):
         for call in self.step.driver.query().bulk_update.mock_calls:
             name, args, kwargs = call
             assert args[0] == args[1]
-            assert args[0][0]["oid"] == set(["test", "ZTFoid0"])
+            assert sorted(args[0][0]["oid"]) == sorted(["test", "ZTFoid0"])
 
     def test_execute_with_existing_objects(self):
         num_messages = 10
