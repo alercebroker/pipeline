@@ -1,4 +1,5 @@
 import click
+import optparse
 from cli.core.download import download, format_tar_file_url
 
 
@@ -28,11 +29,9 @@ def cli(ctx, date_format, date):
     default=None,
     help="Output filename",
 )
-@click.option("--date-format", default="%Y%m%d", help="")
 @click.argument("date")
-def download_archive(ztf_archive_url, output_dir, filename, date_format, date):
-    click.echo(f"download {date_format, date}")
-    url = format_tar_file_url(date, date_format, ztf_archive_url)
+def download_archive(ztf_archive_url, output_dir, filename, date):
+    url = format_tar_file_url(date, ztf_archive_url)
     download(url, output_dir, filename=filename)
 
 

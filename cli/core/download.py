@@ -22,26 +22,26 @@ def print_status(file_size, file_size_dl):
 def format_total_size(file_size):
     if file_size > 1024:
         size = file_size / 1024
-        print(f"Kb: {size}")
+        return f"Kb: {size}"
 
     elif file_size > 1024 * 1024:
         size = file_size / (1024 * 1024)
-        print(f"Mb: {size}")
+        return f"Mb: {size}"
 
     elif file_size > 1024 * 1024 * 1024:
         size = file_size / (1024 * 1024 * 1024)
-        print(f"Gb: {size}")
+        return f"Gb: {size}"
 
     else:
-        print(f"B: {file_size}")
+        return f"B: {file_size}"
 
 
-def format_tar_file_url(date, date_format, base_url):
-    url = base_url
-    # TODO use parselib to create valid url using date
+def format_tar_file_url(date, base_url):
+    ztf_file = f"ztf_public_{date}.tar.gz"
+    return urljoin(base_url, ztf_file)
 
 
-def download(url, output_dir, filename=None):
+def download(url, output_dir, filename=None, **kwargs):
     file_name = filename or url.split("/")[-1]
     u = urlopen(url)
     path = pathlib.Path(output_dir)
