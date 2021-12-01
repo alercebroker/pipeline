@@ -1,4 +1,5 @@
 import random
+import string
 import pandas as pd
 from typing import List
 
@@ -127,7 +128,7 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
                 "magpsf": random.uniform(15, 20),
                 "sigmapsf": random.random(),
                 "fid": random.randint(1, 2),
-                "candid": random.randint(1000000, 9000000),
+                "candid": ''.join(random.choices(string.ascii_letters + string.digits, k=30)),
                 "pid": random.randint(1000000, 9000000),
                 "rfid": random.randint(1000000, 9000000),
                 "isdiffpos": random.choice(["t", "f"]),

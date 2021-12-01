@@ -29,7 +29,7 @@ SCHEMA = {
     },
     {
       "name": "candid",
-      "type": ["long", 'string']
+      "type": ["long", "string"]
     },
     {
       "name": "mjd",
