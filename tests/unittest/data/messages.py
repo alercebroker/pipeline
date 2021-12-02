@@ -1,4 +1,5 @@
 import random
+import pickle
 
 
 def random_ensure_choices(choices, data):
@@ -78,7 +79,7 @@ def get_ztf_prv_candidates(num_prv_candidates):
                 "rbversion": "t7_f4_c3",
             }
         )
-    return prv_candidates
+    return pickle.dumps(prv_candidates)
 
 
 def get_extra_fields(telescope: str, **kwargs):
