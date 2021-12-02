@@ -3,6 +3,7 @@ from typing import List
 from survey_parser_plugins.core import SurveyParser
 
 import pandas as pd
+import pickle
 
 # Keys used on non detections for ZTF
 NON_DET_KEYS = ["aid", "tid", "oid", "mjd", "diffmaglim", "fid"]
@@ -80,7 +81,8 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
             aid = alert["aid"]
             candid = alert["candid"]
             if alert["extra_fields"]["prv_candidates"] is not None:
-                for prv in alert["extra_fields"]["prv_candidates"]:
+                prv_candidates = pickle.loads(alert["extra_fields"]["prv_candidates"])
+                for prv in prv_candidates:
                     if prv["candid"] is None:
                         prv["aid"] = aid
                         prv["oid"] = oid
