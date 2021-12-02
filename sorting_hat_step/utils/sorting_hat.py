@@ -169,12 +169,10 @@ class SortingHat:
 
     def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec") -> pd.DataFrame:
         """
-        Do a internal cross match in data input (batch vs batch) to get closest objects. This method uses cKDTree class
-        to get nearest object. Returns a new dataframe with another column named tmp_id to reference unique objects
-        :param data: alerts in a dataframe
-        :param ra_col: how the ra column is called in data
-        :param dec_col: how the dec column is called in data
-        :return:
+        Do an internal cross-match in data input (batch vs batch) to get the closest objects. This method uses
+        cKDTree class to get the nearest object. Returns a new dataframe with another column named tmp_id to
+        reference unique objects :param data: alerts in a dataframe :param ra_col: how the ra column is called in
+        data :param dec_col: how the dec column is called in data :return:
         """
         data = data.copy()
         radius = self.radius / 3600
@@ -190,17 +188,19 @@ class SortingHat:
         oids = data["oid"].unique()
         for index, oid in enumerate(oids):  # join the same objects
             indexes = data[data["oid"] == oid].index  # get all indexes of this oid
-            if len(indexes) > 1:  # if exists an oid with more that 1 occurrences put the same tmp_id
+            if len(indexes) > 1:  # if exists an oid with more than 1 occurrences put the same tmp_id
                 data.loc[indexes, "tmp_id"] = index
                 # for remove neighbors get the combination or all indexes of the same object
                 a, b = np.meshgrid(indexes, indexes, sparse=True)
                 # remove in adjacency matrix
                 matrix[a, b] = 0
-
         while matrix.sum():  # while exists matches
             matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
             # get rows with max matches (can be more than 1)
-            max_matches = np.argwhere(matches == matches.max(axis=0)).squeeze()
+            max_matches = np.argwhere(matches == np.max(matches))
+            # If exists more than 1 matches the numpy array must be converted into 1-d array
+            if len(max_matches) > 1:
+                max_matches = max_matches.squeeze()
             dist_matches = matrix[max_matches].sum(axis=1)  # compute sum of distance of each element in max_matches
             min_dist = np.argmin(dist_matches)  # get index of min sum of distance
             node = max_matches[min_dist]  # chosen node: with most matches and the least distance
