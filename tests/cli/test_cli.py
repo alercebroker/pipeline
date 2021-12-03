@@ -1,36 +1,6 @@
-from click.testing import CliRunner
-from cli.alert_archive import cli, download_archive, concat_files, upload_s3
-from urllib.request import (
-    HTTPSHandler,
-    HTTPHandler,
-    build_opener,
-    install_opener,
-)
 from unittest import mock
-from urllib.response import addinfourl
-from io import BytesIO
-import pytest
-
-
-def mock_response(req):
-    data = BytesIO(b"mock data")
-    headers = {"Content-Length": data.getbuffer().nbytes}
-    resp = addinfourl(data, headers, req.get_full_url())
-    resp.code = 200
-    resp.msg = "OK"
-    return resp
-
-
-class MockHTTPHandler(HTTPHandler, HTTPSHandler):
-    def https_open(self, req):
-        return mock_response(req)
-
-    def http_open(self, req):
-        return mock_response(req)
-
-
-mock_opener = build_opener(MockHTTPHandler)
-install_opener(mock_opener)
+from click.testing import CliRunner
+from cli.alert_archive import cli, concat_files, download_archive
 
 
 @mock.patch("cli.alert_archive.download_archive")
@@ -45,82 +15,37 @@ def test_cli(upload, concat, download):
     assert result.exit_code == 0
 
 
-def test_download_archive(tmp_path):
+@mock.patch("cli.alert_archive.download")
+def test_download_archive(download):
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(download_archive, ["123456"])
-        assert result.exit_code == 0
-        assert "Downloading: ztf_public_123456.tar.gz" in result.stdout
+    result = runner.invoke(
+        download_archive,
+        [
+            "date",
+            "--output-dir",
+            "output",
+            "--filename",
+            "filename",
+        ],
+    )
+    download.assert_called()
+    kall = download.mock_calls[0]
+    assert kall == mock.call(
+        "https://ztf.uw.edu/alerts/public/ztf_public_date.tar.gz",
+        "output",
+        filename="filename",
+    )
+    assert result.exit_code == 0
 
 
-def test_download_archive_output_dir_error(tmp_path):
+@mock.patch("cli.alert_archive.concat_avro")
+def test_concat(concat_avro):
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            download_archive,
-            [
-                "123456",
-                "--output-dir",
-                "something_not_right",
-            ],
-        )
-        assert result.exit_code != 0
-        assert isinstance(result.exception, NotADirectoryError)
-
-
-def test_download_archive_filename(tmp_path):
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            download_archive,
-            [
-                "123456",
-                "--filename",
-                "test_filename",
-            ],
-        )
-        assert result.exit_code == 0
-
-
-def test_download_archive_filename_error(tmp_path):
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            download_archive,
-            [
-                "123456",
-                "--filename",
-                "/tmp",
-            ],
-        )
-        assert result.exit_code != 0
-        assert isinstance(result.exception, IsADirectoryError)
-
-
-def test_file_exists_warning(tmp_path):
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        p = tmp_path / "existing_file"
-        p.write_text("this file exists and has content")
-        with pytest.warns(
-            RuntimeWarning, match="File .* exists, overwritting"
-        ):
-            result = runner.invoke(
-                download_archive,
-                [
-                    "123456",
-                    "--output-dir",
-                    tmp_path,
-                    "--filename",
-                    "existing_file",
-                ],
-            )
-            assert result.exit_code == 0
-
-
-def test_concat_files():
-    raise NotImplementedError()
-
-
-def test_upload_s3():
-    raise NotImplementedError()
+    result = runner.invoke(
+        concat_files,
+        ["test", "test", "100", "--avro-tools-jar-path", "test"],
+    )
+    concat_avro.assert_called()
+    kall = concat_avro.mock_calls[0]
+    assert kall == mock.call("test", "test", 100, "test")
+    assert result.exit_code == 0
