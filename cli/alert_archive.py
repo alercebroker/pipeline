@@ -5,11 +5,31 @@ from cli.core.concat import concat_avro
 
 @click.group(chain=True, invoke_without_command=True)
 @click.option("--date-format", default="%Y%m%d", help="")
+@click.option(
+    "--avro-tools-jar-path", default=None, help="Avro tools utility path"
+)
 @click.argument("date")
+@click.argument("avro_path")
+@click.argument("output_path")
+@click.argument("partition_size")
 @click.pass_context
-def cli(ctx, date_format, date):
+def cli(
+    ctx,
+    date_format,
+    avro_tools_jar_path,
+    date,
+    avro_path,
+    output_path,
+    partition_size,
+):
     ctx.invoke(download_archive, date_format=date_format, date=date)
-    ctx.invoke(concat_files)
+    ctx.invoke(
+        concat_files,
+        avro_tools_jar_path,
+        avro_path,
+        output_path,
+        partition_size,
+    )
     ctx.invoke(upload_s3)
 
 
@@ -31,11 +51,13 @@ def cli(ctx, date_format, date):
 )
 @click.argument("date")
 def download_archive(ztf_archive_url, output_dir, filename, date):
+    """Download specific date avro files from ztf archive."""
+
     url = format_tar_file_url(date, ztf_archive_url)
     download(url, output_dir, filename=filename)
 
 
-@click.command()
+@cli.command()
 @click.option(
     "--avro-tools-jar-path", default=None, help="Avro tools utility path"
 )
@@ -63,8 +85,9 @@ def concat_files(avro_tools_jar_path, avro_path, output_path, partition_size):
     )
 
 
-@cli.command("upload")
+@cli.command()
 def upload_s3():
+    """Upload files from folder to s3."""
     click.echo("upload")
 
 
