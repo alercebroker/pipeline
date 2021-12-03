@@ -1,7 +1,6 @@
 import fastavro
 import io
 from apf.core.step import GenericStep
-from io import BytesIO
 from fastavro import writer
 import logging
 import boto3
@@ -89,8 +88,11 @@ class AlertArchivingStep(GenericStep):
             partition_name = str(uuid4())  # count
 
             file_name = topic_date + "_" + partition_name + ".avro"
-            fo = BytesIO()
-            print(type(clean_messages[topic]))
-            writer(fo, self.schema, clean_messages[topic])
+            fo = io.BytesIO()
+            writer(fo, self.schema, clean_messages[topic], codec='snappy')
             object_name = "{}/{}_{}/{}".format(survey, self.formatt, topic_date, file_name)
+
+            # Reset read pointer. DOT NOT FORGET THIS, else all uploaded files will be empty!
+            fo.seek(0)
+
             self.upload_file(fo, self.bucket_name, object_name)
