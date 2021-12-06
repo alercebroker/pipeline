@@ -11,14 +11,18 @@ services:
       - DB_NAME=
       - CONSUMER_TOPICS=ATLAS_20211126_01a_testing
       - CONSUMER_SERVER=10.0.2.14:9092,10.0.2.62:9092,10.0.2.181:9092
-      - CONSUMER_GROUP_ID=s3
+      - CONSUMER_GROUP_ID=archive
       - PRODUCER_TOPIC=
       - PRODUCER_SERVER=
-      - STEP_VERSION=s3_0.0.1
+      - STEP_VERSION=archive_0.0.1
       - METRICS_HOST=
       - METRICS_TOPIC=
       - CONSUME_TIMEOUT=60
       - CONSUME_MESSAGES=2200
+      - ARCHIVE_TARGET=S3
+      - ARCHIVE_FORMAT=avro
+      - S3_BUCKET_NAME=astro-alerts-archive
+
     # volumes:
     #   - ./:/app
     # stdin_open: true
