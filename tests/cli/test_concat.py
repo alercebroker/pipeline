@@ -1,5 +1,5 @@
 import tarfile
-from cli.core.concat import decompress, concat_avro, libpath
+from cli.core.concat import decompress, concat_avro
 from unittest import mock
 
 
@@ -11,8 +11,9 @@ def test_decompress(tmp_path):
     tar = tarfile.open(tar_file_path, "w")
     tar.add(some_file, arcname="some_file.txt")
     tar.close()
-    decompress(tar_file_path, tmp_path / "extracted")
-    for i in (tmp_path / "extracted").iterdir():
+    path = decompress(tar_file_path, tmp_path / "extracted")
+    path = str(path).split("/")[-1]
+    for i in (tmp_path / f"extracted/{path}").iterdir():
         with open(i, "r") as f:
             assert f.read() == "some text"
 
@@ -27,11 +28,6 @@ def test_concat_avro(system_mock, tmp_path):
     kalls = system_mock.mock_calls
     assert len(kalls) == 4
     for i, kall in enumerate(kalls):
-        output_file = f"partition_{i}"
-        output_file = tmp_path / output_file
-        assert (
-            mock.call(
-                f"java -jar {libpath / 'avro-tools-1.8.2.jar'} concat {tmp_path} {output_file}"
-            )
-            == kall
-        )
+        output_file = f"partition_{i}.avro"
+        name, args, kwargs = kall
+        assert str(output_file) in args[0]

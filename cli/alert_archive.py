@@ -1,10 +1,10 @@
 import click
 from cli.core.download import download, format_tar_file_url
-from cli.core.concat import concat_avro
+from cli.core.concat import concat_avro, decompress
+from cli.core.upload import upload_to_s3
 
 
-@click.group(chain=True, invoke_without_command=True)
-@click.option("--date-format", default="%Y%m%d", help="")
+@click.group(invoke_without_command=True)
 @click.option(
     "--avro-tools-jar-path", default=None, help="Avro tools utility path"
 )
@@ -12,25 +12,33 @@ from cli.core.concat import concat_avro
 @click.argument("avro_path")
 @click.argument("output_path")
 @click.argument("partition_size")
+@click.argument("bucket_name")
 @click.pass_context
 def cli(
     ctx,
-    date_format,
     avro_tools_jar_path,
     date,
     avro_path,
     output_path,
     partition_size,
+    bucket_name,
 ):
-    ctx.invoke(download_archive, date_format=date_format, date=date)
-    ctx.invoke(
-        concat_files,
-        avro_tools_jar_path,
-        avro_path,
-        output_path,
-        partition_size,
-    )
-    ctx.invoke(upload_s3)
+
+    if ctx.invoked_subcommand is None:
+        tar_file = ctx.invoke(
+            download_archive, date=date, download_dir=avro_path
+        )
+        avro_files = ctx.invoke(extract_file, tar_file=tar_file)
+        ctx.invoke(
+            concat_files,
+            avro_tools_jar_path=avro_tools_jar_path,
+            avro_path=avro_files,
+            output_path=output_path,
+            partition_size=partition_size,
+        )
+        ctx.invoke(upload_s3, bucket_name, output_path)
+    else:
+        ctx.invoked_subcommand
 
 
 @cli.command()
@@ -40,21 +48,27 @@ def cli(
     help="ZTF Alert Archive base url",
 )
 @click.option(
-    "--output-dir",
+    "--download-dir",
     default=".",
     help="Directory to save data",
 )
-@click.option(
-    "--filename",
-    default=None,
-    help="Output filename",
-)
 @click.argument("date")
-def download_archive(ztf_archive_url, output_dir, filename, date):
+def download_archive(ztf_archive_url, download_dir, date):
     """Download specific date avro files from ztf archive."""
 
     url = format_tar_file_url(date, ztf_archive_url)
-    download(url, output_dir, filename=filename)
+    return download(url, download_dir)
+
+
+@cli.command()
+@click.argument("tar_file")
+@click.option(
+    "--output-dir",
+    default=None,
+    help="Customize extracted files path",
+)
+def extract_file(tar_file, output_dir):
+    return decompress(tar_file, output_dir=output_dir)
 
 
 @cli.command()
@@ -69,6 +83,7 @@ def concat_files(avro_tools_jar_path, avro_path, output_path, partition_size):
 
     Parameters
     ------------
+    tar_file : str
     avro_path : str
         The directory containing all input avro files
     output_path : str
@@ -76,19 +91,17 @@ def concat_files(avro_tools_jar_path, avro_path, output_path, partition_size):
     partition_size : int
         The size (number of original avro files) of each output concatenated avro file
     """
-    print(avro_tools_jar_path)
-    print(avro_path)
-    print(output_path)
-    print(partition_size)
     concat_avro(
         avro_path, output_path, int(partition_size), avro_tools_jar_path
     )
 
 
 @cli.command()
-def upload_s3():
+@click.argument("bucket")
+@click.argument("file_dir")
+def upload_s3(bucket, file_dir):
     """Upload files from folder to s3."""
-    click.echo("upload")
+    upload_to_s3(bucket, file_dir)
 
 
 if __name__ == "__main__":

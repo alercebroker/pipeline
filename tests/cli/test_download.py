@@ -47,7 +47,7 @@ def test_download_archive_output_dir_error(tmp_path):
             download_archive,
             [
                 "123456",
-                "--output-dir",
+                "--download-dir",
                 "something_not_right",
             ],
         )
@@ -55,39 +55,10 @@ def test_download_archive_output_dir_error(tmp_path):
         assert isinstance(result.exception, NotADirectoryError)
 
 
-def test_download_archive_filename(tmp_path):
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            download_archive,
-            [
-                "123456",
-                "--filename",
-                "test_filename",
-            ],
-        )
-        assert result.exit_code == 0
-
-
-def test_download_archive_filename_error(tmp_path):
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            download_archive,
-            [
-                "123456",
-                "--filename",
-                "/tmp",
-            ],
-        )
-        assert result.exit_code != 0
-        assert isinstance(result.exception, IsADirectoryError)
-
-
 def test_file_exists_warning(tmp_path):
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        p = tmp_path / "existing_file"
+        p = tmp_path / "ztf_public_123456.tar.gz"
         p.write_text("this file exists and has content")
         with pytest.warns(
             RuntimeWarning, match="File .* exists, overwritting"
@@ -96,10 +67,8 @@ def test_file_exists_warning(tmp_path):
                 download_archive,
                 [
                     "123456",
-                    "--output-dir",
+                    "--download-dir",
                     tmp_path,
-                    "--filename",
-                    "existing_file",
                 ],
             )
             assert result.exit_code == 0

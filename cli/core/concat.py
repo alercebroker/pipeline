@@ -1,13 +1,24 @@
 import tarfile
 import pathlib
 import os
+import re
 
-libpath = pathlib.Path(pathlib.Path(__file__) / "../lib")
+libpath = pathlib.Path(pathlib.Path(__file__).parent.parent.absolute() / "lib")
 
 
 def decompress(file_path: pathlib.Path, output_dir: str = None):
     tar = tarfile.open(file_path)
-    tar.extractall(output_dir or ".")
+    date = re.findall("\d+", str(file_path))
+    if len(date):
+        date = date[0]
+    else:
+        date = ""
+    path = output_dir or pathlib.Path(file_path).parent.absolute()
+    path = pathlib.Path(path) / f"avro_files_{date}/"
+    # if not path.exists():
+    #     path.mkdir()
+    tar.extractall(path)
+    return path.absolute()
 
 
 def ceil(x):
@@ -48,7 +59,14 @@ def concat_avro(
         Path to jar executable tool to concat data - opional - default None
     """
     avro_path = pathlib.Path(avro_path)
-    output_path = pathlib.Path(output_path)
+    date = re.findall("\d+", str(avro_path))
+    if len(date):
+        date = date[0]
+    else:
+        date = ""
+    output_path = (
+        pathlib.Path(output_path) / f"concatenated_avro_files_{date}/"
+    )
     avro_tools_jar_path = (
         avro_tools_jar_path or libpath / "avro-tools-1.8.2.jar"
     )
@@ -56,8 +74,7 @@ def concat_avro(
     n_partitions = ceil(len(files) / partition_size)
     partition_files = split_files(files, n_partitions)
     for i, part in enumerate(partition_files):
-        output_file = output_path / f"partition_{i}"
-        command = (
-            f"java -jar {avro_tools_jar_path} concat {avro_path} {output_file}"
-        )
+        part = [str(p) for p in part]
+        output_file = output_path / f"partition_{i}.avro"
+        command = f"java -jar {avro_tools_jar_path} concat {' '.join(part)} {output_file}"
         os.system(command)

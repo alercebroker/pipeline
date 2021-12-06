@@ -1,17 +1,19 @@
 from unittest import mock
 from click.testing import CliRunner
-from cli.alert_archive import cli, concat_files, download_archive
+from cli.alert_archive import cli, concat_files, download_archive, upload_s3
 
 
 @mock.patch("cli.alert_archive.download_archive")
+@mock.patch("cli.alert_archive.extract_file")
 @mock.patch("cli.alert_archive.concat_files")
 @mock.patch("cli.alert_archive.upload_s3")
-def test_cli(upload, concat, download):
+def test_cli(upload, concat, extract, download):
     runner = CliRunner()
-    result = runner.invoke(cli, ["123"])
+    result = runner.invoke(cli, ["123", ".", ".", "1", "test"])
     download.assert_called()
-    upload.assert_called()
+    extract.assert_called()
     concat.assert_called()
+    upload.assert_called()
     assert result.exit_code == 0
 
 
@@ -22,10 +24,8 @@ def test_download_archive(download):
         download_archive,
         [
             "date",
-            "--output-dir",
+            "--download-dir",
             "output",
-            "--filename",
-            "filename",
         ],
     )
     download.assert_called()
@@ -33,7 +33,6 @@ def test_download_archive(download):
     assert kall == mock.call(
         "https://ztf.uw.edu/alerts/public/ztf_public_date.tar.gz",
         "output",
-        filename="filename",
     )
     assert result.exit_code == 0
 
@@ -48,4 +47,17 @@ def test_concat(concat_avro):
     concat_avro.assert_called()
     kall = concat_avro.mock_calls[0]
     assert kall == mock.call("test", "test", 100, "test")
+    assert result.exit_code == 0
+
+
+@mock.patch("cli.alert_archive.upload_to_s3")
+def test_upload(upload_to_s3):
+    runner = CliRunner()
+    result = runner.invoke(
+        upload_s3,
+        ["test_bucket", "dir_123456"],
+    )
+    upload_to_s3.assert_called()
+    kall = upload_to_s3.mock_calls[0]
+    assert kall == mock.call("test_bucket", "dir_123456")
     assert result.exit_code == 0

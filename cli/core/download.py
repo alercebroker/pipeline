@@ -17,19 +17,19 @@ def print_status(file_size, file_size_dl):
         "\t",
     )
     status = status + bar(file_size_dl * 100.0 / file_size)
-    print(status)
+    print(status, end="\r")
 
 
 def format_total_size(file_size):
-    if file_size > 1024:
+    if file_size > 1024 and file_size < 1024 * 1024:
         size = file_size / 1024
         return f"Kb: {size}"
 
-    elif file_size > 1024 * 1024:
+    elif file_size >= 1024 * 1024 and file_size < 1024 * 1024 * 1024:
         size = file_size / (1024 * 1024)
         return f"Mb: {size}"
 
-    elif file_size > 1024 * 1024 * 1024:
+    elif file_size >= 1024 * 1024 * 1024:
         size = file_size / (1024 * 1024 * 1024)
         return f"Gb: {size}"
 
@@ -42,8 +42,8 @@ def format_tar_file_url(date, base_url):
     return urljoin(base_url, ztf_file)
 
 
-def download(url, output_dir, filename=None, **kwargs):
-    file_name = filename or url.split("/")[-1]
+def download(url, output_dir):
+    file_name = url.split("/")[-1]
     u = urlopen(url)
     path = pathlib.Path(output_dir)
     if not path.is_dir() or not path.exists():
@@ -73,3 +73,4 @@ def download(url, output_dir, filename=None, **kwargs):
         print_status(file_size, file_size_dl)
 
     f.close()
+    return path.absolute()
