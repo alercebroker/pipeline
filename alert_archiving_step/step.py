@@ -19,16 +19,13 @@ class AlertArchivingStep(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
+
     def __init__(
-            self,
-            consumer = None,
-            config = None,
-            level = logging.INFO,
-            **step_args
+        self, consumer=None, config=None, level=logging.INFO, **step_args
     ):
-        super().__init__(consumer,config=config, level=level, **step_args)
-        self.formatt = config["FORMAT"]# = "avro"
-        self.bucket_name = config["BUCKET_NAME"]  #= "astro-alerts-archive"
+        super().__init__(consumer, config=config, level=level, **step_args)
+        self.formatt = config["FORMAT"]  # = "avro"
+        self.bucket_name = config["BUCKET_NAME"]  # = "astro-alerts-archive"
 
     def upload_file(self, filee, bucket, object_name):
         """Upload a file to an S3 bucket
@@ -40,7 +37,7 @@ class AlertArchivingStep(GenericStep):
         """
 
         # Upload the file
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client("s3")
         try:
             response = s3_client.upload_fileobj(filee, bucket, object_name)
         except ClientError as e:
@@ -53,8 +50,7 @@ class AlertArchivingStep(GenericStep):
         reader = fastavro.reader(bytes_io)
         data = reader.next()
         schema = reader.writer_schema
-        return data,schema
-
+        return data, schema
 
     def deserialize_messages(self, messages):
         deserialized = {}
@@ -63,11 +59,13 @@ class AlertArchivingStep(GenericStep):
                 if message.error().name() == "_PARTITION_EOF":
                     self.logger.info("PARTITION_EOF: No more messages")
                     return
-                self.logger.exception(f"Error in kafka stream: {message.error()}")
+                self.logger.exception(
+                    f"Error in kafka stream: {message.error()}"
+                )
                 continue
             else:
                 topic = message.topic()
-                message,schema = self.deserialize_message(message)
+                message, schema = self.deserialize_message(message)
                 self.schema = schema
                 if topic in deserialized:
                     deserialized[topic].append(message)
@@ -77,7 +75,7 @@ class AlertArchivingStep(GenericStep):
         self.messages = messages
         return deserialized
 
-    def execute(self,messages):
+    def execute(self, messages):
         ################################
         #   Here comes the Step Logic  #
         ################################
@@ -89,8 +87,10 @@ class AlertArchivingStep(GenericStep):
 
             file_name = topic_date + "_" + partition_name + ".avro"
             fo = io.BytesIO()
-            writer(fo, self.schema, clean_messages[topic], codec='snappy')
-            object_name = "{}/{}_{}/{}".format(survey, self.formatt, topic_date, file_name)
+            writer(fo, self.schema, clean_messages[topic], codec="snappy")
+            object_name = "{}/{}_{}/{}".format(
+                survey, self.formatt, topic_date, file_name
+            )
 
             # Reset read pointer. DOT NOT FORGET THIS, else all uploaded files will be empty!
             fo.seek(0)
