@@ -48,5 +48,6 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "FORMAT": "avro",
-    "BUCKET_NAME": "astro-alerts-archive",
+    "ZTF_BUCKET_NAME": "ztf-avro",
+    "ATLAS_BUCKET_NAME": "astro-alerts-archive",
 }
