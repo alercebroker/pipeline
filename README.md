@@ -95,8 +95,8 @@ Another way is set a topic strategy, where the topic can change the name. For ex
 - `TOPIC_STRATEGY_FORMAT`: The topic expression, where `%s` is the date in the string (e.g. `ztf_%s_progamid1`).
 
 ### Metrics setup
-- `METRICS_HOST`: Kafka host for storing metrics
-- `METRICS_TOPIC`: Name of the topic to store metrics
+- `METRICS_HOST`: Kafka host for storing metrics.
+- `METRICS_TOPIC`: Name of the topic to store metrics.
 
 
 
