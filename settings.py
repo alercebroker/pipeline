@@ -47,6 +47,7 @@ STEP_CONFIG = {
     "N_PROCESS": os.getenv("N_PROCESS"),            # Number of process for multiprocess script
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": STEP_METADATA,
-    "FORMAT": "avro",
-    "BUCKET_NAME": "astro-alerts-archive",
+    "FORMAT": os.getenv("ARCHIVE_FORMAT", "avro"),
+    "ZTF_BUCKET_NAME": os.getenv("S3_ZTF_BUCKET_NAME", "ztf-avro"),
+    "ATLAS_BUCKET_NAME": os.getenv("S3_ATLAS_BUCKET_NAME", "astro-alerts-archive"),
 }

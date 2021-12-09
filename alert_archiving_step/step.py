@@ -25,7 +25,8 @@ class AlertArchivingStep(GenericStep):
     ):
         super().__init__(consumer, config=config, level=level, **step_args)
         self.formatt = config["FORMAT"]  # = "avro"
-        self.bucket_name = config["BUCKET_NAME"]  # = "astro-alerts-archive"
+
+        self.bucket_name = {'ztf': config["ZTF_BUCKET_NAME"], 'atlas': config["ATLAS_BUCKET_NAME"]}
 
     def upload_file(self, filee, bucket, object_name):
         """Upload a file to an S3 bucket
@@ -82,17 +83,17 @@ class AlertArchivingStep(GenericStep):
         clean_messages = self.deserialize_messages(messages)
         for topic in clean_messages:
             topic_date = topic.split("_")[1]  # yyyymmdd
-            survey = topic.split("_")[0]  # ztf
+            survey = topic.split("_")[0].lower()  # ztf
             partition_name = str(uuid4())  # count
 
             file_name = topic_date + "_" + partition_name + ".avro"
             fo = io.BytesIO()
             writer(fo, self.schema, clean_messages[topic], codec="snappy")
-            object_name = "{}/{}_{}/{}".format(
-                survey, self.formatt, topic_date, file_name
+            object_name = "{}_{}/{}".format(
+                self.formatt, topic_date, file_name
             )
 
             # Reset read pointer. DOT NOT FORGET THIS, else all uploaded files will be empty!
             fo.seek(0)
 
-            self.upload_file(fo, self.bucket_name, object_name)
+            self.upload_file(fo, self.bucket_name[survey], object_name)
