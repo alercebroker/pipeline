@@ -87,6 +87,19 @@ Credentials of AWS.
 - `STEP_NAME`: Name of the step. e.g: `S3`
 - `STEP_COMMENTS`: Comments of the specific version.
 
+### Topic management
+For subscribe to specific topi set the following variable:
+- `CONSUMER_TOPICS`: Some topics. String separated by commas. e.g: `topic_one` or `topic_two,topic_three`. Or a regular expression like `^topic_.*`
+
+Another way is set a topic strategy, where the topic can change the name. For example in ZTF topics the name of topics is `ztf_<yyyymmdd>_programid1`. How to set up it?
+- `TOPIC_STRATEGY_FORMAT`: The topic expression, where `%s` is the date in the string (e.g. `ztf_%s_progamid1`).
+
+### Metrics setup
+- `METRICS_HOST`: Kafka host for storing metrics.
+- `METRICS_TOPIC`: Name of the topic to store metrics.
+
+
+
 
 ## Stream
 
