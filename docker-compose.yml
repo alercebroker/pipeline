@@ -21,7 +21,8 @@ services:
       - CONSUME_MESSAGES=2200
       - ARCHIVE_TARGET=S3
       - ARCHIVE_FORMAT=avro
-      - S3_BUCKET_NAME=astro-alerts-archive
+      - S3_ZTF_BUCKET_NAME=ztf-avro
+      - S3_ATLAS_BUCKET_NAME=astro-alerts-archive
 
     # volumes:
     #   - ./:/app
