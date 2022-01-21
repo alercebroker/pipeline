@@ -1,6 +1,5 @@
 from apf.producers.generic import GenericProducer
 from confluent_kafka import Producer
-
 import fastavro
 import io
 import importlib
@@ -106,26 +105,30 @@ class KafkaProducer(GenericProducer):
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
             self.logger.info(f'Producing to {self.config["TOPIC"]}')
-            self.topic = self.config["TOPIC"] if type(self.config["TOPIC"]) is list else [self.config["TOPIC"]]
+            self.topic = (
+                self.config["TOPIC"]
+                if type(self.config["TOPIC"]) is list
+                else [self.config["TOPIC"]]
+            )
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
             module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
-                ".", 1)
-            TopicStrategy = getattr(
-                importlib.import_module(module_name), class_name)
+                ".", 1
+            )
+            TopicStrategy = getattr(importlib.import_module(module_name), class_name)
             self.topic_strategy = TopicStrategy(
-                **self.config["TOPIC_STRATEGY"]["PARAMS"])
+                **self.config["TOPIC_STRATEGY"]["PARAMS"]
+            )
             self.topic = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
-            self.logger.info(f'Producing to {self.topic}')
+            self.logger.info(f"Producing to {self.topic}")
 
     def produce(self, message=None, **kwargs):
-        """Produce Message to a topic.
-        """
+        """Produce Message to a topic."""
         out = io.BytesIO()
         fastavro.writer(out, self.schema, [message])
         message = out.getvalue()
-        if self.config.get("TOPIC_STRATEGY"):
+        if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             try:

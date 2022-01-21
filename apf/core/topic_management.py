@@ -59,8 +59,8 @@ class DailyTopicStrategy(GenericTopicStrategy):
     def _remove_old_topics(self, now):
         for topic in self.topics:
             delta = now - topic.date
-            if delta.days >= self.retention_days:
-                self.topics = self.topics[-self.retention_days:]
+            if abs(delta.days) >= self.retention_days:
+                self.topics = self.topics[-self.retention_days :]
 
     def get_topics(self):
         """Get list of topics updated to the current date.
