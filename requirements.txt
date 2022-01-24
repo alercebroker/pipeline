@@ -1,4 +1,4 @@
-apf-base==1.0.3
+apf-base==1.0.6
 numexpr
 numpy
 scipy~=1.5.2
