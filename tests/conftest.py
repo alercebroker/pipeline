@@ -1,7 +1,8 @@
 import pytest
 import os
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
+
+from confluent_kafka.admin import AdminClient, NewTopic
+from db_plugins.db.mongo.initialization import init_mongo_database
 from pymongo import MongoClient
 
 
@@ -12,33 +13,30 @@ def docker_compose_file(pytestconfig):
     )
 
 
-settings = {
-    "HOST": "localhost",
-    "USER": "root",
-    "PASSWORD": "rootpassword",
-    "PORT": 27017,
-    "DATABASE": "admin",
-}
-
-
 def is_responsive_mongo(url):
     try:
-        # driver = new_DBConnection(MongoDatabaseCreator)
-        # driver.connect(settings)
         client = MongoClient(
-            "localhost",
-            27017,
-            username="root",
-            password="rootpassword",
-            authSource="admin",
+            "localhost", 27017, username="root", password="root", authSource="admin"
         )
+        client.server_info()  # check connection
+        # Create test test_user and test_db
         db = client.test_db
         db.command(
             "createUser",
-            "testo",
-            pwd="passu",
-            roles=["dbOwner"],
+            "test_user",
+            pwd="test_password",
+            roles=["dbOwner", "readWrite"],
         )
+        # put credentials to init database (create collections and indexes)
+        settings = {
+            "ENGINE": "mongo",
+            "HOST": "localhost",
+            "USER": "test_user",
+            "PASSWORD": "test_password",
+            "PORT": 27017,
+            "DATABASE": "test_db",
+        }
+        init_mongo_database(settings)
         return True
     except Exception as e:
         print(e)
@@ -48,11 +46,33 @@ def is_responsive_mongo(url):
 @pytest.fixture(scope="session")
 def mongo_service(docker_ip, docker_services):
     """Ensure that mongo service is up and responsive."""
-    # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("mongo", 27017)
     server = "{}:{}".format(docker_ip, port)
-    print("mongo", server)
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo(server)
     )
+    return server
+
+
+def is_responsive_kafka(url):
+    print(url)
+    client = AdminClient({"bootstrap.servers": "localhost:9092"})
+    topics = ["test_topic"]
+    new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
+    fs = client.create_topics(new_topics)
+    for topic, f in fs.items():
+        try:
+            f.result()
+        except Exception as e:
+            print(e)
+            return False
+    return True
+
+
+@pytest.fixture(scope="session")
+def kafka_service(docker_ip, docker_services):
+    """Ensure that Kafka service is up and responsive."""
+    port = docker_services.port_for("kafka", 9092)
+    server = "{}:{}".format(docker_ip, port)
+    docker_services.wait_until_responsive(timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server))
     return server

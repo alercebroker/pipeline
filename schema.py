@@ -6,19 +6,19 @@ DETECTIONS = {
         "fields": [
             {"name": "aid", "type": "string"},
             {"name": "oid", "type": "string"},
-            {"name": "sid", "type": "string"},
-            {"name": "candid", "type": "string"},
+            {"name": "tid", "type": "string"},
+            {"name": "candid", "type": ["string", "int"]},
             {"name": "mjd", "type": "double"},
             {"name": "fid", "type": "int"},
             {"name": "ra", "type": "double"},
+            {"name": "e_ra", "type": "double"},
             {"name": "dec", "type": "double"},
-            {"name": "rb", "type": ["float", "null"]},
+            {"name": "e_dec", "type": "double"},
             {"name": "mag", "type": "float"},
-            {"name": "sigmag", "type": "float"},
-            {"name": "aimage", "type": ["float", "null"]},
-            {"name": "bimage", "type": ["float", "null"]},
-            {"name": "xpos", "type": ["float", "null"]},
-            {"name": "ypos", "type": ["float", "null"]},
+            {"name": "e_mag", "type": "float"},
+            {"name": "isdiffpos", "type": "int"},
+            {"name": "rb", "type": ["float", "null"]},
+            {"name": "rbversion", "type": "string"},
             # {"name": "extra_fields", "type": {"type": "map", "values": "string"}},
         ],
     },
@@ -31,7 +31,7 @@ NON_DETECTIONS = {
         "type": "record",
         "fields": [
             {"name": "aid", "type": "string"},
-            {"name": "sid", "type": "string"},
+            {"name": "tid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "mjd", "type": "double"},
             {"name": "diffmaglim", "type": "float"},
@@ -39,23 +39,18 @@ NON_DETECTIONS = {
         ],
     },
 }
-# ["aid", "sid", "oid", "mjd", "diffmaglim", "fid"]
+
 SCHEMA = {
-    "doc": "Light curve",
-    "name": "light_curve",
+    "doc": "Multi stream light curve",
+    "name": "alerce.light_curve",
     "type": "record",
     "fields": [
-        {"name": "oid", "type": "string"},
+        {
+            "name": "aid",
+            "type": "string"},
         {
             "name": "candid",
-            "type": [
-                "string",
-                {
-                    "type": "array",
-                    "items": "string",
-                    "default": []
-                }
-            ]
+            "type": "string"
         },
         {"name": "detections", "type": DETECTIONS},
         {"name": "non_detections", "type": NON_DETECTIONS},

@@ -1,6 +1,8 @@
 import random
 import pickle
 
+from typing import List
+
 
 def random_ensure_choices(choices, data):
     for choice in choices:
@@ -138,14 +140,14 @@ def generate_message_atlas(num_messages):
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.random(),
             "rbversion": f"v{i}",
-            "aid": random.randint(1000000, 9000000),
+            "aid": f"AL2X{random.randint(1000, 9990)}",
             "extra_fields": get_extra_fields("ATLAS"),
         }
         alerts.append(alert)
     return alerts
 
 
-def generate_message_ztf(num_messages: int, num_prv_candidates: int):
+def generate_message_ztf(num_messages: int):
     alerts = []
     for i in range(num_messages):
         alert = {
@@ -163,10 +165,36 @@ def generate_message_ztf(num_messages: int, num_prv_candidates: int):
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.random(),
             "rbversion": f"v{i}",
-            "aid": str(random.randint(100, 200)),
+            "aid": f"AL2X{random.randint(1000, 9990)}",
             "extra_fields": get_extra_fields(
-                "ZTF", num_prv_candidates=num_prv_candidates
+                "ZTF", num_prv_candidates=random.randint(0, 20)
             ),
         }
         alerts.append(alert)
     return alerts
+
+
+def random_sub_samples(samples: int, size: int):
+    sequence = []
+    if samples == 0:
+        sequence = [0 for _ in range(size)]
+    else:
+        for _ in range(size):
+            if _ == size - 1:
+                val = samples - sum(sequence)
+            else:
+                remain = samples - sum(sequence)
+                val = random.randrange(0, remain)
+            sequence.append(val)
+    return sequence
+
+
+def generate_alerts_batch(n: int) -> List[dict]:
+    generators = [generate_message_ztf, generate_message_atlas]
+    sub_samples = random_sub_samples(n, len(generators))
+    batch = []
+    for generator, m in zip(generators, sub_samples):
+        b = generator(m)
+        batch.append(b)
+    batch = sum(batch, [])
+    return batch

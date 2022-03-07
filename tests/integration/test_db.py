@@ -1,25 +1,28 @@
 import pytest
 import unittest
-from apf.producers.kafka import KafkaProducer
-from unittest import mock
-from ingestion_step.step import IngestionStep
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
 import pandas as pd
+
+from apf.producers.kafka import KafkaProducer
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
+from ingestion_step.step import IngestionStep
+from unittest import mock
+
+
+DB_CONFIG = {
+    "HOST": "localhost",
+    "USER": "test_user",
+    "PASSWORD": "test_password",
+    "PORT": 27017,
+    "DATABASE": "test_db",
+}
 
 
 @pytest.mark.usefixtures("mongo_service")
 class MongoIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        db_config = {
-            "HOST": "localhost",
-            "USER": "testo",
-            "PASSWORD": "passu",
-            "PORT": 27017,
-            "DATABASE": "test_db",
-        }
         cls.step_config = {
-            "DB_CONFIG": db_config,
+            "DB_CONFIG": DB_CONFIG,
             "STEP_METADATA": {
                 "STEP_ID": "ingestion",
                 "STEP_NAME": "ingestion",
