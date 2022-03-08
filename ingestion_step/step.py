@@ -27,6 +27,8 @@ import sys
 
 sys.path.insert(0, "../../../../")
 
+# TODO: parent candid is NaN or a float
+
 
 class IngestionStep(GenericStep):
     """IngestionStep Description
@@ -133,7 +135,7 @@ class IngestionStep(GenericStep):
         to_insert = objects[new_objects]
         to_update = objects[~new_objects]
         self.logger.info(
-            f"Inserting {len(to_insert)} and updating {len(to_update)} objects"
+            f"Inserting {len(to_insert)} and updating {len(to_update)} object(s)"
         )
         if len(to_insert) > 0:
             to_insert.replace({np.nan: None}, inplace=True)
@@ -433,7 +435,6 @@ class IngestionStep(GenericStep):
         """
         if self.producer is None:
             raise Exception("Kafka producer not configured in settings.py")
-        print(self.producer)
         # remove unused columns
         light_curves["detections"].drop(columns=["new"], inplace=True)
         light_curves["non_detections"].drop(columns=["new"], inplace=True)
@@ -463,13 +464,11 @@ class IngestionStep(GenericStep):
             }
             self.producer.produce(output_message, key=aid)
             n_messages += 1
-        print(n_messages)
         self.logger.info(f"{n_messages} messages produced")
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
         alerts = pd.DataFrame(messages)
-
         # If is an empiric alert must has stamp
         alerts.loc[:, "has_stamp"] = True
         # Process previous candidates of each alert
@@ -477,14 +476,15 @@ class IngestionStep(GenericStep):
             dets_from_prv_candidates,
             non_dets_from_prv_candidates,
         ) = self.process_prv_candidates(alerts)
-
         # If is an alert from previous candidate hasn't stamps
-        dets_from_prv_candidates["has_stamp"] = False
-
         # Concat detections from alerts and detections from previous candidates
-        detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
+        if dets_from_prv_candidates.empty:
+            detections = alerts.copy()
+        else:
+            dets_from_prv_candidates["has_stamp"] = False
+            detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
         # Remove alerts with the same candid duplicated.
-        # It may be the case that some candid are repeated or some
+        # It may be the case that some candids are repeated or some
         # detections from prv_candidates share the candid.
         # We use keep='first' for maintain the candid of empiric detections.
         detections.drop_duplicates(
@@ -492,12 +492,10 @@ class IngestionStep(GenericStep):
         )
         # Do correction to detections from stream
         detections = self.correct(detections)
-
         # Concat new and old detections and non detections.
         light_curves = self.preprocess_lightcurves(
             detections, non_dets_from_prv_candidates
         )
-
         # Get unique alerce ids for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
 
@@ -518,11 +516,10 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
         self.insert_non_detections(new_non_detections)
-
         # produce to some topic
         if self.producer:
             self.produce(alerts, light_curves)
-
+        self.logger.info(f"Clean batch of data\n")
         del alerts
         del light_curves["detections"]
         del light_curves["non_detections"]

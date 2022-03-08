@@ -3,6 +3,8 @@ import pickle
 
 from typing import List
 
+random.seed(8798, version=2)
+
 
 def random_ensure_choices(choices, data):
     for choice in choices:
@@ -189,12 +191,28 @@ def random_sub_samples(samples: int, size: int):
     return sequence
 
 
-def generate_alerts_batch(n: int) -> List[dict]:
+def generate_alerts_batch(n: int, same_objects: int = 10) -> List[dict]:
+    """
+
+    Parameters
+    ----------
+    n: number of alerts
+    same_objects: number of objects in n alerts
+    Returns a batch of generic alerts
+    -------
+
+    """
     generators = [generate_message_ztf, generate_message_atlas]
-    sub_samples = random_sub_samples(n, len(generators))
+    sub_samples = random_sub_samples(n, len(generators))  # samples by generator
     batch = []
     for generator, m in zip(generators, sub_samples):
-        b = generator(m)
-        batch.append(b)
+        alert = generator(m)
+        batch.append(alert)
     batch = sum(batch, [])
+    # adjust to repeat some identifiers
+    for al in range(n):
+        batch[al]["aid"] = f"AL2X{str(al % same_objects).zfill(5)}"
+        batch[al]["oid"] = f"{batch[al]['tid']}2X{str(al % same_objects).zfill(5)}"
+        batch[al]["candid"] = int(str(al+1).ljust(8, "0"))
+    random.shuffle(batch, lambda: 0.1)
     return batch

@@ -4,7 +4,7 @@ DETECTIONS = {
         "name": "detections_record",
         "type": "record",
         "fields": [
-            {"name": "aid", "type": "string"},
+            # {"name": "aid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "tid", "type": "string"},
             {"name": "candid", "type": ["string", "int"]},

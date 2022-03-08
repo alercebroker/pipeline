@@ -8,6 +8,7 @@ DET_KEYS = [
     "ra",
     "dec",
     "rb",
+    "rbversion",
     "mag",
     "e_g",
     "rfid",
@@ -32,5 +33,5 @@ OBJ_KEYS = [
     "e_ra",
     "e_dec",
 ]
-NON_DET_KEYS = ["aid", "tid", "mjd", "diffmaglim", "fid"]
+NON_DET_KEYS = ["aid", "tid", "mjd", "diffmaglim", "fid", "oid"]
 COR_KEYS = ["magpsf_corr", "sigmapsf_corr", "sigmapsf_corr_ext"]
