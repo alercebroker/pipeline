@@ -375,9 +375,7 @@ class IngestionStep(GenericStep):
         # dicto = {
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
-        data = alerts[
-            ["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]
-        ]
+        data = alerts[["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]]
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
@@ -484,7 +482,9 @@ class IngestionStep(GenericStep):
             detections = alerts.copy()
         else:
             dets_from_prv_candidates["has_stamp"] = False
-            detections = pd.concat([alerts, dets_from_prv_candidates], ignore_index=True)
+            detections = pd.concat(
+                [alerts, dets_from_prv_candidates], ignore_index=True
+            )
         # Remove alerts with the same candid duplicated.
         # It may be the case that some candids are repeated or some
         # detections from prv_candidates share the candid.
