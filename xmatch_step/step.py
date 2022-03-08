@@ -49,6 +49,16 @@ class XmatchStep(GenericStep):
         self.xmatch_config = config["XMATCH_CONFIG"]
         self.xmatch_client = xmatch_client or XmatchClient()
 
+
+        # xmatch variables
+        self.catalog = self.xmatch_config["CATALOG"]
+        self.catalog_alias = self.catalog["name"]
+        self.columns = self.catalog["columns"]
+        self.radius = 1
+        self.selection = "best"
+        self.input_type = "pandas"
+        self.output_type = "pandas"
+
         if "CLASS" in config["PRODUCER_CONFIG"]:
             Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
         else:
@@ -92,12 +102,12 @@ class XmatchStep(GenericStep):
 
     def _extract_coordinates(self, message: dict):
         """
-        Get ra, dec and oid from alert message.
+        Get meanra, meandec and oid from alert message.
 
         Poarameters
         -----------
         message : dict
-            ztf alert message from stream
+            alerce alert message from stream
 
         Returns
         -------
@@ -106,7 +116,7 @@ class XmatchStep(GenericStep):
         """
         record = {
             "candid": message["candid"],
-            "oid": message["objectId"] if message.get("objectId") is not None else message["aid"],
+            "oid": message["oid"],
             "ra": message["candidate"]["meanra"],
             "dec": message["candidate"]["meandec"],
         }
@@ -179,28 +189,6 @@ class XmatchStep(GenericStep):
             array = data.to_dict(orient="records")
             self.driver.query(Xmatch).bulk_insert(array)
 
-    def get_default_object_values(
-        self,
-        alert: dict,
-    ) -> dict:
-
-        data = {"oid": alert["objectId"]}
-        data["ndethist"] = alert["candidate"]["ndethist"]
-        data["ncovhist"] = alert["candidate"]["ncovhist"]
-        data["mjdstarthist"] = alert["candidate"]["jdstarthist"] - 2400000.5
-        data["mjdendhist"] = alert["candidate"]["jdendhist"] - 2400000.5
-        data["firstmjd"] = alert["candidate"]["jd"] - 2400000.5
-        data["lastmjd"] = data["firstmjd"]
-        data["ndet"] = 1
-        data["deltajd"] = 0
-        data["meanra"] = alert["candidate"]["ra"]
-        data["meandec"] = alert["candidate"]["dec"]
-        data["step_id_corr"] = "0.0.0"
-        data["corrected"] = False
-        data["stellar"] = False
-
-        return data
-
     def _produce(self, messages):
         for message in messages:
             self.producer.produce(message, key=message["objectId"])
@@ -213,56 +201,19 @@ class XmatchStep(GenericStep):
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
         array = []
-        object_array = []
+
         for m in messages:
             self.convert_null_to_none(["drb"], m["candidate"])
             record = self._extract_coordinates(m)
             array.append(record)
 
-            record = self.get_default_object_values(m)
-            object_array.append(record)
         df = pd.DataFrame(array, columns=["candid", "oid", "ra", "dec"])
-        object_df = pd.DataFrame(object_array)
 
         df.drop_duplicates(subset=["candid"], inplace=True)
-        object_df.drop_duplicates(subset=["oid"], inplace=True)
 
-        # xmatch
-        catalog = self.xmatch_config["CATALOG"]
-        catalog_alias = catalog["name"]
-        columns = catalog["columns"]
-        radius = 1
-        selection = "best"
-        input_type = "pandas"
-        output_type = "pandas"
-
+        # executing xmatch request
         self.logger.info(f"Getting xmatches")
-        for i in range(self.retries):
-            try:
-                result = self.xmatch_client.execute(
-                    df,
-                    input_type,
-                    catalog_alias,
-                    columns,
-                    selection,
-                    output_type,
-                    radius,
-                )
-            except Exception as e:
-                self.logger.warning(f"CDS xmatch client returned with error {e}")
-                time.sleep(self.retry_interval)
-                self.logger.warning("Retrying request")
-                continue
-            else:
-                break
-
-        else:
-            self.logger.error(
-                f"Retrieving xmatch from the client unsuccessful after {self.retries} retries. Shutting down."
-            )
-            raise Exception(
-                f"Could not retrieve xmatch from CDS after {self.retries} retries."
-            )
+        result = self.request_xmacth_result_with_retries(df, self.retries)
 
         # Write in database
         self.logger.info(f"Writing xmatches in DB")
@@ -274,13 +225,31 @@ class XmatchStep(GenericStep):
 
     def request_xmacth_result_with_retries(self, data_frame, retries_count):
         if retries_count > 0:
-            # try
-            # make request
-            # except Exception
-            # sleep
-            # recusively retry count - 1
-            pass
+            try:
+                # make request
+                result = self.xmatch_client.execute(
+                    data_frame,
+                    self.input_type,
+                    self.catalog_alias,
+                    self.columns,
+                    self.selection,
+                    self.output_type,
+                    self.radius,
+                )
+                return result
+
+            except Exception as e:
+                self.logger.warning(f"CDS xmatch client returned with error {e}")
+                # error catched sleep before retry
+                time.sleep(self.retry_interval)
+                self.logger.warning("Retrying request")
+                return self.request_xmacth_result_with_retries(data_frame, retries_count - 1)
+
         if retries_count == 0:
             # raise error coundt find xmatch
-            pass
-
+            self.logger.error(
+                f"Retrieving xmatch from the client unsuccessful after {self.retries} retries. Shutting down."
+            )
+            raise Exception(
+                f"Could not retrieve xmatch from CDS after {self.retries} retries."
+            )
