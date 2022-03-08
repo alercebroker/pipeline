@@ -106,9 +106,9 @@ class XmatchStep(GenericStep):
         """
         record = {
             "candid": message["candid"],
-            "oid": message["objectId"],
-            "ra": message["candidate"]["ra"],
-            "dec": message["candidate"]["dec"],
+            "oid": message["objectId"] if message.get("objectId") is not None else message["aid"],
+            "ra": message["candidate"]["meanra"],
+            "dec": message["candidate"]["meandec"],
         }
         return record
 
@@ -206,8 +206,9 @@ class XmatchStep(GenericStep):
             self.producer.produce(message, key=message["objectId"])
 
     def convert_null_to_none(self, columns, d):
-        if d.get("drb") == "null":
-            d["drb"] = None
+        for column in columns:
+            if d.get(column) == "null":
+                d[column] = None
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
@@ -270,3 +271,16 @@ class XmatchStep(GenericStep):
         messages = self._format_result(messages, df, result)
         self.logger.info(f"Producing messages")
         self._produce(messages)
+
+    def request_xmacth_result_with_retries(self, data_frame, retries_count):
+        if retries_count > 0:
+            # try
+            # make request
+            # except Exception
+            # sleep
+            # recusively retry count - 1
+            pass
+        if retries_count == 0:
+            # raise error coundt find xmatch
+            pass
+
