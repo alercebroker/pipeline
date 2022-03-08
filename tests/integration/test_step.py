@@ -30,7 +30,7 @@ PRODUCER_CONFIG = {
 def _chunks(lst: List, n: int) -> List:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+        yield lst[i : i + n]
 
 
 def _deserialize_message(message: cimpl.Message):
@@ -78,11 +78,13 @@ class StepIntegrationTest(unittest.TestCase):
             step.execute(mini_batch)
 
         # Create a consumer to verify streamed data
-        consumer = Consumer({
-            "bootstrap.servers": "localhost:9092",
-            "group.id": "consumer_test_1",
-            "auto.offset.reset": "earliest",
-        })
+        consumer = Consumer(
+            {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": "consumer_test_1",
+                "auto.offset.reset": "earliest",
+            }
+        )
         consumer.subscribe([output_topic])
         output = []
         old_len = -1
@@ -110,11 +112,13 @@ class StepIntegrationTest(unittest.TestCase):
         step = IngestionStep(config=self.step_config)
         step.execute(batch)
 
-        consumer = Consumer({
-            "bootstrap.servers": "localhost:9092",
-            "group.id": "consumer_test_2",
-            "auto.offset.reset": "earliest",
-        })
+        consumer = Consumer(
+            {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": "consumer_test_2",
+                "auto.offset.reset": "earliest",
+            }
+        )
         consumer.subscribe([output_topic])
         output = []
         old_len = -1
@@ -132,3 +136,30 @@ class StepIntegrationTest(unittest.TestCase):
         # output is 10
         self.assertEqual(len(output), total_objects)
 
+        one_light_curve = deserialized[0]
+        for field in ["aid", "candid", "detections", "non_detections"]:
+            self.assertIn(field, one_light_curve)
+
+        one_detection = one_light_curve["detections"][0]
+        for field in [
+            "oid",
+            "tid",
+            "candid",
+            "mjd",
+            "fid",
+            "ra",
+            "e_ra",
+            "dec",
+            "e_dec",
+            "mag",
+            "e_mag",
+            "isdiffpos",
+            "rb",
+            "rbversion",
+            "extra_fields",
+        ]:
+            self.assertIn(field, one_detection)
+
+        one_non_detection = one_light_curve["non_detections"][0]
+        for field in ["tid", "oid", "mjd", "diffmaglim", "fid"]:
+            self.assertIn(field, one_non_detection)

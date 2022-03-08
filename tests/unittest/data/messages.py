@@ -213,6 +213,6 @@ def generate_alerts_batch(n: int, same_objects: int = 10) -> List[dict]:
     for al in range(n):
         batch[al]["aid"] = f"AL2X{str(al % same_objects).zfill(5)}"
         batch[al]["oid"] = f"{batch[al]['tid']}2X{str(al % same_objects).zfill(5)}"
-        batch[al]["candid"] = int(str(al+1).ljust(8, "0"))
+        batch[al]["candid"] = int(str(al + 1).ljust(8, "0"))
     random.shuffle(batch, lambda: 0.1)
     return batch

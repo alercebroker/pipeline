@@ -74,5 +74,7 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server))
+    docker_services.wait_until_responsive(
+        timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server)
+    )
     return server

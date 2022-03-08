@@ -4,7 +4,6 @@ DETECTIONS = {
         "name": "detections_record",
         "type": "record",
         "fields": [
-            # {"name": "aid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "tid", "type": "string"},
             {"name": "candid", "type": ["string", "int"]},
@@ -19,7 +18,13 @@ DETECTIONS = {
             {"name": "isdiffpos", "type": "int"},
             {"name": "rb", "type": ["float", "null"]},
             {"name": "rbversion", "type": "string"},
-            # {"name": "extra_fields", "type": {"type": "map", "values": "string"}},
+            {
+                "name": "extra_fields",
+                "type": {
+                    "type": "map",
+                    "values": ["string", "int", "null", "float", "boolean", "double"],
+                },
+            },
         ],
     },
 }
@@ -30,7 +35,6 @@ NON_DETECTIONS = {
         "name": "non_detections_record",
         "type": "record",
         "fields": [
-            {"name": "aid", "type": "string"},
             {"name": "tid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "mjd", "type": "double"},
@@ -45,13 +49,8 @@ SCHEMA = {
     "name": "alerce.light_curve",
     "type": "record",
     "fields": [
-        {
-            "name": "aid",
-            "type": "string"},
-        {
-            "name": "candid",
-            "type": "string"
-        },
+        {"name": "aid", "type": "string"},
+        {"name": "candid", "type": "string"},
         {"name": "detections", "type": DETECTIONS},
         {"name": "non_detections", "type": NON_DETECTIONS},
     ],

@@ -117,12 +117,13 @@ class IngestionStep(GenericStep):
         )
         return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
 
-    def insert_objects(self, objects: pd.DataFrame):
+    def insert_objects(self, objects: pd.DataFrame) -> None:
         """
+        Insert or update records in database. Insert new objects. Update old objects.
 
         Parameters
         ----------
-        objects
+        objects: Dataframe of astronomical objects.
 
         Returns
         -------
@@ -138,10 +139,12 @@ class IngestionStep(GenericStep):
             f"Inserting {len(to_insert)} and updating {len(to_update)} object(s)"
         )
         if len(to_insert) > 0:
+            # to_insert["_id"] = to_insert["aid"].values
+            to_insert.insert(1, "_id", to_insert["aid"].values)
             to_insert.replace({np.nan: None}, inplace=True)
-            to_insert["_id"] = to_insert["aid"]
             dict_to_insert = to_insert.to_dict("records")
             self.driver.query().bulk_insert(dict_to_insert, Object)
+            del to_insert
 
         if len(to_update) > 0:
             to_update.replace({np.nan: None}, inplace=True)
@@ -365,7 +368,7 @@ class IngestionStep(GenericStep):
         ----------
         alerts: A pandas DataFrame created from a list of GenericAlerts.
 
-        Returns A Tuple with detections an non_detections from previous candidates
+        Returns A Tuple with detections a non_detections from previous candidates
         -------
 
         """
@@ -374,7 +377,7 @@ class IngestionStep(GenericStep):
         # }
         data = alerts[
             ["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]
-        ].copy()
+        ]
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
@@ -450,9 +453,8 @@ class IngestionStep(GenericStep):
             aid = key_alert["aid"].values[-1]  # get the last aid of this key
             mask_detections = light_curves["detections"][key] == _key
             detections = light_curves["detections"].loc[mask_detections]
-            # detections.replace({np.nan: None}, inplace=True)
+            detections.replace({np.nan: None}, inplace=True)
             detections = detections.to_dict("records")
-
             mask_non_detections = light_curves["non_detections"][key] == _key
             non_detections = light_curves["non_detections"].loc[mask_non_detections]
             non_detections = non_detections.to_dict("records")
@@ -470,7 +472,7 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         alerts = pd.DataFrame(messages)
         # If is an empiric alert must has stamp
-        alerts.loc[:, "has_stamp"] = True
+        alerts["has_stamp"] = True
         # Process previous candidates of each alert
         (
             dets_from_prv_candidates,
@@ -508,7 +510,7 @@ class IngestionStep(GenericStep):
         # Insert new detections and put step_version
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
-        new_detections.loc[:, "step_id_corr"] = self.version
+        new_detections.loc["step_id_corr"] = self.version
         new_detections.drop(columns=["new"], inplace=True)
         self.insert_detections(new_detections)
         # Insert new now detections
@@ -516,9 +518,11 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
         self.insert_non_detections(new_non_detections)
+
         # produce to some topic
         if self.producer:
             self.produce(alerts, light_curves)
+
         self.logger.info(f"Clean batch of data\n")
         del alerts
         del light_curves["detections"]
