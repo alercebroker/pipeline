@@ -27,8 +27,6 @@ import sys
 
 sys.path.insert(0, "../../../../")
 
-# TODO: parent candid is NaN or a float
-
 
 class IngestionStep(GenericStep):
     """IngestionStep Description
@@ -215,7 +213,7 @@ class IngestionStep(GenericStep):
         else:
             raise ValueError(f"Mean dec must be between -90 and 90 (given {mean_dec})")
 
-    def apply_objs_stats_from_correction(self, df):
+    def apply_objs_stats_from_correction(self, df: pd.DataFrame) -> pd.Series:
         response = {}
         df_mjd = df.mjd
         idx_min = df_mjd.values.argmin()
@@ -230,7 +228,7 @@ class IngestionStep(GenericStep):
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = df_min.tid
-        response["oid"] = list(set([d["oid"] for d in df["extra_fields"]]))
+        response["oid"] = list(df["oid"].unique())
         response["ndet"] = len(df)
         return pd.Series(response)
 
@@ -414,10 +412,6 @@ class IngestionStep(GenericStep):
             corrected = self.detections_corrector.compute(gdf)
             response.append(corrected)
         response = pd.concat(response, ignore_index=True)
-        # move oid to extra_fields
-        response["extra_fields"] = response.apply(
-            lambda x: {"oid": x["oid"], **x["extra_fields"]}, axis=1
-        )
         return response
 
     def produce(
