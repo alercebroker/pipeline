@@ -9,9 +9,6 @@ from db_plugins.db.sql import (
 from db_plugins.db.generic import Pagination
 from sqlalchemy.engine.reflection import Inspector
 import unittest
-import json
-import time
-import datetime
 
 
 class SQLConnectionTest(unittest.TestCase):
