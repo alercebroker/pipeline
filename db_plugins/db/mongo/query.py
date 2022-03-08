@@ -136,9 +136,7 @@ def update_creator(collection_class):
 
 
 def bulk_update_creator(collection_class):
-    def bulk_update(
-        self, instances: list, args: list, filter_fields: list = []
-    ):
+    def bulk_update(self, instances: list, args: list, filter_fields: list = []):
         model = type(instances[0])
         self.init_collection(model)
         requests = []
@@ -149,9 +147,7 @@ def bulk_update_creator(collection_class):
                     {"$set": args[i]},
                 )
             )
-        return collection_class.bulk_write(
-            self, requests=requests, ordered=False
-        )
+        return collection_class.bulk_write(self, requests=requests, ordered=False)
 
     return bulk_update
 
@@ -242,9 +238,7 @@ def find_one_creator(collection_class):
 
 
 def find_all_creator(collection_class):
-    def find_all(
-        self, model: Base = None, filter_by={}, paginate=True, **kwargs
-    ):
+    def find_all(self, model: Base = None, filter_by={}, paginate=True, **kwargs):
         """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.
