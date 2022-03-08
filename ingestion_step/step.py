@@ -415,13 +415,18 @@ class IngestionStep(GenericStep):
         return response
 
     def produce(
-        self, alerts: pd.DataFrame, light_curves: dict, key: str = "aid"
+        self,
+        alerts: pd.DataFrame,
+        objects: pd.DataFrame,
+        light_curves: dict,
+        key: str = "aid",
     ) -> None:
         """Produce light curves to topic configured on settings.py
 
         Parameters
         ----------
         alerts
+        objects
         light_curves
         key
         Returns
@@ -435,14 +440,14 @@ class IngestionStep(GenericStep):
         light_curves["non_detections"].drop(columns=["new"], inplace=True)
 
         # sort by ascending mjd
-        alerts.sort_values("mjd", inplace=True, ascending=True)
-        key_ids = alerts[key].unique().tolist()
-        self.logger.info(f"Checking {len(key_ids)} messages (key={key})")
+        objects.sort_values("lastmjd", inplace=True, ascending=True)
+        self.logger.info(f"Checking {len(objects)} messages (key={key})")
         n_messages = 0
-        for _key in key_ids:
+        for index, row in objects.iterrows():
+            _key = row[key]
+            aid = row["aid"]
             key_alert = alerts[alerts[key] == _key]
             candid = key_alert["candid"].values[-1]  # get the last candid for this key
-            aid = key_alert["aid"].values[-1]  # get the last aid of this key
             mask_detections = light_curves["detections"][key] == _key
             detections = light_curves["detections"].loc[mask_detections]
             detections.replace({np.nan: None}, inplace=True)
@@ -452,6 +457,9 @@ class IngestionStep(GenericStep):
             non_detections = non_detections.to_dict("records")
             output_message = {
                 "aid": str(aid),
+                "meanra": row["meanra"],
+                "meandec": row["meandec"],
+                "ndet": row["ndet"],
                 "candid": str(candid),
                 "detections": detections,
                 "non_detections": non_detections,
@@ -515,7 +523,7 @@ class IngestionStep(GenericStep):
 
         # produce to some topic
         if self.producer:
-            self.produce(alerts, light_curves)
+            self.produce(alerts, objects, light_curves)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts

@@ -137,7 +137,15 @@ class StepIntegrationTest(unittest.TestCase):
         self.assertEqual(len(output), total_objects)
 
         one_light_curve = deserialized[0]
-        for field in ["aid", "candid", "detections", "non_detections"]:
+        for field in [
+            "aid",
+            "candid",
+            "detections",
+            "non_detections",
+            "ndet",
+            "meanra",
+            "meandec",
+        ]:
             self.assertIn(field, one_light_curve)
 
         one_detection = one_light_curve["detections"][0]

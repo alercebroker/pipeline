@@ -51,6 +51,9 @@ SCHEMA = {
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "candid", "type": "string"},
+        {"name": "meanra", "type": "float"},
+        {"name": "meandec", "type": "float"},
+        {"name": "ndet", "type": "int"},
         {"name": "detections", "type": DETECTIONS},
         {"name": "non_detections", "type": NON_DETECTIONS},
     ],
