@@ -10,5 +10,4 @@ jobs:
       - uses: psf/black@stable
         with:
           options: "--check --verbose"
-          src: "./ingestion_step"
-          version: "21.5b1"
+          src: "ingestion_step/"
