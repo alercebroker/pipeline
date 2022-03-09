@@ -19,7 +19,6 @@ class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "DB_CONFIG": {},
-            "PRODUCER_CONFIG": {"fake": "fake"},
             "STEP_METADATA": {
                 "STEP_ID": "",
                 "STEP_NAME": "",
@@ -32,7 +31,7 @@ class StepTestCase(unittest.TestCase):
         self.step = IngestionStep(
             config=self.step_config,
             db_connection=self.mock_database_connection,
-            producer=self.mock_producer,
+            producer=self.mock_producer
         )
 
     def tearDown(self):
@@ -168,13 +167,13 @@ class StepTestCase(unittest.TestCase):
             mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
 
     def test_execute_with_ZTF_stream(self):
-        ZTF_messages = generate_message_ztf(10, 0)
+        ZTF_messages = generate_message_ztf(10)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
 
     def test_execute_with_ZTF_stream_and_existing_objects(self):
-        ZTF_messages = generate_message_ztf(1, 0)
+        ZTF_messages = generate_message_ztf(1)
 
         def side_effect(*args, **kwargs):
             if kwargs["model"] == Object:
@@ -304,7 +303,7 @@ class StepTestCase(unittest.TestCase):
         assert len(args[0]) == num_messages - 1
 
     def test_execute_with_ZTF_stream_non_detections(self):
-        ZTF_messages = generate_message_ztf(10, 10)
+        ZTF_messages = generate_message_ztf(10)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
@@ -314,3 +313,13 @@ class StepTestCase(unittest.TestCase):
         self.step.execute(ATLAS_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
+
+    def test_produce(self):
+        alerts = pd.DataFrame([{"aid": "a", "candid": 1}])
+        objects = pd.DataFrame([{"aid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}])
+        light_curves = {
+            "detections": pd.DataFrame([{"aid": "a", "candid": 1, "new": True}]),
+            "non_detections": pd.DataFrame([{"aid": "a", "candid": None, "new": False}]),
+        }
+        self.step.produce(alerts, objects, light_curves)
+        self.assertEqual(len(self.mock_producer.produce.mock_calls), 1)

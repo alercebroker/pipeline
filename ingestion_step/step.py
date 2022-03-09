@@ -45,12 +45,11 @@ class IngestionStep(GenericStep):
         consumer=None,
         config=None,
         level=logging.INFO,
+        producer=None,
+        db_connection=None,
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-
-        self.driver = new_DBConnection(MongoDatabaseCreator)
-        self.driver.connect(config["DB_CONFIG"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.prv_candidates_processor = Processor(
             ZTFPrvCandidatesStrategy()
@@ -58,11 +57,12 @@ class IngestionStep(GenericStep):
         self.detections_corrector = Corrector(
             ZTFCorrectionStrategy()
         )  # initial strategy (can change)
-
+        self.producer = producer
         if config.get("PRODUCER_CONFIG", False):
             self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
-        else:
-            self.producer = None
+
+        self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
+        self.driver.connect(config["DB_CONFIG"])
 
     def get_objects(self, aids: List[str or int]):
         """
