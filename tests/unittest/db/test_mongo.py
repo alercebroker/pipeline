@@ -37,9 +37,7 @@ class MongoConnectionTest(unittest.TestCase):
 
     def test_create_db(self):
         self.conn.create_db()
-        collections = self.client[
-            self.config["DATABASE"]
-        ].list_collection_names()
+        collections = self.client[self.config["DATABASE"]].list_collection_names()
         expected = ["object", "detection", "non_detection"]
         self.assertEqual(collections, expected)
 
@@ -94,9 +92,7 @@ class MongoQueryTest(unittest.TestCase):
         self.database = client["database"]
         self.obj_collection = self.database["object"]
         self.obj_collection.insert_one({"test": "test"})
-        self.mongo_query_class = mongo_query_creator(
-            mongomock.collection.Collection
-        )
+        self.mongo_query_class = mongo_query_creator(mongomock.collection.Collection)
         self.query = self.mongo_query_class(
             model=Object,
             database=self.database,

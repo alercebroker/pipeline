@@ -21,9 +21,7 @@ class TestManage(unittest.TestCase):
 
     @mock.patch("db_plugins.cli.manage.init_sql")
     def test_initdb_sql(self, mock_init_sql):
-        with self.runner.isolated_filesystem(
-            temp_dir=self.settings_path
-        ) as td:
+        with self.runner.isolated_filesystem(temp_dir=self.settings_path) as td:
             with open("settings.py", "w") as f:
                 f.write("DB_CONFIG=")
                 DB_CONFIG = {
@@ -39,8 +37,7 @@ class TestManage(unittest.TestCase):
             assert result.exit_code == 0
             mock_init_sql.assert_called()
             assert (
-                "Database created with credentials from {}".format(td)
-                in result.output
+                "Database created with credentials from {}".format(td) in result.output
             )
 
     def test_initdb_error(self):
@@ -50,42 +47,32 @@ class TestManage(unittest.TestCase):
 
     @mock.patch("db_plugins.db.sql.initialization.alembic.config.main")
     def test_make_migrations(self, main_mock):
-        with self.runner.isolated_filesystem(
-            temp_dir=self.settings_path
-        ) as td:
+        with self.runner.isolated_filesystem(temp_dir=self.settings_path) as td:
             with open("settings.py", "w") as f:
                 f.write("DB_CONFIG=")
                 DB_CONFIG = {
                     "SQL": {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"},
                 }
                 f.write(str(DB_CONFIG))
-            result = self.runner.invoke(
-                manage.make_migrations, ["--settings_path", td]
-            )
+            result = self.runner.invoke(manage.make_migrations, ["--settings_path", td])
             assert result.exit_code == 0
             main_mock.assert_called()
 
     def test_make_migrations_error(self):
-        result = self.runner.invoke(
-            manage.make_migrations, "--settings_path fail"
-        )
+        result = self.runner.invoke(manage.make_migrations, "--settings_path fail")
         assert result.exit_code != 0
         assert "Settings file not found" == str(result.exception)
 
     @mock.patch("db_plugins.db.sql.initialization.alembic.config.main")
     def test_migrate(self, main_mock):
-        with self.runner.isolated_filesystem(
-            temp_dir=self.settings_path
-        ) as td:
+        with self.runner.isolated_filesystem(temp_dir=self.settings_path) as td:
             with open("settings.py", "w") as f:
                 f.write("DB_CONFIG=")
                 DB_CONFIG = {
                     "SQL": {"SQLALCHEMY_DATABASE_URL": "sqlite:///:memory:"},
                 }
                 f.write(str(DB_CONFIG))
-            result = self.runner.invoke(
-                manage.migrate, ["--settings_path", td]
-            )
+            result = self.runner.invoke(manage.migrate, ["--settings_path", td])
             assert result.exit_code == 0
             main_mock.assert_called()
 
@@ -110,9 +97,7 @@ class TestManage(unittest.TestCase):
 
     @mock.patch("db_plugins.cli.manage.init_mongo")
     def test_initdb_mongo(self, mock_init_mongo):
-        with self.runner.isolated_filesystem(
-            temp_dir=self.settings_path
-        ) as td:
+        with self.runner.isolated_filesystem(temp_dir=self.settings_path) as td:
             with open("settings.py", "w") as f:
                 f.write("DB_CONFIG=")
                 DB_CONFIG = {
@@ -129,6 +114,5 @@ class TestManage(unittest.TestCase):
             assert result.exit_code == 0
             mock_init_mongo.assert_called()
             assert (
-                "Database created with credentials from {}".format(td)
-                in result.output
+                "Database created with credentials from {}".format(td) in result.output
             )

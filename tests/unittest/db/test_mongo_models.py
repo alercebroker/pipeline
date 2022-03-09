@@ -11,13 +11,11 @@ class MongoModelsTest(unittest.TestCase):
             firstmjd="firstmjd",
             meanra=100.0,
             meandec=50.0,
-            ndet="ndet"
+            ndet="ndet",
         )
         self.assertIsInstance(o, models.Object)
         self.assertIsInstance(o, dict)
-        self.assertEqual(
-            o["loc"], {"type": "Point", "coordinates": [-80.0, 50]}
-        )
+        self.assertEqual(o["loc"], {"type": "Point", "coordinates": [-80.0, 50]})
         self.assertEqual(
             o._meta.tablename,
             models.Object.__tablename__,
@@ -56,6 +54,7 @@ class MongoModelsTest(unittest.TestCase):
         d = models.Detection(
             tid="tid",
             aid="aid",
+            oid="oid",
             candid="candid",
             mjd="mjd",
             fid="fid",
@@ -64,19 +63,19 @@ class MongoModelsTest(unittest.TestCase):
             rb="rb",
             mag="mag",
             e_mag="e_mag",
-            rfid = "rfid",
-            e_ra = "e_ra", 
-            e_dec = "e_dec",
-            isdiffpos = "isdiffpos",
-            magpsf_corr = "magpsf_corr",
-            sigmapsf_corr = "sigmapsf_corr",
-            sigmapsf_corr_ext = "sigmapsf_corr_ext",
-            corrected = "corrected",
-            dubious = "dubious",
-            parent_candid = "parent_candid",
-            has_stamp = "has_stamp",
-            step_id_corr = "step_id_corr",
-            rbversion = "rbversion",
+            rfid="rfid",
+            e_ra="e_ra",
+            e_dec="e_dec",
+            isdiffpos="isdiffpos",
+            magpsf_corr="magpsf_corr",
+            sigmapsf_corr="sigmapsf_corr",
+            sigmapsf_corr_ext="sigmapsf_corr_ext",
+            corrected="corrected",
+            dubious="dubious",
+            parent_candid="parent_candid",
+            has_stamp="has_stamp",
+            step_id_corr="step_id_corr",
+            rbversion="rbversion",
         )
         self.assertIsInstance(d, models.Detection)
         self.assertIsInstance(d, dict)
@@ -91,6 +90,7 @@ class MongoModelsTest(unittest.TestCase):
         o = models.Detection(
             tid="tid",
             aid="aid",
+            oid="oid",
             candid="candid",
             mjd="mjd",
             fid="fid",
@@ -100,20 +100,21 @@ class MongoModelsTest(unittest.TestCase):
             mag="mag",
             e_mag="e_mag",
             rfid="rfid",
-            e_ra = "e_ra", 
-            e_dec = "e_dec",
-            isdiffpos = "isdiffpos",
-            corrected = "corrected",
-            parent_candid = "parent_candid",
-            has_stamp = "has_stamp",
-            step_id_corr = "step_id_corr",
-            rbversion = "rbversion",
+            e_ra="e_ra",
+            e_dec="e_dec",
+            isdiffpos="isdiffpos",
+            corrected="corrected",
+            parent_candid="parent_candid",
+            has_stamp="has_stamp",
+            step_id_corr="step_id_corr",
+            rbversion="rbversion",
             extra="extra",
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
         o = models.Detection(
             tid="tid",
             aid="aid",
+            oid="oid",
             candid="candid",
             mjd="mjd",
             fid="fid",
@@ -123,14 +124,14 @@ class MongoModelsTest(unittest.TestCase):
             mag="mag",
             e_mag="e_mag",
             rfid="rfid",
-            e_ra = "e_ra", 
-            e_dec = "e_dec",
-            isdiffpos = "isdiffpos",
-            corrected = "corrected",
-            parent_candid = "parent_candid",
-            has_stamp = "has_stamp",
-            step_id_corr = "step_id_corr",
-            rbversion = "rbversion",
+            e_ra="e_ra",
+            e_dec="e_dec",
+            isdiffpos="isdiffpos",
+            corrected="corrected",
+            parent_candid="parent_candid",
+            has_stamp="has_stamp",
+            step_id_corr="step_id_corr",
+            rbversion="rbversion",
             extra_fields={"extra": "extra"},
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
@@ -138,6 +139,7 @@ class MongoModelsTest(unittest.TestCase):
     def test_non_detection_creates(self):
         o = models.NonDetection(
             aid="aid",
+            oid="oid",
             tid="sid",
             mjd="mjd",
             diffmaglim="diffmaglim",
@@ -155,6 +157,7 @@ class MongoModelsTest(unittest.TestCase):
     def test_non_detection_with_extra_fields(self):
         o = models.NonDetection(
             aid="aid",
+            oid="oid",
             tid="tid",
             mjd="mjd",
             diffmaglim="diffmaglim",
@@ -164,6 +167,7 @@ class MongoModelsTest(unittest.TestCase):
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
         o = models.NonDetection(
             aid="aid",
+            oid="oid",
             tid="tid",
             mjd="mjd",
             diffmaglim="diffmaglim",

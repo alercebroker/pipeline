@@ -64,6 +64,7 @@ class Detection(Base, generic_models.Detection):
         Field()
     )  # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
     aid = Field()
+    oid = Field()
     candid = Field()
     mjd = Field()
     fid = Field()
@@ -90,6 +91,7 @@ class NonDetection(Base, generic_models.NonDetection):
 
     aid = Field()
     tid = Field()
+    oid = Field()
     mjd = Field()
     diffmaglim = Field()
     fid = Field()
