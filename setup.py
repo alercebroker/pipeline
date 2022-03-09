@@ -14,7 +14,7 @@ with open(path.join(this_directory, "README.rst"), encoding="utf-8") as f:
 
 setup(
     name="db-plugins",
-    version="2.0.1",
+    version="2.1.0",
     description="ALeRCE Database Plugins.",
     long_description=long_description,
     long_description_content_type="text/x-rst",
