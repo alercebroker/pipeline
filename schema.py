@@ -6,7 +6,7 @@ DETECTIONS = {
         "fields": [
             {"name": "oid", "type": "string"},
             {"name": "tid", "type": "string"},
-            {"name": "candid", "type": ["string", "int"]},
+            {"name": "candid", "type": ["string", "long"]},
             {"name": "mjd", "type": "double"},
             {"name": "fid", "type": "int"},
             {"name": "ra", "type": "double"},
@@ -50,7 +50,7 @@ SCHEMA = {
     "type": "record",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "candid", "type": "string"},
+        {"name": "candid", "type": ["string", "long"]},
         {"name": "meanra", "type": "float"},
         {"name": "meandec", "type": "float"},
         {"name": "ndet", "type": "int"},
