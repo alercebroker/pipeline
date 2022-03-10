@@ -1,12 +1,13 @@
-import numpy as np
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from cds_xmatch_client import XmatchClient
-from db_plugins.db.sql.models import Object, Allwise, Xmatch, Step
+from db_plugins.db.sql.models import Allwise, Xmatch, Step
 from db_plugins.db.sql import SQLConnection
 from typing import List
-from xmatch_step.utils.constants import XMATCH_KEYS, ALLWISE_KEYS
+from xmatch_step.utils.constants import ALLWISE_MAP
+
+import numpy as np
 import pandas as pd
 import logging
 import datetime
@@ -49,8 +50,6 @@ class XmatchStep(GenericStep):
         self.logger.info(f"XMATCH {self.version}")
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
-        # if not step_args.get("test_mode", False):
-        #     self.insert_step_metadata()
 
     def insert_step_metadata(self):
         """
@@ -64,8 +63,10 @@ class XmatchStep(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def _format_result(self, light_curves: pd.DataFrame, xmatches: pd.DataFrame) -> List[dict]:
-        """ Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
+    def _format_result(
+        self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
+    ) -> List[dict]:
+        """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
         a list of dict as output.
         :param light_curves: Generic messages that contain the light curves (in dataframe)
         :param xmatches: Values of cross-matches (in dataframe)
@@ -75,55 +76,30 @@ class XmatchStep(GenericStep):
         aid_in = xmatches["aid_in"]
         xmatches.drop(columns=["ra_in", "dec_in", "col1", "aid_in"], inplace=True)
         xmatches.replace({np.nan: None}, inplace=True)
-        xmatches = pd.DataFrame({
-            "aid_in": aid_in,
-            "xmatches": xmatches.apply(lambda x: x.to_dict(), axis=1)
-        })
+        xmatches = pd.DataFrame(
+            {
+                "aid_in": aid_in,
+                "xmatches": xmatches.apply(lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1),
+            }
+        )
         # Join xmatches with light curves
         data = light_curves.set_index("aid").join(xmatches.set_index("aid_in"))
         data.replace({np.nan: None}, inplace=True)
+        data.index.name = "aid"
         data.reset_index(inplace=True)
         # Transform to a list of dicts
         data = data.to_dict("records")
         return data
 
-    def save_xmatch(self, result, df_object):
-        if len(result) > 0:
-            result = result.rename(
-                {
-                    "AllWISE": "oid_catalog",
-                    "RAJ2000": "ra",
-                    "DEJ2000": "dec",
-                    "W1mag": "w1mpro",
-                    "W2mag": "w2mpro",
-                    "W3mag": "w3mpro",
-                    "W4mag": "w4mpro",
-                    "e_W1mag": "w1sigmpro",
-                    "e_W2mag": "w2sigmpro",
-                    "e_W3mag": "w3sigmpro",
-                    "e_W4mag": "w4sigmpro",
-                    "Jmag": "j_m_2mass",
-                    "Hmag": "h_m_2mass",
-                    "Kmag": "k_m_2mass",
-                    "e_Jmag": "j_msig_2mass",
-                    "e_Hmag": "h_msig_2mass",
-                    "e_Kmag": "k_msig_2mass",
-                    "oid_in": "oid",
-                    "angDist": "dist",
-                },
+    def save_xmatch(self, xmatches: pd.DataFrame):
+        if len(xmatches) > 0:
+            result = xmatches.rename(
+                ALLWISE_MAP,
                 axis="columns",
             )
-            object_oid = df_object.oid
-            result_oid = result.oid
-
-            object_data = df_object[object_oid.isin(result_oid)]
-
-            # bulk insert to object table
-            array = object_data.to_dict(orient="records")
-            self.driver.query(Object).bulk_insert(array)
-
+            self.logger.info(f"Writing xmatches in DB")
             # bulk insert to allwise table
-            data = result.drop(["oid", "dist"], axis=1)
+            data = result.drop(["dist"], axis=1)
             array = data.to_dict(orient="records")
             self.driver.query(Allwise).bulk_insert(array)
 
@@ -137,7 +113,9 @@ class XmatchStep(GenericStep):
         for message in messages:
             self.producer.produce(message, key=message["aid"])
 
-    def request_xmatch(self, input_catalog: pd.DataFrame, retries_count: int) -> pd.DataFrame:
+    def request_xmatch(
+        self, input_catalog: pd.DataFrame, retries_count: int
+    ) -> pd.DataFrame:
         """
         Recursive method allows request CDS xmatch.
         :param input_catalog: Input catalog in dataframe. Must contain columns: ra, dec, identifier.
@@ -189,15 +167,18 @@ class XmatchStep(GenericStep):
 
         input_catalog = light_curves[["aid", "meanra", "meandec"]]
         input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
-
         # executing xmatch request
         self.logger.info(f"Getting xmatches")
         result = self.request_xmatch(input_catalog, self.retries)
-
         # Write in database
-        self.logger.info(f"Writing xmatches in DB")
-        # self.save_xmatch(result, object_df) # PSQL
-
+        self.save_xmatch(result)  # PSQL
+        # Get output format
         output_messages = self._format_result(light_curves, result)
         self.logger.info(f"Producing {len(output_messages)} messages")
+        # Produce data with xmatch
         self.produce(output_messages)
+        del messages
+        del light_curves
+        del input_catalog
+        del result
+        del output_messages

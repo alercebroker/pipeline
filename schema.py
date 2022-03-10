@@ -46,7 +46,7 @@ NON_DETECTIONS = {
 
 XMATCH = {
     "type": "map",
-    "values": {"type": "map", "values": ["string", "float", "null"]},
+    "values": {"type": "map", "values": ["string", "float", "null", "int"]},
 }
 
 SCHEMA = {
@@ -61,6 +61,6 @@ SCHEMA = {
         {"name": "ndet", "type": "int"},
         {"name": "detections", "type": DETECTIONS},
         {"name": "non_detections", "type": NON_DETECTIONS},
-        {"name": "xmatches", "type": [XMATCH, "null"], "default": "null"},
+        {"name": "xmatches", "type": [XMATCH, "null"]},
     ],
 }

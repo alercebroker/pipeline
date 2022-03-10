@@ -2,6 +2,8 @@ import random
 
 from typing import List
 
+import pandas as pd
+
 random.seed(8798, version=2)
 
 
@@ -105,3 +107,55 @@ def generate_input_batch(n: int) -> List[dict]:
         batch.append(msg)
     random.shuffle(batch, lambda: 0.1)
     return batch
+
+
+def get_default_object_values(message: dict) -> dict:
+    data = {
+        "oid": message["aid"],
+        "ndethist": 0.0,
+        "ncovhist": 0.0,
+        "mjdstarthist": 40000.0,
+        "mjdendhist": 400000.0,
+        "firstmjd": 400000.0,
+        "lastmjd": 400000.0,
+        "ndet": 1,
+        "deltajd": 0,
+        "meanra": 0.0,
+        "meandec": 0.0,
+        "step_id_corr": "test",
+        "corrected": False,
+        "stellar": False
+    }
+    return data
+
+
+def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
+    fake = []
+    df = pd.DataFrame(messages)
+    for i, f in df.iterrows():
+        d = {
+            "angDist": round(random.uniform(0, 1), 6),
+            "col1": random.randint(7, 10),
+            "aid_in": f["aid"],
+            "ra_in": round(f["meanra"], 6),
+            "dec_in": round(f["meandec"], 6),
+            "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
+            "RAJ2000": round(f["meanra"], 6),
+            "DECJ2000": round(f["meandec"], 6),
+            "W1mag": round(random.uniform(10, 15), 3),
+            "W2mag": round(random.uniform(10, 15), 3),
+            "W3mag": round(random.uniform(10, 15), 3),
+            "W4mag": round(random.uniform(10, 15), 3),
+            "Jmag": round(random.uniform(10, 15), 3),
+            "Hmag": round(random.uniform(10, 15), 3),
+            "Kmag": round(random.uniform(10, 15), 3),
+            "e_W1mag": round(random.uniform(0, 1), 3),
+            "e_W2mag": round(random.uniform(0, 1), 3),
+            "e_W3mag": round(random.uniform(0, 1), 3),
+            "e_W4mag": round(random.uniform(0, 1), 3),
+            "e_Jmag": round(random.uniform(0, 1), 3),
+            "e_Hmag": round(random.uniform(0, 1), 3),
+            "e_Kmag": round(random.uniform(0, 1), 3)
+        }
+        fake.append(d)
+    return pd.DataFrame(fake)

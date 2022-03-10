@@ -2,9 +2,11 @@ import pytest
 import unittest
 
 from xmatch_step.step import XmatchStep
-from xmatch_step import XmatchStep, XmatchClient, Step, Object, Allwise, Xmatch
+from xmatch_step import XmatchStep, XmatchClient, Step, Allwise, Xmatch
+from db_plugins.db.sql.models import Object
 from schema import SCHEMA
-from tests.data.messages import generate_input_batch
+from unittest import mock
+from tests.data.messages import generate_input_batch, get_default_object_values, get_fake_xmatch
 
 
 DB_CONFIG = {
@@ -72,6 +74,7 @@ class StepXmatchTest(unittest.TestCase):
             "RETRY_INTERVAL": 1,
         }
         cls.step = XmatchStep(config=cls.step_config)
+        cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
     @classmethod
     def tearDownClass(cls):
@@ -80,6 +83,8 @@ class StepXmatchTest(unittest.TestCase):
 
     def setUp(self):
         self.step.driver.create_db()
+        array = [get_default_object_values(x) for x in self.batch]
+        self.step.driver.query(Object).bulk_insert(array)
 
     def tearDown(self):
         self.step.driver.session.close()
@@ -89,9 +94,10 @@ class StepXmatchTest(unittest.TestCase):
         self.step.insert_step_metadata()
         self.assertEqual(len(self.step.driver.query(Step).all()), 1)
 
-    def test_execute(self):
-        batch = generate_input_batch(20)  # I want 20 light  curves
+    @mock.patch.object(XmatchClient, "execute")
+    def test_execute(self, mock_xmatch: mock.Mock):
         step = XmatchStep(config=self.step_config)
-        step.execute(batch)
+        mock_xmatch.return_value = get_fake_xmatch(self.batch)
+        step.execute(self.batch)
 
 
