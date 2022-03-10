@@ -1,0 +1,20 @@
+ALLWISE_KEYS = [
+    "oid_catalog",
+    "ra",
+    "dec",
+    "w1mpro",
+    "w2mpro",
+    "w3mpro",
+    "w4mpro",
+    "w1sigmpro",
+    "w2sigmpro",
+    "w3sigmpro",
+    "w4sigmpro",
+    "j_m_2mass",
+    "h_m_2mass",
+    "k_m_2mass",
+    "j_msig_2mass",
+    "h_msig_2mass",
+    "k_msig_2mass",
+]
+XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]

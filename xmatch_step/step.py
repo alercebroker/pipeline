@@ -1,36 +1,16 @@
+import numpy as np
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from cds_xmatch_client import XmatchClient
 from db_plugins.db.sql.models import Object, Allwise, Xmatch, Step
-
+from db_plugins.db.sql import SQLConnection
+from typing import List
+from xmatch_step.utils.constants import XMATCH_KEYS, ALLWISE_KEYS
 import pandas as pd
 import logging
 import datetime
-import os
 import time
-from db_plugins.db.sql import SQLConnection
-
-ALLWISE_KEYS = [
-    "oid_catalog",
-    "ra",
-    "dec",
-    "w1mpro",
-    "w2mpro",
-    "w3mpro",
-    "w4mpro",
-    "w1sigmpro",
-    "w2sigmpro",
-    "w3sigmpro",
-    "w4sigmpro",
-    "j_m_2mass",
-    "h_m_2mass",
-    "k_m_2mass",
-    "j_msig_2mass",
-    "h_msig_2mass",
-    "k_msig_2mass",
-]
-XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]
 
 
 class XmatchStep(GenericStep):
@@ -48,7 +28,6 @@ class XmatchStep(GenericStep):
 
         self.xmatch_config = config["XMATCH_CONFIG"]
         self.xmatch_client = xmatch_client or XmatchClient()
-
 
         # xmatch variables
         self.catalog = self.xmatch_config["CATALOG"]
@@ -70,27 +49,12 @@ class XmatchStep(GenericStep):
         self.logger.info(f"XMATCH {self.version}")
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
+        # if not step_args.get("test_mode", False):
+        #     self.insert_step_metadata()
 
     def insert_step_metadata(self):
         """
         Inserts step metadata like version and step name.
-        Some config is required:
-
-        .. code-block:: python
-
-            #settings.py
-
-            STEP_CONFIG = {
-                STEP_METADATA = {
-                    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-                    "STEP_ID": os.getenv("STEP_VERSION", "dev"),
-                    "STEP_NAME": os.getenv("STEP_VERSION", "dev"),
-                    "STEP_COMMENTS": "",
-                }
-            }
-
         """
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
@@ -100,51 +64,31 @@ class XmatchStep(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def _extract_coordinates(self, message: dict):
+    def _format_result(self, light_curves: pd.DataFrame, xmatches: pd.DataFrame) -> List[dict]:
+        """ Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
+        a list of dict as output.
+        :param light_curves: Generic messages that contain the light curves (in dataframe)
+        :param xmatches: Values of cross-matches (in dataframe)
+        :return:
         """
-        Get meanra, meandec and oid from alert message.
-
-        Poarameters
-        -----------
-        message : dict
-            alerce alert message from stream
-
-        Returns
-        -------
-        record : dict
-            a dict with oid, ra and dec keys
-        """
-        record = {
-            "candid": message["candid"],
-            "oid": message["oid"],
-            "ra": message["candidate"]["meanra"],
-            "dec": message["candidate"]["meandec"],
-        }
-        return record
-
-    def _format_result(self, msgs, input, result):
-        messages = []
-        # objects without xmatch
-        without_result = input[~input["oid_in"].isin(result["oid_in"])]["oid_in"].values
-
-        for m in msgs:
-            oid = m["objectId"]
-            if oid in without_result:
-                m["xmatches"] = None
-            else:
-                sel = result[result["oid_in"] == oid]
-                row = sel.iloc[0]
-                columns = dict(row)
-                del columns["oid_in"]
-                m["xmatches"] = {"allwise": columns}
-            messages.append(m)
-
-        return messages
+        # Create a new dataframe that contain just two columns `aid` and `xmatches`.
+        aid_in = xmatches["aid_in"]
+        xmatches.drop(columns=["ra_in", "dec_in", "col1", "aid_in"], inplace=True)
+        xmatches.replace({np.nan: None}, inplace=True)
+        xmatches = pd.DataFrame({
+            "aid_in": aid_in,
+            "xmatches": xmatches.apply(lambda x: x.to_dict(), axis=1)
+        })
+        # Join xmatches with light curves
+        data = light_curves.set_index("aid").join(xmatches.set_index("aid_in"))
+        data.replace({np.nan: None}, inplace=True)
+        data.reset_index(inplace=True)
+        # Transform to a list of dicts
+        data = data.to_dict("records")
+        return data
 
     def save_xmatch(self, result, df_object):
-
         if len(result) > 0:
-
             result = result.rename(
                 {
                     "AllWISE": "oid_catalog",
@@ -189,46 +133,21 @@ class XmatchStep(GenericStep):
             array = data.to_dict(orient="records")
             self.driver.query(Xmatch).bulk_insert(array)
 
-    def _produce(self, messages):
+    def produce(self, messages: List[dict]) -> None:
         for message in messages:
-            self.producer.produce(message, key=message["objectId"])
+            self.producer.produce(message, key=message["aid"])
 
-    def convert_null_to_none(self, columns, d):
-        for column in columns:
-            if d.get(column) == "null":
-                d[column] = None
-
-    def execute(self, messages):
-        self.logger.info(f"Processing {len(messages)} alerts")
-        array = []
-
-        for m in messages:
-            self.convert_null_to_none(["drb"], m["candidate"])
-            record = self._extract_coordinates(m)
-            array.append(record)
-
-        df = pd.DataFrame(array, columns=["candid", "oid", "ra", "dec"])
-
-        df.drop_duplicates(subset=["candid"], inplace=True)
-
-        # executing xmatch request
-        self.logger.info(f"Getting xmatches")
-        result = self.request_xmacth_result_with_retries(df, self.retries)
-
-        # Write in database
-        self.logger.info(f"Writing xmatches in DB")
-        self.save_xmatch(result, object_df)
-
-        messages = self._format_result(messages, df, result)
-        self.logger.info(f"Producing messages")
-        self._produce(messages)
-
-    def request_xmacth_result_with_retries(self, data_frame, retries_count):
+    def request_xmatch(self, input_catalog: pd.DataFrame, retries_count: int) -> pd.DataFrame:
+        """
+        Recursive method allows request CDS xmatch.
+        :param input_catalog: Input catalog in dataframe. Must contain columns: ra, dec, identifier.
+        :param retries_count: number of attempts
+        :return: Data with its xmatch. Data without xmatch is not included.
+        """
         if retries_count > 0:
             try:
-                # make request
                 result = self.xmatch_client.execute(
-                    data_frame,
+                    input_catalog,
                     self.input_type,
                     self.catalog_alias,
                     self.columns,
@@ -240,16 +159,45 @@ class XmatchStep(GenericStep):
 
             except Exception as e:
                 self.logger.warning(f"CDS xmatch client returned with error {e}")
-                # error catched sleep before retry
                 time.sleep(self.retry_interval)
                 self.logger.warning("Retrying request")
-                return self.request_xmacth_result_with_retries(data_frame, retries_count - 1)
+                return self.request_xmatch(input_catalog, retries_count - 1)
 
         if retries_count == 0:
-            # raise error coundt find xmatch
             self.logger.error(
                 f"Retrieving xmatch from the client unsuccessful after {self.retries} retries. Shutting down."
             )
             raise Exception(
                 f"Could not retrieve xmatch from CDS after {self.retries} retries."
             )
+
+    def execute(self, messages: List[dict]) -> None:
+        """
+        Execute method. Contains the logic of the xmatch step, it does the following:
+        - Parse messages to a dataframe (and remove duplicated data)
+        - Generate an input catalog
+        - Do a xmatch between input catalog and CDS
+        - Join matches with input message
+        - Produce
+        :param messages: Input messages from stream
+        :return: None
+        """
+        self.logger.info(f"Processing {len(messages)} alerts")
+        light_curves = pd.DataFrame(messages)
+        light_curves.to_pickle("/home/javier/Desktop/DRs/data.pkl")
+        light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
+
+        input_catalog = light_curves[["aid", "meanra", "meandec"]]
+        input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
+
+        # executing xmatch request
+        self.logger.info(f"Getting xmatches")
+        result = self.request_xmatch(input_catalog, self.retries)
+
+        # Write in database
+        self.logger.info(f"Writing xmatches in DB")
+        # self.save_xmatch(result, object_df) # PSQL
+
+        output_messages = self._format_result(light_curves, result)
+        self.logger.info(f"Producing {len(output_messages)} messages")
+        self.produce(output_messages)
