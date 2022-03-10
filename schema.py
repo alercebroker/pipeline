@@ -17,7 +17,7 @@ DETECTIONS = {
             {"name": "e_mag", "type": "float"},
             {"name": "isdiffpos", "type": "int"},
             {"name": "rb", "type": ["float", "null"]},
-            {"name": "rbversion", "type": "string"},
+            {"name": "rbversion", "type": ["string", "null"]},
             {
                 "name": "extra_fields",
                 "type": {
