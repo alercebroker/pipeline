@@ -22,5 +22,5 @@ from apf.consumers import KafkaConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = XmatchStep(consumer,config=STEP_CONFIG,level=level)
+step = XmatchStep(consumer, config=STEP_CONFIG, level=level)
 step.start()

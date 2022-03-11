@@ -23,14 +23,13 @@ class XmatchStep(GenericStep):
         db_connection=None,
         xmatch_client=None,
         producer=None,
-        **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
 
         self.xmatch_config = config["XMATCH_CONFIG"]
         self.xmatch_client = xmatch_client or XmatchClient()
 
-        # xmatch variables
+        # xmatch parameters
         self.catalog = self.xmatch_config["CATALOG"]
         self.catalog_alias = self.catalog["name"]
         self.columns = self.catalog["columns"]
@@ -47,14 +46,15 @@ class XmatchStep(GenericStep):
         self.driver = db_connection or SQLConnection()
         self.driver.connect(config["DB_CONFIG"]["SQL"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
-        self.logger.info(f"XMATCH {self.version}")
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
+        self.insert_step_metadata()
 
     def insert_step_metadata(self):
         """
         Inserts step metadata like version and step name.
         """
+        self.logger.info("Writing step metadata")
         self.driver.query(Step).get_or_create(
             filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
             name=self.config["STEP_METADATA"]["STEP_NAME"],
@@ -63,7 +63,7 @@ class XmatchStep(GenericStep):
             date=datetime.datetime.now(),
         )
 
-    def _format_result(
+    def format_output(
         self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
     ) -> List[dict]:
         """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
@@ -190,7 +190,7 @@ class XmatchStep(GenericStep):
         # Write in database
         self.save_xmatch(xmatches)  # PSQL
         # Get output format
-        output_messages = self._format_result(light_curves, xmatches)
+        output_messages = self.format_output(light_curves, xmatches)
         self.logger.info(f"Producing {len(output_messages)} messages")
         # Produce data with xmatch
         self.produce(output_messages)

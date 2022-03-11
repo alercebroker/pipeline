@@ -1,9 +1,9 @@
 import pytest
 import unittest
 
-from xmatch_step.step import XmatchStep
-from xmatch_step import XmatchStep, XmatchClient, Step, Allwise, Xmatch
-from db_plugins.db.sql.models import Object
+from xmatch_step import XmatchStep
+from db_plugins.db.sql.models import Object, Step
+from cds_xmatch_client import XmatchClient
 from schema import SCHEMA
 from unittest import mock
 from tests.data.messages import generate_input_batch, get_default_object_values, get_fake_xmatch
