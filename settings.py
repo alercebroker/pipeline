@@ -86,8 +86,8 @@ DB_CONFIG = {
 
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_VERSION", "dev"),
-    "STEP_NAME": os.getenv("STEP_VERSION", "dev"),
+    "STEP_ID": os.getenv("STEP_ID", "dev"),
+    "STEP_NAME": os.getenv("STEP_NAME", "xmatch_step"),
     "STEP_COMMENTS": "",
 }
 
