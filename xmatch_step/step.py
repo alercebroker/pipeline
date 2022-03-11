@@ -4,7 +4,7 @@ from apf.producers import KafkaProducer
 from cds_xmatch_client import XmatchClient
 from db_plugins.db.sql.models import Allwise, Xmatch, Step
 from db_plugins.db.sql import SQLConnection
-from typing import List
+from typing import List, Set
 from xmatch_step.utils.constants import ALLWISE_MAP
 
 import numpy as np
@@ -74,7 +74,8 @@ class XmatchStep(GenericStep):
         """
         # Create a new dataframe that contain just two columns `aid` and `xmatches`.
         aid_in = xmatches["aid_in"]
-        xmatches.drop(columns=["ra_in", "dec_in", "col1", "aid_in"], inplace=True)
+        # Temporal code: the oid_in will be removed
+        xmatches.drop(columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True)
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
@@ -110,8 +111,17 @@ class XmatchStep(GenericStep):
             self.driver.query(Xmatch).bulk_insert(array)
 
     def produce(self, messages: List[dict]) -> None:
+        def exists_in_ztf(oids: Set[str]) -> bool:
+            for o in oids:
+                if "ZTF" in o:
+                    return True
+            return False
+
         for message in messages:
-            self.producer.produce(message, key=message["aid"])
+            # Temporal code: for produce only ZTF objects:
+            if exists_in_ztf(message["oid"]):
+                del message["oid"]
+                self.producer.produce(message, key=message["aid"])
 
     def request_xmatch(
         self, input_catalog: pd.DataFrame, retries_count: int
@@ -162,23 +172,30 @@ class XmatchStep(GenericStep):
         """
         self.logger.info(f"Processing {len(messages)} alerts")
         light_curves = pd.DataFrame(messages)
-        light_curves.to_pickle("/home/javier/Desktop/DRs/data.pkl")
         light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
 
-        input_catalog = light_curves[["aid", "meanra", "meandec"]]
+        # Temporal code: to manage oids of ZTF and store xmatch
+        light_curves["oid"] = light_curves["detections"].apply(lambda x: set(det["oid"] for det in x))
+        input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]  # Temp. code: remove only oid
+        input_catalog = input_catalog.explode("oid", ignore_index=True)
+        mask_ztf = input_catalog["oid"].str.contains("ZTF")
+        input_catalog = input_catalog[mask_ztf]
+        # End of temporal code
+
+        # rename columns of meanra and meandec to (ra, dec)
         input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
         # executing xmatch request
         self.logger.info(f"Getting xmatches")
-        result = self.request_xmatch(input_catalog, self.retries)
+        xmatches = self.request_xmatch(input_catalog, self.retries)
         # Write in database
-        self.save_xmatch(result)  # PSQL
+        self.save_xmatch(xmatches)  # PSQL
         # Get output format
-        output_messages = self._format_result(light_curves, result)
+        output_messages = self._format_result(light_curves, xmatches)
         self.logger.info(f"Producing {len(output_messages)} messages")
         # Produce data with xmatch
         self.produce(output_messages)
         del messages
         del light_curves
         del input_catalog
-        del result
+        del xmatches
         del output_messages

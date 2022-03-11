@@ -111,7 +111,7 @@ def generate_input_batch(n: int) -> List[dict]:
 
 def get_default_object_values(message: dict) -> dict:
     data = {
-        "oid": message["aid"],
+        "oid": f"ZTF{message['aid']}",
         "ndethist": 0.0,
         "ncovhist": 0.0,
         "mjdstarthist": 40000.0,
@@ -136,7 +136,8 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "aid_in": f["aid"],
+            "oid_in": f"ZTF{f['aid']}",  # Temp. code
+            "aid_in": f['aid'],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),
             "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",

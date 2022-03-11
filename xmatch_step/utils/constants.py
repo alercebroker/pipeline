@@ -20,6 +20,7 @@ ALLWISE_KEYS = [
 
 XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]
 
+# Temporal code: the oid in oid_in will replace with aid_in
 ALLWISE_MAP = {
     "AllWISE": "oid_catalog",
     "RAJ2000": "ra",
@@ -38,6 +39,6 @@ ALLWISE_MAP = {
     "e_Jmag": "j_msig_2mass",
     "e_Hmag": "h_msig_2mass",
     "e_Kmag": "k_msig_2mass",
-    "aid_in": "oid",
+    "oid_in": "oid",
     "angDist": "dist",
 }
