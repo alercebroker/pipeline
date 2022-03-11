@@ -6,7 +6,11 @@ from db_plugins.db.sql.models import Object, Step
 from cds_xmatch_client import XmatchClient
 from schema import SCHEMA
 from unittest import mock
-from tests.data.messages import generate_input_batch, get_default_object_values, get_fake_xmatch
+from tests.data.messages import (
+    generate_input_batch,
+    get_default_object_values,
+    get_fake_xmatch,
+)
 
 
 DB_CONFIG = {
@@ -99,5 +103,3 @@ class StepXmatchTest(unittest.TestCase):
         step = XmatchStep(config=self.step_config)
         mock_xmatch.return_value = get_fake_xmatch(self.batch)
         step.execute(self.batch)
-
-

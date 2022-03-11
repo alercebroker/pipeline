@@ -124,7 +124,7 @@ def get_default_object_values(message: dict) -> dict:
         "meandec": 0.0,
         "step_id_corr": "test",
         "corrected": False,
-        "stellar": False
+        "stellar": False,
     }
     return data
 
@@ -137,7 +137,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
             "oid_in": f"ZTF{f['aid']}",  # Temp. code
-            "aid_in": f['aid'],
+            "aid_in": f["aid"],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),
             "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
@@ -156,7 +156,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
             "e_W4mag": round(random.uniform(0, 1), 3),
             "e_Jmag": round(random.uniform(0, 1), 3),
             "e_Hmag": round(random.uniform(0, 1), 3),
-            "e_Kmag": round(random.uniform(0, 1), 3)
+            "e_Kmag": round(random.uniform(0, 1), 3),
         }
         fake.append(d)
     return pd.DataFrame(fake)

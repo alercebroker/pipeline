@@ -75,12 +75,16 @@ class XmatchStep(GenericStep):
         # Create a new dataframe that contain just two columns `aid` and `xmatches`.
         aid_in = xmatches["aid_in"]
         # Temporal code: the oid_in will be removed
-        xmatches.drop(columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True)
+        xmatches.drop(
+            columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True
+        )
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
                 "aid_in": aid_in,
-                "xmatches": xmatches.apply(lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1),
+                "xmatches": xmatches.apply(
+                    lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1
+                ),
             }
         )
         # Join xmatches with light curves
@@ -175,8 +179,12 @@ class XmatchStep(GenericStep):
         light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
 
         # Temporal code: to manage oids of ZTF and store xmatch
-        light_curves["oid"] = light_curves["detections"].apply(lambda x: set(det["oid"] for det in x))
-        input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]  # Temp. code: remove only oid
+        light_curves["oid"] = light_curves["detections"].apply(
+            lambda x: set(det["oid"] for det in x)
+        )
+        input_catalog = light_curves[
+            ["aid", "meanra", "meandec", "oid"]
+        ]  # Temp. code: remove only oid
         input_catalog = input_catalog.explode("oid", ignore_index=True)
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]

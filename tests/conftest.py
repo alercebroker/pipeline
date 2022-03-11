@@ -39,7 +39,9 @@ def kafka_service(docker_ip, docker_services):
 
 def is_responsive_psql(url):
     try:
-        conn = psycopg2.connect("dbname='postgres' user='postgres' host=localhost password='postgres'")
+        conn = psycopg2.connect(
+            "dbname='postgres' user='postgres' host=localhost password='postgres'"
+        )
         conn.close()
         return True
     except Exception as e:

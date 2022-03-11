@@ -139,4 +139,4 @@ cython_debug/
 
 .idea/
 src/
-.gitignore
+.coverage

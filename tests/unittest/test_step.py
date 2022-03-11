@@ -53,7 +53,6 @@ XMATCH_CONFIG = {
 
 
 class StepXmatchTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         step_config = {
@@ -72,10 +71,12 @@ class StepXmatchTest(unittest.TestCase):
         mock_db_connection = mock.create_autospec(SQLConnection)
         mock_xmatch_client = mock.create_autospec(XmatchClient)
         mock_producer = mock.create_autospec(GenericProducer)
-        cls.step = XmatchStep(config=step_config,
-                              producer=mock_producer,
-                              xmatch_client=mock_xmatch_client,
-                              db_connection=mock_db_connection)
+        cls.step = XmatchStep(
+            config=step_config,
+            producer=mock_producer,
+            xmatch_client=mock_xmatch_client,
+            db_connection=mock_db_connection,
+        )
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
     def test_insert_step_metadata(self) -> None:
@@ -105,7 +106,7 @@ class StepXmatchTest(unittest.TestCase):
         old_calls = len(self.step.producer.produce.mock_calls)
         self.step.produce(data)
         new_calls = len(self.step.producer.produce.mock_calls)
-        self.assertEqual(new_calls-old_calls, 2)
+        self.assertEqual(new_calls - old_calls, 2)
 
     def test_bad_xmatch(self):
         catalog = pd.DataFrame(self.batch)
@@ -128,4 +129,4 @@ class StepXmatchTest(unittest.TestCase):
         self.step.producer.produce.assert_called()
         mock_save_xmatch.assert_called()
         new_produce_calls = len(self.step.producer.produce.mock_calls)
-        self.assertEqual(new_produce_calls-old_produce_calls, 20)
+        self.assertEqual(new_produce_calls - old_produce_calls, 20)
