@@ -31,5 +31,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
     ports:
-      - 27017:27017
+      - "27017:27017"
     command: mongod
+
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
