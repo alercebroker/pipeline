@@ -1,23 +1,54 @@
 import pytest
 import unittest
 
-from ingestion_step.utils.multi_driver import MultiDriverConnection
+from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
+
+CONFIG = {
+    "PSQL": {
+        "ENGINE": "postgresql",
+        "HOST": "localhost",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "PORT": 5432,
+        "DB_NAME": "postgres"
+    },
+    "MONGO": {
+        "HOST": "localhost",
+        "USER": "test_user",
+        "PASSWORD": "test_password",
+        "PORT": 27017,
+        "DATABASE": "test_db",
+    }
+}
 
 
 @pytest.mark.usefixtures("mongo_service")
-@pytest.mark.usefixtures("kafka_service")
 @pytest.mark.usefixtures("psql_service")
 class MultiDriverTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = MultiDriverConnection()
-        pass
-
-    def setUp(self):
-        self.step.driver.create_db()
+        cls.driver = MultiDriverConnection(CONFIG)
+        cls.driver.connect()
+        cls.driver.create_db()
 
     @classmethod
     def tearDownClass(cls):
-        cls.step.driver.drop_db()
+        cls.driver.drop_db()
 
+    def test_get_or_created(self):
+        ins, created = self.driver.query().get_or_create(
+            model=Object,
+            filter_by={
+                "aid": "alerce1",
+                "oid": "ZTF1",
+                "lastmjd": 1,
+                "firstmjd": 1,
+                "ndet": 1,
+                "meanra": 0,
+                "meandec": 0,
+            },
+            _id="alerce1",
+        )
+        self.assertTrue(created)
