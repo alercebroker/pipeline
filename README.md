@@ -5,7 +5,7 @@
 ## how to develop a step without deploy infrastructure
 After install requirements, install another dependencies:
 ```bash
-pip install pytest numpy Cython p ytest-docker psycopg2
+pip install pytest numpy Cython pytest-docker psycopg2
 ```
 
 So, each you run the integration test, a process will create a Kafka, Zookeeper, MongoDB and PSQL for your use. After run tests the infrastructure shut down.
