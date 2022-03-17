@@ -2,7 +2,9 @@ import pytest
 import unittest
 
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
+import db_plugins.db.mongo.models as mongo_models
+import db_plugins.db.sql.models as psql_models
+
 
 CONFIG = {
     "PSQL": {
@@ -37,9 +39,9 @@ class MultiDriverTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.driver.drop_db()
 
-    def test_get_or_created(self):
+    def test_get_or_create(self):
         ins, created = self.driver.query().get_or_create(
-            model=Object,
+            model=mongo_models.Object,
             filter_by={
                 "aid": "alerce1",
                 "oid": "ZTF1",
@@ -52,3 +54,6 @@ class MultiDriverTest(unittest.TestCase):
             _id="alerce1",
         )
         self.assertTrue(created)
+
+    def test_psql_get_or_create(self):
+        pass
