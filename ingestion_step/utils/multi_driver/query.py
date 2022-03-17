@@ -4,14 +4,11 @@ from db_plugins.db.sql import SQLConnection
 
 
 class MultiQuery(BaseQuery):
-    def __init__(self, psql_driver: SQLConnection, mongo_driver: MongoConnection, read_from: str = "engine", model=None, *args, **kwargs):
+    def __init__(self, psql_driver: SQLConnection, mongo_driver: MongoConnection, model=None, *args, **kwargs):
+        self.query_class = model
         self.psql = psql_driver
         self.mongo = mongo_driver
-        self.read_from = read_from
-        self.engine = "mongo"
-        if kwargs["engine"]:
-            self.engine = kwargs["engine"]
-        pass
+        self.engine = kwargs.get("engine", "mongo")
 
     def check_exists(self, model, filter_by):
         """Check if a model exists in the database."""
@@ -34,11 +31,21 @@ class MultiQuery(BaseQuery):
         # model
         self.psql.query().bulk_insert(objects, model)
 
-    def find_all(self):
+    def find_all(self, filter_by={}, paginate=True):
         """Retrieve all items from the result of this query."""
-        if self.engine is "mongo":
-            return self.mongo.query().find_all()
-        raise NotImplementedError()
+        if self.engine == "mongo":
+            if self.query_class:
+                return self.mongo.query().find_all(model=self.query_class, filter_by=filter_by, paginate=paginate)
+            else:
+                return self.mongo.query().find_all(filter_by=filter_by, paginate=paginate)
+
+        elif self.engine == "psql":
+            return self.psql.query(self.query_class).find_all()
+
+        elif self.engine == "both":
+            pass
+        else:
+            raise NotImplementedError()
 
     def find_one(self, filter_by={}, model=None, **kwargs):
         """Retrieve only one item from the result of this query.

@@ -2,6 +2,27 @@
 
 # Ingestion Step
 
+## how to develop a step without deploy infrastructure
+After install requirements, install another dependencies:
+```bash
+pip install pytest numpy Cython p ytest-docker psycopg2
+```
+
+So, each you run the integration test, a process will create a Kafka, Zookeeper, MongoDB and PSQL for your use. After run tests the infrastructure shut down.
+
+Then run the integration test:
+
+Only test multi driver
+```bash
+python -m pytest -x -s tests/integration/test_multi_driver.py 
+```
+
+Only test step
+```bash
+python -m pytest -x -s tests/integration/test_step.py 
+```
+
+
 ## Description
 
 Insert data from any survey parsed and assigned by the [Sorting Hat](https://github.com/alercebroker/sorting_hat_step)
