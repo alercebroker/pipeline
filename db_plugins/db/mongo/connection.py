@@ -54,7 +54,7 @@ class MongoConnection(DatabaseConnection):
             username=config["USER"],
             password=config["PASSWORD"],
             port=config["PORT"],
-            authSource=config["DATABASE"],
+            authSource=config.get("AUTH_SOURCE", config["DATABASE"]),
         )
         self.base.set_database(config["DATABASE"])
         self.database = self.client[config["DATABASE"]]
