@@ -40,6 +40,7 @@ class MongoConnection(DatabaseConnection):
                     "PORT": 27017, # mongo tipically runs on port 27017.
                                    # Notice that we use an int here.
                     "DATABASE": "database",
+                    "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
         base : db_plugins.db.mongo.models.Base
             Base class to initialize the database
