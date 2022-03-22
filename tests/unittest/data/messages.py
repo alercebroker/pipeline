@@ -94,6 +94,10 @@ def get_extra_fields(telescope: str, **kwargs):
             "distnr": random.random(),
             "magnr": random.random(),
             "sigmagnr": random.random(),
+            "ndethist": random.random(),
+            "ncovhist": random.random(),
+            "jdstarthist": random.uniform(59000, 60000),
+            "jdendhist": random.uniform(59000, 60000),
             "prv_candidates": get_ztf_prv_candidates(**kwargs),
         }
 

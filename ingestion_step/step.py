@@ -15,7 +15,6 @@ from .utils.correction.strategies import (
     ZTFCorrectionStrategy,
 )
 
-
 from typing import Tuple, List
 
 import numpy as np
@@ -257,23 +256,26 @@ class IngestionStep(GenericStep):
         new_objects["new"] = ~new_objects["aid"].isin(aids)
         return new_objects
 
-    def apply_objs_stats_from_correction_psql(self, df: pd.DataFrame) -> pd.Series:
-        # add g-r, corrected, reference change, etc
+    def obj_stats(self, df: pd.DataFrame):
         response = {}
-        df_mjd = df.mjd
-        idx_min = df_mjd.values.argmin()
-        df_min = df.iloc[idx_min]
+        df_mjd = df["mjd"]
+        idxmax = df_mjd.values.argmax()
+        df_max = df.iloc[idxmax]
         df_ra = df["ra"]
         df_dec = df["dec"]
-        df_e_ra = df["e_ra"]
-        df_e_dec = df["e_dec"]
-
-        response["meanra"], response["e_ra"] = self.compute_meanra(df_ra, df_e_ra)
-        response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
+        response["ndethist"] = df_max["extra_fields"]["ndethist"]
+        response["ncovhist"] = df_max["extra_fields"]["ncovhist"]
+        response["mjdstarthist"] = df_max["extra_fields"]["jdstarthist"] - 2400000.5
+        response["mjdendhist"] = df_max["extra_fields"]["jdendhist"] - 2400000.5
+        response["meanra"] = df_ra.mean()
+        response["meandec"] = df_dec.mean()
+        response["sigmara"] = df_ra.std()
+        response["sigmadec"] = df_dec.std()
         response["firstmjd"] = df_mjd.min()
-        response["lastmjd"] = df_mjd.max()
-        response["tid"] = df_min.tid
-        response["ndet"] = len(df)
+        response["lastmjd"] = df_max.mjd
+        response["deltamjd"] = response["lastmjd"] - response["firstmjd"]
+        response["diffpos"] = df["isdiffpos"].min() > 0
+        response["reference_change"] = response["mjdendhist"] > response["firstmjd"]
         return pd.Series(response)
 
     def preprocess_objects_psql(self, objects: pd.DataFrame, light_curves: dict):
@@ -296,9 +298,7 @@ class IngestionStep(GenericStep):
         # New objects referer to: empirical new objects
         # (without detections in the past) and modified objects
         # (I mean existing objects in database)
-        new_objects = detections.groupby("oid").apply(
-            self.apply_objs_stats_from_correction_psql
-        )
+        new_objects = detections.groupby("oid").apply(self.obj_stats)
         new_objects.reset_index(inplace=True)
         new_objects["new"] = ~new_objects["oid"].isin(oids)
         return new_objects
@@ -529,7 +529,6 @@ class IngestionStep(GenericStep):
         detections = detections[detections["tid"] == "ZTF"]
         non_detections_prv_candidates = non_detections_prv_candidates[non_detections_prv_candidates["tid"] == "ZTF"]
         unique_oids = alerts["oid"].unique().tolist()
-        self.logger.info("getting lcs")
 
         light_curves = self.preprocess_lightcurves(detections, non_detections_prv_candidates, engine="psql")
         objects = self.get_objects(unique_oids, engine="psql")
