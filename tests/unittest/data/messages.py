@@ -216,3 +216,55 @@ def generate_alerts_batch(n: int, same_objects: int = 10) -> List[dict]:
         batch[al]["candid"] = int(str(al + 1).ljust(8, "0"))
     random.shuffle(batch, lambda: 0.1)
     return batch
+
+
+def generate_random_detections(n):
+    batch = []
+    for i in range(n):
+        ex = {
+            "tid": "EXAMPLE",
+            "aid": f"ALERCE{i}",
+            "oid": f"EX{i}",
+            "candid": random.randint(1000000, 9000000),
+            "mjd": random.uniform(59000, 60000),
+            "fid": random.randint(1, 2),
+            "ra": random.uniform(0, 360),
+            "dec": random.uniform(-90, 90),
+            "e_ra": random.random(),
+            "e_dec": random.random(),
+            "mag": random.uniform(15, 20),
+            "e_mag": random.random(),
+            "isdiffpos": random.choice([-1, 1]),
+            "rb": random.random(),
+            "rfid": random.randint(1000000, 9000000),
+            "corrected": random.choice([False, True]),
+            "parent_candid": None,
+            "has_stamp": True,
+            "step_id_corr": "example",
+            "rbversion": "version123121",
+            "extra_fields": {}
+        }
+        batch.append(ex)
+    return batch
+
+
+def generate_random_objects(n):
+    batch = []
+    for i in range(n):
+        ex = {
+            "_id": f"ALERCE{i}",
+            "aid": f"ALERCE{i}",
+            "oid": f"EX{i}",
+            "meanra": random.uniform(0, 360),
+            "meandec": random.uniform(-90, 90),
+            "ndet": random.randint(1, 20),
+            "firstmjd":  random.uniform(59000, 60000),
+            "lastmjd":  random.uniform(59000, 60000) + random.uniform(1, 20),
+            "extra_fields": {
+                "e_ra": 0.,
+                "e_dec": 0.,
+                "tid": "EXAMPLE"
+            }
+        }
+        batch.append(ex)
+    return batch

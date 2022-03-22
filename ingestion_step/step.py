@@ -1,9 +1,7 @@
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 
 from .utils.constants import DET_KEYS, OBJ_KEYS, NON_DET_KEYS
 from .utils.prv_candidates.processor import Processor
@@ -61,73 +59,76 @@ class IngestionStep(GenericStep):
         if config.get("PRODUCER_CONFIG", False):
             self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
-        self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
-        self.driver.connect(config["DB_CONFIG"])
+        self.driver = db_connection or MultiDriverConnection(config["DB_CONFIG"])
+        self.driver.connect()
 
-    def get_objects(self, aids: List[str or int]):
+    def get_objects(self, aids: List[str or int], engine="mongo"):
         """
 
         Parameters
         ----------
         aids
-
+        engine
         Returns
         -------
 
         """
         filter_by = {"aid": {"$in": aids}}
-        objects = self.driver.query().find_all(
-            model=Object, filter_by=filter_by, paginate=False
-        )
-        return pd.DataFrame(objects, columns=OBJ_KEYS)
+        objects = self.driver.query("Object", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        if len(objects) == 0 or engine == "mongo":
+            return pd.DataFrame(objects, columns=OBJ_KEYS)
+        return pd.DataFrame(objects)
 
-    def get_detections(self, aids: List[str or int]):
+    def get_detections(self, aids: List[str or int], engine="mongo"):
         """
 
         Parameters
         ----------
         aids
-
+        engine
         Returns
         -------
 
         """
         filter_by = {"aid": {"$in": aids}}
-        detections = self.driver.query().find_all(
-            model=Detection, filter_by=filter_by, paginate=False
-        )
-        return pd.DataFrame(detections, columns=DET_KEYS)
+        detections = self.driver.query("Detection", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        if len(detections) == 0 or engine == "mongo":
+            return pd.DataFrame(detections, columns=DET_KEYS)
+        return pd.DataFrame(detections)
 
-    def get_non_detections(self, aids: List[str or int]):
+    def get_non_detections(self, aids: List[str or int], engine="mongo"):
         """
 
         Parameters
         ----------
         aids
-
+        engine
         Returns
         -------
 
         """
         filter_by = {"aid": {"$in": aids}}
-        non_detections = self.driver.query().find_all(
-            model=NonDetection, filter_by=filter_by, paginate=False
-        )
-        return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
+        non_detections = self.driver.query("NonDetection", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        if len(non_detections) == 0 or engine == "mongo":
+            return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
+        return pd.DataFrame(non_detections)
 
-    def insert_objects(self, objects: pd.DataFrame) -> None:
+    def insert_objects(self, objects: pd.DataFrame, engine="mongo") -> None:
         """
         Insert or update records in database. Insert new objects. Update old objects.
 
         Parameters
         ----------
         objects: Dataframe of astronomical objects.
-
+        engine
         Returns
         -------
 
         """
-        objects.drop_duplicates(["aid"], inplace=True)
+        if engine == "mongo":
+            objects.drop_duplicates(["aid"], inplace=True)
+        else:
+            objects.drop_duplicates(["oid"], inplace=True)
         new_objects = objects["new"]
         objects.drop(columns=["new"], inplace=True)
 
@@ -137,34 +138,31 @@ class IngestionStep(GenericStep):
             f"Inserting {len(to_insert)} and updating {len(to_update)} object(s)"
         )
         if len(to_insert) > 0:
-            # to_insert["_id"] = to_insert["aid"].values
-            to_insert.insert(1, "_id", to_insert["aid"].values)
+            if engine == "mongo":
+                to_insert["_id"] = to_insert["aid"].values
             to_insert.replace({np.nan: None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
-            self.driver.query().bulk_insert(dict_to_insert, Object)
+            self.driver.query("Object", engine=engine).bulk_insert(dict_to_insert)
             del to_insert
 
         if len(to_update) > 0:
             to_update.replace({np.nan: None}, inplace=True)
             dict_to_update = to_update.to_dict("records")
-            instances = []
-            new_values = []
             filters = []
             for obj in dict_to_update:
-                instances.append(Object(**obj))
-                new_values.append(Object(**obj))
-                filters.append({"_id": obj["aid"]})
-            self.driver.query().bulk_update(
-                instances, new_values, filter_fields=filters
-            )
+                if engine == "mongo":
+                    filters.append({"_id": obj["aid"]})
+                else:
+                    filters.append({"_id": obj["oid"]})
+            self.driver.query("Object", engine=engine).bulk_update(dict_to_update, filter_by=filters)
 
-    def insert_detections(self, detections: pd.DataFrame):
+    def insert_detections(self, detections: pd.DataFrame, engine="mongo"):
         """
 
         Parameters
         ----------
         detections
-
+        engine
         Returns
         -------
 
@@ -172,15 +170,15 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Inserting {len(detections)} new detections")
         detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
-        self.driver.query().bulk_insert(dict_detections, Detection)
+        self.driver.query("Detection", engine=engine).bulk_insert(dict_detections)
 
-    def insert_non_detections(self, non_detections: pd.DataFrame):
+    def insert_non_detections(self, non_detections: pd.DataFrame, engine="mongo"):
         """
 
         Parameters
         ----------
         non_detections
-
+        engine
         Returns
         -------
 
@@ -188,7 +186,7 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Inserting {len(non_detections)} new non_detections")
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
-        self.driver.query().bulk_insert(dict_non_detections, NonDetection)
+        self.driver.query("NonDetection", engine=engine).bulk_insert(dict_non_detections)
 
     @classmethod
     def calculate_stats_coordinates(cls, coordinates, e_coordinates):
@@ -259,20 +257,66 @@ class IngestionStep(GenericStep):
         new_objects["new"] = ~new_objects["aid"].isin(aids)
         return new_objects
 
-    def get_lightcurves(self, oids):
+    def apply_objs_stats_from_correction_psql(self, df: pd.DataFrame) -> pd.Series:
+        # add g-r, corrected, reference change, etc
+        response = {}
+        df_mjd = df.mjd
+        idx_min = df_mjd.values.argmin()
+        df_min = df.iloc[idx_min]
+        df_ra = df["ra"]
+        df_dec = df["dec"]
+        df_e_ra = df["e_ra"]
+        df_e_dec = df["e_dec"]
+
+        response["meanra"], response["e_ra"] = self.compute_meanra(df_ra, df_e_ra)
+        response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
+        response["firstmjd"] = df_mjd.min()
+        response["lastmjd"] = df_mjd.max()
+        response["tid"] = df_min.tid
+        response["ndet"] = len(df)
+        return pd.Series(response)
+
+    def preprocess_objects_psql(self, objects: pd.DataFrame, light_curves: dict):
         """
 
         Parameters
         ----------
-        oids
+        objects
+        light_curves
 
         Returns
         -------
 
         """
+        # Keep existing objects
+        oids = objects["oid"].unique()
+        detections = light_curves["detections"]
+        detections.drop_duplicates(["candid", "oid"], inplace=True, keep="first")
+        detections.reset_index(inplace=True, drop=True)
+        # New objects referer to: empirical new objects
+        # (without detections in the past) and modified objects
+        # (I mean existing objects in database)
+        new_objects = detections.groupby("oid").apply(
+            self.apply_objs_stats_from_correction_psql
+        )
+        new_objects.reset_index(inplace=True)
+        new_objects["new"] = ~new_objects["oid"].isin(oids)
+        return new_objects
+
+    def get_lightcurves(self, oids, engine="mongo"):
+        """
+
+        Parameters
+        ----------
+        oids
+        engine
+        Returns
+        -------
+
+        """
         light_curves = {
-            "detections": self.get_detections(oids),
-            "non_detections": self.get_non_detections(oids),
+            "detections": self.get_detections(oids, engine=engine),
+            "non_detections": self.get_non_detections(oids, engine=engine),
         }
         self.logger.info(
             f"Light Curves ({len(oids)} objects) of this batch: "
@@ -283,7 +327,7 @@ class IngestionStep(GenericStep):
         return light_curves
 
     def preprocess_lightcurves(
-        self, detections: pd.DataFrame, non_detections: pd.DataFrame
+        self, detections: pd.DataFrame, non_detections: pd.DataFrame, engine="mongo"
     ) -> dict:
         """
 
@@ -291,28 +335,32 @@ class IngestionStep(GenericStep):
         ----------
         detections
         non_detections
-
+        engine
         Returns
         -------
 
         """
         # Assign a label to difference new detections
         detections["new"] = True
-
         # Get unique oids from new alerts
-        aids = detections["aid"].unique().tolist()
+        if engine == "psql":
+            aids = detections["oid"].unique().tolist()
+        else:
+            aids = detections["aid"].unique().tolist()
         # Retrieve old detections and non_detections from database
         # and put new label to false
-        light_curves = self.get_lightcurves(aids)
+        light_curves = self.get_lightcurves(aids, engine=engine)
         light_curves["detections"]["new"] = False
         light_curves["non_detections"]["new"] = False
-
         old_detections = light_curves["detections"]
 
         # Remove tuple of [aid, candid] that are new detections and
         # old detections. This is a mask that retrieve
         # existing tuples on db.
-        unique_keys_detections = ["aid", "candid"]
+        if engine == "mongo":
+            unique_keys_detections = ["aid", "candid"]
+        else:
+            unique_keys_detections = ["oid", "candid"]
         # Checking if already on the database
         index_detections = pd.MultiIndex.from_frame(detections[unique_keys_detections])
         old_index_detections = pd.MultiIndex.from_frame(
@@ -335,7 +383,10 @@ class IngestionStep(GenericStep):
             old_non_detections["round_mjd"] = old_non_detections["mjd"].round(5)
             # Remove [aid, fid, round_mjd] that are new non_dets
             # and old non_dets.
-            unique_keys_non_detections = ["aid", "fid", "round_mjd"]
+            if engine == "mongo":
+                unique_keys_non_detections = ["aid", "fid", "round_mjd"]
+            else:
+                unique_keys_non_detections = ["oid", "fid", "round_mjd"]
             # Checking if already on the database
             index_non_detections = pd.MultiIndex.from_frame(
                 non_detections[unique_keys_non_detections]
@@ -468,6 +519,71 @@ class IngestionStep(GenericStep):
             n_messages += 1
         self.logger.info(f"{n_messages} messages produced")
 
+    def execute_psql(self,
+                     alerts: pd.DataFrame,
+                     detections: pd.DataFrame,
+                     non_detections_prv_candidates: pd.DataFrame):
+        # Get just ZTF objects
+        self.logger.info("Working on PSQL")
+        alerts = alerts[alerts["tid"] == "ZTF"]
+        detections = detections[detections["tid"] == "ZTF"]
+        non_detections_prv_candidates = non_detections_prv_candidates[non_detections_prv_candidates["tid"] == "ZTF"]
+        unique_oids = alerts["oid"].unique().tolist()
+        self.logger.info("getting lcs")
+
+        light_curves = self.preprocess_lightcurves(detections, non_detections_prv_candidates, engine="psql")
+        objects = self.get_objects(unique_oids, engine="psql")
+        objects = self.preprocess_objects_psql(objects, light_curves)
+        self.insert_objects(objects, engine="psql")
+        new_detections = light_curves["detections"]["new"]
+        new_detections = light_curves["detections"][new_detections]
+        new_detections.loc["step_id_corr"] = self.version
+        new_detections.drop(columns=["new"], inplace=True)
+        self.insert_detections(new_detections, engine="psql")
+        new_non_detections = light_curves["non_detections"]["new"]
+        new_non_detections = light_curves["non_detections"][new_non_detections]
+        new_non_detections.drop(columns=["new"], inplace=True)
+        self.insert_non_detections(new_non_detections)
+
+    def execute_mongo(self,
+                      alerts: pd.DataFrame,
+                      detections: pd.DataFrame,
+                      non_detections_prv_candidates: pd.DataFrame,
+                      ):
+        # Get unique alerce ids for get objects from database
+        unique_aids = alerts["aid"].unique().tolist()
+        # Concat new and old detections and non detections.
+        light_curves = self.preprocess_lightcurves(
+            detections, non_detections_prv_candidates
+        )
+
+        # Getting other tables: retrieve existing objects
+        # and create new objects
+        objects = self.get_objects(unique_aids)
+        objects = self.preprocess_objects(objects, light_curves)
+        # Insert new objects and update old objects on database
+        self.insert_objects(objects)
+        # Insert new detections and put step_version
+        new_detections = light_curves["detections"]["new"]
+        new_detections = light_curves["detections"][new_detections]
+        new_detections.loc["step_id_corr"] = self.version
+        new_detections.drop(columns=["new"], inplace=True)
+        self.insert_detections(new_detections)
+        # Insert new now detections
+        new_non_detections = light_curves["non_detections"]["new"]
+        new_non_detections = light_curves["non_detections"][new_non_detections]
+        new_non_detections.drop(columns=["new"], inplace=True)
+        self.insert_non_detections(new_non_detections)
+        # produce to some topic
+        if self.producer:
+            self.produce(alerts, objects, light_curves)
+        del light_curves["detections"]
+        del light_curves["non_detections"]
+        del light_curves
+        del objects
+        del new_detections
+        del new_non_detections
+
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
         alerts = pd.DataFrame(messages)
@@ -496,40 +612,9 @@ class IngestionStep(GenericStep):
         )
         # Do correction to detections from stream
         detections = self.correct(detections)
-        # Concat new and old detections and non detections.
-        light_curves = self.preprocess_lightcurves(
-            detections, non_dets_from_prv_candidates
-        )
-        # Get unique alerce ids for get objects from database
-        unique_aids = alerts["aid"].unique().tolist()
-
-        # Getting other tables: retrieve existing objects
-        # and create new objects
-        objects = self.get_objects(unique_aids)
-        objects = self.preprocess_objects(objects, light_curves)
-        # Insert new objects and update old objects on database
-        self.insert_objects(objects)
-        # Insert new detections and put step_version
-        new_detections = light_curves["detections"]["new"]
-        new_detections = light_curves["detections"][new_detections]
-        new_detections.loc["step_id_corr"] = self.version
-        new_detections.drop(columns=["new"], inplace=True)
-        self.insert_detections(new_detections)
-        # Insert new now detections
-        new_non_detections = light_curves["non_detections"]["new"]
-        new_non_detections = light_curves["non_detections"][new_non_detections]
-        new_non_detections.drop(columns=["new"], inplace=True)
-        self.insert_non_detections(new_non_detections)
-
-        # produce to some topic
-        if self.producer:
-            self.produce(alerts, objects, light_curves)
+        # Insert/update data on mongo
+        self.execute_mongo(alerts, detections, non_dets_from_prv_candidates)
+        self.execute_psql(alerts, detections, non_dets_from_prv_candidates)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
-        del light_curves["detections"]
-        del light_curves["non_detections"]
-        del light_curves
-        del objects
-        del new_detections
-        del new_non_detections

@@ -11,11 +11,21 @@ from schema import SCHEMA
 
 
 DB_CONFIG = {
-    "HOST": "localhost",
-    "USER": "test_user",
-    "PASSWORD": "test_password",
-    "PORT": 27017,
-    "DATABASE": "test_db",
+    "PSQL": {
+        "ENGINE": "postgresql",
+        "HOST": "localhost",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "PORT": 5432,
+        "DB_NAME": "postgres"
+    },
+    "MONGO": {
+        "HOST": "localhost",
+        "USER": "test_user",
+        "PASSWORD": "test_password",
+        "PORT": 27017,
+        "DATABASE": "test_db",
+    }
 }
 
 PRODUCER_CONFIG = {
@@ -30,7 +40,7 @@ PRODUCER_CONFIG = {
 def _chunks(lst: List, n: int) -> List:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i : i + n]
+        yield lst[i: i + n]
 
 
 def _deserialize_message(message: cimpl.Message):
@@ -41,6 +51,7 @@ def _deserialize_message(message: cimpl.Message):
 
 
 @pytest.mark.usefixtures("mongo_service")
+@pytest.mark.usefixtures("psql_service")
 @pytest.mark.usefixtures("kafka_service")
 class StepIntegrationTest(unittest.TestCase):
     @classmethod
@@ -58,9 +69,9 @@ class StepIntegrationTest(unittest.TestCase):
         }
         cls.step = IngestionStep(config=cls.step_config)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.step.driver.drop_db()
+    # @classmethod
+    # def tearDownClass(cls):
+    #     cls.step.driver.drop_db()
 
     def setUp(self):
         self.step.driver.create_db()

@@ -11,10 +11,13 @@ import db_plugins.db.sql.models as psql_models
 MODELS = {
     "psql": {
         "Object": psql_models.Object,
-        "Detection": psql_models.Detection
+        "Detection": psql_models.Detection,
+        "NonDetection": psql_models.NonDetection
     },
     "mongo": {
-        "Object": mongo_models.Object
+        "Object": mongo_models.Object,
+        "Detection": mongo_models.Detection,
+        "NonDetection": mongo_models.NonDetection
     }
 }
 
@@ -50,12 +53,14 @@ class MultiQuery(BaseQuery):
                  psql_driver: SQLConnection,
                  mongo_driver: MongoConnection,
                  model=None,
+                 mapper=None,
                  *args,
                  **kwargs):
         self.model = model
         self.psql = psql_driver
         self.mongo = mongo_driver
         self.engine = kwargs.get("engine", "mongo")
+        self.mapper = mapper
 
     def check_exists(self, model, filter_by):
         """Check if a model exists in the database."""
@@ -78,6 +83,7 @@ class MultiQuery(BaseQuery):
             to_update = [model(**x) for x in to_update]
             return self.mongo.query().bulk_update(to_update, to_update, filter_fields=filter_by)
         elif self.engine == "psql":
+            to_update = self.mapper.convert(to_update, model)
             bind_object = to_update[0]
             where_clause = update_to_psql(model, filter_by)
             params_statement = dict(zip(bind_object.keys(), map(bindparam, bind_object.keys())))
@@ -89,7 +95,7 @@ class MultiQuery(BaseQuery):
         """Return a pagination object from this query."""
         raise NotImplementedError()
 
-    def bulk_insert(self, objects: List[object]):
+    def bulk_insert(self, objects: List[dict]):
         try:
             model = MODELS[self.engine][self.model]
         except Exception as e:
@@ -98,11 +104,12 @@ class MultiQuery(BaseQuery):
         if self.engine == "mongo":
             self.mongo.query().bulk_insert(objects, model)
         elif self.engine == "psql":
-            self.psql.query().bulk_insert(objects, model)
+            psql_data = self.mapper.convert(objects, model)
+            self.psql.query().bulk_insert(psql_data, model)
         else:
             raise NotImplementedError()
 
-    def find_all(self, filter_by={}, paginate=True):
+    def find_all(self, filter_by={}, paginate=False):
         """Retrieve all items from the result of this query."""
         try:
             model = MODELS[self.engine][self.model]
@@ -114,7 +121,11 @@ class MultiQuery(BaseQuery):
             return [x for x in cursor]
         elif self.engine == "psql":
             filter_by = filter_to_psql(model, filter_by)
-            return self.psql.query().find_all(model=model, filter_by=filter_by, paginate=paginate)
+            response = self.psql.query().find_all(model=model, filter_by=filter_by, paginate=paginate)
+            response = [x.__dict__ for x in response]
+            for x in response:
+                del x["_sa_instance_state"]
+            return response
         else:
             raise NotImplementedError()
 

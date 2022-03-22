@@ -2,7 +2,7 @@ from db_plugins.db.generic import DatabaseConnection
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.sql import SQLConnection
 from ingestion_step.utils.multi_driver.query import MultiQuery
-# from ingestion_step.utils.multi_driver.mapper import Mapper
+from ingestion_step.utils.multi_driver.mapper import Mapper
 
 
 class MultiDriverConnection(DatabaseConnection):
@@ -11,6 +11,7 @@ class MultiDriverConnection(DatabaseConnection):
         self.config = config
         self.psql_driver = SQLConnection()
         self.mongo_driver = MongoConnection()
+        self.mapper = Mapper("ingestion_step")
 
     def connect(self):
         self.mongo_driver.connect(self.config["MONGO"])
@@ -23,6 +24,7 @@ class MultiDriverConnection(DatabaseConnection):
     def drop_db(self):
         self.mongo_driver.drop_db()
         self.psql_driver.drop_db()
+        self.psql_driver.session.close()
 
     def query(self, query_class=None, *args, **kwargs):
-        return MultiQuery(self.psql_driver, self.mongo_driver, query_class, *args, **kwargs)
+        return MultiQuery(self.psql_driver, self.mongo_driver, query_class, self.mapper, *args, **kwargs)
