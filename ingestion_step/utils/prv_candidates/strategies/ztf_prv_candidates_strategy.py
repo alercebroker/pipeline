@@ -20,7 +20,6 @@ class ZTFPreviousCandidatesParser(SurveyParser):
         "candid": "candid",
         "mjd": "jd",
         "fid": "fid",
-        "pid": "pid",
         "ra": "ra",
         "dec": "dec",
         "mag": "magpsf",

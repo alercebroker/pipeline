@@ -1,5 +1,3 @@
-from db_plugins.db.mongo import models as mongo_models
-from db_plugins.db.sql import models as psql_models
 from typing import List
 
 
@@ -7,7 +5,7 @@ class Mapper:
     def __init__(self, step_id_version: str):
         self.step_id_version = step_id_version
 
-    def _convert_object(self, object_: dict) -> psql_models.Object:
+    def _convert_object(self, object_: dict) -> dict:
         data = {
             "oid": object_["oid"],
             "ndethist": 1,
@@ -39,7 +37,11 @@ class Mapper:
         if isinstance(data, list):
             if "Object" in str(model):
                 response = [self._convert_object(x) for x in data]
+            else:
+                response = data
         else:
             if "Object" in str(model):
                 response = self._convert_object(data)
+            else:
+                response = data
         return response

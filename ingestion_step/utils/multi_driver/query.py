@@ -12,7 +12,13 @@ MODELS = {
     "psql": {
         "Object": psql_models.Object,
         "Detection": psql_models.Detection,
-        "NonDetection": psql_models.NonDetection
+        "NonDetection": psql_models.NonDetection,
+        "MagStats": psql_models.MagStats,
+        "Ps1_ztf": psql_models.Ps1_ztf,
+        "Ss_ztf": psql_models.Ss_ztf,
+        "Reference": psql_models.Reference,
+        "Dataquality": psql_models.Dataquality,
+        "Gaia_ztf": psql_models.Gaia_ztf,
     },
     "mongo": {
         "Object": mongo_models.Object,
@@ -26,7 +32,8 @@ def filter_to_psql(model: object, filter_by: dict):
     filters = []
     for attribute, _filter in filter_by.items():
         if "$in" in _filter:
-            f = getattr(model, "oid").in_(_filter["$in"])
+            attribute = "oid" if attribute == "aid" else attribute
+            f = getattr(model, attribute).in_(_filter["$in"])
             filters.append(f)
     if len(filters) == 1:
         return filters[0]
@@ -38,7 +45,7 @@ def filter_to_psql(model: object, filter_by: dict):
 def update_to_psql(model: object, filter_by: List[dict]):
     filters = []
     for attribute, _filter in filter_by[0].items():
-        if attribute == "_id" and model is psql_models.Object:
+        if attribute == "_id" and (model is psql_models.Object or model is psql_models.Ps1_ztf):
             f = getattr(model, "oid") == bindparam("oid")
             filters.append(f)
     if len(filters) == 1:

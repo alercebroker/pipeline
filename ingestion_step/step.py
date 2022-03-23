@@ -3,7 +3,7 @@ from apf.producers import KafkaProducer
 
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 
-from .utils.constants import DET_KEYS, OBJ_KEYS, NON_DET_KEYS
+from .utils.constants import DET_KEYS, OBJ_KEYS, NON_DET_KEYS, OLD_DET_KEYS
 from .utils.prv_candidates.processor import Processor
 from .utils.prv_candidates.strategies import (
     ATLASPrvCandidatesStrategy,
@@ -14,7 +14,19 @@ from .utils.correction.strategies import (
     ATLASCorrectionStrategy,
     ZTFCorrectionStrategy,
 )
+from .utils.old_preprocess import (
+    get_catalog,
+    preprocess_dataquality,
+    insert_dataquality,
+    preprocess_ss,
+    insert_ss,
+    preprocess_reference,
+    insert_reference,
+    preprocess_ps1,
+    insert_ps1
+)
 
+from lc_correction.compute import apply_mag_stats
 from typing import Tuple, List
 
 import numpy as np
@@ -263,10 +275,10 @@ class IngestionStep(GenericStep):
         df_max = df.iloc[idxmax]
         df_ra = df["ra"]
         df_dec = df["dec"]
-        response["ndethist"] = df_max["extra_fields"]["ndethist"]
-        response["ncovhist"] = df_max["extra_fields"]["ncovhist"]
-        response["mjdstarthist"] = df_max["extra_fields"]["jdstarthist"] - 2400000.5
-        response["mjdendhist"] = df_max["extra_fields"]["jdendhist"] - 2400000.5
+        response["ndethist"] = df_max["ndethist"]
+        response["ncovhist"] = df_max["ncovhist"]
+        response["mjdstarthist"] = df_max["jdstarthist"] - 2400000.5
+        response["mjdendhist"] = df_max["jdendhist"] - 2400000.5
         response["meanra"] = df_ra.mean()
         response["meandec"] = df_dec.mean()
         response["sigmara"] = df_ra.std()
@@ -519,6 +531,7 @@ class IngestionStep(GenericStep):
             n_messages += 1
         self.logger.info(f"{n_messages} messages produced")
 
+    # TEMPORAL CODE
     def execute_psql(self,
                      alerts: pd.DataFrame,
                      detections: pd.DataFrame,
@@ -528,21 +541,64 @@ class IngestionStep(GenericStep):
         alerts = alerts[alerts["tid"] == "ZTF"]
         detections = detections[detections["tid"] == "ZTF"]
         non_detections_prv_candidates = non_detections_prv_candidates[non_detections_prv_candidates["tid"] == "ZTF"]
+        # Reset all indexes
+        alerts.reset_index(inplace=True)
+        detections.reset_index(inplace=True)
+        non_detections_prv_candidates.reset_index(inplace=True)
+        # Get unique oids for ZTF
         unique_oids = alerts["oid"].unique().tolist()
-
+        # Create a new dataframe with extra fields and remove it from detections
+        extra_fields = list(detections["extra_fields"].values)
+        extra_fields = pd.DataFrame(extra_fields)
+        del detections["extra_fields"]
+        # Join detections with extra fields (old format of detections)
+        detections = detections.join(extra_fields)
+        detections["magpsf"] = detections["mag"]
+        detections["sigmapsf"] = detections["e_mag"]
+        # Get historic
         light_curves = self.preprocess_lightcurves(detections, non_detections_prv_candidates, engine="psql")
+        # Process and store/update objects
         objects = self.get_objects(unique_oids, engine="psql")
         objects = self.preprocess_objects_psql(objects, light_curves)
         self.insert_objects(objects, engine="psql")
+        # Store new detections
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
-        new_detections.loc["step_id_corr"] = self.version
+        new_detections["step_id_corr"] = self.version
         new_detections.drop(columns=["new"], inplace=True)
+        new_detections = new_detections[OLD_DET_KEYS]
+        new_detections = new_detections.replace({np.nan: None})
         self.insert_detections(new_detections, engine="psql")
+        # Store new non detections
         new_non_detections = light_curves["non_detections"]["new"]
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
         self.insert_non_detections(new_non_detections)
+        # Dataquality
+        dataquality = preprocess_dataquality(light_curves["detections"])
+        insert_dataquality(dataquality, self.driver)
+        # SS
+        ss = get_catalog(unique_oids, "Ss_ztf", self.driver)
+        ss = preprocess_ss(ss, light_curves["detections"])
+        insert_ss(ss, self.driver)
+        # Reference
+        reference = get_catalog(unique_oids, "Reference", self.driver)
+        reference = preprocess_reference(reference, light_curves["detections"])
+        insert_reference(reference, self.driver)
+        # PS1
+        ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
+        ps1 = preprocess_ps1(ps1, light_curves["detections"])
+        insert_ps1(ps1, self.driver)
+        # # Get reference, ps1, gaia, ss
+        # ps1 = self.get_catalog(unique_oids, "Ps1_ztf")
+        # gaia = self.get_catalog(unique_oids, "Gaia_ztf")
+
+        # # compute magstats with historic catalogs
+        #
+        # magstats = detections.groupby(["oid", "fid"], sort=False).apply(apply_mag_stats)
+        # # insert dataquality
+        # # insert magstats
+        # # insert new reference, ps1, gaia, ss
 
     def execute_mongo(self,
                       alerts: pd.DataFrame,
