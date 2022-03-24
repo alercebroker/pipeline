@@ -19,3 +19,6 @@ services:
       - ES_PREFIX=ztf_pipeline
       - ES_NETWORK_HOST=
       - ES_NETWORK_PORT=
+      - STEP_VERSION=
+      - STEP_NAME=
+      - STEP_ID=
