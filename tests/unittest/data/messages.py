@@ -21,7 +21,7 @@ def get_ztf_prv_candidates(num_prv_candidates):
     for i in range(num_prv_candidates):
         prv_candidates.append(
             {
-                "jd": random.randrange(2458000, 2459000),
+                "jd": random.uniform(2458000, 2459000),
                 "fid": random.choice([1, 2]),
                 "pid": random.randint(1, 999999),
                 "diffmaglim": random.uniform(15, 21),
@@ -97,6 +97,10 @@ def get_ztf_prv_candidates(num_prv_candidates):
                 "drbversion": "drbversion",
                 "jdstartref": random.uniform(2458000, 2459000),
                 "jdendref": random.uniform(2458000, 2459000),
+                "neargaia": random.uniform(0, 10),
+                "neargaiabright": random.uniform(0, 10),
+                "maggaia": random.uniform(0, 10),
+                "maggaiabright": random.uniform(0, 10),
             }
         )
     return pickle.dumps(prv_candidates)
@@ -156,6 +160,11 @@ def get_extra_fields(telescope: str, **kwargs):
             "sgscore3": random.uniform(0, 10),
             "distpsnr3": random.uniform(0, 10),
             "nmtchps": random.randint(1, 100),
+            "neargaia": random.uniform(0, 10),
+            "neargaiabright": random.uniform(0, 10),
+            "maggaia": random.uniform(0, 10),
+            "maggaiabright": random.uniform(0, 10),
+            "chinr": random.uniform(0, 10),
             "prv_candidates": get_ztf_prv_candidates(**kwargs),
         }
 

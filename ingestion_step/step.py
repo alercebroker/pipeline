@@ -23,10 +23,14 @@ from .utils.old_preprocess import (
     preprocess_reference,
     insert_reference,
     preprocess_ps1,
-    insert_ps1
+    insert_ps1,
+    preprocess_gaia,
+    insert_gaia,
+    do_magstats,
+    insert_magstats,
+    do_flags,
+    compute_dmdt
 )
-
-from lc_correction.compute import apply_mag_stats
 from typing import Tuple, List
 
 import numpy as np
@@ -352,6 +356,7 @@ class IngestionStep(GenericStep):
         -------
 
         """
+        # TODO: remove index in psql iteration
         # Assign a label to difference new detections
         detections["new"] = True
         # Get unique oids from new alerts
@@ -539,8 +544,12 @@ class IngestionStep(GenericStep):
         # Get just ZTF objects
         self.logger.info("Working on PSQL")
         alerts = alerts[alerts["tid"] == "ZTF"]
+        # No alerts of ZTF on the batch, continue
+        if len(alerts) == 0:
+            return
         detections = detections[detections["tid"] == "ZTF"]
         non_detections_prv_candidates = non_detections_prv_candidates[non_detections_prv_candidates["tid"] == "ZTF"]
+
         # Reset all indexes
         alerts.reset_index(inplace=True)
         detections.reset_index(inplace=True)
@@ -557,10 +566,44 @@ class IngestionStep(GenericStep):
         detections["sigmapsf"] = detections["e_mag"]
         # Get historic
         light_curves = self.preprocess_lightcurves(detections, non_detections_prv_candidates, engine="psql")
-        # Process and store/update objects
+        # Get catalogs data and combined it with historic data
+        # Dataquality
+        dataquality = preprocess_dataquality(light_curves["detections"])
+        # SS
+        ss = get_catalog(unique_oids, "Ss_ztf", self.driver)
+        ss = preprocess_ss(ss, light_curves["detections"])
+        # Reference
+        reference = get_catalog(unique_oids, "Reference", self.driver)
+        reference = preprocess_reference(reference, light_curves["detections"])
+        # PS1
+        ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
+        ps1 = preprocess_ps1(ps1, light_curves["detections"])
+        # GAIA
+        gaia = get_catalog(unique_oids, "Gaia_ztf", self.driver)
+        gaia = preprocess_gaia(gaia, light_curves["detections"])
+        # compute magstats with historic catalogs
+        old_magstats = get_catalog(unique_oids, "MagStats", self.driver)
+        new_magstats = do_magstats(light_curves, old_magstats, ps1, reference, self.version)
+        # Compute flags
+        obj_flags, magstat_flags = do_flags(light_curves["detections"], reference)
+        dmdt = compute_dmdt(light_curves, new_magstats)
+        if len(dmdt) > 0:
+            new_stats = new_magstats.set_index(["oid", "fid"]).join(dmdt.set_index(["oid", "fid"]))
+            new_stats.reset_index(inplace=True)
+        else:
+            new_stats = new_magstats
+        new_stats.set_index(["oid", "fid"], inplace=True)
+        new_stats.loc[magstat_flags.index, "saturation_rate"] = magstat_flags
+        new_stats.reset_index(inplace=True)
+        # Get objects and store it
         objects = self.get_objects(unique_oids, engine="psql")
         objects = self.preprocess_objects_psql(objects, light_curves)
+        objects.set_index("oid", inplace=True)
+        objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
+        objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
+        objects.reset_index(inplace=True)
         self.insert_objects(objects, engine="psql")
+
         # Store new detections
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
@@ -574,31 +617,13 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
         self.insert_non_detections(new_non_detections)
-        # Dataquality
-        dataquality = preprocess_dataquality(light_curves["detections"])
-        insert_dataquality(dataquality, self.driver)
-        # SS
-        ss = get_catalog(unique_oids, "Ss_ztf", self.driver)
-        ss = preprocess_ss(ss, light_curves["detections"])
-        insert_ss(ss, self.driver)
-        # Reference
-        reference = get_catalog(unique_oids, "Reference", self.driver)
-        reference = preprocess_reference(reference, light_curves["detections"])
+        # Store catalogs
         insert_reference(reference, self.driver)
-        # PS1
-        ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
-        ps1 = preprocess_ps1(ps1, light_curves["detections"])
         insert_ps1(ps1, self.driver)
-        # # Get reference, ps1, gaia, ss
-        # ps1 = self.get_catalog(unique_oids, "Ps1_ztf")
-        # gaia = self.get_catalog(unique_oids, "Gaia_ztf")
-
-        # # compute magstats with historic catalogs
-        #
-        # magstats = detections.groupby(["oid", "fid"], sort=False).apply(apply_mag_stats)
-        # # insert dataquality
-        # # insert magstats
-        # # insert new reference, ps1, gaia, ss
+        insert_magstats(new_stats, self.driver)
+        insert_gaia(gaia, self.driver)
+        insert_ss(ss, self.driver)
+        insert_dataquality(dataquality, self.driver)
 
     def execute_mongo(self,
                       alerts: pd.DataFrame,

@@ -125,3 +125,51 @@ PS1_MultKey = ["objectidps", "sgmag", "srmag", "simag", "szmag", "sgscore", "dis
 PS1_KEYS = ["oid", "candid", "nmtchps"]
 for i in range(1, 4):
     PS1_KEYS = PS1_KEYS + [f"{key}{i}" for key in PS1_MultKey]
+GAIA_KEYS = ["oid", "candid", "neargaia", "neargaiabright", "maggaia", "maggaiabright"]
+
+MAGSTATS_TRANSLATE = {
+    "magpsf_mean": "magmean",
+    "magpsf_median": "magmedian",
+    "magpsf_max": "magmax",
+    "magpsf_min": "magmin",
+    "sigmapsf": "magsigma",
+    "magpsf_last": "maglast",
+    "magpsf_first": "magfirst",
+    "magpsf_corr_mean": "magmean_corr",
+    "magpsf_corr_median": "magmedian_corr",
+    "magpsf_corr_max": "magmax_corr",
+    "magpsf_corr_min": "magmin_corr",
+    "sigmapsf_corr": "magsigma_corr",
+    "magpsf_corr_last": "maglast_corr",
+    "magpsf_corr_first": "magfirst_corr",
+    "first_mjd": "firstmjd",
+    "last_mjd": "lastmjd",
+}
+
+MAGSTATS_UPDATE_KEYS = [
+    "stellar",
+    "corrected",
+    "ndet",
+    "ndubious",
+    "dmdt_first",
+    "dm_first",
+    "sigmadm_first",
+    "dt_first",
+    "magmean",
+    "magmedian",
+    "magmax",
+    "magmin",
+    "magsigma",
+    "maglast",
+    "magfirst",
+    "magmean_corr",
+    "magmedian_corr",
+    "magmax_corr",
+    "magmin_corr",
+    "magsigma_corr",
+    "maglast_corr",
+    "magfirst_corr",
+    "firstmjd",
+    "lastmjd",
+    "step_id_corr",
+]

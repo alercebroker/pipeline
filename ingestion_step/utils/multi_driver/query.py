@@ -45,8 +45,11 @@ def filter_to_psql(model: object, filter_by: dict):
 def update_to_psql(model: object, filter_by: List[dict]):
     filters = []
     for attribute, _filter in filter_by[0].items():
-        if attribute == "_id" and (model is psql_models.Object or model is psql_models.Ps1_ztf):
+        if attribute == "_id" and model in [psql_models.Object, psql_models.Ps1_ztf, psql_models.Gaia_ztf, psql_models.MagStats]:
             f = getattr(model, "oid") == bindparam("oid")
+            filters.append(f)
+        else:
+            f = getattr(model, attribute) == bindparam(attribute)
             filters.append(f)
     if len(filters) == 1:
         return filters[0]
