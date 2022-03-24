@@ -23,6 +23,7 @@ class XmatchStep(GenericStep):
         db_connection=None,
         xmatch_client=None,
         producer=None,
+        insert_metadata=True,
     ):
         super().__init__(consumer, config=config, level=level)
 
@@ -48,7 +49,8 @@ class XmatchStep(GenericStep):
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
-        self.insert_step_metadata()
+        if insert_metadata:
+            self.insert_step_metadata()
 
     def insert_step_metadata(self):
         """
@@ -193,7 +195,7 @@ class XmatchStep(GenericStep):
         # rename columns of meanra and meandec to (ra, dec)
         input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
         # executing xmatch request
-        self.logger.info(f"Getting xmatches")
+        self.logger.info("Getting xmatches")
         xmatches = self.request_xmatch(input_catalog, self.retries)
         # Write in database
         self.save_xmatch(xmatches)  # PSQL

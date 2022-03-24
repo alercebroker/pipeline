@@ -59,7 +59,6 @@ XMATCH_CONFIG = {
 
 
 @pytest.mark.usefixtures("psql_service")
-@pytest.mark.usefixtures("kafka_service")
 class StepXmatchTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -77,7 +76,7 @@ class StepXmatchTest(unittest.TestCase):
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
         }
-        cls.step = XmatchStep(config=cls.step_config)
+        cls.step = XmatchStep(config=cls.step_config, insert_metadata=False)
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
     @classmethod
@@ -100,6 +99,8 @@ class StepXmatchTest(unittest.TestCase):
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, mock_xmatch: mock.Mock):
-        step = XmatchStep(config=self.step_config)
         mock_xmatch.return_value = get_fake_xmatch(self.batch)
-        step.execute(self.batch)
+        self.step.execute(self.batch)
+
+    def test_insert_metadata(self):
+        self.step.insert_step_metadata()
