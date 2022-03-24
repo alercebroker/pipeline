@@ -2,12 +2,10 @@ from db_plugins.db.generic import DatabaseConnection
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.sql import SQLConnection
 from ingestion_step.utils.multi_driver.query import MultiQuery
-from ingestion_step.utils.multi_driver.mapper import Mapper
 
 
 class MultiDriverConnection(DatabaseConnection):
     def __init__(self, config: dict):
-        # self.mapper = Mapper()
         self.config = config
         self.psql_driver = SQLConnection()
         self.mongo_driver = MongoConnection()
