@@ -25,10 +25,10 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        coverage run --source ingestion_step -m pytest -x -s tests/unittest/
+        coverage run --source ingestion_step -m pytest -x tests/unittest/
         coverage xml
     - name: Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
+        files: ./coverage.xml
