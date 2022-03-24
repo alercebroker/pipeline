@@ -67,8 +67,8 @@ def get_ztf_prv_candidates(num_prv_candidates):
                 "nneg": random.choice([None, random.random()]),
                 "nbad": random.choice([None, random.random()]),
                 "rb": random.choice([None, random.random()]),
-                "ssdistnr": random.choice([-999., random.uniform(0, 10)]),
-                "ssmagnr": random.choice([-999., random.uniform(0, 10)]),
+                "ssdistnr": random.choice([-999.0, random.uniform(0, 10)]),
+                "ssmagnr": random.choice([-999.0, random.uniform(0, 10)]),
                 "ssnamenr": "generic_name",
                 "sumrat": random.choice([None, random.random()]),
                 "magapbig": random.choice([None, random.random()]),
@@ -122,8 +122,8 @@ def get_extra_fields(telescope: str, **kwargs):
             "jdendhist": random.uniform(59000, 60000),
             "jdstartref": random.uniform(2458000, 2459000),
             "jdendref": random.uniform(2458000, 2459000),
-            "ssdistnr": random.choice([-999., random.uniform(0, 10)]),
-            "ssmagnr": random.choice([-999., random.uniform(0, 10)]),
+            "ssdistnr": random.choice([-999.0, random.uniform(0, 10)]),
+            "ssmagnr": random.choice([-999.0, random.uniform(0, 10)]),
             "dsnrms": random.uniform(0, 10),
             "ssnrms": random.uniform(0, 10),
             "nmatches": random.randint(1, 100),
@@ -313,7 +313,7 @@ def generate_random_detections(n):
             "has_stamp": True,
             "step_id_corr": "example",
             "rbversion": "version123121",
-            "extra_fields": {}
+            "extra_fields": {},
         }
         batch.append(ex)
     return batch
@@ -329,13 +329,9 @@ def generate_random_objects(n):
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "ndet": random.randint(1, 20),
-            "firstmjd":  random.uniform(59000, 60000),
-            "lastmjd":  random.uniform(59000, 60000) + random.uniform(1, 20),
-            "extra_fields": {
-                "e_ra": 0.,
-                "e_dec": 0.,
-                "tid": "EXAMPLE"
-            }
+            "firstmjd": random.uniform(59000, 60000),
+            "lastmjd": random.uniform(59000, 60000) + random.uniform(1, 20),
+            "extra_fields": {"e_ra": 0.0, "e_dec": 0.0, "tid": "EXAMPLE"},
         }
         batch.append(ex)
     return batch

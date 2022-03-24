@@ -23,8 +23,8 @@ MODELS = {
     "mongo": {
         "Object": mongo_models.Object,
         "Detection": mongo_models.Detection,
-        "NonDetection": mongo_models.NonDetection
-    }
+        "NonDetection": mongo_models.NonDetection,
+    },
 }
 
 
@@ -45,7 +45,12 @@ def filter_to_psql(model: object, filter_by: dict):
 def update_to_psql(model: object, filter_by: List[dict]):
     filters = []
     for attribute, _filter in filter_by[0].items():
-        if attribute == "_id" and model in [psql_models.Object, psql_models.Ps1_ztf, psql_models.Gaia_ztf, psql_models.MagStats]:
+        if attribute == "_id" and model in [
+            psql_models.Object,
+            psql_models.Ps1_ztf,
+            psql_models.Gaia_ztf,
+            psql_models.MagStats,
+        ]:
             f = getattr(model, "oid") == bindparam("oid")
             filters.append(f)
         else:
@@ -59,12 +64,14 @@ def update_to_psql(model: object, filter_by: List[dict]):
 
 
 class MultiQuery(BaseQuery):
-    def __init__(self,
-                 psql_driver: SQLConnection,
-                 mongo_driver: MongoConnection,
-                 model=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        psql_driver: SQLConnection,
+        mongo_driver: MongoConnection,
+        model=None,
+        *args,
+        **kwargs,
+    ):
         self.model = model
         self.psql = psql_driver
         self.mongo = mongo_driver
@@ -89,13 +96,19 @@ class MultiQuery(BaseQuery):
 
         if self.engine == "mongo":
             to_update = [model(**x) for x in to_update]
-            return self.mongo.query().bulk_update(to_update, to_update, filter_fields=filter_by)
+            return self.mongo.query().bulk_update(
+                to_update, to_update, filter_fields=filter_by
+            )
         elif self.engine == "psql":
             # to_update = self.mapper.convert(to_update, model)
             bind_object = to_update[0]
             where_clause = update_to_psql(model, filter_by)
-            params_statement = dict(zip(bind_object.keys(), map(bindparam, bind_object.keys())))
-            statement = model.__table__.update().where(where_clause).values(params_statement)
+            params_statement = dict(
+                zip(bind_object.keys(), map(bindparam, bind_object.keys()))
+            )
+            statement = (
+                model.__table__.update().where(where_clause).values(params_statement)
+            )
             return self.psql.engine.execute(statement, to_update)
         raise NotImplementedError()
 
@@ -125,11 +138,15 @@ class MultiQuery(BaseQuery):
             raise Exception(f"Indicates model on query() method: {e}")
 
         if self.engine == "mongo":
-            cursor = self.mongo.query().find_all(model=model, filter_by=filter_by, paginate=paginate)
+            cursor = self.mongo.query().find_all(
+                model=model, filter_by=filter_by, paginate=paginate
+            )
             return [x for x in cursor]
         elif self.engine == "psql":
             filter_by = filter_to_psql(model, filter_by)
-            response = self.psql.query().find_all(model=model, filter_by=filter_by, paginate=paginate)
+            response = self.psql.query().find_all(
+                model=model, filter_by=filter_by, paginate=paginate
+            )
             response = [x.__dict__ for x in response]
             for x in response:
                 del x["_sa_instance_state"]

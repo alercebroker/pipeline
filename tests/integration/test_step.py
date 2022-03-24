@@ -17,7 +17,7 @@ DB_CONFIG = {
         "USER": "postgres",
         "PASSWORD": "postgres",
         "PORT": 5432,
-        "DB_NAME": "postgres"
+        "DB_NAME": "postgres",
     },
     "MONGO": {
         "HOST": "localhost",
@@ -25,7 +25,7 @@ DB_CONFIG = {
         "PASSWORD": "test_password",
         "PORT": 27017,
         "DATABASE": "test_db",
-    }
+    },
 }
 
 PRODUCER_CONFIG = {
@@ -40,7 +40,7 @@ PRODUCER_CONFIG = {
 def _chunks(lst: List, n: int) -> List:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i: i + n]
+        yield lst[i : i + n]
 
 
 def _deserialize_message(message: cimpl.Message):

@@ -24,4 +24,6 @@ class MultiDriverConnection(DatabaseConnection):
         self.psql_driver.session.close()
 
     def query(self, query_class=None, *args, **kwargs):
-        return MultiQuery(self.psql_driver, self.mongo_driver, query_class, *args, **kwargs)
+        return MultiQuery(
+            self.psql_driver, self.mongo_driver, query_class, *args, **kwargs
+        )

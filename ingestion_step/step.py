@@ -30,7 +30,7 @@ from .utils.old_preprocess import (
     insert_magstats,
     do_flags,
     compute_dmdt,
-    preprocess_objects_
+    preprocess_objects_,
 )
 from typing import Tuple, List
 
@@ -90,7 +90,9 @@ class IngestionStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": aids}}
-        objects = self.driver.query("Object", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        objects = self.driver.query("Object", engine=engine).find_all(
+            filter_by=filter_by, paginate=False
+        )
         if len(objects) == 0 or engine == "mongo":
             return pd.DataFrame(objects, columns=OBJ_KEYS)
         return pd.DataFrame(objects)
@@ -107,7 +109,9 @@ class IngestionStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": aids}}
-        detections = self.driver.query("Detection", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        detections = self.driver.query("Detection", engine=engine).find_all(
+            filter_by=filter_by, paginate=False
+        )
         if len(detections) == 0 or engine == "mongo":
             return pd.DataFrame(detections, columns=DET_KEYS)
         return pd.DataFrame(detections)
@@ -124,7 +128,9 @@ class IngestionStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": aids}}
-        non_detections = self.driver.query("NonDetection", engine=engine).find_all(filter_by=filter_by, paginate=False)
+        non_detections = self.driver.query("NonDetection", engine=engine).find_all(
+            filter_by=filter_by, paginate=False
+        )
         if len(non_detections) == 0 or engine == "mongo":
             return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
         return pd.DataFrame(non_detections)
@@ -170,7 +176,9 @@ class IngestionStep(GenericStep):
                     filters.append({"_id": obj["aid"]})
                 else:
                     filters.append({"_id": obj["oid"]})
-            self.driver.query("Object", engine=engine).bulk_update(dict_to_update, filter_by=filters)
+            self.driver.query("Object", engine=engine).bulk_update(
+                dict_to_update, filter_by=filters
+            )
 
     def insert_detections(self, detections: pd.DataFrame, engine="mongo"):
         """
@@ -202,7 +210,9 @@ class IngestionStep(GenericStep):
         self.logger.info(f"Inserting {len(non_detections)} new non_detections")
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
-        self.driver.query("NonDetection", engine=engine).bulk_insert(dict_non_detections)
+        self.driver.query("NonDetection", engine=engine).bulk_insert(
+            dict_non_detections
+        )
 
     @classmethod
     def calculate_stats_coordinates(cls, coordinates, e_coordinates):
@@ -538,10 +548,12 @@ class IngestionStep(GenericStep):
         self.logger.info(f"{n_messages} messages produced")
 
     # TEMPORAL CODE
-    def execute_psql(self,
-                     alerts: pd.DataFrame,
-                     detections: pd.DataFrame,
-                     non_detections_prv_candidates: pd.DataFrame):
+    def execute_psql(
+        self,
+        alerts: pd.DataFrame,
+        detections: pd.DataFrame,
+        non_detections_prv_candidates: pd.DataFrame,
+    ):
         # Get just ZTF objects
         self.logger.info("Working on PSQL")
         alerts = alerts[alerts["tid"] == "ZTF"]
@@ -549,7 +561,9 @@ class IngestionStep(GenericStep):
         if len(alerts) == 0:
             return
         detections = detections[detections["tid"] == "ZTF"]
-        non_detections_prv_candidates = non_detections_prv_candidates[non_detections_prv_candidates["tid"] == "ZTF"]
+        non_detections_prv_candidates = non_detections_prv_candidates[
+            non_detections_prv_candidates["tid"] == "ZTF"
+        ]
 
         # Reset all indexes
         alerts.reset_index(inplace=True)
@@ -566,7 +580,9 @@ class IngestionStep(GenericStep):
         detections["magpsf"] = detections["mag"]
         detections["sigmapsf"] = detections["e_mag"]
         # Get historic
-        light_curves = self.preprocess_lightcurves(detections, non_detections_prv_candidates, engine="psql")
+        light_curves = self.preprocess_lightcurves(
+            detections, non_detections_prv_candidates, engine="psql"
+        )
         # Get catalogs data and combined it with historic data
         # Dataquality
         dataquality = preprocess_dataquality(light_curves["detections"])
@@ -584,12 +600,16 @@ class IngestionStep(GenericStep):
         gaia = preprocess_gaia(gaia, light_curves["detections"])
         # compute magstats with historic catalogs
         old_magstats = get_catalog(unique_oids, "MagStats", self.driver)
-        new_magstats = do_magstats(light_curves, old_magstats, ps1, reference, self.version)
+        new_magstats = do_magstats(
+            light_curves, old_magstats, ps1, reference, self.version
+        )
         # Compute flags
         obj_flags, magstat_flags = do_flags(light_curves["detections"], reference)
         dmdt = compute_dmdt(light_curves, new_magstats)
         if len(dmdt) > 0:
-            new_stats = new_magstats.set_index(["oid", "fid"]).join(dmdt.set_index(["oid", "fid"]))
+            new_stats = new_magstats.set_index(["oid", "fid"]).join(
+                dmdt.set_index(["oid", "fid"])
+            )
             new_stats.reset_index(inplace=True)
         else:
             new_stats = new_magstats
@@ -598,13 +618,17 @@ class IngestionStep(GenericStep):
         new_stats.reset_index(inplace=True)
         # Get objects and store it
         objects = self.get_objects(unique_oids, engine="psql")
-        objects = preprocess_objects_(objects, light_curves, alerts, new_stats, self.version)
+        objects = preprocess_objects_(
+            objects, light_curves, alerts, new_stats, self.version
+        )
         #         objects = self.preprocess_objects_psql(objects, light_curves)
         objects.set_index("oid", inplace=True)
         objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
         objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
         objects.reset_index(inplace=True)
-        objects.drop(columns=["nearPS1", "nearZTF", "deltamjd", "ndubious"], inplace=True)
+        objects.drop(
+            columns=["nearPS1", "nearZTF", "deltamjd", "ndubious"], inplace=True
+        )
         self.insert_objects(objects, engine="psql")
 
         # Store new detections
@@ -628,11 +652,12 @@ class IngestionStep(GenericStep):
         insert_ss(ss, self.driver)
         insert_dataquality(dataquality, self.driver)
 
-    def execute_mongo(self,
-                      alerts: pd.DataFrame,
-                      detections: pd.DataFrame,
-                      non_detections_prv_candidates: pd.DataFrame,
-                      ):
+    def execute_mongo(
+        self,
+        alerts: pd.DataFrame,
+        detections: pd.DataFrame,
+        non_detections_prv_candidates: pd.DataFrame,
+    ):
         # Get unique alerce ids for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
         # Concat new and old detections and non detections.

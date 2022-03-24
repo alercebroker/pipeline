@@ -22,7 +22,7 @@ DB_CONFIG = {
         "USER": "postgres",
         "PASSWORD": "postgres",
         "PORT": 5432,
-        "DB_NAME": "postgres"
+        "DB_NAME": "postgres",
     },
     "MONGO": {
         "HOST": "localhost",
@@ -30,7 +30,7 @@ DB_CONFIG = {
         "PASSWORD": "test_password",
         "PORT": 27017,
         "DATABASE": "test_db",
-    }
+    },
 }
 
 
@@ -51,7 +51,7 @@ class StepTestCase(unittest.TestCase):
         self.step = IngestionStep(
             config=step_config,
             db_connection=mock_database_connection,
-            producer=mock_producer
+            producer=mock_producer,
         )
 
     def tearDown(self) -> None:
@@ -75,7 +75,9 @@ class StepTestCase(unittest.TestCase):
     def test_get_non_detections(self):
         oids = [12345, 45678]
         self.step.get_non_detections(oids)
-        self.step.driver.query("NonDetection", engine="mongo").find_all.assert_called_with(
+        self.step.driver.query(
+            "NonDetection", engine="mongo"
+        ).find_all.assert_called_with(
             filter_by={"aid": {"$in": oids}},
             paginate=False,
         )
@@ -98,7 +100,9 @@ class StepTestCase(unittest.TestCase):
         self.step.insert_objects(df_objects, engine="mongo")
         self.step.driver.query("Object", engine="mongo").bulk_insert.assert_called()
         self.step.driver.query("Object", engine="mongo").bulk_update.assert_not_called()
-        insert_call = self.step.driver.query("Object", engine="mongo").bulk_insert.mock_calls[0]
+        insert_call = self.step.driver.query(
+            "Object", engine="mongo"
+        ).bulk_insert.mock_calls[0]
         name, args, kwargs = insert_call
         self.assertIsInstance(args, tuple)
         self.assertIsInstance(args[0][0], dict)
@@ -206,10 +210,14 @@ class StepTestCase(unittest.TestCase):
 
     def test_produce(self):
         alerts = pd.DataFrame([{"aid": "a", "candid": 1}])
-        objects = pd.DataFrame([{"aid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}])
+        objects = pd.DataFrame(
+            [{"aid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}]
+        )
         light_curves = {
             "detections": pd.DataFrame([{"aid": "a", "candid": 1, "new": True}]),
-            "non_detections": pd.DataFrame([{"aid": "a", "candid": None, "new": False}]),
+            "non_detections": pd.DataFrame(
+                [{"aid": "a", "candid": None, "new": False}]
+            ),
         }
         self.step.produce(alerts, objects, light_curves)
         self.assertEqual(len(self.step.producer.produce.mock_calls), 1)

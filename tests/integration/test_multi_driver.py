@@ -4,7 +4,10 @@ import db_plugins.db.mongo.models as mongo_models
 import db_plugins.db.sql.models as psql_models
 
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
-from tests.unittest.data.messages import generate_random_detections, generate_random_objects
+from tests.unittest.data.messages import (
+    generate_random_detections,
+    generate_random_objects,
+)
 
 CONFIG = {
     "PSQL": {
@@ -13,7 +16,7 @@ CONFIG = {
         "USER": "postgres",
         "PASSWORD": "postgres",
         "PORT": 5432,
-        "DB_NAME": "postgres"
+        "DB_NAME": "postgres",
     },
     "MONGO": {
         "HOST": "localhost",
@@ -21,14 +24,13 @@ CONFIG = {
         "PASSWORD": "test_password",
         "PORT": 27017,
         "DATABASE": "test_db",
-    }
+    },
 }
 
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("psql_service")
 class MultiDriverTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.driver = MultiDriverConnection(CONFIG)
@@ -108,4 +110,3 @@ class MultiDriverTest(unittest.TestCase):
     #     psql_objects = self.driver.query("Object", engine="psql").find_all(filter_by=filter_by, paginate=False)
     #     self.assertIsInstance(psql_objects, list)
     #     self.assertEqual(len(psql_objects), 2)
-
