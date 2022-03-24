@@ -3,7 +3,7 @@ name: integration_test
 on:
   pull_request:
     branches:
-      - main
+      - develop
 
 jobs:
   integration-test:
