@@ -3,14 +3,14 @@ name: integration_test
 on:
   pull_request:
     branches:
-      - main
+      - develop
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.6]
 
     steps:
       - uses: actions/checkout@v2
