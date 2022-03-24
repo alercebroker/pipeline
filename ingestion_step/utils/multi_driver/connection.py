@@ -11,7 +11,6 @@ class MultiDriverConnection(DatabaseConnection):
         self.config = config
         self.psql_driver = SQLConnection()
         self.mongo_driver = MongoConnection()
-        self.mapper = Mapper("ingestion_step")
 
     def connect(self):
         self.mongo_driver.connect(self.config["MONGO"])
@@ -27,4 +26,4 @@ class MultiDriverConnection(DatabaseConnection):
         self.psql_driver.session.close()
 
     def query(self, query_class=None, *args, **kwargs):
-        return MultiQuery(self.psql_driver, self.mongo_driver, query_class, self.mapper, *args, **kwargs)
+        return MultiQuery(self.psql_driver, self.mongo_driver, query_class, *args, **kwargs)

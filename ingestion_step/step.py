@@ -29,7 +29,8 @@ from .utils.old_preprocess import (
     do_magstats,
     insert_magstats,
     do_flags,
-    compute_dmdt
+    compute_dmdt,
+    preprocess_objects_
 )
 from typing import Tuple, List
 
@@ -597,11 +598,13 @@ class IngestionStep(GenericStep):
         new_stats.reset_index(inplace=True)
         # Get objects and store it
         objects = self.get_objects(unique_oids, engine="psql")
-        objects = self.preprocess_objects_psql(objects, light_curves)
+        objects = preprocess_objects_(objects, light_curves, alerts, new_stats, self.version)
+        #         objects = self.preprocess_objects_psql(objects, light_curves)
         objects.set_index("oid", inplace=True)
         objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
         objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
         objects.reset_index(inplace=True)
+        objects.drop(columns=["nearPS1", "nearZTF", "deltamjd", "ndubious"], inplace=True)
         self.insert_objects(objects, engine="psql")
 
         # Store new detections

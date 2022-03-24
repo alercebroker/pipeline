@@ -63,14 +63,12 @@ class MultiQuery(BaseQuery):
                  psql_driver: SQLConnection,
                  mongo_driver: MongoConnection,
                  model=None,
-                 mapper=None,
                  *args,
                  **kwargs):
         self.model = model
         self.psql = psql_driver
         self.mongo = mongo_driver
         self.engine = kwargs.get("engine", "mongo")
-        self.mapper = mapper
 
     def check_exists(self, model, filter_by):
         """Check if a model exists in the database."""
@@ -93,7 +91,7 @@ class MultiQuery(BaseQuery):
             to_update = [model(**x) for x in to_update]
             return self.mongo.query().bulk_update(to_update, to_update, filter_fields=filter_by)
         elif self.engine == "psql":
-            to_update = self.mapper.convert(to_update, model)
+            # to_update = self.mapper.convert(to_update, model)
             bind_object = to_update[0]
             where_clause = update_to_psql(model, filter_by)
             params_statement = dict(zip(bind_object.keys(), map(bindparam, bind_object.keys())))
@@ -114,8 +112,8 @@ class MultiQuery(BaseQuery):
         if self.engine == "mongo":
             self.mongo.query().bulk_insert(objects, model)
         elif self.engine == "psql":
-            psql_data = self.mapper.convert(objects, model)
-            self.psql.query().bulk_insert(psql_data, model)
+            # psql_data = self.mapper.convert(objects, model)
+            self.psql.query().bulk_insert(objects, model)
         else:
             raise NotImplementedError()
 

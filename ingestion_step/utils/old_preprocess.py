@@ -6,7 +6,7 @@ import warnings
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 from ingestion_step.utils.constants import DATAQUALITY_KEYS, SS_KEYS, REFERENCE_KEYS, PS1_KEYS, GAIA_KEYS, MAGSTATS_TRANSLATE, MAGSTATS_UPDATE_KEYS
 from typing import List
-from lc_correction.compute import apply_mag_stats, get_flag_reference, get_flag_saturation, do_dmdt
+from lc_correction.compute import apply_mag_stats, get_flag_reference, get_flag_saturation, do_dmdt, apply_objstats_from_correction, apply_objstats_from_magstats
 
 
 # TEMPORAL CODE
@@ -300,3 +300,60 @@ def insert_magstats(magstats: pd.DataFrame, driver: MultiDriverConnection):
         to_update = to_update[["oid", "fid"] + MAGSTATS_UPDATE_KEYS]
         dict_to_update = to_update.to_dict("records")
         driver.query("MagStats", engine="psql").bulk_update(dict_to_update, filter_by=filter_by)
+
+
+def get_last_alert(alerts: pd.DataFrame):
+    extra_fields = list(alerts["extra_fields"].values)
+    extra_fields = pd.DataFrame(extra_fields, index=alerts.index)
+    alerts = alerts.join(extra_fields)
+    last_alert = alerts.candid.values.argmax()
+    filtered_alerts = alerts.loc[
+        :, ["oid", "ndethist", "ncovhist", "jdstarthist", "jdendhist"]
+    ]
+    last_alert = filtered_alerts.iloc[last_alert]
+    return last_alert
+
+
+def object_stats_df(corrected, magstats, step_name=None, flags=False):
+    basic_stats = corrected.groupby("objectId").apply(apply_objstats_from_correction, flags=flags)
+    obj_magstats = []
+    for i, g in magstats.groupby("objectId"):
+        r = apply_objstats_from_magstats(g)
+        r["objectId"] = i
+        obj_magstats.append(r)
+    obj_magstats = pd.DataFrame(obj_magstats)
+    obj_magstats.set_index("objectId", inplace=True)
+    basic_stats['step_id_corr'] = 'corr_bulk_0.0.1' if step_name is None else step_name
+    return basic_stats.join(obj_magstats)
+
+
+def preprocess_objects_(objects, light_curves, alerts, magstats, version):
+    oids = objects.oid.unique()
+    apply_last_alert = lambda x: get_last_alert(x)
+    last_alerts = alerts.groupby("oid", sort=False).apply(apply_last_alert)
+    last_alerts.drop(columns=["oid"], inplace=True)
+    detections = light_curves["detections"].drop(columns=["ndethist", "ncovhist", "jdstarthist", "jdendhist"])
+    detections_last_alert = detections.join(last_alerts, on="oid")
+    detections_last_alert["objectId"] = detections_last_alert.oid
+    detections_last_alert.drop_duplicates(["candid", "oid"], inplace=True)
+    detections_last_alert.reset_index(inplace=True)
+    magstats["objectId"] = magstats.oid
+
+    new_objects = object_stats_df(
+        detections_last_alert, magstats, step_name=version
+    )
+    new_objects.reset_index(inplace=True)
+
+    new_names = dict(
+        [(col, col.replace("-", "_")) for col in new_objects.columns if "-" in col]
+    )
+
+    new_objects.rename(columns={"objectId": "oid", **new_names}, inplace=True)
+    new_objects["new"] = ~new_objects.oid.isin(oids)
+    new_objects["deltajd"] = new_objects["deltamjd"]
+
+    detections_last_alert.drop(columns=["objectId"], inplace=True)
+    magstats.drop(columns=["objectId"], inplace=True)
+
+    return new_objects
+
