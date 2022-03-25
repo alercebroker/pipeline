@@ -20,3 +20,5 @@ services:
 #   - ES_PREFIX=
 #   - ES_NETWORK_HOST=
 #   - ES_NETWORK_PORT=
+#   - METRICS_HOST=
+#   - METRICS_TOPIC=
