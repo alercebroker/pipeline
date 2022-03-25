@@ -8,12 +8,23 @@ from schema import SCHEMA
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
 DB_CONFIG = {
-    "HOST": os.environ["DB_HOST"],
-    "USER": os.getenv("DB_USER", None),
-    "PASSWORD": os.getenv("DB_PASSWORD", None),
-    "PORT":  int(os.environ["DB_PORT"]),
-    "DATABASE": os.environ["DB_NAME"],
+    "PSQL": {
+        "ENGINE": "postgresql",
+        "HOST": os.getenv("PSQL_HOST", None),
+        "USER": os.getenv("PSQL_USER", None),
+        "PASSWORD": os.getenv("PSQL_PASSWORD", None),
+        "PORT": int(os.getenv("PSQL_PORT", 5432)),
+        "DB_NAME": os.getenv("PSQL_NAME", None),
+    },
+    "MONGO": {
+        "HOST": os.getenv("MONGO_HOST", None),
+        "USER": os.getenv("MONGO_USER", None),
+        "PASSWORD": os.getenv("MONGO_PASSWORD", None),
+        "PORT": int(os.getenv("MONGO_PORT", 27017)),
+        "DATABASE": os.getenv("MONGO_NAME", None),
+    }
 }
+
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
