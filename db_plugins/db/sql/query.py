@@ -40,7 +40,11 @@ class SQLQuery(BaseQuery, Query):
             Tuple with the instanced object and wether it was created or not
         """
         model = self._entities[0].mapper.class_ if self._entities else model
-        result = self.session.query(model).filter_by(**filter_by).first()
+        if isinstance(filter_by, dict):
+            query = self.session.query(model).filter_by(**filter_by)
+        else:
+            query = self.session.query(model).filter(filter_by)
+        result = query.first()
         created = False
         if result is not None:
             return result, created
@@ -144,7 +148,10 @@ class SQLQuery(BaseQuery, Query):
         """
         model = self._entities[0].mapper.class_ if self._entities else model
         query = self.session.query(model) if not self._entities else self
-        query = query.filter_by(**filter_by)
+        if isinstance(filter_by, dict):
+            query = query.filter_by(**filter_by)
+        else:
+            query = query.filter(filter_by)
         if paginate:
             return query.paginate()
         else:
@@ -166,7 +173,11 @@ class SQLQuery(BaseQuery, Query):
         """
         model = self._entities[0].mapper.class_ if self._entities else model
         query = self.session.query(model) if not self._entities else self
-        return query.filter_by(**filter_by).one_or_none()
+        if isinstance(filter_by, dict):
+            query = query.filter_by(**filter_by)
+        else:
+            query = query.filter(filter_by)
+        return query.one_or_none()
 
     def find_all(self, model=None, filter_by={}, paginate=True):
         """
@@ -185,7 +196,10 @@ class SQLQuery(BaseQuery, Query):
         """
         model = self._entities[0].mapper.class_ if self._entities else model
         query = self.session.query(model) if not self._entities else self
-        query = query.filter_by(**filter_by)
+        if isinstance(filter_by, dict):
+            query = query.filter_by(**filter_by)
+        else:
+            query = query.filter(filter_by)
         if paginate:
             return query.paginate()
         else:
