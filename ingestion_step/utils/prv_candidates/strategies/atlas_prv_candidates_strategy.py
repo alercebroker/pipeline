@@ -8,4 +8,4 @@ NON_DET_KEYS = ["aid", "tid", "oid", "mjd", "diffmaglim", "fid"]
 
 class ATLASPrvCandidatesStrategy(BasePrvCandidatesStrategy):
     def process_prv_candidates(self, alerts: pd.DataFrame):
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(columns=NON_DET_KEYS)

@@ -4,60 +4,78 @@ import pandas as pd
 from unittest import mock
 
 from apf.producers import KafkaProducer
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
-from db_plugins.db.mongo.connection import MongoConnection
+from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 from ingestion_step.step import IngestionStep
 
 from data.messages import (
     generate_message_atlas,
     generate_message_ztf,
-    generate_message,
 )
 
 
+DB_CONFIG = {
+    "PSQL": {
+        "ENGINE": "postgresql",
+        "HOST": "localhost",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "PORT": 5432,
+        "DB_NAME": "postgres",
+    },
+    "MONGO": {
+        "HOST": "localhost",
+        "USER": "test_user",
+        "PASSWORD": "test_password",
+        "PORT": 27017,
+        "DATABASE": "test_db",
+    },
+}
+
+
 class StepTestCase(unittest.TestCase):
-    def setUp(self):
-        self.step_config = {
-            "DB_CONFIG": {},
-            "PRODUCER_CONFIG": {"fake": "fake"},
+    def setUp(self) -> None:
+        step_config = {
+            "DB_CONFIG": DB_CONFIG,
             "STEP_METADATA": {
-                "STEP_ID": "",
-                "STEP_NAME": "",
-                "STEP_VERSION": "",
-                "STEP_COMMENTS": "",
+                "STEP_ID": "ingestion",
+                "STEP_NAME": "ingestion",
+                "STEP_VERSION": "test",
+                "STEP_COMMENTS": "test version",
             },
         }
-        self.mock_database_connection = mock.create_autospec(MongoConnection)
-        self.mock_producer = mock.create_autospec(KafkaProducer)
+        mock_database_connection = mock.create_autospec(MultiDriverConnection)
+        mock_database_connection.connect.return_value = None
+        mock_producer = mock.create_autospec(KafkaProducer)
         self.step = IngestionStep(
-            config=self.step_config,
-            db_connection=self.mock_database_connection,
-            producer=self.mock_producer,
+            config=step_config,
+            db_connection=mock_database_connection,
+            producer=mock_producer,
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         del self.step
 
     # We need define function for each method in the class?
     def test_get_objects(self):
         oids = ["ZTF1", "ZTF2"]
         self.step.get_objects(oids)
-        self.step.driver.query().find_all.assert_called_with(
-            model=Object, filter_by={"aid": {"$in": oids}}, paginate=False
+        self.step.driver.query("Object", engine="mongo").find_all.assert_called_with(
+            filter_by={"aid": {"$in": oids}}, paginate=False
         )
 
     def test_get_detections(self):
         oids = [12345, 45678]
-        self.step.get_detections(oids)
-        self.step.driver.query().find_all.assert_called_with(
-            model=Detection, filter_by={"aid": {"$in": oids}}, paginate=False
+        self.step.get_detections(oids, engine="mongo")
+        self.step.driver.query("Detection", engine="mongo").find_all.assert_called_with(
+            filter_by={"aid": {"$in": oids}}, paginate=False
         )
 
     def test_get_non_detections(self):
         oids = [12345, 45678]
         self.step.get_non_detections(oids)
-        self.step.driver.query().find_all.assert_called_with(
-            model=NonDetection,
+        self.step.driver.query(
+            "NonDetection", engine="mongo"
+        ).find_all.assert_called_with(
             filter_by={"aid": {"$in": oids}},
             paginate=False,
         )
@@ -77,13 +95,15 @@ class StepTestCase(unittest.TestCase):
             "new": [True],
         }
         df_objects = pd.DataFrame(objects)
-        self.step.insert_objects(df_objects)
-        self.step.driver.query().bulk_insert.assert_called()
-        self.step.driver.query().bulk_update.assert_not_called()
-        insert_call = self.step.driver.query().bulk_insert.mock_calls[0]
+        self.step.insert_objects(df_objects, engine="mongo")
+        self.step.driver.query("Object", engine="mongo").bulk_insert.assert_called()
+        self.step.driver.query("Object", engine="mongo").bulk_update.assert_not_called()
+        insert_call = self.step.driver.query(
+            "Object", engine="mongo"
+        ).bulk_insert.mock_calls[0]
         name, args, kwargs = insert_call
-        assert args[1] == Object
-        assert args[0][0]["_id"] == args[0][0]["aid"]
+        self.assertIsInstance(args, tuple)
+        self.assertIsInstance(args[0][0], dict)
 
     def test_insert_objects_without_inserts(self):
         objects = {
@@ -164,153 +184,38 @@ class StepTestCase(unittest.TestCase):
 
     def test_compute_meandec_incorrect(self):
         df = pd.DataFrame({"dec": [200, 100, 100], "e_dec": [0.1, 0.1, 0.1]})
+        print(self.step)
         with pytest.raises(ValueError):
             mean_dec, _ = self.step.compute_meandec(df["dec"], df["e_dec"])
 
     def test_execute_with_ZTF_stream(self):
-        ZTF_messages = generate_message_ztf(10, 0)
+        ZTF_messages = generate_message_ztf(10)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
-        assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
-
-    def test_execute_with_ZTF_stream_and_existing_objects(self):
-        ZTF_messages = generate_message_ztf(1, 0)
-
-        def side_effect(*args, **kwargs):
-            if kwargs["model"] == Object:
-                return [
-                    Object(
-                        aid=ZTF_messages[0]["aid"],
-                        oid=["test"],
-                        lastmjd=1,
-                        firstmjd=1,
-                        ndet=1,
-                        meanra=1,
-                        meandec=1,
-                    )
-                ]
-            if kwargs["model"] == Detection:
-                return [
-                    Detection(
-                        tid="ZTF",
-                        aid=ZTF_messages[0]["aid"],
-                        candid=1,
-                        mjd=1,
-                        fid=1,
-                        ra=1,
-                        dec=1,
-                        rb=1,
-                        mag=20,
-                        e_mag=0.1,
-                        rfid=1,
-                        e_ra=0.1,
-                        e_dec=0.1,
-                        isdiffpos=0.1,
-                        corrected=False,
-                        parent_candid=None,
-                        has_stamp=False,
-                        step_id_corr="aaa",
-                        rbversion="ooo",
-                        oid="test",
-                    )
-                ]
-            return []
-
-        self.step.driver.query().find_all.side_effect = side_effect
-        self.step.execute(ZTF_messages)
-        self.step.driver.query().bulk_update.assert_called()
-        for call in self.step.driver.query().bulk_update.mock_calls:
-            name, args, kwargs = call
-            assert args[0] == args[1]
-            assert sorted(args[0][0]["oid"]) == sorted(["test", "ZTFoid0"])
-
-    def test_execute_with_existing_objects(self):
-        num_messages = 10
-        messages = generate_message(num_messages, num_prv_candidates=0)
-
-        def side_effect(*args, **kwargs):
-            if kwargs["model"] == Object:
-                return [
-                    Object(
-                        aid=messages[0]["aid"],
-                        oid=["test"],
-                        lastmjd=1,
-                        firstmjd=1,
-                        ndet=1,
-                        meanra=1,
-                        meandec=1,
-                    )
-                ]
-            if kwargs["model"] == Detection:
-                return [
-                    Detection(
-                        tid="ZTF",
-                        aid=messages[0]["aid"],
-                        candid=1,
-                        mjd=1,
-                        fid=1,
-                        ra=1,
-                        dec=1,
-                        rb=1,
-                        mag=20,
-                        e_mag=0.1,
-                        rfid=1,
-                        e_ra=0.1,
-                        e_dec=0.1,
-                        isdiffpos=0.1,
-                        corrected=False,
-                        parent_candid=None,
-                        has_stamp=False,
-                        step_id_corr="aaa",
-                        rbversion="ooo",
-                        oid="test",
-                    ),
-                    Detection(
-                        tid="ZTF",
-                        aid=messages[0]["aid"],
-                        candid=2,
-                        mjd=1,
-                        fid=1,
-                        ra=1,
-                        dec=1,
-                        rb=1,
-                        mag=20,
-                        e_mag=0.1,
-                        rfid=1,
-                        e_ra=0.1,
-                        e_dec=0.1,
-                        isdiffpos=0.1,
-                        corrected=False,
-                        parent_candid=None,
-                        has_stamp=False,
-                        step_id_corr="aaa",
-                        rbversion="ooo",
-                        oid="test",
-                    ),
-                ]
-            return []
-
-        self.step.driver.query().find_all.side_effect = side_effect
-        self.step.execute(messages)
-        self.step.driver.query().bulk_update.assert_called()
-        assert len(self.step.driver.query().bulk_update.mock_calls) == 1
-        name, args, kwargs = self.step.driver.query().bulk_update.mock_calls[0]
-        assert args[0] == args[1]
-        assert len(args[0][0]["oid"]) == 2
-        insert_calls = self.step.driver.query().bulk_insert.mock_calls
-        assert len(insert_calls) == 3
-        insert_object_call = insert_calls[0]
-        name, args, kwargs = insert_object_call
-        assert len(args[0]) == num_messages - 1
+        assert len(self.step.driver.query().bulk_insert.mock_calls) == 12
 
     def test_execute_with_ZTF_stream_non_detections(self):
-        ZTF_messages = generate_message_ztf(10, 10)
+        ZTF_messages = generate_message_ztf(10)
         self.step.execute(ZTF_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
-        assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
+        assert len(self.step.driver.query().bulk_insert.mock_calls) == 12
 
     def test_execute_with_ATLAS_stream(self):
         ATLAS_messages = generate_message_atlas(10)
         self.step.execute(ATLAS_messages)
         # Verify 3 inserts calls: objects, detections, non_detections
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
+
+    def test_produce(self):
+        alerts = pd.DataFrame([{"aid": "a", "candid": 1}])
+        objects = pd.DataFrame(
+            [{"aid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}]
+        )
+        light_curves = {
+            "detections": pd.DataFrame([{"aid": "a", "candid": 1, "new": True}]),
+            "non_detections": pd.DataFrame(
+                [{"aid": "a", "candid": None, "new": False}]
+            ),
+        }
+        self.step.produce(alerts, objects, light_curves)
+        self.assertEqual(len(self.step.producer.produce.mock_calls), 1)

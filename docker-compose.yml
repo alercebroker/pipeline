@@ -1,21 +1,24 @@
 version: '3'
 services:
-  atlas_id:
+  ingestion:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: 'always'
-    environment:
-      - DB_HOST=10.0.3.96
-      - DB_USER=
-      - DB_PASSWORD=
-      - DB_PORT=27017
-      - DB_NAME=experiment
-      - CONSUMER_TOPICS=atlas_58884_01a
-      - CONSUMER_SERVER=10.0.2.14:9092,10.0.2.62:9092,10.0.2.181:9092
-      - CONSUMER_GROUP_ID=atlas
-      - PRODUCER_TOPIC=alerce_58884_01a
-      - PRODUCER_SERVER=10.0.2.14:9092,10.0.2.62:9092,10.0.2.181:9092
-      - ES_PREFIX=ztf_pipeline
-      - ES_NETWORK_HOST=
-      - ES_NETWORK_PORT=
+    env_file:
+    - .env
+# environment:
+#   - DB_HOST=
+#   - DB_USER=
+#   - DB_PASSWORD=
+#   - DB_PORT=
+#   - DB_NAME=
+#   - CONSUMER_TOPICS=
+#   - CONSUMER_SERVER=
+#   - CONSUMER_GROUP_ID=
+#   - PRODUCER_TOPIC=
+#   - PRODUCER_SERVER=
+#   - ES_PREFIX=
+#   - ES_NETWORK_HOST=
+#   - ES_NETWORK_PORT=
+#   - METRICS_HOST=
+#   - METRICS_TOPIC=

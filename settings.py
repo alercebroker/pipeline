@@ -57,6 +57,51 @@ STEP_METADATA = {
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
 }
 
+METRICS_CONFIG = {
+    "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "EXTRA_METRICS": [
+        {"key": "candid", "format": lambda x: str(x)},
+        {"key": "objectId", "alias": "oid"}
+    ],
+    "PARAMS": {
+        "PARAMS": {
+            "bootstrap.servers": os.environ["METRICS_HOST"],
+            "auto.offset.reset":"smallest"},
+        "TOPIC": os.environ["METRICS_TOPIC"],
+        "SCHEMA": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "http://example.com/example.json",
+            "type": "object",
+            "title": "The root schema",
+            "description": "The root schema comprises the entire JSON document.",
+            "default": {},
+            "examples": [
+                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+            ],
+            "required": ["timestamp_sent", "timestamp_received"],
+            "properties": {
+                "timestamp_sent": {
+                    "$id": "#/properties/timestamp_sent",
+                    "type": "string",
+                    "title": "The timestamp_sent schema",
+                    "description": "Timestamp sent refers to the time at which a message is sent.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+                "timestamp_received": {
+                    "$id": "#/properties/timestamp_received",
+                    "type": "string",
+                    "title": "The timestamp_received schema",
+                    "description": "Timestamp received refers to the time at which a message is received.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
+}
+
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
@@ -66,4 +111,5 @@ STEP_CONFIG = {
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "N_PROCESS": os.getenv("N_PROCESS"),
     "STEP_METADATA": STEP_METADATA,
+    "METRICS_CONFIG": METRICS_CONFIG,
 }

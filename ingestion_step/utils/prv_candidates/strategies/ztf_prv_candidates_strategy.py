@@ -20,7 +20,6 @@ class ZTFPreviousCandidatesParser(SurveyParser):
         "candid": "candid",
         "mjd": "jd",
         "fid": "fid",
-        "pid": "pid",
         "ra": "ra",
         "dec": "dec",
         "mag": "magpsf",
@@ -46,9 +45,7 @@ class ZTFPreviousCandidatesParser(SurveyParser):
         prv_content["tid"] = cls._source
         # attributes modification
         prv_content["mjd"] = prv_content["mjd"] - 2400000.5
-        prv_content["isdiffpos"] = (
-            1 if prv_content["isdiffpos"] in ["t", "1"] else -1
-        )
+        prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
         prv_content["parent_candid"] = message["parent_candid"]
         e_radec = cls._celestial_errors[prv_content["fid"]]
         prv_content["e_ra"] = (
@@ -61,10 +58,7 @@ class ZTFPreviousCandidatesParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return (
-            "publisher" in message.keys()
-            and cls._source in message["publisher"]
-        )
+        return "publisher" in message.keys() and cls._source in message["publisher"]
 
     @classmethod
     def parse(cls, messages: List[dict]) -> List[dict]:
@@ -101,21 +95,15 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
                             }
                         )
                 del alert["extra_fields"]["prv_candidates"]
-        detections = ZTFPreviousCandidatesParser.parse(
-            list(detections.values())
-        )
+        detections = ZTFPreviousCandidatesParser.parse(list(detections.values()))
         detections = pd.DataFrame(detections)
         non_detections = (
-            pd.DataFrame(non_detections)
-            if len(non_detections)
-            else pd.DataFrame()
+            pd.DataFrame(non_detections) if len(non_detections) else pd.DataFrame()
         )
 
         if len(non_detections):
             non_detections.rename({"objectId": "oid"}, inplace=True)
             non_detections["mjd"] = non_detections["jd"] - 2400000.5
             non_detections = non_detections[NON_DET_KEYS]
-            non_detections = non_detections.drop_duplicates(
-                ["oid", "fid", "mjd"]
-            )
+            non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
         return detections, non_detections
