@@ -4,14 +4,12 @@ import pandas as pd
 from unittest import mock
 
 from apf.producers import KafkaProducer
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 from ingestion_step.step import IngestionStep
 
 from data.messages import (
     generate_message_atlas,
     generate_message_ztf,
-    generate_message,
 )
 
 

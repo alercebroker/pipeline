@@ -28,10 +28,26 @@ MODELS = {
 }
 
 
+def get_model(engine: str, model: str):
+    try:
+        if engine not in MODELS.keys():
+            raise NotImplementedError(f"Not implemented engine: {engine}")
+        models = MODELS[engine]
+        if model not in models.keys():
+            raise Exception(f"Model {model} not in {models.keys()} of engine {engine}")
+        model_instance = MODELS[engine][model]
+        return model_instance
+    except Exception as e:
+        raise Exception(f"Indicates model on query() method: {e}")
+
+
 def filter_to_psql(model: object, filter_by: dict):
     filters = []
     for attribute, _filter in filter_by.items():
-        if "$in" in _filter:
+        if not isinstance(_filter, dict):
+            f = getattr(model, attribute) == _filter
+            filters.append(f)
+        elif "$in" in _filter:
             attribute = "oid" if attribute == "aid" else attribute
             f = getattr(model, attribute).in_(_filter["$in"])
             filters.append(f)
@@ -43,6 +59,8 @@ def filter_to_psql(model: object, filter_by: dict):
 
 
 def update_to_psql(model: object, filter_by: List[dict]):
+    if len(filter_by) == 0:
+        return {}
     filters = []
     for attribute, _filter in filter_by[0].items():
         if attribute == "_id" and model in [
@@ -60,7 +78,6 @@ def update_to_psql(model: object, filter_by: List[dict]):
         return filters[0]
     elif len(filters) > 1:
         return and_(*filters)
-    return {}
 
 
 class MultiQuery(BaseQuery):
@@ -82,17 +99,14 @@ class MultiQuery(BaseQuery):
         raise NotImplementedError()
 
     def get_or_create(self, model, filter_by, **kwargs):
-        pass
+        raise NotImplementedError()
 
     def update(self, instance, args):
         """Update a model instance with specified args."""
         raise NotImplementedError()
 
     def bulk_update(self, to_update: List, filter_by: List[dict]):
-        try:
-            model = MODELS[self.engine][self.model]
-        except Exception as e:
-            raise Exception(f"Indicates model on query() method: {e}")
+        model = get_model(self.engine, self.model)
 
         if self.engine == "mongo":
             to_update = [model(**x) for x in to_update]
@@ -100,7 +114,6 @@ class MultiQuery(BaseQuery):
                 to_update, to_update, filter_fields=filter_by
             )
         elif self.engine == "psql":
-            # to_update = self.mapper.convert(to_update, model)
             bind_object = to_update[0]
             where_clause = update_to_psql(model, filter_by)
             params_statement = dict(
@@ -110,33 +123,22 @@ class MultiQuery(BaseQuery):
                 model.__table__.update().where(where_clause).values(params_statement)
             )
             return self.psql.engine.execute(statement, to_update)
-        raise NotImplementedError()
 
     def paginate(self, page=1, per_page=10, count=True):
         """Return a pagination object from this query."""
         raise NotImplementedError()
 
     def bulk_insert(self, objects: List[dict]):
-        try:
-            model = MODELS[self.engine][self.model]
-        except Exception as e:
-            raise Exception(f"Indicates model on query() method: {e}")
+        model = get_model(self.engine, self.model)
 
         if self.engine == "mongo":
             self.mongo.query().bulk_insert(objects, model)
         elif self.engine == "psql":
-            # psql_data = self.mapper.convert(objects, model)
             self.psql.query().bulk_insert(objects, model)
-        else:
-            raise NotImplementedError()
 
     def find_all(self, filter_by={}, paginate=False):
         """Retrieve all items from the result of this query."""
-        try:
-            model = MODELS[self.engine][self.model]
-        except Exception as e:
-            raise Exception(f"Indicates model on query() method: {e}")
-
+        model = get_model(self.engine, self.model)
         if self.engine == "mongo":
             cursor = self.mongo.query().find_all(
                 model=model, filter_by=filter_by, paginate=paginate
@@ -151,8 +153,6 @@ class MultiQuery(BaseQuery):
             for x in response:
                 del x["_sa_instance_state"]
             return response
-        else:
-            raise NotImplementedError()
 
     def find_one(self, filter_by={}, model=None, **kwargs):
         """Retrieve only one item from the result of this query.
