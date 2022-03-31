@@ -23,7 +23,7 @@ jobs:
           fi
           TAGS="${DOCKER_IMAGE}:${VERSION}"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
+            TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA,${DOCKER_IMAGE}:rc"
           fi
           echo ::set-output name=tags::${TAGS}
   push_image:
