@@ -251,7 +251,7 @@ class IngestionStep(GenericStep):
         response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
-        response["tid"] = df_min.tid
+        response["tid"] = list(df["tid"].unique())
         response["oid"] = list(df["oid"].unique())
         response["ndet"] = len(df)
         return pd.Series(response)
