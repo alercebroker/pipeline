@@ -12,8 +12,8 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "beginning",
-        "max.poll.interval.ms": 3600000,
+        "auto.offset.reset":"beginning",
+        "max.poll.interval.ms": 3600000
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 60)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 2200)),
@@ -33,53 +33,6 @@ elif os.getenv("CONSUMER_TOPICS"):
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
-
-METRICS_CONFIG = {
-    "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
-        {"key": "objectId", "alias": "oid"},
-    ],
-    "PARAMS": {
-        "PARAMS": {
-            "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest",
-        },
-        "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
-    },
-}
-
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
     "STEP_ID": os.getenv("STEP_ID", "archiving"),
@@ -88,13 +41,13 @@ STEP_METADATA = {
 }
 
 
+
 ## Step Configuration
 STEP_CONFIG = {
-    "N_PROCESS": os.getenv("N_PROCESS"),  # Number of process for multiprocess script
+    "N_PROCESS": os.getenv("N_PROCESS"),            # Number of process for multiprocess script
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": STEP_METADATA,
     "FORMAT": os.getenv("ARCHIVE_FORMAT", "avro"),
     "ZTF_BUCKET_NAME": os.getenv("S3_ZTF_BUCKET_NAME", "ztf-avro"),
     "ATLAS_BUCKET_NAME": os.getenv("S3_ATLAS_BUCKET_NAME", "astro-alerts-archive"),
-    "METRICS_CONFIG": METRICS_CONFIG,
 }
