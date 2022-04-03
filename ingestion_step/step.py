@@ -452,7 +452,7 @@ class IngestionStep(GenericStep):
         # dicto = {
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
-        data = alerts[["aid", "oid", "tid", "candid", "ra", "dec", "extra_fields"]]
+        data = alerts[["aid", "oid", "tid", "candid", "ra", "dec", "pid", "extra_fields"]]
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
@@ -574,6 +574,9 @@ class IngestionStep(GenericStep):
         # Create a new dataframe with extra fields and remove it from detections
         extra_fields = list(detections["extra_fields"].values)
         extra_fields = pd.DataFrame(extra_fields)
+        for c in ["prv_candidates", "pid"]:
+            if c in extra_fields.columns:
+                extra_fields.drop(columns=[c], inplace=True)
         del detections["extra_fields"]
         # Join detections with extra fields (old format of detections)
         detections = detections.join(extra_fields)
@@ -612,7 +615,9 @@ class IngestionStep(GenericStep):
             )
             new_stats.reset_index(inplace=True)
         else:
-            new_stats = new_magstats
+            empty_dmdt =  ['dmdt_first', 'dm_first', 'sigmadm_first', 'dt_first']
+            new_stats = new_magstats.reindex(columns=new_magstats.columns.tolist() + empty_dmdt)
+
         new_stats.set_index(["oid", "fid"], inplace=True)
         new_stats.loc[magstat_flags.index, "saturation_rate"] = magstat_flags
         new_stats.reset_index(inplace=True)

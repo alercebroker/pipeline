@@ -94,7 +94,6 @@ def preprocess_reference(metadata: pd.DataFrame, detections: pd.DataFrame):
     detections["mjdendref"] = detections["jdendref"] - 2400000.5
     new_values = detections.loc[~already_on_db, detections.columns.isin(REFERENCE_KEYS)]
     if len(new_values) > 0:
-        new_values.replace({np.nan: None}, inplace=True)
         new_values.loc[:, "new"] = True
         new_values.reset_index(inplace=True, drop=True)
     if len(metadata) == 0:
@@ -106,7 +105,8 @@ def insert_reference(metadata: pd.DataFrame, driver: MultiDriverConnection):
     new_metadata = metadata["new"]
     to_insert = metadata[new_metadata]
     if len(to_insert) > 0:
-        to_insert.astype(object).where(pd.notnull(to_insert), None)
+        to_insert.replace({np.nan: None}, inplace=True)
+        to_insert = to_insert.astype(object).where(pd.notnull(to_insert), None)
         dict_to_insert = to_insert.to_dict("records")
         driver.query("Reference", engine="psql").bulk_insert(dict_to_insert)
 
