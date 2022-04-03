@@ -111,7 +111,6 @@ def get_extra_fields(telescope: str, **kwargs):
         return {}
     elif telescope == "ZTF":
         return {
-            "pid": random.randint(1, 999999),
             "distnr": random.random(),
             "rfid": random.random(),
             "magnr": random.random(),
@@ -175,6 +174,7 @@ def generate_message(num_messages: int, **kwargs):
     for i in range(num_messages):
         alert = {
             "oid": f"{telescopes[i%2]}oid{i}",
+            "pid": random.randint(1, 999999),
             "tid": telescopes[i % 2],
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
@@ -201,6 +201,7 @@ def generate_message_atlas(num_messages):
         alert = {
             "oid": f"ATLASoid{i}",
             "tid": "ATLAS",
+            "pid": random.randint(1, 999999),
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
             "fid": random.randint(1, 2),
@@ -226,6 +227,7 @@ def generate_message_ztf(num_messages: int):
         alert = {
             "oid": f"ZTFoid{i}",
             "tid": "ZTF",
+            "pid": random.randint(1, 999999),
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
             "fid": random.randint(1, 2),
@@ -296,6 +298,7 @@ def generate_random_detections(n):
             "tid": "EXAMPLE",
             "aid": f"ALERCE{i}",
             "oid": f"EX{i}",
+            "pid": random.randint(1, 999999),
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
             "fid": random.randint(1, 2),
