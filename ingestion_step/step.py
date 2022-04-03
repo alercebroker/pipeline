@@ -452,7 +452,9 @@ class IngestionStep(GenericStep):
         # dicto = {
         #     "ZTF": ZTFPrvCandidatesStrategy()
         # }
-        data = alerts[["aid", "oid", "tid", "candid", "ra", "dec", "pid", "extra_fields"]]
+        data = alerts[
+            ["aid", "oid", "tid", "candid", "ra", "dec", "pid", "extra_fields"]
+        ]
         detections = []
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
@@ -615,8 +617,10 @@ class IngestionStep(GenericStep):
             )
             new_stats.reset_index(inplace=True)
         else:
-            empty_dmdt =  ['dmdt_first', 'dm_first', 'sigmadm_first', 'dt_first']
-            new_stats = new_magstats.reindex(columns=new_magstats.columns.tolist() + empty_dmdt)
+            empty_dmdt = ["dmdt_first", "dm_first", "sigmadm_first", "dt_first"]
+            new_stats = new_magstats.reindex(
+                columns=new_magstats.columns.tolist() + empty_dmdt
+            )
 
         new_stats.set_index(["oid", "fid"], inplace=True)
         new_stats.loc[magstat_flags.index, "saturation_rate"] = magstat_flags
