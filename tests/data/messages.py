@@ -142,7 +142,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
             "dec_in": round(f["meandec"], 6),
             "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
             "RAJ2000": round(f["meanra"], 6),
-            "DECJ2000": round(f["meandec"], 6),
+            "DEJ2000": round(f["meandec"], 6),
             "W1mag": round(random.uniform(10, 15), 3),
             "W2mag": round(random.uniform(10, 15), 3),
             "W3mag": round(random.uniform(10, 15), 3),

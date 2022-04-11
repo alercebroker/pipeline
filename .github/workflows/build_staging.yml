@@ -21,7 +21,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           fi
-          TAGS="${DOCKER_IMAGE}:${VERSION}"
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:rc"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
             TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
           fi
