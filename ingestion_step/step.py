@@ -584,7 +584,6 @@ class IngestionStep(GenericStep):
         detections = detections.join(extra_fields)
         detections["magpsf"] = detections["mag"]
         detections["sigmapsf"] = detections["e_mag"]
-        detections.to_parquet("/home/javier/Desktop/notebooks/pipeline/example.parquet")
         # Get catalogs data and combined it with historic data
         # Dataquality
         dataquality = preprocess_dataquality(detections)
