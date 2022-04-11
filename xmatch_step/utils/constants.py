@@ -24,7 +24,7 @@ XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]
 ALLWISE_MAP = {
     "AllWISE": "oid_catalog",
     "RAJ2000": "ra",
-    "DECJ2000": "dec",
+    "DEJ2000": "dec",
     "W1mag": "w1mpro",
     "W2mag": "w2mpro",
     "W3mag": "w3mpro",
