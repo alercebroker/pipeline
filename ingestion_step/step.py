@@ -557,11 +557,11 @@ class IngestionStep(GenericStep):
         non_detections_prv_candidates: pd.DataFrame,
     ):
         # Get just ZTF objects
-        self.logger.info("Working on PSQL")
         alerts = alerts[alerts["tid"] == "ZTF"]
         # No alerts of ZTF on the batch, continue
         if len(alerts) == 0:
             return
+        self.logger.info("Working on PSQL")
         detections = detections[detections["tid"] == "ZTF"]
         non_detections_prv_candidates = non_detections_prv_candidates[
             non_detections_prv_candidates["tid"] == "ZTF"
@@ -584,25 +584,25 @@ class IngestionStep(GenericStep):
         detections = detections.join(extra_fields)
         detections["magpsf"] = detections["mag"]
         detections["sigmapsf"] = detections["e_mag"]
+        # Get catalogs data and combined it with historic data
+        # Dataquality
+        dataquality = preprocess_dataquality(detections)
+        # SS
+        ss = get_catalog(unique_oids, "Ss_ztf", self.driver)
+        ss = preprocess_ss(ss, detections)
+        # Reference
+        reference = get_catalog(unique_oids, "Reference", self.driver)
+        reference = preprocess_reference(reference, detections)
+        # PS1
+        ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
+        ps1 = preprocess_ps1(ps1, detections)
+        # GAIA
+        gaia = get_catalog(unique_oids, "Gaia_ztf", self.driver)
+        gaia = preprocess_gaia(gaia, detections)
         # Get historic
         light_curves = self.preprocess_lightcurves(
             detections, non_detections_prv_candidates, engine="psql"
         )
-        # Get catalogs data and combined it with historic data
-        # Dataquality
-        dataquality = preprocess_dataquality(light_curves["detections"])
-        # SS
-        ss = get_catalog(unique_oids, "Ss_ztf", self.driver)
-        ss = preprocess_ss(ss, light_curves["detections"])
-        # Reference
-        reference = get_catalog(unique_oids, "Reference", self.driver)
-        reference = preprocess_reference(reference, light_curves["detections"])
-        # PS1
-        ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
-        ps1 = preprocess_ps1(ps1, light_curves["detections"])
-        # GAIA
-        gaia = get_catalog(unique_oids, "Gaia_ztf", self.driver)
-        gaia = preprocess_gaia(gaia, light_curves["detections"])
         # compute magstats with historic catalogs
         old_magstats = get_catalog(unique_oids, "MagStats", self.driver)
         new_magstats = do_magstats(
