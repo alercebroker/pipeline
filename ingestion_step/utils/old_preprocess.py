@@ -36,6 +36,7 @@ def get_catalog(aids: List[str or int], table: str, driver: MultiDriverConnectio
 
 
 def preprocess_dataquality(detections: pd.DataFrame):
+    detections = detections[detections["parent_candid"].isna()]
     dataquality = detections.loc[:, detections.columns.isin(DATAQUALITY_KEYS)]
     return dataquality
 
@@ -61,6 +62,7 @@ def insert_dataquality(dataquality: pd.DataFrame, driver: MultiDriverConnection)
 
 
 def preprocess_ss(ss_catalog: pd.DataFrame, detections: pd.DataFrame) -> pd.DataFrame:
+    detections = detections[detections["parent_candid"].isna()]
     if len(ss_catalog):
         oids = ss_catalog["oid"].unique()
     else:
@@ -84,6 +86,7 @@ def insert_ss(metadata: pd.DataFrame, driver: MultiDriverConnection):
 
 
 def preprocess_reference(metadata: pd.DataFrame, detections: pd.DataFrame):
+    detections = detections[detections["parent_candid"].isna()]
     if len(metadata) == 0:
         metadata = pd.DataFrame(columns=REFERENCE_KEYS)
     metadata["new"] = False
@@ -112,6 +115,7 @@ def insert_reference(metadata: pd.DataFrame, driver: MultiDriverConnection):
 
 
 def preprocess_ps1(metadata: pd.DataFrame, detections: pd.DataFrame):
+    detections = detections[detections["parent_candid"].isna()]
     if len(metadata) == 0:
         oids = []
     else:
@@ -170,6 +174,7 @@ def insert_ps1(metadata: pd.DataFrame, driver: MultiDriverConnection):
 
 
 def preprocess_gaia(metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03):
+    detections = detections[detections["parent_candid"].isna()]
     if len(metadata) == 0:
         oids = []
     else:
