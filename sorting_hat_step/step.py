@@ -14,13 +14,15 @@ import logging
 
 
 class SortingHatStep(GenericStep):
-    def __init__(self,
-                 consumer=None,
-                 config=None,
-                 level=logging.INFO,
-                 producer=None,
-                 db_connection=None,
-                 **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        level=logging.INFO,
+        producer=None,
+        db_connection=None,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
         if not producer and config.get("PRODUCER_CONFIG", False):
             if "CLASS" in config["PRODUCER_CONFIG"]:
@@ -43,11 +45,15 @@ class SortingHatStep(GenericStep):
         :return:
         """
         n_messages = 0
-        alerts = alerts.replace({np.nan: None})  # transform np.nan to None (only for produce proposals)
+        alerts = alerts.replace(
+            {np.nan: None}
+        )  # transform np.nan to None (only for produce proposals)
         for index, alert in alerts.iterrows():
             alert = alert.to_dict()
             alert["rfid"] = None if alert["rfid"] is None else int(alert["rfid"])
-            for k in alert["extra_fields"].keys():  # transform to bytes if datatype is list
+            for k in alert[
+                "extra_fields"
+            ].keys():  # transform to bytes if datatype is list
                 if isinstance(alert["extra_fields"][k], list):
                     alert["extra_fields"][k] = pickle.dumps(alert["extra_fields"][k])
             # produce alert content with key of candid
