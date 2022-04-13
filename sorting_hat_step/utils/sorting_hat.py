@@ -116,7 +116,7 @@ class SortingHat:
         :param dec: declination in degrees
         :return: alerce id
         """
-        # 19 Digit ID - two spare at the end for up to 100 duplicates
+        # 19-Digit ID - two spare at the end for up to 100 duplicates
         aid = 1000000000000000000
 
         # 2013-11-15 KWS Altered code to fix the negative RA problem
@@ -250,7 +250,7 @@ class SortingHat:
         :param alerts: Dataframe of alerts
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
-        # Internal cross match that identifies same objects in own batch: create a new column named 'tmp_id'
+        # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
         alerts = self.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
