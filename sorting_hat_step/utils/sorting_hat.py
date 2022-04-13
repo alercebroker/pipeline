@@ -197,10 +197,7 @@ class SortingHat:
         while matrix.sum():  # while exists matches
             matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
             # get rows with max matches (can be more than 1)
-            max_matches = np.argwhere(matches == np.max(matches))
-            # If exists more than 1 matches the numpy array must be converted into 1-d array
-            if len(max_matches) > 1:
-                max_matches = max_matches.squeeze()
+            max_matches = np.argwhere(matches == matches.max(axis=0)).flatten()
             dist_matches = matrix[max_matches].sum(axis=1)  # compute sum of distance of each element in max_matches
             min_dist = np.argmin(dist_matches)  # get index of min sum of distance
             node = max_matches[min_dist]  # chosen node: with most matches and the least distance
@@ -252,6 +249,6 @@ class SortingHat:
         tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
         # Join the tuple tmp_id-aid with batch of alerts
         alerts = alerts.set_index("tmp_id").join(tmp_id_aid)
-        # Remove column tmp_id (really is a index) for ever
+        # Remove column tmp_id (really is an index) forever
         alerts.reset_index(inplace=True, drop=True)
         return alerts
