@@ -30,8 +30,13 @@ class SortingHat:
         :return:
         """
         # Compute radius of curvature along meridian (see https://en.wikipedia.org/wiki/Meridian_arc)
-        rm = self.a * (1 - np.power(self.e, 2)) / np.power(
-            (1 - np.power(self.e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5)
+        rm = (
+            self.a
+            * (1 - np.power(self.e, 2))
+            / np.power(
+                (1 - np.power(self.e, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5
+            )
+        )
         # Compute length of arc at this latitude (meters/degree)
         arc = rm * self.angle
         return arc
@@ -46,24 +51,18 @@ class SortingHat:
         radius = self.radius / 3600
         scaling = self.wgs_scale(dec)
         meter_radius = radius * scaling
-        lon, lat = ra - 180., dec
+        lon, lat = ra - 180.0, dec
         objects = self.db.query(model=Object)
         cursor = objects.find(
             {
-                'loc': {
-                    '$nearSphere': {
-                        '$geometry':
-                            {
-                                'type': 'Point',
-                                'coordinates': [lon, lat]
-                            },
-                        '$maxDistance': meter_radius,
+                "loc": {
+                    "$nearSphere": {
+                        "$geometry": {"type": "Point", "coordinates": [lon, lat]},
+                        "$maxDistance": meter_radius,
                     }
                 },
             },
-            {
-                "aid": 1  # only return alerce_id
-            }
+            {"aid": 1},  # only return alerce_id
         )
         spatial = [i for i in cursor]
         return spatial
@@ -75,17 +74,7 @@ class SortingHat:
         :return: existing aid if exists else is None
         """
         objects = self.db.query(model=Object)
-        cursor = objects.find(
-            {
-                "oid": {
-                    "$in": oid
-                }
-            },
-            {
-                "_id": 0,
-                "aid": 1
-            }
-        )
+        cursor = objects.find({"oid": {"$in": oid}}, {"_id": 0, "aid": 1})
         data = [i["aid"] for i in cursor]
         if len(data):
             return data[0]
@@ -104,7 +93,7 @@ class SortingHat:
             long_number = long_number // self.base
             representation.append(char)
         representation.reverse()
-        name = ''.join(representation)
+        name = "".join(representation)
         return name
 
     def decode(self, name: str) -> int:
@@ -154,20 +143,22 @@ class SortingHat:
         dec_ss = int(((dec - dec_deg) * 60 - dec_mm) * 60)
         dec_f = int(((((dec - dec_deg) * 60 - dec_mm) * 60) - dec_ss) * 10)
 
-        aid += (ra_hh * 10000000000000000)
-        aid += (ra_mm * 100000000000000)
-        aid += (ra_ss * 1000000000000)
-        aid += (ra_ff * 10000000000)
+        aid += ra_hh * 10000000000000000
+        aid += ra_mm * 100000000000000
+        aid += ra_ss * 1000000000000
+        aid += ra_ff * 10000000000
 
-        aid += (h * 1000000000)
-        aid += (dec_deg * 10000000)
-        aid += (dec_mm * 100000)
-        aid += (dec_ss * 1000)
-        aid += (dec_f * 100)
+        aid += h * 1000000000
+        aid += dec_deg * 10000000
+        aid += dec_mm * 100000
+        aid += dec_ss * 1000
+        aid += dec_f * 100
         # transform to str
         return aid
 
-    def internal_cross_match(self, data: pd.DataFrame, ra_col="ra", dec_col="dec") -> pd.DataFrame:
+    def internal_cross_match(
+        self, data: pd.DataFrame, ra_col="ra", dec_col="dec"
+    ) -> pd.DataFrame:
         """
         Do an internal cross-match in data input (batch vs batch) to get the closest objects. This method uses
         cKDTree class to get the nearest object. Returns a new dataframe with another column named tmp_id to
@@ -178,7 +169,9 @@ class SortingHat:
         radius = self.radius / 3600
         values = data[[ra_col, dec_col]].to_numpy()
         tree = cKDTree(values)
-        sdm = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")  # get sparse distance matrix
+        sdm = tree.sparse_distance_matrix(
+            tree, radius, output_type="coo_matrix"
+        )  # get sparse distance matrix
         # Get the matrix representation -> rows x cols
         matrix = sdm.toarray()
 
@@ -188,22 +181,34 @@ class SortingHat:
         oids = data["oid"].unique()
         for index, oid in enumerate(oids):  # join the same objects
             indexes = data[data["oid"] == oid].index  # get all indexes of this oid
-            if len(indexes) > 1:  # if exists an oid with more than 1 occurrences put the same tmp_id
+            if (
+                len(indexes) > 1
+            ):  # if exists an oid with more than 1 occurrences put the same tmp_id
                 data.loc[indexes, "tmp_id"] = index
                 # for remove neighbors get the combination or all indexes of the same object
                 a, b = np.meshgrid(indexes, indexes, sparse=True)
                 # remove in adjacency matrix
                 matrix[a, b] = 0
         while matrix.sum():  # while exists matches
-            matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
+            matches = np.count_nonzero(
+                matrix, axis=1
+            )  # count of matches per node (row)
             # get rows with max matches (can be more than 1)
             max_matches = np.argwhere(matches == matches.max(axis=0)).flatten()
-            dist_matches = matrix[max_matches].sum(axis=1)  # compute sum of distance of each element in max_matches
+            dist_matches = matrix[max_matches].sum(
+                axis=1
+            )  # compute sum of distance of each element in max_matches
             min_dist = np.argmin(dist_matches)  # get index of min sum of distance
-            node = max_matches[min_dist]  # chosen node: with most matches and the least distance
+            node = max_matches[
+                min_dist
+            ]  # chosen node: with most matches and the least distance
             neighbours = matrix[node, :]  # get all neighbours of the node
-            neighbours_indexes = np.flatnonzero(neighbours)  # get indexes of the neighbours
-            data.loc[neighbours_indexes, "tmp_id"] = data["tmp_id"][node]  # put tmp_id of the neighbours
+            neighbours_indexes = np.flatnonzero(
+                neighbours
+            )  # get indexes of the neighbours
+            data.loc[neighbours_indexes, "tmp_id"] = data["tmp_id"][
+                node
+            ]  # put tmp_id of the neighbours
             matrix[neighbours_indexes, :] = 0  # turn off neighbours
             matrix[:, neighbours_indexes] = 0
         return data
@@ -230,9 +235,11 @@ class SortingHat:
                 aid = near_objects[0]["aid"]
             # 3) Miss generate a new ALeRCE identifier
             else:
-                aid = self.id_generator(first_alert["ra"], first_alert["dec"])  # this is the long id
+                aid = self.id_generator(
+                    first_alert["ra"], first_alert["dec"]
+                )  # this is the long id
                 aid = self.encode(aid)  # this is the long id encoded to string id
-                year = time.strftime('%y')  # get year in short form. e.g: 21 means 2021
+                year = time.strftime("%y")  # get year in short form. e.g: 21 means 2021
                 aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
         response = {"aid": aid}
         return pd.Series(response)
