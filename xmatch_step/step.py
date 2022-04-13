@@ -190,22 +190,20 @@ class XmatchStep(GenericStep):
         input_catalog = input_catalog.explode("oid", ignore_index=True)
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
-        # End of temporal code
-
         # rename columns of meanra and meandec to (ra, dec)
         input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
-        # executing xmatch request
-        self.logger.info("Getting xmatches")
-        xmatches = self.request_xmatch(input_catalog, self.retries)
-        # Write in database
-        self.save_xmatch(xmatches)  # PSQL
-        # Get output format
-        output_messages = self.format_output(light_curves, xmatches)
-        self.logger.info(f"Producing {len(output_messages)} messages")
-        # Produce data with xmatch
-        self.produce(output_messages)
-        del messages
-        del light_curves
-        del input_catalog
-        del xmatches
-        del output_messages
+        if len(input_catalog) > 0:
+            self.logger.info("Getting xmatches")
+            xmatches = self.request_xmatch(input_catalog, self.retries)
+            # Write in database
+            self.save_xmatch(xmatches)  # PSQL
+            # Get output format
+            output_messages = self.format_output(light_curves, xmatches)
+            self.logger.info(f"Producing {len(output_messages)} messages")
+            # Produce data with xmatch
+            self.produce(output_messages)
+            del messages
+            del light_curves
+            del input_catalog
+            del xmatches
+            del output_messages
