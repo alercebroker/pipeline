@@ -25,7 +25,7 @@ CONSUMER_CONFIG = {
         'max.poll.interval.ms': 3600000
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
-    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 10)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
