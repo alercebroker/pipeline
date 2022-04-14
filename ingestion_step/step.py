@@ -730,7 +730,9 @@ class IngestionStep(GenericStep):
         # Do correction to detections from stream
         detections = self.correct(detections)
         # Insert/update data on mongo
-        self.execute_psql(alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy())
+        self.execute_psql(
+            alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy()
+        )
         self.execute_mongo(alerts, detections, non_dets_from_prv_candidates)
 
         self.logger.info(f"Clean batch of data\n")
