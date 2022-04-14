@@ -191,7 +191,7 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(detections)} new detections")
+        self.logger.info(f"Inserting {len(detections)} new detections {engine}")
         detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
         self.driver.query("Detection", engine=engine).bulk_insert(dict_detections)
@@ -207,7 +207,7 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(non_detections)} new non_detections")
+        self.logger.info(f"Inserting {len(non_detections)} new non_detections {engine}")
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query("NonDetection", engine=engine).bulk_insert(
@@ -652,7 +652,7 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"]["new"]
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
-        self.insert_non_detections(new_non_detections)
+        self.insert_non_detections(new_non_detections, engine="psql")
         # Store catalogs
         insert_reference(reference, self.driver)
         insert_ps1(ps1, self.driver)
@@ -683,7 +683,7 @@ class IngestionStep(GenericStep):
         # Insert new detections and put step_version
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
-        new_detections.loc["step_id_corr"] = self.version
+        new_detections["step_id_corr"] = self.version
         new_detections.drop(columns=["new"], inplace=True)
         self.insert_detections(new_detections)
         # Insert new now detections
@@ -730,8 +730,10 @@ class IngestionStep(GenericStep):
         # Do correction to detections from stream
         detections = self.correct(detections)
         # Insert/update data on mongo
+        self.execute_psql(
+            alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy()
+        )
         self.execute_mongo(alerts, detections, non_dets_from_prv_candidates)
-        self.execute_psql(alerts, detections, non_dets_from_prv_candidates)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
