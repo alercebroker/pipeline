@@ -683,7 +683,7 @@ class IngestionStep(GenericStep):
         # Insert new detections and put step_version
         new_detections = light_curves["detections"]["new"]
         new_detections = light_curves["detections"][new_detections]
-        new_detections.loc["step_id_corr"] = self.version
+        new_detections["step_id_corr"] = self.version
         new_detections.drop(columns=["new"], inplace=True)
         self.insert_detections(new_detections)
         # Insert new now detections
@@ -730,8 +730,8 @@ class IngestionStep(GenericStep):
         # Do correction to detections from stream
         detections = self.correct(detections)
         # Insert/update data on mongo
+        self.execute_psql(alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy())
         self.execute_mongo(alerts, detections, non_dets_from_prv_candidates)
-        self.execute_psql(alerts, detections, non_dets_from_prv_candidates)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
