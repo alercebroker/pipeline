@@ -191,7 +191,7 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(detections)} new detections")
+        self.logger.info(f"Inserting {len(detections)} new detections {engine}")
         detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
         self.driver.query("Detection", engine=engine).bulk_insert(dict_detections)
@@ -207,7 +207,7 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(non_detections)} new non_detections")
+        self.logger.info(f"Inserting {len(non_detections)} new non_detections {engine}")
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query("NonDetection", engine=engine).bulk_insert(
@@ -652,7 +652,7 @@ class IngestionStep(GenericStep):
         new_non_detections = light_curves["non_detections"]["new"]
         new_non_detections = light_curves["non_detections"][new_non_detections]
         new_non_detections.drop(columns=["new"], inplace=True)
-        self.insert_non_detections(new_non_detections)
+        self.insert_non_detections(new_non_detections, engine="psql")
         # Store catalogs
         insert_reference(reference, self.driver)
         insert_ps1(ps1, self.driver)
