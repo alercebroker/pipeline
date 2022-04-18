@@ -99,7 +99,9 @@ class ZTFPrvCandidatesStrategy(BasePrvCandidatesStrategy):
         detections = ZTFPreviousCandidatesParser.parse(list(detections.values()))
         detections = pd.DataFrame(detections)
         non_detections = (
-            pd.DataFrame(non_detections) if len(non_detections) else pd.DataFrame(columns=NON_DET_KEYS)
+            pd.DataFrame(non_detections)
+            if len(non_detections)
+            else pd.DataFrame(columns=NON_DET_KEYS)
         )
 
         if len(non_detections):
