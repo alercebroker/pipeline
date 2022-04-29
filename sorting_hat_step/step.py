@@ -48,6 +48,13 @@ class SortingHatStep(GenericStep):
         alerts = alerts.replace(
             {np.nan: None}
         )  # transform np.nan to None (only for produce proposals)
+
+        self.metrics["ra"] = alerts["ra"].tolist()
+        self.metrics["dec"] = alerts["dec"].tolist()
+        self.metrics["oid"] = alerts["oid"].tolist()
+        self.metrics["tid"] = alerts["tid"].tolist()
+        self.metrics["aid"] = alerts["aid"].tolist()
+
         for index, alert in alerts.iterrows():
             alert = alert.to_dict()
             alert["rfid"] = None if alert["rfid"] is None else int(alert["rfid"])
