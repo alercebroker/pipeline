@@ -67,15 +67,20 @@ class XmatchStep(GenericStep):
 
     # TEMPORAL CODE: Get the old format pipeline light curves.
     def unparse(self, data: pd.DataFrame):
+        data = data.copy(deep=True)
+        detections = []
         lc_detections = data["detections"].values
-        print(lc_detections)
         for dets in lc_detections:
             d = pd.DataFrame(dets)
             d = d[d["tid"] == "ZTF"]
             extra_fields = list(d["extra_fields"].values)
             extra_fields = pd.DataFrame(extra_fields, index=d.index)
-            d = extra_fields.join(extra_fields)
-        pass
+            d = d.join(extra_fields)
+            d.drop(columns=["extra_fields"], inplace=True)
+            d = d.to_dict("records")
+            detections.append(d)
+        data["detections"] = detections
+        return data
 
     def format_output(
         self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
@@ -107,7 +112,7 @@ class XmatchStep(GenericStep):
         data.index.name = "aid"
         data.reset_index(inplace=True)
         # TEMPORAL CODE: unparse data
-        data_ = self.unparse(data)
+        data = self.unparse(data)
         # Transform to a list of dicts
         data = data.to_dict("records")
         return data
