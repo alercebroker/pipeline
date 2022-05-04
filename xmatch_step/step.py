@@ -66,21 +66,24 @@ class XmatchStep(GenericStep):
         )
 
     # TEMPORAL CODE: Get the old format pipeline light curves.
-    def unparse(self, data: pd.DataFrame):
+    def unparse(self, data: pd.DataFrame, key: str):
         data = data.copy(deep=True)
-        detections = []
-        lc_detections = data["detections"].values
-        for dets in lc_detections:
+        response = []
+        data = data[key].values
+        for dets in data:
             d = pd.DataFrame(dets)
+            if d.empty:
+                continue
             d = d[d["tid"] == "ZTF"]
-            extra_fields = list(d["extra_fields"].values)
-            extra_fields = pd.DataFrame(extra_fields, index=d.index)
-            d = d.join(extra_fields)
-            d.drop(columns=["extra_fields"], inplace=True)
-            d = d.to_dict("records")
-            detections.append(d)
-        data["detections"] = detections
-        return data
+            if "extra_fields" in d.columns:
+                extra_fields = list(d["extra_fields"].values)
+                extra_fields = pd.DataFrame(extra_fields, index=d.index)
+                d = d.join(extra_fields)
+                d.drop(columns=["extra_fields"], inplace=True)
+            response.append(d)
+        response = pd.concat(response, ignore_index=True)
+        lc = response.groupby("oid").apply(lambda x: pd.Series({key: x.to_dict("records")}))
+        return lc
 
     def format_output(
         self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
@@ -91,8 +94,8 @@ class XmatchStep(GenericStep):
         :param xmatches: Values of cross-matches (in dataframe)
         :return:
         """
-        # Create a new dataframe that contain just two columns `aid` and `xmatches`.
-        aid_in = xmatches["aid_in"]
+        # Create a new dataframe that contains just two columns `aid` and `xmatches`.
+        aid_in = xmatches["oid_in"]  # change to aid for multi stream purposes
         # Temporal code: the oid_in will be removed
         xmatches.drop(
             columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True
@@ -100,19 +103,20 @@ class XmatchStep(GenericStep):
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
-                "aid_in": aid_in,
+                "oid_in": aid_in,  # change to aid name for multi stream
                 "xmatches": xmatches.apply(
                     lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1
                 ),
             }
         )
         # Join xmatches with light curves
-        data = light_curves.set_index("aid").join(xmatches.set_index("aid_in"))
+        dets = self.unparse(light_curves, "detections")
+        non_dets = self.unparse(light_curves, "non_detections")
+
+        data = dets.join(xmatches.set_index("oid_in"))
+        data = data.join(non_dets)
         data.replace({np.nan: None}, inplace=True)
-        data.index.name = "aid"
         data.reset_index(inplace=True)
-        # TEMPORAL CODE: unparse data
-        data = self.unparse(data)
         # Transform to a list of dicts
         data = data.to_dict("records")
         return data
@@ -145,7 +149,8 @@ class XmatchStep(GenericStep):
         for message in messages:
             # Temporal code: for produce only ZTF objects:
             if exists_in_ztf(message["oid"]):
-                del message["oid"]
+                print(message.keys())
+                print(message)
                 self.producer.produce(message, key=message["aid"])
 
     def request_xmatch(

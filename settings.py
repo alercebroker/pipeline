@@ -1,5 +1,5 @@
 import os
-from schema import SCHEMA
+from schema_old import SCHEMA
 ##################################################
 #       xmatch_step   Settings File
 ##################################################
