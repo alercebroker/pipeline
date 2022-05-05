@@ -82,8 +82,14 @@ class XmatchStep(GenericStep):
                 d.drop(columns=["extra_fields"], inplace=True)
             response.append(d)
         response = pd.concat(response, ignore_index=True)
-        lc = response.groupby("oid").apply(lambda x: pd.Series({key: x.to_dict("records")}))
-        return lc
+        if key == "detections":
+            response = response.groupby("oid").apply(lambda x: pd.Series({
+                key: x.to_dict("records"),
+                "candid": x["candid"].max()
+            }))
+        else:
+            response = response.groupby("oid").apply(lambda x: pd.Series({key: x.to_dict("records")}))
+        return response
 
     def format_output(
         self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
@@ -112,7 +118,6 @@ class XmatchStep(GenericStep):
         # Join xmatches with light curves
         dets = self.unparse(light_curves, "detections")
         non_dets = self.unparse(light_curves, "non_detections")
-
         data = dets.join(xmatches.set_index("oid_in"))
         data = data.join(non_dets)
         data.replace({np.nan: None}, inplace=True)
@@ -140,18 +145,8 @@ class XmatchStep(GenericStep):
             self.driver.query(Xmatch).bulk_insert(array)
 
     def produce(self, messages: List[dict]) -> None:
-        def exists_in_ztf(oids: Set[str]) -> bool:
-            for o in oids:
-                if "ZTF" in o:
-                    return True
-            return False
-
         for message in messages:
-            # Temporal code: for produce only ZTF objects:
-            if exists_in_ztf(message["oid"]):
-                print(message.keys())
-                print(message)
-                self.producer.produce(message, key=message["aid"])
+            self.producer.produce(message, key=message["oid"])
 
     def request_xmatch(
         self, input_catalog: pd.DataFrame, retries_count: int
