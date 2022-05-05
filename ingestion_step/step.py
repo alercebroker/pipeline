@@ -40,6 +40,18 @@ import logging
 import sys
 
 sys.path.insert(0, "../../../../")
+pd.options.mode.chained_assignment = None
+logging.getLogger("GP").setLevel(logging.WARNING)
+np.seterr(divide="ignore")
+
+
+def parse_metadata(df: pd.DataFrame, name) -> pd.DataFrame:
+    df["candid"] = df["candid"].astype("int")
+    df.sort_values(by="candid", inplace=True, ignore_index=True, ascending=True)
+    df.drop_duplicates(subset="oid", keep="last", inplace=True)
+    index = df["oid"].values
+    new_df = pd.DataFrame({name: df.to_dict("records")}, index=index)
+    return new_df
 
 
 class IngestionStep(GenericStep):
@@ -500,6 +512,7 @@ class IngestionStep(GenericStep):
         alerts: pd.DataFrame,
         objects: pd.DataFrame,
         light_curves: dict,
+        metadata: pd.DataFrame,
         key: str = "aid",
     ) -> None:
         """Produce light curves to topic configured on settings.py
@@ -519,7 +532,6 @@ class IngestionStep(GenericStep):
         # remove unused columns
         light_curves["detections"].drop(columns=["new"], inplace=True)
         light_curves["non_detections"].drop(columns=["new"], inplace=True)
-
         # sort by ascending mjd
         objects.sort_values("lastmjd", inplace=True, ascending=True)
         self.logger.info(f"Checking {len(objects)} messages (key={key})")
@@ -527,6 +539,14 @@ class IngestionStep(GenericStep):
         for index, row in objects.iterrows():
             _key = row[key]
             aid = row["aid"]
+            oids = row["oid"]
+
+            metadata_ = None
+            for o in oids:
+                if o in metadata.index:
+                    metadata_ = metadata.loc[o].to_dict()
+                    break
+
             key_alert = alerts[alerts[key] == _key]
             candid = key_alert["candid"].values[-1]  # get the last candid for this key
             mask_detections = light_curves["detections"][key] == _key
@@ -544,6 +564,7 @@ class IngestionStep(GenericStep):
                 "candid": str(candid),
                 "detections": detections,
                 "non_detections": non_detections,
+                "metadata": metadata_
             }
             self.producer.produce(output_message, key=aid)
             n_messages += 1
@@ -661,11 +682,19 @@ class IngestionStep(GenericStep):
         insert_ss(ss, self.driver)
         insert_dataquality(dataquality, self.driver)
 
+        reference = parse_metadata(reference, "reference")
+        ps1 = parse_metadata(ps1, "ps1")
+        gaia = parse_metadata(gaia, "gaia")
+        ss = parse_metadata(ss, "ss")
+        metadata = reference.join(ps1, how="outer").join(gaia, how="outer").join(ss, how="outer")
+        return metadata
+
     def execute_mongo(
         self,
         alerts: pd.DataFrame,
         detections: pd.DataFrame,
         non_detections_prv_candidates: pd.DataFrame,
+        metadata: pd.DataFrame
     ):
         # Get unique alerce ids for get objects from database
         unique_aids = alerts["aid"].unique().tolist()
@@ -693,7 +722,7 @@ class IngestionStep(GenericStep):
         self.insert_non_detections(new_non_detections)
         # produce to some topic
         if self.producer:
-            self.produce(alerts, objects, light_curves)
+            self.produce(alerts, objects, light_curves, metadata)
         del light_curves["detections"]
         del light_curves["non_detections"]
         del light_curves
@@ -729,11 +758,11 @@ class IngestionStep(GenericStep):
         )
         # Do correction to detections from stream
         detections = self.correct(detections)
-        # Insert/update data on mongo
-        self.execute_psql(
+        # Insert/update data on mongo and get metadata
+        metadata = self.execute_psql(
             alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy()
         )
-        self.execute_mongo(alerts, detections, non_dets_from_prv_candidates)
+        self.execute_mongo(alerts, detections, non_dets_from_prv_candidates, metadata)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
