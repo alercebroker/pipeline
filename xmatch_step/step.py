@@ -83,12 +83,15 @@ class XmatchStep(GenericStep):
             response.append(d)
         response = pd.concat(response, ignore_index=True)
         if key == "detections":
-            response = response.groupby("oid").apply(lambda x: pd.Series({
-                key: x.to_dict("records"),
-                "candid": x["candid"].max()
-            }))
+            response = response.groupby("oid").apply(
+                lambda x: pd.Series(
+                    {key: x.to_dict("records"), "candid": x["candid"].max()}
+                )
+            )
         else:
-            response = response.groupby("oid").apply(lambda x: pd.Series({key: x.to_dict("records")}))
+            response = response.groupby("oid").apply(
+                lambda x: pd.Series({key: x.to_dict("records")})
+            )
         return response
 
     def format_output(
@@ -116,7 +119,11 @@ class XmatchStep(GenericStep):
             }
         )
         # Join xmatches with light curves
-        metadata = light_curves[["oid", "metadata"]].explode("oid", ignore_index=True).set_index("oid")
+        metadata = (
+            light_curves[["oid", "metadata"]]
+            .explode("oid", ignore_index=True)
+            .set_index("oid")
+        )
         dets = self.unparse(light_curves, "detections")
         non_dets = self.unparse(light_curves, "non_detections")
         data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
