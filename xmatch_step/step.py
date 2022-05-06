@@ -116,10 +116,10 @@ class XmatchStep(GenericStep):
             }
         )
         # Join xmatches with light curves
+        metadata = light_curves[["oid", "metadata"]].explode("oid", ignore_index=True).set_index("oid")
         dets = self.unparse(light_curves, "detections")
         non_dets = self.unparse(light_curves, "non_detections")
-        data = dets.join(xmatches.set_index("oid_in"))
-        data = data.join(non_dets)
+        data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
         data.replace({np.nan: None}, inplace=True)
         data.reset_index(inplace=True)
         # Transform to a list of dicts
@@ -207,6 +207,7 @@ class XmatchStep(GenericStep):
             ["aid", "meanra", "meandec", "oid"]
         ]  # Temp. code: remove only oid
         input_catalog = input_catalog.explode("oid", ignore_index=True)
+        # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
         # rename columns of meanra and meandec to (ra, dec)
