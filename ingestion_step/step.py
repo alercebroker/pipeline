@@ -564,7 +564,7 @@ class IngestionStep(GenericStep):
                 "candid": str(candid),
                 "detections": detections,
                 "non_detections": non_detections,
-                "metadata": metadata_
+                "metadata": metadata_,
             }
             self.producer.produce(output_message, key=aid)
             n_messages += 1
@@ -686,7 +686,11 @@ class IngestionStep(GenericStep):
         ps1 = parse_metadata(ps1, "ps1")
         gaia = parse_metadata(gaia, "gaia")
         ss = parse_metadata(ss, "ss")
-        metadata = reference.join(ps1, how="outer").join(gaia, how="outer").join(ss, how="outer")
+        metadata = (
+            reference.join(ps1, how="outer")
+            .join(gaia, how="outer")
+            .join(ss, how="outer")
+        )
         return metadata
 
     def execute_mongo(
@@ -694,7 +698,7 @@ class IngestionStep(GenericStep):
         alerts: pd.DataFrame,
         detections: pd.DataFrame,
         non_detections_prv_candidates: pd.DataFrame,
-        metadata: pd.DataFrame
+        metadata: pd.DataFrame,
     ):
         # Get unique alerce ids for get objects from database
         unique_aids = alerts["aid"].unique().tolist()

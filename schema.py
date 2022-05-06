@@ -1,4 +1,3 @@
-
 METADATA = {
     "name": "metadata",
     "type": "record",
