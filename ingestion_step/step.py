@@ -522,6 +522,7 @@ class IngestionStep(GenericStep):
         alerts
         objects
         light_curves
+        metadata
         key
         Returns
         -------
@@ -536,16 +537,18 @@ class IngestionStep(GenericStep):
         objects.sort_values("lastmjd", inplace=True, ascending=True)
         self.logger.info(f"Checking {len(objects)} messages (key={key})")
         n_messages = 0
+
         for index, row in objects.iterrows():
             _key = row[key]
             aid = row["aid"]
             oids = row["oid"]
 
             metadata_ = None
-            for o in oids:
-                if o in metadata.index:
-                    metadata_ = metadata.loc[o].to_dict()
-                    break
+            if metadata is not None:
+                for o in oids:
+                    if o in metadata.index:
+                        metadata_ = metadata.loc[o].to_dict()
+                        break
 
             key_alert = alerts[alerts[key] == _key]
             candid = key_alert["candid"].values[-1]  # get the last candid for this key
