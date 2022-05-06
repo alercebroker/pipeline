@@ -207,15 +207,16 @@ class StepTestCase(unittest.TestCase):
         assert len(self.step.driver.query().bulk_insert.mock_calls) == 3
 
     def test_produce(self):
-        alerts = pd.DataFrame([{"aid": "a", "candid": 1}])
+        alerts = pd.DataFrame([{"aid": "a", "oid": "a", "candid": 1}])
         objects = pd.DataFrame(
-            [{"aid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}]
+            [{"aid": "a",  "oid": "a", "meanra": 1, "meandec": 1, "ndet": 1, "lastmjd": 1}]
         )
         light_curves = {
-            "detections": pd.DataFrame([{"aid": "a", "candid": 1, "new": True}]),
+            "detections": pd.DataFrame([{"aid": "a",  "oid": "a", "candid": 1, "new": True}]),
             "non_detections": pd.DataFrame(
-                [{"aid": "a", "candid": None, "new": False}]
+                [{"aid": "a",  "oid": "a", "candid": None, "new": False}]
             ),
         }
-        self.step.produce(alerts, objects, light_curves)
+        metadata = pd.DataFrame([{"aid": "a",  "oid": "a", "ps1": {}, "gaia": {}}])
+        self.step.produce(alerts, objects, light_curves, metadata)
         self.assertEqual(len(self.step.producer.produce.mock_calls), 1)

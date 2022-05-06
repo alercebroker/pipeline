@@ -147,7 +147,9 @@ def preprocess_ps1(metadata: pd.DataFrame, detections: pd.DataFrame):
             metadata[f"unique{i}"] = False
             metadata[f"update{i}"] = metadata.oid.isin(difference.oid).astype(bool)
 
-    return pd.concat([metadata, new_values], ignore_index=True)
+    data = pd.concat([metadata, new_values], ignore_index=True)
+    data["nmtchps"] = data["nmtchps"].astype("int")
+    return data
 
 
 def insert_ps1(metadata: pd.DataFrame, driver: MultiDriverConnection):
@@ -196,14 +198,14 @@ def preprocess_gaia(metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03)
             metadata.set_index("oid"), on="oid", rsuffix="_old"
         )
         is_the_same_gaia = np.isclose(
-            join_metadata["maggaia"].astype(np.float),
-            join_metadata[f"maggaia_old"].astype(np.float),
+            join_metadata["maggaia"].astype("float"),
+            join_metadata[f"maggaia_old"].astype("float"),
             rtol=tol,
             atol=tol,
             equal_nan=True,
         ) & np.isclose(
-            join_metadata["maggaiabright"].astype(np.float),
-            join_metadata[f"maggaiabright_old"].astype(np.float),
+            join_metadata["maggaiabright"].astype("float"),
+            join_metadata[f"maggaiabright_old"].astype("float"),
             rtol=tol,
             atol=tol,
             equal_nan=True,
