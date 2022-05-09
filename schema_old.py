@@ -145,7 +145,7 @@ SCHEMA = {
             "name": "metadata",
             "type": METADATA,
         },
-        {"name": "preprocess_step_id", "type": "string"},
-        {"name": "preprocess_step_version", "type": "string"},
+        # {"name": "preprocess_step_id", "type": "string"},
+        # {"name": "preprocess_step_version", "type": "string"},
     ],
 }
