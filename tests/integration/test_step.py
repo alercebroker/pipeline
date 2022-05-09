@@ -4,7 +4,7 @@ import unittest
 from xmatch_step import XmatchStep
 from db_plugins.db.sql.models import Object, Step
 from cds_xmatch_client import XmatchClient
-from schema import SCHEMA
+from schema_old import SCHEMA
 from unittest import mock
 from tests.data.messages import (
     generate_input_batch,
@@ -86,7 +86,7 @@ class StepXmatchTest(unittest.TestCase):
 
     def setUp(self):
         self.step.driver.create_db()
-        array = [get_default_object_values(x) for x in self.batch]
+        array = [get_default_object_values(i) for i, x in enumerate(self.batch)]
         self.step.driver.query(Object).bulk_insert(array)
 
     def tearDown(self):

@@ -106,7 +106,7 @@ class StepXmatchTest(unittest.TestCase):
         old_calls = len(self.step.producer.produce.mock_calls)
         self.step.produce(data)
         new_calls = len(self.step.producer.produce.mock_calls)
-        self.assertEqual(new_calls - old_calls, 2)
+        self.assertEqual(new_calls - old_calls, 4)
 
     def test_bad_xmatch(self):
         catalog = pd.DataFrame(self.batch)

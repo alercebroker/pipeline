@@ -65,6 +65,35 @@ class XmatchStep(GenericStep):
             date=datetime.datetime.now(),
         )
 
+    # TEMPORAL CODE: Get the old format pipeline light curves.
+    def unparse(self, data: pd.DataFrame, key: str):
+        data = data.copy(deep=True)
+        response = []
+        data = data[key].values
+        for dets in data:
+            d = pd.DataFrame(dets)
+            if d.empty:
+                continue
+            d = d[d["tid"] == "ZTF"]
+            if "extra_fields" in d.columns:
+                extra_fields = list(d["extra_fields"].values)
+                extra_fields = pd.DataFrame(extra_fields, index=d.index)
+                d = d.join(extra_fields)
+                d.drop(columns=["extra_fields"], inplace=True)
+            response.append(d)
+        response = pd.concat(response, ignore_index=True)
+        if key == "detections":
+            response = response.groupby("oid").apply(
+                lambda x: pd.Series(
+                    {key: x.to_dict("records"), "candid": x["candid"].max()}
+                )
+            )
+        else:
+            response = response.groupby("oid").apply(
+                lambda x: pd.Series({key: x.to_dict("records")})
+            )
+        return response
+
     def format_output(
         self, light_curves: pd.DataFrame, xmatches: pd.DataFrame
     ) -> List[dict]:
@@ -74,8 +103,8 @@ class XmatchStep(GenericStep):
         :param xmatches: Values of cross-matches (in dataframe)
         :return:
         """
-        # Create a new dataframe that contain just two columns `aid` and `xmatches`.
-        aid_in = xmatches["aid_in"]
+        # Create a new dataframe that contains just two columns `aid` and `xmatches`.
+        aid_in = xmatches["oid_in"]  # change to aid for multi stream purposes
         # Temporal code: the oid_in will be removed
         xmatches.drop(
             columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True
@@ -83,16 +112,22 @@ class XmatchStep(GenericStep):
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
-                "aid_in": aid_in,
+                "oid_in": aid_in,  # change to aid name for multi stream
                 "xmatches": xmatches.apply(
                     lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1
                 ),
             }
         )
         # Join xmatches with light curves
-        data = light_curves.set_index("aid").join(xmatches.set_index("aid_in"))
+        metadata = (
+            light_curves[["oid", "metadata"]]
+            .explode("oid", ignore_index=True)
+            .set_index("oid")
+        )
+        dets = self.unparse(light_curves, "detections")
+        non_dets = self.unparse(light_curves, "non_detections")
+        data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
         data.replace({np.nan: None}, inplace=True)
-        data.index.name = "aid"
         data.reset_index(inplace=True)
         # Transform to a list of dicts
         data = data.to_dict("records")
@@ -117,17 +152,8 @@ class XmatchStep(GenericStep):
             self.driver.query(Xmatch).bulk_insert(array)
 
     def produce(self, messages: List[dict]) -> None:
-        def exists_in_ztf(oids: Set[str]) -> bool:
-            for o in oids:
-                if "ZTF" in o:
-                    return True
-            return False
-
         for message in messages:
-            # Temporal code: for produce only ZTF objects:
-            if exists_in_ztf(message["oid"]):
-                del message["oid"]
-                self.producer.produce(message, key=message["aid"])
+            self.producer.produce(message, key=message["oid"])
 
     def request_xmatch(
         self, input_catalog: pd.DataFrame, retries_count: int
@@ -188,6 +214,7 @@ class XmatchStep(GenericStep):
             ["aid", "meanra", "meandec", "oid"]
         ]  # Temp. code: remove only oid
         input_catalog = input_catalog.explode("oid", ignore_index=True)
+        # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
         # rename columns of meanra and meandec to (ra, dec)

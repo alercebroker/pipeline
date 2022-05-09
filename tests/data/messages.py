@@ -15,6 +15,15 @@ def get_extra_fields(telescope: str):
             "distnr": random.random(),
             "magnr": random.random(),
             "sigmagnr": random.random(),
+            "pid": random.randint(1, 999999),
+            "diffmaglim": random.uniform(15, 21),
+            "nid": random.randint(1, 999999),
+            "magpsf": random.random(),  #
+            "sigmapsf": random.random(),  #
+            "magap": random.random(),
+            "sigmagap": random.random(),
+            "magapbig": random.random(),
+            "sigmagapbig": random.random(),
         }
 
 
@@ -54,14 +63,18 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
             "fid": random.randint(1, 2),
             "ra": random.uniform(0, 360),
             "dec": random.uniform(-90, 90),
-            "e_ra": random.random(),
-            "e_dec": random.random(),
+            "e_ra": random.uniform(0, 1),
+            "e_dec": random.uniform(0, 1),
             "mag": random.uniform(15, 20),
-            "e_mag": random.random(),
+            "e_mag": random.uniform(0, 1),
             "isdiffpos": random.choice([-1, 1]),
-            "rb": random.random(),
+            "rb": random.uniform(0, 1),
             "rbversion": f"v1",
             "extra_fields": get_extra_fields("ZTF"),
+            "corrected": random.choice([True, False]),
+            "dubious": random.choice([True, False]),
+            "has_stamp": random.choice([True, False]),
+            "step_id_corr": "test_version",
         }
         alerts.append(alert)
     return alerts
@@ -81,6 +94,54 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
     return non_det
 
 
+def generate_metadata(candid):
+    ss = {
+        "ssdistnr": random.choice([-999.0, random.uniform(0, 10)]),
+        "ssmagnr": random.choice([-999.0, random.uniform(0, 10)]),
+        "ssnamenr": f"randomname{random.randint(0, 1000)}",
+    }
+    gaia = {
+        "neargaia": random.uniform(0, 10),
+        "neargaiabright": random.uniform(0, 10),
+        "maggaia": random.uniform(0, 10),
+        "maggaiabright": random.uniform(0, 10),
+        "unique1": random.choice([True, False])
+    }
+    ps1 = {
+        "objectidps1": random.randint(1, 999999),
+        "sgmag1": random.uniform(10, 20),
+        "srmag1": random.uniform(10, 20),
+        "simag1": random.uniform(10, 20),
+        "szmag1": random.uniform(10, 20),
+        "sgscore1": random.uniform(0, 10),
+        "distpsnr1": random.uniform(0, 10),
+        "objectidps2": random.randint(1, 999999),
+        "sgmag2": random.uniform(10, 20),
+        "srmag2": random.uniform(10, 20),
+        "simag2": random.uniform(10, 20),
+        "szmag2": random.uniform(10, 20),
+        "sgscore2": random.uniform(0, 10),
+        "distpsnr2": random.uniform(0, 10),
+        "objectidps3": random.randint(10, 20),
+        "sgmag3": random.uniform(10, 20),
+        "srmag3": random.uniform(10, 20),
+        "simag3": random.uniform(10, 20),
+        "szmag3": random.uniform(10, 20),
+        "sgscore3": random.uniform(0, 10),
+        "distpsnr3": random.uniform(0, 10),
+        "nmtchps": random.randint(1, 100),
+        "candid": candid,
+        "unique1": random.choice([True, False]),
+        "unique2": random.choice([True, False]),
+        "unique3": random.choice([True, False])
+    }
+    return {
+        "ss": ss,
+        "gaia": gaia,
+        "ps1": ps1
+    }
+
+
 def generate_input_batch(n: int) -> List[dict]:
     """
     Parameters
@@ -94,24 +155,26 @@ def generate_input_batch(n: int) -> List[dict]:
         detections = generate_alert_atlas(
             random.randint(1, 100), m
         ) + generate_alert_ztf(random.randint(1, 100), m)
-        non_det = generate_non_det(random.randint(0, 20), m)
+        non_det = generate_non_det(random.randint(1, 20), m)
+        candid = int(str(m + 1).ljust(8, "0"))
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
-            "candid": int(str(m + 1).ljust(8, "0")),
+            "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
             "non_detections": non_det,
             "ndet": len(detections),
+            "metadata": generate_metadata(candid)
         }
         batch.append(msg)
     random.shuffle(batch, lambda: 0.1)
     return batch
 
 
-def get_default_object_values(message: dict) -> dict:
+def get_default_object_values(identifier: int) -> dict:
     data = {
-        "oid": f"ZTF{message['aid']}",
+        "oid": f"ZTFoid{identifier}",
         "ndethist": 0.0,
         "ncovhist": 0.0,
         "mjdstarthist": 40000.0,
@@ -136,7 +199,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "oid_in": f"ZTF{f['aid']}",  # Temp. code
+            "oid_in":  f"ZTFoid{i}",  #f"ZTF{f['aid']}",  # Temp. code
             "aid_in": f["aid"],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),
