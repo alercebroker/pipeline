@@ -37,7 +37,6 @@ def init(db_config, db=None):
 
 
 def make_migrations():
-    print("ENTRA")
     os.chdir(MIGRATIONS_PATH)
     alembicArgs = ["--raiseerr", "revision", "--autogenerate", "-m", "tables"]
     alembic.config.main(alembicArgs)
