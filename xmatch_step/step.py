@@ -79,6 +79,7 @@ class XmatchStep(GenericStep):
                 extra_fields = list(d["extra_fields"].values)
                 extra_fields = pd.DataFrame(extra_fields, index=d.index)
                 d = d.join(extra_fields)
+                d.rename(columns={"mag": "magpsf", "e_mag": "sigmapsf"}, inplace=True)
                 d.drop(columns=["extra_fields"], inplace=True)
             response.append(d)
         response = pd.concat(response, ignore_index=True)
@@ -88,10 +89,12 @@ class XmatchStep(GenericStep):
                     {key: x.to_dict("records"), "candid": x["candid"].max()}
                 )
             )
-        else:
+        elif key == "non_detections":
             response = response.groupby("oid").apply(
                 lambda x: pd.Series({key: x.to_dict("records")})
             )
+        else:
+            raise NotImplementedError(f"Not implemented unparse for {key} key")
         return response
 
     def format_output(
@@ -128,6 +131,7 @@ class XmatchStep(GenericStep):
         non_dets = self.unparse(light_curves, "non_detections")
         data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
         data.replace({np.nan: None}, inplace=True)
+        data.index.names = ['oid']
         data.reset_index(inplace=True)
         # Transform to a list of dicts
         data = data.to_dict("records")
@@ -153,6 +157,7 @@ class XmatchStep(GenericStep):
 
     def produce(self, messages: List[dict]) -> None:
         for message in messages:
+            message["non_detections"] = [] if message["non_detections"] is None else message["non_detections"]
             self.producer.produce(message, key=message["oid"])
 
     def request_xmatch(
@@ -205,7 +210,6 @@ class XmatchStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         light_curves = pd.DataFrame(messages)
         light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
-
         # Temporal code: to manage oids of ZTF and store xmatch
         light_curves["oid"] = light_curves["detections"].apply(
             lambda x: set(det["oid"] for det in x)
