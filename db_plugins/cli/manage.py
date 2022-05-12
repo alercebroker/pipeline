@@ -25,8 +25,6 @@ def initdb(settings_path, db=None):
     sys.path.append(os.path.dirname(os.path.expanduser(settings_path + "/")))
     settings = importlib.import_module("settings")
     DB_CONFIG = settings.DB_CONFIG
-    sys.path.pop(-1)
-    del sys.modules["settings"]
     if "SQL" in DB_CONFIG:
         init_sql(DB_CONFIG["SQL"], db)
         click.echo("Database created with credentials from {}".format(settings_path))
@@ -37,6 +35,8 @@ def initdb(settings_path, db=None):
 
     else:
         raise Exception("Invalid settings file")
+    sys.path.pop(-1)
+    del sys.modules["settings"]
 
 
 @cli.command()
