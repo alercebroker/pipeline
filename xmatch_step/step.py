@@ -131,7 +131,7 @@ class XmatchStep(GenericStep):
         non_dets = self.unparse(light_curves, "non_detections")
         data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
         data.replace({np.nan: None}, inplace=True)
-        data.index.names = ['oid']
+        data.index.names = ["oid"]
         data.reset_index(inplace=True)
         # Transform to a list of dicts
         data = data.to_dict("records")
@@ -157,7 +157,9 @@ class XmatchStep(GenericStep):
 
     def produce(self, messages: List[dict]) -> None:
         for message in messages:
-            message["non_detections"] = [] if message["non_detections"] is None else message["non_detections"]
+            message["non_detections"] = (
+                [] if message["non_detections"] is None else message["non_detections"]
+            )
             self.producer.produce(message, key=message["oid"])
 
     def request_xmatch(
