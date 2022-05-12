@@ -98,10 +98,10 @@ class StepXmatchTest(unittest.TestCase):
 
     def test_produce(self):
         data = [
-            {"oid": ["ATLAS1"], "aid": "A"},
-            {"oid": ["ZTF1"], "aid": "D"},
-            {"oid": ["ZTF2", "ATLAS2"], "aid": "C"},
-            {"oid": ["ATLAS10"], "aid": "D"},
+            {"oid": ["ATLAS1"], "aid": "A", "non_detections": None},
+            {"oid": ["ZTF1"], "aid": "D", "non_detections": None},
+            {"oid": ["ZTF2", "ATLAS2"], "aid": "C", "non_detections": None},
+            {"oid": ["ATLAS10"], "aid": "D", "non_detections": []},
         ]
         old_calls = len(self.step.producer.produce.mock_calls)
         self.step.produce(data)
