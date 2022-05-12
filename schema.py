@@ -86,6 +86,7 @@ DETECTIONS = {
             {"name": "isdiffpos", "type": "int"},
             {"name": "rb", "type": ["float", "null"]},
             {"name": "rbversion", "type": ["string", "null"]},
+            {"name": "corrected", "type": "boolean"},
             {
                 "name": "extra_fields",
                 "type": {
