@@ -130,5 +130,7 @@ SCHEMA = {
             "name": "metadata",
             "type": METADATA,
         },
+        {"name": "preprocess_step_id", "type": "string", "default": "transitional_pipeline"},
+        {"name": "preprocess_step_version", "type": "string", "default": "1.0.0"},
     ],
 }
