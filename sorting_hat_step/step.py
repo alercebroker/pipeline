@@ -64,7 +64,7 @@ class SortingHatStep(GenericStep):
                 if isinstance(alert["extra_fields"][k], list):
                     alert["extra_fields"][k] = pickle.dumps(alert["extra_fields"][k])
             # produce alert content with key of candid
-            self.producer.produce(alert, key=str(alert["candid"]))
+            self.producer.produce(alert, key=str(alert["aid"]))
             n_messages += 1
         self.logger.info(f"{n_messages} messages Produced")
 
