@@ -212,7 +212,9 @@ class XmatchStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} alerts")
         light_curves = pd.DataFrame(messages)
         light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
-        light_curves = light_curves[~light_curves["metadata"].isna()]  # Leave lightcurves with metadata (means ZTF lc)
+        light_curves = light_curves[
+            ~light_curves["metadata"].isna()
+        ]  # Leave lightcurves with metadata (means ZTF lc)
         # Temporal code: to manage oids of ZTF and store xmatch
         light_curves["oid"] = light_curves["detections"].apply(
             lambda x: set(det["oid"] for det in x)
