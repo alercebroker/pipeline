@@ -47,7 +47,9 @@ np.seterr(divide="ignore")
 
 def parse_metadata(df: pd.DataFrame, name) -> pd.DataFrame:
     df["candid"] = df["candid"].astype("int")
-    df.sort_values(by="candid", inplace=True, ignore_index=True, ascending=True)
+    df.sort_values(
+        by="candid", inplace=True, ignore_index=True, ascending=True
+    )
     df.drop_duplicates(subset="oid", keep="last", inplace=True)
     index = df["oid"].values
     new_df = pd.DataFrame({name: df.to_dict("records")}, index=index)
@@ -87,7 +89,9 @@ class IngestionStep(GenericStep):
         if config.get("PRODUCER_CONFIG", False):
             self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
 
-        self.driver = db_connection or MultiDriverConnection(config["DB_CONFIG"])
+        self.driver = db_connection or MultiDriverConnection(
+            config["DB_CONFIG"]
+        )
         self.driver.connect()
 
     def get_objects(self, aids: List[str or int], engine="mongo"):
@@ -140,9 +144,9 @@ class IngestionStep(GenericStep):
 
         """
         filter_by = {"aid": {"$in": aids}}
-        non_detections = self.driver.query("NonDetection", engine=engine).find_all(
-            filter_by=filter_by, paginate=False
-        )
+        non_detections = self.driver.query(
+            "NonDetection", engine=engine
+        ).find_all(filter_by=filter_by, paginate=False)
         if len(non_detections) == 0 or engine == "mongo":
             return pd.DataFrame(non_detections, columns=NON_DET_KEYS)
         return pd.DataFrame(non_detections)
@@ -176,7 +180,9 @@ class IngestionStep(GenericStep):
                 to_insert["_id"] = to_insert["aid"].values
             to_insert.replace({np.nan: None}, inplace=True)
             dict_to_insert = to_insert.to_dict("records")
-            self.driver.query("Object", engine=engine).bulk_insert(dict_to_insert)
+            self.driver.query("Object", engine=engine).bulk_insert(
+                dict_to_insert
+            )
             del to_insert
 
         if len(to_update) > 0:
@@ -203,12 +209,18 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(detections)} new detections {engine}")
+        self.logger.info(
+            f"Inserting {len(detections)} new detections {engine}"
+        )
         detections = detections.where(detections.notnull(), None)
         dict_detections = detections.to_dict("records")
-        self.driver.query("Detection", engine=engine).bulk_insert(dict_detections)
+        self.driver.query("Detection", engine=engine).bulk_insert(
+            dict_detections
+        )
 
-    def insert_non_detections(self, non_detections: pd.DataFrame, engine="mongo"):
+    def insert_non_detections(
+        self, non_detections: pd.DataFrame, engine="mongo"
+    ):
         """
 
         Parameters
@@ -219,7 +231,9 @@ class IngestionStep(GenericStep):
         -------
 
         """
-        self.logger.info(f"Inserting {len(non_detections)} new non_detections {engine}")
+        self.logger.info(
+            f"Inserting {len(non_detections)} new non_detections {engine}"
+        )
         non_detections.replace({np.nan: None}, inplace=True)
         dict_non_detections = non_detections.to_dict("records")
         self.driver.query("NonDetection", engine=engine).bulk_insert(
@@ -240,14 +254,18 @@ class IngestionStep(GenericStep):
         if 0.0 <= mean_ra <= 360.0:
             return mean_ra, e_ra
         else:
-            raise ValueError(f"Mean ra must be between 0 and 360 (given {mean_ra})")
+            raise ValueError(
+                f"Mean ra must be between 0 and 360 (given {mean_ra})"
+            )
 
     def compute_meandec(self, decs, e_decs):
         mean_dec, e_dec = self.calculate_stats_coordinates(decs, e_decs)
         if -90.0 <= mean_dec <= 90.0:
             return mean_dec, e_dec
         else:
-            raise ValueError(f"Mean dec must be between -90 and 90 (given {mean_dec})")
+            raise ValueError(
+                f"Mean dec must be between -90 and 90 (given {mean_dec})"
+            )
 
     def apply_objs_stats_from_correction(self, df: pd.DataFrame) -> pd.Series:
         response = {}
@@ -259,8 +277,12 @@ class IngestionStep(GenericStep):
         df_e_ra = df["e_ra"]
         df_e_dec = df["e_dec"]
 
-        response["meanra"], response["e_ra"] = self.compute_meanra(df_ra, df_e_ra)
-        response["meandec"], response["e_dec"] = self.compute_meandec(df_dec, df_e_dec)
+        response["meanra"], response["e_ra"] = self.compute_meanra(
+            df_ra, df_e_ra
+        )
+        response["meandec"], response["e_dec"] = self.compute_meandec(
+            df_dec, df_e_dec
+        )
         response["firstmjd"] = df_mjd.min()
         response["lastmjd"] = df_mjd.max()
         response["tid"] = list(df["tid"].unique())
@@ -283,7 +305,9 @@ class IngestionStep(GenericStep):
         # Keep existing objects
         aids = objects["aid"].unique()
         detections = light_curves["detections"]
-        detections.drop_duplicates(["candid", "aid"], inplace=True, keep="first")
+        detections.drop_duplicates(
+            ["candid", "aid"], inplace=True, keep="first"
+        )
         detections.reset_index(inplace=True, drop=True)
         # New objects referer to: empirical new objects
         # (without detections in the past) and modified objects
@@ -314,10 +338,14 @@ class IngestionStep(GenericStep):
         response["lastmjd"] = df_max.mjd
         response["deltamjd"] = response["lastmjd"] - response["firstmjd"]
         response["diffpos"] = df["isdiffpos"].min() > 0
-        response["reference_change"] = response["mjdendhist"] > response["firstmjd"]
+        response["reference_change"] = (
+            response["mjdendhist"] > response["firstmjd"]
+        )
         return pd.Series(response)
 
-    def preprocess_objects_psql(self, objects: pd.DataFrame, light_curves: dict):
+    def preprocess_objects_psql(
+        self, objects: pd.DataFrame, light_curves: dict
+    ):
         """
 
         Parameters
@@ -332,7 +360,9 @@ class IngestionStep(GenericStep):
         # Keep existing objects
         oids = objects["oid"].unique()
         detections = light_curves["detections"]
-        detections.drop_duplicates(["candid", "oid"], inplace=True, keep="first")
+        detections.drop_duplicates(
+            ["candid", "oid"], inplace=True, keep="first"
+        )
         detections.reset_index(inplace=True, drop=True)
         # New objects referer to: empirical new objects
         # (without detections in the past) and modified objects
@@ -366,7 +396,10 @@ class IngestionStep(GenericStep):
         return light_curves
 
     def preprocess_lightcurves(
-        self, detections: pd.DataFrame, non_detections: pd.DataFrame, engine="mongo"
+        self,
+        detections: pd.DataFrame,
+        non_detections: pd.DataFrame,
+        engine="mongo",
     ) -> dict:
         """
 
@@ -402,7 +435,9 @@ class IngestionStep(GenericStep):
         else:
             unique_keys_detections = ["oid", "candid"]
         # Checking if already on the database
-        index_detections = pd.MultiIndex.from_frame(detections[unique_keys_detections])
+        index_detections = pd.MultiIndex.from_frame(
+            detections[unique_keys_detections]
+        )
         old_index_detections = pd.MultiIndex.from_frame(
             old_detections[unique_keys_detections]
         )
@@ -420,7 +455,9 @@ class IngestionStep(GenericStep):
             # Using round 5 to have 5 decimals of precision to
             # delete duplicates non_detections
             non_detections["round_mjd"] = non_detections["mjd"].round(5)
-            old_non_detections["round_mjd"] = old_non_detections["mjd"].round(5)
+            old_non_detections["round_mjd"] = old_non_detections["mjd"].round(
+                5
+            )
             # Remove [aid, fid, round_mjd] that are new non_dets
             # and old non_dets.
             if engine == "mongo":
@@ -434,7 +471,9 @@ class IngestionStep(GenericStep):
             old_index_non_detections = pd.MultiIndex.from_frame(
                 old_non_detections[unique_keys_non_detections]
             )
-            non_dets_already_on_db = index_non_detections.isin(old_index_non_detections)
+            non_dets_already_on_db = index_non_detections.isin(
+                old_index_non_detections
+            )
             # Apply mask and get only new non detections on
             # non detections from stream.
             new_non_detections = non_detections[~non_dets_already_on_db]
@@ -471,9 +510,13 @@ class IngestionStep(GenericStep):
         non_detections = []
         for tid, subset_data in data.groupby("tid"):
             if tid == "ZTF":
-                self.prv_candidates_processor.strategy = ZTFPrvCandidatesStrategy()
+                self.prv_candidates_processor.strategy = (
+                    ZTFPrvCandidatesStrategy()
+                )
             elif "ATLAS" in tid:
-                self.prv_candidates_processor.strategy = ATLASPrvCandidatesStrategy()
+                self.prv_candidates_processor.strategy = (
+                    ATLASPrvCandidatesStrategy()
+                )
             else:
                 raise ValueError(f"Unknown Survey {tid}")
             det, non_det = self.prv_candidates_processor.compute(subset_data)
@@ -551,13 +594,17 @@ class IngestionStep(GenericStep):
                         break
 
             key_alert = alerts[alerts[key] == _key]
-            candid = key_alert["candid"].values[-1]  # get the last candid for this key
+            candid = key_alert["candid"].values[
+                -1
+            ]  # get the last candid for this key
             mask_detections = light_curves["detections"][key] == _key
             detections = light_curves["detections"].loc[mask_detections]
             detections.replace({np.nan: None}, inplace=True)
             detections = detections.to_dict("records")
             mask_non_detections = light_curves["non_detections"][key] == _key
-            non_detections = light_curves["non_detections"].loc[mask_non_detections]
+            non_detections = light_curves["non_detections"].loc[
+                mask_non_detections
+            ]
             non_detections = non_detections.to_dict("records")
             output_message = {
                 "aid": str(aid),
@@ -633,7 +680,9 @@ class IngestionStep(GenericStep):
             light_curves, old_magstats, ps1, reference, self.version
         )
         # Compute flags
-        obj_flags, magstat_flags = do_flags(light_curves["detections"], reference)
+        obj_flags, magstat_flags = do_flags(
+            light_curves["detections"], reference
+        )
         dmdt = compute_dmdt(light_curves, new_magstats)
         if len(dmdt) > 0:
             new_stats = new_magstats.set_index(["oid", "fid"]).join(
@@ -641,7 +690,12 @@ class IngestionStep(GenericStep):
             )
             new_stats.reset_index(inplace=True)
         else:
-            empty_dmdt = ["dmdt_first", "dm_first", "sigmadm_first", "dt_first"]
+            empty_dmdt = [
+                "dmdt_first",
+                "dm_first",
+                "sigmadm_first",
+                "dt_first",
+            ]
             new_stats = new_magstats.reindex(
                 columns=new_magstats.columns.tolist() + empty_dmdt
             )
@@ -657,10 +711,13 @@ class IngestionStep(GenericStep):
         #         objects = self.preprocess_objects_psql(objects, light_curves)
         objects.set_index("oid", inplace=True)
         objects.loc[obj_flags.index, "diffpos"] = obj_flags["diffpos"]
-        objects.loc[obj_flags.index, "reference_change"] = obj_flags["reference_change"]
+        objects.loc[obj_flags.index, "reference_change"] = obj_flags[
+            "reference_change"
+        ]
         objects.reset_index(inplace=True)
         objects.drop(
-            columns=["nearPS1", "nearZTF", "deltamjd", "ndubious"], inplace=True
+            columns=["nearPS1", "nearZTF", "deltamjd", "ndubious"],
+            inplace=True,
         )
         self.insert_objects(objects, engine="psql")
 
@@ -767,9 +824,13 @@ class IngestionStep(GenericStep):
         detections = self.correct(detections)
         # Insert/update data on mongo and get metadata
         metadata = self.execute_psql(
-            alerts.copy(), detections.copy(), non_dets_from_prv_candidates.copy()
+            alerts.copy(),
+            detections.copy(),
+            non_dets_from_prv_candidates.copy(),
         )
-        self.execute_mongo(alerts, detections, non_dets_from_prv_candidates, metadata)
+        self.execute_mongo(
+            alerts, detections, non_dets_from_prv_candidates, metadata
+        )
 
         self.logger.info(f"Clean batch of data\n")
         del alerts

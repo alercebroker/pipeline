@@ -1,5 +1,6 @@
 import os
 from schema import SCHEMA
+
 ##################################################
 #       atlas_id_step   Settings File
 ##################################################
@@ -22,7 +23,7 @@ DB_CONFIG = {
         "PASSWORD": os.getenv("MONGO_PASSWORD", None),
         "PORT": int(os.getenv("MONGO_PORT", 27017)),
         "DATABASE": os.getenv("MONGO_NAME", None),
-    }
+    },
 }
 
 
@@ -30,10 +31,10 @@ DB_CONFIG = {
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
     "PARAMS": {
-        "bootstrap.servers":  os.environ["CONSUMER_SERVER"],
+        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
-        'max.poll.interval.ms': 3600000
+        "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
@@ -43,13 +44,17 @@ if os.getenv("TOPIC_STRATEGY_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
-            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
+            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"]
+            .strip()
+            .split(","),
             "date_format": "%Y%m%d",
             "change_hour": 23,
         },
     }
 elif os.getenv("CONSUMER_TOPICS"):
-    CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+    CONSUMER_CONFIG["TOPICS"] = (
+        os.environ["CONSUMER_TOPICS"].strip().split(",")
+    )
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
@@ -58,7 +63,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
 }
 
 STEP_METADATA = {
@@ -72,12 +77,13 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
-        {"key": "objectId", "alias": "oid"}
+        {"key": "objectId", "alias": "oid"},
     ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
+            "auto.offset.reset": "smallest",
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
@@ -87,7 +93,10 @@ METRICS_CONFIG = {
             "description": "The root schema comprises the entire JSON document.",
             "default": {},
             "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+                {
+                    "timestamp_sent": "2020-09-01",
+                    "timestamp_received": "2020-09-01",
+                }
             ],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
@@ -116,7 +125,7 @@ METRICS_CONFIG = {
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
-    # "COMMIT": False,           #Disables commit, useful to debug a KafkaConsumer
+    # "COMMIT": False,  # Disables commit, useful to debug a KafkaConsumer
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
