@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+import logging
 
 from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 from ingestion_step.utils.constants import (
@@ -23,9 +24,13 @@ from lc_correction.compute import (
     apply_objstats_from_magstats,
 )
 
+logger = logging.getLogger("OldPreprocess")
+
 
 # TEMPORAL CODE
-def get_catalog(aids: List[str or int], table: str, driver: MultiDriverConnection):
+def get_catalog(
+    aids: List[str or int], table: str, driver: MultiDriverConnection
+):
     filter_by = {"aid": {"$in": aids}}
     catalog = driver.query(table, engine="psql").find_all(
         filter_by=filter_by, paginate=False
@@ -49,7 +54,9 @@ def get_dataquality(candids: List[int], driver: MultiDriverConnection):
     return pd.DataFrame(query, columns=DATAQUALITY_KEYS)
 
 
-def insert_dataquality(dataquality: pd.DataFrame, driver: MultiDriverConnection):
+def insert_dataquality(
+    dataquality: pd.DataFrame, driver: MultiDriverConnection
+):
     # Not inserting twice
     candids = dataquality["candid"].unique().tolist()
     old_dataquality = get_dataquality(candids, driver)
@@ -61,7 +68,9 @@ def insert_dataquality(dataquality: pd.DataFrame, driver: MultiDriverConnection)
     driver.query("Dataquality", engine="psql").bulk_insert(dict_dataquality)
 
 
-def preprocess_ss(ss_catalog: pd.DataFrame, detections: pd.DataFrame) -> pd.DataFrame:
+def preprocess_ss(
+    ss_catalog: pd.DataFrame, detections: pd.DataFrame
+) -> pd.DataFrame:
     detections = detections[detections["parent_candid"].isna()]
     if len(ss_catalog):
         oids = ss_catalog["oid"].unique()
@@ -95,7 +104,9 @@ def preprocess_reference(metadata: pd.DataFrame, detections: pd.DataFrame):
     already_on_db = index_detections.isin(index_metadata)
     detections["mjdstartref"] = detections["jdstartref"] - 2400000.5
     detections["mjdendref"] = detections["jdendref"] - 2400000.5
-    new_values = detections.loc[~already_on_db, detections.columns.isin(REFERENCE_KEYS)]
+    new_values = detections.loc[
+        ~already_on_db, detections.columns.isin(REFERENCE_KEYS)
+    ]
     if len(new_values) > 0:
         new_values.loc[:, "new"] = True
         new_values.reset_index(inplace=True, drop=True)
@@ -124,8 +135,12 @@ def preprocess_ps1(metadata: pd.DataFrame, detections: pd.DataFrame):
     for i in range(1, 4):
         metadata[f"update{i}"] = False
     new_metadata = ~detections.oid.isin(oids)
-    new_values = detections.loc[new_metadata, detections.columns.isin(PS1_KEYS)]
-    old_values = detections.loc[~new_metadata, detections.columns.isin(PS1_KEYS)]
+    new_values = detections.loc[
+        new_metadata, detections.columns.isin(PS1_KEYS)
+    ]
+    old_values = detections.loc[
+        ~new_metadata, detections.columns.isin(PS1_KEYS)
+    ]
     if len(new_values) > 0:
         new_values.loc[:, "new"] = True
         new_values.drop_duplicates(["oid"], inplace=True)
@@ -145,7 +160,9 @@ def preprocess_ps1(metadata: pd.DataFrame, detections: pd.DataFrame):
                 & join_metadata[f"unique{i}"]
             ]
             metadata[f"unique{i}"] = False
-            metadata[f"update{i}"] = metadata.oid.isin(difference.oid).astype(bool)
+            metadata[f"update{i}"] = metadata.oid.isin(difference.oid).astype(
+                bool
+            )
 
     data = pd.concat([metadata, new_values], ignore_index=True)
     data["nmtchps"] = data["nmtchps"].astype("int")
@@ -163,7 +180,9 @@ def insert_ps1(metadata: pd.DataFrame, driver: MultiDriverConnection):
         driver.query("Ps1_ztf", engine="psql").bulk_insert(dict_to_insert)
 
     if len(to_update) > 0:
-        updates = to_update[to_update.update1 | to_update.update2 | to_update.update3]
+        updates = to_update[
+            to_update.update1 | to_update.update2 | to_update.update3
+        ]
         if len(updates) > 0:
             updates.replace({np.nan: None}, inplace=True)
             oids = updates["oid"].values
@@ -175,7 +194,9 @@ def insert_ps1(metadata: pd.DataFrame, driver: MultiDriverConnection):
             )
 
 
-def preprocess_gaia(metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03):
+def preprocess_gaia(
+    metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03
+):
     detections = detections[detections["parent_candid"].isna()]
     if len(metadata) == 0:
         oids = []
@@ -185,8 +206,12 @@ def preprocess_gaia(metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03)
     metadata[f"update1"] = False
     metadata["new"] = False
     new_metadata = ~detections["oid"].isin(oids)
-    new_values = detections.loc[new_metadata, detections.columns.isin(GAIA_KEYS)]
-    old_values = detections.loc[~new_metadata, detections.columns.isin(GAIA_KEYS)]
+    new_values = detections.loc[
+        new_metadata, detections.columns.isin(GAIA_KEYS)
+    ]
+    old_values = detections.loc[
+        ~new_metadata, detections.columns.isin(GAIA_KEYS)
+    ]
 
     if len(new_values) > 0:
         new_values[f"unique1"] = True
@@ -210,7 +235,9 @@ def preprocess_gaia(metadata: pd.DataFrame, detections: pd.DataFrame, tol=1e-03)
             atol=tol,
             equal_nan=True,
         )
-        difference = join_metadata[~(is_the_same_gaia) & join_metadata[f"unique1"]]
+        difference = join_metadata[
+            ~(is_the_same_gaia) & join_metadata[f"unique1"]
+        ]
         metadata[f"update1"] = metadata.oid.isin(difference.oid).astype(bool)
         metadata[f"unique1"] = False
         metadata["new"] = False
@@ -243,7 +270,9 @@ def do_flags(detections: pd.DataFrame, reference: pd.DataFrame):
     diffpos = detections.groupby("oid").apply(lambda x: x.isdiffpos.min() > 0)
     firstmjd = detections.groupby("oid").apply(lambda x: x.mjd.min())
     firstmjd.name = "firstmjd"
-    saturation_rate = detections.groupby(["oid", "fid"]).apply(get_flag_saturation)
+    saturation_rate = detections.groupby(["oid", "fid"]).apply(
+        get_flag_saturation
+    )
     saturation_rate.name = "saturation_rate"
 
     reference_mjd = reference.join(firstmjd, on="oid")
@@ -252,7 +281,9 @@ def do_flags(detections: pd.DataFrame, reference: pd.DataFrame):
     )
 
     return (
-        pd.DataFrame({"diffpos": diffpos, "reference_change": reference_change}),
+        pd.DataFrame(
+            {"diffpos": diffpos, "reference_change": reference_change}
+        ),
         saturation_rate,
     )
 
@@ -368,29 +399,41 @@ def object_stats_df(corrected, magstats, step_name=None, flags=False):
         obj_magstats.append(r)
     obj_magstats = pd.DataFrame(obj_magstats)
     obj_magstats.set_index("objectId", inplace=True)
-    basic_stats["step_id_corr"] = "corr_bulk_0.0.1" if step_name is None else step_name
+    basic_stats["step_id_corr"] = (
+        "corr_bulk_0.0.1" if step_name is None else step_name
+    )
     return basic_stats.join(obj_magstats)
 
 
 def preprocess_objects_(objects, light_curves, alerts, magstats, version):
     oids = objects.oid.unique()
-    apply_last_alert = lambda x: get_last_alert(x)
-    last_alerts = alerts.groupby("oid", sort=False).apply(apply_last_alert)
-    last_alerts.drop(columns=["oid"], inplace=True)
+    extra_fields = list(alerts["extra_fields"].values)
+    extra_fields = pd.DataFrame(extra_fields, index=alerts.index)
+    alerts = alerts.join(extra_fields)
+    alerts = alerts.loc[
+        :, ["oid", "ndethist", "ncovhist", "jdstarthist", "jdendhist"]
+    ]
+    alerts.drop(columns=["oid"], inplace=True)
     detections = light_curves["detections"].drop(
         columns=["ndethist", "ncovhist", "jdstarthist", "jdendhist"]
     )
-    detections_last_alert = detections.join(last_alerts, on="oid")
+    detections_last_alert = detections.join(alerts)
     detections_last_alert["objectId"] = detections_last_alert.oid
     detections_last_alert.drop_duplicates(["candid", "oid"], inplace=True)
     detections_last_alert.reset_index(inplace=True)
     magstats["objectId"] = magstats.oid
 
-    new_objects = object_stats_df(detections_last_alert, magstats, step_name=version)
+    new_objects = object_stats_df(
+        detections_last_alert, magstats, step_name=version
+    )
     new_objects.reset_index(inplace=True)
 
     new_names = dict(
-        [(col, col.replace("-", "_")) for col in new_objects.columns if "-" in col]
+        [
+            (col, col.replace("-", "_"))
+            for col in new_objects.columns
+            if "-" in col
+        ]
     )
 
     new_objects.rename(columns={"objectId": "oid", **new_names}, inplace=True)
