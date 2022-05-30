@@ -808,6 +808,7 @@ class IngestionStep(GenericStep):
         # Concat detections from alerts and detections from previous candidates
         if dets_from_prv_candidates.empty:
             detections = alerts.copy()
+            detections["parent_candid"] = np.nan
         else:
             dets_from_prv_candidates["has_stamp"] = False
             detections = pd.concat(
