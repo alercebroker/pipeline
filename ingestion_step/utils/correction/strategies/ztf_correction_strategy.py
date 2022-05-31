@@ -34,9 +34,8 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
         # Uses candid like index
         df.index = detections["candid"]
         # Additional columns for correction
-        df["magpsf"] = detections["mag"]
-        df["sigmapsf"] = detections["e_mag"]
-        df["isdiffpos"] = detections["isdiffpos"]
+        df.loc[:, ["magpsf", "sigmapsf"]] = detections[["mag", "e_mag"]].values
+        df.loc[:, "isdiffpos"] = detections["isdiffpos"].values
         # Is possible correct that detection?
         df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
         # Apply formula of correction: corrected is the dataframe with response
