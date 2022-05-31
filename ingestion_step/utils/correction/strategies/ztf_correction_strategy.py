@@ -30,18 +30,21 @@ class ZTFCorrectionStrategy(BaseCorrectionStrategy):
             lambda x: [x["distnr"], x["magnr"], x["sigmagnr"]]
         )
         # Create an auxiliary dataframe for correction
-        df = pd.DataFrame(list(fields), columns=["distnr", "magnr", "sigmagnr"])
+        df = pd.DataFrame(
+            list(fields), columns=["distnr", "magnr", "sigmagnr"]
+        )
         # Uses candid like index
         df.index = detections["candid"]
         # Additional columns for correction
-        df["magpsf"] = detections["mag"]
-        df["sigmapsf"] = detections["e_mag"]
-        df["isdiffpos"] = detections["isdiffpos"]
+        df.loc[:, ["magpsf", "sigmapsf"]] = detections[["mag", "e_mag"]].values
+        df.loc[:, "isdiffpos"] = detections["isdiffpos"].values
         # Is possible correct that detection?
         df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
         # Apply formula of correction: corrected is the dataframe with response
         corrected = df.apply(
-            lambda x: correction(x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos)
+            lambda x: correction(
+                x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos
+            )
             if x["corrected"]
             else (np.nan, np.nan, np.nan),
             axis=1,

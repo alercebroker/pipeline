@@ -34,7 +34,9 @@ def get_model(engine: str, model: str):
             raise NotImplementedError(f"Not implemented engine: {engine}")
         models = MODELS[engine]
         if model not in models.keys():
-            raise Exception(f"Model {model} not in {models.keys()} of engine {engine}")
+            raise Exception(
+                f"Model {model} not in {models.keys()} of engine {engine}"
+            )
         model_instance = MODELS[engine][model]
         return model_instance
     except Exception as e:
@@ -120,7 +122,9 @@ class MultiQuery(BaseQuery):
                 zip(bind_object.keys(), map(bindparam, bind_object.keys()))
             )
             statement = (
-                model.__table__.update().where(where_clause).values(params_statement)
+                model.__table__.update()
+                .where(where_clause)
+                .values(params_statement)
             )
             return self.psql.engine.execute(statement, to_update)
 

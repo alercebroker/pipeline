@@ -121,11 +121,26 @@ REFERENCE_KEYS = [
     "mjdstartref",
     "mjdendref",
 ]
-PS1_MultKey = ["objectidps", "sgmag", "srmag", "simag", "szmag", "sgscore", "distpsnr"]
+PS1_MultKey = [
+    "objectidps",
+    "sgmag",
+    "srmag",
+    "simag",
+    "szmag",
+    "sgscore",
+    "distpsnr",
+]
 PS1_KEYS = ["oid", "candid", "nmtchps"]
 for i in range(1, 4):
     PS1_KEYS = PS1_KEYS + [f"{key}{i}" for key in PS1_MultKey]
-GAIA_KEYS = ["oid", "candid", "neargaia", "neargaiabright", "maggaia", "maggaiabright"]
+GAIA_KEYS = [
+    "oid",
+    "candid",
+    "neargaia",
+    "neargaiabright",
+    "maggaia",
+    "maggaiabright",
+]
 
 MAGSTATS_TRANSLATE = {
     "magpsf_mean": "magmean",
