@@ -1,6 +1,6 @@
 from typing import List
 from .generic import GenericAlert, SurveyParser
-from ..parsers import ATLASParser, ZTFParser
+from ..parsers import ATLASParser, ZTFParser, LSSTParser
 
 
 class ParserSelector:
@@ -61,4 +61,12 @@ class ALeRCEParser(ParserSelector):
         self.parsers = {
             ATLASParser,
             ZTFParser
+        }
+
+
+class ELAsTiCCParser(ParserSelector):
+    def __init__(self):
+        super().__init__()
+        self.parsers = {
+            LSSTParser
         }
