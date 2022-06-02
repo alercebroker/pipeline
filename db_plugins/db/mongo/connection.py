@@ -3,11 +3,25 @@ from db_plugins.db.mongo.query import mongo_query_creator
 from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
 from db_plugins.db.mongo.models import Base
 
+
 MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DATABASE"}
 
 
 def satisfy_keys(config_keys):
     return MAP_KEYS.difference(config_keys)
+
+
+def to_camel_case(config: dict):
+    """Converts config keys to lowerCamelCase"""
+    result_config = {}
+    for key in config:
+        lower_key = key.lower()
+        camel_case_key = lower_key.split("_")
+        camel_case_key = camel_case_key[0] + "".join(
+            x.title() for x in camel_case_key[1:]
+        )
+        result_config[camel_case_key] = config[key]
+    return result_config
 
 
 class MongoDatabaseCreator(DatabaseCreator):
@@ -21,6 +35,7 @@ class MongoConnection(DatabaseConnection):
         self.config = config
         self.client = client
         self.base = base or Base
+        self.database = None
 
     def connect(self, config):
         """
@@ -49,14 +64,7 @@ class MongoConnection(DatabaseConnection):
         invalid_keys = satisfy_keys(set(config.keys()))
         if len(invalid_keys) != 0:
             raise ValueError(f"Invalid config. Missing values {invalid_keys}")
-        self.client = self.client or MongoClient(
-            host=config["HOST"],  # <-- IP and port go here
-            serverSelectionTimeoutMS=3000,  # 3 second timeout
-            username=config["USER"],
-            password=config["PASSWORD"],
-            port=config["PORT"],
-            authSource=config.get("AUTH_SOURCE", config["DATABASE"]),
-        )
+        self.client = self.client or MongoClient(**to_camel_case(config))
         self.base.set_database(config["DATABASE"])
         self.database = self.client[config["DATABASE"]]
 
