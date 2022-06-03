@@ -1,5 +1,5 @@
 ##################################################
-#       custom-mirrormaker   Settings File
+#       cmirrormaker   Settings File
 ##################################################
 
 ## Set the global logging level to debug
