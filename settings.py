@@ -1,16 +1,46 @@
+import os
+
 ##################################################
 #       cmirrormaker   Settings File
 ##################################################
 
-## Set the global logging level to debug
-#LOGGING_DEBUG = True
+# Set the global logging level to debug
+LOGGING_DEBUG = os.getenv('LOGGING_DEBUG', False)
 
-## Consumer configuration
-### Each consumer has different parameters and can be found in the documentation
-CONSUMER_CONFIG = {}
+# Consumer configuration
+# Each consumer has different parameters and can be found in the documentation
+CONSUMER_CONFIG = {
+    'PARAMS': {
+        'bootstrap.servers': os.environ['CONSUMER_SERVER'],
+        'group.id': os.environ['CONSUMER_GROUP_ID'],
+        'auto.offset.reset': 'beginning'
+    },
+    'consume.timeout': int(os.getenv('CONSUME_TIMEOUT', 10)),
+    'consume.messages': int(os.getenv('CONSUME_MESSAGES', 1000))
+}
 
-## Step Configuration
+PRODUCER_CONFIG = {
+    'TOPIC': os.environ['PRODUCER_TOPIC'],
+    'PARAMS': {
+        'bootstrap.servers': os.environ['PRODUCER_SERVER']
+    }
+}
+
+METRICS_CONFIG = {
+    'CLASS': 'apf.metrics.KafkaMetricsProducer',
+    'PARAMS': {
+        'PARAMS': {
+            'bootstrap.servers': os.environ['METRICS_HOST'],
+            'auto.offset.reset': 'smallest'
+        },
+        'TOPIC': os.environ['METRICS_TOPIC']
+    }
+}
+
+# Step Configuration
 STEP_CONFIG = {
-    # "N_PROCESS": 4,            # Number of process for multiprocess script
-    # "COMMIT": False,           #Disables commit, useful to debug a KafkaConsumer
+    'CONSUMER_CONFIG': CONSUMER_CONFIG,
+    'PRODUCER_CONFIG': PRODUCER_CONFIG,
+    'METRICS_CONFIG': METRICS_CONFIG,
+    "N_PROCESS": os.getenv('N_PROCESS')
 }
