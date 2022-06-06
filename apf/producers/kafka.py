@@ -123,11 +123,14 @@ class KafkaProducer(GenericProducer):
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f"Producing to {self.topic}")
 
-    def produce(self, message=None, **kwargs):
-        """Produce Message to a topic."""
+    def _serialize_message(self, message):
         out = io.BytesIO()
         fastavro.writer(out, self.schema, [message])
-        message = out.getvalue()
+        return out.getvalue()
+
+    def produce(self, message=None, **kwargs):
+        """Produce Message to a topic."""
+        message = self._serialize_message(message)
         if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
