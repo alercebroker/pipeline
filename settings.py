@@ -10,6 +10,7 @@ LOGGING_DEBUG = os.getenv('LOGGING_DEBUG', False)
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
+    'CLASS': 'cmirrormaker.utils.CustomKafkaConsumer',
     'PARAMS': {
         'bootstrap.servers': os.environ['CONSUMER_SERVER'],
         'group.id': os.environ['CONSUMER_GROUP_ID'],
@@ -20,6 +21,7 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
+    'CLASS': 'cmirrormaker.utils.CustomKafkaProducer',
     'TOPIC': os.environ['PRODUCER_TOPIC'],
     'PARAMS': {
         'bootstrap.servers': os.environ['PRODUCER_SERVER']
