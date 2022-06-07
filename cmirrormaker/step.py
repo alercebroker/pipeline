@@ -21,16 +21,15 @@ class CustomMirrormaker(GenericStep):
         super().__init__(consumer, config=config, level=level)
         if 'PRODUCER_CONFIG' not in config:
             raise Exception("Kafka producer not configured in settings.py")
-
         producer = get_class(config['PRODUCER_CONFIG'].pop('CLASS', 'cmirrormaker.utils.CustomKafkaProducer'))
         self.producer = producer(config['PRODUCER_CONFIG'])
 
-    def produce(self, messages):
+    def produce(self, message):
         try:
-            self.producer.produce(messages)
-        except TypeError:
-            for message in messages:
-                self.producer.produce(message)
+            self.producer.produce(message)
+        except AttributeError:
+            for msg in message:
+                self.producer.produce(msg)
 
     def execute(self, message):
         self.produce(message)
