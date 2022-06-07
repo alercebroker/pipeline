@@ -3,6 +3,10 @@ from apf.producers import KafkaProducer
 
 class CustomKafkaProducer(KafkaProducer):
     """Producer that prevents serialization of the message"""
+    def __init__(self, config: dict):
+        # TODO: Added dummy schema to prevent error in initializaiton (unused in production)
+        config.setdefault('SCHEMA', {'name': 'dummy', 'type': 'record', 'fields': []})
+        super().__init__(config)
 
     def produce(self, message=None, **kwargs):
         # TODO: Suggest moving serialization in KafkaProducer to own method (as in KafkaConsumer)
