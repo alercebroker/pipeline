@@ -17,12 +17,21 @@ class CustomMirrormaker(GenericStep):
         Logging level.
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO):
+    def __init__(
+        self, consumer=None, config=None, level=logging.INFO, producer=None
+    ):
         super().__init__(consumer, config=config, level=level)
-        if 'PRODUCER_CONFIG' not in config:
+
+        if "PRODUCER_CONFIG" not in config:
             raise Exception("Kafka producer not configured in settings.py")
-        producer = get_class(config['PRODUCER_CONFIG'].pop('CLASS', 'cmirrormaker.utils.RawKafkaProducer'))
-        self.producer = producer(config['PRODUCER_CONFIG'])
+
+        if producer is None:
+            producer = get_class(
+                config["PRODUCER_CONFIG"].pop(
+                    "CLASS", "cmirrormaker.utils.RawKafkaProducer"
+                )
+            )(config["PRODUCER_CONFIG"])
+        self.producer = producer
 
     def produce(self, message):
         try:
