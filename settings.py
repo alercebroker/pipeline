@@ -10,11 +10,12 @@ LOGGING_DEBUG = os.getenv('LOGGING_DEBUG', False)
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
-    'CLASS': 'cmirrormaker.utils.CustomKafkaConsumer',
+    'CLASS': 'cmirrormaker.utils.RawKafkaConsumer',
     'PARAMS': {
         'bootstrap.servers': os.environ['CONSUMER_SERVER'],
         'group.id': os.environ['CONSUMER_GROUP_ID'],
-        'auto.offset.reset': 'beginning'
+        'auto.offset.reset': 'beginning',
+        'max.poll.interval.ms': 3600000
     },
     'consume.timeout': int(os.getenv('CONSUME_TIMEOUT', 10)),
     'consume.messages': int(os.getenv('CONSUME_MESSAGES', 1000))
@@ -35,7 +36,7 @@ else:
     raise Exception('Add TOPIC_STRATEGY or CONSUMER_TOPICS')
 
 PRODUCER_CONFIG = {
-    'CLASS': 'cmirrormaker.utils.CustomKafkaProducer',
+    'CLASS': 'cmirrormaker.utils.RawKafkaProducer',
     'TOPIC': os.environ['PRODUCER_TOPIC'],
     'PARAMS': {
         'bootstrap.servers': os.environ['PRODUCER_SERVER']
