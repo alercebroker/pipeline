@@ -27,7 +27,7 @@ class CustomMirrormaker(GenericStep):
     def produce(self, message):
         try:
             self.producer.produce(message)
-        except AttributeError:
+        except (AttributeError, TypeError):
             for msg in message:
                 self.producer.produce(msg)
 
