@@ -77,7 +77,10 @@ class StepXmatchTest(unittest.TestCase):
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
         }
-        cls.step = XmatchStep(config=cls.step_config, insert_metadata=False)
+        producer = mock.MagicMock()
+        cls.step = XmatchStep(
+            config=cls.step_config, producer=producer, insert_metadata=False
+        )
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
     @classmethod
