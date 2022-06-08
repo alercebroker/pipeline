@@ -18,7 +18,14 @@ ALLWISE_KEYS = [
     "k_msig_2mass",
 ]
 
-XMATCH_KEYS = ["oid", "catid", "oid_catalog", "dist", "class_catalog", "period"]
+XMATCH_KEYS = [
+    "oid",
+    "catid",
+    "oid_catalog",
+    "dist",
+    "class_catalog",
+    "period",
+]
 
 # Temporal code: the oid in oid_in will replace with aid_in
 ALLWISE_MAP = {

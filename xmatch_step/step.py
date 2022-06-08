@@ -79,7 +79,10 @@ class XmatchStep(GenericStep):
                 extra_fields = list(d["extra_fields"].values)
                 extra_fields = pd.DataFrame(extra_fields, index=d.index)
                 d = d.join(extra_fields)
-                d.rename(columns={"mag": "magpsf", "e_mag": "sigmapsf"}, inplace=True)
+                d.rename(
+                    columns={"mag": "magpsf", "e_mag": "sigmapsf"},
+                    inplace=True,
+                )
                 d.drop(columns=["extra_fields"], inplace=True)
             response.append(d)
         response = pd.concat(response, ignore_index=True)
@@ -110,14 +113,16 @@ class XmatchStep(GenericStep):
         aid_in = xmatches["oid_in"]  # change to aid for multi stream purposes
         # Temporal code: the oid_in will be removed
         xmatches.drop(
-            columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"], inplace=True
+            columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"],
+            inplace=True,
         )
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
                 "oid_in": aid_in,  # change to aid name for multi stream
                 "xmatches": xmatches.apply(
-                    lambda x: None if x is None else {"allwise": x.to_dict()}, axis=1
+                    lambda x: None if x is None else {"allwise": x.to_dict()},
+                    axis=1,
                 ),
             }
         )
@@ -129,7 +134,11 @@ class XmatchStep(GenericStep):
         )
         dets = self.unparse(light_curves, "detections")
         non_dets = self.unparse(light_curves, "non_detections")
-        data = dets.join(non_dets).join(metadata).join(xmatches.set_index("oid_in"))
+        data = (
+            dets.join(non_dets)
+            .join(metadata)
+            .join(xmatches.set_index("oid_in"))
+        )
         data.replace({np.nan: None}, inplace=True)
         data.index.names = ["oid"]
         data.reset_index(inplace=True)
@@ -158,7 +167,9 @@ class XmatchStep(GenericStep):
     def produce(self, messages: List[dict]) -> None:
         for message in messages:
             message["non_detections"] = (
-                [] if message["non_detections"] is None else message["non_detections"]
+                []
+                if message["non_detections"] is None
+                else message["non_detections"]
             )
             self.producer.produce(message, key=message["oid"])
 
@@ -185,7 +196,9 @@ class XmatchStep(GenericStep):
                 return result
 
             except Exception as e:
-                self.logger.warning(f"CDS xmatch client returned with error {e}")
+                self.logger.warning(
+                    f"CDS xmatch client returned with error {e}"
+                )
                 time.sleep(self.retry_interval)
                 self.logger.warning("Retrying request")
                 return self.request_xmatch(input_catalog, retries_count - 1)
@@ -211,7 +224,9 @@ class XmatchStep(GenericStep):
         """
         self.logger.info(f"Processing {len(messages)} alerts")
         light_curves = pd.DataFrame(messages)
-        light_curves.drop_duplicates(["aid", "candid"], keep="last", inplace=True)
+        light_curves.drop_duplicates(
+            ["aid", "candid"], keep="last", inplace=True
+        )
         light_curves = light_curves[
             ~light_curves["metadata"].isna()
         ]  # Leave lightcurves with metadata (means ZTF lc)
@@ -227,19 +242,24 @@ class XmatchStep(GenericStep):
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
         # rename columns of meanra and meandec to (ra, dec)
-        input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
+        input_catalog.rename(
+            columns={"meanra": "ra", "meandec": "dec"}, inplace=True
+        )
         if len(input_catalog) > 0:
             self.logger.info("Getting xmatches")
             xmatches = self.request_xmatch(input_catalog, self.retries)
             # Write in database
             self.save_xmatch(xmatches)  # PSQL
             # Get output format
-            output_messages = self.format_output(light_curves, xmatches)
-            self.logger.info(f"Producing {len(output_messages)} messages")
-            # Produce data with xmatch
-            self.produce(output_messages)
+            if len(xmatches):
+                output_messages = self.format_output(light_curves, xmatches)
+                self.logger.info(f"Producing {len(output_messages)} messages")
+                # Produce data with xmatch
+                self.produce(output_messages)
+                del output_messages
+            else:
+                self.logger.info("No xmatches found. Skiping produce")
             del messages
             del light_curves
             del input_catalog
             del xmatches
-            del output_messages
