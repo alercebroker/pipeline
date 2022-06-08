@@ -20,7 +20,6 @@ CONSUMER_CONFIG = {
     'consume.messages': int(os.getenv('CONSUME_MESSAGES', 1000))
 }
 
-# TODO: Check whether both possibilities can apply or only one should be used
 if os.getenv('TOPIC_STRATEGY_FORMAT'):
     CONSUMER_CONFIG['TOPIC_STRATEGY'] = {
         'CLASS': 'apf.core.topic_management.DailyTopicStrategy',
