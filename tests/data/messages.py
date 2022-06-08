@@ -105,7 +105,7 @@ def generate_metadata(candid):
         "neargaiabright": random.uniform(0, 10),
         "maggaia": random.uniform(0, 10),
         "maggaiabright": random.uniform(0, 10),
-        "unique1": random.choice([True, False])
+        "unique1": random.choice([True, False]),
     }
     ps1 = {
         "objectidps1": random.randint(1, 999999),
@@ -133,13 +133,9 @@ def generate_metadata(candid):
         "candid": candid,
         "unique1": random.choice([True, False]),
         "unique2": random.choice([True, False]),
-        "unique3": random.choice([True, False])
+        "unique3": random.choice([True, False]),
     }
-    return {
-        "ss": ss,
-        "gaia": gaia,
-        "ps1": ps1
-    }
+    return {"ss": ss, "gaia": gaia, "ps1": ps1}
 
 
 def generate_input_batch(n: int) -> List[dict]:
@@ -165,7 +161,7 @@ def generate_input_batch(n: int) -> List[dict]:
             "detections": detections,
             "non_detections": non_det,
             "ndet": len(detections),
-            "metadata": generate_metadata(candid)
+            "metadata": generate_metadata(candid),
         }
         batch.append(msg)
     random.shuffle(batch, lambda: 0.1)
@@ -199,7 +195,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "oid_in":  f"ZTFoid{i}",  #f"ZTF{f['aid']}",  # Temp. code
+            "oid_in": f"ZTFoid{i}",  # f"ZTF{f['aid']}",  # Temp. code
             "aid_in": f["aid"],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),
@@ -223,3 +219,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         }
         fake.append(d)
     return pd.DataFrame(fake)
+
+
+def get_fake_empty_xmatch(messages: List[dict]) -> pd.DataFrame:
+    return pd.DataFrame()

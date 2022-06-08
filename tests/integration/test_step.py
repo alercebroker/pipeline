@@ -10,6 +10,7 @@ from tests.data.messages import (
     generate_input_batch,
     get_default_object_values,
     get_fake_xmatch,
+    get_fake_empty_xmatch,
 )
 
 
@@ -86,7 +87,9 @@ class StepXmatchTest(unittest.TestCase):
 
     def setUp(self):
         self.step.driver.create_db()
-        array = [get_default_object_values(i) for i, x in enumerate(self.batch)]
+        array = [
+            get_default_object_values(i) for i, x in enumerate(self.batch)
+        ]
         self.step.driver.query(Object).bulk_insert(array)
 
     def tearDown(self):
@@ -100,6 +103,11 @@ class StepXmatchTest(unittest.TestCase):
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, mock_xmatch: mock.Mock):
         mock_xmatch.return_value = get_fake_xmatch(self.batch)
+        self.step.execute(self.batch)
+
+    @mock.patch.object(XmatchClient, "execute")
+    def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
+        mock_xmatch.return_value = get_fake_empty_xmatch(self.batch)
         self.step.execute(self.batch)
 
     def test_insert_metadata(self):
