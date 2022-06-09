@@ -1,7 +1,8 @@
 import random
 
+
 def create_random_string():
-    letters = "abcdefghijklmnopqrstuvwxyz".split()
+    letters = list("abcdefghijklmnopqrstuvwxyz")
     random.shuffle(letters)
     return ''.join(letters)
     

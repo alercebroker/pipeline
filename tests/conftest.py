@@ -12,13 +12,11 @@ def docker_compose_file(pytestconfig):
 
 
 def is_responsive_kafka(url):
-    client1 = AdminClient({"bootstrap.servers": "localhost:9092"})
-    client2 = AdminClient({"bootstrap.servers": "localhost:9093"})
+    client = AdminClient({"bootstrap.servers": url})
     topics = ["test_topic"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
-    fs1 = client1.create_topics(new_topics)
-    fs2 = client2.create_topics(new_topics)
-    for topic, f in fs1.items() + fs2.items():
+    fs = client.create_topics(new_topics)
+    for topic, f in fs.items():
         try:
             f.result()
         except Exception as e:
@@ -40,4 +38,4 @@ def kafka_service(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server2)
     )
-    return [server1, server2]
+    return server1, server2
