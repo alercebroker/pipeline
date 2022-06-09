@@ -1,9 +1,6 @@
 name: unittest
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -12,10 +9,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.6]
-
     steps:
     - uses: actions/checkout@v2
     - name: Download Model
@@ -24,10 +17,10 @@ jobs:
         repo: "alercebroker/stamp_classifier"
         file: "model.zip"
         token: ${{ secrets.READ_PACKAGE_TOKEN }}
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.6
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
