@@ -1,9 +1,9 @@
-name: build_staging_image
+name: build_production_image
 on:
-  push:
-    branches:
-      - main
-
+  release:
+    types:
+      - published
+      - edited
 jobs:
   get_tags:
     runs-on: ubuntu-latest
@@ -16,14 +16,13 @@ jobs:
         id: prep
         run: |
           DOCKER_IMAGE=ghcr.io/alercebroker/alerce_reflector_step
-          SHA=$(git rev-parse --short HEAD)
-          VERSION=rc-$SHA
+          VERSION=latest
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           fi
-          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:rc"
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
+            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
           fi
           echo ::set-output name=tags::${TAGS}
   push_image:
