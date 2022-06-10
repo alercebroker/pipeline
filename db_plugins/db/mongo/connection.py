@@ -64,7 +64,7 @@ class MongoConnection(DatabaseConnection):
         invalid_keys = satisfy_keys(set(config.keys()))
         if len(invalid_keys) != 0:
             raise ValueError(f"Invalid config. Missing values {invalid_keys}")
-        not_pymongo_arguments = ["DATABASE"]
+        not_pymongo_arguments = ["database"]
         pymongo_arguments = to_camel_case(config)
         for argument in not_pymongo_arguments:
             del pymongo_arguments[argument]
