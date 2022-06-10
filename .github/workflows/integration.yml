@@ -1,4 +1,4 @@
-name: unittest
+name: integration_test
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  unit_test:
+  integration-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,10 +21,4 @@ jobs:
           pip install -r dev-requirements.txt
       - name: Test with pytest
         run: |
-          coverage run --source cmirrormaker -m pytest -x tests/unittest
-          coverage xml
-      - name: Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.xml
+          python -m pytest -x tests/integration
