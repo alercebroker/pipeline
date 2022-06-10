@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
             'STEP_METADATA': STEP_METADATA
         }
 
-    def test_step_exection_copies_full_topic(self):
+    def test_step_runs(self):
         n_messages = 10
         external = Producer({'bootstrap.servers': 'localhost:9092'})
         rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
