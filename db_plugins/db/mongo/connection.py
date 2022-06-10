@@ -4,7 +4,7 @@ from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
 from db_plugins.db.mongo.models import Base
 
 
-MAP_KEYS = {"HOST", "USER", "PASSWORD", "PORT", "DATABASE"}
+MAP_KEYS = {"HOST", "USERNAME", "PASSWORD", "PORT", "DATABASE"}
 
 
 def satisfy_keys(config_keys):
