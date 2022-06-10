@@ -5,6 +5,7 @@ from db_plugins.db.mongo.models import Base
 
 
 MAP_KEYS = {"HOST", "USERNAME", "PASSWORD", "PORT", "DATABASE"}
+NOT_PYMONGO_KEYS = {"database"}
 
 
 def satisfy_keys(config_keys):
@@ -64,10 +65,9 @@ class MongoConnection(DatabaseConnection):
         invalid_keys = satisfy_keys(set(config.keys()))
         if len(invalid_keys) != 0:
             raise ValueError(f"Invalid config. Missing values {invalid_keys}")
-        not_pymongo_arguments = ["database"]
         pymongo_arguments = to_camel_case(config)
-        for argument in not_pymongo_arguments:
-            del pymongo_arguments[argument]
+        for key in NOT_PYMONGO_KEYS:
+            del pymongo_arguments[key]
         self.client = self.client or MongoClient(**pymongo_arguments)
         self.base.set_database(config["DATABASE"])
         self.database = self.client[config["DATABASE"]]
