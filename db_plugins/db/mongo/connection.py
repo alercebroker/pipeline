@@ -50,7 +50,7 @@ class MongoConnection(DatabaseConnection):
 
                 config = {
                     "HOST": "host",
-                    "USER": "username",
+                    "USERNAME": "username",
                     "PASSWORD": "pwd",
                     "PORT": 27017, # mongo tipically runs on port 27017.
                                    # Notice that we use an int here.
@@ -64,7 +64,11 @@ class MongoConnection(DatabaseConnection):
         invalid_keys = satisfy_keys(set(config.keys()))
         if len(invalid_keys) != 0:
             raise ValueError(f"Invalid config. Missing values {invalid_keys}")
-        self.client = self.client or MongoClient(**to_camel_case(config))
+        not_pymongo_arguments = ["DATABASE"]
+        pymongo_arguments = to_camel_case(config)
+        for argument in not_pymongo_arguments:
+            del pymongo_arguments[argument]
+        self.client = self.client or MongoClient(**pymongo_arguments)
         self.base.set_database(config["DATABASE"])
         self.database = self.client[config["DATABASE"]]
 

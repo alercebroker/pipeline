@@ -16,7 +16,7 @@ class MongoConnectionTest(unittest.TestCase):
         self.client = mongomock.MongoClient()
         self.config = {
             "HOST": "host",
-            "USER": "username",
+            "USERNAME": "username",
             "PASSWORD": "pwd",
             "PORT": 27017,
             "DATABASE": "database",
