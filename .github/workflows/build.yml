@@ -5,9 +5,9 @@ on:
       tags:
         required: true
         type: string
-      secrets:
-        PUBLISH_IMAGE_TOKEN:
-          required: true
+    secrets:
+      PUBLISH_IMAGE_TOKEN:
+        required: true
 
 jobs:
   build_and_push:
