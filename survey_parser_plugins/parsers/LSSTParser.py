@@ -1,4 +1,5 @@
 from ..core import GenericAlert, SurveyParser
+import numpy as np
 
 
 class LSSTParser(SurveyParser):
@@ -47,7 +48,7 @@ class LSSTParser(SurveyParser):
             # inclusion of stamps
             generic_alert_message["stamps"] = stamps
             # attributes modification
-            # ex: jd -> mjd
+            generic_alert_message["ra"] = np.abs(generic_alert_message["ra"])
             # possible attributes
             for k in message.keys():
                 if k not in ["diaSource", "cutoutDifference", "cutoutTemplate"]:
