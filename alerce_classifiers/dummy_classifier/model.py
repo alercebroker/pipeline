@@ -1,8 +1,8 @@
-import numpy as np
-import pandas as pd
-
 from abc import ABC
 from alerce_base_model import ClassifierModel
+
+import numpy as np
+import pandas as pd
 
 
 class DummyClassifier(ClassifierModel, ABC):
@@ -35,4 +35,3 @@ class DummyClassifier(ClassifierModel, ABC):
         probs = np.zeros((len(data_input), len(self.taxonomy)))
         response = pd.DataFrame(probs, columns=self.taxonomy)
         return response
-
