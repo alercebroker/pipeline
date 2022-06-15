@@ -6,7 +6,6 @@ repos:
         -   id: end-of-file-fixer
         -   id: trailing-whitespace
         -   id: requirements-txt-fixer
-        exclude: ^\.gitignore$
     -   repo: https://github.com/pycqa/isort
         rev: 5.10.1
         hooks:

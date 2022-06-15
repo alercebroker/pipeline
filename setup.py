@@ -7,7 +7,7 @@ main_package = "alerce_classifiers"
 sub_packages = [
     sp
     for sp in os.listdir(main_package)
-    if os.path.isdir(os.path.join(main_package, sp))
+    if os.path.isdir(os.path.join(main_package, sp)) and sp != "__pycache__"
 ]
 
 extras_require = {
