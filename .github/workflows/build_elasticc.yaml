@@ -32,8 +32,7 @@ jobs:
     uses: ./.github/workflows/build.yaml
     with:
       tags: ${{ needs.get_tags.outputs.tags }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      USERNAME: ${{ secrets.USERNAME }}
+      GH_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
+      USERNAME: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
