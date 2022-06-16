@@ -5,18 +5,17 @@ import os
 
 main_package = "alerce_classifiers"
 sub_packages = [
-    sp
-    for sp in os.listdir(main_package)
-    if os.path.isdir(os.path.join(main_package, sp)) and sp != "__pycache__"
+    sp[0] for sp in os.walk(main_package) if not sp[0].endswith("__pycache__")
 ]
 
 extras_require = {
-    sp: open(os.path.join(main_package, sp, "requirements.txt")).read().split()
+    sp: open(os.path.join(sp, "requirements.txt")).read().split("\n")
     for sp in sub_packages
+    if os.path.exists(os.path.join(sp, "requirements.txt"))
 }
 extras_require["complete"] = sorted({v for req in extras_require.values() for v in req})
 
-packages = [main_package] + [f"{main_package}.{sp}" for sp in sub_packages]
+packages = [sp.replace("/", ".") for sp in sub_packages]
 
 setup(
     name="alerce_classifiers",

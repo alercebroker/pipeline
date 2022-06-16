@@ -4,13 +4,14 @@ from alerce_base_model import ClassifierModel
 import numpy as np
 import os
 import pandas as pd
+import sys
 import torch
-
-os.chdir(os.path.dirname(__file__))
 
 
 class TransformerOnlineClassifier(ClassifierModel, ABC):
     def __init__(self, path_to_model: str):
+        _file = os.path.dirname(__file__)
+        sys.path.append(_file)
         super().__init__(path_to_model)
         self.taxonomy = [
             "AGN",
@@ -43,7 +44,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         if pad_num >= 0:
             return np.pad(lc, (0, pad_num), "constant", constant_values=(0, 0))
         else:
-            return np.array(lc)[np.linspace(0, nepochs - 1, num=MAX_EPOCHS).astype(int)]
+            return np.array(lc)[np.linspace(0, nepochs - 1, num=max_epochs).astype(int)]
 
     def create_mask(self, lc):
         return (lc != 0).astype(float)
@@ -78,7 +79,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         return these_kwargs
 
     def _load_model(self, path_to_model: str) -> None:
-        self.model = torch.load(path_to_model, map_location=torch.device("cpu"))
+        self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
         # Compute max epochs, maximum length per index and band
@@ -108,7 +109,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
         preprocessed = self.preprocess(data_input)
         input_nn = self.to_tensor_dict(preprocessed)
-        pred = this_encoder.predict(**input_nn)
+        pred = self.model.predict(**input_nn)
         preds = pd.DataFrame(
             pred.numpy(), columns=self.taxonomy, index=preprocessed.index
         )
