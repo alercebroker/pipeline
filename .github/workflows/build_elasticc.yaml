@@ -26,16 +26,13 @@ jobs:
             TAGS="$TAGS,${DOCKER_IMAGE}:elasticc-$SHA"
           fi
           echo ::set-output name=tags::${TAGS}
-      - shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          echo $GH_TOKEN
+
   push_image:
     needs: get_tags
     uses: ./.github/workflows/build.yaml
     with:
       tags: ${{ needs.get_tags.outputs.tags }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
