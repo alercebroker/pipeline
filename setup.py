@@ -9,7 +9,7 @@ sub_packages = [
 ]
 
 extras_require = {
-    sp: open(os.path.join(sp, "requirements.txt")).read().split("\n")
+    sp.split("/")[-1]: open(os.path.join(sp, "requirements.txt")).read().split("\n")
     for sp in sub_packages
     if os.path.exists(os.path.join(sp, "requirements.txt"))
 }
