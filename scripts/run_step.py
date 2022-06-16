@@ -27,5 +27,5 @@ else:
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = TransformerOnlineClassifierStep(consumer,config=STEP_CONFIG,level=level)
+step = TransformerOnlineClassifierStep(consumer, config=STEP_CONFIG, level=level)
 step.start()

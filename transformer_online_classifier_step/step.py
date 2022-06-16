@@ -1,9 +1,10 @@
-import os
-import sys
-
+import pandas as pd
+import numpy as np
 from apf.core.step import GenericStep
+from apf.producers import KafkaProducer
 from alerce_classifiers.transformer_online_classifier import TransformerOnlineClassifier
 import logging
+from typing import List
 
 
 class TransformerOnlineClassifierStep(GenericStep):
@@ -17,11 +18,73 @@ class TransformerOnlineClassifierStep(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+    def __init__(self, consumer=None, config=None, level=logging.INFO, producer=None, **step_args):
         super().__init__(consumer, config=config, level=level)
-        self.modelo = TransformerOnlineClassifier("../Encoder.pt")
+        prod_config = self.config.get("PRODUCER_CONFIG", None)
+        if prod_config:
+            self.producer = producer or KafkaProducer(prod_config)
+        else:
+            self.producer = None
 
-    def execute(self, message):
-        print(message)
-        # self.modelo.predict_proba(message)
-        input("stop")
+        self.model = TransformerOnlineClassifier("../Encoder.pt")
+
+        self._rename_cols = {
+            "mag": "FLUXCAL",
+            "e_mag": "FLUXCALERR",
+            "fid": "BAND",
+            "mjd": "MJD"
+        }
+
+        self._fid_mapper = {
+            0: "u",
+            1: "g",
+            2: "r",
+            3: "i",
+            4: "z",
+            5: "Y",
+        }
+
+    def map_detections(self, light_curves: pd.DataFrame) -> pd.DataFrame:
+        light_curves.drop(columns=["meanra", "meandec", "ndet", "non_detections", "metadata"], inplace=True)
+        exploded = light_curves.explode("detections")
+        detections = pd.DataFrame.from_records(exploded["detections"].values, index=exploded.index)
+        detections = detections[self._rename_cols.keys()]
+        detections = detections.rename(columns=self._rename_cols)
+        detections["BAND"] = detections["BAND"].map(lambda x: self._fid_mapper[x])
+        return detections
+
+    def format_output_message(self, predictions: pd.DataFrame, light_curves: pd.DataFrame) -> List[dict]:
+        classifications = lambda x: [{
+            "classifierName": "Niko",
+            "classifierParams": "IDK",
+            "classId": predicted_class,
+            "probability": predicted_prob
+        }
+            for predicted_class, predicted_prob in x.iteritems()]
+
+        response = pd.DataFrame({
+            "classifications": predictions.apply(classifications, axis=1),
+            "diaSourceId": light_curves.index.astype(int)
+        })
+        response["alertId"] = 1
+        response["brokerName"] = "ALeRCE"
+        response["brokerVersion"] = "1.0.0"
+        response["elasticcPublishTimestamp"] = None
+        response["brokerIngestTimestamp"] = None
+        response.replace({np.nan: None}, inplace=True)
+        return response.to_dict("records")
+
+    def produce(self, output_messages):
+        for message in output_messages:
+            aid = message["alertId"]
+            self.producer.produce(message, key=str(aid))
+
+    def execute(self, messages: List[dict]):
+        light_curves_dataframe = pd.DataFrame(messages)
+        light_curves_dataframe.drop_duplicates(subset="aid", inplace=True, keep="last")
+        light_curves_dataframe.set_index("aid", inplace=True)
+        self.logger.info(f"Processing {len(messages)} light curves.")
+        detections = self.map_detections(light_curves_dataframe)
+        predictions = self.model.predict_proba(detections)
+        output = self.format_output_message(predictions, light_curves_dataframe)
+        self.produce(output)
