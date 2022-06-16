@@ -2,6 +2,7 @@
 #       transformer_online_classifier_step   Settings File
 ##################################################
 import os
+from schema import SCHEMA
 # LOGGING_DEBUG = True
 
 CONSUMER_CONFIG = {
@@ -16,10 +17,18 @@ CONSUMER_CONFIG = {
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(",")
 }
 
+PRODUCER_CONFIG = {
+    "TOPIC": os.environ["PRODUCER_TOPIC"],
+    "PARAMS": {
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+    },
+    "SCHEMA": SCHEMA
+}
 
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     # "COMMIT": False,           #Disables commit, useful to debug a KafkaConsumer
-    "CONSUMER_CONFIG": CONSUMER_CONFIG
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG
 }
