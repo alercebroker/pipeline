@@ -1,13 +1,12 @@
 import unittest
 from unittest import mock
-from s3_step.step import S3Step, SQLConnection, boto3, io
-from apf.consumers import GenericConsumer
+from s3_step.step import S3Step, SQLConnection, io
 
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
         STORAGE_CONFIG = {
-            "BUCKET_NAME": "fake_bucket",
+            "BUCKET_NAME": "fake_bucket:test_topic",
             "AWS_ACCESS_KEY": "fake",
             "AWS_SECRET_ACCESS_KEY": "fake",
             "REGION_NAME": "fake",
@@ -27,14 +26,16 @@ class StepTestCase(unittest.TestCase):
             "METRICS_CONFIG": METRICS_CONFIG,
         }
         mock_db = mock.create_autospec(SQLConnection)
-        mock_consumer = mock.create_autospec(GenericConsumer)
+        mock_consumer = mock.MagicMock()
+        mock_consumer.consumer.list_topics.return_value.topics = {'test_topic': ''}
         mock_message = mock.MagicMock()
         mock_message.value.return_value = b"fake"
+        mock_message.topic.return_value = "test_topic"
         mock_consumer.messages = [mock_message]
         self.step = S3Step(config=self.step_config, db_connection=mock_db, consumer=mock_consumer, test_mode=True)
 
     def test_get_object_url(self):
-        bucket_name = self.step_config["STORAGE"]["BUCKET_NAME"]
+        bucket_name = self.step_config["STORAGE"]["BUCKET_NAME"].split(':')[0]
         candid = 123
         url = self.step.get_object_url(bucket_name, candid)
         self.assertEqual(url, "https://fake_bucket.s3.amazonaws.com/321.avro")
@@ -58,7 +59,6 @@ class StepTestCase(unittest.TestCase):
         message = {"objectId": "obj", "candidate": {"candid": 123 }}
         self.step.execute(message)
         mock_upload.assert_called_once()
-
 
     def test_insert_step_metadata(self):
         self.step.insert_step_metadata()

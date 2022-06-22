@@ -125,7 +125,8 @@ class S3Step(GenericStep):
 
     def execute(self, message):
         self.logger.debug(message["objectId"])
-        f = io.BytesIO(self.consumer.messages[0].value())
+        serialized = self.consumer.messages[0]
+        f = io.BytesIO(serialized.value())
         self.upload_file(
-            f, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"]
+            f, message["candidate"]["candid"], self.buckets[serialized.topic()]
         )
