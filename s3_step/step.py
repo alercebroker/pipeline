@@ -1,12 +1,11 @@
-from apf.core.step import GenericStep
-import logging
-import io
-import math
 import datetime
+import io
+import logging
+
+import boto3
+from apf.core.step import GenericStep
 from db_plugins.db.sql import SQLConnection
 from db_plugins.db.sql.models import Step
-import boto3
-from botocore.config import Config
 
 
 class S3Step(GenericStep):
@@ -99,7 +98,8 @@ class S3Step(GenericStep):
         s3.upload_fileobj(f, bucket_name, object_name)
         return self.get_object_url(bucket_name, candid)
 
-    def reverse_candid(self, candid):
+    @staticmethod
+    def reverse_candid(candid):
         """
         Returns reverse digits of the candid
 
@@ -108,10 +108,7 @@ class S3Step(GenericStep):
         candid : int or str
             original candid to be reversed
         """
-        reversed = str(candid)[::-1]
-        return reversed
-
-
+        return str(candid)[::-1]
 
     def execute(self, message):
         self.logger.debug(message["objectId"])
