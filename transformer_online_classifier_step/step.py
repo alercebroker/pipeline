@@ -56,23 +56,27 @@ class TransformerOnlineClassifierStep(GenericStep):
 
     def format_output_message(self, predictions: pd.DataFrame, light_curves: pd.DataFrame) -> List[dict]:
         classifications = lambda x: [{
-            "classifierName": "Niko",
-            "classifierParams": "IDK",
+            "classifierName": "balto_classifier",
+            "classifierParams": "version1.0.0",
             "classId": predicted_class,
             "probability": predicted_prob
         }
             for predicted_class, predicted_prob in x.iteritems()]
 
         response = pd.DataFrame({
-            "alertId": light_curves["alertId"].values.astype(int),
-            "diaSourceId": light_curves.index.astype(int),
+            # "alertId": light_curves["alertId"].values.astype(int),
+            # "diaSourceId": light_curves["candid"].astype(int),
             "classifications": predictions.apply(classifications, axis=1),
         })
         response["brokerName"] = "ALeRCE"
         response["brokerVersion"] = "1.0.0"
-        response["elasticcPublishTimestamp"] = None
-        response["brokerIngestTimestamp"] = datetime.datetime.now(tz=datetime.timezone.utc)
+        response["elasticcPublishTimestamp"] = 0
+        response["brokerIngestTimestamp"] = 0
+        response = response.join(light_curves)
         response.replace({np.nan: None}, inplace=True)
+        response.rename(columns={"candid": "diaSourceId"}, inplace=True)
+        response["alertId"] = response["alertId"].astype(int)
+        response["diaSourceId"] = response["diaSourceId"].astype(int)
         return response.to_dict("records")
 
     def produce(self, output_messages):
