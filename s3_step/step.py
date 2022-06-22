@@ -1,11 +1,8 @@
-import datetime
 import io
 import logging
 
 import boto3
 from apf.core.step import GenericStep
-from db_plugins.db.sql import SQLConnection
-from db_plugins.db.sql.models import Step
 
 
 class S3Step(GenericStep):
@@ -15,49 +12,21 @@ class S3Step(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-
     """
 
     def __init__(
         self,
         consumer=None,
         config=None,
-        db_connection=None,
         level=logging.INFO,
-        **step_args
     ):
         super().__init__(consumer, config=config, level=level)
-        self._parse_bucket_names(config["STORAGE"]["BUCKET_NAME"])
-        self.db = db_connection or SQLConnection()
-        self.db.connect(self.config["DB_CONFIG"]["SQL"])
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
+        self.buckets = self._parse_buckets(config["STORAGE"]["BUCKET_NAME"])
 
-    def _parse_bucket_names(self, buckets, verify=True):
+    @staticmethod
+    def _parse_buckets(buckets):
         # Mapping from topic name to bucket name
-        buckets = dict([pair.split(':')[::-1] for pair in buckets.split(',')])
-        if verify:
-            topics = self.consumer.consumer.list_topics().topics
-            missing = [topic for topic in topics if topic not in buckets]
-            if missing:
-                raise ValueError(
-                    f'Consumer topic(s) {", ".join(missing)} not present in bucket mapping (BUCKET_NAME)'
-                )
-        self.buckets = buckets
-
-    def insert_step_metadata(self):
-        """
-        Inserts step version and other metadata to step table.
-        """
-        self.db.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
+        return dict([pair.split(':')[::-1] for pair in buckets.split(',')])
 
     def get_object_url(self, bucket_name, candid):
         """
@@ -123,10 +92,16 @@ class S3Step(GenericStep):
         """
         return str(candid)[::-1]
 
-    def execute(self, message):
+    def _upload_message(self, message, serialized):
         self.logger.debug(message["objectId"])
-        serialized = self.consumer.messages[0]
-        f = io.BytesIO(serialized.value())
-        self.upload_file(
-            f, message["candidate"]["candid"], self.buckets[serialized.topic()]
-        )
+        file = io.BytesIO(serialized.value())
+        bucket = self.buckets[serialized.topic()]
+        self.upload_file(file, message["candidate"]["candid"], bucket)
+
+    def execute(self, message):
+        try:
+            serialized, = self.consumer.messages
+            self._upload_message(message, serialized)
+        except ValueError:
+            for msg, serialized in zip(message, self.consumer.messages):
+                self._upload_message(msg, serialized)
