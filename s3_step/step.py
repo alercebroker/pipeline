@@ -29,10 +29,23 @@ class S3Step(GenericStep):
         **step_args
     ):
         super().__init__(consumer, config=config, level=level)
+        self._parse_bucket_names(config["STORAGE"]["BUCKET_NAME"])
         self.db = db_connection or SQLConnection()
         self.db.connect(self.config["DB_CONFIG"]["SQL"])
         if not step_args.get("test_mode", False):
             self.insert_step_metadata()
+
+    def _parse_bucket_names(self, buckets, verify=True):
+        # Mapping from topic name to bucket name
+        buckets = dict([pair.split(':')[::-1] for pair in buckets.split(',')])
+        if verify:
+            topics = self.consumer.consumer.list_topics().topics
+            missing = [topic for topic in topics if topic not in buckets]
+            if missing:
+                raise ValueError(
+                    f'Consumer topic(s) {", ".join(missing)} not present in bucket mapping (BUCKET_NAME)'
+                )
+        self.buckets = buckets
 
     def insert_step_metadata(self):
         """
