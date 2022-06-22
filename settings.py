@@ -3,16 +3,6 @@
 ##################################################
 import os
 
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.environ["DB_ENGINE"],
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.environ["DB_PORT"]),
-        "DB_NAME": os.environ["DB_NAME"],
-    }
-}
 
 CONSUMER_CONFIG = {
     "PARAMS": {
@@ -20,7 +10,7 @@ CONSUMER_CONFIG = {
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
-        'max.poll.interval.ms' : 3600000
+        'max.poll.interval.ms': 3600000
     },
 }
 
@@ -104,7 +94,6 @@ LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 STEP_CONFIG = {
     "STORAGE": STORAGE_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
-    "DB_CONFIG": DB_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "STEP_METADATA": STEP_METADATA,
 }
