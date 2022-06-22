@@ -1,11 +1,15 @@
 import unittest
 from unittest import mock
+
+import pytest
 from s3_step.step import S3Step, Step
 from apf.consumers import GenericConsumer
 
+
+@pytest.mark.usefixtures("psql_service")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         db_config = {
             "SQL": {
                 "ENGINE": "postgresql",
@@ -16,7 +20,7 @@ class PSQLIntegrationTest(unittest.TestCase):
                 "DB_NAME": "postgres",
             }
         }
-        self.step_config = {
+        cls.step_config = {
             "DB_CONFIG": db_config,
             "STEP_METADATA": {
                 "STEP_ID": "",
@@ -31,16 +35,16 @@ class PSQLIntegrationTest(unittest.TestCase):
         mock_message = mock.MagicMock()
         mock_message.value.return_value = b"fake"
         mock_consumer.messages = [mock_message]
-        self.step = S3Step(
-            config=self.step_config,
+        cls.step = S3Step(
+            config=cls.step_config,
             test_mode=True,
             consumer=mock_consumer,
         )
 
     @classmethod
-    def tearDownClass(self):
-        self.step.db.drop_db()
-        self.step.db.session.close()
+    def tearDownClass(cls):
+        cls.step.db.drop_db()
+        cls.step.db.session.close()
 
     def setUp(self):
         self.message = {
