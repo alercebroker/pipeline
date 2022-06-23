@@ -1,2 +1,2 @@
-apf_base==1.0.7
+git+https://github.com/alercebroker/survey-parser-plugins@elasticc
 

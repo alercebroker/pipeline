@@ -18,9 +18,24 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
-    "TOPIC": os.environ["PRODUCER_TOPIC"],
+    "TOPIC_STRATEGY": {
+        "PARAMS": {
+            "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
+            "date_format": os.environ["PRODUCER_DATE_FORMAT"],
+            "change_hour": int(os.environ["PRODUCER_CHANGE_HOUR"]),
+            "retention_days": int(os.environ["PRODUCER_RETENTION_DAYS"]),
+        },
+        "CLASS": os.getenv(
+            "PRODUCER_TOPIC_STRATEGY_CLASS",
+            "apf.core.topic_management.DailyTopicStrategy",
+        ),
+    },
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+        "security.protocol": os.getenv("PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"),
+        "sasl.mechanism": os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"),
+        "sasl.username": os.environ["PRODUCER_SASL_USERNAME"],
+        "sasl.password": os.environ["PRODUCER_SASL_PASSWORD"],
     },
     "SCHEMA": SCHEMA
 }

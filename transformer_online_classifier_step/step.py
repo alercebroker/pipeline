@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 import logging
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
+from apf.producers import KafkaSchemalessProducer
 from alerce_classifiers.transformer_online_classifier import TransformerOnlineClassifier
 from typing import List
 
@@ -24,7 +24,7 @@ class TransformerOnlineClassifierStep(GenericStep):
         super().__init__(consumer, config=config, level=level)
         prod_config = self.config.get("PRODUCER_CONFIG", None)
         if prod_config:
-            self.producer = producer or KafkaProducer(prod_config)
+            self.producer = producer or KafkaSchemalessProducer(prod_config)
         else:
             self.producer = None
 
