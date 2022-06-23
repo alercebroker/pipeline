@@ -83,7 +83,9 @@ STEP_METADATA = {
 }
 
 STORAGE_CONFIG = {
-    "BUCKET_NAME": os.environ["BUCKET_NAME"],
+    # BUCKET_NAME is mapping from topic prefix to s3 bucket name
+    "BUCKET_NAME": dict([pair.split(':')[::-1]
+                         for pair in os.environ["BUCKET_NAME"].split(',')]),
     "REGION_NAME": os.environ["REGION_NAME"],
     "AWS_ACCESS_KEY": os.environ["AWS_ACCESS_KEY"],
     "AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"],

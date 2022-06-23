@@ -9,7 +9,10 @@ SVY2_TOPIC, SVY2_BUCKET = "svy2_topic", "test_svy2_bucket"
 
 
 STORAGE_CONFIG = {
-    "BUCKET_NAME": f"{SVY1_BUCKET}:svy1,{SVY2_BUCKET}:svy2",
+    "BUCKET_NAME": {
+        'svy1': SVY1_BUCKET,
+        'svy2': SVY2_BUCKET
+    },
     "AWS_ACCESS_KEY": "fake",
     "AWS_SECRET_ACCESS_KEY": "fake",
     "REGION_NAME": "fake",
@@ -29,9 +32,8 @@ class StepTestCase(unittest.TestCase):
         self.step = S3Step(config=self.step_config, consumer=mock_consumer)
 
     def test_get_object_url(self):
-        bucket_name = SVY1_BUCKET
         candid = 123
-        url = self.step.get_object_url(bucket_name, candid)
+        url = self.step.get_object_url(SVY1_BUCKET, candid)
         self.assertEqual(url, f"https://{SVY1_BUCKET}.s3.amazonaws.com/321.avro")
 
     @mock.patch("boto3.client")

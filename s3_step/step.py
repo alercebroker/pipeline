@@ -21,12 +21,7 @@ class S3Step(GenericStep):
         level=logging.INFO,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.buckets = self._parse_buckets(config["STORAGE"]["BUCKET_NAME"])
-
-    @staticmethod
-    def _parse_buckets(buckets):
-        # Mapping from topic name to bucket name
-        return dict([pair.split(':')[::-1] for pair in buckets.split(',')])
+        # self.buckets = self._parse_buckets(config["STORAGE"]["BUCKET_NAME"])
 
     def get_object_url(self, bucket_name, candid):
         """
@@ -106,11 +101,11 @@ class S3Step(GenericStep):
             self.upload_file(file, message["candidate"]["candid"], bucket)
 
     def _find_bucket(self, topic):
-        for key in self.buckets:
+        for key in self.config["STORAGE"]["BUCKET_NAME"]:
             if topic.startswith(key):
-                return self.buckets[key]
+                return self.config["STORAGE"]["BUCKET_NAME"][key]
         raise KeyError(
-            f"Topic {topic} does not match with set prefixes: {', '.join(self.buckets)}"
+            f"Topic {topic} does not match with set prefixes: {', '.join(self.config['STORAGE']['BUCKET_NAME'])}"
         )
 
     def execute(self, message):
