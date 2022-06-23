@@ -36,7 +36,7 @@ SCHEMA = {
                 "type": "string",
                 "doc": "Any classifier parameter information worth noting for this classification"
             },
-            {"name": "classId", "type": "string", "doc": "See <filename> for specification"},
+            {"name": "classId", "type": "int", "doc": "See <filename> for specification"},
             {"name": "probability",  "type": "float", "doc": "0-1"}
           ]
         }

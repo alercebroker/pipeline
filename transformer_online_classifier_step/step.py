@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
+import datetime
+import logging
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from alerce_classifiers.transformer_online_classifier import TransformerOnlineClassifier
-import logging
 from typing import List
 
 
@@ -18,6 +19,7 @@ class TransformerOnlineClassifierStep(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
+
     def __init__(self, consumer=None, config=None, level=logging.INFO, producer=None, **step_args):
         super().__init__(consumer, config=config, level=level)
         prod_config = self.config.get("PRODUCER_CONFIG", None)
@@ -44,6 +46,34 @@ class TransformerOnlineClassifierStep(GenericStep):
             5: "Y",
         }
 
+        self._class_mapper = {
+            "Periodic/Other": 210,
+            "Cepheid": 211,
+            "RR Lyrae": 212,
+            "Delta Scuti": 213,
+            "EB": 214,
+            "LPV/Mira": 215,
+            "Non-Periodic/Other": 220,
+            "AGN": 221,
+            "SN-like/Other": 110,
+            "Ia": 111,
+            "Ib/c": 112,
+            "II": 113,
+            "Iax": 114,
+            "91bg": 115,
+            "Fast/Other": 120,
+            "KN": 121,
+            "M-dwarf Flare": 122,
+            "Dwarf Novae": 123,
+            "uLens": 124,
+            "Long/Other": 130,
+            "SLSN": 131,
+            "TDE": 132,
+            "ILOT": 133,
+            "CART": 134,
+            "PISN": 135
+        }
+
     def map_detections(self, light_curves: pd.DataFrame) -> pd.DataFrame:
         light_curves.drop(columns=["meanra", "meandec", "ndet", "non_detections", "metadata"], inplace=True)
         exploded = light_curves.explode("detections")
@@ -54,10 +84,13 @@ class TransformerOnlineClassifierStep(GenericStep):
         return detections
 
     def format_output_message(self, predictions: pd.DataFrame, light_curves: pd.DataFrame) -> List[dict]:
+        for class_name in self._class_mapper.keys():
+            if class_name not in predictions.columns:
+                predictions[class_name] = 0.0
         classifications = lambda x: [{
             "classifierName": "balto_classifier",
             "classifierParams": "version1.0.0",
-            "classId": predicted_class,
+            "classId": self._class_mapper[predicted_class],
             "probability": predicted_prob
         }
             for predicted_class, predicted_prob in x.iteritems()]
@@ -65,6 +98,7 @@ class TransformerOnlineClassifierStep(GenericStep):
         response = pd.DataFrame({
             "classifications": predictions.apply(classifications, axis=1),
         })
+        response["brokerPublishTimestamp"] = int(datetime.datetime.now().timestamp() * 1000)
         response["brokerName"] = "ALeRCE"
         response["brokerVersion"] = "1.0.0"
         response = response.join(light_curves)
