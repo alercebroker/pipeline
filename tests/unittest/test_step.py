@@ -4,20 +4,22 @@ from s3_step.step import S3Step, io
 from apf.consumers import GenericConsumer
 
 
+STORAGE_CONFIG = {
+    "BUCKET_NAME": "fake_bucket:test_topic",
+    "AWS_ACCESS_KEY": "fake",
+    "AWS_SECRET_ACCESS_KEY": "fake",
+    "REGION_NAME": "fake",
+}
+STEP_METADATA = {
+    "STEP_VERSION": "dev",
+    "STEP_ID": "s3",
+    "STEP_NAME": "s3",
+    "STEP_COMMENTS": "s3 upload",
+}
+
+
 class StepTestCase(unittest.TestCase):
     def setUp(self):
-        STORAGE_CONFIG = {
-            "BUCKET_NAME": "fake_bucket:test_topic",
-            "AWS_ACCESS_KEY": "fake",
-            "AWS_SECRET_ACCESS_KEY": "fake",
-            "REGION_NAME": "fake",
-        }
-        STEP_METADATA = {
-            "STEP_VERSION": "dev",
-            "STEP_ID": "s3",
-            "STEP_NAME": "s3",
-            "STEP_COMMENTS": "s3 upload",
-        }
         self.step_config = {
             "STORAGE": STORAGE_CONFIG,
             "STEP_METADATA": STEP_METADATA,
@@ -47,10 +49,10 @@ class StepTestCase(unittest.TestCase):
             aws_secret_access_key=self.step_config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
             region_name=self.step_config["STORAGE"]["REGION_NAME"]
         )
-        mock_client().upload_fileobj.assert_called_with(f,bucket_name, f"{321}.avro")
+        mock_client().upload_fileobj.assert_called_with(f, bucket_name, f"{321}.avro")
 
     @mock.patch("s3_step.S3Step.upload_file")
     def test_execute(self, mock_upload):
-        message = {"objectId": "obj", "candidate": {"candid": 123 }}
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
         self.step.execute(message)
         mock_upload.assert_called_once()
