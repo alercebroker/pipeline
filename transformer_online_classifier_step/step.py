@@ -88,7 +88,7 @@ class TransformerOnlineClassifierStep(GenericStep):
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = lambda x: [{
-            "classifierName": "balto_classifier",
+            "classifierName": "balto_lc_classifier",
             "classifierParams": "version1.0.0",
             "classId": self._class_mapper[predicted_class],
             "probability": predicted_prob
