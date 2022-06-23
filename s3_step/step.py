@@ -95,13 +95,29 @@ class S3Step(GenericStep):
     def _upload_message(self, message, serialized):
         self.logger.debug(message["objectId"])
         file = io.BytesIO(serialized.value())
-        bucket = self.buckets[serialized.topic()]
-        self.upload_file(file, message["candidate"]["candid"], bucket)
+        try:
+            bucket = self._find_bucket(serialized.topic())
+        except KeyError as err:
+            self.logger.error(
+                f"{err}"
+            )
+            raise
+        else:
+            self.upload_file(file, message["candidate"]["candid"], bucket)
+
+    def _find_bucket(self, topic):
+        for key in self.buckets:
+            if topic.startswith(key):
+                return self.buckets[key]
+        raise KeyError(
+            f"Topic {topic} does not match with set prefixes: {', '.join(self.buckets)}"
+        )
 
     def execute(self, message):
         try:
             serialized, = self.consumer.messages
-            self._upload_message(message, serialized)
         except ValueError:
             for msg, serialized in zip(message, self.consumer.messages):
                 self._upload_message(msg, serialized)
+        else:
+            self._upload_message(message, serialized)
