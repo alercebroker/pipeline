@@ -21,7 +21,6 @@ class S3Step(GenericStep):
         level=logging.INFO,
     ):
         super().__init__(consumer, config=config, level=level)
-        # self.buckets = self._parse_buckets(config["STORAGE"]["BUCKET_NAME"])
 
     def get_object_url(self, bucket_name, candid):
         """

@@ -24,12 +24,12 @@ class StepTestCase(unittest.TestCase):
         self.step_config = {
             "STORAGE": STORAGE_CONFIG,
         }
-        mock_consumer = mock.create_autospec(GenericConsumer)
-        mock_message = mock.MagicMock()
-        mock_message.value.return_value = b"fake"
-        mock_message.topic.return_value = SVY1_TOPIC
-        mock_consumer.messages = [mock_message]
-        self.step = S3Step(config=self.step_config, consumer=mock_consumer)
+        self.mock_consumer = mock.create_autospec(GenericConsumer)
+        self.mock_message = mock.MagicMock()
+        self.mock_message.value.return_value = b"fake"
+        self.mock_message.topic.return_value = SVY1_TOPIC
+        self.mock_consumer.messages = [self.mock_message]
+        self.step = S3Step(config=self.step_config, consumer=self.mock_consumer)
 
     def test_get_object_url(self):
         candid = 123
@@ -54,3 +54,19 @@ class StepTestCase(unittest.TestCase):
         message = {"objectId": "obj", "candidate": {"candid": 123}}
         self.step.execute(message)
         mock_upload.assert_called_once()
+
+    @mock.patch("s3_step.S3Step.upload_file")
+    def test_execute_with_unknown_topic_for_bucket(self, mock_upload):
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
+        self.mock_message.topic.return_value = "svy3_topic"
+        self.mock_consumer.messages = [self.mock_message]
+        with self.assertRaisesRegex(KeyError, 'svy3_topic'):
+            self.step.execute(message)
+        mock_upload.assert_not_called()
+
+    @mock.patch("s3_step.S3Step.upload_file")
+    def test_execute_with_message_list(self, mock_upload):
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
+        self.mock_consumer.messages = [self.mock_message, self.mock_message]
+        self.step.execute([message, message])
+        self.assertEqual(2, mock_upload.call_count)
