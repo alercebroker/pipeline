@@ -5,12 +5,12 @@ SCHEMA = {
   "doc": "sample avro alert schema v4.1",
   "fields": [
     {
-        "name": "alertId", "type": "long", "doc": "unique alert identifer"},
+        "name": "alertId", "type": "long", "doc": "unique alert identifier"},
     {
         "name": "diaSourceId", "type": "long", "doc": "id of source that triggered this classification"},
     {
         "name": "elasticcPublishTimestamp",
-        "type": ["null", {"type": "long", "logicalType": "timestamp-micros"}],
+        "type": {"type": "long", "logicalType": "timestamp-micros"},
         "doc": "timestamp from originating ELAsTiCC alert"
     },
     {

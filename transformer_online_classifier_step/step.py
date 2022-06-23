@@ -4,7 +4,6 @@ from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from alerce_classifiers.transformer_online_classifier import TransformerOnlineClassifier
 import logging
-import datetime
 from typing import List
 
 
@@ -64,14 +63,10 @@ class TransformerOnlineClassifierStep(GenericStep):
             for predicted_class, predicted_prob in x.iteritems()]
 
         response = pd.DataFrame({
-            # "alertId": light_curves["alertId"].values.astype(int),
-            # "diaSourceId": light_curves["candid"].astype(int),
             "classifications": predictions.apply(classifications, axis=1),
         })
         response["brokerName"] = "ALeRCE"
         response["brokerVersion"] = "1.0.0"
-        response["elasticcPublishTimestamp"] = 0
-        response["brokerIngestTimestamp"] = 0
         response = response.join(light_curves)
         response.replace({np.nan: None}, inplace=True)
         response.rename(columns={"candid": "diaSourceId"}, inplace=True)
