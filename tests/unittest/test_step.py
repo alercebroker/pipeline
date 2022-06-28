@@ -1,65 +1,72 @@
 import unittest
 from unittest import mock
-from s3_step.step import S3Step, SQLConnection, boto3, io
+from s3_step.step import S3Step, io
 from apf.consumers import GenericConsumer
+
+
+SVY1_TOPIC, SVY1_BUCKET = "svy1_topic", "test_svy1_bucket"
+SVY2_TOPIC, SVY2_BUCKET = "svy2_topic", "test_svy2_bucket"
+
+
+STORAGE_CONFIG = {
+    "BUCKET_NAME": {
+        'svy1': SVY1_BUCKET,
+        'svy2': SVY2_BUCKET
+    },
+    "AWS_ACCESS_KEY": "fake",
+    "AWS_SECRET_ACCESS_KEY": "fake",
+    "REGION_NAME": "fake",
+}
 
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
-        STORAGE_CONFIG = {
-            "BUCKET_NAME": "fake_bucket",
-            "AWS_ACCESS_KEY": "fake",
-            "AWS_SECRET_ACCESS_KEY": "fake",
-            "REGION_NAME": "fake",
-        }
-        STEP_METADATA = {
-            "STEP_VERSION": "dev",
-            "STEP_ID": "s3",
-            "STEP_NAME": "s3",
-            "STEP_COMMENTS": "s3 upload",
-        }
-        METRICS_CONFIG = {}
-        DB_CONFIG = {"SQL": {}}
         self.step_config = {
-            "DB_CONFIG": DB_CONFIG,
             "STORAGE": STORAGE_CONFIG,
-            "STEP_METADATA": STEP_METADATA,
-            "METRICS_CONFIG": METRICS_CONFIG,
         }
-        mock_db = mock.create_autospec(SQLConnection)
-        mock_consumer = mock.create_autospec(GenericConsumer)
-        mock_message = mock.MagicMock()
-        mock_message.value.return_value = b"fake"
-        mock_consumer.messages = [mock_message]
-        self.step = S3Step(config=self.step_config, db_connection=mock_db, consumer=mock_consumer, test_mode=True)
+        self.mock_consumer = mock.create_autospec(GenericConsumer)
+        self.mock_message = mock.MagicMock()
+        self.mock_message.value.return_value = b"fake"
+        self.mock_message.topic.return_value = SVY1_TOPIC
+        self.mock_consumer.messages = [self.mock_message]
+        self.step = S3Step(config=self.step_config, consumer=self.mock_consumer)
 
     def test_get_object_url(self):
-        bucket_name = self.step_config["STORAGE"]["BUCKET_NAME"]
         candid = 123
-        url = self.step.get_object_url(bucket_name, candid)
-        self.assertEqual(url, "https://fake_bucket.s3.amazonaws.com/321.avro")
+        url = self.step.get_object_url(SVY1_BUCKET, candid)
+        self.assertEqual(url, f"https://{SVY1_BUCKET}.s3.amazonaws.com/321.avro")
 
     @mock.patch("boto3.client")
     def test_upload_file(self, mock_client):
         f = io.BytesIO(b"fake")
         candid = 123
-        bucket_name = self.step_config["STORAGE"]["BUCKET_NAME"]
-        self.step.upload_file(f, candid, bucket_name)
+        self.step.upload_file(f, candid, SVY1_BUCKET)
         mock_client.assert_called_with(
             "s3",
             aws_access_key_id=self.step_config["STORAGE"]["AWS_ACCESS_KEY"],
             aws_secret_access_key=self.step_config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
             region_name=self.step_config["STORAGE"]["REGION_NAME"]
-        )
-        mock_client().upload_fileobj.assert_called_with(f,bucket_name, f"{321}.avro")
+            )
+        mock_client().upload_fileobj.assert_called_with(f, SVY1_BUCKET, "321.avro")
 
     @mock.patch("s3_step.S3Step.upload_file")
     def test_execute(self, mock_upload):
-        message = {"objectId": "obj", "candidate": {"candid": 123 }}
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
         self.step.execute(message)
         mock_upload.assert_called_once()
 
+    @mock.patch("s3_step.S3Step.upload_file")
+    def test_execute_with_unknown_topic_for_bucket(self, mock_upload):
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
+        self.mock_message.topic.return_value = "svy3_topic"
+        self.mock_consumer.messages = [self.mock_message]
+        with self.assertRaisesRegex(KeyError, 'svy3_topic'):
+            self.step.execute(message)
+        mock_upload.assert_not_called()
 
-    def test_insert_step_metadata(self):
-        self.step.insert_step_metadata()
-        self.step.db.query().get_or_create.assert_called_once()
+    @mock.patch("s3_step.S3Step.upload_file")
+    def test_execute_with_message_list(self, mock_upload):
+        message = {"objectId": "obj", "candidate": {"candid": 123}}
+        self.mock_consumer.messages = [self.mock_message, self.mock_message]
+        self.step.execute([message, message])
+        self.assertEqual(2, mock_upload.call_count)

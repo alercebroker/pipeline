@@ -1,12 +1,8 @@
-from apf.core.step import GenericStep
-import logging
 import io
-import math
-import datetime
-from db_plugins.db.sql import SQLConnection
-from db_plugins.db.sql.models import Step
+import logging
+
 import boto3
-from botocore.config import Config
+from apf.core.step import GenericStep
 
 
 class S3Step(GenericStep):
@@ -16,36 +12,15 @@ class S3Step(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-
     """
 
     def __init__(
         self,
         consumer=None,
         config=None,
-        db_connection=None,
         level=logging.INFO,
-        **step_args
     ):
         super().__init__(consumer, config=config, level=level)
-        self.db = db_connection or SQLConnection()
-        self.db.connect(self.config["DB_CONFIG"]["SQL"])
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
-
-    def insert_step_metadata(self):
-        """
-        Inserts step version and other metadata to step table.
-        """
-        self.db.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_VERSION"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
 
     def get_object_url(self, bucket_name, candid):
         """
@@ -99,7 +74,8 @@ class S3Step(GenericStep):
         s3.upload_fileobj(f, bucket_name, object_name)
         return self.get_object_url(bucket_name, candid)
 
-    def reverse_candid(self, candid):
+    @staticmethod
+    def reverse_candid(candid):
         """
         Returns reverse digits of the candid
 
@@ -108,14 +84,34 @@ class S3Step(GenericStep):
         candid : int or str
             original candid to be reversed
         """
-        reversed = str(candid)[::-1]
-        return reversed
+        return str(candid)[::-1]
 
+    def _upload_message(self, message, serialized):
+        self.logger.debug(message["objectId"])
+        file = io.BytesIO(serialized.value())
+        try:
+            bucket = self._find_bucket(serialized.topic())
+        except KeyError as err:
+            self.logger.error(
+                f"{err}"
+            )
+            raise
+        else:
+            self.upload_file(file, message["candidate"]["candid"], bucket)
 
+    def _find_bucket(self, topic):
+        for key in self.config["STORAGE"]["BUCKET_NAME"]:
+            if topic.startswith(key):
+                return self.config["STORAGE"]["BUCKET_NAME"][key]
+        raise KeyError(
+            f"Topic {topic} does not match with set prefixes: {', '.join(self.config['STORAGE']['BUCKET_NAME'])}"
+        )
 
     def execute(self, message):
-        self.logger.debug(message["objectId"])
-        f = io.BytesIO(self.consumer.messages[0].value())
-        self.upload_file(
-            f, message["candidate"]["candid"], self.config["STORAGE"]["BUCKET_NAME"]
-        )
+        try:
+            serialized, = self.consumer.messages
+        except ValueError:
+            for msg, serialized in zip(message, self.consumer.messages):
+                self._upload_message(msg, serialized)
+        else:
+            self._upload_message(message, serialized)

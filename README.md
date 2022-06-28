@@ -11,35 +11,6 @@
 #### Next steps:
 - None
 
-## Database interactions
-Save step metadata. The following config is needed
-
-```python
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.environ["DB_ENGINE"],
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.environ["DB_PORT"]),
-        "DB_NAME": os.environ["DB_NAME"],
-    }
-}
-
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "features"),
-    "STEP_NAME": os.getenv("STEP_NAME", "features"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
-}
-
-STEP_CONFIG = {
-    "DB_CONFIG": DB_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
-}
-```
-
 ## Previous conditions
 
 Credentials of AWS.
@@ -47,12 +18,10 @@ Credentials of AWS.
 ## Version
 - **1.0.0:** 
 	- Use of APF.
-    - Use of db-plugins
 	- Use of boto3.
 
 ## Libraries used
 - APF
-- db-plugins
 - boto3
 
 ## Environment variables
@@ -69,17 +38,9 @@ Credentials of AWS.
 - `ES_NETWORK_PORT`: Elasticsearch port.
 
 ### S3 setup
-- `BUCKET_NAME`: Name of bucket to store avro files.
+- `BUCKET_NAME`: Mapping of bucket name(s) to topic prefix, e.g., `bucket1:topic1,bucket2:topic2`. The example will send the inputs from topics with names starting with `topic1` to `bucket1` and analogously for `topic2` and `bucket2`.
 - `AWS_ACCESS_KEY_ID`: Access key id of your AWS account.
 - `AWS_SECRET_ACCESS_KEY`: Secret access key of your AWS account.
-
-### DB setup
-- `DB_ENGINE`: Database engine used is `postgresql`
-- `DB_HOST`: Database host name or ip. e.g: `localhost`
-- `DB_USER`: Database user name. e.g: `postgres`
-- `DB_PASSWORD`: Database password. e.g: `postgres`
-- `DB_PORT`: Database port. e.g: `5432`
-- `DB_NAME`: Database name: e.g: `postgres`
 
 ### Step metadata
 - `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
