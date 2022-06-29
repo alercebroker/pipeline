@@ -3,7 +3,7 @@ from confluent_kafka import Message
 from cmirrormaker.utils.consumer import RawKafkaConsumer
 from cmirrormaker.utils.producer import RawKafkaProducer
 from cmirrormaker.step import CustomMirrormaker
-from data.datagen import create_data
+from data.datagen import create_messages
 
 
 @mock.patch('apf.consumers.kafka.Consumer', autospec=True)
@@ -26,7 +26,7 @@ class TestRawConsumer(TestCase):
                 "PARAMS": {}
             }
         )
-        mock_message = repr(create_data(1)[0])
+        mock_message = create_messages()
         deserialized_message = consumer._deserialize_message(mock_message)
         self.assertEqual(mock_message, deserialized_message)
 
@@ -63,7 +63,6 @@ class TestStep(TestCase):
         self.mock_producer = mock.create_autospec(RawKafkaProducer)
         self.step = CustomMirrormaker(
             consumer=self.mock_consumer,
-            config={"PRODUCER_CONFIG": "cmirrormaker.utils.RawKafkaProducer"},
             producer=self.mock_producer,
         )
 
@@ -72,24 +71,19 @@ class TestStep(TestCase):
 
     def test_step_fails_if_producer_is_not_defined_in_config(self):
         with self.assertRaisesRegex(Exception, 'producer not configured'):
-            CustomMirrormaker(consumer=self.mock_consumer, config={})
+            CustomMirrormaker(consumer=self.mock_consumer)
+
+    @mock.patch('cmirrormaker.step.get_class')
+    def test_step_uses_config_if_producer_is_defined_as_arg_and_in_config(self, mock_class_getter):
+        step = CustomMirrormaker(consumer=self.mock_consumer, producer=self.mock_producer, config={"PRODUCER_CONFIG": {}})
+        self.assertEqual(mock_class_getter.return_value.return_value, step.producer)
 
     def test_step_produces_message_batch(self):
-        def side_effect(messages):
-            nonlocal first_call
-            if first_call:
-                first_call = False
-                raise AttributeError()
-            return None
-
-        first_call = True
-        data_batch = create_data(10)
-        self.mock_producer.produce.side_effect = side_effect
+        data_batch = create_messages(10)
         self.step.execute(data_batch)
-        # Test last call
         self.mock_producer.produce.assert_called_with(data_batch[-1])
 
     def test_step_produces_single_message(self):
-        data_batch, = create_data(1)
+        data_batch, = create_messages(1)
         self.step.execute(data_batch)
         self.mock_producer.produce.assert_called_with(data_batch)
