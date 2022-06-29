@@ -37,7 +37,7 @@ else:
 
 PRODUCER_CONFIG = {
     'CLASS': 'cmirrormaker.utils.RawKafkaProducer',
-    'TOPIC': os.environ['PRODUCER_TOPIC'],
+    'TOPIC': os.getenv('PRODUCER_TOPIC'),
     'PARAMS': {
         'bootstrap.servers': os.environ['PRODUCER_SERVER'],
         'acks': 'all',
