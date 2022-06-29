@@ -4,7 +4,7 @@ import pytest
 from confluent_kafka import Producer
 from cmirrormaker.step import CustomMirrormaker
 from cmirrormaker.utils import RawKafkaConsumer
-from tests.unittest.data.datagen import create_data
+from tests.unittest.data.datagen import create_messages
 
 
 STEP_METADATA = {
@@ -50,9 +50,9 @@ class MyTestCase(unittest.TestCase):
         rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
         step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
 
-        messages = create_data(n_messages)
+        messages = create_messages(n_messages, 'test_topic')
         for msg in messages:
-            external.produce(topic='test_topic', value=repr(msg))
+            external.produce(topic=msg.topic(), value=msg.value())
         external.flush()
 
         step.start()

@@ -27,20 +27,23 @@ class CustomMirrormaker(GenericStep):
                 'Producer is defined twice. Using PRODUCER_CONFIG'
             )
         if "PRODUCER_CONFIG" in self.config:
-            producer = get_class(
-                self.config["PRODUCER_CONFIG"].pop(
+            pconfig = self.config["PRODUCER_CONFIG"]
+            if "TOPIC" not in pconfig and "TOPIC_STRATEGY" not in pconfig:
+                self.logger.info("Producing with same topic as message")
+            producer = get_class(pconfig.pop(
                     "CLASS", "cmirrormaker.utils.RawKafkaProducer"
-                )
-            )(self.config["PRODUCER_CONFIG"])
+            ))(pconfig)
         if producer is None:
             raise Exception("Kafka producer not configured in settings.py")
         self.producer = producer
 
     def produce(self, message):
         try:
+            self.producer.topic = [message.topic()]
             self.producer.produce(message)
         except (AttributeError, TypeError):
             for msg in message:
+                self.producer.topic = [msg.topic()]
                 self.producer.produce(msg)
 
     def execute(self, message):
