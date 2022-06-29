@@ -29,7 +29,7 @@ class CustomMirrormaker(GenericStep):
         self.use_message_topic = True
         if "PRODUCER_CONFIG" in self.config:
             pconfig = self.config["PRODUCER_CONFIG"]
-            if "TOPIC" in pconfig or "TOPIC_STRATEGY" in pconfig:
+            if pconfig["TOPIC"] is not None or pconfig["TOPIC_STRATEGY"] is not None:
                 self.use_message_topic = False
             producer = get_class(
                 pconfig.pop("CLASS", "cmirrormaker.utils.RawKafkaProducer")
