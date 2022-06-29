@@ -63,7 +63,6 @@ class TestStep(TestCase):
         self.mock_producer = mock.create_autospec(RawKafkaProducer)
         self.step = CustomMirrormaker(
             consumer=self.mock_consumer,
-            config={"PRODUCER_CONFIG": "cmirrormaker.utils.RawKafkaProducer"},
             producer=self.mock_producer,
         )
 
@@ -72,7 +71,12 @@ class TestStep(TestCase):
 
     def test_step_fails_if_producer_is_not_defined_in_config(self):
         with self.assertRaisesRegex(Exception, 'producer not configured'):
-            CustomMirrormaker(consumer=self.mock_consumer, config={})
+            CustomMirrormaker(consumer=self.mock_consumer)
+
+    @mock.patch('cmirrormaker.step.get_class')
+    def test_step_uses_config_if_producer_is_defined_as_arg_and_in_config(self, mock_class_getter):
+        step = CustomMirrormaker(consumer=self.mock_consumer, producer=self.mock_producer, config={"PRODUCER_CONFIG": {}})
+        self.assertEqual(mock_class_getter.return_value.return_value, step.producer)
 
     def test_step_produces_message_batch(self):
         def side_effect(messages):

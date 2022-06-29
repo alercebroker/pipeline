@@ -22,15 +22,18 @@ class CustomMirrormaker(GenericStep):
     ):
         super().__init__(consumer, config=config, level=level)
 
-        if "PRODUCER_CONFIG" not in config:
-            raise Exception("Kafka producer not configured in settings.py")
-
-        if producer is None:
+        if producer and "PRODUCER_CONFIG" in self.config:
+            self.logger.warning(
+                'Producer is defined twice. Using PRODUCER_CONFIG'
+            )
+        if "PRODUCER_CONFIG" in self.config:
             producer = get_class(
-                config["PRODUCER_CONFIG"].pop(
+                self.config["PRODUCER_CONFIG"].pop(
                     "CLASS", "cmirrormaker.utils.RawKafkaProducer"
                 )
-            )(config["PRODUCER_CONFIG"])
+            )(self.config["PRODUCER_CONFIG"])
+        if producer is None:
+            raise Exception("Kafka producer not configured in settings.py")
         self.producer = producer
 
     def produce(self, message):
