@@ -67,7 +67,7 @@ If both are set, then `CONSUMER_TOPICS` will be ignored.
 ### Producer setup
 
 * `PRODUCER_SERVER`: Kafka host with ports, e.g., `localhost:9092`
-* `PRODUCER_TOPIC`: Topic to which messages will be produced, e.g., `topic`
+* `PRODUCER_TOPIC`: Topic to which messages will be produced, e.g., `topic`. This is optional, if not provided, it will produce with the same topic as the incoming message.
 
 ### Step metadata
 
