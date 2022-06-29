@@ -36,6 +36,7 @@ class TestRawProducer(TestCase):
     def test_serialization_only_returns_message_value(self, mock_producer):
         producer = RawKafkaProducer(
             {
+                "TOPIC": None,
                 "PARAMS": {}
             }
         )
@@ -52,6 +53,7 @@ class TestRawProducer(TestCase):
                         'type': 'record',
                         'fields': []
                     },
+                    "TOPIC": None,
                     'PARAMS': {}
                 }
             )
@@ -75,7 +77,13 @@ class TestStep(TestCase):
 
     @mock.patch('cmirrormaker.step.get_class')
     def test_step_uses_config_if_producer_is_defined_as_arg_and_in_config(self, mock_class_getter):
-        step = CustomMirrormaker(consumer=self.mock_consumer, producer=self.mock_producer, config={"PRODUCER_CONFIG": {}})
+        step = CustomMirrormaker(
+            consumer=self.mock_consumer,
+            producer=self.mock_producer,
+            config={
+                "PRODUCER_CONFIG": {"TOPIC": None}
+            }
+        )
         self.assertEqual(mock_class_getter.return_value.return_value, step.producer)
 
     def test_step_produces_message_batch(self):
