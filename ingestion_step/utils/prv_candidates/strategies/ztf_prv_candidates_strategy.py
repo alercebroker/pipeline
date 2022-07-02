@@ -15,6 +15,7 @@ class ZTFPreviousCandidatesParser(SurveyParser):
     _celestial_errors = {
         1: 0.065,
         2: 0.085,
+        3: 0.01,
     }
     _generic_alert_message_key_mapping = {
         "candid": "candid",
