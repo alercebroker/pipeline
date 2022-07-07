@@ -91,6 +91,8 @@ class MultiheadAttention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1).permute(0, 1, 3, 2)
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+            # attn_logits = attn_logits.masked_fill(mask == 0, -65504)
+
         attention = F.softmax(attn_logits, dim=-1)
         # if self.dropout_layer is not None:
         #     attention = self.dropout_layer(attention)

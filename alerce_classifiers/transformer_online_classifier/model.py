@@ -1,13 +1,14 @@
 from abc import ABC
 from alerce_base_model import ClassifierModel
+from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
+from joblib import load
 
 import numpy as np
 import os
 import pandas as pd
 import sys
 import torch
-from .dict_transform import FEAT_DICT
-from joblib import dump, load
+
 
 class TransformerOnlineClassifier(ClassifierModel, ABC):
     def __init__(self, path_to_model: str, path_to_quantiles: str):
@@ -36,7 +37,6 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             "TDE",
             "uLens",
         ]
-        self.feat_dict = FEAT_DICT
         self._load_quantiles(path_to_quantiles)
 
     def get_max_epochs(self, pd_output):
@@ -68,7 +68,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             final_array += [self.pad_list(aux, nepochs, max_epochs)]
         return np.stack(final_array, 1)
 
-    def to_tensor_dict(self, pd_output: pd.DataFrame) -> dict:
+    def to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: pd.DataFrame) -> dict:
         these_kwargs = {
             "data": torch.from_numpy(
                 np.stack(pd_output["FLUXCAL"].to_list(), 0)
@@ -78,34 +78,22 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             ).float(),
             "time": torch.from_numpy(np.stack(pd_output["MJD"].to_list(), 0)).float(),
             "mask": torch.from_numpy(np.stack(pd_output["mask"].to_list(), 0)).float(),
+            "tabular_feat": torch.from_numpy(np_headers),
         }
         return these_kwargs
-
-    def obtain_tabular_data(self, light_curves: pd.DataFrame) -> pd.DataFrame:
-        exploded   = light_curves.explode("detections")
-        detections = pd.DataFrame.from_records(exploded["detections"].values, index=exploded.index)
-        detections = detections.sort_values(by=['mjd'])
-        tabular_data = pd.DataFrame.from_records(detections['extra_fields'].values, index=detections.index)
-        tabular_data = tabular_data[tabular_data['diaObject'].notnull()]
-        tabular_data = tabular_data[~tabular_data.index.duplicated(keep='first')]
-        tabular_data = pd.DataFrame.from_records(tabular_data['diaObject'].values, index=tabular_data.index)
-        tabular_data = tabular_data[list(self.feat_dict.keys())]
-        tabular_data = tabular_data.rename(columns = self.feat_dict)
-        tabular_data = tabular_data.sort_index()
-        return tabular_data
 
     def _load_model(self, path_to_model: str) -> None:
         self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
 
     def _load_quantiles(self, path_to_quantiles: str) -> None:
-        self.dict_quantiles = {}
-        for col in self.feat_dict.values():
-            self.dict_quantiles[col] = load(f'{path_to_quantiles}/norm_{col}.joblib')
+        self.quantiles = {}
+        for key, val in ELAsTiCCMapper.feat_dict.items():
+            self.quantiles[val] = load(f"{path_to_quantiles}/norm_{val}.joblib")
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
         # Compute max epochs, maximum length per index and band
         max_epochs = self.get_max_epochs(data_input)
-        # Groupby by aid and creating lightcurve
+        # Group by aid and creating lightcurve
         data_input = data_input.groupby(["aid"]).agg(lambda x: list(x))
         # Declare features that are time series
         list_time_feat = ["MJD", "FLUXCAL", "FLUXCALERR"]
@@ -127,21 +115,24 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         )
         return data_input
 
-    def preprocess_tabular_data(self, data_input: pd.DataFrame) -> np.array:
-        tabular_data = self.obtain_tabular_data(data_input)
+    def preprocess_headers(self, headers: pd.DataFrame) -> np.array:
         all_feat = []
-        for col in tabular_data.columns:
-            all_feat += [self.dict_quantiles[col].transform(tabular_data[col].to_numpy().reshape(-1, 1))]
+        for col in headers.columns:
+            all_feat += [
+                self.quantiles[col].transform(headers[col].to_numpy().reshape(-1, 1))
+            ]
         return np.concatenate(all_feat, 1)
 
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        preprocessed = self.preprocess(data_input)
-        tabular_data = self.preprocess_tabular_data(data_input)
+        detections = ELAsTiCCMapper.get_detections(data_input)
+        headers = ELAsTiCCMapper.get_header(data_input, keep="first")
 
-        input_nn = self.to_tensor_dict(preprocessed)
-        input_nn.update({'tabular_feat': tabular_data})
+        preprocessed_detections = self.preprocess(detections)
+        preprocessed_headers = self.preprocess_headers(headers)
+
+        input_nn = self.to_tensor_dict(preprocessed_detections, preprocessed_headers)
         pred = self.model.predict_mix(**input_nn)
         preds = pd.DataFrame(
-            pred.numpy(), columns=self.taxonomy, index=preprocessed.index
+            pred.numpy(), columns=self.taxonomy, index=preprocessed_detections.index
         )
         return preds

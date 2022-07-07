@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 class FeatModulator(nn.Module):
-    def __init__(self, Feat_M, embed_dim, F_max, **kwargs):
+    def __init__(self, Feat_M, embed_dim, F_max, using_norm_feat=False, **kwargs):
         super().__init__()
         self.F_len = len(F_max)
         self.alpha_sin = nn.Parameter(torch.randn(self.F_len, Feat_M, embed_dim))
@@ -18,9 +18,12 @@ class FeatModulator(nn.Module):
         # self.F_max     = F_max
         self.Feat_M = Feat_M
         self.register_buffer("ar", torch.arange(Feat_M).unsqueeze(0).unsqueeze(0))
-        self.register_buffer(
-            "F_max", torch.tensor(F_max).unsqueeze(0).unsqueeze(2).unsqueeze(3)
-        )
+        if not using_norm_feat:
+            self.register_buffer(
+                "F_max", torch.tensor(F_max).unsqueeze(0).unsqueeze(2).unsqueeze(3)
+            )
+        else:
+            self.F_max = 10.0
 
     def get_sin(self, x):
         # x: Batch size x Feat_len x 1:

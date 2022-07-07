@@ -280,6 +280,8 @@ class Encoder(nn.Module):
         pretab_num_heads=2,
         pretab_head_dim=16,
         pretab_output_dim=0,
+        combine_lc_tab=False,
+        use_feat_modulator=False,
         **kwargs
     ):
 
@@ -327,39 +329,55 @@ class Encoder(nn.Module):
         self.pretab_head_dim = pretab_head_dim
         self.pretab_output_dim = pretab_output_dim
 
+        self.combine_lc_tab = combine_lc_tab
+        self.use_feat_modulator = use_feat_modulator
+
         self.F_len = len(F_max)
         self.dim_tab = len(F_max)
 
-        if self.preprocess_tab:
-            self.pretab_transformer = Transformer(
-                **{
-                    **nkwargs,
-                    "head_dim": self.pretab_head_dim,
-                    "num_heads": self.pretab_num_heads,
-                    "dropout": self.dropout_first_mha,
-                }
-            )
+        if self.preprocess_tab or self.combine_lc_tab:
+            if not self.combine_lc_tab:
+                self.pretab_transformer = Transformer(
+                    **{
+                        **nkwargs,
+                        "head_dim": self.pretab_head_dim,
+                        "num_heads": self.pretab_num_heads,
+                        "dropout": self.dropout_first_mha,
+                    }
+                )
 
-            self.pretab_input_dim_mha = self.pretab_transformer.get_input_dim()
-            self.pretab_W_feat = nn.Parameter(
-                torch.randn(1, self.dim_tab, self.pretab_input_dim_mha)
-            )
-            self.pretab_b_feat = nn.Parameter(
-                torch.randn(1, self.dim_tab, self.pretab_input_dim_mha)
-            )
-            self.pretab_mlp_head = TokenClassifier(
-                self.pretab_input_dim_mha,
-                self.n_classes,
-                embed_dim=self.pretab_output_dim,
-            )
-            self.pretab_token = nn.Parameter(
-                torch.randn(1, 1, self.pretab_input_dim_mha)
-            )
-            self.F_len = (
-                self.pretab_output_dim
-                if self.pretab_output_dim > 0.0
-                else self.pretab_input_dim_mha
-            )
+                self.pretab_input_dim_mha = self.pretab_transformer.get_input_dim()
+                self.pretab_mlp_head = TokenClassifier(
+                    self.pretab_input_dim_mha,
+                    self.n_classes,
+                    embed_dim=self.pretab_output_dim,
+                )
+                self.F_len = (
+                    self.pretab_output_dim
+                    if self.pretab_output_dim > 0.0
+                    else self.pretab_input_dim_mha
+                )
+                self.pretab_token = nn.Parameter(
+                    torch.randn(1, 1, self.pretab_input_dim_mha)
+                )
+            else:
+                self.pretab_input_dim_mha = self.input_dim_mha
+
+            if self.use_feat_modulator:
+                self.feat_modulator = tmod.FeatModulator(
+                    **{
+                        **nkwargs,
+                        "F_max": F_max,
+                        "embed_dim": self.pretab_input_dim_mha,
+                    }
+                )
+            else:
+                self.pretab_W_feat = nn.Parameter(
+                    torch.randn(1, self.dim_tab, self.pretab_input_dim_mha)
+                )
+                self.pretab_b_feat = nn.Parameter(
+                    torch.randn(1, self.dim_tab, self.pretab_input_dim_mha)
+                )
 
         if self.using_tabular_feat and self.tab_classifier_type == "MLP":
             self.tab_classifier = ClassifierFeedForward(
@@ -460,6 +478,28 @@ class Encoder(nn.Module):
             z_rep = emb_x[:, 0, :]
         return self.log_softmax(self.mlp_head(z_rep)).exp().detach()
 
+    def predict_mix(
+        self,
+        data,
+        data_var=None,
+        time=None,
+        mask=None,
+        mask_drop=None,
+        tabular_feat=None,
+        **kwargs
+    ):
+        emb_y, add_loss = self(
+            data,
+            data_var=data_var,
+            time=time,
+            mask=mask,
+            mask_drop=mask_drop,
+            tabular_feat=tabular_feat,
+            **kwargs
+        )
+        output = self.log_softmax(emb_y["MLPMix"]).exp().detach()
+        return output
+
     def log_latent_classifier(
         self,
         data,
@@ -493,7 +533,33 @@ class Encoder(nn.Module):
         global_step=0,
         **kwargs
     ):
+        output = {}
+        tabular_used = tabular_feat
+        # Modulate time
         emb_x, t, mask = self.time_modulator(data, time, mask, var=data_var)
+
+        # Preprocess tabular data
+        if self.preprocess_tab or self.combine_lc_tab:
+            if not self.use_feat_modulator:
+                pretab_emb = self.pretab_W_feat * tabular_used + self.pretab_b_feat
+            else:
+                pretab_emb = self.feat_modulator(tabular_used)
+            if not self.combine_lc_tab:
+                pretab_token_repeated = self.pretab_token.repeat(
+                    pretab_emb.shape[0], 1, 1
+                )
+                pretab_emb = torch.cat([pretab_token_repeated, pretab_emb], axis=1)
+                pretab_emb = self.pretab_transformer(pretab_emb, None)
+                pretab_emb_y_pred, pretab_z_rep = self.pretab_mlp_head(
+                    pretab_emb[:, 0, :]
+                )
+                output.update({"MLPTab": pretab_emb_y_pred})
+                tabular_used = pretab_z_rep.unsqueeze(2)
+            else:
+                pretab_mask = torch.ones(tabular_used.shape).float().to(emb_x.device)
+                emb_x = torch.cat([pretab_emb, emb_x], axis=1)
+                mask = torch.cat([pretab_mask, mask], axis=1)
+
         # if self.using_tabular_feat and tabular_feat is not None:
         #     emb_feat = self.W_feat * tabular_feat + self.b_feat
         #     #emb_feat  = self.feat_modulator(tabular_feat)
@@ -505,27 +571,16 @@ class Encoder(nn.Module):
             mask_token = torch.ones(emb_x.shape[0], 1, 1).float().to(emb_x.device)
             mask = torch.cat([mask_token, mask], axis=1)
             emb_x = torch.cat([token_repeated, emb_x], axis=1)
-        # for mha_layer in self.attn_layers:
-        #     emb_x, attention_lc  = mha_layer(emb_x, key = emb_x, query = emb_x,\
-        #                                     mask = mask, return_attention = False)
         emb_x = self.transformer(emb_x, mask)
         if self.emb_to_classifier == "avg":
             z_rep = (emb_x * mask).sum(1) / mask.sum(1)
         elif self.emb_to_classifier == "token":
             z_rep = emb_x[:, 0, :]
-        output = {"MLP": self.mlp_head(z_rep)}
-        tabular_used = tabular_feat
+        output.update({"MLP": self.mlp_head(z_rep)})
 
-        if self.preprocess_tab:
-            pretab_emb = self.pretab_W_feat * tabular_used + self.pretab_b_feat
-            pretab_token_repeated = self.pretab_token.repeat(pretab_emb.shape[0], 1, 1)
-            pretab_emb = torch.cat([pretab_token_repeated, pretab_emb], axis=1)
-            pretab_emb = self.pretab_transformer(pretab_emb, None)
-            pretab_emb_y_pred, pretab_z_rep = self.pretab_mlp_head(pretab_emb[:, 0, :])
-            output.update({"MLPTab": pretab_emb_y_pred})
-            tabular_used = pretab_z_rep.unsqueeze(2)
-
-        if self.using_tabular_feat or self.using_extra_transformer:
+        if (
+            self.using_tabular_feat or self.using_extra_transformer
+        ) and not self.combine_lc_tab:
             z_rep_aux = z_rep if not self.tab_detach else z_rep.detach()
             tabular_used = (
                 tabular_used.detach()
@@ -555,8 +610,6 @@ class Encoder(nn.Module):
                     tab_mask = torch.ones(tab_emb.shape[0], tab_emb.shape[1], 1).to(
                         tab_emb.device
                     )
-                    if self.drop_mask_second_mha and global_step < 50000:
-                        tab_mask[:, 1 : self.F_len + 1, :] = 0
                     tab_emb = self.tab_transformer(tab_emb, tab_mask)
                 if (
                     self.tab_classifier_type == "TransformerLC"
@@ -603,6 +656,8 @@ class Encoder(nn.Module):
             add_loss = self.emb_norm_cte * (z_rep**2).sum(-1).mean()
             if self.preprocess_tab:
                 add_loss += self.emb_norm_cte * (pretab_z_rep**2).sum(-1).mean()
+        if not ("MLPMix" in output.keys()):
+            output["MLPMix"] = output["MLP"]
         return output, add_loss
 
 
