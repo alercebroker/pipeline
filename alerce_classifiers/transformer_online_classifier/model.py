@@ -6,10 +6,11 @@ import os
 import pandas as pd
 import sys
 import torch
-
+from .dict_transform import FEAT_DICT
+from joblib import dump, load
 
 class TransformerOnlineClassifier(ClassifierModel, ABC):
-    def __init__(self, path_to_model: str):
+    def __init__(self, path_to_model: str, path_to_quantiles: str):
         _file = os.path.dirname(__file__)
         sys.path.append(_file)
         super().__init__(path_to_model)
@@ -35,6 +36,8 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             "TDE",
             "uLens",
         ]
+        self.feat_dict = FEAT_DICT
+        self._load_quantiles(path_to_quantiles)
 
     def get_max_epochs(self, pd_output):
         return pd_output.groupby(["aid", "BAND"]).count()["FLUXCAL"].max()
@@ -78,8 +81,26 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         }
         return these_kwargs
 
+    def obtain_tabular_data(self, light_curves: pd.DataFrame) -> pd.DataFrame:
+        exploded   = light_curves.explode("detections")
+        detections = pd.DataFrame.from_records(exploded["detections"].values, index=exploded.index)
+        detections = detections.sort_values(by=['mjd'])
+        tabular_data = pd.DataFrame.from_records(detections['extra_fields'].values, index=detections.index)
+        tabular_data = tabular_data[tabular_data['diaObject'].notnull()]
+        tabular_data = tabular_data[~tabular_data.index.duplicated(keep='first')]
+        tabular_data = pd.DataFrame.from_records(tabular_data['diaObject'].values, index=tabular_data.index)
+        tabular_data = tabular_data[list(self.feat_dict.keys())]
+        tabular_data = tabular_data.rename(columns = self.feat_dict)
+        tabular_data = tabular_data.sort_index()
+        return tabular_data
+
     def _load_model(self, path_to_model: str) -> None:
         self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
+
+    def _load_quantiles(self, path_to_quantiles: str) -> None:
+        self.dict_quantiles = {}
+        for col in self.feat_dict.values():
+            self.dict_quantiles[col] = load(f'{path_to_quantiles}/norm_{col}.joblib')
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
         # Compute max epochs, maximum length per index and band
@@ -106,10 +127,20 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         )
         return data_input
 
+    def preprocess_tabular_data(self, data_input: pd.DataFrame) -> np.array:
+        tabular_data = self.obtain_tabular_data(data_input)
+        all_feat = []
+        for col in tabular_data.columns:
+            all_feat += [self.dict_quantiles[col].transform(tabular_data[col].to_numpy().reshape(-1, 1))]
+        return np.concatenate(all_feat, 1)
+
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
         preprocessed = self.preprocess(data_input)
+        tabular_data = self.preprocess_tabular_data(data_input)
+
         input_nn = self.to_tensor_dict(preprocessed)
-        pred = self.model.predict(**input_nn)
+        input_nn.update({'tabular_feat': tabular_data})
+        pred = self.model.predict_mix(**input_nn)
         preds = pd.DataFrame(
             pred.numpy(), columns=self.taxonomy, index=preprocessed.index
         )
