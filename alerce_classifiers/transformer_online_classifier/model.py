@@ -78,7 +78,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             ).float(),
             "time": torch.from_numpy(np.stack(pd_output["MJD"].to_list(), 0)).float(),
             "mask": torch.from_numpy(np.stack(pd_output["mask"].to_list(), 0)).float(),
-            "tabular_feat": torch.from_numpy(np_headers),
+            "tabular_feat": torch.from_numpy(np_headers).float(),
         }
         return these_kwargs
 
@@ -121,7 +121,11 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             all_feat += [
                 self.quantiles[col].transform(headers[col].to_numpy().reshape(-1, 1))
             ]
-        return np.concatenate(all_feat, 1)
+
+        response = np.concatenate(all_feat, 1)
+        batch, num_features = response.shape
+        response = response.reshape([batch, num_features, 1])
+        return response
 
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
         detections = ELAsTiCCMapper.get_detections(data_input)
