@@ -4,6 +4,7 @@ from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
 from lc_classifier.classifier.models import ElasticcRandomForest
 
 import pandas as pd
+import validators
 
 
 class RandomForestFeaturesClassifier(ClassifierModel, ABC):
@@ -33,6 +34,10 @@ class RandomForestFeaturesClassifier(ClassifierModel, ABC):
         self.model = ElasticcRandomForest(
             self.taxonomy_dictionary, self.non_used_features, n_trees=500, n_jobs=1
         )
+        if validators.url(path_to_model):
+            self.model.url_model = path_to_model
+            self.model.download_model()
+            path_to_model = self.model.MODEL_PICKLE_PATH
         self.model.load_model(path_to_model)
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
