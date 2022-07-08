@@ -57,6 +57,8 @@ class ELAsTiCCMapper:
         features = light_curve_and_features[
             ~light_curve_and_features["features"].isna()
         ]
-        features = pd.DataFrame.from_records(features["features"].values)
+        features = pd.DataFrame.from_records(
+            features["features"].values, index=features.index
+        )
         features.replace({None: np.nan}, inplace=True)
         return features
