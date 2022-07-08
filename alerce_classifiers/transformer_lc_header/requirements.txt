@@ -1,5 +1,5 @@
+joblib
 numpy
 pandas
-torch==1.11.0
-joblib
 scikit-learn
+torch==1.11.0
