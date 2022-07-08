@@ -1,3 +1,3 @@
 git+https://github.com/alercebroker/APF@elasticc
-git+https://${GITHUB_TOKEN}@github.com/alercebroker/alerce_classifiers.git#egg=alerce_classifiers[transformer_lc_header]
+git+https://${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git#egg=alerce_classifiers[transformer_lc_header]
 git+https://github.com/alercebroker/alerce_base_model#egg=alerce_base_model
