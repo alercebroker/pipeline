@@ -10,8 +10,6 @@ on:
         required: true
       GH_TOKEN:
         required: true
-      USERNAME:
-        required: true
 jobs:
   build_and_push:
     name: Push Docker image to GitHub Packages
@@ -38,4 +36,3 @@ jobs:
           tags: ${{ inputs.tags }}
           build-args: |
             GH_TOKEN=${{ secrets.GH_TOKEN }}
-            USERNAME=${{ secrets.USERNAME }}

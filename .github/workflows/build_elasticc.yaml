@@ -35,4 +35,3 @@ jobs:
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      USERNAME: ${{ secrets.USERNAME }}

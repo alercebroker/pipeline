@@ -1,18 +1,16 @@
-FROM python:3.7
+FROM python:3.8
 
-ARG GH_TOKEN=${GH_TOKEN}
-ARG USERNAME=${USERNAME}
+ARG GH_TOKEN={GH_TOKEN}
 
 COPY requirements.txt /app/requirements.txt
+RUN pip install pandas wget validators
 RUN pip install -r /app/requirements.txt
-RUN git clone https://${USERNAME}:${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git
-WORKDIR alerce_classifiers/
-RUN pip install -r requirements.txt
-RUN pip install .["transformer_online_classifier"]
 
 WORKDIR /app
 COPY . /app
 
 WORKDIR /app/scripts
+
+ENV NUMEXPR_MAX_THREADS=1
 
 CMD ["python", "run_step.py"]

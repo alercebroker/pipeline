@@ -18,7 +18,7 @@ logging.basicConfig(level=level,
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
 
-from transformer_online_classifier_step import TransformerOnlineClassifierStep
+from transformer_online_classifier_step import TransformerLCHeaderClassifierStep
 from apf.core import get_class
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
@@ -27,5 +27,5 @@ else:
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = TransformerOnlineClassifierStep(consumer, config=STEP_CONFIG, level=level)
+step = TransformerLCHeaderClassifierStep(consumer, config=STEP_CONFIG, level=level)
 step.start()
