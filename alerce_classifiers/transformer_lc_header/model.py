@@ -144,6 +144,7 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
         detections = ELAsTiCCMapper.get_detections(data_input)
         headers = ELAsTiCCMapper.get_header(data_input, keep="first")
+        headers.replace({np.nan: -9999}, inplace=True)
 
         preprocessed_detections = self.preprocess(detections)
         preprocessed_headers = self.preprocess_headers(headers)
