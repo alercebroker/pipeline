@@ -1,5 +1,6 @@
 from .dict_transform import FEAT_DICT
 
+import numpy as np
 import pandas as pd
 
 
@@ -50,3 +51,12 @@ class ELAsTiCCMapper:
         headers = headers.rename(columns=cls.feat_dict)
         headers = headers.sort_index()
         return headers
+
+    @classmethod
+    def get_features(cls, light_curve_and_features: pd.DataFrame) -> pd.DataFrame:
+        features = light_curve_and_features[
+            ~light_curve_and_features["features"].isna()
+        ]
+        features = pd.DataFrame.from_records(features["features"].values)
+        features.replace({None: np.nan}, inplace=True)
+        return features
