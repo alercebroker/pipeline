@@ -8,10 +8,12 @@ import os
 import pandas as pd
 import sys
 import torch
+import validators
 
 
-class TransformerOnlineClassifier(ClassifierModel, ABC):
+class TransformerLCHeaderClassifier(ClassifierModel, ABC):
     def __init__(self, path_to_model: str, path_to_quantiles: str):
+        self.local_files = f"/tmp/{type(self).__name__}"
         _file = os.path.dirname(__file__)
         sys.path.append(_file)
         super().__init__(path_to_model)
@@ -39,25 +41,45 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         ]
         self._load_quantiles(path_to_quantiles)
 
-    def get_max_epochs(self, pd_output):
+    def _load_model(self, path_to_model: str) -> None:
+        if validators.url(path_to_model):
+            path_to_model = self.download(path_to_model, self.local_files)
+        self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
+
+    def _load_quantiles(self, path_to_quantiles: str) -> None:
+        self.quantiles = {}
+        existing_quantiles = ELAsTiCCMapper.feat_dict.items()
+
+        if validators.url(path_to_quantiles):
+            for key, val in existing_quantiles:
+                quantile_url = os.path.join(path_to_quantiles, f"norm_{val}.joblib")
+                self.download(quantile_url, self.local_files)
+            path_to_quantiles = self.local_files
+
+        for key, val in ELAsTiCCMapper.feat_dict.items():
+            self.quantiles[val] = load(f"{path_to_quantiles}/norm_{val}.joblib")
+
+    def get_max_epochs(self, pd_output: pd.DataFrame) -> int:
         return pd_output.groupby(["aid", "BAND"]).count()["FLUXCAL"].max()
 
-    def pad_list(self, lc, nepochs, max_epochs):
+    def pad_list(self, lc: pd.DataFrame, nepochs: int, max_epochs: int) -> np.ndarray:
         pad_num = max_epochs - nepochs
         if pad_num >= 0:
             return np.pad(lc, (0, pad_num), "constant", constant_values=(0, 0))
         else:
             return np.array(lc)[np.linspace(0, nepochs - 1, num=max_epochs).astype(int)]
 
-    def create_mask(self, lc):
+    def create_mask(self, lc: pd.DataFrame) -> np.ndarray:
         return (lc != 0).astype(float)
 
-    def normalizing_time(self, time_fid):
+    def normalizing_time(self, time_fid: pd.Series) -> pd.Series:
         mask_min = 9999999999 * (time_fid == 0).astype(float)
         t_min = np.min(time_fid + mask_min)
         return (time_fid - t_min) * (~(time_fid == 0)).astype(float)
 
-    def separate_by_filter(self, feat_time_series, bands, max_epochs):
+    def separate_by_filter(
+        self, feat_time_series: np.ndarray, bands: np.ndarray, max_epochs: int
+    ) -> np.ndarray:
         timef_array = np.array(feat_time_series)
         band_array = np.array(bands)
         colors = {"u": "b", "g": "g", "r": "r", "i": "orange", "z": "brown", "Y": "k"}
@@ -68,7 +90,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             final_array += [self.pad_list(aux, nepochs, max_epochs)]
         return np.stack(final_array, 1)
 
-    def to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: pd.DataFrame) -> dict:
+    def to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
         these_kwargs = {
             "data": torch.from_numpy(
                 np.stack(pd_output["FLUXCAL"].to_list(), 0)
@@ -81,14 +103,6 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
             "tabular_feat": torch.from_numpy(np_headers).float(),
         }
         return these_kwargs
-
-    def _load_model(self, path_to_model: str) -> None:
-        self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
-
-    def _load_quantiles(self, path_to_quantiles: str) -> None:
-        self.quantiles = {}
-        for key, val in ELAsTiCCMapper.feat_dict.items():
-            self.quantiles[val] = load(f"{path_to_quantiles}/norm_{val}.joblib")
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
         # Compute max epochs, maximum length per index and band
@@ -115,7 +129,7 @@ class TransformerOnlineClassifier(ClassifierModel, ABC):
         )
         return data_input
 
-    def preprocess_headers(self, headers: pd.DataFrame) -> np.array:
+    def preprocess_headers(self, headers: pd.DataFrame) -> np.ndarray:
         all_feat = []
         for col in headers.columns:
             all_feat += [
