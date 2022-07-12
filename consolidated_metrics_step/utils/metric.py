@@ -37,7 +37,7 @@ class ConsolidatedMetric(JsonModel):
         return self.__dict__["__field__"][field]
 
     def __setitem__(self, key, value):
-        pass
+        self.__setattr__(key, value)
 
 
 from redis_om import get_redis_connection
