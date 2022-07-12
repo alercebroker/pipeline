@@ -1,4 +1,8 @@
+from .utils.metric import ConsolidatedMetric
+from .utils.metric import STEP_MAPPER
+from .utils.metric import StepMetric
 from apf.core.step import GenericStep
+from datetime import datetime
 
 import logging
 
@@ -17,10 +21,42 @@ class ConsolidatedMetricsStep(GenericStep):
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
+        self.datetime_conversion = lambda x: datetime.strptime(
+            x, "%Y-%m-%dT%H:%M:%S.%f+00:00"
+        )
+
+    @staticmethod
+    def create_consolidated_metrics(
+        candid: str, source: str, metric: StepMetric
+    ) -> ConsolidatedMetric:
+        query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
+        if len(query):  # HIT
+            consolidated_metric = query[0]
+            consolidated_metric[source] = metric
+        else:
+            kwargs = {"candid": candid, source: metric}
+            consolidated_metric = ConsolidatedMetric(**kwargs)
+            consolidated_metric.save()
+        return consolidated_metric
 
     def execute(self, message):
         ################################
         #   Here comes the Step Logic  #
         ################################
 
-        pass
+        for msg in message:
+            candid = msg["candid"]
+            source = STEP_MAPPER[msg["source"]]
+            metric = StepMetric(
+                received=self.datetime_conversion(msg["timestamp_received"]),
+                sent=self.datetime_conversion(msg["timestamp_sent"]),
+                execution_time=msg["execution_time"],
+            )
+
+            if isinstance(candid, list):
+                for c in candid:
+                    cm = self.create_consolidated_metrics(c, source, metric)
+            else:
+                cm = self.create_consolidated_metrics(candid, source, metric)
+            print(cm)
+        input("stop")

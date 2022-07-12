@@ -26,7 +26,7 @@ from consolidated_metrics_step import ConsolidatedMetricsStep
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
 else:
-    from apf.consumers import KafkaConsumer as Consumer
+    from apf.consumers import KafkaJsonConsumer as Consumer
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
