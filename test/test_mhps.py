@@ -14,7 +14,8 @@ class TestMHPS(unittest.TestCase):
         mag = data.magpsf_corr
         magerr = data.sigmapsf_corr
         time = data.mjd
-        result = mhps.statistics(mag.values, magerr.values, time.values, self.t1, self.t2)
+        result = mhps.statistics(
+            mag.values, magerr.values, time.values, self.t1, self.t2)
         result = np.array(result)
         self.assertEqual(len(result), 5)
 
@@ -23,7 +24,8 @@ class TestMHPS(unittest.TestCase):
         mag = data.magpsf_corr
         magerr = data.sigmapsf_corr
         time = data.mjd
-        result = mhps.statistics(mag.values, magerr.values, time.values, self.t1, self.t2)
+        result = mhps.statistics(
+            mag.values, magerr.values, time.values, self.t1, self.t2)
         result = np.array(result)
         self.assertEqual(len(result), 5)
 
@@ -32,7 +34,8 @@ class TestMHPS(unittest.TestCase):
         mag = np.zeros_like(data.magpsf_corr)
         magerr = data.sigmapsf_corr
         time = data.mjd
-        result = mhps.statistics(mag, magerr.values, time.values, self.t1, self.t2)
+        result = mhps.statistics(
+            mag, magerr.values, time.values, self.t1, self.t2)
         result = np.array(result)
         self.assertEqual(len(result), 5)
         for i in range(5):

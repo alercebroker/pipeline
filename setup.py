@@ -38,5 +38,5 @@ setup(
     url='https://github.com/alercebroker/mhps',
     description='Mexican Hat Power Spectra https://arxiv.org/abs/1207.5825',
     author='ALeRCE',
-    version='0.0.1',
+    version='0.1.0',
 )
