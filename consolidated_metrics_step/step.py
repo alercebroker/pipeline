@@ -26,9 +26,8 @@ class ConsolidatedMetricsStep(GenericStep):
         )
         self.pipeline_order = config.get("PIPELINE_ORDER")
 
-    @staticmethod
     def generate_consolidated_metrics(
-        candid: str, source: str, metric: StepMetric
+        self, candid: str, source: str, metric: StepMetric
     ) -> ConsolidatedMetric:
         query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
         if len(query):  # HIT
@@ -39,10 +38,17 @@ class ConsolidatedMetricsStep(GenericStep):
             consolidated_metric = ConsolidatedMetric(**kwargs)
         consolidated_metric.save()
 
-        print(consolidated_metric)
-
         if consolidated_metric.is_bingo():
-            print(consolidated_metric)
+            queue_times = consolidated_metric.compute_queue_times(self.pipeline_order)
+            total_time_in_pipeline = consolidated_metric.compute_total_time(
+                "sorting_hat", "late_classifier"
+            )
+            output = {
+                "candid": candid,
+                "total_time": total_time_in_pipeline,
+                **queue_times,
+            }
+            print(output)
         return consolidated_metric
 
     def execute(self, message):
@@ -51,7 +57,6 @@ class ConsolidatedMetricsStep(GenericStep):
         ################################
 
         for msg in message:
-            print(msg)
             if "candid" not in msg.keys():
                 return
             candid = msg["candid"]
