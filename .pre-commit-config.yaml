@@ -1,26 +1,26 @@
 repos:
-    -   repo: https://github.com/pre-commit/pre-commit-hooks
-        rev: v4.2.0
-        hooks:
-        -   id: check-yaml
-        -   id: end-of-file-fixer
-        -   id: trailing-whitespace
-        -   id: requirements-txt-fixer
-    -   repo: https://github.com/pycqa/isort
-        rev: 5.10.1
-        hooks:
-        - id: isort
-    -   repo: https://github.com/psf/black
-        rev: 22.3.0
-        hooks:
-        - id: black
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: requirements-txt-fixer
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
 
-    - repo: local
-      hooks:
-        - id: unittest
-          name: unittest
-          entry: coverage run --source consolidated_metrics_step/ -m pytest -x -s tests/unit/
-          language: python
-          types: [ python ]
-          pass_filenames: false
-          stages: [ commit ]
+  - repo: local
+    hooks:
+      - id: unittest
+        name: unittest
+        entry: coverage run --source consolidated_metrics_step/ -m pytest -x -s tests/unit/
+        language: python
+        types: [ python ]
+        pass_filenames: false
+        stages: [ commit ]
