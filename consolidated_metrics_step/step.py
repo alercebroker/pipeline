@@ -24,6 +24,7 @@ class ConsolidatedMetricsStep(GenericStep):
         self.datetime_conversion = lambda x: datetime.strptime(
             x, "%Y-%m-%dT%H:%M:%S.%f+00:00"
         )
+        self.pipeline_order = config.get("PIPELINE_ORDER")
 
     @staticmethod
     def generate_consolidated_metrics(

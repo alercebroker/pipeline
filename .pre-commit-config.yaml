@@ -14,3 +14,13 @@ repos:
         rev: 22.3.0
         hooks:
         - id: black
+
+    - repo: local
+      hooks:
+        - id: unittest
+          name: unittest
+          entry: coverage run --source consolidated_metrics_step/ -m pytest -x -s tests/unit/
+          language: python
+          types: [ python ]
+          pass_filenames: false
+          stages: [ commit ]
