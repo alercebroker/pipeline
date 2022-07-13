@@ -1,4 +1,6 @@
-from faker import Faker, providers
+from faker import Faker
+from faker import providers
+
 import datetime
 
 
@@ -10,8 +12,16 @@ class FakeMetric:
     def _init_faker(self):
         sources_provider = providers.DynamicProvider(
             provider_name="sources",
-            elements=['S3Step', 'EarlyClassifier', 'WatchlistStep', 'SortingHatStep', 'IngestionStep', 'XmatchStep',
-                      'FeaturesComputer', 'LateClassifier'],
+            elements=[
+                "S3Step",
+                "EarlyClassifier",
+                "WatchlistStep",
+                "SortingHatStep",
+                "IngestionStep",
+                "XmatchStep",
+                "FeaturesComputer",
+                "LateClassifier",
+            ],
         )
         self.fake.add_provider(sources_provider)
 
@@ -19,11 +29,15 @@ class FakeMetric:
         fake_candid = self.fake.user_name()
         fake_candids = [self.fake.user_name() for x in range(0, 10)]
         return {
-            "timestamp_sent": self.fake.date(pattern="%Y-%m-%dT%H:%M:%S.%f+00:00",
-                                             end_datetime=datetime.datetime.now()),
-            "timestamp_received": self.fake.date(pattern="%Y-%m-%dT%H:%M:%S.%f+00:00",
-                                                 end_datetime=datetime.datetime.now()),
+            "timestamp_sent": self.fake.date(
+                pattern="%Y-%m-%dT%H:%M:%S.%f+00:00",
+                end_datetime=datetime.datetime.now(),
+            ),
+            "timestamp_received": self.fake.date(
+                pattern="%Y-%m-%dT%H:%M:%S.%f+00:00",
+                end_datetime=datetime.datetime.now(),
+            ),
             "execution_time": self.fake.random.uniform(0, 1),
             "candid": candid or self.fake.random.choice([fake_candids, fake_candid]),
-            "source": source or self.fake.sources()
+            "source": source or self.fake.sources(),
         }

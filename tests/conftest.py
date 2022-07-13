@@ -1,10 +1,11 @@
-import pytest
-import os
-
-
-from confluent_kafka.admin import AdminClient, NewTopic
-from redis_om import Migrator, get_redis_connection
+from confluent_kafka.admin import AdminClient
+from confluent_kafka.admin import NewTopic
 from consolidated_metrics_step.utils.metric import ConsolidatedMetric
+from redis_om import get_redis_connection
+from redis_om import Migrator
+
+import os
+import pytest
 
 
 @pytest.fixture(scope="session")

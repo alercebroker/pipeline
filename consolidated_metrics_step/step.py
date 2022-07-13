@@ -27,7 +27,7 @@ class ConsolidatedMetricsStep(GenericStep):
 
     @staticmethod
     def generate_consolidated_metrics(
-            candid: str, source: str, metric: StepMetric
+        candid: str, source: str, metric: StepMetric
     ) -> ConsolidatedMetric:
         query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
         if len(query):  # HIT

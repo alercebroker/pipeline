@@ -1,8 +1,9 @@
+from consolidated_metrics_step.step import ConsolidatedMetricsStep
+from tests.data import FakeMetric
+
 import pytest
 import unittest
 
-from consolidated_metrics_step.step import ConsolidatedMetricsStep
-from tests.data import FakeMetric
 
 @pytest.mark.usefixtures("redis_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -16,4 +17,3 @@ class StepIntegrationTest(unittest.TestCase):
         fake_metrics = [self.faker_metrics.create_fake_metric() for _ in range(100)]
         step = ConsolidatedMetricsStep(config=self.step_config)
         step.execute(fake_metrics)
-
