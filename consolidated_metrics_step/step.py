@@ -26,17 +26,22 @@ class ConsolidatedMetricsStep(GenericStep):
         )
 
     @staticmethod
-    def create_consolidated_metrics(
-        candid: str, source: str, metric: StepMetric
+    def generate_consolidated_metrics(
+            candid: str, source: str, metric: StepMetric
     ) -> ConsolidatedMetric:
         query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
         if len(query):  # HIT
             consolidated_metric = query[0]
             consolidated_metric[source] = metric
-        else:
+        else:  # MISS
             kwargs = {"candid": candid, source: metric}
             consolidated_metric = ConsolidatedMetric(**kwargs)
-            consolidated_metric.save()
+        consolidated_metric.save()
+
+        print(consolidated_metric)
+
+        if consolidated_metric.is_bingo():
+            print(consolidated_metric)
         return consolidated_metric
 
     def execute(self, message):
@@ -45,6 +50,9 @@ class ConsolidatedMetricsStep(GenericStep):
         ################################
 
         for msg in message:
+            print(msg)
+            if "candid" not in msg.keys():
+                return
             candid = msg["candid"]
             source = STEP_MAPPER[msg["source"]]
             metric = StepMetric(
@@ -55,8 +63,6 @@ class ConsolidatedMetricsStep(GenericStep):
 
             if isinstance(candid, list):
                 for c in candid:
-                    cm = self.create_consolidated_metrics(c, source, metric)
+                    cm = self.generate_consolidated_metrics(c, source, metric)
             else:
-                cm = self.create_consolidated_metrics(candid, source, metric)
-            print(cm)
-        input("stop")
+                cm = self.generate_consolidated_metrics(candid, source, metric)

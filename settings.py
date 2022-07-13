@@ -34,7 +34,7 @@ PIPELINE_ORDER = {
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
-    "COMMIT": False,  # Disables commit, useful to debug a KafkaConsumer
+    "COMMIT": bool(os.getenv("COMMIT", True)),  # Disables commit, useful to debug a KafkaConsumer
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
 }

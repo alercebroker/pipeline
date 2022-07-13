@@ -33,6 +33,13 @@ class ConsolidatedMetric(JsonModel):
     features: Optional[StepMetric]
     late_classifier: Optional[StepMetric]
 
+    def is_bingo(self) -> bool:
+        keys = STEP_MAPPER.values()
+        for k in keys:
+            if self.__getattribute__(k) is None:
+                return False
+        return True
+
     def __getitem__(self, field):
         return self.__dict__["__field__"][field]
 
@@ -40,8 +47,8 @@ class ConsolidatedMetric(JsonModel):
         self.__setattr__(key, value)
 
 
-from redis_om import get_redis_connection
-from redis_om import Migrator
-
-redis = get_redis_connection()
-Migrator().run()
+# from redis_om import get_redis_connection
+# from redis_om import Migrator
+#
+# redis = get_redis_connection()
+# Migrator().run()
