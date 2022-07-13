@@ -11,7 +11,7 @@ import pytest
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return os.path.join(
-        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
+        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml"
     )
 
 
