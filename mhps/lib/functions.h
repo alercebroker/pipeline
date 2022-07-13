@@ -7,8 +7,8 @@
 #include <string.h>
 
 
-# define pi 3.141592
-# define E 2.718281828
+# define pi 3.141592f
+# define E 2.718281828f
 
 float _conv(
     int N, float *a, float *time1, float *b1, float *b2,
