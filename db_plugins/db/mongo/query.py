@@ -212,7 +212,7 @@ def paginate(
     if not count:
         total = None
     else:
-        all_docs = self.count_documents()
+        all_docs = self.count_documents(filter_by)
         total = all_docs if all_docs < max_results else max_results
     return Pagination(self, page, per_page, total, items)
 

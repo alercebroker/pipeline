@@ -203,3 +203,8 @@ class MongoQueryTest(unittest.TestCase):
             ]
         )
         self.assertEqual(self.obj_collection.count_documents({}), 3)
+
+    def test_find_all(self):
+        result = self.query.find_all(filter_by={"test": "test"})
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.items[0]["test"], "test")
