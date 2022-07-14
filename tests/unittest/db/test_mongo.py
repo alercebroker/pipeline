@@ -2,6 +2,7 @@ from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
+    to_camel_case,
 )
 from db_plugins.db.mongo.query import mongo_query_creator
 from db_plugins.db.mongo.models import Object
@@ -15,12 +16,20 @@ class MongoConnectionTest(unittest.TestCase):
         self.client = mongomock.MongoClient()
         self.config = {
             "HOST": "host",
-            "USER": "username",
+            "USERNAME": "username",
             "PASSWORD": "pwd",
             "PORT": 27017,
             "DATABASE": "database",
         }
         self.conn = MongoConnection(client=self.client, config=self.config)
+
+    def test_to_camel_case(self):
+        conf = self.config
+        conf["SOME_OTHER_ATTRIBUTE"] = "test"
+        new_conf = to_camel_case(conf)
+        self.assertDictContainsSubset(
+            {"someOtherAttribute": "test", "host": "host"}, new_conf
+        )
 
     def test_factory_method(self):
         conn = new_DBConnection(MongoDatabaseCreator)
@@ -37,7 +46,9 @@ class MongoConnectionTest(unittest.TestCase):
 
     def test_create_db(self):
         self.conn.create_db()
-        collections = self.client[self.config["DATABASE"]].list_collection_names()
+        collections = self.client[
+            self.config["DATABASE"]
+        ].list_collection_names()
         expected = ["object", "detection", "non_detection"]
         self.assertEqual(collections, expected)
 
@@ -92,7 +103,9 @@ class MongoQueryTest(unittest.TestCase):
         self.database = client["database"]
         self.obj_collection = self.database["object"]
         self.obj_collection.insert_one({"test": "test"})
-        self.mongo_query_class = mongo_query_creator(mongomock.collection.Collection)
+        self.mongo_query_class = mongo_query_creator(
+            mongomock.collection.Collection
+        )
         self.query = self.mongo_query_class(
             model=Object,
             database=self.database,
