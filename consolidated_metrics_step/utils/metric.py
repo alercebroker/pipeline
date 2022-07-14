@@ -56,6 +56,14 @@ class ConsolidatedMetric(JsonModel):
                 if v is not None:
                     compute_queue(k, v, response)
 
+        if not self.is_bingo():
+            missing = [
+                k for k in STEP_MAPPER.values() if self.__getattribute__(k) is None
+            ]
+            raise Exception(
+                f"Consolidated metric is not full yet (bad bingo): Missing metrics for {missing}"
+            )
+
         queue_times = {}
         for head, tail in pipeline_order.items():
             if tail is not None:

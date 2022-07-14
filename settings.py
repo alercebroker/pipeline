@@ -20,6 +20,14 @@ CONSUMER_CONFIG = {
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
 }
 
+PRODUCER_CONFIG = {
+    "PARAMS": {
+        "bootstrap.servers": os.environ["METRICS_HOST"],
+        "auto.offset.reset": "smallest",
+    },
+    "TOPIC": os.environ["METRIC_TOPIC"],
+}
+
 DB_CONFIG = {}
 
 PIPELINE_ORDER = {
@@ -39,4 +47,5 @@ STEP_CONFIG = {
     ),  # Disables commit, useful to debug a KafkaConsumer
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG,
 }

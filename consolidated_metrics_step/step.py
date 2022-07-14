@@ -2,6 +2,7 @@ from .utils.metric import ConsolidatedMetric
 from .utils.metric import STEP_MAPPER
 from .utils.metric import StepMetric
 from apf.core.step import GenericStep
+from apf.metrics import KafkaMetricsProducer
 from datetime import datetime
 
 import logging
@@ -25,6 +26,7 @@ class ConsolidatedMetricsStep(GenericStep):
             x, "%Y-%m-%dT%H:%M:%S.%f+00:00"
         )
         self.pipeline_order = config.get("PIPELINE_ORDER")
+        self.producer = KafkaMetricsProducer(self.config["PRODUCER_CONFIG"])
 
     def generate_consolidated_metrics(
         self, candid: str, source: str, metric: StepMetric
@@ -48,7 +50,9 @@ class ConsolidatedMetricsStep(GenericStep):
                 "total_time": total_time_in_pipeline,
                 **queue_times,
             }
-            print(output)
+            self.producer.send_metrics(output)
+            self.producer.producer.poll(0.0)  # Do poll for sync the production
+            self.logger.info(f"Produced consolidated metrics for: {candid}")
         return consolidated_metric
 
     def execute(self, message):
@@ -72,3 +76,5 @@ class ConsolidatedMetricsStep(GenericStep):
                     cm = self.generate_consolidated_metrics(c, source, metric)
             else:
                 cm = self.generate_consolidated_metrics(candid, source, metric)
+
+        return
