@@ -71,10 +71,12 @@ class ConsolidatedMetric(JsonModel):
         return queue_times
 
     def compute_total_time(self, start: str, end: str) -> float:
-        total_time = (
-            self.__getattribute__(end).sent - self.__getattribute__(start).received
-        )
-        return total_time.total_seconds()
+        last = self.__getattribute__(end)
+        first = self.__getattribute__(start)
+        if last and first:
+            total_time = last.sent - first.received
+            return total_time.total_seconds()
+        raise Exception(f"{start} or {end} is None")
 
     def __getitem__(self, field):
         return self.__dict__["__field__"][field]
