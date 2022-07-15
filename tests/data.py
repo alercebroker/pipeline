@@ -27,8 +27,8 @@ class FakeMetric:
         self.fake.add_provider(sources_provider)
 
     def create_fake_metric(self, candid: str = None, source: str = None):
-        fake_candid = self.fake.user_name()
-        fake_candids = [self.fake.user_name() for _ in range(0, 10)]
+        fake_candid = f"01a{self.fake.user_name()}"
+        fake_candids = [f"01a{self.fake.user_name()}" for _ in range(0, 10)]
         return {
             "timestamp_sent": self.fake.date_time_between(
                 start_date=datetime.now() - timedelta(minutes=10),

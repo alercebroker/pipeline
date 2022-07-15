@@ -6,6 +6,20 @@ from unittest import mock
 
 import unittest
 
+PIPELINE_ORDER = {
+    "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
+    "ZTF": {
+        "EarlyClassifier": None,
+        "S3Step": None,
+        "WatchlistStep": None,
+        "SortingHatStep": {
+            "IngestionStep": {
+                "XmatchStep": {"FeaturesComputer": {"LateClassifier": None}}
+            }
+        },
+    },
+}
+
 
 class ConsolidatedMetricTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -19,29 +33,30 @@ class ConsolidatedMetricTest(unittest.TestCase):
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_create_metric_model(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         assert cm.candid == "test"
+        assert cm.survey == "test"
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_is_bingo_true(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         for v in STEP_MAPPER.values():
             sm = StepMetric(
                 received=datetime.now(), sent=datetime.now(), execution_time=0.0
             )
             cm[v] = sm
-        self.assertTrue(cm.is_bingo())
+        self.assertTrue(cm.is_bingo(PIPELINE_ORDER["ZTF"]))
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_is_bingo_false(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         fields = list(STEP_MAPPER.values())
         for v in fields[0:2]:
             sm = StepMetric(
                 received=datetime.now(), sent=datetime.now(), execution_time=0.0
             )
             cm[v] = sm
-        self.assertFalse(cm.is_bingo())
+        self.assertFalse(cm.is_bingo(PIPELINE_ORDER["ZTF"]))
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_compute_queue_time(self, mock_connection):
@@ -52,6 +67,7 @@ class ConsolidatedMetricTest(unittest.TestCase):
         )
         cm = ConsolidatedMetric(
             candid="test",
+            survey="test",
             s3=dummy,
             early_classifier=dummy,
             watchlist=dummy,
@@ -77,14 +93,14 @@ class ConsolidatedMetricTest(unittest.TestCase):
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_bad_compute_queue_times(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         with self.assertRaises(Exception) as context:
-            cm.compute_queue_times({})
+            cm.compute_queue_times(PIPELINE_ORDER["ZTF"])
         self.assertIsInstance(context.exception, Exception)
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_compute_total_time(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         cm.sorting_hat = StepMetric(
             execution_time=1,
             received=datetime(2022, 1, 1, 12, 0, 0, 0),
@@ -106,7 +122,7 @@ class ConsolidatedMetricTest(unittest.TestCase):
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_bad_compute_total_time(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test")
+        cm = ConsolidatedMetric(candid="test", survey="test")
         with self.assertRaises(Exception) as context:
             cm.compute_total_time("sorting_hat", "ingestion")
         self.assertIsInstance(context.exception, Exception)

@@ -24,6 +24,7 @@ class StepMetric(EmbeddedJsonModel):
 
 class ConsolidatedMetric(JsonModel):
     candid: str = Field(index=True)
+    survey: str
     s3: Optional[StepMetric]
     early_classifier: Optional[StepMetric]
     watchlist: Optional[StepMetric]
@@ -36,8 +37,33 @@ class ConsolidatedMetric(JsonModel):
     def _get_mapped_attribute(self, key):
         return self.__getattribute__(STEP_MAPPER[key])
 
-    def is_bingo(self) -> bool:
-        keys = STEP_MAPPER.values()
+    def get_deep_pipeline(self, pipeline_order: dict):
+        def get_deep(sender, receiver, response=None):
+            if response is None:
+                response = []
+
+            response.append(sender)
+            if receiver is None:
+                return
+            for k, v in receiver.items():
+                get_deep(k, v, response)
+
+        r = []
+        for head, tail in pipeline_order.items():
+            get_deep(head, tail, r)
+
+        return [STEP_MAPPER[x] for x in r]
+
+    def status(self, pipeline_order: dict) -> str:
+        keys = self.get_deep_pipeline(pipeline_order)
+        res = 0
+        for k in keys:
+            if self.__getattribute__(k):
+                res += 1
+        return f"{res}/{len(keys)}"
+
+    def is_bingo(self, pipeline_order: dict) -> bool:
+        keys = self.get_deep_pipeline(pipeline_order)
         for k in keys:
             if self.__getattribute__(k) is None:
                 return False
@@ -48,15 +74,14 @@ class ConsolidatedMetric(JsonModel):
             if response is None:
                 response = {}
             for k, v in receiver.items():
-                queue_time = (
-                    self._get_mapped_attribute(k).received
-                    - self._get_mapped_attribute(sender).sent
-                )
+                queue_time = self._get_mapped_attribute(k).received.replace(
+                    tzinfo=None
+                ) - self._get_mapped_attribute(sender).sent.replace(tzinfo=None)
                 response[f"{sender}_{k}"] = queue_time.total_seconds()
                 if v is not None:
                     compute_queue(k, v, response)
 
-        if not self.is_bingo():
+        if not self.is_bingo(pipeline_order):
             missing = [
                 k for k in STEP_MAPPER.values() if self.__getattribute__(k) is None
             ]
@@ -74,9 +99,20 @@ class ConsolidatedMetric(JsonModel):
         last = self.__getattribute__(end)
         first = self.__getattribute__(start)
         if last and first:
-            total_time = last.sent - first.received
+            total_time = last.sent.replace(tzinfo=None) - first.received.replace(
+                tzinfo=None
+            )
             return total_time.total_seconds()
         raise Exception(f"{start} or {end} is None")
+
+    def compute_execution_time(self, pipeline_order) -> float:
+        keys = self.get_deep_pipeline(pipeline_order)
+        execution_time = 0.0
+        for k in keys:
+            step = self.__getattribute__(k)
+            if step is not None:
+                execution_time += step.execution_time
+        return execution_time
 
     def __getitem__(self, field):
         return self.__dict__["__field__"][field]

@@ -42,7 +42,7 @@ def kafka_service(docker_ip, docker_services):
 
 def is_responsive_redis(url):
     redis_conn = get_redis_connection(url=url)
-    test = ConsolidatedMetric(candid="test")
+    test = ConsolidatedMetric(candid="test", survey="test")
     test.save()
     Migrator().run()
     return True

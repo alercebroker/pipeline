@@ -25,19 +25,30 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["METRICS_HOST"],
         "auto.offset.reset": "smallest",
     },
-    "TOPIC": os.environ["METRIC_TOPIC"],
+    "TOPIC": os.environ["METRICS_TOPIC"],
 }
 
 DB_CONFIG = {}
 
 PIPELINE_ORDER = {
-    "EarlyClassifier": None,
-    "S3Step": None,
-    "WatchlistStep": None,
-    "SortingHatStep": {
-        "IngestionStep": {"XmatchStep": {"FeaturesComputer": {"LateClassifier": None}}}
+    "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
+    "ZTF": {
+        "EarlyClassifier": None,
+        "S3Step": None,
+        "WatchlistStep": None,
+        "SortingHatStep": {
+            "IngestionStep": {
+                "XmatchStep": {"FeaturesComputer": {"LateClassifier": None}}
+            }
+        },
     },
 }
+
+PIPELINE_DISTANCES = {
+    "ATLAS": ("sorting_hat", "ingestion"),
+    "ZTF": ("sorting_hat", "late_classifier"),
+}
+
 
 # Step Configuration
 STEP_CONFIG = {
@@ -48,4 +59,6 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "PIPELINE_ORDER": PIPELINE_ORDER,
+    "PIPELINDE_DISTANCES": PIPELINE_DISTANCES,
 }

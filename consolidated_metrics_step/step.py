@@ -3,8 +3,8 @@ from .utils.metric import STEP_MAPPER
 from .utils.metric import StepMetric
 from apf.core.step import GenericStep
 from apf.metrics import KafkaMetricsProducer
-from datetime import datetime
 
+import dateutil.parser
 import logging
 
 
@@ -22,11 +22,16 @@ class ConsolidatedMetricsStep(GenericStep):
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
-        self.datetime_conversion = lambda x: datetime.strptime(
-            x, "%Y-%m-%dT%H:%M:%S.%f+00:00"
-        )
         self.pipeline_order = config.get("PIPELINE_ORDER")
+        self.pipeline_distances = config.get("PIPELINE_DISTANCES")
         self.producer = KafkaMetricsProducer(self.config["PRODUCER_CONFIG"])
+
+    def get_survey(self, candid: str) -> str:
+        if candid[:3] in ["01a", "02a", "03a", "04a"]:
+            return "ATLAS"
+        elif len(candid) == 19:
+            return "ZTF"
+        return "UNKNOWN"
 
     def generate_consolidated_metrics(
         self, candid: str, source: str, metric: StepMetric
@@ -36,23 +41,36 @@ class ConsolidatedMetricsStep(GenericStep):
             consolidated_metric = query[0]
             consolidated_metric[source] = metric
         else:  # MISS
-            kwargs = {"candid": candid, source: metric}
+            survey = self.get_survey(candid)
+            kwargs = {"candid": candid, "survey": survey, source: metric}
             consolidated_metric = ConsolidatedMetric(**kwargs)
         consolidated_metric.save()
 
-        if consolidated_metric.is_bingo():
-            queue_times = consolidated_metric.compute_queue_times(self.pipeline_order)
-            total_time_in_pipeline = consolidated_metric.compute_total_time(
-                "sorting_hat", "late_classifier"
+        survey = consolidated_metric.survey
+        pipeline = self.pipeline_order[survey]
+
+        self.logger.debug(f"Candid {candid} is {consolidated_metric.status(pipeline)}")
+
+        if consolidated_metric.is_bingo(pipeline):
+            queue_times = consolidated_metric.compute_queue_times(
+                self.pipeline_order[survey]
+            )
+            distance = self.pipeline_distances[survey]
+            total_time_in_pipeline = consolidated_metric.compute_total_time(*distance)
+            execution_time_in_pipeline = consolidated_metric.compute_execution_time(
+                self.pipeline_order[survey]
             )
             output = {
                 "candid": candid,
                 "total_time": total_time_in_pipeline,
+                "execution_time": execution_time_in_pipeline,
+                "survey": survey,
                 **queue_times,
             }
             self.producer.send_metrics(output)
+            ConsolidatedMetric.delete(consolidated_metric.pk)
             self.producer.producer.poll(0.0)  # Do poll for sync the production
-            self.logger.info(f"Produced consolidated metrics for: {candid}")
+            self.logger.info(f"Produced consolidated metrics for candid: {candid}")
         return consolidated_metric
 
     def execute(self, message):
@@ -66,8 +84,8 @@ class ConsolidatedMetricsStep(GenericStep):
             candid = msg["candid"]
             source = STEP_MAPPER[msg["source"]]
             metric = StepMetric(
-                received=self.datetime_conversion(msg["timestamp_received"]),
-                sent=self.datetime_conversion(msg["timestamp_sent"]),
+                received=dateutil.parser.parse(msg["timestamp_received"]),
+                sent=dateutil.parser.parse(msg["timestamp_sent"]),
                 execution_time=msg["execution_time"],
             )
 
@@ -76,5 +94,4 @@ class ConsolidatedMetricsStep(GenericStep):
                     cm = self.generate_consolidated_metrics(c, source, metric)
             else:
                 cm = self.generate_consolidated_metrics(candid, source, metric)
-
         return
