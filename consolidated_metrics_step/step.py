@@ -44,6 +44,7 @@ class ConsolidatedMetricsStep(GenericStep):
             survey = self.get_survey(candid)
             kwargs = {"candid": candid, "survey": survey, source: metric}
             consolidated_metric = ConsolidatedMetric(**kwargs)
+            consolidated_metric.expire(21600)  # 21600 seconds -> 6 hours
         consolidated_metric.save()
 
         survey = consolidated_metric.survey
