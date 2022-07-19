@@ -4,7 +4,7 @@ from confluent_kafka import Consumer, KafkaException
 import fastavro
 import io
 import importlib
-
+import json
 
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
@@ -254,3 +254,13 @@ class KafkaConsumer(GenericConsumer):
                 # Rasing the same error
                 if retries == self.max_retries:
                     raise e
+
+
+class KafkaJsonConsumer(KafkaConsumer):
+    def __init__(self, config):
+        super().__init__(config)
+
+    def _deserialize_message(self, message):
+        msg_value = message.value()
+        data = json.loads(msg_value)
+        return data
