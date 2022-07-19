@@ -28,7 +28,7 @@ jobs:
           echo ::set-output name=tags::${TAGS}
   push_image:
     needs: get_tags
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build.yaml
     with:
       tags: ${{ needs.get_tags.outputs.tags }}
     secrets:
