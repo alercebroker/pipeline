@@ -1,0 +1,16 @@
+version: '3'
+services:
+  step:
+    image: ghcr.io/alercebroker/consolidated_metrics_step:rc
+    network_mode: "host"
+    environment:
+      - CONSUMER_GROUP_ID=metrics-consolidated
+      - CONSUMER_SERVER=
+      - CONSUMER_TOPICS=metrics
+      - METRICS_HOST=
+      - METRICS_TOPIC=consolidated-metrics-dev
+
+#  redis:
+#    image: redis/redis-stack:latest
+#    network_mode: "host"
+#
