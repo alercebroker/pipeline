@@ -89,7 +89,7 @@ class XmatchStep(GenericStep):
         if len(response):
             response = pd.concat(response, ignore_index=True)
         else:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=[key])
 
         if key == "detections":
             response = response.groupby("oid").apply(
