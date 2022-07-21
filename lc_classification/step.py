@@ -172,7 +172,8 @@ class LateClassifier(GenericStep):
                 tree_oid[key] = self.get_oid_tree(data, oid)
         return tree_oid
 
-    def produce(self, alert_data, features, tree_probabilities):
+    def produce(self, alert_data, features, tree_probabilities: pd.DataFrame):
+        self.metrics["class"] = tree_probabilities["class"].tolist()
         features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
         alert_data.sort_values("candid", ascending=False, inplace=True)
