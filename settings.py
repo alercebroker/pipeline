@@ -37,7 +37,7 @@ CONSUMER_CONFIG = {
         "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
-    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 10)),
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
@@ -77,7 +77,9 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
-        {"key": "objectId", "alias": "oid"},
+        {"key": "oid", "alias": "oid"},
+        {"key": "aid", "alias": "aid"},
+        {"key": "tid", "format": lambda x: str(x)},
     ],
     "PARAMS": {
         "PARAMS": {
