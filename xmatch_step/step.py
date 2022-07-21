@@ -227,7 +227,7 @@ class XmatchStep(GenericStep):
         :param messages: Input messages from stream
         :return: None
         """
-        self.logger.info(f"Processing {len(messages)} alerts")
+        self.logger.info(f"Processing {len(messages)} light curves")
         light_curves = pd.DataFrame(messages)
         light_curves.drop_duplicates(
             ["aid", "candid"], keep="last", inplace=True
@@ -256,14 +256,11 @@ class XmatchStep(GenericStep):
             # Write in database
             self.save_xmatch(xmatches)  # PSQL
             # Get output format
-            if len(xmatches):
-                output_messages = self.format_output(light_curves, xmatches)
-                self.logger.info(f"Producing {len(output_messages)} messages")
-                # Produce data with xmatch
-                self.produce(output_messages)
-                del output_messages
-            else:
-                self.logger.info("No xmatches found. Skiping produce")
+            output_messages = self.format_output(light_curves, xmatches)
+            self.logger.info(f"Producing {len(output_messages)} messages")
+            # Produce data with xmatch
+            self.produce(output_messages)
+            del output_messages
             del messages
             del light_curves
             del input_catalog
