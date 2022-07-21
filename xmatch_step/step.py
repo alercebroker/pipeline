@@ -85,7 +85,12 @@ class XmatchStep(GenericStep):
                 )
                 d.drop(columns=["extra_fields"], inplace=True)
             response.append(d)
-        response = pd.concat(response, ignore_index=True)
+
+        if len(response):
+            response = pd.concat(response, ignore_index=True)
+        else:
+            response = pd.DataFrame(columns=["oid"])
+
         if key == "detections":
             response = response.groupby("oid").apply(
                 lambda x: pd.Series(
