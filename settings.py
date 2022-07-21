@@ -43,9 +43,9 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
-        "oid",
-        {"key": "detections", "format": lambda x: len(x), "alias": "n_det"},
-        {"key": "non_detections", "format": lambda x: len(x), "alias": "n_non_det"}
+        {"key": "oid", "alias": "oid"},
+        {"key": "aid", "alias": "aid"},
+        {"key": "tid", "format": lambda x: str(x)},
     ],
     "PARAMS": {
         "PARAMS": {
