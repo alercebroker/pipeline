@@ -133,7 +133,7 @@ class XmatchStep(GenericStep):
         )
         # Join xmatches with light curves
         metadata = (
-            light_curves[["oid", "metadata"]]
+            light_curves[["oid", "metadata", "tid", "aid"]]
             .explode("oid", ignore_index=True)
             .set_index("oid")
         )

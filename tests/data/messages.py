@@ -155,6 +155,8 @@ def generate_input_batch(n: int) -> List[dict]:
         candid = int(str(m + 1).ljust(8, "0"))
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "tid": f"AL2X{str(m).zfill(5)}",
+            "oid": f"AL2X{str(m).zfill(5)}",
             "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
@@ -222,4 +224,5 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: List[dict]) -> pd.DataFrame:
-    return pd.DataFrame()
+    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
+
