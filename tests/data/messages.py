@@ -155,6 +155,8 @@ def generate_input_batch(n: int) -> List[dict]:
         candid = int(str(m + 1).ljust(8, "0"))
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "tid": f"AL2X{str(m).zfill(5)}",
+            "oid": f"AL2X{str(m).zfill(5)}",
             "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
