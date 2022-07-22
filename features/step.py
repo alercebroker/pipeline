@@ -263,11 +263,18 @@ class FeaturesComputer(GenericStep):
         alert_data.drop_duplicates(inplace=True, keep="last")
         for oid, features_oid in features.iterrows():
             features_oid.replace({np.nan: None}, inplace=True)
-            candid = alert_data.loc[oid].candid
+            message = alert_data.loc[oid]
+            candid = message["candid"]
             if isinstance(candid, pd.Series):
                 candid = candid.iloc[-1]
             features_dict = features_oid.to_dict()
-            out_message = {"features": features_dict, "oid": oid, "candid": candid}
+            out_message = {
+                "features": features_dict,
+                "oid": oid,
+                "candid": candid,
+                "tid": message["tid"],
+                "aid": message["aid"],
+            }
             self.producer.produce(out_message, key=oid)
 
     def get_metadata_from_message(self, message):
@@ -336,7 +343,12 @@ class FeaturesComputer(GenericStep):
         self.logger.info("Getting batch alert data")
         alert_data = pd.DataFrame(
             [
-                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
+                {
+                    "oid": message.get("oid"),
+                    "aid": message.get("aid"),
+                    "tid": message.get("tid"),
+                    "candid": message.get("candid", np.nan)
+                }
                 for message in messages
             ]
         )

@@ -5,6 +5,8 @@ SCHEMA = {
     "fields": [
         {"name": "oid", "type": "string"},
         {"name": "candid", "type": "long"},
+        {"name": "aid", "type": "string"},
+        {"name": "tid", "type": "string"},
         {
             "name": "features",
             "type": {
