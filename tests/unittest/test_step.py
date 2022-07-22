@@ -328,21 +328,25 @@ class StepTestCase(unittest.TestCase):
         produce.assert_called_once()
 
     def test_produce(self):
-        alert_data = pd.DataFrame({"oid": ["OID", "OID"], "candid": [123, 123]})
-        features = pd.DataFrame({"oid": ["OID"], "feature1": 1, "feature2": 2})
+        alert_data = pd.DataFrame({"oid": ["OID1", "OID2"], "candid": [123, 124], "aid": ["1", "2"], "tid": ["a", "b"]})
+        features = pd.DataFrame({"oid": ["OID1"], "feature1": 1, "feature2": 2})
         features.set_index("oid", inplace=True)
         self.step.produce(features, alert_data)
         expected_message = {
             "features": {"feature1": 1, "feature2": 2},
-            "oid": "OID",
+            "oid": "OID1",
             "candid": 123,
+            "aid": "1",
+            "tid": "a"
         }
-        self.step.producer.produce.assert_called_with(expected_message, key="OID")
+        self.step.producer.produce.assert_called_with(expected_message, key="OID1")
 
     def test_produce_with_candid_series(self):
         alert_data = pd.read_csv(
             FILE_PATH + "/../examples/alert_data_with_duplicates.csv"
         )
+        alert_data["aid"] = alert_data["oid"]
+        alert_data["tid"] = "ZTF"
         features = pd.read_csv(
             FILE_PATH + "/../examples/features_with_candid_problem.csv"
         )
