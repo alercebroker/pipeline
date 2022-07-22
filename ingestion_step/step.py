@@ -593,10 +593,7 @@ class IngestionStep(GenericStep):
                         metadata_ = metadata.loc[o].to_dict()
                         break
 
-            key_alert = alerts[alerts[key] == _key]
-            candid = key_alert["candid"].values[
-                -1
-            ]  # get the last candid for this key
+            key_alert = alerts[alerts[key] == _key].iloc[-1]
             mask_detections = light_curves["detections"][key] == _key
             detections = light_curves["detections"].loc[mask_detections]
             detections.replace({np.nan: None}, inplace=True)
@@ -611,7 +608,9 @@ class IngestionStep(GenericStep):
                 "meanra": row["meanra"],
                 "meandec": row["meandec"],
                 "ndet": row["ndet"],
-                "candid": str(candid),
+                "candid": str(key_alert["candid"]),
+                "tid": str(key_alert["tid"]),
+                "oid": str(key_alert["oid"]),
                 "detections": detections,
                 "non_detections": non_detections,
                 "metadata": metadata_,

@@ -5,7 +5,7 @@ from ingestion_step.utils.multi_driver.connection import MultiDriverConnection
 from ingestion_step.utils.multi_driver.query import filter_to_psql, update_to_psql
 from db_plugins.db.sql.models import Object
 from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
-from tests.unittest.data.messages import generate_random_objects
+from data.messages import generate_random_objects
 
 CONFIG = {
     "PSQL": {

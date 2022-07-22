@@ -119,6 +119,8 @@ SCHEMA = {
     "type": "record",
     "fields": [
         {"name": "aid", "type": "string"},
+        {"name": "tid", "type": "string"},
+        {"name": "oid", "type": "string"},
         {"name": "candid", "type": ["string", "long"]},
         {"name": "meanra", "type": "float"},
         {"name": "meandec", "type": "float"},
