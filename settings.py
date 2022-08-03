@@ -16,7 +16,7 @@ CONSUMER_CONFIG = {
         "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
-    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 10)),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
 }
 
@@ -54,7 +54,7 @@ PIPELINE_DISTANCES = {
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     "COMMIT": bool(
-        os.getenv("COMMIT", True)
+        int(os.getenv("COMMIT", 1))
     ),  # Disables commit, useful to debug a KafkaConsumer
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,

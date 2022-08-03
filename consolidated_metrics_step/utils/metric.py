@@ -3,6 +3,7 @@ from redis_om import EmbeddedJsonModel
 from redis_om import Field
 from redis_om import JsonModel
 from typing import Optional
+from typing import Tuple
 
 STEP_MAPPER = {
     "S3Step": "s3",
@@ -19,7 +20,7 @@ STEP_MAPPER = {
 class StepMetric(EmbeddedJsonModel):
     received: datetime
     sent: datetime
-    execution_time: float
+    execution_time: float  # in seconds
 
 
 class ConsolidatedMetric(JsonModel):
@@ -36,6 +37,52 @@ class ConsolidatedMetric(JsonModel):
 
     def _get_mapped_attribute(self, key):
         return self.__getattribute__(STEP_MAPPER[key])
+
+    def _get_prev_step(self, pipeline_order: dict, to_find: str) -> str or None:
+        for head, tail in pipeline_order.items():
+            if tail:
+                for h, t in tail.items():
+                    if h == to_find:
+                        return head
+                    else:
+                        return self._get_prev_step(tail, to_find)
+        return None
+
+    def compute_queue_time_between(
+        self, prev_step: str, current_step: str
+    ) -> [float, None]:
+        t_0 = self._get_mapped_attribute(prev_step)
+        t_1 = self._get_mapped_attribute(current_step)
+        queue_time = None
+        if t_0 and t_1:
+            queue_time = t_1.received.replace(tzinfo=None) - t_0.sent.replace(
+                tzinfo=None
+            )
+            queue_time = queue_time.total_seconds()
+        return queue_time
+
+    def compute_queue_time(
+        self, pipeline_order: dict, current_step: str
+    ) -> [float, None]:
+        prev_step = self._get_prev_step(pipeline_order, current_step)
+        if prev_step:
+            queue_time = self.compute_queue_time_between(prev_step, current_step)
+            return queue_time
+        return None
+
+    def compute_accumulated_time(self, pipeline_order: dict, current_step: str):
+        prev = self._get_prev_step(pipeline_order, current_step)
+        t_1 = self._get_mapped_attribute(current_step)
+        accumulated_time = t_1.execution_time
+        while prev:
+            queue_time = self.compute_queue_time(pipeline_order, current_step)
+            t_0 = self._get_mapped_attribute(prev)
+            if t_0 is None:
+                return None
+            accumulated_time += t_0.execution_time + queue_time
+            current_step = prev
+            prev = self._get_prev_step(pipeline_order, current_step)
+        return accumulated_time
 
     def get_deep_pipeline(self, pipeline_order: dict):
         def get_deep(sender, receiver, response=None):
@@ -74,24 +121,19 @@ class ConsolidatedMetric(JsonModel):
             if response is None:
                 response = {}
             for k, v in receiver.items():
-                queue_time = self._get_mapped_attribute(k).received.replace(
-                    tzinfo=None
-                ) - self._get_mapped_attribute(sender).sent.replace(tzinfo=None)
-                response[f"{sender}_{k}"] = queue_time.total_seconds()
-                if v is not None:
-                    compute_queue(k, v, response)
-
-        if not self.is_bingo(pipeline_order):
-            missing = [
-                k for k in STEP_MAPPER.values() if self.__getattribute__(k) is None
-            ]
-            raise Exception(
-                f"Consolidated metric is not full yet (bad bingo): Missing metrics for {missing}"
-            )
+                new_head = self._get_mapped_attribute(k)
+                new_tail = self._get_mapped_attribute(sender)
+                if new_head and new_tail:
+                    queue_time = new_head.received.replace(
+                        tzinfo=None
+                    ) - new_tail.sent.replace(tzinfo=None)
+                    response[f"{sender}_{k}"] = queue_time.total_seconds()
+                    if v is not None:
+                        compute_queue(k, v, response)
 
         queue_times = {}
         for head, tail in pipeline_order.items():
-            if tail is not None:
+            if head and tail:
                 compute_queue(head, tail, queue_times)
         return queue_times
 
@@ -118,7 +160,11 @@ class ConsolidatedMetric(JsonModel):
         return self.__dict__["__field__"][field]
 
     def __setitem__(self, key, value):
-        self.__setattr__(key, value)
+        if key in STEP_MAPPER.keys():
+            key = STEP_MAPPER[key]
+            self.__setattr__(key, value)
+        else:
+            self.__setattr__(key, value)
 
 
 # from redis_om import get_redis_connection
