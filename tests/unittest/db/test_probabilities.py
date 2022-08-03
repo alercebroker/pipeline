@@ -162,6 +162,11 @@ class MongoProbabilitiesTest(unittest.TestCase):
         self.assertEqual(len(fl), 2)
 
     def test_update_probability(self):
+        """
+        According to my documentation reading, to update an object we must first check if the
+        probability we desire to update exist (a filter for the aid and a elemMatch for the probabilitie).
+        If it does we can update it, if it doesn't we need to push it.
+        """
         self.create_2_objects()
 
         self.obj_collection.update_one(
@@ -217,23 +222,18 @@ class MongoProbabilitiesTest(unittest.TestCase):
         self.assertEqual(f2["probabilities"], expected_object_2_probabilities)
 
     def test_insert_probability(self):
+        """
+        An example of a probabilitie push
+        """
         self.create_simple_object()
 
         self.obj_collection.update_one(
             {
                 "aid": "aid3",
-                "probabilities": {
-                    "$elemMatch": {
-                        "classifier_name": "stamp_classifier",
-                        "classifier_version": "stamp_classifier_1.0.0",
-                        "class_name": "CLASS1",
-                        "ranking": 1,
-                    }
-                },
             },
             {
-                "$set": {
-                    "probabilities.$": {
+                "$push": {
+                    "probabilities": {
                         "classifier_name": "stamp_classifier",
                         "classifier_version": "stamp_classifier_1.0.0",
                         "class_name": "CLASS1",
@@ -256,4 +256,3 @@ class MongoProbabilitiesTest(unittest.TestCase):
             }
         ]
         self.assertEqual(f["probabilities"], expected_object_1_probabilities)
-        self.assertEqual(1, 2)
