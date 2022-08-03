@@ -22,11 +22,13 @@ def create_extra_fields(Model, **kwargs):
                 pass
         return kwargs
 
+
 def create_magstats(**kwargs):
     if "magstats" in kwargs:
         return kwargs["magstats"]
     else:
         return []
+
 
 def create_features(**kwargs):
     if "features" in kwargs:
@@ -34,11 +36,13 @@ def create_features(**kwargs):
     else:
         return []
 
+
 def create_probabilities(**kwargs):
     if "probabilities" in kwargs:
         return kwargs["probabilities"]
     else:
         return []
+
 
 class Object(generic_models.Object, Base):
     """Mongo implementation of the Object class.
