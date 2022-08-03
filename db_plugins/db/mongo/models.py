@@ -22,6 +22,23 @@ def create_extra_fields(Model, **kwargs):
                 pass
         return kwargs
 
+def create_magstats(**kwargs):
+    if "magstats" in kwargs:
+        return kwargs["magstats"]
+    else:
+        return []
+
+def create_features(**kwargs):
+    if "features" in kwargs:
+        return kwargs["features"]
+    else:
+        return []
+
+def create_probabilities(**kwargs):
+    if "probabilities" in kwargs:
+        return kwargs["probabilities"]
+    else:
+        return []
 
 class Object(generic_models.Object, Base):
     """Mongo implementation of the Object class.
@@ -45,6 +62,9 @@ class Object(generic_models.Object, Base):
     loc = SpecialField(loc_definition)
     meanra = Field()
     meandec = Field()
+    magstats = SpecialField(create_magstats)
+    features = SpecialField(create_features)
+    probabilities = SpecialField(create_probabilities)
     extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
