@@ -253,7 +253,7 @@ class XmatchStep(GenericStep):
             self.logger.info("Getting xmatches")
             xmatches = self.request_xmatch(input_catalog, self.retries)
             # Write in database
-            # self.save_xmatch(xmatches)  # PSQL
+            self.save_xmatch(xmatches)  # PSQL
             # Get output format
             output_messages = self.format_output(light_curves, xmatches)
             self.logger.info(f"Producing {len(output_messages)} messages")
