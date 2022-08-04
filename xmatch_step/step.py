@@ -92,9 +92,7 @@ class XmatchStep(GenericStep):
             return pd.DataFrame(columns=[key])
         if key == "detections":
             response = response.groupby("oid", sort=False).apply(
-                lambda x: pd.Series(
-                    {key: x.to_dict("records")}
-                )
+                lambda x: pd.Series({key: x.to_dict("records")})
             )
         elif key == "non_detections":
             response = response.groupby("oid", sort=False).apply(
@@ -131,10 +129,9 @@ class XmatchStep(GenericStep):
             }
         )
         # Join metadata with xmatches
-        metadata = (
-            light_curves[["oid", "metadata", "tid", "aid", "candid"]]
-            .set_index("oid")
-        )
+        metadata = light_curves[
+            ["oid", "metadata", "tid", "aid", "candid"]
+        ].set_index("oid")
         metadata_xmatches = metadata.join(xmatches.set_index("oid_in"))
 
         # Unparse dets and non dets: means separate detections and non detections by oid. For example if exists a list
@@ -239,9 +236,7 @@ class XmatchStep(GenericStep):
         light_curves = light_curves[
             ~light_curves["metadata"].isna()
         ]  # Leave lightcurves with metadata (means ZTF lc)
-        input_catalog = light_curves[
-            ["aid", "meanra", "meandec", "oid"]
-        ]
+        input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]
         # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
