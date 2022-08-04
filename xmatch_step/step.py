@@ -90,15 +90,14 @@ class XmatchStep(GenericStep):
             response = pd.concat(response, ignore_index=True)
         else:
             return pd.DataFrame(columns=[key])
-
         if key == "detections":
-            response = response.groupby("oid").apply(
+            response = response.groupby("oid", sort=False).apply(
                 lambda x: pd.Series(
-                    {key: x.to_dict("records"), "candid": x["candid"].max()}
+                    {key: x.to_dict("records")}
                 )
             )
         elif key == "non_detections":
-            response = response.groupby("oid").apply(
+            response = response.groupby("oid", sort=False).apply(
                 lambda x: pd.Series({key: x.to_dict("records")})
             )
         else:
@@ -115,7 +114,7 @@ class XmatchStep(GenericStep):
         :return:
         """
         # Create a new dataframe that contains just two columns `aid` and `xmatches`.
-        aid_in = xmatches["oid_in"]  # change to aid for multi stream purposes
+        oid_in = xmatches["oid_in"]  # change to aid for multi stream purposes
         # Temporal code: the oid_in will be removed
         xmatches.drop(
             columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"],
@@ -124,29 +123,34 @@ class XmatchStep(GenericStep):
         xmatches.replace({np.nan: None}, inplace=True)
         xmatches = pd.DataFrame(
             {
-                "oid_in": aid_in,  # change to aid name for multi stream
+                "oid_in": oid_in,  # change to aid name for multi stream
                 "xmatches": xmatches.apply(
                     lambda x: None if x is None else {"allwise": x.to_dict()},
                     axis=1,
                 ),
             }
         )
-        # Join xmatches with light curves
+        # Join metadata with xmatches
         metadata = (
-            light_curves[["oid", "metadata", "tid", "aid"]]
-            .explode("oid", ignore_index=True)
+            light_curves[["oid", "metadata", "tid", "aid", "candid"]]
             .set_index("oid")
         )
+        metadata_xmatches = metadata.join(xmatches.set_index("oid_in"))
+
+        # Unparse dets and non dets: means separate detections and non detections by oid. For example if exists a list
+        # of oids = [ZTF1, ZTF2] for an aid, te unparse creates a new dataframe of detections and non detections for
+        # each oid
         dets = self.unparse(light_curves, "detections")
         non_dets = self.unparse(light_curves, "non_detections")
-        data = (
-            dets.join(non_dets)
-            .join(metadata)
-            .join(xmatches.set_index("oid_in"))
-        )
+        # Join dets and non dets
+        dets_nondets = dets.join(non_dets)
+        # Join all
+        data = metadata_xmatches.join(dets_nondets)
+
         data.replace({np.nan: None}, inplace=True)
         data.index.names = ["oid"]
         data.reset_index(inplace=True)
+        data["candid"] = data["candid"].astype("int64")
         # Transform to a list of dicts
         data = data.to_dict("records")
         return data
@@ -235,14 +239,9 @@ class XmatchStep(GenericStep):
         light_curves = light_curves[
             ~light_curves["metadata"].isna()
         ]  # Leave lightcurves with metadata (means ZTF lc)
-        # Temporal code: to manage oids of ZTF and store xmatch
-        light_curves["oid"] = light_curves["detections"].apply(
-            lambda x: set(det["oid"] for det in x)
-        )
         input_catalog = light_curves[
             ["aid", "meanra", "meandec", "oid"]
-        ]  # Temp. code: remove only oid
-        input_catalog = input_catalog.explode("oid", ignore_index=True)
+        ]
         # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
@@ -254,7 +253,7 @@ class XmatchStep(GenericStep):
             self.logger.info("Getting xmatches")
             xmatches = self.request_xmatch(input_catalog, self.retries)
             # Write in database
-            self.save_xmatch(xmatches)  # PSQL
+            # self.save_xmatch(xmatches)  # PSQL
             # Get output format
             output_messages = self.format_output(light_curves, xmatches)
             self.logger.info(f"Producing {len(output_messages)} messages")
