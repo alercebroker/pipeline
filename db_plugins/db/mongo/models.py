@@ -24,24 +24,15 @@ def create_extra_fields(Model, **kwargs):
 
 
 def create_magstats(**kwargs):
-    if "magstats" in kwargs:
-        return kwargs["magstats"]
-    else:
-        return []
+    return kwargs.get("magstats", [])
 
 
 def create_features(**kwargs):
-    if "features" in kwargs:
-        return kwargs["features"]
-    else:
-        return []
+    return kwargs.get("features", [])
 
 
 def create_probabilities(**kwargs):
-    if "probabilities" in kwargs:
-        return kwargs["probabilities"]
-    else:
-        return []
+    return kwargs.get("probabilities", [])
 
 
 class Object(generic_models.Object, Base):

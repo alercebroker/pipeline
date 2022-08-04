@@ -245,8 +245,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         )
 
         f = self.obj_collection.find_one({"aid": "aid3"})
-        print(f"objeto 1 {f}")
-        expected_object_1_probabilities = [
+        expected_object_probabilities = [
             {
                 "classifier_name": "stamp_classifier",
                 "classifier_version": "stamp_classifier_1.0.0",
@@ -255,4 +254,4 @@ class MongoProbabilitiesTest(unittest.TestCase):
                 "ranking": 1,
             }
         ]
-        self.assertEqual(f["probabilities"], expected_object_1_probabilities)
+        self.assertEqual(f["probabilities"], expected_object_probabilities)
