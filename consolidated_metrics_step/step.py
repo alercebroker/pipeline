@@ -1,4 +1,6 @@
-from .utils.metric import ConsolidatedMetric, STEP_MAPPER, StepMetric
+from .utils.metric import ConsolidatedMetric
+from .utils.metric import STEP_MAPPER
+from .utils.metric import StepMetric
 from apf.core.step import GenericStep
 from apf.metrics import KafkaMetricsProducer
 
@@ -18,11 +20,14 @@ class ConsolidatedMetricsStep(GenericStep):
 
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+    def __init__(
+        self, consumer=None, config=None, level=logging.INFO, producer=None, **step_args
+    ):
         super().__init__(consumer, config=config, level=level)
         self.pipeline_order = config.get("PIPELINE_ORDER")
-        self.pipeline_distances = config.get("PIPELINE_DISTANCES")
-        self.producer = KafkaMetricsProducer(self.config["PRODUCER_CONFIG"])
+        self.producer = producer
+        if config.get("PRODUCER_CONFIG", False):
+            self.producer = KafkaMetricsProducer(self.config["PRODUCER_CONFIG"])
         self.expire_time = config.get("EXPIRE_TIME", 21600)  # 21600 seconds -> 6 hours
 
     def produce(self, message: dict) -> None:
@@ -79,9 +84,10 @@ class ConsolidatedMetricsStep(GenericStep):
         pipeline = self.pipeline_order[survey]
         cm = self.generate_consolidated_metrics(candid, source, metric, survey)
         metric_queue = self.process_queues(cm, source)
-        self.produce(metric_queue)
-        if cm.is_bingo(pipeline):
-            ConsolidatedMetric.delete(cm.pk)
+        if metric_queue:
+            self.produce(metric_queue)
+            if cm.is_bingo(pipeline):
+                ConsolidatedMetric.delete(cm.pk)
 
     def execute(self, message):
         ################################

@@ -28,8 +28,6 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["METRICS_TOPIC"],
 }
 
-DB_CONFIG = {}
-
 PIPELINE_ORDER = {
     "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
     "ZTF": {
@@ -44,21 +42,13 @@ PIPELINE_ORDER = {
     },
 }
 
-PIPELINE_DISTANCES = {
-    "ATLAS": ("sorting_hat", "ingestion"),
-    "ZTF": ("sorting_hat", "late_classifier"),
-}
-
-
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     "COMMIT": bool(
         int(os.getenv("COMMIT", 1))
     ),  # Disables commit, useful to debug a KafkaConsumer
-    "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "PIPELINE_ORDER": PIPELINE_ORDER,
-    "PIPELINE_DISTANCES": PIPELINE_DISTANCES,
 }
