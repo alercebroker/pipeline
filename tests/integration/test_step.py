@@ -144,8 +144,7 @@ class StepIntegrationTest(unittest.TestCase):
         self.assertIsInstance(output, list)
         self.assertIsInstance(deserialized[0], dict)
         self.assertIsInstance(output[0], cimpl.Message)
-        # output is 10
-        self.assertEqual(len(output), total_objects)
+        self.assertEqual(len(output), total_alerts)
 
         one_light_curve = deserialized[0]
         for field in [
