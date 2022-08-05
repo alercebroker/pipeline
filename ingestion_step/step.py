@@ -304,9 +304,9 @@ class IngestionStep(GenericStep):
         """
         # Keep existing objects
         aids = objects["aid"].unique()
-        detections = light_curves["detections"]
+        detections = light_curves["detections"].copy()
         detections.drop_duplicates(
-            ["candid", "aid"], inplace=True, keep="first"
+            ["candid", "aid", "oid"], inplace=True, keep="first"
         )
         detections.reset_index(inplace=True, drop=True)
         # New objects referer to: empirical new objects
@@ -431,7 +431,7 @@ class IngestionStep(GenericStep):
         # old detections. This is a mask that retrieve
         # existing tuples on db.
         if engine == "mongo":
-            unique_keys_detections = ["aid", "candid"]
+            unique_keys_detections = ["aid", "candid", "oid"]
         else:
             unique_keys_detections = ["oid", "candid"]
         # Checking if already on the database
