@@ -1,3 +1,7 @@
+[![codecov](https://codecov.io/gh/alercebroker/consolidated_metrics_step/branch/main/graph/badge.svg?token=XjQI6NzhFB)](https://codecov.io/gh/alercebroker/consolidated_metrics_step)
+[![unit_tests](https://github.com/alercebroker/consolidated_metrics_step/actions/workflows/unit_tests.yaml/badge.svg)](https://github.com/alercebroker/consolidated_metrics_step/actions/workflows/unit_tests.yaml)
+[![integration_tests](https://github.com/alercebroker/consolidated_metrics_step/actions/workflows/integration_tests.yaml/badge.svg)](https://github.com/alercebroker/consolidated_metrics_step/actions/workflows/integration_tests.yaml)
+
 # Consolidated Metrics Step
 
 A simple step that computes queue, execution and total times.
