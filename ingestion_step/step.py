@@ -580,20 +580,17 @@ class IngestionStep(GenericStep):
         objects.sort_values("lastmjd", inplace=True, ascending=True)
         self.logger.info(f"Checking {len(objects)} messages (key={key})")
         n_messages = 0
-
-        for index, row in objects.iterrows():
+        objects.set_index(key, inplace=True)
+        for index, row in alerts.iterrows():
             _key = row[key]
             aid = row["aid"]
-            oids = row["oid"]
-
+            oid = row["oid"]
+            candid = row["candid"]
+            tid = row["tid"]
             metadata_ = None
             if metadata is not None:
-                for o in oids:
-                    if o in metadata.index:
-                        metadata_ = metadata.loc[o].to_dict()
-                        break
-
-            key_alert = alerts[alerts[key] == _key].iloc[-1]
+                if oid in metadata.index:
+                    metadata_ = metadata.loc[oid].to_dict()
             mask_detections = light_curves["detections"][key] == _key
             detections = light_curves["detections"].loc[mask_detections]
             detections.replace({np.nan: None}, inplace=True)
@@ -603,14 +600,15 @@ class IngestionStep(GenericStep):
                 mask_non_detections
             ]
             non_detections = non_detections.to_dict("records")
+            the_object = objects.loc[_key]
             output_message = {
                 "aid": str(aid),
-                "meanra": row["meanra"],
-                "meandec": row["meandec"],
-                "ndet": row["ndet"],
-                "candid": str(key_alert["candid"]),
-                "tid": str(key_alert["tid"]),
-                "oid": str(key_alert["oid"]),
+                "meanra": the_object["meanra"],
+                "meandec": the_object["meandec"],
+                "ndet": the_object["ndet"],
+                "candid": str(candid),
+                "tid": str(tid),
+                "oid": str(oid),
                 "detections": detections,
                 "non_detections": non_detections,
                 "metadata": metadata_,
