@@ -16,7 +16,7 @@ CONSUMER_CONFIG = {
         "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
-    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
+    "consume.messages": int(os.getenv("CONSUME_MESSAGES", 10)),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
 }
 
@@ -27,8 +27,6 @@ PRODUCER_CONFIG = {
     },
     "TOPIC": os.environ["METRICS_TOPIC"],
 }
-
-DB_CONFIG = {}
 
 PIPELINE_ORDER = {
     "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
@@ -44,21 +42,13 @@ PIPELINE_ORDER = {
     },
 }
 
-PIPELINE_DISTANCES = {
-    "ATLAS": ("sorting_hat", "ingestion"),
-    "ZTF": ("sorting_hat", "late_classifier"),
-}
-
-
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
     "COMMIT": bool(
-        os.getenv("COMMIT", True)
+        int(os.getenv("COMMIT", 1))
     ),  # Disables commit, useful to debug a KafkaConsumer
-    "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "PIPELINE_ORDER": PIPELINE_ORDER,
-    "PIPELINE_DISTANCES": PIPELINE_DISTANCES,
 }

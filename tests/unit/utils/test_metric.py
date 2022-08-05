@@ -2,34 +2,15 @@ from consolidated_metrics_step.utils.metric import ConsolidatedMetric
 from consolidated_metrics_step.utils.metric import STEP_MAPPER
 from consolidated_metrics_step.utils.metric import StepMetric
 from datetime import datetime
+from tests.commons import PIPELINE_ORDER
 from unittest import mock
 
 import unittest
 
-PIPELINE_ORDER = {
-    "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
-    "ZTF": {
-        "EarlyClassifier": None,
-        "S3Step": None,
-        "WatchlistStep": None,
-        "SortingHatStep": {
-            "IngestionStep": {
-                "XmatchStep": {"FeaturesComputer": {"LateClassifier": None}}
-            }
-        },
-    },
-}
-
 
 class ConsolidatedMetricTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.pipeline_1 = {"SortingHatStep": {"IngestionStep": None}}
-        self.pipeline_2 = {
-            "SortingHatStep": {
-                "IngestionStep": None,
-                "XmatchStep": None,
-            }
-        }
+        pass
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
     def test_create_metric_model(self, mock_connection):
@@ -58,23 +39,48 @@ class ConsolidatedMetricTest(unittest.TestCase):
             cm[v] = sm
         self.assertFalse(cm.is_bingo(PIPELINE_ORDER["ZTF"]))
 
+    def test_get_prev_step(self):
+        cm = ConsolidatedMetric(candid="test", survey="test")
+        prev_step = cm._get_prev_step(PIPELINE_ORDER["ZTF"], "IngestionStep")
+        self.assertEqual(prev_step, "SortingHatStep")
+
+        prev_step = cm._get_prev_step(PIPELINE_ORDER["ZTF"], "SortingHatStep")
+        self.assertEqual(prev_step, None)
+
     @mock.patch("redis.connection.ConnectionPool.get_connection")
-    def test_compute_queue_time(self, mock_connection):
-        dummy = StepMetric(
+    def test_compute_queue_time_between(self, mock_connection):
+        step_1 = StepMetric(
             execution_time=1,
             received=datetime(2022, 1, 1, 12, 0, 0, 0),
             sent=datetime(2022, 1, 1, 13, 0, 0, 0),
         )
+
+        step_2 = StepMetric(
+            execution_time=1,
+            received=datetime(2022, 1, 1, 14, 0, 0, 0),
+            sent=datetime(2022, 1, 1, 15, 0, 0, 0),
+        )
+
         cm = ConsolidatedMetric(
             candid="test",
             survey="test",
-            s3=dummy,
-            early_classifier=dummy,
-            watchlist=dummy,
-            xmatch=dummy,
-            features=dummy,
-            late_classifier=dummy,
+            s3=None,
+            early_classifier=None,
+            watchlist=None,
+            xmatch=None,
+            features=step_1,
+            late_classifier=step_2,
         )
+
+        queue_time = cm.compute_queue_time_between("FeaturesComputer", "LateClassifier")
+        self.assertEqual(3600.0, queue_time)
+
+        bad = cm.compute_queue_time_between("EarlyClassifier", "LateClassifier")
+        self.assertEqual(None, bad)
+
+    @mock.patch("redis.connection.ConnectionPool.get_connection")
+    def test_compute_queue_time(self, mock_connection):
+        cm = ConsolidatedMetric(candid="test", survey="test")
 
         cm.sorting_hat = StepMetric(
             execution_time=1,
@@ -86,21 +92,17 @@ class ConsolidatedMetricTest(unittest.TestCase):
             received=datetime(2022, 1, 1, 14, 0, 0, 0),
             sent=datetime(2022, 1, 1, 15, 0, 0, 0),
         )
-        self.assertDictEqual(
-            cm.compute_queue_times(self.pipeline_1),
-            {"SortingHatStep_IngestionStep": 3600.0},
-        )
+
+        queue_time = cm.compute_queue_time(PIPELINE_ORDER["ZTF"], "IngestionStep")
+        self.assertEqual(3600.0, queue_time)
+
+        status = cm.status(PIPELINE_ORDER["ZTF"])
+        self.assertEqual("2/8", status)
 
     @mock.patch("redis.connection.ConnectionPool.get_connection")
-    def test_bad_compute_queue_times(self, mock_connection):
+    def test_compute_accumulated_time(self, mock_connection):
         cm = ConsolidatedMetric(candid="test", survey="test")
-        with self.assertRaises(Exception) as context:
-            cm.compute_queue_times(PIPELINE_ORDER["ZTF"])
-        self.assertIsInstance(context.exception, Exception)
 
-    @mock.patch("redis.connection.ConnectionPool.get_connection")
-    def test_compute_total_time(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test", survey="test")
         cm.sorting_hat = StepMetric(
             execution_time=1,
             received=datetime(2022, 1, 1, 12, 0, 0, 0),
@@ -111,18 +113,29 @@ class ConsolidatedMetricTest(unittest.TestCase):
             received=datetime(2022, 1, 1, 14, 0, 0, 0),
             sent=datetime(2022, 1, 1, 15, 0, 0, 0),
         )
-        self.assertEqual(cm.compute_total_time("sorting_hat", "ingestion"), 10800.0)
 
-        cm.ingestion = StepMetric(
+        cm.xmatch = StepMetric(
             execution_time=1,
-            received=datetime(2022, 1, 1, 14, 0, 0, 0),
-            sent=datetime(2022, 1, 1, 12, 30, 0, 0),
+            received=datetime(2022, 1, 1, 15, 0, 0, 0),
+            sent=datetime(2022, 1, 1, 16, 0, 0, 0),
         )
-        self.assertEqual(cm.compute_total_time("sorting_hat", "ingestion"), 1800.0)
 
-    @mock.patch("redis.connection.ConnectionPool.get_connection")
-    def test_bad_compute_total_time(self, mock_connection):
-        cm = ConsolidatedMetric(candid="test", survey="test")
-        with self.assertRaises(Exception) as context:
-            cm.compute_total_time("sorting_hat", "ingestion")
-        self.assertIsInstance(context.exception, Exception)
+        cm.features = StepMetric(
+            execution_time=1,
+            received=datetime(2022, 1, 1, 17, 0, 0, 0),
+            sent=datetime(2022, 1, 1, 18, 0, 0, 0),
+        )
+
+        cm.late_classifier = StepMetric(
+            execution_time=1,
+            received=datetime(2022, 1, 1, 18, 0, 0, 0),
+            sent=datetime(2022, 1, 1, 19, 0, 0, 0),
+        )
+
+        accum_time = cm.compute_accumulated_time(
+            PIPELINE_ORDER["ZTF"], "LateClassifier"
+        )
+        self.assertEqual(7205.0, accum_time)
+
+        status = cm.status(PIPELINE_ORDER["ZTF"])
+        self.assertEqual("5/8", status)
