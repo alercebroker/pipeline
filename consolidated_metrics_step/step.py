@@ -30,6 +30,18 @@ class ConsolidatedMetricsStep(GenericStep):
             self.producer = KafkaMetricsProducer(self.config["PRODUCER_CONFIG"])
         self.expire_time = config.get("EXPIRE_TIME", 21600)  # 21600 seconds -> 6 hours
 
+    @staticmethod
+    def retrieve_survey(candid: str, survey: [str, None]) -> str:
+        if survey:
+            return survey
+        elif len(candid) == 19 and candid.isdigit():
+            return "ZTF"
+        elif candid[:3] in ["01a", "02a", "03a", "04a"]:
+            tid = candid[:3]  # the identifier of ATLAS
+            return f"ATLAS-{tid}"
+        else:
+            return "UNKNOWN"
+
     def produce(self, message: dict) -> None:
         self.producer.send_metrics(message)
         self.producer.producer.poll(0.0)  # Do poll for sync the production
@@ -72,6 +84,8 @@ class ConsolidatedMetricsStep(GenericStep):
         if len(query):  # HIT
             consolidated_metric = query[0]
             consolidated_metric[source] = metric
+            if consolidated_metric.survey is None:
+                consolidated_metric.survey = survey
         else:  # MISS
             kwargs = {"candid": candid, "survey": survey, source: metric}
             consolidated_metric = ConsolidatedMetric(**kwargs)
@@ -97,8 +111,9 @@ class ConsolidatedMetricsStep(GenericStep):
             if "candid" not in msg.keys():
                 return
             candid = msg["candid"]
-            survey = msg["tid"]
             source = msg["source"]
+            tid = msg.get("tid", None)
+            survey = self.retrieve_survey(candid, tid)
 
             metric = StepMetric(
                 received=dateutil.parser.parse(msg["timestamp_received"]),

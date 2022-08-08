@@ -28,8 +28,12 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["METRICS_TOPIC"],
 }
 
+ATLAS = {"S3Step": None, "SortingHatStep": {"IngestionStep": None}}
 PIPELINE_ORDER = {
-    "ATLAS": {"S3Step": None, "SortingHatStep": {"IngestionStep": None}},
+    "ATLAS-01a": ATLAS,
+    "ATLAS-02a": ATLAS,
+    "ATLAS-03a": ATLAS,
+    "ATLAS-04a": ATLAS,
     "ZTF": {
         "EarlyClassifier": None,
         "S3Step": None,
