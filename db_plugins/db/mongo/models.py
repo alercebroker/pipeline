@@ -116,3 +116,11 @@ class NonDetection(Base, generic_models.NonDetection):
         IndexModel([("aid", ASCENDING), ("tid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
+
+
+class Taxonomy(Base):
+    classifier_name = Field()
+    classifier_version = Field()
+    classes = Field()
+
+    __tablename__ = "taxonomy"
