@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - feat/update_mongo_object_model
 
 jobs:
   test:
