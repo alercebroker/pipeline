@@ -1,3 +1,4 @@
+from pydoc import pager
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
@@ -204,3 +205,31 @@ class MongoQueryTest(unittest.TestCase):
         result = self.query.find_all(filter_by={"test": "test"})
         self.assertEqual(result.total, 1)
         self.assertEqual(result.items[0]["test"], "test")
+
+    
+
+    def test_bulk_insert(self):
+        self.assertEqual(self.obj_collection.count_documents({}), 1)
+        self.query.bulk_insert(
+            [
+                {
+                    "aid": "test",
+                    "oid": "test",
+                    "firstmjd": "test",
+                    "lastmjd": "test",
+                    "meanra": 100.0,
+                    "meandec": 50.0,
+                    "ndet": "test",
+                }
+                for i in range(2)
+            ]
+        )
+        self.assertEqual(self.obj_collection.count_documents({}), 3)
+        
+        paginate = self.query.paginate(page=1, per_page=2, count=False)
+        self.assertTrue(paginate.has_next)
+        self.assertEqual(paginate.next_num, 2)
+
+        paginate = self.query.paginate(page=2, per_page=2, count=False)
+        self.assertFalse(paginate.has_next)
+        self.assertIsNone(paginate.next_num)

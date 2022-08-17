@@ -162,6 +162,17 @@ class Pagination:
         return self.page + 1
 
 
+class PaginationNoCount(Pagination):
+    def __init__(self, query, page, per_page, items, has_next):
+        super().__init__(query, page, per_page, None, items)
+        self._has_next = has_next
+
+    @property
+    def has_next(self):
+        """Check if a previous page exists."""
+        return self._has_next
+
+
 class AbstractObject:
     """Abstract Object model.
 
