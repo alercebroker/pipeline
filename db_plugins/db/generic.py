@@ -102,6 +102,7 @@ class BaseQuery(abc.ABC):
         """
         raise NotImplementedError()
 
+
 class Pagination:
     """Paginate responses from the database."""
 
@@ -159,6 +160,7 @@ class Pagination:
         if not self.has_next:
             return None
         return self.page + 1
+
 
 class PaginationNoCount(Pagination):
     def __init__(self, query, page, per_page, items, has_next):
