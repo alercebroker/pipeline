@@ -108,9 +108,9 @@ class ConsolidatedMetricsStep(GenericStep):
         #   Here comes the Step Logic  #
         ################################
         for msg in message:
-            if "candid" not in msg.keys():
-                return
-            candid = msg["candid"]
+            candid = msg.get("candid", None)
+            if candid is None:
+                continue
             source = msg["source"]
             tid = msg.get("tid", None)
             survey = self.retrieve_survey(candid, tid)
