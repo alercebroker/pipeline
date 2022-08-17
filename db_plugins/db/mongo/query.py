@@ -1,4 +1,4 @@
-from db_plugins.db.generic import BaseQuery, Pagination
+from db_plugins.db.generic import BaseQuery, Pagination, PaginationNoCount
 from db_plugins.db.mongo.models import Base
 from pymongo.collection import Collection as PymongoCollection
 from pymongo import UpdateOne
@@ -205,16 +205,21 @@ def paginate(
     skips = per_page * (page - 1)
 
     # Skip and limit
-    cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page)
+    if count:
+        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page)
+    else:
+        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page + 1)
 
     # Return documents
-    items = [x for x in cursor]
+    items = list(cursor)
     if not count:
-        total = None
+        has_next = len(items) > per_page
+        items = items[:-1] if has_next else items
+        return PaginationNoCount(self, page, per_page, items, has_next)
     else:
         all_docs = self.count_documents(filter_by)
         total = all_docs if all_docs < max_results else max_results
-    return Pagination(self, page, per_page, total, items)
+        return Pagination(self, page, per_page, total, items)
 
 
 def find_one_creator(collection_class):
