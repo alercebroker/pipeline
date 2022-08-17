@@ -80,10 +80,13 @@ class ConsolidatedMetricsStep(GenericStep):
         self, candid: str, source: str, metric: StepMetric, survey: str
     ) -> ConsolidatedMetric:
         try:
-            query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
-        except Exception as e:
-            self.logger.info(f"{candid} of {source}-{survey} {e}")
-            raise Exception(e)
+            query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid)
+            query = query.all()
+        except TypeError as e:
+            self.logger.info(
+                f"{candid} of {source}-{survey}\n{e}"
+            )  # Sometimes raise an error of redis_om, found a None response after that try to indexing as str
+            query = []
 
         source = STEP_MAPPER[source]
         if len(query):  # HIT
