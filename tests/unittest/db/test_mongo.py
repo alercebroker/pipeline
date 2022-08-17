@@ -47,7 +47,7 @@ class MongoConnectionTest(unittest.TestCase):
     def test_create_db(self):
         self.conn.create_db()
         collections = self.client[self.config["DATABASE"]].list_collection_names()
-        expected = ["object", "detection", "non_detection"]
+        expected = ["object", "detection", "non_detection", "taxonomy"]
         self.assertEqual(collections, expected)
 
     def test_drop_db(self):

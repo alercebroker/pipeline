@@ -123,4 +123,9 @@ class Taxonomy(Base):
     classifier_version = Field()
     classes = Field()
 
+    __table_args__ = [
+        IndexModel(
+            [("classifier_name", ASCENDING),
+             ("classifier_version", ASCENDING)]),
+    ]
     __tablename__ = "taxonomy"
