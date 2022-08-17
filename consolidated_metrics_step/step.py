@@ -79,7 +79,12 @@ class ConsolidatedMetricsStep(GenericStep):
     def generate_consolidated_metrics(
         self, candid: str, source: str, metric: StepMetric, survey: str
     ) -> ConsolidatedMetric:
-        query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
+        try:
+            query = ConsolidatedMetric.find(ConsolidatedMetric.candid == candid).all()
+        except Exception as e:
+            self.logger.info(f"{candid} of {source}-{survey} {e}")
+            raise Exception(e)
+
         source = STEP_MAPPER[source]
         if len(query):  # HIT
             consolidated_metric = query[0]
