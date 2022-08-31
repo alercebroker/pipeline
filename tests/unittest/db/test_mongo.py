@@ -225,9 +225,65 @@ class MongoQueryTest(unittest.TestCase):
         self.assertEqual(self.obj_collection.count_documents({}), 3)
         
         paginate = self.query.paginate(page=1, per_page=2, count=False)
+        self.assertIsNone(paginate.total)
         self.assertTrue(paginate.has_next)
         self.assertEqual(paginate.next_num, 2)
 
         paginate = self.query.paginate(page=2, per_page=2, count=False)
+        self.assertIsNone(paginate.total)
         self.assertFalse(paginate.has_next)
         self.assertIsNone(paginate.next_num)
+
+    def test_pagination_with_counting(self):
+        self.assertEqual(self.obj_collection.count_documents({}), 1)
+        self.query.bulk_insert(
+            [
+                {
+                    "aid": "test",
+                    "oid": "test",
+                    "firstmjd": "test",
+                    "lastmjd": "test",
+                    "meanra": 100.0,
+                    "meandec": 50.0,
+                    "ndet": "test",
+                }
+                for i in range(2)
+            ]
+        )
+        self.assertEqual(self.obj_collection.count_documents({}), 3)
+
+        paginate = self.query.paginate(page=1, per_page=2, count=True)
+        self.assertEqual(paginate.total, 3)
+        self.assertTrue(paginate.has_next)
+        self.assertEqual(paginate.next_num, 2)
+
+        paginate = self.query.paginate(page=2, per_page=2, count=True)
+        self.assertEqual(paginate.total, 3)
+        self.assertFalse(paginate.has_next)
+        self.assertIsNone(paginate.next_num)
+
+    def test_pagination_with_empty_query(self):
+        self.assertEqual(self.obj_collection.count_documents({}), 1)
+        self.query.bulk_insert(
+            [
+                {
+                    "aid": "test",
+                    "oid": "test",
+                    "firstmjd": "test",
+                    "lastmjd": "test",
+                    "meanra": 100.0,
+                    "meandec": 50.0,
+                    "ndet": "test",
+                }
+                for i in range(2)
+            ]
+        )
+        self.assertEqual(self.obj_collection.count_documents({}), 3)
+
+        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=True)
+        self.assertEqual(paginate.total, 0)
+        self.assertListEqual(paginate.items, [])
+
+        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=False)
+        self.assertIsNone(paginate.total)
+        self.assertListEqual(paginate.items, [])
