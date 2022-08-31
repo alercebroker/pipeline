@@ -203,12 +203,9 @@ def paginate(
 
     # Calculate number of documents to skip
     skips = per_page * (page - 1)
-
+    _per_page = per_page if count else per_page + 1
     # Skip and limit
-    if count:
-        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page)
-    else:
-        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page + 1)
+    cursor = self.find(filter_by, **kwargs).skip(skips).limit(_per_page)
 
     # Return documents
     items = list(cursor)
