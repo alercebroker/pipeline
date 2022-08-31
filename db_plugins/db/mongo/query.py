@@ -218,9 +218,13 @@ def paginate(
     else:
         filter_by.pop()
         filter_by.pop()
+        filter_by.append({"$limit": max_results})
         filter_by.append({"$count": "n"})
-        all_docs = self.aggregate(filter_by).next()["n"]
-        total = all_docs if all_docs < max_results else max_results
+        summary = list(self.aggregate(filter_by))
+        try:
+            total = summary[0]["n"]
+        except IndexError:
+            total = 0
         return Pagination(self, page, per_page, total, items)
 
 
