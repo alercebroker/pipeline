@@ -35,6 +35,10 @@ def create_probabilities(**kwargs):
     return kwargs.get("probabilities", [])
 
 
+def create_xmatch(**kwargs):
+    return kwargs.get("xmatch", [])
+
+
 class Object(generic_models.Object, Base):
     """Mongo implementation of the Object class.
 
@@ -60,6 +64,7 @@ class Object(generic_models.Object, Base):
     magstats = SpecialField(create_magstats)
     features = SpecialField(create_features)
     probabilities = SpecialField(create_probabilities)
+    xmatch = SpecialField(create_xmatch)
     extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
