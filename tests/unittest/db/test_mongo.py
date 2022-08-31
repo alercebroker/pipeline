@@ -206,9 +206,7 @@ class MongoQueryTest(unittest.TestCase):
         self.assertEqual(result.total, 1)
         self.assertEqual(result.items[0]["test"], "test")
 
-    
-
-    def test_bulk_insert(self):
+    def test_pagination_without_counting(self):
         self.assertEqual(self.obj_collection.count_documents({}), 1)
         self.query.bulk_insert(
             [
