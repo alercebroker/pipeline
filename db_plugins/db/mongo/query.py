@@ -182,7 +182,6 @@ def paginate(
     per_page=10,
     count=True,
     max_results=50000,
-    **kwargs,
 ):
     """Return pagination object with the results.
 
@@ -201,14 +200,14 @@ def paginate(
     if per_page < 0:
         per_page = 10
 
-    # Calculate number of documents to skip
-    skips = per_page * (page - 1)
+    if isinstance(filter_by, dict):
+        filter_by = [{"$match": filter_by}]
 
+    # Calculate number of documents to skip
+    filter_by.append({"$skip": per_page * (page - 1)})
+    filter_by.append({"$limit": per_page if count else per_page + 1})
     # Skip and limit
-    if count:
-        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page)
-    else:
-        cursor = self.find(filter_by, **kwargs).skip(skips).limit(per_page + 1)
+    cursor = self.aggregate(filter_by)
 
     # Return documents
     items = list(cursor)
@@ -217,7 +216,10 @@ def paginate(
         items = items[:-1] if has_next else items
         return PaginationNoCount(self, page, per_page, items, has_next)
     else:
-        all_docs = self.count_documents(filter_by)
+        filter_by.pop()
+        filter_by.pop()
+        filter_by.append({"$count": "n"})
+        all_docs = self.aggregate(filter_by).next()["n"]
         total = all_docs if all_docs < max_results else max_results
         return Pagination(self, page, per_page, total, items)
 
@@ -258,14 +260,17 @@ def find_all_creator(collection_class):
             whether to get a paginated result or not
         kwargs : dict
             all other arguments are passed to `paginate` and/or
-            `pymongo.collection.Collection.find`
+            `pymongo.collection.Collection.aggregate`
         """
         self.init_collection(model)
+
+        if isinstance(filter_by, dict):
+            filter_by = [{"$match": filter_by}]
 
         if paginate:
             return self.paginate(filter_by, **kwargs)
         else:
-            return collection_class.find(self, filter_by, **kwargs)
+            return collection_class.aggregate(self, filter_by, **kwargs)
 
     return find_all
 
