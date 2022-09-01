@@ -84,7 +84,7 @@ class MultiheadAttention(nn.Module):
             ):
                 init.orthogonal_(module.weight)
 
-    def scaled_dot_product(self, q, k, v, mask=None):
+    def scaled_dot_product(self, q, k, v, mask=None, causal_mask=False):
         d_k = q.size()[-1]
         attn_logits = torch.matmul(q, k.transpose(-2, -1))
         attn_logits = attn_logits / math.sqrt(d_k)
@@ -92,7 +92,13 @@ class MultiheadAttention(nn.Module):
             mask = mask.unsqueeze(1).permute(0, 1, 3, 2)
             attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
             # attn_logits = attn_logits.masked_fill(mask == 0, -65504)
-
+        if causal_mask:
+            i, j = attn_logits.shape[-2:]
+            mask_aux = torch.ones(i, j, device=q.device, dtype=torch.bool).triu(
+                j - i + 1
+            )
+            attn_logits = attn_logits.masked_fill(mask_aux, -9e15)
+        attn_logits = attn_logits - attn_logits.amax(dim=-1, keepdim=True).detach()
         attention = F.softmax(attn_logits, dim=-1)
         # if self.dropout_layer is not None:
         #     attention = self.dropout_layer(attention)
@@ -108,6 +114,7 @@ class MultiheadAttention(nn.Module):
         mask=None,
         return_attention=False,
         reshape=True,
+        causal_mask=False,
     ):
         bs, sl, v_dim = value.size()  # batch_size, source length, vdim
         tl = sl if query is None else query.size(1)
@@ -143,7 +150,9 @@ class MultiheadAttention(nn.Module):
             )
 
             # Determine value outputs
-        values, attention = self.scaled_dot_product(q, k, v, mask=mask)
+        values, attention = self.scaled_dot_product(
+            q, k, v, mask=mask, causal_mask=causal_mask
+        )
         values = values.permute(0, 2, 1, 3)  # [Batch, SeqLen, Head, Dims]
 
         if self.is_output_proj:
@@ -197,60 +206,14 @@ class MultiheadAttentionHandler(nn.Module):
     def get_last_dim(self):
         return self.embed_dim
 
-    def forward(self, emb_x, mask=None, return_attention=False):
-        emb, attention = self.mha_lc(
-            emb_x, key=emb_x, query=emb_x, mask=mask, return_attention=return_attention
-        )
-        return emb
-
-
-class DoubleMultiheadAttentionHandler(nn.Module):
-    def __init__(
-        self,
-        input_dim,
-        head_dim,
-        num_heads,
-        which_linear=nn.Linear,
-        dropout=0.0,
-        **kwargs
-    ):
-        super().__init__()
-
-        self.input_dim = input_dim
-        self.embed_dim = head_dim * num_heads
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.mod_dim = self.head_dim
-
-        ### Projection to latent variable ####
-        self.mha_lc = MultiheadAttention(
-            input_dim,
-            input_dim,
-            input_dim,
-            self.embed_dim,
-            num_heads,
-            output_dim=input_dim,
-            is_q_proj=True,
-            is_k_proj=True,
-            is_v_proj=True,
-            is_output_proj=True,
-            which_linear=which_linear,
-            dropout=dropout,
-        )
-
-    def get_input_dim(self):
-        return self.embed_dim
-
-    def get_last_dim(self):
-        return self.embed_dim
-
-    def forward(self, emb_x, target_emb_x, mask=None, return_attention=False):
+    def forward(self, emb_x, mask=None, return_attention=False, causal_mask=False):
         emb, attention = self.mha_lc(
             emb_x,
             key=emb_x,
-            query=target_emb_x,
+            query=emb_x,
             mask=mask,
             return_attention=return_attention,
+            causal_mask=causal_mask,
         )
         return emb
 

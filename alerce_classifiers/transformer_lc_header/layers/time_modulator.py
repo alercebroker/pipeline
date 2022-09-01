@@ -65,6 +65,7 @@ class TimeModulator(nn.Module):
         self.T_max = T_max
         self.M = M
         self.register_buffer("ar", torch.arange(M).unsqueeze(0).unsqueeze(0))
+        self.embed_dim = embed_dim
 
     def get_sin(self, t):
         # t: Batch size x time x dim, dim = 1:
@@ -109,11 +110,14 @@ class TimeModulatorHandler(nn.Module):
 
 
 class EncTimeModulatorHandler(TimeModulatorHandler):
-    def __init__(self, cat_noise_to_E=False, **kwargs):
+    def __init__(self, cat_noise_to_E=False, which_encoder="vanilla", **kwargs):
         super().__init__(**kwargs)
         self.cat_noise_to_E = cat_noise_to_E
+        self.which_encoder = which_encoder
+        if self.which_encoder == "bert":
+            self.time_token = nn.Parameter(torch.randn(1, 1, self.input_dim_mha))
 
-    def forward(self, x, t, mask, var=None):
+    def forward(self, x, t, mask, var=None, time_token_mask=None):
         # [Batch x seq len x features]
         all_mod_emb_x = []
         if self.cat_noise_to_E and var is not None:
@@ -130,18 +134,27 @@ class EncTimeModulatorHandler(TimeModulatorHandler):
             x, time, mask = all_x[i], all_time[i], all_mask[i]
             emb_x = self.to_emb(x)
             time_emb_sin, time_emb_cos = self.time_mod[i].get_sin_cos(time)
-            all_mod_emb_x += [self.time_mod[i](emb_x, time_emb_sin, time_emb_cos)]
+            aux_emb_x = self.time_mod[i](emb_x, time_emb_sin, time_emb_cos)
+            if self.which_encoder == "bert":
+                token_emb_x = self.time_mod[i](
+                    self.time_token.repeat(1, emb_x.shape[1], 1),
+                    time_emb_sin,
+                    time_emb_cos,
+                )
+                aux_emb_x = (
+                    aux_emb_x * (1 - time_token_mask) + token_emb_x * time_token_emb
+                )
+            all_mod_emb_x += [aux_emb_x]
+
         mod_emb_x, time, mask = (
             torch.cat(all_mod_emb_x, 1),
             torch.cat(all_time, 1),
             torch.cat(all_mask, 1),
         )
-        a_time = time.argsort(1)
-        return (
-            mod_emb_x.gather(1, a_time.repeat(1, 1, mod_emb_x.shape[-1])),
-            time.gather(1, a_time),
-            mask.gather(1, a_time),
-        )
+        a_time = (time * mask + (1 - mask) * 9999999).argsort(1)
+        return mod_emb_x.gather(
+            1, a_time.repeat(1, 1, mod_emb_x.shape[-1])
+        ), mask.gather(1, a_time)
 
 
 class EncJustTimeModulatorHandler(TimeModulatorHandler):
