@@ -6,6 +6,9 @@ from apf.core.step import GenericStep
 from apf.producers import KafkaSchemalessProducer
 from alerce_classifiers.transformer_lc_header import TransformerLCHeaderClassifier
 from typing import List
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 class TransformerLCHeaderClassifierStep(GenericStep):
