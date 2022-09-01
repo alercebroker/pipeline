@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 import datetime
@@ -66,8 +68,8 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = lambda x: [{
-            "classifierName": "balto_lc_header_classifier",
-            "classifierParams": "version1.0.0",
+            "classifierName": os.getenv("CLASSIFIER_NAME", "balto"),
+            "classifierParams": os.getenv("CLASSIFIER_VERSION", ""),
             "classId": self._class_mapper[predicted_class],
             "probability": predicted_prob
         }
@@ -78,7 +80,7 @@ class TransformerLCHeaderClassifierStep(GenericStep):
         })
         response["brokerPublishTimestamp"] = int(datetime.datetime.now().timestamp() * 1000)
         response["brokerName"] = "ALeRCE"
-        response["brokerVersion"] = "1.0.0"
+        response["brokerVersion"] = os.getenv("CLASSIFIER_VERSION", ""),
         response = response.join(light_curves)
         response.replace({np.nan: None}, inplace=True)
         response.rename(columns={"candid": "diaSourceId"}, inplace=True)
