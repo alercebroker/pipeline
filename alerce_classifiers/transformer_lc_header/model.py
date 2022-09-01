@@ -49,7 +49,6 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
     def _load_quantiles(self, path_to_quantiles: str) -> None:
         self.quantiles = {}
         existing_quantiles = ELAsTiCCMapper.feat_dict.items()
-
         if validators.url(path_to_quantiles):
             for key, val in existing_quantiles:
                 quantile_url = os.path.join(path_to_quantiles, f"norm_{val}.joblib")
@@ -59,20 +58,24 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
         for key, val in ELAsTiCCMapper.feat_dict.items():
             self.quantiles[val] = load(f"{path_to_quantiles}/norm_{val}.joblib")
 
-    def get_max_epochs(self, pd_output: pd.DataFrame) -> int:
+    @classmethod
+    def get_max_epochs(cls, pd_output: pd.DataFrame) -> int:
         return pd_output.groupby(["aid", "BAND"]).count()["FLUXCAL"].max()
 
-    def pad_list(self, lc: pd.DataFrame, nepochs: int, max_epochs: int) -> np.ndarray:
+    @classmethod
+    def pad_list(cls, lc: pd.DataFrame, nepochs: int, max_epochs: int) -> np.ndarray:
         pad_num = max_epochs - nepochs
         if pad_num >= 0:
             return np.pad(lc, (0, pad_num), "constant", constant_values=(0, 0))
         else:
             return np.array(lc)[np.linspace(0, nepochs - 1, num=max_epochs).astype(int)]
 
-    def create_mask(self, lc: pd.DataFrame) -> np.ndarray:
+    @classmethod
+    def create_mask(cls, lc: pd.DataFrame) -> np.ndarray:
         return (lc != 0).astype(float)
 
-    def normalizing_time(self, time_fid: pd.Series) -> pd.Series:
+    @classmethod
+    def normalizing_time(cls, time_fid: pd.Series) -> pd.Series:
         mask_min = 9999999999 * (time_fid == 0).astype(float)
         t_min = np.min(time_fid + mask_min)
         return (time_fid - t_min) * (~(time_fid == 0)).astype(float)
@@ -90,7 +93,8 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
             final_array += [self.pad_list(aux, nepochs, max_epochs)]
         return np.stack(final_array, 1)
 
-    def to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
+    @classmethod
+    def to_tensor_dict(cls, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
         these_kwargs = {
             "data": torch.from_numpy(
                 np.stack(pd_output["FLUXCAL"].to_list(), 0)
@@ -142,16 +146,17 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
         return response
 
     def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        detections = ELAsTiCCMapper.get_detections(data_input)
+        light_curve = ELAsTiCCMapper.get_detections(data_input)
         headers = ELAsTiCCMapper.get_header(data_input, keep="first")
         headers.replace({np.nan: -9999}, inplace=True)
 
-        preprocessed_detections = self.preprocess(detections)
+        preprocessed_light_curve = self.preprocess(light_curve)
         preprocessed_headers = self.preprocess_headers(headers)
 
-        input_nn = self.to_tensor_dict(preprocessed_detections, preprocessed_headers)
+        input_nn = self.to_tensor_dict(preprocessed_light_curve, preprocessed_headers)
         pred = self.model.predict_mix(**input_nn)
+        pred = pred["MLPMix"].exp().detach().numpy()
         preds = pd.DataFrame(
-            pred.numpy(), columns=self.taxonomy, index=preprocessed_detections.index
+            pred, columns=self.taxonomy, index=preprocessed_light_curve.index
         )
         return preds
