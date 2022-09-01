@@ -34,7 +34,7 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             self.producer = None
 
         self.model = TransformerLCHeaderClassifier(self.config.get("MODEL_PATH"), self.config.get("QUANTILES_PATH"))
-
+        self.model_version = os.getenv("MODEL_VERSION", "0.0.0")
         self._class_mapper = {
             "Periodic/Other": 210,
             "Cepheid": 211,
@@ -69,7 +69,7 @@ class TransformerLCHeaderClassifierStep(GenericStep):
                 predictions[class_name] = 0.0
         classifications = lambda x: [{
             "classifierName": os.getenv("CLASSIFIER_NAME", "balto"),
-            "classifierParams": os.getenv("CLASSIFIER_VERSION", ""),
+            "classifierParams": self.model_version,
             "classId": self._class_mapper[predicted_class],
             "probability": predicted_prob
         }
@@ -77,10 +77,10 @@ class TransformerLCHeaderClassifierStep(GenericStep):
 
         response = pd.DataFrame({
             "classifications": predictions.apply(classifications, axis=1),
+            "brokerVersion": [self.model_version] * len(predictions)
         })
         response["brokerPublishTimestamp"] = int(datetime.datetime.now().timestamp() * 1000)
         response["brokerName"] = "ALeRCE"
-        response["brokerVersion"] = os.getenv("CLASSIFIER_VERSION", ""),
         response = response.join(light_curves)
         response.replace({np.nan: None}, inplace=True)
         response.rename(columns={"candid": "diaSourceId"}, inplace=True)
