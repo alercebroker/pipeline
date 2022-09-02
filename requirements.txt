@@ -1,1 +1,1 @@
-git+https://github.com/alercebroker/alerce_base_model.git#egg=alerce_base_model
+git+https://github.com/alercebroker/alerce_base_model.git@1.0.0#egg=alerce_base_model
