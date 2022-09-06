@@ -38,7 +38,7 @@ def create_or_update_probabilities(
     )
 
     unmodified_object = connection.database["object"].find_one({"aid": aid})
-    for indx, prob in enumerate(sorted_classes_and_prob_list):
+    for indx, (class_name, prob) in enumerate(sorted_classes_and_prob_list):
         founded = list(
             filter(
                 filter_function(sorted_classes_and_prob_list[indx][0]),
@@ -56,13 +56,13 @@ def create_or_update_probabilities(
                         "$elemMatch": {
                             "classifier_name": classifier,
                             "classifier_version": version,
-                            "class_name": prob[0],
+                            "class_name": class_name,
                         }
                     },
                 },
                 {
                     "$set": {
-                        "probabilities.$.probability": prob[1],
+                        "probabilities.$.probability": prob,
                         "probabilities.$.ranking": indx + 1,
                     }
                 },
@@ -78,8 +78,8 @@ def create_or_update_probabilities(
                         "probabilities": {
                             "classifier_name": classifier,
                             "classifier_version": version,
-                            "class_name": prob[0],
-                            "probability": prob[1],
+                            "class_name": class_name,
+                            "probability": prob,
                             "ranking": indx + 1,
                         }
                     }
