@@ -54,6 +54,20 @@ class MongoProbabilitiesTest(unittest.TestCase):
                     "probability": 0.4,
                     "ranking": 2,
                 },
+                {
+                    "classifier_name": "lc_classifier",
+                    "classifier_version": "lc_classifier_1.0.0",
+                    "class_name": "CLASS1",
+                    "probability": 0.4,
+                    "ranking": 2,
+                },
+                {
+                    "classifier_name": "lc_classifier",
+                    "classifier_version": "lc_classifier_1.0.0",
+                    "class_name": "CLASS2",
+                    "probability": 0.6,
+                    "ranking": 1,
+                },
             ],
         )
         model_2 = Object(
@@ -164,6 +178,20 @@ class MongoProbabilitiesTest(unittest.TestCase):
                 "probability": 0.7,
                 "ranking": 1,
             },
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.4,
+                "ranking": 2,
+            },
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.6,
+                "ranking": 1,
+            },
         ]
 
         self.assertEqual(f1["probabilities"], expected_probabilities)
@@ -204,6 +232,20 @@ class MongoProbabilitiesTest(unittest.TestCase):
                 "classifier_version": "stamp_classifier_1.0.0",
                 "class_name": "CLASS2",
                 "probability": 0.7,
+                "ranking": 1,
+            },
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.4,
+                "ranking": 2,
+            },
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.6,
                 "ranking": 1,
             },
         ]
