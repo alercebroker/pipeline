@@ -1,14 +1,19 @@
-import os
-
-import pandas as pd
-import numpy as np
 import datetime
 import logging
+import os
+import warnings
+from typing import List
+
+import numpy as np
+import pandas as pd
+from alerce_classifiers.transformer_lc_header import \
+    TransformerLCHeaderClassifier
 from apf.core.step import GenericStep
 from apf.producers import KafkaSchemalessProducer
-from alerce_classifiers.transformer_lc_header import TransformerLCHeaderClassifier
-from typing import List
-import warnings
+from db_plugins.db.generic import new_DBConnection
+from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from db_plugins.db.mongo.helpers.update_probs import \
+    create_or_update_probabilities_bulk
 
 warnings.filterwarnings("ignore")
 
@@ -25,7 +30,15 @@ class TransformerLCHeaderClassifierStep(GenericStep):
 
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO, producer=None, **step_args):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        level=logging.INFO,
+        producer=None,
+        db_connection=None,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
         prod_config = self.config.get("PRODUCER_CONFIG", None)
         if prod_config:
@@ -33,8 +46,13 @@ class TransformerLCHeaderClassifierStep(GenericStep):
         else:
             self.producer = None
 
-        self.model = TransformerLCHeaderClassifier(self.config.get("MODEL_PATH"), self.config.get("QUANTILES_PATH"))
+        self.model = TransformerLCHeaderClassifier(
+            self.config.get("MODEL_PATH"), self.config.get("QUANTILES_PATH")
+        )
         self.model_version = os.getenv("MODEL_VERSION", "0.0.0")
+        self.model_name = os.getenv("CLASSIFIER_NAME", "balto")
+        self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
+        self.driver.connect(config["DB_CONFIG"])
         self._class_mapper = {
             "Periodic/Other": 210,
             "Cepheid": 211,
@@ -60,26 +78,34 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             "TDE": 132,
             "ILOT": 133,
             "CART": 134,
-            "PISN": 135
+            "PISN": 135,
         }
 
-    def format_output_message(self, predictions: pd.DataFrame, light_curves: pd.DataFrame) -> List[dict]:
+    def format_output_message(
+        self, predictions: pd.DataFrame, light_curves: pd.DataFrame
+    ) -> List[dict]:
         for class_name in self._class_mapper.keys():
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
-        classifications = lambda x: [{
-            "classifierName": os.getenv("CLASSIFIER_NAME", "balto"),
-            "classifierParams": self.model_version,
-            "classId": self._class_mapper[predicted_class],
-            "probability": predicted_prob
-        }
-            for predicted_class, predicted_prob in x.iteritems()]
+        classifications = lambda x: [
+            {
+                "classifierName": self.model_name,
+                "classifierParams": self.model_version,
+                "classId": self._class_mapper[predicted_class],
+                "probability": predicted_prob,
+            }
+            for predicted_class, predicted_prob in x.iteritems()
+        ]
 
-        response = pd.DataFrame({
-            "classifications": predictions.apply(classifications, axis=1),
-            "brokerVersion": [self.model_version] * len(predictions)
-        })
-        response["brokerPublishTimestamp"] = int(datetime.datetime.now().timestamp() * 1000)
+        response = pd.DataFrame(
+            {
+                "classifications": predictions.apply(classifications, axis=1),
+                "brokerVersion": [self.model_version] * len(predictions),
+            }
+        )
+        response["brokerPublishTimestamp"] = int(
+            datetime.datetime.now().timestamp() * 1000
+        )
         response["brokerName"] = "ALeRCE"
         response = response.join(light_curves)
         response.replace({np.nan: None}, inplace=True)
@@ -93,11 +119,21 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             aid = message["alertId"]
             self.producer.produce(message, key=str(aid))
 
+    def save_predictions(self, predictions: pd.DataFrame):
+        probabilities = predictions.to_dict(
+            "records"
+        )  # list of dict probabilities and its class
+        aids = predictions.index.to_list()  # list of identifiers
+        create_or_update_probabilities_bulk(
+            self.driver, self.model_name, self.model_version, aids, probabilities
+        )
+
     def execute(self, messages: List[dict]):
         light_curves_dataframe = pd.DataFrame(messages)
         light_curves_dataframe.drop_duplicates(subset="aid", inplace=True, keep="last")
         light_curves_dataframe.set_index("aid", inplace=True)
         self.logger.info(f"Processing {len(messages)} light curves.")
         predictions = self.model.predict_proba(light_curves_dataframe)
+        self.save_predictions(predictions)
         output = self.format_output_message(predictions, light_curves_dataframe)
         self.produce(output)

@@ -1,3 +1,4 @@
 git+https://github.com/alercebroker/APF@elasticc
 git+https://${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git@0.0.1#egg=alerce_classifiers[transformer_lc_header]
 git+https://github.com/alercebroker/alerce_base_model.git@1.0.0#egg=alerce_base_model
+git+https://git@github.com/alercebroker/db-plugins@6dd808d#egg=db-plugins
