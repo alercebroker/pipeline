@@ -1,5 +1,8 @@
 from db_plugins.db.mongo.models import Object
-from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities, create_or_update_probabilities_bulk
+from db_plugins.db.mongo.helpers.update_probs import (
+    create_or_update_probabilities,
+    create_or_update_probabilities_bulk,
+)
 from db_plugins.db.mongo.connection import MongoConnection
 import unittest
 import mongomock
@@ -182,12 +185,11 @@ class MongoProbabilitiesTest(unittest.TestCase):
                     "CLASS1": 0.8,
                     "CLASS2": 0.2,
                 },
-            ]
+            ],
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid1"})
         f2 = self.obj_collection.find_one({"aid": "aid2"})
-
 
         expected_probabilities_1 = [
             {
