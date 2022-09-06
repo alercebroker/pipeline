@@ -85,6 +85,18 @@ METRICS_CONFIG = {
     },
 }
 
+
+DB_CONFIG = {
+    "HOST": os.getenv("MONGO_HOST", None),
+    "USERNAME": os.getenv("MONGO_USER", None),
+    "PASSWORD": os.getenv("MONGO_PASSWORD", None),
+    "PORT": int(os.getenv("MONGO_PORT", 27017)),
+    "DATABASE": os.getenv("MONGO_NAME", None),
+    "REPLICA_SET": "rs0",
+    "READ_PREFERENCE": "secondaryPreferred",
+    "RETRY_WRITES": False
+}
+
 # Step Configuration
 STEP_CONFIG = {
     # "N_PROCESS": 4,            # Number of process for multiprocess script
@@ -93,5 +105,6 @@ STEP_CONFIG = {
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "MODEL_PATH": os.environ["MODEL_PATH"],
-    "QUANTILES_PATH": os.environ["QUANTILES_PATH"]
+    "QUANTILES_PATH": os.environ["QUANTILES_PATH"],
+    "DB_CONFIG": DB_CONFIG
 }
