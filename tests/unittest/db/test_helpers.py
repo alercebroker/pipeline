@@ -1,5 +1,5 @@
 from db_plugins.db.mongo.models import Object
-from db_plugins.db.mongo.helpers.update_probs import create_of_update_probabilities
+from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities
 from db_plugins.db.mongo.connection import MongoConnection
 import unittest
 import mongomock
@@ -83,7 +83,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
     def test_create_probabilities(self):
         self.create_2_objects()
 
-        create_of_update_probabilities(
+        create_or_update_probabilities(
             self.mongo_connection,
             "aid2",
             "stamp_classifier",
@@ -132,7 +132,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
     def test_update_probabilities(self):
         self.create_2_objects()
         
-        create_of_update_probabilities(
+        create_or_update_probabilities(
             self.mongo_connection,
             "aid1",
             "stamp_classifier",

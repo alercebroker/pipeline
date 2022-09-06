@@ -6,7 +6,7 @@ Helper function to create or update the probabilities for an object
 """
 
 
-def create_of_update_probabilities(
+def create_or_update_probabilities(
     connection: MongoConnection,
     aid: str,
     classifier: str,
