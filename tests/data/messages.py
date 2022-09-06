@@ -153,6 +153,7 @@ def generate_input_batch(n: int) -> List[dict]:
         ) + generate_alert_ztf(random.randint(1, 100), m)
         non_det = generate_non_det(random.randint(1, 20), m)
         candid = int(str(m + 1).ljust(8, "0"))
+        detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
             "tid": f"ZTF",
