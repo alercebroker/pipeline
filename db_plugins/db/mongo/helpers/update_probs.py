@@ -21,7 +21,7 @@ def create_or_update_probabilities(
     aid: the identifier of the object
     classifier: the name of the classifier
     version: the version of the classifier
-    probabilities: the probabilities dictionary the keys are the names and the values are the probabilitie
+    probabilities: the probabilities dictionary the keys are the classes names and the values are the probabilitie
     """
 
     # helper filter function
