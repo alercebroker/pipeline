@@ -224,6 +224,7 @@ class XmatchStep(GenericStep):
             for det in series["detections"]:
                 if str(det["candid"]) == str(candid):
                     return det["oid"]
+
         oid = light_curves.apply(_get_oid, axis=1)
         return oid
 
