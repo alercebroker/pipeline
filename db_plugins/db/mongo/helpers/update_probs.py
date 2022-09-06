@@ -11,7 +11,7 @@ def create_or_update_probabilities(
     aid: str,
     classifier: str,
     version: str,
-    probabilities: dict
+    probabilities: dict,
 ):
     """
     Create or update the probabilities for the object wth aid. Usiing the MongoConnection
@@ -33,14 +33,18 @@ def create_or_update_probabilities(
         )
 
     # sort by probabilities (for rank)
-    sorted_classes_and_prob_list = sorted(probabilities.items(), key=lambda val: val[1], reverse=True)
+    sorted_classes_and_prob_list = sorted(
+        probabilities.items(), key=lambda val: val[1], reverse=True
+    )
 
     unmodified_object = connection.database["object"].find_one({"aid": aid})
     for indx in range(len(sorted_classes_and_prob_list)):
-        founded = list(filter(
-            filter_function(sorted_classes_and_prob_list[indx][0]),
-            unmodified_object["probabilities"],
-        ))
+        founded = list(
+            filter(
+                filter_function(sorted_classes_and_prob_list[indx][0]),
+                unmodified_object["probabilities"],
+            )
+        )
 
         # should be always 1?
         if len(founded):
@@ -58,7 +62,9 @@ def create_or_update_probabilities(
                 },
                 {
                     "$set": {
-                        "probabilities.$.probability": sorted_classes_and_prob_list[indx][1],
+                        "probabilities.$.probability": sorted_classes_and_prob_list[
+                            indx
+                        ][1],
                         "probabilities.$.ranking": indx + 1,
                     }
                 },

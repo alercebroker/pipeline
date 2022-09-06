@@ -89,9 +89,9 @@ class MongoProbabilitiesTest(unittest.TestCase):
             "stamp_classifier",
             "stamp_classifier_1.0.0",
             {
-                "CLASS1": 0.3, 
+                "CLASS1": 0.3,
                 "CLASS2": 0.7,
-            }
+            },
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid2"})
@@ -131,16 +131,16 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
     def test_update_probabilities(self):
         self.create_2_objects()
-        
+
         create_or_update_probabilities(
             self.mongo_connection,
             "aid1",
             "stamp_classifier",
             "stamp_classifier_1.0.0",
             {
-                "CLASS1": 0.3, 
+                "CLASS1": 0.3,
                 "CLASS2": 0.7,
-            }
+            },
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid1"})
