@@ -87,3 +87,25 @@ def create_or_update_probabilities(
                     }
                 },
             )
+
+
+def create_or_update_probabilities_bulk(
+    connection: MongoConnection,
+    classifier: str,
+    version: str,
+    aids: list,
+    probabilities: list,
+):
+    """
+    Bulk version of the create or update probabilities. It iterate over the list arguments and 
+    call create_or_update_probabilities
+    params:
+    connection: the mongo conection used to interface with the db
+    classifier: the name of the classifier
+    version: the version of the classifier
+    aids: list of identifiers for the objects. It's index must be correlated with the probabilities list. 
+    probabilities: List of dicts with classes and probabilities. probabilities [i] should be for aid[i]
+    """
+
+    for indx in len(aids):
+        create_or_update_probabilities(connection, classifier, version, aids[indx], probabilities[indx]) 
