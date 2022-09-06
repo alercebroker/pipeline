@@ -11,8 +11,7 @@ def create_of_update_probabilities(
     aid: str,
     classifier: str,
     version: str,
-    classes: list,
-    probabilities: list,
+    probabilities: dict
 ):
     """
     Create or update the probabilities for the object wth aid. Usiing the MongoConnection
@@ -22,8 +21,7 @@ def create_of_update_probabilities(
     aid: the identifier of the object
     classifier: the name of the classifier
     version: the version of the classifier
-    classes: the list of classes that the classifier returns
-    probabilities: the probabilities for each of the classes the classifier returns
+    probabilities: the probabilities dictionary the keys are the names and the values are the probabilitie
     """
 
     # helper filter function
@@ -34,21 +32,17 @@ def create_of_update_probabilities(
             and ele["class_name"] == class_name
         )
 
-    if len(classes) != len(probabilities):
-        raise Exception("The claases and probablities lists dont match size")
-
     # zip the lists
-    zipped_classes_and_probs = list(zip(classes, probabilities))
+    classes_and_prob_list = list(probabilities.items())
 
     # sort by probabilities (for rank)
-    sorted_zipped_list = sorted(zipped_classes_and_probs, key=lambda val: val[1], reverse=True)
-    print(f"list : {sorted_zipped_list}")
+    sorted_classes_and_prob_list = sorted(classes_and_prob_list, key=lambda val: val[1], reverse=True)
 
     unmodified_object = connection.database["object"].find_one({"aid": aid})
 
-    for indx in range(len(sorted_zipped_list)):
+    for indx in range(len(sorted_classes_and_prob_list)):
         founded = list(filter(
-            filter_function(sorted_zipped_list[indx][0]),
+            filter_function(sorted_classes_and_prob_list[indx][0]),
             unmodified_object["probabilities"],
         ))
 
@@ -62,13 +56,13 @@ def create_of_update_probabilities(
                         "$elemMatch": {
                             "classifier_name": classifier,
                             "classifier_version": version,
-                            "class_name": sorted_zipped_list[indx][0],
+                            "class_name": sorted_classes_and_prob_list[indx][0],
                         }
                     },
                 },
                 {
                     "$set": {
-                        "probabilities.$.probability": sorted_zipped_list[indx][1],
+                        "probabilities.$.probability": sorted_classes_and_prob_list[indx][1],
                         "probabilities.$.ranking": indx + 1,
                     }
                 },
@@ -84,8 +78,8 @@ def create_of_update_probabilities(
                         "probabilities": {
                             "classifier_name": classifier,
                             "classifier_version": version,
-                            "class_name": sorted_zipped_list[indx][0],
-                            "probability": sorted_zipped_list[indx][1],
+                            "class_name": sorted_classes_and_prob_list[indx][0],
+                            "probability": sorted_classes_and_prob_list[indx][1],
                             "ranking": indx + 1,
                         }
                     }

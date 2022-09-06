@@ -80,12 +80,6 @@ class MongoProbabilitiesTest(unittest.TestCase):
         )
         self.obj_collection.insert_many([model_1, model_2])
 
-
-    def test_error_input_length(self):
-        with self.assertRaises(Exception):
-            create_of_update_probabilities(self.mongo_connection, "aid1", "classifier1", "v1", ["class1", "class2"], [0.1, 0.2, 0.3])
-
-
     def test_create_probabilities(self):
         self.create_2_objects()
 
@@ -94,8 +88,10 @@ class MongoProbabilitiesTest(unittest.TestCase):
             "aid2",
             "stamp_classifier",
             "stamp_classifier_1.0.0",
-            ["CLASS1", "CLASS2"],
-            [0.3, 0.7]
+            {
+                "CLASS1": 0.3, 
+                "CLASS2": 0.7,
+            }
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid2"})
@@ -141,8 +137,10 @@ class MongoProbabilitiesTest(unittest.TestCase):
             "aid1",
             "stamp_classifier",
             "stamp_classifier_1.0.0",
-            ["CLASS1", "CLASS2"],
-            [0.3, 0.7]
+            {
+                "CLASS1": 0.3, 
+                "CLASS2": 0.7,
+            }
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid1"})
