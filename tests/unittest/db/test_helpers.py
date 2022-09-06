@@ -1,5 +1,5 @@
 from db_plugins.db.mongo.models import Object
-from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities
+from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities, create_or_update_probabilities_bulk
 from db_plugins.db.mongo.connection import MongoConnection
 import unittest
 import mongomock
@@ -85,9 +85,9 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         create_or_update_probabilities(
             self.mongo_connection,
-            "aid2",
             "stamp_classifier",
             "stamp_classifier_1.0.0",
+            "aid2",
             {
                 "CLASS1": 0.3,
                 "CLASS2": 0.7,
@@ -134,9 +134,9 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         create_or_update_probabilities(
             self.mongo_connection,
-            "aid1",
             "stamp_classifier",
             "stamp_classifier_1.0.0",
+            "aid1",
             {
                 "CLASS1": 0.3,
                 "CLASS2": 0.7,
@@ -144,7 +144,6 @@ class MongoProbabilitiesTest(unittest.TestCase):
         )
 
         f1 = self.obj_collection.find_one({"aid": "aid1"})
-        print(f"result \n {f1['probabilities']}")
 
         # Mind that the update dont change the order
         expected_probabilities = [
@@ -165,3 +164,77 @@ class MongoProbabilitiesTest(unittest.TestCase):
         ]
 
         self.assertEqual(f1["probabilities"], expected_probabilities)
+
+    def test_bulk_create_or_update_probabilities(self):
+        self.create_2_objects()
+
+        create_or_update_probabilities_bulk(
+            self.mongo_connection,
+            "stamp_classifier",
+            "stamp_classifier_1.0.0",
+            ["aid1", "aid2"],
+            [
+                {
+                    "CLASS1": 0.3,
+                    "CLASS2": 0.7,
+                },
+                {
+                    "CLASS1": 0.8,
+                    "CLASS2": 0.2,
+                },
+            ]
+        )
+
+        f1 = self.obj_collection.find_one({"aid": "aid1"})
+        f2 = self.obj_collection.find_one({"aid": "aid2"})
+
+
+        expected_probabilities_1 = [
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.3,
+                "ranking": 2,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.7,
+                "ranking": 1,
+            },
+        ]
+        expected_probabilities_2 = [
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.4,
+                "ranking": 2,
+            },
+            {
+                "classifier_name": "lc_classifier",
+                "classifier_version": "lc_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.6,
+                "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.8,
+                "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.2,
+                "ranking": 2,
+            },
+        ]
+
+        self.assertEqual(f1["probabilities"], expected_probabilities_1)
+        self.assertEqual(f2["probabilities"], expected_probabilities_2)

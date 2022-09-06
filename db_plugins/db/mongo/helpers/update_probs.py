@@ -8,9 +8,9 @@ Helper function to create or update the probabilities for an object
 
 def create_or_update_probabilities(
     connection: MongoConnection,
-    aid: str,
     classifier: str,
     version: str,
+    aid: str,
     probabilities: dict,
 ):
     """
@@ -107,5 +107,5 @@ def create_or_update_probabilities_bulk(
     probabilities: List of dicts with classes and probabilities. probabilities [i] should be for aid[i]
     """
 
-    for indx in len(aids):
+    for indx in range(len(aids)):
         create_or_update_probabilities(connection, classifier, version, aids[indx], probabilities[indx]) 
