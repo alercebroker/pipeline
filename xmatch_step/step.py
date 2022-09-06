@@ -248,6 +248,8 @@ class XmatchStep(GenericStep):
             ~light_curves["metadata"].isna()
         ]  # Leave lightcurves with metadata (means ZTF lc)
         # Temporal code: to manage oids of ZTF and store xmatch
+        if light_curves.empty:
+            return
         light_curves["oid"] = self.get_last_oid(light_curves)
         input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]
         # Get only ZTF objects
