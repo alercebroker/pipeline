@@ -32,14 +32,10 @@ def create_or_update_probabilities(
             and ele["class_name"] == class_name
         )
 
-    # zip the lists
-    classes_and_prob_list = list(probabilities.items())
-
     # sort by probabilities (for rank)
-    sorted_classes_and_prob_list = sorted(classes_and_prob_list, key=lambda val: val[1], reverse=True)
+    sorted_classes_and_prob_list = sorted(probabilities.items(), key=lambda val: val[1], reverse=True)
 
     unmodified_object = connection.database["object"].find_one({"aid": aid})
-
     for indx in range(len(sorted_classes_and_prob_list)):
         founded = list(filter(
             filter_function(sorted_classes_and_prob_list[indx][0]),
