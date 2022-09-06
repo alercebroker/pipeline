@@ -130,7 +130,7 @@ class XmatchStep(GenericStep):
         )
         # Join metadata with xmatches
         metadata = light_curves[
-            ["oid", "metadata", "tid", "aid", "candid"]
+            ["oid", "metadata", "aid", "candid"]
         ].set_index("oid")
         metadata_xmatches = metadata.join(xmatches.set_index("oid_in"))
 
@@ -217,6 +217,17 @@ class XmatchStep(GenericStep):
                 f"Could not retrieve xmatch from CDS after {self.retries} retries."
             )
 
+    @classmethod
+    def get_last_oid(cls, light_curves: pd.DataFrame):
+        def _get_oid(series: pd.Series):
+            candid = series["candid"]
+            for det in series["detections"]:
+                if str(det["candid"]) == str(candid):
+                    return det["oid"]
+
+        oid = light_curves.apply(_get_oid, axis=1)
+        return oid
+
     def execute(self, messages: List[dict]) -> None:
         """
         Execute method. Contains the logic of the xmatch step, it does the following:
@@ -236,6 +247,8 @@ class XmatchStep(GenericStep):
         light_curves = light_curves[
             ~light_curves["metadata"].isna()
         ]  # Leave lightcurves with metadata (means ZTF lc)
+        # Temporal code: to manage oids of ZTF and store xmatch
+        light_curves["oid"] = self.get_last_oid(light_curves)
         input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]
         # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")

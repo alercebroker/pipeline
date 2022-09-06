@@ -116,7 +116,6 @@ SCHEMA = {
     "type": "record",
     "fields": [
         {"name": "oid", "type": "string"},
-        {"name": "tid", "type": "string"},
         {"name": "aid", "type": "string"},
         {
             "name": "candid",
