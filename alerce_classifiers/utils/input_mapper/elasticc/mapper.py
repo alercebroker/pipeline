@@ -32,17 +32,21 @@ class ELAsTiCCMapper:
         # Get forced photometry and remove NaN
         expl_forced_phot = light_curves.explode("non_detections")
         expl_forced_phot = expl_forced_phot[~expl_forced_phot["non_detections"].isna()]
-        forced_phot = pd.DataFrame.from_records(
-            expl_forced_phot["non_detections"].values, index=expl_forced_phot.index
-        )
-        forced_phot.rename(columns={"diffmaglim": "mag"}, inplace=True)
-        forced_phot["e_mag"] = forced_phot["extra_fields"].apply(
-            lambda x: x["psFluxErr"]
-        )
-        forced_phot["type"] = "f"
-
         # Get the usable keys
         cols = list(cls._rename_cols.keys()) + ["type"]
+
+        if not expl_forced_phot.empty:
+            forced_phot = pd.DataFrame.from_records(
+                expl_forced_phot["non_detections"].values, index=expl_forced_phot.index
+            )
+            forced_phot.rename(columns={"diffmaglim": "mag"}, inplace=True)
+            forced_phot["e_mag"] = forced_phot["extra_fields"].apply(
+                lambda x: x["psFluxErr"]
+            )
+            forced_phot["type"] = "f"
+        else:
+            forced_phot = pd.DataFrame(columns=cols)
+
         detections = detections[cols]
         forced_phot = forced_phot[cols]
 
@@ -50,6 +54,7 @@ class ELAsTiCCMapper:
         detections = pd.concat([detections, forced_phot])
         detections = detections.rename(columns=cls._rename_cols)
         detections["BAND"] = detections["BAND"].map(lambda x: cls._fid_mapper[x])
+        detections.index.name = "aid"  # force to put this name
         return detections
 
     @classmethod

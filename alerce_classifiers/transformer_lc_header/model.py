@@ -152,11 +152,18 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
 
         preprocessed_light_curve = self.preprocess(light_curve)
         preprocessed_headers = self.preprocess_headers(headers)
+        del light_curve
+        del headers
 
         input_nn = self.to_tensor_dict(preprocessed_light_curve, preprocessed_headers)
-        pred = self.model.predict_mix(**input_nn)
-        pred = pred["MLPMix"].exp().detach().numpy()
-        preds = pd.DataFrame(
-            pred, columns=self.taxonomy, index=preprocessed_light_curve.index
-        )
+        del preprocessed_headers
+
+        with torch.no_grad():
+            pred = self.model.predict_mix(**input_nn)
+            pred = pred["MLPMix"].exp().detach().numpy()
+            preds = pd.DataFrame(
+                pred, columns=self.taxonomy, index=preprocessed_light_curve.index
+            )
+        del input_nn
+        del preprocessed_light_curve
         return preds
