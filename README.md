@@ -58,7 +58,7 @@ No special conditions, only connection to Kafka.
 * `CONSUMER_GROUP_ID`: Name for the consumer group, e.g., `cmirrormaker-step`
 * `CONSUME_TIMEOUT`: Maximum time in seconds to wait for a message. Defaults to `10`
 * `CONSUME_MESSAGES`: Number of messages to consume per operation. Defaults to `1000`
-* `TOPIC_STRATEGY_FORMAT`: Format of topics that change daily, e.g., `ztf_{}_pid` or `ztf_{}_pid1,ztf_{}_pid2`. The `{}` will be replaced by the date formatted as `%Y%m%d`, set to change every day at 23:00 UTC
+* `TOPIC_STRATEGY_FORMAT`: Format of topics that change daily, e.g., `ztf_%s_programid1` or `ztf_%s_programid1,ztf_%s_programid3`. The `{}` will be replaced by the date formatted as `%Y%m%d`, set to change every day at 23:00 UTC
 * `CONSUMER_TOPICS`: List of topics to consume as a string separated by commas, e.g., `topic` or `topic1,topic2`
 
 Note that one of `TOPIC_STRATEGY_FORMAT` or `CONSUMER_TOPICS` *must* be set. 
