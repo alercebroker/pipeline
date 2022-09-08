@@ -182,7 +182,8 @@ class Encoder(nn.Module):
 
     def create_layers(
         self,
-        using_tabular_feat=False,
+        using_metadata=False,
+        using_features=False,
         emb_to_classifier="token",
         F_max=[],
         tab_detach=False,
@@ -200,7 +201,8 @@ class Encoder(nn.Module):
         self.which_linear = nn.Linear
         self.which_embedding = nn.Embedding
         self.which_bn = nn.BatchNorm2d
-        self.using_tabular_feat = using_tabular_feat
+        self.using_metadata = using_metadata
+        self.using_features = using_features
         self.emb_to_classifier = emb_to_classifier
 
         nkwargs = kwargs.copy()
@@ -239,7 +241,7 @@ class Encoder(nn.Module):
                 torch.randn(1, self.dim_tab, self.tab_input_dim_mha)
             )
 
-        if self.using_tabular_feat and not self.combine_lc_tab:
+        if (self.using_metadata or self.using_features) and not self.combine_lc_tab:
             self.tab_transformer = Transformer(
                 **{
                     **nkwargs,
@@ -272,7 +274,7 @@ class Encoder(nn.Module):
             )
         self.token = nn.Parameter(torch.randn(1, 1, self.input_dim_mha))
         self.lc_classifier = TokenClassifier(self.input_dim_mha, self.n_classes)
-        self.log_softmax = torch.nn.LogSoftmax(dim=1)
+        self.log_softmax = torch.nn.LogSoftmax()
         if self.use_detection_token:
             self.detection_token = nn.Parameter(torch.randn(1, 1, self.input_dim_mha))
             self.non_detection_token = nn.Parameter(
@@ -419,7 +421,7 @@ class Encoder(nn.Module):
         # Obtain lc embedding
         emb_lc = self.obtain_lc_emb(**kwargs)
         output.update({"MLP": self.lc_classifier(emb_lc)})
-        if self.using_tabular_feat and not self.combine_lc_tab:
+        if (self.using_metadata or self.using_features) and not self.combine_lc_tab:
             # Obtain tabular embedding
             emb_tab = self.obtain_tab_emb(**kwargs)
             output.update({"MLPTab": self.tab_classifier(emb_tab)})
