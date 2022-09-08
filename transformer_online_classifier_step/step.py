@@ -128,6 +128,10 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             self.driver, self.model_name, self.model_version, aids, probabilities
         )
 
+    def add_class_metrics(self, predictions: pd.DataFrame) -> None:
+        classification = predictions.idxmax(axis=1).tolist()
+        self.metrics["class"] = classification
+
     def execute(self, messages: List[dict]):
         light_curves_dataframe = pd.DataFrame(messages)
         light_curves_dataframe.drop_duplicates(subset="aid", inplace=True, keep="last")
@@ -137,3 +141,4 @@ class TransformerLCHeaderClassifierStep(GenericStep):
         self.save_predictions(predictions)
         output = self.format_output_message(predictions, light_curves_dataframe)
         self.produce(output)
+        self.add_class_metrics(predictions)
