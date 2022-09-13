@@ -23,33 +23,11 @@ def create_extra_fields(Model, **kwargs):
         return kwargs
 
 
-def create_magstats(**kwargs):
-    return kwargs.get("magstats", [])
-
-
-def create_features(**kwargs):
-    return kwargs.get("features", [])
-
-
-def create_probabilities(**kwargs):
-    return kwargs.get("probabilities", [])
-
-
-def create_xmatch(**kwargs):
-    return kwargs.get("xmatch", [])
-
-
 class Object(generic_models.Object, Base):
     """Mongo implementation of the Object class.
 
     Contains definitions of indexes and custom attributes like loc.
     """
-
-    def loc_definition(**kwargs):
-        return {
-            "type": "Point",
-            "coordinates": [kwargs["meanra"] - 180.0, kwargs["meandec"]],
-        }
 
     _id = SpecialField(lambda **kwargs: kwargs["aid"] or kwargs["_id"])  # ALeRCE object ID (unique ID in database)
     oid = Field()  # Should include OID of all surveys (same survey can have many OIDs)
@@ -57,13 +35,13 @@ class Object(generic_models.Object, Base):
     lastmjd = Field()
     firstmjd = Field()
     ndet = Field()
-    loc = SpecialField(loc_definition)
+    loc = SpecialField(lambda **kwargs: {"type": "Point", "coordinates": [kwargs["meanra"] - 180, kwargs["meandec"]]})
     meanra = Field()
     meandec = Field()
-    magstats = SpecialField(create_magstats)
-    features = SpecialField(create_features)
-    probabilities = SpecialField(create_probabilities)
-    xmatch = SpecialField(create_xmatch)
+    magstats = SpecialField(lambda **kwargs: kwargs.get("magstats", []))
+    features = SpecialField(lambda **kwargs: kwargs.get("features", []))
+    probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
+    xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
@@ -78,28 +56,23 @@ class Object(generic_models.Object, Base):
 
 class Detection(Base, generic_models.Detection):
 
-    tid = (
-        Field()
-    )  # Telescope id (this gives the spatial coordinates of the observatory, e.g. ZTF, ATLAS-HKO, ATLAS-MLO)
+    tid = Field()  # Telescope ID
     aid = Field()
     oid = Field()
     candid = Field()
     mjd = Field()
     fid = Field()
     ra = Field()
+    e_ra = Field()
     dec = Field()
-    rb = Field()
+    e_dec = Field()
     mag = Field()
     e_mag = Field()
     rfid = Field()
-    e_ra = Field()
-    e_dec = Field()
     isdiffpos = Field()
     corrected = Field()
-    parent_candid = Field()
     has_stamp = Field()
     step_id_corr = Field()
-    rbversion = Field()
     extra_fields = SpecialField(create_extra_fields)
     __table_args__ = [IndexModel([("aid", ASCENDING), ("tid", ASCENDING)])]
     __tablename__ = "detection"
@@ -111,8 +84,8 @@ class NonDetection(Base, generic_models.NonDetection):
     tid = Field()
     oid = Field()
     mjd = Field()
-    diffmaglim = Field()
     fid = Field()
+    diffmaglim = Field()
     extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [

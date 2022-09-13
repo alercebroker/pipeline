@@ -73,7 +73,6 @@ class MongoModelsTest(unittest.TestCase):
             fid="fid",
             ra="ra",
             dec="dec",
-            rb="rb",
             mag="mag",
             e_mag="e_mag",
             rfid="rfid",
@@ -81,10 +80,8 @@ class MongoModelsTest(unittest.TestCase):
             e_dec="e_dec",
             isdiffpos="isdiffpos",
             corrected="corrected",
-            parent_candid="parent_candid",
             has_stamp="has_stamp",
             step_id_corr="step_id_corr",
-            rbversion="rbversion",
             extra="extra",
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
