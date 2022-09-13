@@ -23,7 +23,7 @@ packages = [sp.replace("/", ".") for sp in sub_packages]
 
 setup(
     name="alerce_classifiers",
-    version="0.0.4",
+    version="0.0.5",
     packages=packages,
     extras_require=extras_require,
     include_package_data=True,
