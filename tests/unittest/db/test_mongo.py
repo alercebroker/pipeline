@@ -119,7 +119,8 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
-                "oid": "test",
+                "oid": ["test"],
+                "tid": ["test"],
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -134,7 +135,8 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
-                "oid": "test",
+                "oid": ["test"],
+                "tid": ["test"],
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -150,6 +152,7 @@ class MongoQueryTest(unittest.TestCase):
         model = Object(
             aid="aid",
             oid="oid",
+            tid="tid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -165,7 +168,8 @@ class MongoQueryTest(unittest.TestCase):
     def test_bulk_update(self):
         model = Object(
             aid="aid",
-            oid="oid",
+            oid=["oid"],
+            tid=["tid"],
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -173,14 +177,14 @@ class MongoQueryTest(unittest.TestCase):
             ndet="ndet",
         )
         self.obj_collection.insert_one(model)
-        self.query.bulk_update([model], [{"oid": "edited"}])
-        f = self.obj_collection.find_one({"oid": "edited"})
+        self.query.bulk_update([model], [{"oid": ["edited"]}])
+        f = self.obj_collection.find_one({"oid": ["edited"]})
         self.assertIsNotNone(f)
         # now with filters
         self.query.bulk_update(
-            [model], [{"oid": "edited2"}], filter_fields=[{"aid": "aid"}]
+            [model], [{"oid": ["edited2"]}], filter_fields=[{"_id": "aid"}]
         )
-        f = self.obj_collection.find_one({"oid": "edited2"})
+        f = self.obj_collection.find_one({"oid": ["edited2"]})
         self.assertIsNotNone(f)
 
     def test_bulk_insert(self):
@@ -188,8 +192,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
-                    "oid": "test",
+                    "aid": f"test{i}",
+                    "oid": ["test"],
+                    "tid": ["test"],
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -211,8 +216,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -239,8 +245,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -267,8 +274,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -280,10 +288,10 @@ class MongoQueryTest(unittest.TestCase):
         )
         self.assertEqual(self.obj_collection.count_documents({}), 3)
 
-        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=True)
+        paginate = self.query.paginate({"_id": "fake"}, page=1, per_page=2, count=True)
         self.assertEqual(paginate.total, 0)
         self.assertListEqual(paginate.items, [])
 
-        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=False)
+        paginate = self.query.paginate({"_id": "fake"}, page=1, per_page=2, count=False)
         self.assertIsNone(paginate.total)
         self.assertListEqual(paginate.items, [])

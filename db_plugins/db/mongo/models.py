@@ -51,10 +51,9 @@ class Object(generic_models.Object, Base):
             "coordinates": [kwargs["meanra"] - 180.0, kwargs["meandec"]],
         }
 
-    aid = Field()  # ALeRCE candidate id (unique id of object in the ALeRCE database)
-    oid = (
-        Field()
-    )  # Object id should include objects id of all surveys (same survey can provide different object ids)
+    _id = SpecialField(lambda **kwargs: kwargs["aid"] or kwargs["_id"])  # ALeRCE object ID (unique ID in database)
+    oid = Field()  # Should include OID of all surveys (same survey can have many OIDs)
+    tid = Field()  # Should include all telescopes contributing with detections
     lastmjd = Field()
     firstmjd = Field()
     ndet = Field()
@@ -65,7 +64,6 @@ class Object(generic_models.Object, Base):
     features = SpecialField(create_features)
     probabilities = SpecialField(create_probabilities)
     xmatch = SpecialField(create_xmatch)
-    extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),

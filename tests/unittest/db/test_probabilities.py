@@ -19,6 +19,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_1 = Object(
             aid="aid1",
             oid="oid1",
+            tid="tid1",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -44,6 +45,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_2 = Object(
             aid="aid2",
             oid="oid2",
+            tid="tid2",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -72,6 +74,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_2 = Object(
             aid="aid3",
             oid="oid3",
+            tid="tid3",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -100,7 +103,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         fl = list(f)
         self.assertIsNotNone(f)
         self.assertEqual(len(fl), 1)
-        self.assertEqual(fl[0]["aid"], "aid1")
+        self.assertEqual(fl[0]["_id"], "aid1")
 
         # find object 2
         f = self.obj_collection.find(
@@ -119,7 +122,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         fl = list(f)
         self.assertIsNotNone(f)
         self.assertEqual(len(fl), 1)
-        self.assertEqual(fl[0]["aid"], "aid2")
+        self.assertEqual(fl[0]["_id"], "aid2")
 
     def test_query_with_probabilities_find_none(self):
         self.create_2_objects()
@@ -171,7 +174,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         self.obj_collection.update_one(
             {
-                "aid": "aid1",
+                "_id": "aid1",
                 "probabilities": {
                     "$elemMatch": {
                         "classifier_name": "stamp_classifier",
@@ -183,7 +186,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
             {"$set": {"probabilities.$.probability": 1.0}},
         )
 
-        f1 = self.obj_collection.find_one({"aid": "aid1"})
+        f1 = self.obj_collection.find_one({"_id": "aid1"})
         expected_object_1_probabilities = [
             {
                 "classifier_name": "stamp_classifier",
@@ -202,7 +205,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         ]
         self.assertEqual(f1["probabilities"], expected_object_1_probabilities)
 
-        f2 = self.obj_collection.find_one({"aid": "aid2"})
+        f2 = self.obj_collection.find_one({"_id": "aid2"})
         expected_object_2_probabilities = [
             {
                 "classifier_name": "stamp_classifier",
@@ -229,7 +232,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         self.obj_collection.update_one(
             {
-                "aid": "aid3",
+                "_id": "aid3",
             },
             {
                 "$push": {
@@ -244,7 +247,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
             },
         )
 
-        f = self.obj_collection.find_one({"aid": "aid3"})
+        f = self.obj_collection.find_one({"_id": "aid3"})
         expected_object_probabilities = [
             {
                 "classifier_name": "stamp_classifier",

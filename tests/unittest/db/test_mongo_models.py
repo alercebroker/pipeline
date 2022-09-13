@@ -7,6 +7,7 @@ class MongoModelsTest(unittest.TestCase):
         o = models.Object(
             aid="aid",
             oid="oid",
+            tid="tid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -24,31 +25,7 @@ class MongoModelsTest(unittest.TestCase):
     def test_object_fails_creation(self):
         with self.assertRaises(AttributeError) as e:
             models.Object()
-        self.assertEqual(str(e.exception), "Object model needs aid attribute")
-
-    def test_object_with_extra_fields(self):
-        o = models.Object(
-            aid="aid",
-            oid="oid",
-            lastmjd="lastmjd",
-            firstmjd="firstmjd",
-            meanra=100.0,
-            meandec=50.0,
-            ndet="ndet",
-            extra="extra",
-        )
-        self.assertEqual(o["extra_fields"], {"extra": "extra"})
-        o = models.Object(
-            aid="aid",
-            oid="sid",
-            lastmjd="lastmjd",
-            firstmjd="firstmjd",
-            meanra=100.0,
-            meandec=50.0,
-            ndet="ndet",
-            extra_fields={"extra": "extra"},
-        )
-        self.assertEqual(o["extra_fields"], {"extra": "extra"})
+        self.assertEqual(str(e.exception), "Object model needs _id attribute")
 
     def test_detection_creates(self):
         d = models.Detection(
