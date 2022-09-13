@@ -18,7 +18,7 @@ def create_extra_fields(Model, **kwargs):
         for field in Model._meta.fields:
             try:
                 kwargs.pop(field)
-            except (KeyError):
+            except KeyError:
                 pass
         return kwargs
 
@@ -44,7 +44,7 @@ class Object(generic_models.Object, Base):
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
+        IndexModel([("oid", ASCENDING)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),

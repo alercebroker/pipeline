@@ -59,9 +59,8 @@ class MongoModelsTest(unittest.TestCase):
         self.assertEqual(d["aid"], "aid")
 
     def test_detection_fails_creation(self):
-        with self.assertRaises(AttributeError) as e:
+        with self.assertRaisesRegex(AttributeError, "Detection model needs .+? attribute"):
             models.Detection()
-        self.assertEqual(str(e.exception), "Detection model needs tid attribute")
 
     def test_detection_with_extra_fields(self):
         o = models.Detection(
