@@ -18,7 +18,7 @@ logging.basicConfig(level=level,
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
 
-from transformer_online_classifier_step import TransformerLCHeaderClassifierStep
+from transformer_online_classifier_step import TransformerLCHeaderClassifierStep, TransformerLCFeaturesClassifierStep
 from apf.core import get_class
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
@@ -27,5 +27,13 @@ else:
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = TransformerLCHeaderClassifierStep(consumer, config=STEP_CONFIG, level=level)
+
+step_type = STEP_CONFIG.get("CLASSIFIER")
+
+if step_type == "header":
+    step = TransformerLCHeaderClassifierStep(consumer, config=STEP_CONFIG, level=level)
+elif step_type == "features":
+    step = TransformerLCFeaturesClassifierStep(consumer, config=STEP_CONFIG, level=level)
+else:
+    raise Exception("Wrong CLASSIFIER type assigned in setting.py")
 step.start()

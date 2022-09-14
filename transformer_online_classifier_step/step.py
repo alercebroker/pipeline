@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from alerce_classifiers.transformer_lc_header import \
     TransformerLCHeaderClassifier
+from alerce_classifiers.transformer_lc_features import TransformerLCFeaturesClassifier
 from apf.core.step import GenericStep
 from apf.producers import KafkaSchemalessProducer
 from db_plugins.db.generic import new_DBConnection
@@ -45,10 +46,7 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             self.producer = producer or KafkaSchemalessProducer(prod_config)
         else:
             self.producer = None
-
-        self.model = TransformerLCHeaderClassifier(
-            self.config.get("MODEL_PATH"), self.config.get("QUANTILES_PATH")
-        )
+        self.load_model()
         self.model_version = os.getenv("MODEL_VERSION", "0.0.0")
         self.model_name = os.getenv("CLASSIFIER_NAME", "balto")
         self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
@@ -80,6 +78,11 @@ class TransformerLCHeaderClassifierStep(GenericStep):
             "CART": 134,
             "PISN": 135,
         }
+
+    def load_model(self):
+        self.model = TransformerLCHeaderClassifier(
+            self.config.get("MODEL_PATH"), self.config.get("HEADER_QUANTILES_PATH")
+        )
 
     def format_output_message(
         self, predictions: pd.DataFrame, light_curves: pd.DataFrame
@@ -142,3 +145,29 @@ class TransformerLCHeaderClassifierStep(GenericStep):
         output = self.format_output_message(predictions, light_curves_dataframe)
         self.produce(output)
         self.add_class_metrics(predictions)
+
+
+class TransformerLCFeaturesClassifierStep(TransformerLCHeaderClassifierStep):
+    def __init__(
+        self,
+        consumer=None,
+        config=None,
+        level=logging.INFO,
+        producer=None,
+        db_connection=None,
+        **step_args,
+    ):
+        super().__init__(consumer, config=config, level=level, producer=producer, db_connection=db_connection,
+                         **step_args)
+        self.model_version = os.getenv("MODEL_VERSION", "0.0.0")
+        self.model_name = os.getenv("CLASSIFIER_NAME", "messi")
+
+    def load_model(self):
+        if self.config.get("FEATURES_QUANTILES_PATH"):
+            self.model = TransformerLCFeaturesClassifier(
+                self.config.get("MODEL_PATH"),
+                self.config.get("HEADER_QUANTILES_PATH"),
+                self.config.get("FEATURES_QUANTILES_PATH"),
+            )
+        else:
+            raise Exception("Not features quantiles path assigned")
