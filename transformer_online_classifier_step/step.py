@@ -160,7 +160,7 @@ class TransformerLCFeaturesClassifierStep(TransformerLCHeaderClassifierStep):
         super().__init__(consumer, config=config, level=level, producer=producer, db_connection=db_connection,
                          **step_args)
         self.model_version = os.getenv("MODEL_VERSION", "0.0.0")
-        self.model_name = os.getenv("CLASSIFIER_NAME", "piscola")
+        self.model_name = os.getenv("CLASSIFIER_NAME", "messi")
 
     def load_model(self):
         if self.config.get("FEATURES_QUANTILES_PATH"):
