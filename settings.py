@@ -106,7 +106,7 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "MODEL_PATH": os.environ["MODEL_PATH"],
     "HEADER_QUANTILES_PATH": os.environ["HEADER_QUANTILES_PATH"],
-    "FEATURES_QUANTILES_PATH": os.getenv("FEATURE_QUANTILES_PATH", None),
+    "FEATURES_QUANTILES_PATH": os.getenv("FEATURES_QUANTILES_PATH", None),
     "DB_CONFIG": DB_CONFIG,
     "CLASSIFIER": os.getenv("CLASSIFIER", "header")  # header or features
 }

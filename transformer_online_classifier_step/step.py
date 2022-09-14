@@ -141,9 +141,9 @@ class TransformerLCHeaderClassifierStep(GenericStep):
         light_curves_dataframe.set_index("aid", inplace=True)
         self.logger.info(f"Processing {len(messages)} light curves.")
         predictions = self.model.predict_proba(light_curves_dataframe)
-        # self.save_predictions(predictions)
+        self.save_predictions(predictions)
         output = self.format_output_message(predictions, light_curves_dataframe)
-        # self.produce(output)
+        self.produce(output)
         self.add_class_metrics(predictions)
 
 
