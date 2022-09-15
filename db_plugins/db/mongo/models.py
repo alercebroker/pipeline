@@ -1,14 +1,11 @@
 from db_plugins.db import models as generic_models
 from pymongo import (
-    TEXT,
     GEOSPHERE,
     IndexModel,
     DESCENDING,
     ASCENDING,
 )
-from db_plugins.db.mongo.orm import base_creator, Field, SpecialField
-
-Base = base_creator()
+from db_plugins.db.mongo.orm import Field, SpecialField, BaseMetaClass
 
 
 def create_extra_fields(Model, **kwargs):
@@ -21,6 +18,32 @@ def create_extra_fields(Model, **kwargs):
             except KeyError:
                 pass
         return kwargs
+
+
+class Base(dict, metaclass=BaseMetaClass):
+    def __init__(self, **kwargs):
+        model = {}
+        if "_id" in kwargs:
+            model["_id"] = kwargs["_id"]
+        for field in self._meta.fields:
+            try:
+                if isinstance(self._meta.fields[field], SpecialField):
+                    model[field] = self._meta.fields[field].callback(
+                        Model=self.__class__, **kwargs
+                    )
+                else:
+                    model[field] = kwargs[field]
+            except KeyError:
+                raise AttributeError(
+                    "{} model needs {} attribute".format(
+                        self.__class__.__name__, field
+                    )
+                )
+        super().__init__(**model)
+
+    @classmethod
+    def set_database(cls, database):
+        cls.metadata.database = database
 
 
 class Object(generic_models.Object, Base):
@@ -77,6 +100,7 @@ class Detection(Base, generic_models.Detection):
     has_stamp = Field()
     step_id_corr = Field()
     extra_fields = SpecialField(create_extra_fields)
+
     __table_args__ = [IndexModel([("aid", ASCENDING), ("tid", ASCENDING)])]
     __tablename__ = "detection"
 
