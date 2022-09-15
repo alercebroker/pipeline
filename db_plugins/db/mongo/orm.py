@@ -45,6 +45,10 @@ class BaseMetaClass(type):
         tablename = attrs.get("__tablename__", "")
         indexes = attrs.get("__table_args__", [])
         fields = {k: v for k, v in attrs.items() if isinstance(v, Field)}
+        try:
+            fields["extra_fields"] = SpecialField(cls.create_extra_fields)
+        except AttributeError:
+            pass
         if tablename:
             mcs.metadata.collections[tablename] = {"indexes": indexes, "fields": fields}
         cls._meta = ModelMetadata(tablename, fields, indexes)

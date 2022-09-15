@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from db_plugins.db.mongo.query import mongo_query_creator
 from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
-from db_plugins.db.mongo.models import Base
+from db_plugins.db.mongo.models import BaseModel
 
 
 MAP_KEYS = {"HOST", "USERNAME", "PASSWORD", "PORT", "DATABASE"}
@@ -35,7 +35,7 @@ class MongoConnection(DatabaseConnection):
     def __init__(self, config=None, client=None, base=None):
         self.config = config
         self.client = client
-        self.base = base or Base
+        self.base = base or BaseModel
         self.database = None
 
     def connect(self, config):
@@ -58,7 +58,7 @@ class MongoConnection(DatabaseConnection):
                     "DATABASE": "database",
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
-        base : db_plugins.db.mongo.models.Base
+        base : db_plugins.db.mongo.models.BaseModel
             Base class to initialize the database
         """
         self.config = config

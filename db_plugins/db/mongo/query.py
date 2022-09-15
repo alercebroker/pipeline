@@ -1,11 +1,11 @@
 from db_plugins.db.generic import BaseQuery, Pagination, PaginationNoCount
-from db_plugins.db.mongo.models import Base
+from db_plugins.db.mongo.models import BaseModel
 from pymongo.collection import Collection as PymongoCollection
 from pymongo import UpdateOne
 
 
 def constructor_creator(collection_class):
-    def constructor(self, database, model: Base = None, *args, **kwargs):
+    def constructor(self, database, model: BaseModel = None, *args, **kwargs):
         """Get / create a Mongo collection.
 
         Raises :class:`TypeError` if `name` is not
@@ -54,7 +54,7 @@ def init_collection_creator(collection_class):
 
 def check_exists(
     self,
-    model: Base = None,
+    model: BaseModel = None,
     filter_by={},
 ):
     """
@@ -74,7 +74,7 @@ def check_exists(
 
 
 def get_or_create_creator(collection_class):
-    def get_or_create(self, filter_by={}, model: Base = None, **kwargs):
+    def get_or_create(self, filter_by={}, model: BaseModel = None, **kwargs):
         """Initialize a model by creating it or getting it from the database.
 
         Parameters
@@ -229,7 +229,7 @@ def paginate(
 
 
 def find_one_creator(collection_class):
-    def find_one(self, filter_by={}, model: Base = None):
+    def find_one(self, filter_by={}, model: BaseModel = None):
         """Find one item of the specified model.
 
         If there are more than one item an error occurs.
@@ -249,7 +249,7 @@ def find_one_creator(collection_class):
 
 
 def find_all_creator(collection_class):
-    def find_all(self, model: Base = None, filter_by={}, paginate=True, **kwargs):
+    def find_all(self, model: BaseModel = None, filter_by={}, paginate=True, **kwargs):
         """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.

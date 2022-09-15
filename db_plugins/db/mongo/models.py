@@ -1,4 +1,3 @@
-from db_plugins.db import models as generic_models
 from pymongo import (
     GEOSPHERE,
     IndexModel,
@@ -8,37 +7,19 @@ from pymongo import (
 from db_plugins.db.mongo.orm import Field, SpecialField, BaseMetaClass
 
 
-def create_extra_fields(Model, **kwargs):
-    if "extra_fields" in kwargs:
-        return kwargs["extra_fields"]
-    else:
-        for field in Model._meta.fields:
-            try:
-                kwargs.pop(field)
-            except KeyError:
-                pass
-        return kwargs
-
-
-class Base(dict, metaclass=BaseMetaClass):
+class BaseModel(dict, metaclass=BaseMetaClass):
     def __init__(self, **kwargs):
         model = {}
-        if "_id" in kwargs:
+        if "_id" in kwargs and "_id" not in self._meta.fields:
             model["_id"] = kwargs["_id"]
-        for field in self._meta.fields:
+        for field, fclass in self._meta.fields.items():
             try:
-                if isinstance(self._meta.fields[field], SpecialField):
-                    model[field] = self._meta.fields[field].callback(
-                        Model=self.__class__, **kwargs
-                    )
+                if isinstance(fclass, SpecialField):
+                    model[field] = fclass.callback(**kwargs)
                 else:
                     model[field] = kwargs[field]
             except KeyError:
-                raise AttributeError(
-                    "{} model needs {} attribute".format(
-                        self.__class__.__name__, field
-                    )
-                )
+                raise AttributeError(f"{self.__class__.__name__} model needs {field} attribute")
         super().__init__(**model)
 
     @classmethod
@@ -46,21 +27,33 @@ class Base(dict, metaclass=BaseMetaClass):
         cls.metadata.database = database
 
 
-class Object(generic_models.Object, Base):
+class BaseModelWithExtraFields(BaseModel):
+    _exclude_kwargs = []
+
+    @classmethod
+    def create_extra_fields(cls, **kwargs):
+        if "extra_fields" in kwargs:
+            return kwargs["extra_fields"]
+        else:
+            kwargs = {k: v for k, v in kwargs.items() if k not in cls._meta.fields and k not in cls._exclude_kwargs}
+            return kwargs
+
+
+class Object(BaseModel):
     """Mongo implementation of the Object class.
 
     Contains definitions of indexes and custom attributes like loc.
     """
 
-    _id = SpecialField(lambda **kwargs: kwargs["aid"] or kwargs["_id"])  # ALeRCE object ID (unique ID in database)
+    _id = SpecialField(lambda **kwargs: kwargs.get("aid") or kwargs["_id"])  # ALeRCE object ID (unique ID in database)
     oid = Field()  # Should include OID of all surveys (same survey can have many OIDs)
     tid = Field()  # Should include all telescopes contributing with detections
     lastmjd = Field()
     firstmjd = Field()
     ndet = Field()
-    loc = SpecialField(lambda **kwargs: {"type": "Point", "coordinates": [kwargs["meanra"] - 180, kwargs["meandec"]]})
     meanra = Field()
     meandec = Field()
+    loc = SpecialField(lambda **kwargs: {"type": "Point", "coordinates": [kwargs["meanra"] - 180, kwargs["meandec"]]})
     magstats = SpecialField(lambda **kwargs: kwargs.get("magstats", []))
     features = SpecialField(lambda **kwargs: kwargs.get("features", []))
     probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
@@ -80,9 +73,10 @@ class Object(generic_models.Object, Base):
     __tablename__ = "object"
 
 
-class Detection(Base, generic_models.Detection):
+class Detection(BaseModelWithExtraFields):
+    _exclude_kwargs = ["candid"]
 
-    _id = SpecialField(lambda **kwargs: kwargs["candid"] or kwargs["_id"])
+    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     tid = Field()  # Telescope ID
     aid = Field()
     oid = Field()
@@ -99,13 +93,12 @@ class Detection(Base, generic_models.Detection):
     corrected = Field()
     has_stamp = Field()
     step_id_corr = Field()
-    extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [IndexModel([("aid", ASCENDING), ("tid", ASCENDING)])]
     __tablename__ = "detection"
 
 
-class NonDetection(Base, generic_models.NonDetection):
+class NonDetection(BaseModelWithExtraFields):
 
     aid = Field()
     tid = Field()
@@ -113,7 +106,6 @@ class NonDetection(Base, generic_models.NonDetection):
     mjd = Field()
     fid = Field()
     diffmaglim = Field()
-    extra_fields = SpecialField(create_extra_fields)
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("tid", ASCENDING)]),
@@ -121,7 +113,7 @@ class NonDetection(Base, generic_models.NonDetection):
     __tablename__ = "non_detection"
 
 
-class Taxonomy(Base):
+class Taxonomy(BaseModel):
     classifier_name = Field()
     classifier_version = Field()
     classes = Field()
