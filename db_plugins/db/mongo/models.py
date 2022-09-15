@@ -48,18 +48,16 @@ class Object(generic_models.Object, Base):
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
-        IndexModel([("meanra", ASCENDING)]),
-        IndexModel([("meandec", ASCENDING)]),
     ]
     __tablename__ = "object"
 
 
 class Detection(Base, generic_models.Detection):
 
+    _id = SpecialField(lambda **kwargs: kwargs["candid"] or kwargs["_id"])
     tid = Field()  # Telescope ID
     aid = Field()
     oid = Field()
-    candid = Field()
     mjd = Field()
     fid = Field()
     ra = Field()
