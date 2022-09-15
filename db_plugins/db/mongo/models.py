@@ -48,6 +48,11 @@ class Object(generic_models.Object, Base):
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
+        IndexModel(
+            [("probabilities.classifier_name", ASCENDING),
+             ("probabilities.classifier_version", DESCENDING),
+             ("probabilities.probability", DESCENDING)],
+            partialFilterExpresion={"probabilities.ranking": 1})
     ]
     __tablename__ = "object"
 
@@ -98,6 +103,7 @@ class Taxonomy(Base):
     classes = Field()
 
     __table_args__ = [
-        IndexModel([("classifier_name", ASCENDING), ("classifier_version", ASCENDING)]),
+        IndexModel([("classifier_name", ASCENDING),
+                    ("classifier_version", DESCENDING)]),
     ]
     __tablename__ = "taxonomy"
