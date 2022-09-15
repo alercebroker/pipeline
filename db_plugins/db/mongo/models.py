@@ -1,9 +1,4 @@
-from pymongo import (
-    GEOSPHERE,
-    IndexModel,
-    DESCENDING,
-    ASCENDING,
-)
+from pymongo import ASCENDING, DESCENDING, GEOSPHERE, IndexModel
 from db_plugins.db.mongo.orm import Field, SpecialField, BaseMetaClass
 
 
