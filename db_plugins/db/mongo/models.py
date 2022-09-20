@@ -23,15 +23,12 @@ class BaseModel(dict, metaclass=BaseMetaClass):
 
 
 class BaseModelWithExtraFields(BaseModel):
-    _exclude_kwargs = []
-
     @classmethod
     def create_extra_fields(cls, **kwargs):
         if "extra_fields" in kwargs:
             return kwargs["extra_fields"]
         else:
-            kwargs = {k: v for k, v in kwargs.items() if k not in cls._meta.fields and k not in cls._exclude_kwargs}
-            return kwargs
+            return {k: v for k, v in kwargs.items() if k not in cls._meta.fields}
 
 
 class Object(BaseModel):
@@ -63,13 +60,18 @@ class Object(BaseModel):
             [("probabilities.classifier_name", ASCENDING),
              ("probabilities.classifier_version", DESCENDING),
              ("probabilities.probability", DESCENDING)],
-            partialFilterExpresion={"probabilities.ranking": 1})
+            partialFilterExpresion={"probabilities.ranking": 1}
+        )
     ]
     __tablename__ = "object"
 
 
 class Detection(BaseModelWithExtraFields):
-    _exclude_kwargs = ["candid"]
+    @classmethod
+    def create_extra_fields(cls, **kwargs):
+        kwargs = super().create_extra_fields(**kwargs)
+        kwargs.pop("candid", None)  # Prevents repeated candid entry in extra_fields
+        return kwargs
 
     _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     tid = Field()  # Telescope ID

@@ -56,11 +56,9 @@ class BaseMetaClass(type):
 
 
 class Field:
-    def __init__(self):
-        pass
+    pass
 
 
 class SpecialField(Field):
     def __init__(self, callback):
-        super(SpecialField, self).__init__()
         self.callback = callback
