@@ -1,10 +1,9 @@
-import pymongo.collection
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
-    to_camel_case,
+    MongoConfig
 )
 from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.mongo.models import Object
@@ -28,7 +27,7 @@ class MongoConnectionTest(unittest.TestCase):
     def test_to_camel_case(self):
         conf = self.config
         conf["SOME_OTHER_ATTRIBUTE"] = "test"
-        new_conf = to_camel_case(conf)
+        new_conf = MongoConfig(conf)
         self.assertDictContainsSubset(
             {"someOtherAttribute": "test", "host": "host"}, new_conf
         )

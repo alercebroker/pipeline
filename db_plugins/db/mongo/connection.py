@@ -1,28 +1,15 @@
+from collections import UserDict
+
 from pymongo import MongoClient
 from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
 from db_plugins.db.mongo.models import BaseModel
 
 
-MAP_KEYS = {"HOST", "USERNAME", "PASSWORD", "PORT", "DATABASE"}
-NOT_PYMONGO_KEYS = {"database"}
-
-
-def satisfy_keys(config_keys):
-    return MAP_KEYS.difference(config_keys)
-
-
-def to_camel_case(config: dict):
-    """Converts config keys to lowerCamelCase"""
-    result_config = {}
-    for key in config:
-        lower_key = key.lower()
-        camel_case_key = lower_key.split("_")
-        camel_case_key = camel_case_key[0] + "".join(
-            x.title() for x in camel_case_key[1:]
-        )
-        result_config[camel_case_key] = config[key]
-    return result_config
+class MongoConfig(UserDict):
+    def __setitem__(self, key, value):
+        klist = [w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))]
+        super().__setitem__("".join(klist), value)
 
 
 class MongoDatabaseCreator(DatabaseCreator):
@@ -58,17 +45,11 @@ class MongoConnection(DatabaseConnection):
                     "DATABASE": "database",
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
-        base : db_plugins.db.mongo.models.BaseModel
-            Base class to initialize the database
         """
         self.config = config
-        invalid_keys = satisfy_keys(set(config.keys()))
-        if len(invalid_keys) != 0:
-            raise ValueError(f"Invalid config. Missing values {invalid_keys}")
-        pymongo_arguments = to_camel_case(config)
-        for key in NOT_PYMONGO_KEYS:
-            del pymongo_arguments[key]
-        self.client = self.client or MongoClient(**pymongo_arguments)
+        kwargs = MongoConfig(config)
+        kwargs.pop("database")
+        self.client = self.client or MongoClient(**kwargs)
         self.base.set_database(config["DATABASE"])
         self.database = self.client[config["DATABASE"]]
 
