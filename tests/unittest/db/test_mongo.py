@@ -1,11 +1,12 @@
-from pydoc import pager
+import pymongo.collection
+
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
     to_camel_case,
 )
-from db_plugins.db.mongo.query import mongo_query_creator
+from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.mongo.models import Object
 import unittest
 import mongomock
@@ -62,38 +63,23 @@ class MongoConnectionTest(unittest.TestCase):
         expected = []
         self.assertEqual(databases, expected)
 
-    def test_query(self):
+    def test_query_orm_api_without_model(self):
         self.conn.database = self.client.database
-        query = self.conn.query(self.query_class)
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+        query = self.conn.query()
+        self.assertIsNone(query.collection)
+        self.assertIsNone(query.model)
 
     def test_query_pymongo_api(self):
         self.conn.database = self.client.database
-        query = self.conn.query(
-            self.query_class,
-            name="collection",
-            _db_store=self.conn.database._store,
-        )
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+        query = self.conn.query(name="collection")
+        self.assertIsInstance(query.collection, mongomock.collection.Collection)
         self.assertIsNone(query.model)
 
     def test_query_orm_api_with_model(self):
         self.conn.database = self.client.database
-        query = self.conn.query(
-            self.query_class,
-            model=Object,
-            _db_store=self.conn.database._store,
-        )
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+        query = self.conn.query(model=Object)
+        self.assertIsInstance(query.collection, mongomock.collection.Collection)
         self.assertEqual(query.model, Object)
-
-    def test_query_orm_api_without_model(self):
-        self.conn.database = self.client.database
-        query = self.conn.query(self.query_class)
-        self.assertIsNone(query.model)
 
 
 class MongoQueryTest(unittest.TestCase):
@@ -102,11 +88,10 @@ class MongoQueryTest(unittest.TestCase):
         self.database = client["database"]
         self.obj_collection = self.database["object"]
         self.obj_collection.insert_one({"test": "test"})
-        self.mongo_query_class = mongo_query_creator(mongomock.collection.Collection)
-        self.query = self.mongo_query_class(
+        self.query = MongoQuery(
             model=Object,
             database=self.database,
-            _db_store=self.database._store,
+            # _db_store=self.database._store,
         )
 
     def test_check_exists(self):

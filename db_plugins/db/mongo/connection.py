@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from db_plugins.db.mongo.query import mongo_query_creator
+from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
 from db_plugins.db.mongo.models import BaseModel
 
@@ -78,15 +78,17 @@ class MongoConnection(DatabaseConnection):
     def drop_db(self):
         self.base.metadata.drop_all(self.client, self.config["DATABASE"])
 
-    def query(self, query_class=None, *args, **kwargs):
+    def query(self, model=None, name=None):
         """Create a BaseQuery object that allows you to query the database using
         the PyMongo Collection API, or using the BaseQuery methods
         like ``get_or_create``.
 
         Parameters
         ----------
-        args : tuple
-            Args you can pass to pymongo.collection.Collection class.
+        model : Type[BaseModel]
+            Model class to create the query for
+        name : str
+            Name of collection to use
 
         Examples
         --------
@@ -94,18 +96,11 @@ class MongoConnection(DatabaseConnection):
 
             # Using PyMongo API
             db_conn.query(
-                database=my_db_instance,
                 name='my_collection',
-            ).find({'hello': 'world'})
+            ).collection.find({'hello': 'world'})
             # Using db-plugins
             # These two statements are equivalent
             db_conn.query(model=Object).get_or_create(filter_by=**filters)
             db_conn.query().get_or_create(model=Object, filter_by=**filters)
         """
-        if query_class:
-            return mongo_query_creator(query_class)(
-                self.database,
-                *args,
-                **kwargs,
-            )
-        return mongo_query_creator()(self.database, *args, **kwargs)
+        return MongoQuery(self.database, model=model, name=name)
