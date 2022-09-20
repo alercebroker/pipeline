@@ -42,15 +42,17 @@ class BaseMetaClass(type):
         """Create class with mappings and other metadata."""
         cls = super().__new__(mcs, name, bases, attrs)
 
-        tablename = attrs.get("__tablename__", "")
-        indexes = attrs.get("__table_args__", [])
         fields = {k: v for k, v in attrs.items() if isinstance(v, Field)}
+        if not fields:  # Base classes should not include fields
+            return cls
         try:
             fields["extra_fields"] = SpecialField(cls.create_extra_fields)
         except AttributeError:
             pass
-        if tablename:
-            mcs.metadata.collections[tablename] = {"indexes": indexes, "fields": fields}
+        tablename = attrs.pop("__tablename__")
+        indexes = attrs.get("__table_args__", [])
+
+        mcs.metadata.collections[tablename] = {"indexes": indexes, "fields": fields}
         cls._meta = ModelMetadata(tablename, fields, indexes)
         return cls
 
