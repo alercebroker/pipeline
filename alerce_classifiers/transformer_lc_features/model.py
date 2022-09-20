@@ -119,8 +119,7 @@ class TransformerLCFeaturesClassifier(TransformerLCHeaderClassifier):
         headers = ELAsTiCCMapper.get_header(data_input, keep="first")
         headers.replace({np.nan: -9999}, inplace=True)
         features = ELAsTiCCMapper.get_features(data_input)
-        features.replace({np.nan: -9999}, inplace=True)
-
+        features.replace({np.nan: -9999, np.inf: -9999, -np.inf: -9999}, inplace=True)
         preprocessed_light_curve = self.preprocess(light_curve)
         preprocessed_headers = self.preprocess_headers(headers)
         preprocessed_features = self.preprocess_features(features)
