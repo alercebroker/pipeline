@@ -216,8 +216,10 @@ class MongoQuery(BaseQuery):
             items = items[:-1] if has_next else items
             return PaginationNoCount(self, page, per_page, items, has_next)
         else:
-            dismiss = ("$sort", "$limit", "$skip")
-            filter_by = [step for step in filter_by if all(skip not in step for skip in dismiss)]
+            filter_by.pop()  # Removes pagination $limit step
+            filter_by.pop()  # Removes pagination $skip step
+            # $sorting can be too slow and is fully irrelevant for counting
+            filter_by = [step for step in filter_by if "$sort" not in step]
             filter_by.append({"$limit": max_results})
             filter_by.append({"$count": "n"})
             summary = list(self.collection.aggregate(filter_by))
