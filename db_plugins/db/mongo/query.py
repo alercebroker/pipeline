@@ -25,7 +25,19 @@ class MongoQuery(BaseQuery):
             # Using custom ORM API
             self.init_collection(model)
 
-    def init_collection(self, model):
+    def init_collection(self, model: Type[BaseModel] = None):
+        """Sets the collection used by the various methods based on the model
+        class provided. If no model is provided, it will use the collection
+        provided during creation, if any.
+
+        Raises a :class:`CollectionNotFound` error if no model is provided
+        and no collection was selected during creation.
+
+        Parameters
+        ----------
+        model : Type[BaseModel]
+            Model class used for queries
+        """
         if model:
             self.model = model
             self.collection = self._db[model._meta.tablename]
@@ -66,8 +78,8 @@ class MongoQuery(BaseQuery):
 
         Returns
         ----------
-        tuple[dict, bool]
-            Tuple with the document and whether it was created or not
+        tuple[dict or InsertOneResult, bool]
+            Tuple with the document (if not created) and whether it was created or not
         """
         filter_by = filter_by or {}
         self.init_collection(model)
@@ -96,20 +108,38 @@ class MongoQuery(BaseQuery):
 
         Returns
         ----------
-        dict
-            The updated document
+        pymongo.results.UpdateResult
         """
         self.init_collection(type(instance))
         return self.collection.update_one(instance, {"$set": attrs})
 
-    def bulk_update(self, instances: list = None, attrs: list = None, filter_fields: list = None):
-        instances = instances or []
-        if not len(instances):
+    def bulk_update(self, instances: list, attrs: list, filter_fields: list = None):
+        """Update multiple documents in a collection at once.
+
+        The length of `instances` and `attrs` must be the same.
+
+        If `filter_fields` is defined, it must also match the length of
+        `instances` and its contents will take precedence over the
+        corresponding instance when querying for documents to update.
+
+        Parameters
+        ----------
+        instances : list[BaseModel]
+            List with documents to be updated
+        attrs : list[dict]
+            List with dictionary of fields to update for corresponding instance
+        filter_fields : list[dict], optional
+            Attributes for finding the document that needs to be updates
+
+        Returns
+        -------
+        pymongo.results.BulkWriteResult
+        """
+        if len(instances) == 0:
             return
         model = instances[0].__class__
         if any(instance.__class__ != model for instance in instances):
             raise TypeError("All instances must have the same model class")
-        attrs = attrs or []
         if len(instances) != len(attrs):
             raise ValueError("Length of instances and attributes must match")
         filter_fields = filter_fields or []
@@ -121,8 +151,8 @@ class MongoQuery(BaseQuery):
                     for instance, attr, filters in zip_longest(instances, attrs, filter_fields)]
         return self.collection.bulk_write(requests=requests, ordered=False)
 
-    def bulk_insert(self, documents: list = None, model: Type[BaseModel] = None):
-        """Insert multiple objects to the database improving performance.
+    def bulk_insert(self, documents: list, model: Type[BaseModel] = None):
+        """Insert multiple documents to the database at once.
 
         Parameters
         -----------
@@ -130,19 +160,23 @@ class MongoQuery(BaseQuery):
             Documents to be added
         model: Type[BaseModel]
             Class of the model documents to be added
-        """
-        documents = documents or []
-        if not len(documents):
-            return
 
+        Returns
+        -------
+        pymongo.results.InsertManyResult
+        """
+        if len(documents) == 0:
+            return
         self.init_collection(model)
+
         documents = [self.model(**doc) for doc in documents]
         return self.collection.insert_many(documents)
 
     def paginate(self, filter_by=None, page=1, per_page=10, count=True, max_results=50000):
-        """Return pagination object with the results.
+        """Return pagination object with selected documents.
 
         https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
+
         Parameters
         -----------
         filter_by : dict, list
@@ -182,8 +216,8 @@ class MongoQuery(BaseQuery):
             items = items[:-1] if has_next else items
             return PaginationNoCount(self, page, per_page, items, has_next)
         else:
-            filter_by.pop()  # Removes $limit step
-            filter_by.pop()  # Removes $skip step
+            dismiss = ("$sort", "$limit", "$skip")
+            filter_by = [step for step in filter_by if all(skip not in step for skip in dismiss)]
             filter_by.append({"$limit": max_results})
             filter_by.append({"$count": "n"})
             summary = list(self.collection.aggregate(filter_by))
@@ -196,15 +230,19 @@ class MongoQuery(BaseQuery):
     def find_one(self, filter_by: dict = None, model: Type[BaseModel] = None, **kwargs):
         """Find one item of the specified model.
 
-        If there is more than one item an error occurs.
-        If there are no items, then it returns None
+        If there are no items, then it returns None.
 
         Parameters
         -----------
         model : Model
             Class of the model to be retrieved
         filter_by : dict
-            attributes used to find object in the database
+            Attributes used to find object document in the database
+
+        Returns
+        -------
+        dict, None
+            First document that matches
         """
         filter_by = filter_by or {}
         self.init_collection(model)
@@ -226,6 +264,12 @@ class MongoQuery(BaseQuery):
         kwargs : dict
             All other arguments are passed to `paginate` and/or
             `pymongo.collection.Collection.aggregate`
+
+        Returns
+        -------
+        pymongo.cursor.Cursor, Paginate
+            Cursor to iterate over query results or a pagination object,
+            depending on the `paginate` option
         """
         self.init_collection(model)
         filter_by = filter_by or {}
@@ -238,4 +282,4 @@ class MongoQuery(BaseQuery):
             return self.collection.aggregate(filter_by, **kwargs)
 
     def __repr__(self):
-        return f"MongoQuery(model={self.model})"
+        return f"MongoQuery(model={self.model.__class__.__name__})"
