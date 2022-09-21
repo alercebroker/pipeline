@@ -7,7 +7,21 @@ from db_plugins.db.mongo.models import BaseModel
 
 
 class MongoConfig(UserDict):
+    MAP_KEYS = {"host", "username", "password", "port", "database"}
+
+    def __init__(self, seq=None, **kwargs):
+        super().__init__(seq, **kwargs)
+        if self.MAP_KEYS.difference(self.keys()):
+            missing = ", ".join(value.upper() for value in self.MAP_KEYS.difference(self.keys()))
+            raise ValueError(f"Invalid configuration. Missing keys: {missing}")
+        self._db_name = self.pop("database")
+
+    @property
+    def db_name(self):
+        return self._db_name
+
     def __setitem__(self, key, value):
+        """Converts keys from (case-insensitive) `snake_case` to `lowerCamelCase`"""
         klist = [w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))]
         super().__setitem__("".join(klist), value)
 
@@ -20,7 +34,7 @@ class MongoDatabaseCreator(DatabaseCreator):
 
 class MongoConnection(DatabaseConnection):
     def __init__(self, config=None, client=None, base=None):
-        self.config = config
+        self.config = MongoConfig(config) if config is not None else config
         self.client = client
         self.base = base or BaseModel
         self.database = None
@@ -46,18 +60,16 @@ class MongoConnection(DatabaseConnection):
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
         """
-        self.config = config
-        kwargs = MongoConfig(config)
-        kwargs.pop("database")
-        self.client = self.client or MongoClient(**kwargs)
-        self.base.set_database(config["DATABASE"])
-        self.database = self.client[config["DATABASE"]]
+        self.config = MongoConfig(config)
+        self.client = self.client or MongoClient(**self.config)
+        self.base.set_database(self.config.db_name)
+        self.database = self.client[self.config.db_name]
 
     def create_db(self):
-        self.base.metadata.create_all(self.client, self.config["DATABASE"])
+        self.base.metadata.create_all(self.client, self.config.db_name)
 
     def drop_db(self):
-        self.base.metadata.drop_all(self.client, self.config["DATABASE"])
+        self.base.metadata.drop_all(self.client, self.config.db_name)
 
     def query(self, model=None, name=None):
         """Create a BaseQuery object that allows you to query the database using

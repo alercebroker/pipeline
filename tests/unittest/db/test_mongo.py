@@ -38,7 +38,6 @@ class MongoConnectionTest(unittest.TestCase):
 
     def test_connect(self):
         self.conn.connect(self.config)
-        self.assertEqual(self.conn.config, self.config)
         self.assertEqual(
             self.conn.base.metadata.database,
             self.config["DATABASE"],
