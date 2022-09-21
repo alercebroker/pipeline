@@ -75,13 +75,13 @@ class MongoConnection(DatabaseConnection):
         --------
         .. code-block:: python
 
-            # Using PyMongo API
+            # Using PyMongo API through collection attribute
             db_conn.query(
                 name='my_collection',
             ).collection.find({'hello': 'world'})
             # Using db-plugins
             # These two statements are equivalent
-            db_conn.query(model=Object).get_or_create(filter_by=**filters)
-            db_conn.query().get_or_create(model=Object, filter_by=**filters)
+            db_conn.query(model=Object).get_or_create(filter_by=filters)
+            db_conn.query().get_or_create(model=Object, filter_by=filters)
         """
         return MongoQuery(self.database, model=model, name=name)

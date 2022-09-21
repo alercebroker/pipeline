@@ -269,7 +269,7 @@ class MongoQuery(BaseQuery):
 
         Returns
         -------
-        pymongo.cursor.Cursor, Paginate
+        pymongo.cursor.Cursor or Paginate
             Cursor to iterate over query results or a pagination object,
             depending on the `paginate` option
         """
