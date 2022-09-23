@@ -47,7 +47,7 @@ This step requires:
 - Accumulated time: The total time that one message is partially in one branch of the pipeline. For example the message it's coming out of `Step B`, the accumulated time until `Step B` is `t3 - t0` or `Execution_StepA + Queue_StepA_StepB + Execution_StepB`.
 
 ## The input
-The input of this step is a **metric** that all step in ALeRCE pipeline produce in JSON format. The example of basic metrics defined in APF for an alert or batch:
+The input of this step is a **metric** that all steps in ALeRCE pipeline produce in JSON format. The example of basic metrics defined in APF for an alert or batch:
 ```json
 {
   "timestamp_received": "2022-09-23T13:43:18.398120+00:00",
@@ -136,7 +136,7 @@ class ConsolidatedMetric(JsonModel):
 
 With these models we can Insert, Update and Delete records in Redis. The records are indexed by `candid` field, so the operations are very fast to database.
 
-The sequence of this step is defined in teh following diagram flow:
+The sequence of this step is defined in the following diagram flow:
 
 ![diagram](doc/flow_diagram.png)
 
