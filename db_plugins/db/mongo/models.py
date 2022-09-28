@@ -91,7 +91,7 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
     step_id_corr = Field()
 
-    __table_args__ = [IndexModel([("aid", ASCENDING), ("tid", ASCENDING)])]
+    __table_args__ = [IndexModel([("aid", ASCENDING)]), IndexModel([("tid", ASCENDING)])]
     __tablename__ = "detection"
 
 
@@ -105,7 +105,7 @@ class NonDetection(BaseModelWithExtraFields):
     diffmaglim = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("tid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING)]), IndexModel([("tid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
 
