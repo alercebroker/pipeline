@@ -62,6 +62,7 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+        "max.request.size": os.getenv("MAX_REQUEST_SIZE", 20971520),
     },
     "SCHEMA": SCHEMA,
 }
