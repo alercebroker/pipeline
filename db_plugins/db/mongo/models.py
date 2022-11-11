@@ -14,7 +14,9 @@ class BaseModel(dict, metaclass=BaseMetaClass):
                 else:
                     model[field] = kwargs[field]
             except KeyError:
-                raise AttributeError(f"{self.__class__.__name__} model needs {field} attribute")
+                raise AttributeError(
+                    f"{self.__class__.__name__} model needs {field} attribute"
+                )
         super().__init__(**model)
 
     @classmethod
@@ -37,7 +39,9 @@ class Object(BaseModel):
     Contains definitions of indexes and custom attributes like loc.
     """
 
-    _id = SpecialField(lambda **kwargs: kwargs.get("aid") or kwargs["_id"])  # ALeRCE object ID (unique ID in database)
+    _id = SpecialField(
+        lambda **kwargs: kwargs.get("aid") or kwargs["_id"]
+    )  # ALeRCE object ID (unique ID in database)
     oid = Field()  # Should include OID of all surveys (same survey can have many OIDs)
     tid = Field()  # Should include all telescopes contributing with detections
     lastmjd = Field()
@@ -45,7 +49,12 @@ class Object(BaseModel):
     ndet = Field()
     meanra = Field()
     meandec = Field()
-    loc = SpecialField(lambda **kwargs: {"type": "Point", "coordinates": [kwargs["meanra"] - 180, kwargs["meandec"]]})
+    loc = SpecialField(
+        lambda **kwargs: {
+            "type": "Point",
+            "coordinates": [kwargs["meanra"] - 180, kwargs["meandec"]],
+        }
+    )
     magstats = SpecialField(lambda **kwargs: kwargs.get("magstats", []))
     features = SpecialField(lambda **kwargs: kwargs.get("features", []))
     probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
@@ -57,11 +66,13 @@ class Object(BaseModel):
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
         IndexModel(
-            [("probabilities.classifier_name", ASCENDING),
-             ("probabilities.classifier_version", DESCENDING),
-             ("probabilities.probability", DESCENDING)],
-            partialFilterExpresion={"probabilities.ranking": 1}
-        )
+            [
+                ("probabilities.classifier_name", ASCENDING),
+                ("probabilities.classifier_version", DESCENDING),
+                ("probabilities.probability", DESCENDING),
+            ],
+            partialFilterExpresion={"probabilities.ranking": 1},
+        ),
     ]
     __tablename__ = "object"
 
@@ -91,7 +102,10 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
     step_id_corr = Field()
 
-    __table_args__ = [IndexModel([("aid", ASCENDING)]), IndexModel([("tid", ASCENDING)])]
+    __table_args__ = [
+        IndexModel([("aid", ASCENDING)]),
+        IndexModel([("tid", ASCENDING)]),
+    ]
     __tablename__ = "detection"
 
 
@@ -105,7 +119,8 @@ class NonDetection(BaseModelWithExtraFields):
     diffmaglim = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING)]), IndexModel([("tid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING)]),
+        IndexModel([("tid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
 
@@ -116,7 +131,8 @@ class Taxonomy(BaseModel):
     classes = Field()
 
     __table_args__ = [
-        IndexModel([("classifier_name", ASCENDING),
-                    ("classifier_version", DESCENDING)]),
+        IndexModel(
+            [("classifier_name", ASCENDING), ("classifier_version", DESCENDING)]
+        ),
     ]
     __tablename__ = "taxonomy"

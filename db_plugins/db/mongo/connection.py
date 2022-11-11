@@ -12,7 +12,9 @@ class MongoConfig(UserDict):
     def __init__(self, seq=None, **kwargs):
         super().__init__(seq, **kwargs)
         if self.MAP_KEYS.difference(self.keys()):
-            missing = ", ".join(value.upper() for value in self.MAP_KEYS.difference(self.keys()))
+            missing = ", ".join(
+                value.upper() for value in self.MAP_KEYS.difference(self.keys())
+            )
             raise ValueError(f"Invalid configuration. Missing keys: {missing}")
         self._db_name = self.pop("database")
 
@@ -22,7 +24,9 @@ class MongoConfig(UserDict):
 
     def __setitem__(self, key, value):
         """Converts keys from (case-insensitive) `snake_case` to `lowerCamelCase`"""
-        klist = [w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))]
+        klist = [
+            w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))
+        ]
         super().__setitem__("".join(klist), value)
 
 

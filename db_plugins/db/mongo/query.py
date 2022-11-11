@@ -42,7 +42,9 @@ class MongoQuery(BaseQuery):
             self.model = model
             self.collection = self._db[model._meta.tablename]
         elif self.collection is None:
-            raise CollectionNotFound("A valid model must be provided at instantiation or in method call")
+            raise CollectionNotFound(
+                "A valid model must be provided at instantiation or in method call"
+            )
 
     def check_exists(self, filter_by: dict = None, model: Type[BaseModel] = None):
         """
@@ -147,8 +149,10 @@ class MongoQuery(BaseQuery):
             raise ValueError("Length of filter_fields must be 0 or equal to instances")
         self.init_collection(model)
 
-        requests = [UpdateOne(filters or instance, {"$set": attr})
-                    for instance, attr, filters in zip_longest(instances, attrs, filter_fields)]
+        requests = [
+            UpdateOne(filters or instance, {"$set": attr})
+            for instance, attr, filters in zip_longest(instances, attrs, filter_fields)
+        ]
         return self.collection.bulk_write(requests=requests, ordered=False)
 
     def bulk_insert(self, documents: list, model: Type[BaseModel] = None):
@@ -172,7 +176,9 @@ class MongoQuery(BaseQuery):
         documents = [self.model(**doc) for doc in documents]
         return self.collection.insert_many(documents)
 
-    def paginate(self, filter_by=None, page=1, per_page=10, count=True, max_results=50000):
+    def paginate(
+        self, filter_by=None, page=1, per_page=10, count=True, max_results=50000
+    ):
         """Return pagination object with selected documents.
 
         https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
@@ -250,7 +256,13 @@ class MongoQuery(BaseQuery):
         self.init_collection(model)
         return self.collection.find_one(filter_by, **kwargs)
 
-    def find_all(self, filter_by: dict = None, model: Type[BaseModel] = None, paginate=True, **kwargs):
+    def find_all(
+        self,
+        filter_by: dict = None,
+        model: Type[BaseModel] = None,
+        paginate=True,
+        **kwargs,
+    ):
         """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.
