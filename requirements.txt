@@ -1,5 +1,4 @@
 alembic~=1.4.2
-astropy~=4.0
 click>=7.1.2
 marshmallow_sqlalchemy~=0.23
 numpydoc>=0.9.1
