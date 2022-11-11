@@ -28,7 +28,7 @@ class DatabaseConnection(abc.ABC):
     """
 
     @abc.abstractmethod
-    def connect(self):
+    def connect(self, config):
         """Initiate the database connection."""
         raise NotImplementedError()
 
