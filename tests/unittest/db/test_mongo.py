@@ -28,9 +28,8 @@ class MongoConnectionTest(unittest.TestCase):
         conf = self.config
         conf["SOME_OTHER_ATTRIBUTE"] = "test"
         new_conf = MongoConfig(conf)
-        self.assertDictContainsSubset(
-            {"someOtherAttribute": "test", "host": "host"}, new_conf
-        )
+        # Replacement for deprecated assertDictContainsSubset
+        self.assertEqual(new_conf, {**new_conf, **{"someOtherAttribute": "test", "host": "host"}})
 
     def test_factory_method(self):
         conn = new_DBConnection(MongoDatabaseCreator)
