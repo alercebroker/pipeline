@@ -6,14 +6,24 @@ from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
 from db_plugins.db.mongo.models import BaseModel
 
 
-class MongoConfig(UserDict):
-    MAP_KEYS = {"host", "username", "password", "port", "database"}
+class _MongoConfig(UserDict):
+    """Special dictionary used to parse configuration dictionaries for mongodb.
+
+    The required keys are described in `REQUIRED_KEYS`, but can come with any
+    capitalization. It is possible to add extra keys for other parameters used
+    by `pymongo.MongoClient`.
+
+    All keys are converted from `snake_case` to `lowerCamelCase` format, as
+    used by `pymongo`. The special key `database` is removed from the dictionary
+    proper, but can be accessed through the property `db_name`.
+    """
+    REQUIRED_KEYS = {"host", "username", "password", "port", "database"}
 
     def __init__(self, seq=None, **kwargs):
         super().__init__(seq, **kwargs)
-        if self.MAP_KEYS.difference(self.keys()):
+        if self.REQUIRED_KEYS.difference(self.keys()):
             missing = ", ".join(
-                value.upper() for value in self.MAP_KEYS.difference(self.keys())
+                value.upper() for value in self.REQUIRED_KEYS.difference(self.keys())
             )
             raise ValueError(f"Invalid configuration. Missing keys: {missing}")
         self._db_name = self.pop("database")
@@ -38,7 +48,7 @@ class MongoDatabaseCreator(DatabaseCreator):
 
 class MongoConnection(DatabaseConnection):
     def __init__(self, config=None, client=None, base=None):
-        self.config = MongoConfig(config) if config is not None else config
+        self.config = _MongoConfig(config) if config is not None else config
         self.client = client
         self.base = base or BaseModel
         self.database = None
@@ -64,7 +74,7 @@ class MongoConnection(DatabaseConnection):
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
         """
-        self.config = MongoConfig(config)
+        self.config = _MongoConfig(config)
         self.client = self.client or MongoClient(**self.config)
         self.base.set_database(self.config.db_name)
         self.database = self.client[self.config.db_name]

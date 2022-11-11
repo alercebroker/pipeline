@@ -3,7 +3,7 @@ from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
-    MongoConfig
+    _MongoConfig
 )
 from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.mongo.models import Object
@@ -27,7 +27,7 @@ class MongoConnectionTest(unittest.TestCase):
     def test_to_camel_case(self):
         conf = self.config
         conf["SOME_OTHER_ATTRIBUTE"] = "test"
-        new_conf = MongoConfig(conf)
+        new_conf = _MongoConfig(conf)
         # Replacement for deprecated assertDictContainsSubset
         self.assertEqual(new_conf, {**new_conf, **{"someOtherAttribute": "test", "host": "host"}})
 
