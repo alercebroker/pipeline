@@ -33,7 +33,7 @@ class ModelMetadata:
         return str(dict_repr)
 
 
-class BaseMetaClass(type):
+class ModelMetaClass(type):
     """Metaclass for Base model class that creates mappings."""
 
     metadata = Metadata()
@@ -55,6 +55,10 @@ class BaseMetaClass(type):
         mcs.metadata.collections[tablename] = {"indexes": indexes, "fields": fields}
         cls._meta = ModelMetadata(tablename, fields, indexes)
         return cls
+
+    @classmethod
+    def set_database(mcs, database):
+        mcs.metadata.database = database
 
 
 class Field:

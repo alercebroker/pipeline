@@ -1,5 +1,6 @@
 import abc
 from math import ceil
+from typing import Type
 
 
 class DatabaseCreator(abc.ABC):
@@ -10,8 +11,9 @@ class DatabaseCreator(abc.ABC):
     implementation of this method.
     """
 
+    @classmethod
     @abc.abstractmethod
-    def create_database(self):
+    def create_database(cls):
         """Abstract factory method.
 
         Note that the Creator may also provide some default implementation of
@@ -48,7 +50,7 @@ class DatabaseConnection(abc.ABC):
         raise NotImplementedError()
 
 
-def new_DBConnection(creator: DatabaseCreator) -> DatabaseConnection:
+def new_DBConnection(creator: Type[DatabaseCreator]) -> DatabaseConnection:
     """Create a new database connection.
 
     The client code works with an instance of a concrete creator,

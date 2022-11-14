@@ -1,4 +1,3 @@
-
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
@@ -7,14 +6,13 @@ from db_plugins.db.mongo.connection import (
 )
 from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.mongo.models import Object
+from unittest import mock
 import unittest
 import mongomock
 
 
 class MongoConnectionTest(unittest.TestCase):
     def setUp(self):
-        self.query_class = mongomock.collection.Collection
-        self.client = mongomock.MongoClient()
         self.config = {
             "HOST": "host",
             "USERNAME": "username",
@@ -22,7 +20,7 @@ class MongoConnectionTest(unittest.TestCase):
             "PORT": 27017,
             "DATABASE": "database",
         }
-        self.conn = MongoConnection(client=self.client, config=self.config)
+        self.conn = MongoConnection(config=self.config)
 
     def test_to_camel_case(self):
         conf = self.config
@@ -38,44 +36,61 @@ class MongoConnectionTest(unittest.TestCase):
     def test_connect(self):
         self.conn.connect(self.config)
         self.assertEqual(
-            self.conn.base.metadata.database,
+            Object.metadata.database,
             self.config["DATABASE"],
         )
         self.assertEqual(self.conn.database.name, self.config["DATABASE"])
 
-    def test_create_db(self):
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_create_db(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
         self.conn.create_db()
-        collections = self.client[self.config["DATABASE"]].list_collection_names()
+        collections = self.conn.client[self.config["DATABASE"]].list_collection_names()
         expected = ["object", "detection", "non_detection", "taxonomy"]
         self.assertEqual(collections, expected)
 
-    def test_drop_db(self):
-        db = self.client[self.config["DATABASE"]]
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_drop_db(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
+        db = self.conn.client[self.config["DATABASE"]]
         db.test.insert_one({"test": "test"})
-        databases = self.client.list_database_names()
+        databases = self.conn.client.list_database_names()
         expected = ["database"]
         self.assertEqual(databases, expected)
         self.conn.drop_db()
-        databases = self.client.list_database_names()
+        databases = self.conn.client.list_database_names()
         expected = []
         self.assertEqual(databases, expected)
 
-    def test_query_orm_api_without_model(self):
-        self.conn.database = self.client.database
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_orm_api_without_model(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
         query = self.conn.query()
         self.assertIsNone(query.collection)
         self.assertIsNone(query.model)
 
-    def test_query_pymongo_api(self):
-        self.conn.database = self.client.database
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_pymongo_api(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
         query = self.conn.query(name="collection")
-        self.assertIsInstance(query.collection, mongomock.collection.Collection)
+        self.assertIsInstance(query.collection, mongomock.Collection)
         self.assertIsNone(query.model)
 
-    def test_query_orm_api_with_model(self):
-        self.conn.database = self.client.database
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_orm_api_with_model(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
         query = self.conn.query(model=Object)
-        self.assertIsInstance(query.collection, mongomock.collection.Collection)
+        self.assertIsInstance(query.collection, mongomock.Collection)
         self.assertEqual(query.model, Object)
 
 

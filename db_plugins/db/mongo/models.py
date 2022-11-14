@@ -1,8 +1,8 @@
 from pymongo import ASCENDING, DESCENDING, GEOSPHERE, IndexModel
-from db_plugins.db.mongo.orm import Field, SpecialField, BaseMetaClass
+from db_plugins.db.mongo.orm import Field, SpecialField, ModelMetaClass
 
 
-class BaseModel(dict, metaclass=BaseMetaClass):
+class BaseModel(dict, metaclass=ModelMetaClass):
     def __init__(self, **kwargs):
         model = {}
         if "_id" in kwargs and "_id" not in self._meta.fields:
@@ -18,10 +18,6 @@ class BaseModel(dict, metaclass=BaseMetaClass):
                     f"{self.__class__.__name__} model needs {field} attribute"
                 )
         super().__init__(**model)
-
-    @classmethod
-    def set_database(cls, database):
-        cls.metadata.database = database
 
 
 class BaseModelWithExtraFields(BaseModel):

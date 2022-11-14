@@ -16,11 +16,6 @@ def settings_map(config):
     return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
 
-class SQLDatabaseCreator(DatabaseCreator):
-    def create_database(self) -> DatabaseConnection:
-        return SQLConnection()
-
-
 class SQLConnection(DatabaseConnection):
     def __init__(self, config=None, engine=None, Base=None, Session=None, session=None):
         self.config = config
@@ -113,3 +108,9 @@ class SQLConnection(DatabaseConnection):
             db_conn.query().get_or_create(model=Object, filter_by=**filters)
         """
         return self.session.query(*args)
+
+
+class SQLDatabaseCreator(DatabaseCreator):
+    @classmethod
+    def create_database(cls) -> SQLConnection:
+        return SQLConnection()

@@ -3,7 +3,7 @@ from collections import UserDict
 from pymongo import MongoClient
 from db_plugins.db.mongo.query import MongoQuery
 from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
-from db_plugins.db.mongo.models import BaseModel
+from db_plugins.db.mongo.orm import ModelMetaClass
 
 
 class _MongoConfig(UserDict):
@@ -40,20 +40,21 @@ class _MongoConfig(UserDict):
         super().__setitem__("".join(klist), value)
 
 
-class MongoDatabaseCreator(DatabaseCreator):
-    @classmethod
-    def create_database(cls) -> DatabaseConnection:
-        return MongoConnection()
-
-
 class MongoConnection(DatabaseConnection):
-    def __init__(self, config=None, client=None, base=None):
-        self.config = _MongoConfig(config) if config is not None else config
-        self.client = client
-        self.base = base or BaseModel
+    def __init__(self, config=None):
+        self.config = config
+        self.client = None
         self.database = None
 
-    def connect(self, config):
+    @property
+    def config(self):
+        return self.__config
+
+    @config.setter
+    def config(self, config):
+        self.__config = config if config is None else _MongoConfig(config)
+
+    def connect(self, config=None):
         """
         Establishes connection to a database and initializes a session.
 
@@ -68,22 +69,23 @@ class MongoConnection(DatabaseConnection):
                     "HOST": "host",
                     "USERNAME": "username",
                     "PASSWORD": "pwd",
-                    "PORT": 27017, # mongo tipically runs on port 27017.
+                    "PORT": 27017, # mongo typically runs on port 27017.
                                    # Notice that we use an int here.
                     "DATABASE": "database",
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
         """
-        self.config = _MongoConfig(config)
+        if config is not None:
+            self.config = config
         self.client = self.client or MongoClient(**self.config)
-        self.base.set_database(self.config.db_name)
         self.database = self.client[self.config.db_name]
+        ModelMetaClass.set_database(self.config.db_name)
 
     def create_db(self):
-        self.base.metadata.create_all(self.client, self.config.db_name)
+        ModelMetaClass.metadata.create_all(self.client, self.config.db_name)
 
     def drop_db(self):
-        self.base.metadata.drop_all(self.client, self.config.db_name)
+        ModelMetaClass.metadata.drop_all(self.client, self.config.db_name)
 
     def query(self, model=None, name=None):
         """Create a BaseQuery object that allows you to query the database using
@@ -111,3 +113,9 @@ class MongoConnection(DatabaseConnection):
             db_conn.query().get_or_create(model=Object, filter_by=filters)
         """
         return MongoQuery(self.database, model=model, name=name)
+
+
+class MongoDatabaseCreator(DatabaseCreator):
+    @classmethod
+    def create_database(cls) -> MongoConnection:
+        return MongoConnection()
