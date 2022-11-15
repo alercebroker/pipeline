@@ -111,12 +111,7 @@ def _create_or_update_probabilities_bulk(
         )
 
 
-def get_db_operations(
-    classifier: str,
-    version: str,
-    aid: str,
-    probabilities: dict
-):
+def get_db_operations(classifier: str, version: str, aid: str, probabilities: dict):
     """
     Check if this is really efficient
     """
@@ -129,22 +124,24 @@ def get_db_operations(
 
     for n_item, (class_name, prob) in enumerate(sorted_classes_and_prob_list):
         db_operations.append(
-            UpdateOne({
-                "aid": aid,
-                "probabilities": {
-                    "$elemMatch": {
-                        "classifier_name": classifier,
-                        "classifier_version": version,
-                        "class_name": class_name,
-                    }
+            UpdateOne(
+                {
+                    "aid": aid,
+                    "probabilities": {
+                        "$elemMatch": {
+                            "classifier_name": classifier,
+                            "classifier_version": version,
+                            "class_name": class_name,
+                        }
+                    },
                 },
-            },
                 {
                     "$set": {
                         "probabilities.$.probability": prob,
                         "probabilities.$.ranking": n_item + 1,
                     }
-            })
+                },
+            )
         )
 
     return db_operations
@@ -155,7 +152,7 @@ def create_or_update_probabilities_bulk(
     classifier: str,
     version: str,
     aids: list,
-    probabilities: list
+    probabilities: list,
 ):
     """
     Bulk update using the actual bulk object of pymongo
@@ -163,8 +160,6 @@ def create_or_update_probabilities_bulk(
     db_operations = []
 
     for aid, probs in zip(aids, probabilities):
-        db_operations.extend(
-            get_db_operations(classifier, version, aid, probs)
-        )
+        db_operations.extend(get_db_operations(classifier, version, aid, probs))
 
     connection.database["object"].bulk_write(db_operations)
