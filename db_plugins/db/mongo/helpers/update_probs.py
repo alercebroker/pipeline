@@ -200,7 +200,8 @@ def create_or_update_probabilities(
     probabilities: dict,
 ):
     connection.database["object"].bulk_write(
-        get_db_operations(connection, classifier, version, aid, probabilities), ordered=False
+        get_db_operations(connection, classifier, version, aid, probabilities),
+        ordered=False,
     )
 
 
@@ -217,6 +218,8 @@ def create_or_update_probabilities_bulk(
     db_operations = []
 
     for aid, probs in zip(aids, probabilities):
-        db_operations.extend(get_db_operations(connection, classifier, version, aid, probs))
+        db_operations.extend(
+            get_db_operations(connection, classifier, version, aid, probs)
+        )
 
     connection.database["object"].bulk_write(db_operations, ordered=False)
