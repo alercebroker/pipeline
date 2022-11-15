@@ -162,4 +162,4 @@ def create_or_update_probabilities_bulk(
     for aid, probs in zip(aids, probabilities):
         db_operations.extend(get_db_operations(classifier, version, aid, probs))
 
-    connection.database["object"].bulk_write(db_operations)
+    connection.database["object"].bulk_write(db_operations, ordered=False)
