@@ -4,6 +4,8 @@ from pymongo import UpdateOne
 """
 Helper function to create or update the probabilities for an object
 """
+
+
 def get_db_operations(
     connection: MongoConnection,
     classifier: str,
