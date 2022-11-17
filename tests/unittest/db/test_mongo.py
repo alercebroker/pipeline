@@ -48,7 +48,7 @@ class MongoConnectionTest(unittest.TestCase):
 
         self.conn.create_db()
         collections = self.conn.client[self.config["DATABASE"]].list_collection_names()
-        expected = ["object", "detection", "non_detection", "taxonomy"]
+        expected = ["object", "detection", "non_detection", "taxonomy", "step", "feature_version", "pipeline"]
         self.assertEqual(collections, expected)
 
     @mock.patch('db_plugins.db.mongo.connection.MongoClient')

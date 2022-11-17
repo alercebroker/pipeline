@@ -34,12 +34,11 @@ class Object(BaseModel):
 
     Contains definitions of indexes and custom attributes like loc.
     """
-
     _id = SpecialField(
         lambda **kwargs: kwargs.get("aid") or kwargs["_id"]
     )  # ALeRCE object ID (unique ID in database)
-    oid = Field()  # Should include OID of all surveys (same survey can have many OIDs)
-    tid = Field()  # Should include all telescopes contributing with detections
+    oid = Field()  # List with each OID (all surveys; might have more than one per survey)
+    tid = Field()  # List with all telescopes the object has been observed with
     lastmjd = Field()
     firstmjd = Field()
     ndet = Field()
@@ -77,7 +76,7 @@ class Detection(BaseModelWithExtraFields):
     @classmethod
     def create_extra_fields(cls, **kwargs):
         kwargs = super().create_extra_fields(**kwargs)
-        kwargs.pop("candid", None)  # Prevents repeated candid entry in extra_fields
+        kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
         return kwargs
 
     _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
@@ -106,7 +105,6 @@ class Detection(BaseModelWithExtraFields):
 
 
 class NonDetection(BaseModelWithExtraFields):
-
     aid = Field()
     tid = Field()
     oid = Field()
@@ -132,3 +130,42 @@ class Taxonomy(BaseModel):
         ),
     ]
     __tablename__ = "taxonomy"
+
+
+class Step(BaseModel):
+    step_id = Field()
+    name = Field()
+    version = Field()
+    comments = Field()
+    date = Field()
+
+    __table_args__ = [
+        IndexModel([("step_id", ASCENDING)]),
+    ]
+    __tablename__ = "step"
+
+
+class FeatureVersion(BaseModel):
+    version = Field()
+    step_id_feature = Field()
+    step_id_preprocess = Field()
+
+    __table_args__ = [
+        IndexModel([("version", ASCENDING)]),
+    ]
+    __tablename__ = "feature_version"
+
+
+class Pipeline(BaseModel):
+    pipeline_id = Field()
+    step_id_corr = Field()
+    step_id_feat = Field()
+    step_id_clf = Field()
+    step_id_out = Field()
+    step_id_stamp = Field()
+    date = Field()
+
+    __table_args__ = [
+        IndexModel([("pipeline_id", ASCENDING)]),
+    ]
+    __tablename__ = "pipeline"
