@@ -17,6 +17,7 @@ class _MongoConfig(UserDict):
     used by `pymongo`. The special key `database` is removed from the dictionary
     proper, but can be accessed through the property `db_name`.
     """
+
     REQUIRED_KEYS = {"host", "username", "password", "port", "database"}
 
     def __init__(self, seq=None, **kwargs):

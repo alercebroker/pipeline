@@ -34,10 +34,13 @@ class Object(BaseModel):
 
     Contains definitions of indexes and custom attributes like loc.
     """
+
     _id = SpecialField(
         lambda **kwargs: kwargs.get("aid") or kwargs["_id"]
     )  # ALeRCE object ID (unique ID in database)
-    oid = Field()  # List with each OID (all surveys; might have more than one per survey)
+    oid = (
+        Field()
+    )  # List with each OID (all surveys; might have more than one per survey)
     tid = Field()  # List with all telescopes the object has been observed with
     lastmjd = Field()
     firstmjd = Field()
