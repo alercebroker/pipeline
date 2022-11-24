@@ -9,9 +9,9 @@ class BaseModel(dict, metaclass=ModelMetaClass):
             model["_id"] = kwargs["_id"]
         for field, fclass in self._meta.fields.items():
             try:
-                if isinstance(fclass, SpecialField):
+                try:
                     model[field] = fclass.callback(**kwargs)
-                else:
+                except AttributeError:
                     model[field] = kwargs[field]
             except KeyError:
                 raise AttributeError(

@@ -4,8 +4,8 @@ from db_plugins.db.mongo.connection import (
     MongoDatabaseCreator,
     _MongoConfig
 )
-from db_plugins.db.mongo.query import MongoQuery
-from db_plugins.db.mongo.models import Object
+from db_plugins.db.mongo.query import MongoQuery, CollectionNotFound
+from db_plugins.db.mongo.models import Object, NonDetection
 from unittest import mock
 import unittest
 import mongomock
@@ -106,6 +106,15 @@ class MongoQueryTest(unittest.TestCase):
             # _db_store=self.database._store,
         )
 
+    def test_query_initialization_with_collection_name_and_model_fails(self):
+        with self.assertRaisesRegex(ValueError, 'Only one of .+ can be defined'):
+            MongoQuery(model=Object, name='objects', database=self.database)
+
+    def test_query_initialization_without_collection_name_and_model_fails(self):
+        with self.assertRaisesRegex(CollectionNotFound, 'A valid model must be provided'):
+            q = MongoQuery(database=self.database)
+            q.init_collection()
+
     def test_check_exists(self):
         self.assertTrue(self.query.check_exists({"test": "test"}))
 
@@ -163,8 +172,8 @@ class MongoQueryTest(unittest.TestCase):
         self.assertEqual(self.query.model, Object)
 
     def test_bulk_update(self):
-        model = Object(
-            aid="aid",
+        model1 = Object(
+            aid="aid1",
             oid=["oid"],
             tid=["tid"],
             lastmjd="lastmjd",
@@ -173,16 +182,106 @@ class MongoQueryTest(unittest.TestCase):
             meandec=50.0,
             ndet="ndet",
         )
-        self.obj_collection.insert_one(model)
-        self.query.bulk_update([model], [{"oid": ["edited"]}])
-        f = self.obj_collection.find_one({"oid": ["edited"]})
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+        f = self.obj_collection.find_one({"oid": ["edited1"]})
         self.assertIsNotNone(f)
-        # now with filters
+        self.assertEqual(f["_id"], "aid1")
+        f = self.obj_collection.find_one({"oid": ["edited2"]})
+        self.assertIsNotNone(f)
+        self.assertEqual(f["_id"], "aid2")
+
+    def test_bulk_update_using_filter(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+
         self.query.bulk_update(
-            [model], [{"oid": ["edited2"]}], filter_fields=[{"_id": "aid"}]
+            [model2], [{"oid": ["edited2"]}], filter_fields=[{"_id": "aid2"}]
         )
         f = self.obj_collection.find_one({"oid": ["edited2"]})
         self.assertIsNotNone(f)
+        self.assertEqual(f["_id"], "aid2")
+
+    def test_bulk_update_fails_if_not_all_instances_have_same_model(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = NonDetection(
+            aid="aid",
+            tid="tid",
+            oid="oid",
+            mjd=100,
+            fid=1,
+            diffmaglim=2,
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        with self.assertRaisesRegex(TypeError, "All instances"):
+            self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+
+    def test_bulk_update_fails_if_instances_and_attributes_do_not_match_size(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        with self.assertRaisesRegex(ValueError, "Length of instances and attributes must match"):
+            self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}])
 
     def test_bulk_insert(self):
         self.assertEqual(self.obj_collection.count_documents({}), 1)
