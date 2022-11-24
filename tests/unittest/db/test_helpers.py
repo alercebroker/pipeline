@@ -36,6 +36,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_1 = Object(
             aid="aid1",
             oid="oid1",
+            tid="tid1",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -75,6 +76,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_2 = Object(
             aid="aid2",
             oid="oid2",
+            tid="tid2",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
