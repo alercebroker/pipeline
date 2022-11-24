@@ -16,75 +16,41 @@ def get_db_operations(
     """
     Check if this is really efficient
     """
-
-    db_operations = []
-
-    sorted_classes_and_prob_list = sorted(
-        probabilities.items(), key=lambda val: val[1], reverse=True
-    )
-
-    def filter_function(class_name):
-        return (
-            lambda ele: ele["classifier_name"] == classifier
-            and ele["classifier_version"] == version
-            and ele["class_name"] == class_name
-        )
-
     # sort by probabilities (for rank)
     sorted_classes_and_prob_list = sorted(
         probabilities.items(), key=lambda val: val[1], reverse=True
     )
 
-    unmodified_object = connection.database["object"].find_one({"aid": aid})
-    for n_item, (class_name, prob) in enumerate(sorted_classes_and_prob_list):
-        found = list(
-            filter(
-                filter_function(sorted_classes_and_prob_list[n_item][0]),
-                unmodified_object["probabilities"],
-            )
-        )
-        if len(found):
-            db_operations.append(
-                UpdateOne(
-                    {
-                        "aid": aid,
-                        "probabilities": {
-                            "$elemMatch": {
-                                "classifier_name": classifier,
-                                "classifier_version": version,
-                                "class_name": class_name,
-                            }
-                        },
-                    },
-                    {
-                        "$set": {
-                            "probabilities.$.probability": prob,
-                            "probabilities.$.ranking": n_item + 1,
-                        }
-                    },
-                )
-            )
-        else:
-            db_operations.append(
-                UpdateOne(
-                    {
-                        "aid": aid,
-                    },
-                    {
-                        "$push": {
-                            "probabilities": {
-                                "classifier_name": classifier,
-                                "classifier_version": version,
-                                "class_name": class_name,
-                                "probability": prob,
-                                "ranking": n_item + 1,
-                            }
-                        }
-                    },
-                )
-            )
+    object_probabilities = connection.database["object"].find_one({"aid": aid})[
+        "probabilities"
+    ]
 
-    return db_operations
+    # Remove all existing probabilities for given classifier and version (if any)
+    object_probabilities = [
+        item
+        for item in object_probabilities
+        if item["classifier_name"] != classifier
+        or item["classifier_version"] != version
+    ]
+    # Add all new probabilities
+    object_probabilities.extend(
+        [
+            {
+                "classifier_version": version,
+                "classifier_name": classifier,
+                "class_name": object_class,
+                "probability": prob,
+                "ranking": idx + 1,
+            }
+            for idx, (object_class, prob) in enumerate(sorted_classes_and_prob_list)
+        ]
+    )
+
+    operation = UpdateOne(
+        {"aid": aid}, {"$set": {"probabilities": object_probabilities}}
+    )
+
+    return operation
 
 
 def create_or_update_probabilities(
@@ -95,7 +61,7 @@ def create_or_update_probabilities(
     probabilities: dict,
 ):
     connection.database["object"].bulk_write(
-        get_db_operations(connection, classifier, version, aid, probabilities),
+        [get_db_operations(connection, classifier, version, aid, probabilities)],
         ordered=False,
     )
 
@@ -113,7 +79,7 @@ def create_or_update_probabilities_bulk(
     db_operations = []
 
     for aid, probs in zip(aids, probabilities):
-        db_operations.extend(
+        db_operations.append(
             get_db_operations(connection, classifier, version, aid, probs)
         )
 

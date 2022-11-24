@@ -165,20 +165,6 @@ class MongoProbabilitiesTest(unittest.TestCase):
         # Mind that the update dont change the order
         expected_probabilities = [
             {
-                "classifier_name": "stamp_classifier",
-                "classifier_version": "stamp_classifier_1.0.0",
-                "class_name": "CLASS1",
-                "probability": 0.3,
-                "ranking": 2,
-            },
-            {
-                "classifier_name": "stamp_classifier",
-                "classifier_version": "stamp_classifier_1.0.0",
-                "class_name": "CLASS2",
-                "probability": 0.7,
-                "ranking": 1,
-            },
-            {
                 "classifier_name": "lc_classifier",
                 "classifier_version": "lc_classifier_1.0.0",
                 "class_name": "CLASS1",
@@ -191,6 +177,20 @@ class MongoProbabilitiesTest(unittest.TestCase):
                 "class_name": "CLASS2",
                 "probability": 0.6,
                 "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.7,
+                "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.3,
+                "ranking": 2,
             },
         ]
 
@@ -221,20 +221,6 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         expected_probabilities_1 = [
             {
-                "classifier_name": "stamp_classifier",
-                "classifier_version": "stamp_classifier_1.0.0",
-                "class_name": "CLASS1",
-                "probability": 0.3,
-                "ranking": 2,
-            },
-            {
-                "classifier_name": "stamp_classifier",
-                "classifier_version": "stamp_classifier_1.0.0",
-                "class_name": "CLASS2",
-                "probability": 0.7,
-                "ranking": 1,
-            },
-            {
                 "classifier_name": "lc_classifier",
                 "classifier_version": "lc_classifier_1.0.0",
                 "class_name": "CLASS1",
@@ -247,6 +233,20 @@ class MongoProbabilitiesTest(unittest.TestCase):
                 "class_name": "CLASS2",
                 "probability": 0.6,
                 "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS2",
+                "probability": 0.7,
+                "ranking": 1,
+            },
+            {
+                "classifier_name": "stamp_classifier",
+                "classifier_version": "stamp_classifier_1.0.0",
+                "class_name": "CLASS1",
+                "probability": 0.3,
+                "ranking": 2,
             },
         ]
         expected_probabilities_2 = [
