@@ -1,4 +1,5 @@
 from db_plugins.db.mongo.models import Object
+from unittest import mock
 from db_plugins.db.mongo.helpers.update_probs import (
     create_or_update_probabilities,
     create_or_update_probabilities_bulk,
@@ -13,12 +14,10 @@ and explain how to query and update the objects with
 probabilities (main focus of the tests)
 """
 
-
 class MongoProbabilitiesTest(unittest.TestCase):
-    def setUp(self):
-        client = mongomock.MongoClient()
-        self.database = client["database"]
-        self.obj_collection = self.database["object"]
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def setUp(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
         self.config = {
             "HOST": "host",
             "USERNAME": "username",
@@ -26,9 +25,12 @@ class MongoProbabilitiesTest(unittest.TestCase):
             "PORT": 27017,
             "DATABASE": "database",
         }
-        self.mongo_connection = MongoConnection(client=client)
+        self.mongo_connection = MongoConnection()
         self.mongo_connection.connect(config=self.config)
         self.mongo_connection.create_db()
+        self.database = self.mongo_connection.database
+        self.obj_collection = self.database["object"]
+
 
     def create_2_objects(self):
         model_1 = Object(
