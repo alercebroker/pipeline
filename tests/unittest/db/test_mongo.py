@@ -1,20 +1,18 @@
-from pydoc import pager
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
-    to_camel_case,
+    _MongoConfig
 )
-from db_plugins.db.mongo.query import mongo_query_creator
-from db_plugins.db.mongo.models import Object
+from db_plugins.db.mongo.query import MongoQuery, CollectionNotFound
+from db_plugins.db.mongo.models import Object, NonDetection
+from unittest import mock
 import unittest
 import mongomock
 
 
 class MongoConnectionTest(unittest.TestCase):
     def setUp(self):
-        self.query_class = mongomock.collection.Collection
-        self.client = mongomock.MongoClient()
         self.config = {
             "HOST": "host",
             "USERNAME": "username",
@@ -22,15 +20,14 @@ class MongoConnectionTest(unittest.TestCase):
             "PORT": 27017,
             "DATABASE": "database",
         }
-        self.conn = MongoConnection(client=self.client, config=self.config)
+        self.conn = MongoConnection(config=self.config)
 
     def test_to_camel_case(self):
         conf = self.config
         conf["SOME_OTHER_ATTRIBUTE"] = "test"
-        new_conf = to_camel_case(conf)
-        self.assertDictContainsSubset(
-            {"someOtherAttribute": "test", "host": "host"}, new_conf
-        )
+        new_conf = _MongoConfig(conf)
+        # Replacement for deprecated assertDictContainsSubset
+        self.assertEqual(new_conf, {**new_conf, **{"someOtherAttribute": "test", "host": "host"}})
 
     def test_factory_method(self):
         conn = new_DBConnection(MongoDatabaseCreator)
@@ -38,62 +35,63 @@ class MongoConnectionTest(unittest.TestCase):
 
     def test_connect(self):
         self.conn.connect(self.config)
-        self.assertEqual(self.conn.config, self.config)
         self.assertEqual(
-            self.conn.base.metadata.database,
+            Object.metadata.database,
             self.config["DATABASE"],
         )
         self.assertEqual(self.conn.database.name, self.config["DATABASE"])
 
-    def test_create_db(self):
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_create_db(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
         self.conn.create_db()
-        collections = self.client[self.config["DATABASE"]].list_collection_names()
-        expected = ["object", "detection", "non_detection", "taxonomy"]
+        collections = self.conn.client[self.config["DATABASE"]].list_collection_names()
+        expected = ["object", "detection", "non_detection", "taxonomy", "step", "feature_version", "pipeline"]
         self.assertEqual(collections, expected)
 
-    def test_drop_db(self):
-        db = self.client[self.config["DATABASE"]]
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_drop_db(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
+        db = self.conn.client[self.config["DATABASE"]]
         db.test.insert_one({"test": "test"})
-        databases = self.client.list_database_names()
+        databases = self.conn.client.list_database_names()
         expected = ["database"]
         self.assertEqual(databases, expected)
         self.conn.drop_db()
-        databases = self.client.list_database_names()
+        databases = self.conn.client.list_database_names()
         expected = []
         self.assertEqual(databases, expected)
 
-    def test_query(self):
-        self.conn.database = self.client.database
-        query = self.conn.query(self.query_class)
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_orm_api_without_model(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
 
-    def test_query_pymongo_api(self):
-        self.conn.database = self.client.database
-        query = self.conn.query(
-            self.query_class,
-            name="collection",
-            _db_store=self.conn.database._store,
-        )
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+        query = self.conn.query()
+        self.assertIsNone(query.collection)
         self.assertIsNone(query.model)
 
-    def test_query_orm_api_with_model(self):
-        self.conn.database = self.client.database
-        query = self.conn.query(
-            self.query_class,
-            model=Object,
-            _db_store=self.conn.database._store,
-        )
-        self.assertIsInstance(query, self.query_class)
-        self.assertIsInstance(query, mongomock.collection.Collection)
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_pymongo_api(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
+        query = self.conn.query(name="collection")
+        self.assertIsInstance(query.collection, mongomock.Collection)
+        self.assertIsNone(query.model)
+
+    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    def test_query_orm_api_with_model(self, mock_mongo):
+        mock_mongo.return_value = mongomock.MongoClient()
+        self.conn.connect()
+
+        query = self.conn.query(model=Object)
+        self.assertIsInstance(query.collection, mongomock.Collection)
         self.assertEqual(query.model, Object)
-
-    def test_query_orm_api_without_model(self):
-        self.conn.database = self.client.database
-        query = self.conn.query(self.query_class)
-        self.assertIsNone(query.model)
 
 
 class MongoQueryTest(unittest.TestCase):
@@ -102,12 +100,20 @@ class MongoQueryTest(unittest.TestCase):
         self.database = client["database"]
         self.obj_collection = self.database["object"]
         self.obj_collection.insert_one({"test": "test"})
-        self.mongo_query_class = mongo_query_creator(mongomock.collection.Collection)
-        self.query = self.mongo_query_class(
+        self.query = MongoQuery(
             model=Object,
             database=self.database,
-            _db_store=self.database._store,
+            # _db_store=self.database._store,
         )
+
+    def test_query_initialization_with_collection_name_and_model_fails(self):
+        with self.assertRaisesRegex(ValueError, 'Only one of .+ can be defined'):
+            MongoQuery(model=Object, name='objects', database=self.database)
+
+    def test_query_initialization_without_collection_name_and_model_fails(self):
+        with self.assertRaisesRegex(CollectionNotFound, 'A valid model must be provided'):
+            q = MongoQuery(database=self.database)
+            q.init_collection()
 
     def test_check_exists(self):
         self.assertTrue(self.query.check_exists({"test": "test"}))
@@ -119,7 +125,8 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
-                "oid": "test",
+                "oid": ["test"],
+                "tid": ["test"],
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -134,7 +141,8 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
-                "oid": "test",
+                "oid": ["test"],
+                "tid": ["test"],
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -150,6 +158,7 @@ class MongoQueryTest(unittest.TestCase):
         model = Object(
             aid="aid",
             oid="oid",
+            tid="tid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -163,33 +172,125 @@ class MongoQueryTest(unittest.TestCase):
         self.assertEqual(self.query.model, Object)
 
     def test_bulk_update(self):
-        model = Object(
-            aid="aid",
-            oid="oid",
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
             meandec=50.0,
             ndet="ndet",
         )
-        self.obj_collection.insert_one(model)
-        self.query.bulk_update([model], [{"oid": "edited"}])
-        f = self.obj_collection.find_one({"oid": "edited"})
-        self.assertIsNotNone(f)
-        # now with filters
-        self.query.bulk_update(
-            [model], [{"oid": "edited2"}], filter_fields=[{"aid": "aid"}]
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
         )
-        f = self.obj_collection.find_one({"oid": "edited2"})
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+        f = self.obj_collection.find_one({"oid": ["edited1"]})
         self.assertIsNotNone(f)
+        self.assertEqual(f["_id"], "aid1")
+        f = self.obj_collection.find_one({"oid": ["edited2"]})
+        self.assertIsNotNone(f)
+        self.assertEqual(f["_id"], "aid2")
+
+    def test_bulk_update_using_filter(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+
+        self.query.bulk_update(
+            [model2], [{"oid": ["edited2"]}], filter_fields=[{"_id": "aid2"}]
+        )
+        f = self.obj_collection.find_one({"oid": ["edited2"]})
+        self.assertIsNotNone(f)
+        self.assertEqual(f["_id"], "aid2")
+
+    def test_bulk_update_fails_if_not_all_instances_have_same_model(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = NonDetection(
+            aid="aid",
+            tid="tid",
+            oid="oid",
+            mjd=100,
+            fid=1,
+            diffmaglim=2,
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        with self.assertRaisesRegex(TypeError, "All instances"):
+            self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+
+    def test_bulk_update_fails_if_instances_and_attributes_do_not_match_size(self):
+        model1 = Object(
+            aid="aid1",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        model2 = Object(
+            aid="aid2",
+            oid=["oid"],
+            tid=["tid"],
+            lastmjd="lastmjd",
+            firstmjd="firstmjd",
+            meanra=100.0,
+            meandec=50.0,
+            ndet="ndet",
+        )
+        self.obj_collection.insert_one(model1)
+        self.obj_collection.insert_one(model2)
+        with self.assertRaisesRegex(ValueError, "Length of instances and attributes must match"):
+            self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}])
 
     def test_bulk_insert(self):
         self.assertEqual(self.obj_collection.count_documents({}), 1)
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
-                    "oid": "test",
+                    "aid": f"test{i}",
+                    "oid": ["test"],
+                    "tid": ["test"],
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -211,8 +312,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -239,8 +341,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -267,8 +370,9 @@ class MongoQueryTest(unittest.TestCase):
         self.query.bulk_insert(
             [
                 {
-                    "aid": "test",
+                    "aid": f"test{i}",
                     "oid": "test",
+                    "tid": "test",
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -280,10 +384,10 @@ class MongoQueryTest(unittest.TestCase):
         )
         self.assertEqual(self.obj_collection.count_documents({}), 3)
 
-        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=True)
+        paginate = self.query.paginate({"_id": "fake"}, page=1, per_page=2, count=True)
         self.assertEqual(paginate.total, 0)
         self.assertListEqual(paginate.items, [])
 
-        paginate = self.query.paginate({"aid": "fake"}, page=1, per_page=2, count=False)
+        paginate = self.query.paginate({"_id": "fake"}, page=1, per_page=2, count=False)
         self.assertIsNone(paginate.total)
         self.assertListEqual(paginate.items, [])

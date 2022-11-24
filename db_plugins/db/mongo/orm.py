@@ -1,5 +1,5 @@
 """Main classes for using the Mongo ORM"""
-from pymongo import MongoClient, IndexModel
+from pymongo import MongoClient
 
 
 class Metadata:
@@ -33,76 +33,38 @@ class ModelMetadata:
         return str(dict_repr)
 
 
-class BaseMetaClass(type):
+class ModelMetaClass(type):
     """Metaclass for Base model class that creates mappings."""
 
     metadata = Metadata()
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(mcs, name, bases, attrs):
         """Create class with mappings and other metadata."""
-        if name == "Base":
-            return type.__new__(cls, name, bases, attrs)
-        class_dict = {"_meta": ModelMetadata(name, {}, [])}
-        for k, v in attrs.items():
-            if k == "__table_args__":
-                for arg in v:
-                    if isinstance(arg, IndexModel):
-                        class_dict["_meta"].indexes.append(arg)
-            if k == "__tablename__":
-                class_dict["_meta"].tablename = v
-            if isinstance(v, Field):
-                class_dict["_meta"].fields[k] = v
+        cls = super().__new__(mcs, name, bases, attrs)
 
-        cls.metadata.collections[class_dict["_meta"].tablename] = {
-            "indexes": class_dict["_meta"].indexes,
-            "fields": class_dict["_meta"].fields,
-        }
-        return type.__new__(cls, name, bases, class_dict)
+        fields = {k: v for k, v in attrs.items() if isinstance(v, Field)}
+        if not fields:  # Base classes should not include fields
+            return cls
+        try:
+            fields["extra_fields"] = SpecialField(cls.create_extra_fields)
+        except AttributeError:
+            pass
+        tablename = attrs.pop("__tablename__")
+        indexes = attrs.get("__table_args__", [])
 
+        mcs.metadata.collections[tablename] = {"indexes": indexes, "fields": fields}
+        cls._meta = ModelMetadata(tablename, fields, indexes)
+        return cls
 
-def base_creator():
-    """Create a Base class for declarative model definition."""
-
-    class Base(dict, metaclass=BaseMetaClass):
-        def __init__(self, **kwargs):
-            model = {}
-            if "_id" in kwargs:
-                model["_id"] = kwargs["_id"]
-            for field in self._meta.fields:
-                try:
-                    if isinstance(self._meta.fields[field], SpecialField):
-                        model[field] = self._meta.fields[field].callback(
-                            Model=self.__class__, **kwargs
-                        )
-                    else:
-                        model[field] = kwargs[field]
-                except KeyError:
-                    raise AttributeError(
-                        "{} model needs {} attribute".format(
-                            self.__class__.__name__, field
-                        )
-                    )
-            super(Base, self).__init__(**model)
-
-        @classmethod
-        def set_database(cls, database):
-            cls.metadata.database = database
-
-        def __str__(self):
-            return dict.__str__(self)
-
-        def __repr__(self):
-            return dict.__repr__(self)
-
-    return Base
+    @classmethod
+    def set_database(mcs, database):
+        mcs.metadata.database = database
 
 
 class Field:
-    def __init__(self):
-        pass
+    pass
 
 
 class SpecialField(Field):
     def __init__(self, callback):
-        super(SpecialField, self).__init__()
         self.callback = callback

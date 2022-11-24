@@ -1,255 +1,268 @@
-from db_plugins.db.generic import BaseQuery, Pagination, PaginationNoCount
-from db_plugins.db.mongo.models import Base
-from pymongo.collection import Collection as PymongoCollection
+from itertools import zip_longest
+from typing import Type
+
 from pymongo import UpdateOne
 
+from db_plugins.db.generic import BaseQuery, Pagination, PaginationNoCount
+from db_plugins.db.mongo.models import BaseModel
 
-def constructor_creator(collection_class):
-    def constructor(self, database, model: Base = None, *args, **kwargs):
-        """Get / create a Mongo collection.
 
-        Raises :class:`TypeError` if `name` is not
-        """
+class CollectionNotFound(Exception):
+    pass
+
+
+class MongoQuery(BaseQuery):
+    def __init__(self, database, model: Type[BaseModel] = None, name: str = None):
+        if model and name:
+            raise ValueError("Only one of 'model' or 'name' can be defined")
         self.model = model
-        self.initialized_collection = False
+        self.collection = None
         self._db = database
-        if "name" in kwargs:
+        if name:
             # Ignore model and use pure pymongo API
-            collection_class.__init__(
-                self,
-                database=database,
-                *args,
-                **kwargs,
-            )
-            self.initialized_collection = True
+            self.collection = self._db[name]
         elif model:
             # Using custom ORM API
-            self.init_collection(model, **kwargs)
-            self.initialized_collection = True
+            self.init_collection(model)
 
-    return constructor
+    def init_collection(self, model: Type[BaseModel] = None):
+        """Sets the collection used by the various methods based on the model
+        class provided. If no model is provided, it will use the collection
+        provided during creation, if any.
 
+        Raises a :class:`CollectionNotFound` error if no model is provided
+        and no collection was selected during creation.
 
-def init_collection_creator(collection_class):
-    def init_collection(self, model, **kwargs):
-        if self.initialized_collection:
-            return
+        Parameters
+        ----------
+        model : Type[BaseModel]
+            Model class used for queries
+        """
         if model:
             self.model = model
-            collection_class.__init__(
-                self,
-                name=model._meta.tablename,
-                database=self._db,
-                **kwargs,
+            self.collection = self._db[model._meta.tablename]
+        elif self.collection is None:
+            raise CollectionNotFound(
+                "A valid model must be provided at instantiation or in method call"
             )
-            # get rid of temporary attribute
-            self.__delattr__("_db")
-            self.initialized_collection = True
-            return
-        if not self.model:
-            self.raise_collection_not_found_error()
 
-    return init_collection
+    def check_exists(self, filter_by: dict = None, model: Type[BaseModel] = None):
+        """
+        Check if record exists in database.
 
+        Parameters
+        ----------
+        filter_by : dict
+            Attributes for finding a document in database
+        model : Type[BaseModel]
+            Class of the model whose collection will be searched for
 
-def check_exists(
-    self,
-    model: Base = None,
-    filter_by={},
-):
-    """
-    Check if record exists in database.
+        Returns
+        -------
+        bool
+            Whether an object exists in the collection or not
+        """
+        filter_by = filter_by or {}
+        self.init_collection(model)
+        return self.collection.count_documents(filter_by, limit=1) != 0
 
-    :param session: The connection session
-    :param model: The class of the model to be instantiated
-    :param dict filter_by: attributes used to find object in the database
-    :param dict kwargs: attributes used to create the object that are not
-    used in filter_by
-
-    :returns: True if object exists else False
-
-    """
-    self.init_collection(model)
-    return self.count_documents(filter_by, limit=1) != 0
-
-
-def get_or_create_creator(collection_class):
-    def get_or_create(self, filter_by={}, model: Base = None, **kwargs):
+    def get_or_create(self, filter_by: dict = None, model: BaseModel = None, **kwargs):
         """Initialize a model by creating it or getting it from the database.
 
         Parameters
         ----------
-        session : Session
-            The connection session
-        model : Model
-            The class of the model to be instantiated
+        model : Type[BaseModel]
+            Class of the model to be searched for or created
         filter_by : dict
-            attributes used to find object in the database
-        kwargs : dict
-            attributes used to create the object that are not used in filter_by
+            Attributes for finding a document in the database
+        **kwargs
+            Additional attributes for creating a document (will be overridden by ``filter_by`` attributes)
+
         Returns
         ----------
-        instance, created
-            Tuple with the instanced object and wether it was created or not
+        tuple[dict or InsertOneResult, bool]
+            Tuple with the document (if not created) and whether it was created or not
         """
+        filter_by = filter_by or {}
         self.init_collection(model)
-        result = collection_class.find_one(self, filter_by)
-        created = False
+        result = self.collection.find_one(filter_by)
         if result is not None:
-            return result, created
+            return result, False
 
+        kwargs.update(filter_by)
         try:
-            kwargs.update(filter_by)
             model_instance = self.model(**kwargs)
-            result = self.insert_one(model_instance)
-            created = True
+            result = self.collection.insert_one(model_instance)
         except Exception as e:
             raise AttributeError(e)
-            created = False
 
-        return result, created
+        return result, True
 
-    return get_or_create
+    def update(self, instance, attrs):
+        """Update a document in collection.
 
+        Parameters
+        ----------
+        instance : BaseModel
+            Document to be updated
+        attrs : dict
+            Attributes to be updated
 
-def update_creator(collection_class):
-    def update(self, instance, args):
-        """Update an object.
-
-        Parameter
-        -----------
-        instance : Model
-            Object to be updated
-        args : dict
-            Attributes updated
         Returns
         ----------
-        instance
-            The updated object instance
+        pymongo.results.UpdateResult
         """
-        model = type(instance)
+        self.init_collection(type(instance))
+        return self.collection.update_one(instance, {"$set": attrs})
+
+    def bulk_update(self, instances: list, attrs: list, filter_fields: list = None):
+        """Update multiple documents in a collection at once.
+
+        The length of `instances` and `attrs` must be the same.
+
+        If `filter_fields` is defined, it must also match the length of
+        `instances` and its contents will take precedence over the
+        corresponding instance when querying for documents to update.
+
+        Parameters
+        ----------
+        instances : list[BaseModel]
+            List with documents to be updated
+        attrs : list[dict]
+            List with dictionary of fields to update for corresponding instance
+        filter_fields : list[dict], optional
+            Attributes for finding the document that needs to be updates
+
+        Returns
+        -------
+        pymongo.results.BulkWriteResult
+        """
+        if len(instances) == 0:
+            return
+        model = instances[0].__class__
+        if any(instance.__class__ != model for instance in instances):
+            raise TypeError("All instances must have the same model class")
+        if len(instances) != len(attrs):
+            raise ValueError("Length of instances and attributes must match")
+        filter_fields = filter_fields or []
+        if len(filter_fields) and len(filter_fields) != len(instances):
+            raise ValueError("Length of filter_fields must be 0 or equal to instances")
         self.init_collection(model)
-        update_op = {"$set": args}
-        return collection_class.update_one(self, instance, update_op)
 
-    return update
+        requests = [
+            UpdateOne(filters or instance, {"$set": attr})
+            for instance, attr, filters in zip_longest(instances, attrs, filter_fields)
+        ]
+        return self.collection.bulk_write(requests=requests, ordered=False)
 
-
-def bulk_update_creator(collection_class):
-    def bulk_update(self, instances: list, args: list, filter_fields: list = []):
-        model = type(instances[0])
-        self.init_collection(model)
-        requests = []
-        for i, instance in enumerate(instances):
-            requests.append(
-                UpdateOne(
-                    filter_fields[i] if len(filter_fields) > 0 else instance,
-                    {"$set": args[i]},
-                )
-            )
-        return collection_class.bulk_write(self, requests=requests, ordered=False)
-
-    return bulk_update
-
-
-def bulk_insert_creator(collection_class):
-    def bulk_insert(self, objects, model=None):
-        """Insert multiple objects to the database improving performance.
+    def bulk_insert(self, documents: list, model: Type[BaseModel] = None):
+        """Insert multiple documents to the database at once.
 
         Parameters
         -----------
-        objects : list
-            Objects to be added
-        model: Model
-            Class of the model to be added
-        session: Session
-            Session instance
+        documents : list[dict]
+            Documents to be added
+        model: Type[BaseModel]
+            Class of the model documents to be added
+
+        Returns
+        -------
+        pymongo.results.InsertManyResult
         """
-        if objects is None or len(objects) == 0:
+        if len(documents) == 0:
             return
-
         self.init_collection(model)
-        objects = [self.model(**obj) for obj in objects]
-        return collection_class.insert_many(self, objects)
 
-    return bulk_insert
+        documents = [self.model(**doc) for doc in documents]
+        return self.collection.insert_many(documents)
 
+    def paginate(
+        self, filter_by=None, page=1, per_page=10, count=True, max_results=50000
+    ):
+        """Return pagination object with selected documents.
 
-def paginate(
-    self,
-    filter_by={},
-    page=1,
-    per_page=10,
-    count=True,
-    max_results=50000,
-):
-    """Return pagination object with the results.
+        https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
 
-    https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb
-    Parameters
-    -----------
-    page : int
-        page or offset of the query
-    per_page : int
-        number of items per each result page
-    count : bool
-        whether to count total elements in query
-    """
-    if page < 1:
-        page = 1
-    if per_page < 0:
-        per_page = 10
+        Parameters
+        -----------
+        filter_by : dict, list
+            Attributes used to find documents in the database or aggregation pipeline
+        page : int
+            Page of the query
+        per_page : int
+            Number of items per page
+        count : bool
+            Whether to count total number of documents in query
+        max_results: int
+            If counting is used, only count up to this amount of documents
 
-    if isinstance(filter_by, dict):
-        filter_by = [{"$match": filter_by}]
+        Returns
+        -------
+        Pagination
+            Paginated results
+        """
+        if page < 1:
+            page = 1
+        if per_page < 0:
+            per_page = 10
 
-    # Calculate number of documents to skip
-    filter_by.append({"$skip": per_page * (page - 1)})
-    filter_by.append({"$limit": per_page if count else per_page + 1})
-    # Skip and limit
-    cursor = self.aggregate(filter_by)
+        filter_by = filter_by or {}
+        if isinstance(filter_by, dict):
+            filter_by = [{"$match": filter_by}]
 
-    # Return documents
-    items = list(cursor)
-    if not count:
-        has_next = len(items) > per_page
-        items = items[:-1] if has_next else items
-        return PaginationNoCount(self, page, per_page, items, has_next)
-    else:
-        filter_by.pop()
-        filter_by.pop()
-        filter_by.append({"$limit": max_results})
-        filter_by.append({"$count": "n"})
-        summary = list(self.aggregate(filter_by))
-        try:
-            total = summary[0]["n"]
-        except IndexError:
-            total = 0
-        return Pagination(self, page, per_page, total, items)
+        # Calculate number of documents to skip
+        filter_by.append({"$skip": per_page * (page - 1)})
+        filter_by.append({"$limit": per_page if count else per_page + 1})
+        cursor = self.collection.aggregate(filter_by)
 
+        # Return documents
+        items = list(cursor)
+        if not count:
+            has_next = len(items) > per_page
+            items = items[:-1] if has_next else items
+            return PaginationNoCount(self, page, per_page, items, has_next)
+        else:
+            filter_by.pop()  # Removes pagination $limit step
+            filter_by.pop()  # Removes pagination $skip step
+            # $sorting can be too slow and is fully irrelevant for counting
+            filter_by = [step for step in filter_by if "$sort" not in step]
+            filter_by.append({"$limit": max_results})
+            filter_by.append({"$count": "n"})
+            summary = list(self.collection.aggregate(filter_by))
+            try:
+                total = summary[0]["n"]
+            except IndexError:
+                total = 0
+            return Pagination(self, page, per_page, total, items)
 
-def find_one_creator(collection_class):
-    def find_one(self, filter_by={}, model: Base = None):
+    def find_one(self, filter_by: dict = None, model: Type[BaseModel] = None, **kwargs):
         """Find one item of the specified model.
 
-        If there are more than one item an error occurs.
-        If there are no items, then it returns None
+        If there are no items, then it returns None.
 
         Parameters
         -----------
         model : Model
             Class of the model to be retrieved
         filter_by : dict
-            attributes used to find object in the database
+            Attributes used to find object document in the database
+
+        Returns
+        -------
+        dict, None
+            First document that matches
         """
+        filter_by = filter_by or {}
         self.init_collection(model)
-        return collection_class.find_one(self, filter_by)
+        return self.collection.find_one(filter_by, **kwargs)
 
-    return find_one
-
-
-def find_all_creator(collection_class):
-    def find_all(self, model: Base = None, filter_by={}, paginate=True, **kwargs):
+    def find_all(
+        self,
+        filter_by: dict = None,
+        model: Type[BaseModel] = None,
+        paginate=True,
+        **kwargs,
+    ):
         """Find list of items of the specified model.
 
         If there are too many items a timeout can happen.
@@ -259,57 +272,28 @@ def find_all_creator(collection_class):
         model : Model
             Class of the model to be retrieved
         filter_by : dict
-            attributes used to find objects in the database
+            Attributes used to find documents in the database or aggregation pipeline
         paginate : bool
-            whether to get a paginated result or not
+            Whether to get a paginated result
         kwargs : dict
-            all other arguments are passed to `paginate` and/or
+            All other arguments are passed to `paginate` and/or
             `pymongo.collection.Collection.aggregate`
+
+        Returns
+        -------
+        pymongo.cursor.Cursor or Paginate
+            Cursor to iterate over query results or a pagination object,
+            depending on the `paginate` option
         """
         self.init_collection(model)
-
+        filter_by = filter_by or {}
         if isinstance(filter_by, dict):
             filter_by = [{"$match": filter_by}]
 
         if paginate:
             return self.paginate(filter_by, **kwargs)
         else:
-            return collection_class.aggregate(self, filter_by, **kwargs)
+            return self.collection.aggregate(filter_by, **kwargs)
 
-    return find_all
-
-
-def raise_collection_not_found_error(self):
-    class CollectionNotFound(Exception):
-        pass
-
-    raise CollectionNotFound(
-        "You should provide model argument to either the MongoQuery instance or this method call"
-    )
-
-
-def __repr__(self):
-    if not self.initialized_collection:
-        return f"MongoQuery(model={self.model})"
-    else:
-        return super().__repr__()
-
-
-def mongo_query_creator(collection_class=PymongoCollection) -> BaseQuery:
-    class_dict = {
-        "__init__": constructor_creator(collection_class),
-        "init_collection": init_collection_creator(collection_class),
-        "check_exists": check_exists,
-        "get_or_create": get_or_create_creator(collection_class),
-        "update": update_creator(collection_class),
-        "bulk_update": bulk_update_creator(collection_class),
-        "bulk_insert": bulk_insert_creator(collection_class),
-        "paginate": paginate,
-        "find_one": find_one_creator(collection_class),
-        "find_all": find_all_creator(collection_class),
-    }
-    return type(
-        "MongoQuery",
-        (collection_class, BaseQuery),
-        class_dict,
-    )
+    def __repr__(self):
+        return f"MongoQuery(model={self.model.__class__.__name__})"
