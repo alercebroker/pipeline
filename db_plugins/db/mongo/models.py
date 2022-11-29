@@ -70,7 +70,7 @@ class Object(BaseModel):
                 ("probabilities.probability", DESCENDING),
                 ("probabilities.class_name", DESCENDING),
             ],
-            partialFilterExpresion={"probabilities.ranking": 1},
+            partialFilterExpression={"probabilities.ranking": 1},
         ),
     ]
     __tablename__ = "object"
