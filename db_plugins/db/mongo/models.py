@@ -67,10 +67,10 @@ class Object(BaseModel):
             [
                 ("probabilities.classifier_name", ASCENDING),
                 ("probabilities.classifier_version", DESCENDING),
-                ("probabilities.probability", DESCENDING),
                 ("probabilities.class_name", DESCENDING),
+                ("probabilities.probability", DESCENDING),
             ],
-            partialFilterExpresion={"probabilities.ranking": 1},
+            partialFilterExpression={"probabilities.ranking": 1},
         ),
     ]
     __tablename__ = "object"
