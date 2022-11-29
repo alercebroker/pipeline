@@ -67,8 +67,8 @@ class Object(BaseModel):
             [
                 ("probabilities.classifier_name", ASCENDING),
                 ("probabilities.classifier_version", DESCENDING),
-                ("probabilities.probability", DESCENDING),
                 ("probabilities.class_name", DESCENDING),
+                ("probabilities.probability", DESCENDING),
             ],
             partialFilterExpression={"probabilities.ranking": 1},
         ),
