@@ -8,9 +8,9 @@ Helper function to create or update the probabilities for an object
 
 def get_probabilities(connection: MongoConnection, aids: list):
     probabilities = connection.database["object"].find(
-        {"aid": {"$in": aids}}, {"probabilities": True, "aid": True}
+        {"_id": {"$in": aids}}, {"probabilities": True}
     )
-    return {item["aid"]: item["probabilities"] for item in probabilities}
+    return {item["_id"]: item["probabilities"] for item in probabilities}
 
 
 def get_db_operations(
@@ -50,7 +50,7 @@ def get_db_operations(
     )
 
     operation = UpdateOne(
-        {"aid": aid}, {"$set": {"probabilities": object_probabilities}}
+        {"_id": aid}, {"$set": {"probabilities": object_probabilities}}
     )
 
     return operation
