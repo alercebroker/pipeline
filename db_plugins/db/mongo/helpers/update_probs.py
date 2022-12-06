@@ -6,11 +6,18 @@ Helper function to create or update the probabilities for an object
 """
 
 
+def get_probabilities(connection: MongoConnection, aids: list):
+    probabilities = connection.database["object"].find(
+        {"aid": {"$in": aids}}, {"probabilities": True, "aid": True}
+    )
+    return {item["aid"]: item["probabilities"] for item in probabilities}
+
+
 def get_db_operations(
-    connection: MongoConnection,
     classifier: str,
     version: str,
     aid: str,
+    object_probabilities: list,
     probabilities: dict,
 ):
     """
@@ -20,10 +27,6 @@ def get_db_operations(
     sorted_classes_and_prob_list = sorted(
         probabilities.items(), key=lambda val: val[1], reverse=True
     )
-
-    object_probabilities = connection.database["object"].find_one({"aid": aid})[
-        "probabilities"
-    ]
 
     # Remove all existing probabilities for given classifier and version (if any)
     object_probabilities = [
@@ -60,8 +63,10 @@ def create_or_update_probabilities(
     aid: str,
     probabilities: dict,
 ):
+    object_probs = get_probabilities(connection, [aid])
+
     connection.database["object"].bulk_write(
-        [get_db_operations(connection, classifier, version, aid, probabilities)],
+        [get_db_operations(classifier, version, aid, object_probs[aid], probabilities)],
         ordered=False,
     )
 
@@ -78,9 +83,14 @@ def create_or_update_probabilities_bulk(
     """
     db_operations = []
 
+    # no warrants that probs will have the same aid order
+    object_probabilities = get_probabilities(connection, aids)
+
     for aid, probs in zip(aids, probabilities):
         db_operations.append(
-            get_db_operations(connection, classifier, version, aid, probs)
+            get_db_operations(
+                classifier, version, aid, object_probabilities[aid], probs
+            )
         )
 
     connection.database["object"].bulk_write(db_operations, ordered=False)
