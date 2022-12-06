@@ -34,7 +34,7 @@ class TestMongoProbabilities(unittest.TestCase):
 
     def create_2_objects(self):
         model_1 = Object(
-            aid="aid1",
+            _id="aid1",
             oid="oid1",
             tid="tid1",
             lastmjd="lastmjd",
@@ -74,7 +74,7 @@ class TestMongoProbabilities(unittest.TestCase):
             ],
         )
         model_2 = Object(
-            aid="aid2",
+            _id="aid2",
             oid="oid2",
             tid="tid2",
             lastmjd="lastmjd",
@@ -115,7 +115,7 @@ class TestMongoProbabilities(unittest.TestCase):
             },
         )
 
-        f1 = self.obj_collection.find_one({"aid": "aid2"})
+        f1 = self.obj_collection.find_one({"_id": "aid2"})
 
         expected_probabilities = [
             {
@@ -164,9 +164,9 @@ class TestMongoProbabilities(unittest.TestCase):
             },
         )
 
-        f1 = self.obj_collection.find_one({"aid": "aid1"})
+        f1 = self.obj_collection.find_one({"_id": "aid1"})
 
-        # Mind that the update dont change the order
+        # Mind that the update don't change the order
         expected_probabilities = [
             {
                 "classifier_name": "lc_classifier",
@@ -220,8 +220,8 @@ class TestMongoProbabilities(unittest.TestCase):
             ],
         )
 
-        f1 = self.obj_collection.find_one({"aid": "aid1"})
-        f2 = self.obj_collection.find_one({"aid": "aid2"})
+        f1 = self.obj_collection.find_one({"_id": "aid1"})
+        f2 = self.obj_collection.find_one({"_id": "aid2"})
 
         expected_probabilities_1 = [
             {
