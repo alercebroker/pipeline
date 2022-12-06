@@ -4,9 +4,14 @@ from pymongo import UpdateOne
 """
 Helper function to create or update the probabilities for an object
 """
+
+
 def get_probabilities(connection: MongoConnection, aids: list):
-    probabilities = connection.database["object"].find({ "aid": { "$in": aids } }, { "probabilities": True, "aid": True })
-    return { item["aid"]: item["probabilities"] for item in probabilities }
+    probabilities = connection.database["object"].find(
+        {"aid": {"$in": aids}}, {"probabilities": True, "aid": True}
+    )
+    return {item["aid"]: item["probabilities"] for item in probabilities}
+
 
 def get_db_operations(
     classifier: str,
@@ -83,7 +88,9 @@ def create_or_update_probabilities_bulk(
 
     for aid, probs in zip(aids, probabilities):
         db_operations.append(
-            get_db_operations(classifier, version, aid, object_probabilities[aid], probs)
+            get_db_operations(
+                classifier, version, aid, object_probabilities[aid], probs
+            )
         )
 
     connection.database["object"].bulk_write(db_operations, ordered=False)
