@@ -14,7 +14,8 @@ and explain how to query and update the objects with
 probabilities (main focus of the tests)
 """
 
-class MongoProbabilitiesTest(unittest.TestCase):
+
+class TestMongoProbabilities(unittest.TestCase):
     @mock.patch('db_plugins.db.mongo.connection.MongoClient')
     def setUp(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
@@ -30,7 +31,6 @@ class MongoProbabilitiesTest(unittest.TestCase):
         self.mongo_connection.create_db()
         self.database = self.mongo_connection.database
         self.obj_collection = self.database["object"]
-
 
     def create_2_objects(self):
         model_1 = Object(
