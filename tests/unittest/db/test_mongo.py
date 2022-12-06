@@ -325,7 +325,7 @@ class MongoQueryTest(unittest.TestCase):
             ]
         )
         self.assertEqual(self.obj_collection.count_documents({}), 3)
-        
+
         paginate = self.query.paginate(page=1, per_page=2, count=False)
         self.assertIsNone(paginate.total)
         self.assertTrue(paginate.has_next)

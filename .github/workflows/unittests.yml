@@ -4,11 +4,11 @@
 name: UnitTests
 
 on:
-  pull_request:
+  pull_request:    
     branches:
       - main
       - develop
-      - feat/update_mongo_object_model
+      - 'feat/**'
 
 jobs:
   test:

@@ -162,14 +162,15 @@ class MongoModelsTest(unittest.TestCase):
     def test_taxonomy_fails_creation(self):
         with self.assertRaises(AttributeError) as e:
             models.Taxonomy()
-        self.assertEqual(str(e.exception), "Taxonomy model needs classifier_name attribute")
+        self.assertEqual(
+            str(e.exception), "Taxonomy model needs classifier_name attribute"
+        )
 
     def test_taxonomy_with_extra_fields_ignores_them(self):
         as_dict = dict(
             classifier_name="classifier",
             classifier_version="test-1.0.0",
             classes=["class1", "class2"],
-
         )
         o = models.Taxonomy(extra="extra", **as_dict)
         self.assertDictEqual(o, as_dict)
