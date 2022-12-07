@@ -66,7 +66,7 @@ class MongoQuery(BaseQuery):
         self.init_collection(model)
         return self.collection.count_documents(filter_by, limit=1) != 0
 
-    def get_or_create(self, filter_by: dict = None, model: BaseModel = None, **kwargs):
+    def get_or_create(self, filter_by: dict = None, model: Type[BaseModel] = None, **kwargs):
         """Initialize a model by creating it or getting it from the database.
 
         Parameters
@@ -139,8 +139,8 @@ class MongoQuery(BaseQuery):
         """
         if len(instances) == 0:
             return
-        model = instances[0].__class__
-        if any(instance.__class__ != model for instance in instances):
+        model = type(instances[0])
+        if any(type(instance) != model for instance in instances):
             raise TypeError("All instances must have the same model class")
         if len(instances) != len(attrs):
             raise ValueError("Length of instances and attributes must match")

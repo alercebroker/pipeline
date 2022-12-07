@@ -60,6 +60,7 @@ class Object(BaseModel):
 
     __table_args__ = [
         IndexModel([("oid", ASCENDING)]),
+        IndexModel([("tid", ASCENDING)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
@@ -102,7 +103,7 @@ class Detection(BaseModelWithExtraFields):
     step_id_corr = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
         IndexModel([("tid", ASCENDING)]),
     ]
     __tablename__ = "detection"
@@ -117,7 +118,7 @@ class NonDetection(BaseModelWithExtraFields):
     diffmaglim = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
         IndexModel([("tid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
