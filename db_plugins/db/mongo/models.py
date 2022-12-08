@@ -38,15 +38,17 @@ class Object(BaseModel):
     _id = SpecialField(
         lambda **kwargs: kwargs.get("aid") or kwargs["_id"]
     )  # ALeRCE object ID (unique ID in database)
-    oid = (
-        Field()
-    )  # List with each OID (all surveys; might have more than one per survey)
+    oid = Field()  # List with all OIDs
     tid = Field()  # List with all telescopes the object has been observed with
-    lastmjd = Field()
+    corrected = Field()
+    stellar = Field()
     firstmjd = Field()
+    lastmjd = Field()
     ndet = Field()
     meanra = Field()
+    sigmara = Field()
     meandec = Field()
+    sigmadec = Field()
     loc = SpecialField(
         lambda **kwargs: {
             "type": "Point",
@@ -57,6 +59,7 @@ class Object(BaseModel):
     features = SpecialField(lambda **kwargs: kwargs.get("features", []))
     probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
+    reference = SpecialField(lambda **kwargs: kwargs.get("reference", []))
 
     __table_args__ = [
         IndexModel([("oid", ASCENDING)]),
@@ -94,11 +97,15 @@ class Detection(BaseModelWithExtraFields):
     e_ra = Field()
     dec = Field()
     e_dec = Field()
-    mag = Field()
-    e_mag = Field()
-    rfid = Field()
+    mag = Field()  # magpsf in ZTF alerts
+    e_mag = Field()  # sigmapsf in ZTF alerts
+    mag_corr = Field()  # magpsf_corr in ZTF alerts
+    e_mag_corr = Field()  # sigmapsf_corr in ZTF alerts
+    e_mag_corr_ext = Field()  # sigmapsf_corr_ext in ZTF alerts
     isdiffpos = Field()
     corrected = Field()
+    dubious = Field()
+    parent_candidate = Field()
     has_stamp = Field()
     step_id_corr = Field()
 
@@ -110,6 +117,13 @@ class Detection(BaseModelWithExtraFields):
 
 
 class NonDetection(BaseModelWithExtraFields):
+    @classmethod
+    def create_extra_fields(cls, **kwargs):
+        kwargs = super().create_extra_fields(**kwargs)
+        kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
+        return kwargs
+
+    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     aid = Field()
     tid = Field()
     oid = Field()
