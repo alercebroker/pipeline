@@ -10,6 +10,10 @@ class MongoModelsTest(unittest.TestCase):
             tid="tid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
+            corrected=True,
+            stellar=True,
+            sigmara=.1,
+            sigmadec=.2,
             meanra=100.0,
             meandec=50.0,
             ndet="ndet",
@@ -40,7 +44,10 @@ class MongoModelsTest(unittest.TestCase):
             rb="rb",
             mag="mag",
             e_mag="e_mag",
-            rfid="rfid",
+            mag_corr="mag_corr",
+            e_mag_corr="e_mag_corr",
+            e_mag_corr_ext="e_mag_corr_ext",
+            parent_candidate="parent_candidate",
             e_ra="e_ra",
             e_dec="e_dec",
             isdiffpos="isdiffpos",
@@ -74,7 +81,11 @@ class MongoModelsTest(unittest.TestCase):
             dec="dec",
             mag="mag",
             e_mag="e_mag",
-            rfid="rfid",
+            mag_corr="mag_corr",
+            e_mag_corr="e_mag_corr",
+            e_mag_corr_ext="e_mag_corr_ext",
+            parent_candidate="parent_candidate",
+            dubious="dubious",
             e_ra="e_ra",
             e_dec="e_dec",
             isdiffpos="isdiffpos",
@@ -96,7 +107,11 @@ class MongoModelsTest(unittest.TestCase):
             rb="rb",
             mag="mag",
             e_mag="e_mag",
-            rfid="rfid",
+            mag_corr="mag_corr",
+            e_mag_corr="e_mag_corr",
+            e_mag_corr_ext="e_mag_corr_ext",
+            parent_candidate="parent_candidate",
+            dubious="dubious",
             e_ra="e_ra",
             e_dec="e_dec",
             isdiffpos="isdiffpos",
@@ -111,6 +126,7 @@ class MongoModelsTest(unittest.TestCase):
 
     def test_non_detection_creates(self):
         o = models.NonDetection(
+            candid="candid",
             aid="aid",
             oid="oid",
             tid="sid",
@@ -123,12 +139,13 @@ class MongoModelsTest(unittest.TestCase):
         self.assertEqual(o["aid"], "aid")
 
     def test_non_detection_fails_creation(self):
-        with self.assertRaises(AttributeError) as e:
+        with self.assertRaisesRegex(AttributeError, "NonDetection model needs .+ attribute"):
             models.NonDetection()
-        self.assertEqual(str(e.exception), "NonDetection model needs aid attribute")
+        # self.assertEqual(str(e.exception), "NonDetection model needs aid attribute")
 
     def test_non_detection_with_extra_fields(self):
         o = models.NonDetection(
+            candid="candid",
             aid="aid",
             oid="oid",
             tid="tid",
@@ -139,6 +156,7 @@ class MongoModelsTest(unittest.TestCase):
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
         o = models.NonDetection(
+            candid="candid",
             aid="aid",
             oid="oid",
             tid="tid",
