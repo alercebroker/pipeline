@@ -66,7 +66,9 @@ class MongoQuery(BaseQuery):
         self.init_collection(model)
         return self.collection.count_documents(filter_by, limit=1) != 0
 
-    def get_or_create(self, filter_by: dict = None, model: Type[BaseModel] = None, **kwargs):
+    def get_or_create(
+        self, filter_by: dict = None, model: Type[BaseModel] = None, **kwargs
+    ):
         """Initialize a model by creating it or getting it from the database.
 
         Parameters
