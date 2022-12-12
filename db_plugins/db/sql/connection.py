@@ -123,6 +123,7 @@ class SQLConnection(DatabaseConnection):
             self.session.remove()
         else:
             self.session.close()
+        self.session = None
 
     def create_db(self):
         self.Base.metadata.create_all(bind=self.engine)

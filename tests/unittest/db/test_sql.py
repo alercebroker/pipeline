@@ -50,6 +50,12 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertIsNotNone(self.db.session)
         self.assertIsNotNone(self.db.Base.query)
 
+    def test_end_session(self):
+        self.db.create_session(use_scoped=False)
+        self.assertIsNotNone(self.db.session)
+        self.db.end_session()
+        self.assertIsNone(self.db.session)
+
     def test_create_db(self):
         self.db.Base = mock.Mock()
         self.db.create_db()
