@@ -29,9 +29,16 @@ class SQLConnection(DatabaseConnection):
         self.Base = Base
         self.Session = Session
         self.session = session
+        self.use_scoped = False
 
     def connect(
-        self, config, base=None, session_options=None, use_scoped=False, scope_func=None
+        self,
+        config,
+        base=None,
+        session_options=None,
+        create_session=True,
+        use_scoped=False,
+        scope_func=None,
     ):
         """
         Establishes connection to a database and initializes a session.
@@ -55,6 +62,20 @@ class SQLConnection(DatabaseConnection):
             Base class used by sqlalchemy to create tables
         session_options : dict
             Options passed to sessionmaker
+        create_session : Boolean
+            Whether to instantiate a session or not. The default value is True since this is the previous behavior.
+            Proper usage should be to pass False and create / close the session on demand inside the application.
+            You should call this method first and then call SQLConnection.create_session(use_scoped)
+
+            .. code-block:: python
+
+                # scoped session example
+                conn = SQLConnection()
+                conn.connect(config, create_session=False)
+                conn.create_session(use_scoped=True)
+                # use session
+                conn.query()
+                conn.session.remove()
         use_scoped : Boolean
             Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.
             Read more about scoped sessions at: `<https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped>`_
@@ -71,21 +92,42 @@ class SQLConnection(DatabaseConnection):
         self.Base = base or Base
         session_options = session_options or {}
         session_options["query_cls"] = SQLQuery
-        if self.Session is not None:
-            self.Session = self.Session
-        else:
+        if self.Session is None:
             self.Session = sessionmaker(bind=self.engine, **session_options)
+        if create_session:
+            self.create_session(use_scoped, scope_func)
+
+    def create_session(self, use_scoped, scope_func=None):
+        """
+        Creates a SQLAlchemy Session object to interact with the database.
+
+        Parameters
+        ----------
+        use_scoped : Boolean
+            Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.
+            Read more about scoped sessions at: `<https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped>`_
+        scope_func : function
+            A function which serves as the scope for the session. The session will live only in the scope of that function.
+        """
         if not use_scoped:
-            self.create_session()
+            self._create_unscoped_session()
         else:
-            self.create_scoped_session(scope_func)
+            self._create_scoped_session(scope_func)
 
-    def create_session(self):
-        self.session = self.Session()
-
-    def create_scoped_session(self, scope_func=None):
+    def _create_scoped_session(self, scope_func):
         self.session = scoped_session(self.Session, scopefunc=scope_func)
         self.Base.query = self.session.query_property(query_cls=SQLQuery)
+        self.use_scoped = True
+
+    def _create_unscoped_session(self):
+        self.session = self.Session()
+
+    def end_session(self):
+        if self.use_scoped:
+            self.session.remove()
+        else:
+            self.session.close()
+        self.session = None
 
     def create_db(self):
         self.Base.metadata.create_all(bind=self.engine)
