@@ -69,12 +69,12 @@ class Object(BaseModel):
         IndexModel([("loc", GEOSPHERE)]),
         IndexModel(
             [
+                ("probabilities.ranking", DESCENDING),
                 ("probabilities.classifier_name", ASCENDING),
                 ("probabilities.classifier_version", DESCENDING),
                 ("probabilities.class_name", DESCENDING),
                 ("probabilities.probability", DESCENDING),
             ],
-            partialFilterExpression={"probabilities.ranking": 1},
         ),
     ]
     __tablename__ = "object"
