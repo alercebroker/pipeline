@@ -55,7 +55,7 @@ class SQLConnectionTest(unittest.TestCase):
         engine = create_engine(self.config["SQLALCHEMY_DATABASE_URL"])
         Session = sessionmaker(bind=engine, **self.session_options)
         self.db.Session = Session
-        self.db.create_session()
+        self.db.create_session(use_scoped=False)
         self.assertIsNotNone(self.db.session)
 
     def test_create_scoped_session(self):
@@ -65,7 +65,7 @@ class SQLConnectionTest(unittest.TestCase):
         Session = sessionmaker(bind=engine, **session_options)
         self.db.Session = Session
         self.db.Base = Base
-        self.db.create_scoped_session()
+        self.db.create_session(use_scoped=True)
         self.assertIsNotNone(self.db.session)
 
     def test_create_db(self):
