@@ -92,9 +92,7 @@ class SQLConnection(DatabaseConnection):
         self.Base = base or Base
         session_options = session_options or {}
         session_options["query_cls"] = SQLQuery
-        if self.Session is not None:
-            self.Session = self.Session
-        else:
+        if self.Session is None:
             self.Session = sessionmaker(bind=self.engine, **session_options)
         if create_session:
             self.create_session(use_scoped, scope_func)
@@ -112,11 +110,17 @@ class SQLConnection(DatabaseConnection):
             A function which serves as the scope for the session. The session will live only in the scope of that function.
         """
         if not use_scoped:
-            self.session = self.Session()
+            self._create_unscoped_session()
         else:
-            self.session = scoped_session(self.Session, scopefunc=scope_func)
-            self.Base.query = self.session.query_property(query_cls=SQLQuery)
-            self.use_scoped = True
+            self._create_scoped_session(scope_func)
+
+    def _create_scoped_session(self, scope_func):
+        self.session = scoped_session(self.Session, scopefunc=scope_func)
+        self.Base.query = self.session.query_property(query_cls=SQLQuery)
+        self.use_scoped = True
+
+    def _create_unscoped_session(self):
+        self.session = self.Session()
 
     def end_session(self):
         if self.use_scoped:
