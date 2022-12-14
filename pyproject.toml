@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "db-plugins"
+version = "4.0.0"
+description = "ALeRCE database plugins."
+authors = [
+    {email = "contact@alerce.online"},
+    {name = "ALeRCE Team"}
+]
+readme = "README.rst"
+requires-python = "~=3.9"
+dependencies = [
+    "alembic==1.8.1",
+    "click==8.1.3",
+    "marshmallow_sqlalchemy==0.28.1",
+    "SQLAlchemy==1.3.24",
+    "pymongo==4.3.3"
+]
+
+[project.optional-dependencies]
+dev = [
+    "psycopg2-binary",
+    "pytest",
+    "pytest-docker",
+    "coverage",
+    "alchemy_mock",
+    "mongomock"
+]
+doc = [
+    "numpydoc>=0.9.1",
+    "recommonmark"
+]
+
+[project.scripts]
+dbp = "db_plugins.cli.manage:cli"
+
+[project.urls]
+repository = "https://github.com/alercebroker/db-plugins"

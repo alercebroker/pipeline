@@ -1,5 +1,6 @@
 import abc
 from math import ceil
+from typing import Type
 
 
 class DatabaseCreator(abc.ABC):
@@ -10,8 +11,9 @@ class DatabaseCreator(abc.ABC):
     implementation of this method.
     """
 
+    @classmethod
     @abc.abstractmethod
-    def create_database(self):
+    def create_database(cls):
         """Abstract factory method.
 
         Note that the Creator may also provide some default implementation of
@@ -28,7 +30,7 @@ class DatabaseConnection(abc.ABC):
     """
 
     @abc.abstractmethod
-    def connect(self):
+    def connect(self, config):
         """Initiate the database connection."""
         raise NotImplementedError()
 
@@ -48,7 +50,7 @@ class DatabaseConnection(abc.ABC):
         raise NotImplementedError()
 
 
-def new_DBConnection(creator: DatabaseCreator) -> DatabaseConnection:
+def new_DBConnection(creator: Type[DatabaseCreator]) -> DatabaseConnection:
     """Create a new database connection.
 
     The client code works with an instance of a concrete creator,
@@ -160,6 +162,17 @@ class Pagination:
         if not self.has_next:
             return None
         return self.page + 1
+
+
+class PaginationNoCount(Pagination):
+    def __init__(self, query, page, per_page, items, has_next):
+        super().__init__(query, page, per_page, None, items)
+        self._has_next = has_next
+
+    @property
+    def has_next(self):
+        """Check if a previous page exists."""
+        return self._has_next
 
 
 class AbstractObject:

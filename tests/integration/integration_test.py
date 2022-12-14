@@ -8,9 +8,11 @@ from db_plugins.db.sql import (
 )
 from db_plugins.db.generic import Pagination
 from sqlalchemy.engine.reflection import Inspector
+import pytest
 import unittest
 
 
+@pytest.mark.usefixtures("psql_service")
 class SQLConnectionTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -88,6 +90,7 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertIsInstance(query, SQLQuery)
 
 
+@pytest.mark.usefixtures("psql_service")
 class SQLQueryTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -203,6 +206,7 @@ class SQLQueryTest(unittest.TestCase):
         self.assertIsInstance(obj_page, list)
 
 
+@pytest.mark.usefixtures("psql_service")
 class ScopedSQLQueryTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):

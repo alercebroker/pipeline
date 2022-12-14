@@ -1,6 +1,5 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.declarative import declarative_base
 
 from .query import SQLQuery
 from ..generic import DatabaseConnection, DatabaseCreator
@@ -15,11 +14,6 @@ def satisfy_keys(config_keys):
 
 def settings_map(config):
     return f"{config['ENGINE']}://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
-
-
-class SQLDatabaseCreator(DatabaseCreator):
-    def create_database(self) -> DatabaseConnection:
-        return SQLConnection()
 
 
 class SQLConnection(DatabaseConnection):
@@ -156,3 +150,9 @@ class SQLConnection(DatabaseConnection):
             db_conn.query().get_or_create(model=Object, filter_by=**filters)
         """
         return self.session.query(*args)
+
+
+class SQLDatabaseCreator(DatabaseCreator):
+    @classmethod
+    def create_database(cls) -> SQLConnection:
+        return SQLConnection()
