@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check version is updated
-      run: |
-        perl -e '`git describe --tags --abbrev=0` =~ /(.+)\.(.+)\.(.+)/; ($of, $os, $ot) = ($1, $2, $3);' -e '`cat db_plugins/__init__.py` =~ /__version__\s*=\s*['\''"](.+)\.(.+)\.(.+)['\''"]/; ($nf, $ns, $nt) = ($1, $2, $3);' -e 'exit($nf <= $of && $ns <= $os && $nt <= $ot)'
+      - uses: actions/checkout@v2
+      - name: Check version is updated
+        run: |
+          perl -e '`git describe --tags --abbrev=0` =~ /(.+)\.(.+)\.(.+)/; ($of, $os, $ot) = ($1, $2, $3);' -e '`cat db_plugins/__init__.py` =~ /__version__\s*=\s*['\''"](.+)\.(.+)\.(.+)['\''"]/; ($nf, $ns, $nt) = ($1, $2, $3);' -e 'exit($nf <= $of && $ns <= $os && $nt <= $ot)'
