@@ -1,9 +1,10 @@
 from collections import UserDict
 
 from pymongo import MongoClient
-from db_plugins.db.mongo.query import MongoQuery
-from db_plugins.db.generic import DatabaseConnection, DatabaseCreator
-from db_plugins.db.mongo.orm import ModelMetaClass
+
+from .query import MongoQuery
+from ..generic import DatabaseConnection, DatabaseCreator
+from .orm import ModelMetaClass
 
 
 class _MongoConfig(UserDict):

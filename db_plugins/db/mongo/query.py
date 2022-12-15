@@ -3,8 +3,8 @@ from typing import Type
 
 from pymongo import UpdateOne
 
-from db_plugins.db.generic import BaseQuery, Pagination, PaginationNoCount
-from db_plugins.db.mongo.models import BaseModel
+from ..generic import BaseQuery, Pagination, PaginationNoCount
+from .models import BaseModel
 
 
 class CollectionNotFound(Exception):

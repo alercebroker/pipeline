@@ -1,5 +1,5 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from db_plugins.db.sql.models import *
+from .models import *
 
 
 class Gaia_ztfSchema(SQLAlchemyAutoSchema):

@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Query
 from sqlalchemy.dialects.postgresql import insert
-from ..generic import BaseQuery, Pagination
 from sqlalchemy.exc import IntegrityError
+
+from ..generic import BaseQuery, Pagination
 
 
 class SQLQuery(BaseQuery, Query):

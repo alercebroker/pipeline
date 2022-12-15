@@ -1,4 +1,4 @@
-from db_plugins.db.mongo.connection import MongoConnection
+from .connection import MongoConnection
 
 
 def init_mongo_database(config, db=None):
