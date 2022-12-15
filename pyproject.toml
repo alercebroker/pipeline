@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "db-plugins"
-version = "4.0.1"
+dynamic = ["version"]
 description = "ALeRCE database plugins."
 authors = [
     {email = "contact@alerce.online"},
@@ -33,6 +33,9 @@ doc = [
     "numpydoc>=0.9.1",
     "recommonmark"
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "db_plugins.__version__"}
 
 [project.scripts]
 dbp = "db_plugins.cli.manage:cli"
