@@ -59,7 +59,6 @@ class Object(BaseModel):
     features = SpecialField(lambda **kwargs: kwargs.get("features", []))
     probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
-    reference = SpecialField(lambda **kwargs: kwargs.get("reference", []))
 
     __table_args__ = [
         IndexModel([("oid", ASCENDING)]),
@@ -101,7 +100,6 @@ class Detection(BaseModelWithExtraFields):
     e_mag = Field()  # sigmapsf in ZTF alerts
     mag_corr = Field()  # magpsf_corr in ZTF alerts
     e_mag_corr = Field()  # sigmapsf_corr in ZTF alerts
-    e_mag_corr_ext = Field()  # sigmapsf_corr_ext in ZTF alerts
     isdiffpos = Field()
     corrected = Field()
     dubious = Field()
