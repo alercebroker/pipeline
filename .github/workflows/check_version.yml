@@ -19,4 +19,6 @@ jobs:
           VERSION_FILE=db_plugins/__init__.py
           perl -e '`git describe --tags --abbrev=0` =~ /(.+)\.(.+)\.(.+)/; ($of, $os, $ot) = ($1, $2, $3);'\
                -e '`cat '$VERSION_FILE'` =~ /__version__\s*=\s*['\''"](.+)\.(.+)\.(.+)['\''"]/;($nf, $ns, $nt) = ($1, $2, $3);'\
-               -e 'exit($nf <= $of && $ns <= $os && $nt <= $ot)'
+               -e '$nf < $of ? exit(1) : $nf > $of ? exit(0) : {};'\
+               -e '$ns < $os ? exit(1) : $ns > $os ? exit(0) : {};'\
+               -e '$nt <= $ot ? exit(1) : $nt > $ot ? exit(0) : {};'
