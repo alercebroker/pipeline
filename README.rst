@@ -17,6 +17,12 @@ Installing *db_plugins*
 
    pip install .
 
+Alternatively, to automatically install the additional development requirements, you can use
+
+.. code-block:: console
+
+   pip install .[dev]
+
 or you can install it directly from github
 
 .. code-block:: console
