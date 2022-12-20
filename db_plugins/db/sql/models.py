@@ -12,7 +12,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
 )
 from sqlalchemy.orm import relationship
-from db_plugins.db import generic
+from .. import generic
 
 from sqlalchemy.ext.declarative import declarative_base
 

@@ -1,5 +1,5 @@
 from pymongo import ASCENDING, DESCENDING, GEOSPHERE, IndexModel
-from db_plugins.db.mongo.orm import Field, SpecialField, ModelMetaClass
+from .orm import Field, SpecialField, ModelMetaClass
 
 
 class BaseModel(dict, metaclass=ModelMetaClass):
