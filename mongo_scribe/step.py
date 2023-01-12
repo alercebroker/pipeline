@@ -15,8 +15,11 @@ class MongoScribe(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self,consumer = None, config = None,level = logging.INFO,**step_args):
-        super().__init__(consumer,config=config, level=level)
+
+    def __init__(
+        self, consumer=None, config=None, level=logging.INFO, **step_args
+    ):
+        super().__init__(consumer, config=config, level=level)
         self.db_client = ScribeDbOperations(config["DB_CONFIG"])
 
     def execute(self, messages):
@@ -31,7 +34,9 @@ class MongoScribe(GenericStep):
                 logging.error(f"[ERROR] Error processing message: {e}")
                 n_invalid_commands += 1
 
-        logging.info(f"[INFO] Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages.")
+        logging.info(
+            f"[INFO] Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages."
+        )
 
         if len(valid_commands) > 0:
             logging.info("[INFO] Writing commands into database")

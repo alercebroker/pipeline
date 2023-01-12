@@ -12,11 +12,11 @@ LOGGING_DEBUG = True
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
-        'bootstrap.servers': 'localhost:9092',
-        'group.id': 'python_example_group_1'
+        "bootstrap.servers": "localhost:9092",
+        "group.id": "python_example_group_1",
     },
     "TOPICS": ["commands"],
-    "NUM_MESSAGES": 2
+    "NUM_MESSAGES": 2,
 }
 
 DB_CONFIG = {
