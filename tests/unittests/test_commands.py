@@ -7,19 +7,17 @@ from mongo_scribe.command.exceptions import (
     UpdateWithNoCriteriaException,
 )
 
-dummy_data = {
-    "type": "insert",
-    "criteria": {"_id": "AID51423"},
-    "data": {"field1": "some_field", "field2": "some_other_field"},
-}
+from mockdata import valid_data_dict
 
 
 class CommandTests(unittest.TestCase):
     def test_create_dbcommand(self):
         command = DbCommand(
-            dummy_data["type"], dummy_data["criteria"], dummy_data["data"]
+            valid_data_dict["type"],
+            valid_data_dict["criteria"],
+            valid_data_dict["data"],
         )
-        self.assertEqual(command.data, dummy_data["data"])
+        self.assertEqual(command.data, valid_data_dict["data"])
 
     def test_create_dbcommand_no_data(self):
         self.assertRaises(
@@ -29,5 +27,5 @@ class CommandTests(unittest.TestCase):
     def test_create_dbcommand_update_without_criteria(self):
         self.assertRaises(
             UpdateWithNoCriteriaException,
-            lambda: DbCommand("update", None, dummy_data["data"]),
+            lambda: DbCommand("update", None, valid_data_dict["data"]),
         )
