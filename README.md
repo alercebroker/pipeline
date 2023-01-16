@@ -15,4 +15,5 @@ The commands must be formatted as follows:
 ```
 
  - To be published to the topic, this JSON or dictionary must be stringified (*tested with json.dumps*) and published in a dictionary with the key **payload** and serialized as AVRO.
- - An insert command must include a non-null criteria 
+ - An update command must include a non-null criteria.
+ - Criteria and data haven't been tested with MongoDB operations.
