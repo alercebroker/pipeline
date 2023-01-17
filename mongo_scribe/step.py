@@ -20,6 +20,7 @@ class MongoScribe(GenericStep):
         self, consumer=None, config=None, level=logging.INFO, **step_args
     ):
         super().__init__(consumer, config=config, level=level)
+        print(f'Holi, {config["DB_CONFIG"]["MONGO"]["USERNAME"]}')
         self.db_client = ScribeDbOperations(config["DB_CONFIG"])
 
     def execute(self, messages):
