@@ -5,6 +5,7 @@ on:
     branches:
       - feature/*
       - feat/*
+      - develop
       - main
 
 jobs:
