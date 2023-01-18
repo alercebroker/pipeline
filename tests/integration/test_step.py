@@ -74,5 +74,6 @@ class StepTest(unittest.TestCase):
 
         self.step.start()
         result = self.step.db_client.collection.find({})
-        print(result[0])
+        self.assertIsNotNone(result[0])
+        self.assertEqual(result[0]["field"], "some_value")
 
