@@ -1,7 +1,7 @@
 import pytest
 import unittest
-from unittest.mock import patch
-
+from unittest.mock import patch, Mock
+from mongo_scribe.db.models import get_model_collection
 from mongo_scribe.db.operations import ScribeDbOperations
 from mongo_scribe.command.commands import DbCommand
 
@@ -23,36 +23,38 @@ class OperationTest(unittest.TestCase):
         self.db_operations = operations
 
     def test_bulk_execute_empty(self, mock_collection, _):
-        self.db_operations.collection = mock_collection
         operations = []
 
         self.db_operations.bulk_execute(operations)
         mock_collection.insert_many.assert_not_called()
         mock_collection.bulk_write.assert_not_called()
 
-    def test_bulk_execute_insert_only(self, mock_collection, _):
-        self.db_operations.collection = mock_collection
-        operations = [DbCommand("insert", None, {"field": "value"})]
+    @patch('mongo_scribe.db.operations.get_model_collection')
+    def test_bulk_execute_insert_only(self, get_model_coll_mock, mock_collection, _):
+        get_model_coll_mock.return_value = mock_collection
+        operations = [DbCommand("object", "insert", None, {"field": "value"})]
 
         self.db_operations.bulk_execute(operations)
         mock_collection.insert_many.assert_called()
         mock_collection.bulk_write.assert_not_called()
 
-    def test_bulk_execute_update_only(self, mock_collection, _):
-        self.db_operations.collection = mock_collection
+    @patch('mongo_scribe.db.operations.get_model_collection')
+    def test_bulk_execute_update_only(self, get_model_coll_mock, mock_collection, _):
+        get_model_coll_mock.return_value = mock_collection
         operations = [
-            DbCommand("update", {"_id": "AID51423"}, {"field": "value"})
+            DbCommand("object", "update", {"_id": "AID51423"}, {"field": "value"})
         ]
 
         self.db_operations.bulk_execute(operations)
         mock_collection.insert_many.assert_not_called()
         mock_collection.bulk_write.assert_called()
 
-    def test_bulk_execute(self, mock_collection, _):
-        self.db_operations.collection = mock_collection
+    @patch('mongo_scribe.db.operations.get_model_collection')
+    def test_bulk_execute(self, get_model_coll_mock, mock_collection, _):
+        get_model_coll_mock.return_value = mock_collection
         operations = [
-            DbCommand("insert", None, {"field": "value"}),
-            DbCommand("update", {"_id": "AID51423"}, {"field": "value"}),
+            DbCommand("object", "insert", None, {"field": "value"}),
+            DbCommand("object", "update", {"_id": "AID51423"}, {"field": "value"}),
         ]
 
         self.db_operations.bulk_execute(operations)
