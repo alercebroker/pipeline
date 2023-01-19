@@ -15,7 +15,7 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": "localhost:9092",
         "group.id": "python_example_group_1",
     },
-    "TOPICS": ["commands"],
+    "TOPICS": ["scribe_commands"],
     "NUM_MESSAGES": 2,
 }
 
