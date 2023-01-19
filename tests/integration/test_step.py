@@ -3,6 +3,7 @@ import pytest
 import json
 from time import sleep
 from mongo_scribe.step import MongoScribe
+from mongo_scribe.db.models import get_model_collection
 from apf.consumers.kafka import KafkaConsumer
 from apf.producers.kafka import KafkaProducer
 
@@ -64,6 +65,7 @@ class StepTest(unittest.TestCase):
 
     def test_write_into_database(self):
         command = json.dumps({
+            "collection": "object",
             "type": "insert",
             "data": {
                 "field": "some_value"
@@ -73,7 +75,8 @@ class StepTest(unittest.TestCase):
         self.producer.produce({ "payload": command }, key="insertion_2")
 
         self.step.start()
-        result = self.step.db_client.collection.find({})
+        collection = get_model_collection(self.step.db_client.connection, "object")
+        result = collection.find({})
         self.assertIsNotNone(result[0])
         self.assertEqual(result[0]["field"], "some_value")
 

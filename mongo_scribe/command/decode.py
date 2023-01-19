@@ -4,7 +4,7 @@ from .exceptions import MisformattedCommandExcepction
 
 
 def validate(message: dict):
-    if "type" not in message or "data" not in message:
+    if "type" not in message or "data" not in message or "collection" not in message:
         return None
 
     if "criteria" not in message:
@@ -26,6 +26,7 @@ def decode_message(encoded_message: str):
 def db_command_factory(msg: str):
     decoded_message = decode_message(msg)
     return DbCommand(
+        decoded_message["collection"],
         decoded_message["type"],
         decoded_message["criteria"],
         decoded_message["data"],
