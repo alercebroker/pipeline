@@ -16,7 +16,7 @@ CONSUMER_CONFIG = {
         "group.id": "python_example_group_1",
     },
     "TOPICS": ["scribe_commands"],
-    "NUM_MESSAGES": 2,
+    "NUM_MESSAGES": 100,
 }
 
 DB_CONFIG = {
