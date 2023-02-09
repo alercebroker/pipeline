@@ -11,7 +11,8 @@ on:
 jobs:
   lint:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
-    sources-folder: 'sorting_hat_step'
+    with:
+      sources-folder: 'sorting_hat_step'
   unittest:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
