@@ -18,21 +18,21 @@ DB_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "sorting_hat_stream",
     "PARAMS": {
-        "bootstrap.servers": "localhost:9094",
+        "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
 }
 
 CONSUMER_CONFIG = {
     "PARAMS": {
-        "bootstrap.servers":  "localhost:9094",
+        "bootstrap.servers": "localhost:9092",
         "group.id": "sorting_hat_consumer",
         "auto.offset.reset": "beginning",
-        'max.poll.interval.ms': 3600000
+        "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": 10,
     "consume.messages": 10,
-    "TOPICS": ["topic_test"]
+    "TOPICS": ["topic_test"],
 }
 
 
@@ -52,12 +52,10 @@ class MongoIntegrationTest(unittest.TestCase):
                 "STEP_COMMENTS": "developing and testing it",
             },
         }
-        cls.step = SortingHatStep(
-            consumer,
-            config=cls.step_config,
-            level=logging.DEBUG
-        )
+        cls.step = SortingHatStep(consumer, config=cls.step_config, level=logging.DEBUG)
 
     def test_execute(self):
-        batch = generate_alerts_batch(100, nearest=10)  # generate 110 alerts where 10 alerts are near of another alerts
+        batch = generate_alerts_batch(
+            100, nearest=10
+        )  # generate 110 alerts where 10 alerts are near of another alerts
         self.step.execute(batch)
