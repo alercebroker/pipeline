@@ -21,6 +21,9 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       pre-dependencies: 'numpy'
+      test-command: |
+        coverage run --source sorting_hat_step -m pytest -x tests/unittest
+        coverage xml
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
@@ -30,3 +33,4 @@ jobs:
       test-dependencies: 'confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
       pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x tests/integration'
