@@ -6,10 +6,10 @@ from db_plugins.db.generic import new_DBConnection
 from survey_parser_plugins import ALeRCEParser
 from typing import List
 from .utils.sorting_hat import SortingHat
+from .utils.output import _parse_output
 
 import numpy as np
 import pandas as pd
-import pickle
 import logging
 
 
@@ -45,28 +45,18 @@ class SortingHatStep(GenericStep):
         :return:
         """
         n_messages = 0
-        alerts = alerts.replace(
-            {np.nan: None}
-        )  # transform np.nan to None (only for produce proposals)
+        for _, alert in alerts.iterrows():
+            output = _parse_output(alert)
+            self.producer.produce(output, key=str(output["aid"]))
+            n_messages += 1
+        self.logger.info(f"{n_messages} messages Produced")
 
+    def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics["ra"] = alerts["ra"].tolist()
         self.metrics["dec"] = alerts["dec"].tolist()
         self.metrics["oid"] = alerts["oid"].tolist()
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
-
-        for index, alert in alerts.iterrows():
-            alert = alert.to_dict()
-            alert["rfid"] = None if alert["rfid"] is None else int(alert["rfid"])
-            for k in alert[
-                "extra_fields"
-            ].keys():  # transform to bytes if datatype is list
-                if isinstance(alert["extra_fields"][k], list):
-                    alert["extra_fields"][k] = pickle.dumps(alert["extra_fields"][k])
-            # produce alert content with key of candid
-            self.producer.produce(alert, key=str(alert["aid"]))
-            n_messages += 1
-        self.logger.info(f"{n_messages} messages Produced")
 
     def execute(self, messages: List[dict]) -> None:
         """
@@ -76,10 +66,10 @@ class SortingHatStep(GenericStep):
         """
         response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
-        del alerts["stamps"]
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
         alerts = self.wizard.to_name(alerts)
+        self._add_metrics(alerts)
         if self.producer:
             self.produce(alerts)
         del alerts
