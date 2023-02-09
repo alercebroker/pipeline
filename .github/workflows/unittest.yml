@@ -6,29 +6,24 @@ on:
       - main
 
 jobs:
-  unit_test:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    sources-folder: 'sorting_hat_step'
+  unittest:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.7]
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    - name: unittest
+      uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest coverage numpy
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Test with pytest
-      run: |
-        coverage run --source sorting_hat_step -m pytest -x -s tests/unittest/
-        coverage xml
-    - name: Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
+        python-version: '3.8'
+        sources-folder: 'sorting_hat_step'
+        test-folder: 'tests/unittest'
+        test-dependencies: 'pytest pytest-cov numpy'
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/integration'
+      test-dependencies: 'confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
+      codecov-flags: ''  # Do not upload
