@@ -10,17 +10,17 @@ on:
 
 jobs:
   lint:
-    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@a5528ef
     sources-folder: 'sorting_hat_step'
   unittest:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@a5528ef
     with:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov numpy'
   integration:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@a5528ef
     with:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
