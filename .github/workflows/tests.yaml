@@ -10,15 +10,12 @@ jobs:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
     sources-folder: 'sorting_hat_step'
   unittest:
-    runs-on: ubuntu-latest
-    steps:
-    - name: unittest
-      uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-      with:
-        python-version: '3.8'
-        sources-folder: 'sorting_hat_step'
-        test-folder: 'tests/unittest'
-        test-dependencies: 'pytest pytest-cov numpy'
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov numpy'
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
