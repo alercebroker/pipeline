@@ -21,7 +21,7 @@ class Topic:
 
 
 class DailyTopicStrategy(GenericTopicStrategy):
-    """ Gives a KafkaConsumer a new topic every day. (For more information check the :class:`apf.consumers.KafkaConsumer`)
+    """Gives a KafkaConsumer a new topic every day. (For more information check the :class:`apf.consumers.KafkaConsumer`)
 
     Parameters
     ----------
@@ -36,12 +36,17 @@ class DailyTopicStrategy(GenericTopicStrategy):
     """
 
     def __init__(
-        self, topic_format="ztf_%s_programid1", date_format="%Y%m%d", change_hour=22
+        self,
+        topic_format="ztf_%s_programid1",
+        date_format="%Y%m%d",
+        change_hour=22,
+        retention_days=8,
     ):
         super().__init__()
         self.topic_formats = (
             topic_format if type(topic_format) is list else [topic_format]
         )
+        self.retention_days = retention_days
         self.date_format = date_format
         self.change_hour = change_hour
         now = datetime.datetime.utcnow()
@@ -54,8 +59,8 @@ class DailyTopicStrategy(GenericTopicStrategy):
     def _remove_old_topics(self, now):
         for topic in self.topics:
             delta = now - topic.date
-            if delta.days >= 8:
-                self.topics.remove(topic)
+            if abs(delta.days) >= self.retention_days:
+                self.topics = self.topics[-self.retention_days :]
 
     def get_topics(self):
         """Get list of topics updated to the current date.

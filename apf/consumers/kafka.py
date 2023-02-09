@@ -1,10 +1,10 @@
 from apf.consumers.generic import GenericConsumer
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, KafkaException
 
 import fastavro
 import io
 import importlib
-
+import json
 
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
@@ -82,7 +82,8 @@ class KafkaConsumer(GenericConsumer):
                     "ztf_%s_programid3"
                     ],
                 "date_format": "%Y%m%d",
-                "change_hour": 23
+                "change_hour": 23,
+                "retention_days": 8,
                }
               }
             }
@@ -122,6 +123,9 @@ class KafkaConsumer(GenericConsumer):
         self.config["PARAMS"]["enable.auto.commit"] = False
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
+
+        self.max_retries = int(self.config.get("COMMIT_RETRY", 5))
+
         self.logger.info(
             f"Creating consumer for {self.config['PARAMS'].get('bootstrap.servers')}"
         )
@@ -237,5 +241,26 @@ class KafkaConsumer(GenericConsumer):
                     yield deserialized
 
     def commit(self):
-        for message in self.messages:
-            self.consumer.commit(message)
+        retries = 0
+        commited = False
+
+        while not commited:
+            try:
+                self.consumer.commit(asynchronous=False)
+                commited = True
+            except KafkaException as e:
+                retries += 1
+
+                # Rasing the same error
+                if retries == self.max_retries:
+                    raise e
+
+
+class KafkaJsonConsumer(KafkaConsumer):
+    def __init__(self, config):
+        super().__init__(config)
+
+    def _deserialize_message(self, message):
+        msg_value = message.value()
+        data = json.loads(msg_value)
+        return data

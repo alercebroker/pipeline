@@ -40,28 +40,28 @@ def new_step(name):
     loader = jinja2.FileSystemLoader(TEMPLATE_PATH)
     route = jinja2.Environment(loader=loader)
 
-    init_template = route.get_template("step/package/__init__.py.template")
+    init_template = route.get_template("step/package/__init__.py")
     with open(os.path.join(output_path, package_name, "__init__.py"), "w") as f:
         f.write(init_template.render())
 
-    step_template = route.get_template("step/package/step.py.template")
+    step_template = route.get_template("step/package/step.py")
     with open(os.path.join(output_path, package_name, "step.py"), "w") as f:
 
         class_name = "".join(
             [word.capitalize() for word in cleaned_name])
         f.write(step_template.render(step_name=class_name))
 
-    dockerfile_template = route.get_template("step/Dockerfile.template")
+    dockerfile_template = route.get_template("step/Dockerfile")
     with open(os.path.join(output_path, "Dockerfile"), "w") as f:
         f.write(dockerfile_template.render())
 
-    run_script_template = route.get_template("step/scripts/run_step.py.template")
+    run_script_template = route.get_template("step/scripts/run_step.py")
     with open(os.path.join(output_path, "scripts", "run_step.py"), "w") as f:
         f.write(run_script_template.render(
             package_name=package_name, class_name=class_name))
 
     run_multiprocess_template = route.get_template(
-        "step/scripts/run_multiprocess.py.template")
+        "step/scripts/run_multiprocess.py")
     with open(os.path.join(output_path, "scripts", "run_multiprocess.py"), "w") as f:
         f.write(run_multiprocess_template.render(
             package_name=package_name, class_name=class_name))
@@ -75,7 +75,7 @@ def new_step(name):
         f.write(requirements_template.render(
             apf_version=apf_version))
 
-    settings_template = route.get_template("step/settings.py.template")
+    settings_template = route.get_template("step/settings.py")
     with open(os.path.join(output_path, "settings.py"), "w") as f:
         f.write(settings_template.render(step_name=name))
 

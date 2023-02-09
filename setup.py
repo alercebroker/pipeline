@@ -14,7 +14,7 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="apf_base",
-    version="1.0.1",
+    version="1.0.8",
     description="ALeRCE Alert Processing Framework.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -22,6 +22,8 @@ setup(
     author_email="contact@alerce.online",
     packages=find_namespace_packages(include=["apf.*"]),
     scripts=["scripts/apf"],
+    package_data={"": ["*.txt", "Dockerfile"]},
+    include_package_data=True,
     install_requires=required_packages,
     build_requires=required_packages,
     project_urls={

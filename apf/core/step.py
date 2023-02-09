@@ -170,8 +170,7 @@ class GenericStep:
                     # Checking if the metric exists
                     if aliased_metric not in extra_metrics:
                         extra_metrics[aliased_metric] = []
-                    if value:
-                        extra_metrics[aliased_metric].append(value)
+                    extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)
 
         # If not they are only added as a single value.
@@ -179,8 +178,7 @@ class GenericStep:
             extra_metrics = {}
             for metric in self.extra_metrics:
                 aliased_metric, value = self.get_value(message, metric)
-                if value:
-                    extra_metrics[aliased_metric] = value
+                extra_metrics[aliased_metric] = value
             extra_metrics["n_messages"] = 1
         return extra_metrics
 

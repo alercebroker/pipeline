@@ -3,6 +3,7 @@ import logging
 import tempfile
 import os
 
+
 class LogfileMetricsProducer(GenericMetricsProducer):
     """Write metrics into a logfile
 
