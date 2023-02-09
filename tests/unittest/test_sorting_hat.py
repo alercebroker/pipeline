@@ -19,13 +19,13 @@ class SortingHatTestCase(unittest.TestCase):
         del self.sh
 
     def test_wgs_scale(self):
-        val90 = self.sh.wgs_scale(90.)
+        val90 = self.sh.wgs_scale(90.0)
         self.assertAlmostEqual(val90, 111693.97955912731)
 
-        val0 = self.sh.wgs_scale(0.)
+        val0 = self.sh.wgs_scale(0.0)
         self.assertAlmostEqual(val0, 110574.27582159475)
 
-        valm90 = self.sh.wgs_scale(0.)
+        valm90 = self.sh.wgs_scale(0.0)
         self.assertAlmostEqual(valm90, 110574.27582159475)
 
     def test_id_generator(self):
@@ -42,7 +42,9 @@ class SortingHatTestCase(unittest.TestCase):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
         batch = self.sh.internal_cross_match(example_batch)
-        self.assertListEqual(batch.index.tolist(), batch["tmp_id"].to_list())  # The index must be equal to tmp_id
+        self.assertListEqual(
+            batch.index.tolist(), batch["tmp_id"].to_list()
+        )  # The index must be equal to tmp_id
         self.assertEqual(len(batch["oid"].unique()), 500)
 
     def test_internal_cross_match_closest_objects(self):
@@ -78,7 +80,9 @@ class SortingHatTestCase(unittest.TestCase):
 
     def test_oid_query(self):
         # Mock a response with elements in database
-        self.mock_database_connection.query(model=Object).find.return_value = [{"aid": 1}]
+        self.mock_database_connection.query(model=Object).find.return_value = [
+            {"aid": 1}
+        ]
         aid = self.sh.oid_query(["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_database_connection.query(model=Object).find.assert_called()
@@ -88,21 +92,27 @@ class SortingHatTestCase(unittest.TestCase):
         self.assertEqual(aid, None)
         self.mock_database_connection.query(model=Object).find.assert_called()
         # Mock a response without aid field
-        self.mock_database_connection.query(model=Object).find.return_value = [{"field1": 1, "field2": 2}]
+        self.mock_database_connection.query(model=Object).find.return_value = [
+            {"field1": 1, "field2": 2}
+        ]
         with self.assertRaises(KeyError) as context:
             self.sh.oid_query(["x", "y", "z"])
             self.mock_database_connection.query(model=Object).find.assert_called()
         self.assertIsInstance(context.exception, Exception)
 
     def test_cone_search(self):
-        self.mock_database_connection.query(model=Object).find.return_value = [{"aid": 1}]
+        self.mock_database_connection.query(model=Object).find.return_value = [
+            {"aid": 1}
+        ]
         aids = self.sh.cone_search(0, 0)
         self.mock_database_connection.query(model=Object).find.assert_called()
         self.assertListEqual(aids, [{"aid": 1}])
 
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_miss(self, mock_cone_search: MagicMock, mock_oid_query: MagicMock):
+    def test_one_to_name_miss(
+        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
+    ):
         batch = generate_parsed_batch(1, nearest=10)
         # Test one batch that is the same object: (miss) test when object doesn't exist in database, so create alerce_id
         mock_cone_search.return_value = []
@@ -114,7 +124,9 @@ class SortingHatTestCase(unittest.TestCase):
 
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_hit_oid(self, mock_cone_search: MagicMock, mock_oid_query: MagicMock):
+    def test_one_to_name_hit_oid(
+        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
+    ):
         batch = generate_parsed_batch(1, nearest=10)
         # Test one batch that is the same object: (hit) test when exists oid
         mock_cone_search.return_value = []
@@ -127,7 +139,9 @@ class SortingHatTestCase(unittest.TestCase):
 
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_hit_cone_search(self, mock_cone_search: MagicMock, mock_oid_query: MagicMock):
+    def test_one_to_name_hit_cone_search(
+        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
+    ):
         batch = generate_parsed_batch(1, nearest=10)
         # Test one batch that is the same object: (hit) test when exists objects nearest
         mock_cone_search.return_value = [{"aid": 123}]

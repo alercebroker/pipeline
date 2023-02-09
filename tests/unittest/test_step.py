@@ -26,7 +26,7 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.step = SortingHatStep(
             config=self.step_config,
             db_connection=self.mock_database_connection,
-            producer=self.mock_producer
+            producer=self.mock_producer,
         )
 
     def tearDown(self):
@@ -36,11 +36,12 @@ class SortingHatStepTestCase(unittest.TestCase):
 
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.to_name")
     @mock.patch("sorting_hat_step.step.SortingHatStep.produce")
-    def test_execute(self, mock_produce: MagicMock, mock_to_name: MagicMock):
+    def test_execute(self, mock_to_name: MagicMock, mock_produce: MagicMock):
         alerts = generate_alerts_batch(100)
         self.step.execute(alerts)
         mock_to_name.assert_called()
         mock_produce.assert_called()
+        print(mock_produce.call_args[0][0]["stamps"])
 
     def test_produce(self):
         alerts = generate_alerts_batch(100)
@@ -50,4 +51,3 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.step.produce(alerts)
         self.step.producer.produce.assert_called()
         self.assertEqual(self.step.producer.produce.call_count, len(alerts))
-        pass
