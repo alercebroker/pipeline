@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 from unittest.mock import MagicMock
+from apf.consumers import KafkaConsumer
 
 import pandas as pd
 from apf.producers import KafkaProducer
@@ -23,10 +24,12 @@ class SortingHatStepTestCase(unittest.TestCase):
         }
         self.mock_database_connection = mock.create_autospec(MongoConnection)
         self.mock_producer = mock.create_autospec(KafkaProducer)
+        self.mock_consumer = mock.create_autospec(KafkaConsumer)
         self.step = SortingHatStep(
+            consumer=self.mock_consumer,
             config=self.step_config,
-            db_connection=self.mock_database_connection,
             producer=self.mock_producer,
+            db_connection=self.mock_database_connection,
         )
 
     def tearDown(self):

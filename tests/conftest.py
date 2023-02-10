@@ -22,7 +22,7 @@ def docker_compose_command():
     return "docker compose" if v2 else "docker-compose"
 
 
-def is_responsive_mongo(url):
+def is_responsive_mongo():
     try:
         client = MongoClient(
             "localhost", 27017, username="root", password="root", authSource="admin"
@@ -38,12 +38,12 @@ def is_responsive_mongo(url):
         )
         # put credentials to init database (create collections and indexes)
         settings = {
-            "ENGINE": "mongo",
             "HOST": "localhost",
-            "USER": "test_user",
+            "USERNAME": "test_user",
             "PASSWORD": "test_password",
             "PORT": 27017,
             "DATABASE": "test_db",
+            "AUTH_SOURCE": "test_db",
         }
         init_mongo_database(settings)
         return True
@@ -58,13 +58,13 @@ def mongo_service(docker_ip, docker_services):
     port = docker_services.port_for("mongo", 27017)
     server = "{}:{}".format(docker_ip, port)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo(server)
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo()
     )
     return server
 
 
 def is_responsive_kafka(url):
-    client = AdminClient({"bootstrap.servers": "localhost:9092"})
+    client = AdminClient({"bootstrap.servers": url})
     topics = ["test_topic"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
@@ -72,6 +72,7 @@ def is_responsive_kafka(url):
         try:
             f.result()
         except Exception as e:
+            print(f"Can't create topic {topic}")
             print(e)
             return False
     return True
