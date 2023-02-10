@@ -21,9 +21,6 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       pre-dependencies: 'numpy'
-      test-command: |
-        coverage run --source sorting_hat_step -m pytest -x tests/unittest
-        coverage xml
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
