@@ -30,4 +30,3 @@ jobs:
       test-dependencies: 'confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
       pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
