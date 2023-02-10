@@ -1,0 +1,6 @@
+apf_base>=1.0.0
+alerce_classifiers
+db_plugins
+astropy
+numpy
+pandas
