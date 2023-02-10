@@ -1,5 +1,5 @@
 apf_base>=1.0.0
-alerce_classifiers
+atlas_stamp_classifier
 db_plugins
 astropy
 numpy
