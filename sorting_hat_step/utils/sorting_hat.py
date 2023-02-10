@@ -5,10 +5,8 @@ import time
 import string
 
 from scipy.spatial import cKDTree
-from typing import List, Union
+from typing import Callable, List, Union
 
-from db_plugins.db.mongo.models import Object
-from db_plugins.db.mongo.connection import MongoConnection
 
 CHARACTERS = string.ascii_lowercase
 
@@ -41,44 +39,6 @@ class SortingHat:
         # Compute length of arc at this latitude (meters/degree)
         arc = rm * self.angle
         return arc
-
-    def cone_search(self, ra: float, dec: float) -> List[dict]:
-        """
-        Cone search to database given a ra, dec and radius. Returns a list of objects sorted by distance.
-        :param ra: right ascension
-        :param dec: declination
-        :return:
-        """
-        radius = self.radius / 3600
-        scaling = self.wgs_scale(dec)
-        meter_radius = radius * scaling
-        lon, lat = ra - 180.0, dec
-        mongo_query = self.db.query(Object)
-        cursor = mongo_query.collection.find(
-            {
-                "loc": {
-                    "$nearSphere": {
-                        "$geometry": {"type": "Point", "coordinates": [lon, lat]},
-                        "$maxDistance": meter_radius,
-                    }
-                },
-            },
-            {"aid": 1},  # only return alerce_id
-        )
-        spatial = [i for i in cursor]
-        return spatial
-
-    def oid_query(self, oid: list) -> Union[int, None]:
-        """
-        Query to database if the oids has an alerce_id
-        :param oid: oid of any survey
-        :return: existing aid if exists else is None
-        """
-        mongo_query = self.db.query(Object)
-        object = mongo_query.find_one({"oid": {"$in": oid}})
-        if object:
-            return object["aid"]
-        return None
 
     def encode(self, long_number: int) -> str:
         """
@@ -213,49 +173,124 @@ class SortingHat:
             matrix[:, neighbours_indexes] = 0
         return data
 
-    def _to_name(self, group_of_alerts: pd.DataFrame) -> pd.Series:
+    def find_existing_id(
+        self,
+        alerts: pd.DataFrame,
+        database_id_getter: Callable[[list], Union[int, None]],
+    ):
         """
-        Generate alerce_id to a group of alerts of the same object. This method has three options:
-        1) First Hit: The alert has an oid existing in database
-        2) Second Hit: The alert has a ra, dec closest to object in database (radius of 1.5")
-        3) Miss: Create a new aid given its ra, dec
-        :param group_of_alerts: alerts of the same object.
-        :return:
+        Assigns aid column to a dataframe that has tmp_id column.
+        The aid column will be the existing alerce id obtained by the injected database_id_getter.
+        If no id is found, the resulting aid column will contain null values.
+
+        Input:
+                oid    tmp_id
+            0   A      X
+            1   B      X
+            2   C      Y
+
+        Output:
+                oid    tmp_id
+            0   A      X      aid1
+            1   B      X      aid1
+            2   C      Y      None
         """
-        oids = group_of_alerts["oid"].unique().tolist()
-        first_alert = group_of_alerts.iloc[0]
-        # 1) First Hit: Exists at least one aid to this oid
-        existing_oid = self.oid_query(oids)
-        if existing_oid:
-            aid = existing_oid
-        else:
-            # 2) Second Hit: cone search return objects sorted. So first response is closest.
-            near_objects = self.cone_search(first_alert["ra"], first_alert["dec"])
+        alerts_copy = alerts.copy()
+
+        def _find_existing_id(data: pd.DataFrame):
+            aid = None
+            oids = data["oid"].unique().tolist()
+            aid = database_id_getter(oids)
+            return pd.Series({"aid": aid})
+
+        tmp_id_aid = alerts_copy.groupby("tmp_id").apply(_find_existing_id)
+        return alerts_copy.join(tmp_id_aid, on="tmp_id")
+
+    def find_id_by_conesearch(
+        self,
+        alerts: pd.DataFrame,
+        conesearch_id_getter: Callable[[float, float, float], List[dict]],
+    ):
+        """
+        Assigns aid column to a dataframe that has tmp_id column.
+        The aid column will be the existing alerce id obtained by the injected conesearch_id_getter.
+        If no id is found, the resulting aid column will contain null values.
+
+        Input:
+                oid    tmp_id  aid   ra   dec
+            0   A      X     aid1   123   456
+            1   B      X     aid1   123   456
+            2   C      Y     None   123   456
+
+        Output:
+                oid    tmp_id  aid   ra   dec
+            0   A      X     aid1   123   456
+            1   B      X     aid1   123   456
+            2   C      Y     aid2   123   456
+        """
+        alerts_copy = alerts.copy()
+        alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
+        if len(alerts_without_aid) == 0:
+            return alerts_copy
+
+        def _find_id_by_conesearch(data: pd.DataFrame):
+            first_alert = data.iloc[0]
+            ra = first_alert["ra"]
+            dec = first_alert["dec"]
+
+            radius = self.radius / 3600
+            scaling = self.wgs_scale(dec)
+            meter_radius = radius * scaling
+            lon, lat = ra - 180.0, dec
+
+            near_objects = conesearch_id_getter(lon, lat, meter_radius)
+            aid = None
             if len(near_objects):
                 aid = near_objects[0]["aid"]
-            # 3) Miss generate a new ALeRCE identifier
-            else:
-                aid = self.id_generator(
-                    first_alert["ra"], first_alert["dec"]
-                )  # this is the long id
-                aid = self.encode(aid)  # this is the long id encoded to string id
-                year = time.strftime("%y")  # get year in short form. e.g: 21 means 2021
-                aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
-        response = {"aid": aid}
-        return pd.Series(response)
+            return pd.Series({"aid": aid})
 
-    def to_name(self, alerts: pd.DataFrame) -> pd.DataFrame:
+        tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_find_id_by_conesearch)
+        print(alerts_copy)
+        print(tmp_id_aid)
+        alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
+        alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
+        alerts_copy = alerts_copy.drop(columns=["aid_found"])
+        return alerts_copy
+
+    def generate_new_id(self, alerts: pd.DataFrame):
         """
-        Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.
-        :param alerts: Dataframe of alerts
-        :return: Dataframe of alerts with a new column called `aid` (alerce_id)
+        Assigns aid column to a dataframe that has tmp_id column.
+        The aid column will be a new generated alerce id.
+
+        Input:
+                oid    tmp_id  aid   ra   dec
+            0   A      X     aid1   123   456
+            1   B      X     aid1   123   456
+            2   C      Y     None   123   456
+
+        Output:
+                oid    tmp_id  aid   ra   dec
+            0   A      X     aid1   123   456
+            1   B      X     aid1   123   456
+            2   C      Y     ALid   123   456
         """
-        # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
-        alerts = self.internal_cross_match(alerts)
-        # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
-        tmp_id_aid = alerts.groupby("tmp_id").apply(self._to_name)
-        # Join the tuple tmp_id-aid with batch of alerts
-        alerts = alerts.set_index("tmp_id").join(tmp_id_aid)
-        # Remove column tmp_id (really is an index) forever
-        alerts.reset_index(inplace=True, drop=True)
-        return alerts
+        alerts_copy = alerts.copy()
+        alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
+        if len(alerts_without_aid) == 0:
+            return alerts_copy
+
+        def _generate_new_id(data: pd.DataFrame):
+            first_alert = data.iloc[0]
+            aid = self.id_generator(
+                first_alert["ra"], first_alert["dec"]
+            )  # this is the long id
+            aid = self.encode(aid)  # this is the long id encoded to string id
+            year = time.strftime("%y")  # get year in short form. e.g: 21 means 2021
+            aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
+            return pd.Series({"aid": aid})
+
+        tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_generate_new_id)
+        alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
+        alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
+        alerts_copy = alerts_copy.drop(columns=["aid_found"])
+        return alerts_copy

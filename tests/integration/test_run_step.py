@@ -67,3 +67,4 @@ class MongoIntegrationTest(unittest.TestCase):
             100, nearest=10
         )  # generate 110 alerts where 10 alerts are near of another alerts
         self.step.execute(batch)
+        # TODO check database and kafka topics

@@ -4,6 +4,8 @@ from apf.producers import GenericProducer
 from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
 from typing import List
+
+from sorting_hat_step.utils.database import oid_query, conesearch_query
 from .utils.sorting_hat import SortingHat
 from .utils.output import _parse_output
 import logging
@@ -57,10 +59,27 @@ class SortingHatStep(GenericStep):
         alerts = pd.DataFrame(response)
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
-        alerts = self.wizard.to_name(alerts)
+        alerts = self.add_aid(alerts)
         self._add_metrics(alerts)
         if self.producer:
             self.produce(alerts)
         del alerts
         del messages
         del response
+
+    def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
+        """
+        Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.
+        :param alerts: Dataframe of alerts
+        :return: Dataframe of alerts with a new column called `aid` (alerce_id)
+        """
+        # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
+        alerts = self.wizard.internal_cross_match(alerts)
+        # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
+        alerts = self.wizard.find_existing_id(alerts, oid_query(self.driver))
+        alerts = self.wizard.find_id_by_conesearch(
+            alerts, conesearch_query(self.driver)
+        )
+        alerts = self.wizard.generate_new_id(alerts)
+        alerts.drop(columns=["tmp_id"])
+        return alerts

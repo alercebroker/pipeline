@@ -1,12 +1,10 @@
 import unittest
 import pandas as pd
 from unittest import mock
-from unittest.mock import MagicMock
 
 from db_plugins.db.mongo.connection import MongoConnection
-from db_plugins.db.mongo.models import Object
 from sorting_hat_step.utils.sorting_hat import SortingHat
-from data.batch import generate_batch_ra_dec, generate_parsed_batch
+from data.batch import generate_batch_ra_dec
 
 
 class SortingHatTestCase(unittest.TestCase):
@@ -78,87 +76,58 @@ class SortingHatTestCase(unittest.TestCase):
         self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 1)
         self.assertEqual(len(batch_xmatched["tmp_id"]), 10)
 
-    def test_oid_query(self):
-        # Mock a response with elements in database
-        self.mock_database_connection.query(Object).find_one.return_value = {"aid": 1}
-        aid = self.sh.oid_query(["x", "y", "z"])
-        self.assertEqual(aid, 1)
-        self.mock_database_connection.query(Object).find_one.assert_called()
-        # Mock a response with no elements
-        self.mock_database_connection.query(Object).find_one.return_value = []
-        aid = self.sh.oid_query(["x", "y", "z"])
-        self.assertEqual(aid, None)
-        self.mock_database_connection.query(Object).find_one.assert_called()
-        # Mock a response without aid field
-        self.mock_database_connection.query(Object).find_one.return_value = {
-            "field1": 1,
-            "field2": 2,
-        }
+    def test_find_existing_id(self):
+        alerts = pd.DataFrame(
+            [
+                {"oid": "A", "tmp_id": "X"},
+                {"oid": "B", "tmp_id": "X"},
+                {"oid": "C", "tmp_id": "Y"},
+            ]
+        )
+        id_getter = mock.Mock()
+        id_getter.side_effect = ["aid1", None]
+        response = self.sh.find_existing_id(alerts, id_getter)
+        assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
-        with self.assertRaises(KeyError) as context:
-            self.sh.oid_query(["x", "y", "z"])
-            self.mock_database_connection.query(Object).find_one.assert_called()
-        self.assertIsInstance(context.exception, Exception)
-
-    def test_cone_search(self):
-        self.mock_database_connection.query(Object).collection.find.return_value = [
-            {"aid": 1}
+    def test_find_id_by_conesearch(self):
+        alerts = pd.DataFrame(
+            [
+                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+            ],
+        )
+        id_getter = mock.Mock()
+        id_getter.side_effect = [
+            [{"oid": "obj1", "aid": "aid2"}, {"oid": "obj2", "aid": "aid2"}]
         ]
-        aids = self.sh.cone_search(0, 0)
-        self.mock_database_connection.query(Object).collection.find.assert_called()
-        self.assertListEqual(aids, [{"aid": 1}])
+        response = self.sh.find_id_by_conesearch(alerts, id_getter)
+        assert (response["aid"].values == ["aid1", "aid1", "aid2"]).all()
 
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_miss(
-        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
-    ):
-        batch = generate_parsed_batch(1, nearest=10)
-        # Test one batch that is the same object: (miss) test when object doesn't exist in database, so create alerce_id
-        mock_cone_search.return_value = []
-        mock_oid_query.return_value = None
-        aid_series = self.sh._to_name(batch)
-        mock_oid_query.assert_called()
-        mock_cone_search.assert_called()
-        self.assertIsInstance(aid_series, pd.Series)
+    def test_find_id_by_conesearch_without_found_aid(self):
+        alerts = pd.DataFrame(
+            [
+                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+            ],
+        )
+        id_getter = mock.Mock()
+        id_getter.side_effect = [[]]
+        response = self.sh.find_id_by_conesearch(alerts, id_getter)
+        assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_hit_oid(
-        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
-    ):
-        batch = generate_parsed_batch(1, nearest=10)
-        # Test one batch that is the same object: (hit) test when exists oid
-        mock_cone_search.return_value = []
-        mock_oid_query.return_value = 123
-        aid_series = self.sh._to_name(batch)
-        mock_oid_query.assert_called()
-        mock_cone_search.assert_not_called()
-        self.assertIsInstance(aid_series, pd.Series)
-        self.assertEqual(aid_series["aid"], 123)
-
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.cone_search")
-    def test_one_to_name_hit_cone_search(
-        self, mock_cone_search: MagicMock, mock_oid_query: MagicMock
-    ):
-        batch = generate_parsed_batch(1, nearest=10)
-        # Test one batch that is the same object: (hit) test when exists objects nearest
-        mock_cone_search.return_value = [{"aid": 123}]
-        mock_oid_query.return_value = None
-        aid_series = self.sh._to_name(batch)
-        mock_oid_query.assert_called()
-        mock_cone_search.assert_called()
-        self.assertIsInstance(aid_series, pd.Series)
-        self.assertEqual(aid_series["aid"], 123)
-
-    def test_to_name_batch(self):
-        # Test one batch that is the same object
-        batch = generate_parsed_batch(100, nearest=10)
-        response = self.sh.to_name(batch)
-        self.assertIsInstance(response, pd.DataFrame)
-        self.assertIn("aid", response.columns)
-        self.assertEqual(len(batch), len(response))
+    def test_generate_new_id(self):
+        alerts = pd.DataFrame(
+            [
+                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+            ],
+        )
+        response = self.sh.generate_new_id(alerts)
+        assert response["aid"].notna().all()
+        assert str(response["aid"][2]).startswith("AL")
 
     def test_encode(self):
         # known alerce_id: 'b' -> 1
