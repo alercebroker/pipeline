@@ -1,5 +1,4 @@
-apf_base==1.0.7
-numpy
+apf_base==1.0.8
 scipy
 
 git+https://github.com/alercebroker/survey-parser-plugins@1.0.0

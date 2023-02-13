@@ -21,8 +21,11 @@ If you make any changes to this repository, run these commands to test your chan
 
 1. Unit tests: Test functionalities with mock of services (kafka, mongo and zookeeper).
 ```bash
-coverage run --source sorting_hat_step -m pytest -x -s tests/unittest/
+coverage run --source sorting_hat_step -m pytest -x tests/unittest/
 ```
+
+You can then call `coverage report` to check the coverage.
+
 2. Integration tests: Run the step in an environment with kafka, mongo and zookeeper. This test is useful for developing without setting up a complex environment.
 
 ```bash

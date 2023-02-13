@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'doc'
+      - 'scripts'
+
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'sorting_hat_step'
+  unittest:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      pre-dependencies: 'numpy'
+      test-command: |
+        coverage run --source sorting_hat_step -m pytest -x tests/unittest
+        coverage xml
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/integration'
+      test-dependencies: 'confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
+      pre-dependencies: 'numpy'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x tests/integration'

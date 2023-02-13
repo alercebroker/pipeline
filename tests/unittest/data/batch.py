@@ -16,7 +16,7 @@ def generate_batch_ra_dec(n: int, nearest: int = 0) -> pd.DataFrame:
         }
         batch.append(alert)
     for i in range(nearest):
-        batch_object = random.randint(0, n-1)
+        batch_object = random.randint(0, n - 1)
         alert = batch[batch_object].copy()
         alert["oid"] = f"{alert['oid']}_{i}"
         alert["ra"] = alert["ra"] + random.uniform(-0.000001, 0.000001)
@@ -49,7 +49,7 @@ def generate_parsed_batch(n: int, nearest: int = 0) -> pd.DataFrame:
         }
         batch.append(alert)
     for i in range(nearest):
-        batch_object = random.randint(0, n-1)
+        batch_object = random.randint(0, n - 1)
         alert = batch[batch_object].copy()
         alert["oid"] = f"{alert['oid']}_{i}"
         alert["ra"] = alert["ra"] + random.uniform(-0.000001, 0.000001)
@@ -66,9 +66,9 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
         alert = {
             "objectId": f"ZTF_ALERT{i}",
             "publisher": "ZTF",
-            "cutoutScience": {"stampData": b""},
-            "cutoutTemplate": {"stampData": b""},
-            "cutoutDifference": {"stampData": b""},
+            "cutoutScience": {"stampData": b"science"},
+            "cutoutTemplate": {"stampData": b"template"},
+            "cutoutDifference": {"stampData": b"difference"},
             "candidate": {
                 "jd": random.randrange(2458000, 2459000),
                 "ra": random.uniform(0, 360),
@@ -83,32 +83,41 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
                 "rb": random.random(),
                 "rbversion": f"v1",
             },
-            "prv_candidates": random.choice([
-                None,
+            "prv_candidates": random.choice(
                 [
-                    {
-                        "candid": random.choice([None, random.randint(1000000, 9000000)]),
-                        "jd": random.randrange(2458000, 2459000),
-                        "fid": random.randint(1, 2),
-                        "rfid": random.randint(1000000, 9000000),
-                        "ra": random.uniform(0, 360),
-                        "dec": random.uniform(-90, 90),
-                        "magpsf": random.uniform(15, 20),
-                        "sigmapsf": random.random(),
-                        "isdiffpos": random.choice(["t", "f", "1", "0"]),
-                        "rb": random.random(),
-                        "rbversion": f"v1",
-                    }
-                    for _ in range(0, m)]
-            ])
+                    None,
+                    [
+                        {
+                            "candid": random.choice(
+                                [None, random.randint(1000000, 9000000)]
+                            ),
+                            "jd": random.randrange(2458000, 2459000),
+                            "fid": random.randint(1, 2),
+                            "rfid": random.randint(1000000, 9000000),
+                            "ra": random.uniform(0, 360),
+                            "dec": random.uniform(-90, 90),
+                            "magpsf": random.uniform(15, 20),
+                            "sigmapsf": random.random(),
+                            "isdiffpos": random.choice(["t", "f", "1", "0"]),
+                            "rb": random.random(),
+                            "rbversion": f"v1",
+                        }
+                        for _ in range(0, m)
+                    ],
+                ]
+            ),
         }
         batch.append(alert)
     for i in range(nearest):
-        batch_object = random.randint(0, n-1)
+        batch_object = random.randint(0, n - 1)
         alert = batch[batch_object].copy()
         alert["objectId"] = f"{alert['objectId']}_{i}"
-        alert["candidate"]["ra"] = alert["candidate"]["ra"] + random.uniform(-0.000001, 0.000001)
-        alert["candidate"]["dec"] = alert["candidate"]["dec"] + random.uniform(-0.000001, 0.000001)
+        alert["candidate"]["ra"] = alert["candidate"]["ra"] + random.uniform(
+            -0.000001, 0.000001
+        )
+        alert["candidate"]["dec"] = alert["candidate"]["dec"] + random.uniform(
+            -0.000001, 0.000001
+        )
         batch.append(alert)
     return batch
 
@@ -119,8 +128,8 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
         alert = {
             "objectId": f"ATLAS_ALERT{i}",
             "publisher": "ATLAS",
-            "cutoutScience": {"stampData": b""},
-            "cutoutDifference": {"stampData": b""},
+            "cutoutScience": {"stampData": b"science"},
+            "cutoutDifference": {"stampData": b"difference"},
             "candidate": {
                 "jd": random.randrange(2458000, 2459000),
                 "ra": random.uniform(0, 360),
@@ -128,7 +137,9 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
                 "magpsf": random.uniform(15, 20),
                 "sigmapsf": random.random(),
                 "fid": random.randint(1, 2),
-                "candid": ''.join(random.choices(string.ascii_letters + string.digits, k=30)),
+                "candid": "".join(
+                    random.choices(string.ascii_letters + string.digits, k=30)
+                ),
                 "pid": random.randint(1000000, 9000000),
                 "rfid": random.randint(1000000, 9000000),
                 "isdiffpos": random.choice(["t", "f"]),
@@ -140,15 +151,19 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
                 "Mag": random.uniform(15, 20),
                 "Dmag": random.random(),
                 "filter": "o",
-            }
+            },
         }
         batch.append(alert)
     for i in range(nearest):
-        batch_object = random.randint(0, n-1)
+        batch_object = random.randint(0, n - 1)
         alert = batch[batch_object].copy()
         alert["objectId"] = f"{alert['objectId']}_{i}"
-        alert["candidate"]["RA"] = alert["candidate"]["RA"] + random.uniform(-0.000001, 0.000001)
-        alert["candidate"]["RA"] = alert["candidate"]["RA"] + random.uniform(-0.000001, 0.000001)
+        alert["candidate"]["RA"] = alert["candidate"]["RA"] + random.uniform(
+            -0.000001, 0.000001
+        )
+        alert["candidate"]["RA"] = alert["candidate"]["RA"] + random.uniform(
+            -0.000001, 0.000001
+        )
         batch.append(alert)
     return batch
 
@@ -159,7 +174,7 @@ def random_sub_samples(samples: int, size: int):
         sequence = [0 for _ in range(size)]
     else:
         for _ in range(size):
-            if _ == size-1:
+            if _ == size - 1:
                 val = samples - sum(sequence)
             else:
                 remain = samples - sum(sequence)
