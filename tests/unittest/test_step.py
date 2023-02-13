@@ -53,3 +53,14 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.step.produce(alerts)
         self.step.producer.produce.assert_called()
         self.assertEqual(self.step.producer.produce.call_count, len(alerts))
+
+    def test_add_metrics(self):
+        dataframe = pd.DataFrame(
+            [[1, 2, 3, 4, 5]], columns=["ra", "dec", "oid", "tid", "aid"]
+        )
+        self.step._add_metrics(dataframe)
+        assert self.step.metrics["ra"] == [1]
+        assert self.step.metrics["dec"] == [2]
+        assert self.step.metrics["oid"] == [3]
+        assert self.step.metrics["tid"] == [4]
+        assert self.step.metrics["aid"] == [5]
