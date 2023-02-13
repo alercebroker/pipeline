@@ -95,5 +95,4 @@ def _parse_output(alert: pd.Series) -> dict:
     alert_dict["rfid"] = _parse_rfid(alert_dict["rfid"])
     alert_dict["extra_fields"] = _parse_extra_fields(alert_dict["extra_fields"])
     alert_dict["stamps"] = _parse_stamps(alert_dict["stamps"], alert_dict["tid"])
-    print(alert_dict)
     return alert_dict

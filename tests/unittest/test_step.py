@@ -37,14 +37,16 @@ class SortingHatStepTestCase(unittest.TestCase):
         del self.mock_producer
         del self.step
 
-    @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.to_name")
+    @mock.patch("sorting_hat_step.step.SortingHat.to_name")
     @mock.patch("sorting_hat_step.step.SortingHatStep.produce")
-    def test_execute(self, mock_to_name: MagicMock, mock_produce: MagicMock):
+    @mock.patch("sorting_hat_step.step.SortingHatStep._add_metrics")
+    def test_execute(self, _, mock_produce: MagicMock, mock_to_name: MagicMock):
         alerts = generate_alerts_batch(100)
         self.step.execute(alerts)
         mock_to_name.assert_called()
         mock_produce.assert_called()
-        print(mock_produce.call_args[0][0]["stamps"])
+        assert len(mock_produce.mock_calls) == 1
+        assert len(mock_to_name.mock_calls) == 1
 
     def test_produce(self):
         alerts = generate_alerts_batch(100)
@@ -54,3 +56,14 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.step.produce(alerts)
         self.step.producer.produce.assert_called()
         self.assertEqual(self.step.producer.produce.call_count, len(alerts))
+
+    def test_add_metrics(self):
+        dataframe = pd.DataFrame(
+            [[1, 2, 3, 4, 5]], columns=["ra", "dec", "oid", "tid", "aid"]
+        )
+        self.step._add_metrics(dataframe)
+        assert self.step.metrics["ra"] == [1]
+        assert self.step.metrics["dec"] == [2]
+        assert self.step.metrics["oid"] == [3]
+        assert self.step.metrics["tid"] == [4]
+        assert self.step.metrics["aid"] == [5]
