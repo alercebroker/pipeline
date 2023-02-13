@@ -5,11 +5,11 @@ from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
 from typing import List
 
-from sorting_hat_step.utils.database import oid_query, conesearch_query
-from .utils.sorting_hat import SortingHat
-from .utils.output import _parse_output
+from sorting_hat_step.utils.database import db_queries
+from .utils import sorting_hat as wizard, output as output_parser
 import logging
 import pandas as pd
+from operator import itemgetter
 
 
 class SortingHatStep(GenericStep):
@@ -27,7 +27,9 @@ class SortingHatStep(GenericStep):
         self.driver.connect(config["DB_CONFIG"])
         self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.parser = ALeRCEParser()
-        self.wizard = SortingHat(self.driver)
+        self.oid_query, self.conesearch_query = itemgetter(
+            "oid_query", "conesearch_query"
+        )(db_queries(self.driver))
 
     def produce(self, alerts: pd.DataFrame) -> None:
         """
@@ -37,7 +39,7 @@ class SortingHatStep(GenericStep):
         """
         n_messages = 0
         for _, alert in alerts.iterrows():
-            output = _parse_output(alert)
+            output = output_parser._parse_output(alert)
             self.producer.produce(output, key=str(output["aid"]))
             n_messages += 1
         self.logger.info(f"{n_messages} messages Produced")
@@ -74,12 +76,10 @@ class SortingHatStep(GenericStep):
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
         # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
-        alerts = self.wizard.internal_cross_match(alerts)
+        alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
-        alerts = self.wizard.find_existing_id(alerts, oid_query(self.driver))
-        alerts = self.wizard.find_id_by_conesearch(
-            alerts, conesearch_query(self.driver)
-        )
-        alerts = self.wizard.generate_new_id(alerts)
+        alerts = wizard.find_existing_id(alerts, self.oid_query)
+        alerts = wizard.find_id_by_conesearch(alerts, self.conesearch_query)
+        alerts = wizard.generate_new_id(alerts)
         alerts.drop(columns=["tmp_id"])
         return alerts

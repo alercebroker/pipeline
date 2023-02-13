@@ -1,30 +1,44 @@
-from typing import Callable, List, Union
+from typing import Callable, Dict, List, Union
 from db_plugins.db.mongo.connection import DatabaseConnection
 
 from db_plugins.db.mongo.models import Object
 
 
-def oid_query(db: DatabaseConnection) -> Callable[[list], Union[int, None]]:
+def db_queries(db: DatabaseConnection) -> Dict[str, Callable]:
     """
-    Query to database if the oids has an alerce_id
-    :param oid: oid of any survey
-    :return: existing aid if exists else is None
+    Get a dictionary of functions that perform database queries with
+    the db connection instance injected into them.
+
+    :param db: instance of db_plugins.DatabaseConnection
+
+    :return: dictionary with oid query and conesearch query
     """
 
-    def query(oid: list) -> Union[int, None]:
+    def oid_query(oid: list) -> Union[int, None]:
+        """
+        Query the database and check if the oids has an alerce_id
+
+        :param oid: oid of any survey
+
+        :return: existing aid if exists else is None
+        """
         mongo_query = db.query(Object)
         object = mongo_query.find_one({"oid": {"$in": oid}})
         if object:
             return object["aid"]
         return None
 
-    return query
+    def conesearch_query(lon: float, lat: float, meter_radius: float) -> List[dict]:
+        """
+        Query the database and check if there is an alerce_id
+        for the specified coordinates and search radius
 
+        :param lon: first coordinate argument (RA)
+        :param lat: first coordinate argument (Dec)
+        :param meter_radius: search radius (arcsec)
 
-def conesearch_query(
-    db: DatabaseConnection,
-) -> Callable[[float, float, float], List[dict]]:
-    def query(lon: float, lat: float, meter_radius: float) -> List[dict]:
+        :return: existing aid if exists else is None
+        """
         mongo_query = db.query(Object)
         cursor = mongo_query.collection.find(
             {
@@ -40,4 +54,4 @@ def conesearch_query(
         spatial = [i for i in cursor]
         return spatial
 
-    return query
+    return {"oid_query": oid_query, "conesearch_query": conesearch_query}

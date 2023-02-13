@@ -1,20 +1,24 @@
+from operator import itemgetter
 import unittest
 from unittest import mock
 
 from db_plugins.db.mongo.connection import MongoConnection
 from db_plugins.db.mongo.models import Object
 
-from sorting_hat_step.utils.database import oid_query, conesearch_query
+from sorting_hat_step.utils.database import db_queries
 
 
 class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
         self.mock_database_connection = mock.create_autospec(MongoConnection)
+        self.oid_query, self.conesearch_query = itemgetter(
+            "oid_query", "conesearch_query"
+        )(db_queries(self.mock_database_connection))
 
     def test_oid_query(self):
         # Mock a response with elements in database
         self.mock_database_connection.query(Object).find_one.return_value = {"aid": 1}
-        aid = oid_query(self.mock_database_connection)(["x", "y", "z"])
+        aid = self.oid_query(["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_database_connection.query(Object).find_one.assert_called_with(
             {"oid": {"$in": ["x", "y", "z"]}}
@@ -22,7 +26,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_oid_query_with_no_elements(self):
         self.mock_database_connection.query(Object).find_one.return_value = []
-        aid = oid_query(self.mock_database_connection)(["x", "y", "z"])
+        aid = self.oid_query(["x", "y", "z"])
         self.assertEqual(aid, None)
         self.mock_database_connection.query(Object).find_one.assert_called_with(
             {"oid": {"$in": ["x", "y", "z"]}}
@@ -34,7 +38,7 @@ class DatabaseTestCase(unittest.TestCase):
             "field2": 2,
         }
         with self.assertRaises(KeyError) as context:
-            oid_query(self.mock_database_connection)(["x", "y", "z"])
+            self.oid_query(["x", "y", "z"])
             self.mock_database_connection.query(Object).find_one.assert_called_with(
                 {"oid": {"$in": ["x", "y", "z"]}}
             )
@@ -44,7 +48,7 @@ class DatabaseTestCase(unittest.TestCase):
         self.mock_database_connection.query(Object).collection.find.return_value = [
             {"aid": 1}
         ]
-        objects = conesearch_query(self.mock_database_connection)(1, 2, 3)
+        objects = self.conesearch_query(1, 2, 3)
         assert objects[0]["aid"] == 1
         self.mock_database_connection.query(Object).collection.find.assert_called_with(
             {
@@ -60,7 +64,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_conesearch_query_without_results(self):
         self.mock_database_connection.query(Object).collection.find.return_value = []
-        objects = conesearch_query(self.mock_database_connection)(1, 2, 3)
+        objects = self.conesearch_query(1, 2, 3)
         assert len(objects) == 0
         self.mock_database_connection.query(Object).collection.find.assert_called_with(
             {

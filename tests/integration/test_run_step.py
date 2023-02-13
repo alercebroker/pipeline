@@ -1,4 +1,5 @@
 import logging
+from apf.core.step import GenericConsumer
 from apf.producers import KafkaProducer
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
