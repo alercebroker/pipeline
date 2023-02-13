@@ -37,22 +37,18 @@ class SortingHatStepTestCase(unittest.TestCase):
         del self.mock_producer
         del self.step
 
-    @mock.patch("sorting_hat_step.step.SortingHat.to_name")
     @mock.patch("sorting_hat_step.step.SortingHatStep.produce")
     @mock.patch("sorting_hat_step.step.SortingHatStep._add_metrics")
-    def test_execute(self, _, mock_produce: MagicMock, mock_to_name: MagicMock):
+    def test_execute(self, _, mock_produce: MagicMock):
         alerts = generate_alerts_batch(100)
         self.step.execute(alerts)
-        mock_to_name.assert_called()
         mock_produce.assert_called()
-        assert len(mock_produce.mock_calls) == 1
-        assert len(mock_to_name.mock_calls) == 1
 
     def test_produce(self):
         alerts = generate_alerts_batch(100)
         parsed = self.step.parser.parse(alerts)
         parsed = pd.DataFrame(parsed)
-        alerts = self.step.wizard.to_name(parsed)
+        alerts = self.step.add_aid(parsed)
         self.step.produce(alerts)
         self.step.producer.produce.assert_called()
         self.assertEqual(self.step.producer.produce.call_count, len(alerts))

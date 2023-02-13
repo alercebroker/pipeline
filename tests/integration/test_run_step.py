@@ -1,4 +1,5 @@
 import logging
+from apf.core.step import GenericConsumer
 from apf.producers import KafkaProducer
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
@@ -67,3 +68,4 @@ class MongoIntegrationTest(unittest.TestCase):
             100, nearest=10
         )  # generate 110 alerts where 10 alerts are near of another alerts
         self.step.execute(batch)
+        # TODO check database and kafka topics
