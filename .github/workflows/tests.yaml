@@ -19,7 +19,7 @@ jobs:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
+      test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
       pre-dependencies: 'numpy'
       test-command: 'python -m pytest -x tests/unittest --cov sorting_hat_step --cov-report xml'
   integration:
