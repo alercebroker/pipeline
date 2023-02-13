@@ -39,7 +39,7 @@ class SortingHatStep(GenericStep):
         """
         n_messages = 0
         for _, alert in alerts.iterrows():
-            output = output_parser._parse_output(alert)
+            output = output_parser.parse_output(alert)
             self.producer.produce(output, key=str(output["aid"]))
             n_messages += 1
         self.logger.info(f"{n_messages} messages Produced")

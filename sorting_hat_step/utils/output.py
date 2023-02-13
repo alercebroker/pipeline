@@ -40,7 +40,7 @@ def _parse_stamps(stamps: dict, tid: str) -> dict:
         parsed_stamp = {
             "science": stamp["cutoutScience"],
             "template": stamp["cutoutTemplate"],
-            "difference": stamp["cutoutTemplate"],
+            "difference": stamp["cutoutDifference"],
         }
         return parsed_stamp
 
@@ -48,7 +48,7 @@ def _parse_stamps(stamps: dict, tid: str) -> dict:
         parsed_stamp = {
             "science": stamp["cutoutScience"],
             "template": None,
-            "difference": stamp["cutoutScience"],
+            "difference": stamp["cutoutDifference"],
         }
         return parsed_stamp
 
@@ -60,7 +60,7 @@ def _parse_stamps(stamps: dict, tid: str) -> dict:
     return stamps
 
 
-def _parse_output(alert: pd.Series) -> dict:
+def parse_output(alert: pd.Series) -> dict:
     """
     Transforms a pandas.Series representing a single alert, where each column
     is an attribute of the alert, to a dictionary with the proper values in
