@@ -80,32 +80,32 @@ class SortingHatTestCase(unittest.TestCase):
 
     def test_oid_query(self):
         # Mock a response with elements in database
-        self.mock_database_connection.query(model=Object).find.return_value = [
-            {"aid": 1}
-        ]
+        self.mock_database_connection.query(Object).find_one.return_value = {"aid": 1}
         aid = self.sh.oid_query(["x", "y", "z"])
         self.assertEqual(aid, 1)
-        self.mock_database_connection.query(model=Object).find.assert_called()
+        self.mock_database_connection.query(Object).find_one.assert_called()
         # Mock a response with no elements
-        self.mock_database_connection.query(model=Object).find.return_value = []
+        self.mock_database_connection.query(Object).find_one.return_value = []
         aid = self.sh.oid_query(["x", "y", "z"])
         self.assertEqual(aid, None)
-        self.mock_database_connection.query(model=Object).find.assert_called()
+        self.mock_database_connection.query(Object).find_one.assert_called()
         # Mock a response without aid field
-        self.mock_database_connection.query(model=Object).find.return_value = [
-            {"field1": 1, "field2": 2}
-        ]
+        self.mock_database_connection.query(Object).find_one.return_value = {
+            "field1": 1,
+            "field2": 2,
+        }
+
         with self.assertRaises(KeyError) as context:
             self.sh.oid_query(["x", "y", "z"])
-            self.mock_database_connection.query(model=Object).find.assert_called()
+            self.mock_database_connection.query(Object).find_one.assert_called()
         self.assertIsInstance(context.exception, Exception)
 
     def test_cone_search(self):
-        self.mock_database_connection.query(model=Object).find.return_value = [
+        self.mock_database_connection.query(Object).collection.find.return_value = [
             {"aid": 1}
         ]
         aids = self.sh.cone_search(0, 0)
-        self.mock_database_connection.query(model=Object).find.assert_called()
+        self.mock_database_connection.query(Object).collection.find.assert_called()
         self.assertListEqual(aids, [{"aid": 1}])
 
     @mock.patch("sorting_hat_step.utils.sorting_hat.SortingHat.oid_query")

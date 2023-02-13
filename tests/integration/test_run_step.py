@@ -1,4 +1,7 @@
 import logging
+from apf.producers import KafkaProducer
+from db_plugins.db.generic import new_DBConnection
+from db_plugins.db.mongo.connection import MongoDatabaseCreator
 import pytest
 import unittest
 
@@ -9,10 +12,11 @@ from tests.unittest.data.batch import generate_alerts_batch
 
 DB_CONFIG = {
     "HOST": "localhost",
-    "USER": "test_user",
+    "USERNAME": "test_user",
     "PASSWORD": "test_password",
     "PORT": 27017,
     "DATABASE": "test_db",
+    "AUTH_SOURCE": "test_db",
 }
 
 PRODUCER_CONFIG = {
@@ -42,6 +46,8 @@ class MongoIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         consumer = KafkaConsumer(config=CONSUMER_CONFIG)
+        producer = KafkaProducer(config=PRODUCER_CONFIG)
+        database = new_DBConnection(MongoDatabaseCreator)
         cls.step_config = {
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -52,7 +58,9 @@ class MongoIntegrationTest(unittest.TestCase):
                 "STEP_COMMENTS": "developing and testing it",
             },
         }
-        cls.step = SortingHatStep(consumer, config=cls.step_config, level=logging.DEBUG)
+        cls.step = SortingHatStep(
+            consumer, cls.step_config, producer, database, level=logging.DEBUG
+        )
 
     def test_execute(self):
         batch = generate_alerts_batch(

@@ -1,10 +1,11 @@
+from db_plugins.db.generic import DatabaseConnection
 import numpy as np
 import pandas as pd
 import time
 import string
 
 from scipy.spatial import cKDTree
-from typing import List
+from typing import List, Union
 
 from db_plugins.db.mongo.models import Object
 from db_plugins.db.mongo.connection import MongoConnection
@@ -14,7 +15,7 @@ CHARACTERS = string.ascii_lowercase
 
 # https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
 class SortingHat:
-    def __init__(self, db: MongoConnection, radius: float = 1.5):
+    def __init__(self, db: DatabaseConnection, radius: float = 1.5):
         self.radius = radius
         self.db = db
         # Values from WGS 84
@@ -52,8 +53,8 @@ class SortingHat:
         scaling = self.wgs_scale(dec)
         meter_radius = radius * scaling
         lon, lat = ra - 180.0, dec
-        objects = self.db.query(model=Object)
-        cursor = objects.find(
+        mongo_query = self.db.query(Object)
+        cursor = mongo_query.collection.find(
             {
                 "loc": {
                     "$nearSphere": {
@@ -67,17 +68,16 @@ class SortingHat:
         spatial = [i for i in cursor]
         return spatial
 
-    def oid_query(self, oid: list) -> int or None:
+    def oid_query(self, oid: list) -> Union[int, None]:
         """
         Query to database if the oids has an alerce_id
         :param oid: oid of any survey
         :return: existing aid if exists else is None
         """
-        objects = self.db.query(model=Object)
-        cursor = objects.find({"oid": {"$in": oid}}, {"_id": 0, "aid": 1})
-        data = [i["aid"] for i in cursor]
-        if len(data):
-            return data[0]
+        mongo_query = self.db.query(Object)
+        object = mongo_query.find_one({"oid": {"$in": oid}})
+        if object:
+            return object["aid"]
         return None
 
     def encode(self, long_number: int) -> str:
