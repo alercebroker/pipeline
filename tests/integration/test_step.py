@@ -22,17 +22,15 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9094",
         "group.id": "command_consumer_1",
-        'enable.partition.eof': True,
-        'auto.offset.reset': 'beginning'
-    },    
-    'NUM_MESSAGES': 2,
+        "enable.partition.eof": True,
+        "auto.offset.reset": "beginning",
+    },
+    "NUM_MESSAGES": 2,
 }
 
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
-    "PARAMS": {
-        "bootstrap.servers": "localhost:9094"
-    },
+    "PARAMS": {"bootstrap.servers": "localhost:9094"},
     "SCHEMA": {
         "namespace": "db_operation",
         "type": "record",
@@ -64,19 +62,20 @@ class StepTest(unittest.TestCase):
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
     def test_write_into_database(self):
-        command = json.dumps({
-            "collection": "object",
-            "type": "insert",
-            "data": {
-                "field": "some_value"
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "insert",
+                "data": {"field": "some_value"},
             }
-        })
-        self.producer.produce({ "payload": command }, key="insertion_1")
-        self.producer.produce({ "payload": command }, key="insertion_2")
+        )
+        self.producer.produce({"payload": command}, key="insertion_1")
+        self.producer.produce({"payload": command}, key="insertion_2")
 
         self.step.start()
-        collection = get_model_collection(self.step.db_client.connection, "object")
+        collection = get_model_collection(
+            self.step.db_client.connection, "object"
+        )
         result = collection.find({})
         self.assertIsNotNone(result[0])
         self.assertEqual(result[0]["field"], "some_value")
-

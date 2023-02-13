@@ -1,10 +1,15 @@
 from json import loads
-from .commands import DbCommand
-from .exceptions import MisformattedCommandExcepction
+from mongo_scribe.command.commands import DbCommand
+from mongo_scribe.command.exceptions import MisformattedCommandExcepction
 
 
 def validate(message: dict):
-    if "type" not in message or "data" not in message or "collection" not in message:
+    """Checks if a dictionary has a valid command format. Returns the dictionary if valid, otherwise returns None."""
+    if (
+        "type" not in message
+        or "data" not in message
+        or "collection" not in message
+    ):
         return None
 
     if "criteria" not in message:
@@ -14,6 +19,10 @@ def validate(message: dict):
 
 
 def decode_message(encoded_message: str):
+    """
+    Transforms a JSON string into a Python dictionary.
+    It raises MisformattedCommand if the JSON string isn't a valid command.
+    """
     decoded = loads(encoded_message)
     valid_message = validate(decoded)
 
@@ -24,6 +33,10 @@ def decode_message(encoded_message: str):
 
 
 def db_command_factory(msg: str):
+    """
+    Returns a DbCommand instance based on a JSON stringified.
+    Raises MisformattedCommand if the JSON string is not a valid command.
+    """
     decoded_message = decode_message(msg)
     return DbCommand(
         decoded_message["collection"],

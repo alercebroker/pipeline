@@ -1,10 +1,8 @@
 from typing import List
-from ..command.commands import DbCommand
-from .models import get_model_collection
-from .update_one import update_one_factory
 from db_plugins.db.mongo import MongoConnection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
-from pymongo.collection import Collection
+from mongo_scribe.command.commands import DbCommand
+from mongo_scribe.db.models import get_model_collection
+from mongo_scribe.db.update_one import update_one_factory
 
 
 class ScribeDbOperations:
@@ -13,7 +11,9 @@ class ScribeDbOperations:
         connection.connect(config["MONGO"])
         self.connection = connection
 
-    def _bulk_execute_in_collection(self, collection_name: str, commands: List[DbCommand]):
+    def _bulk_execute_in_collection(
+        self, collection_name: str, commands: List[DbCommand]
+    ):
         inserts = [
             command.data for command in commands if command.type == "insert"
         ]
@@ -32,6 +32,9 @@ class ScribeDbOperations:
             collection.bulk_write(updates)
 
     def bulk_execute(self, commands: List[DbCommand]):
+        """
+        Executes a list of commands obtained from a Kafka topic
+        """
         commands_by_collection = {}
         for command in commands:
             coll = command.collection

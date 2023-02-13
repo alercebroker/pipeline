@@ -29,8 +29,10 @@ class OperationTest(unittest.TestCase):
         mock_collection.insert_many.assert_not_called()
         mock_collection.bulk_write.assert_not_called()
 
-    @patch('mongo_scribe.db.operations.get_model_collection')
-    def test_bulk_execute_insert_only(self, get_model_coll_mock, mock_collection, _):
+    @patch("mongo_scribe.db.operations.get_model_collection")
+    def test_bulk_execute_insert_only(
+        self, get_model_coll_mock, mock_collection, _
+    ):
         get_model_coll_mock.return_value = mock_collection
         operations = [DbCommand("object", "insert", None, {"field": "value"})]
 
@@ -38,23 +40,29 @@ class OperationTest(unittest.TestCase):
         mock_collection.insert_many.assert_called()
         mock_collection.bulk_write.assert_not_called()
 
-    @patch('mongo_scribe.db.operations.get_model_collection')
-    def test_bulk_execute_update_only(self, get_model_coll_mock, mock_collection, _):
+    @patch("mongo_scribe.db.operations.get_model_collection")
+    def test_bulk_execute_update_only(
+        self, get_model_coll_mock, mock_collection, _
+    ):
         get_model_coll_mock.return_value = mock_collection
         operations = [
-            DbCommand("object", "update", {"_id": "AID51423"}, {"field": "value"})
+            DbCommand(
+                "object", "update", {"_id": "AID51423"}, {"field": "value"}
+            )
         ]
 
         self.db_operations.bulk_execute(operations)
         mock_collection.insert_many.assert_not_called()
         mock_collection.bulk_write.assert_called()
 
-    @patch('mongo_scribe.db.operations.get_model_collection')
+    @patch("mongo_scribe.db.operations.get_model_collection")
     def test_bulk_execute(self, get_model_coll_mock, mock_collection, _):
         get_model_coll_mock.return_value = mock_collection
         operations = [
             DbCommand("object", "insert", None, {"field": "value"}),
-            DbCommand("object", "update", {"_id": "AID51423"}, {"field": "value"}),
+            DbCommand(
+                "object", "update", {"_id": "AID51423"}, {"field": "value"}
+            ),
         ]
 
         self.db_operations.bulk_execute(operations)
