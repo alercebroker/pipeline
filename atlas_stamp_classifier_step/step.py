@@ -58,7 +58,7 @@ class AtlasStampClassifierStep(GenericStep):
                 "probability": predicted_prob,
             }
             output.append(aux_dict)
-        return pd.Series(output)
+        return output
 
     def _classifications_with_ranking(self, x: pd.Series):
         sorted_x = x.sort_values(ascending=False)
