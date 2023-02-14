@@ -16,6 +16,7 @@ from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning
 from typing import List
 import logging
+import json
 
 
 class AtlasStampClassifierStep(GenericStep):
@@ -33,9 +34,9 @@ class AtlasStampClassifierStep(GenericStep):
     def __init__(
         self,
         consumer: GenericConsumer,
-        config: dict,
-        db_connection: DatabaseConnection,
         producer: GenericProducer,
+        scribe_producer: GenericProducer,
+        config: dict,
         model: AtlasStampClassifier,
         level=logging.INFO,
         **step_args,
@@ -45,29 +46,45 @@ class AtlasStampClassifierStep(GenericStep):
         self.model_name = os.getenv("MODEL_NAME", "atlas_stamp_classifier")
         self.logger.info("Loading model")
         self.model = model
-        self.driver = db_connection
-        self.driver.connect(config["DB_CONFIG"])
         self.producer = producer
+        self.scribe_producer = scribe_producer
         self.fits_fields = ["FILTER", "AIRMASS", "SEEING", "SUNELONG", "MANGLE"]
+
+    def _classifications(self, x):
+        output = []
+        for predicted_class, predicted_prob in x.iteritems():
+            aux_dict = {
+                "classifier_name": self.model_name,
+                "model_version": self.model_version,
+                "class_name": predicted_class,
+                "probability": predicted_prob,
+            }
+            output.append(aux_dict)
+        return pd.Series(output)
+
+    def _classifications_with_ranking(self, x: pd.Series):
+        sorted_x = x.sort_values(ascending=False)
+        output = []
+        rank = 1
+        for predicted_class, predicted_prob in sorted_x.iteritems():
+            aux_dict = {
+                "ranking": rank,
+                "class_name": predicted_class,
+                "classifier_name": self.model_name,
+                "classifier_version": self.model_version,
+                "probability": predicted_prob,
+            }
+            rank += 1
+            output.append(aux_dict)
+        return output
 
     def format_output_message(
         self, predictions: pd.DataFrame, stamps: pd.DataFrame
     ) -> List[dict]:
-        def classifications(x):
-            output = []
-            for predicted_class, predicted_prob in x.iteritems():
-                aux_dict = {
-                    "classifier_name": self.model_name,
-                    "model_version": self.model_version,
-                    "class_name": predicted_class,
-                    "probability": predicted_prob,
-                }
-                output.append(aux_dict)
-            return output
 
         response = pd.DataFrame(
             {
-                "classifications": predictions.apply(classifications, axis=1),
+                "classifications": predictions.apply(self._classifications, axis=1),
                 "model_version": [self.model_version] * len(predictions),
             }
         )
@@ -76,7 +93,7 @@ class AtlasStampClassifierStep(GenericStep):
         )
         response = response.join(stamps)
         response.replace({np.nan: None}, inplace=True)
-        response.index.name = "oid"
+        response.index.name = "aid"
         response.reset_index(inplace=True)
 
         return response.to_dict(orient="records")
@@ -140,7 +157,7 @@ class AtlasStampClassifierStep(GenericStep):
     def message_to_df(self, messages):
         rows = []
         for message in messages:
-            oid = message.get("oid")
+            aid = message.get("aid")
             candid = message.get("candid")
             mjd = message.get("mjd")
             stamps = message.get("stamps")
@@ -156,7 +173,7 @@ class AtlasStampClassifierStep(GenericStep):
 
             row_df = pd.DataFrame(
                 data=[[candid, mjd, science, difference] + metadata],
-                index=[oid],
+                index=[aid],
                 columns=["candid", "mjd", "red", "diff"]
                 + self.fits_fields
                 + ["ra", "dec"],
@@ -164,18 +181,27 @@ class AtlasStampClassifierStep(GenericStep):
             rows.append(row_df)
         return pd.concat(rows, axis=0)
 
-    def save_predictions(self, predictions: pd.DataFrame):
-        # list of dict probabilities and its class
-        probabilities = predictions.to_dict(orient="records")
-
-        aids = predictions.index.to_list()  # list of identifiers
-        create_or_update_probabilities_bulk(
-            self.driver, self.model_name, self.model_version, aids, probabilities
+    def write_predictions(self, predictions: pd.DataFrame):
+        predictions_with_extra = predictions.apply(
+            self._classifications_with_ranking, axis=1
         )
+        predictions_dict = predictions_with_extra.to_dict()
+        for key, value in predictions_dict.items():
+            data_to_produce = {
+                "payload": json.dumps(
+                    {
+                        "collection": "object",
+                        "type": "update-probabilities",
+                        "criteria": {"aid": key},
+                        "data": {"probabilities": value},
+                    }
+                )
+            }
+            self.scribe_producer.produce(data_to_produce)
 
     def produce(self, output_messages):
         for message in output_messages:
-            aid = message["oid"]
+            aid = message["aid"]
             self.producer.produce(message, key=str(aid))
 
     def add_class_metrics(self, predictions: pd.DataFrame) -> None:
@@ -195,7 +221,7 @@ class AtlasStampClassifierStep(GenericStep):
         predictions = self.predict(stamps_dataframe)
 
         self.logger.info("Inserting/Updating results on database")
-        self.save_predictions(predictions)  # should predictions be in normalized form?
+        self.write_predictions(predictions)  # should predictions be in normalized form?
 
         self.logger.info("Producing messages")
         output = self.format_output_message(predictions, stamps_dataframe)

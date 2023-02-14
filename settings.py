@@ -12,13 +12,13 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "smallest"
+        "auto.offset.reset": "smallest",
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
 }
 
-PRODUCER_CONFIG = {
+OUTPUT_PRODUCER_CONFIG = {
     "TOPIC_STRATEGY": {
         "PARAMS": {
             "topic_format": os.environ["PRODUCER_TOPIC_FORMAT"],
@@ -38,19 +38,24 @@ PRODUCER_CONFIG = {
         "sasl.username": os.environ["PRODUCER_SASL_USERNAME"],
         "sasl.password": os.environ["PRODUCER_SASL_PASSWORD"],
     },
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "TOPIC": os.environ["SCRIBE_TOPIC"],
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_SERVER"],
+    },
 }
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
-        "oid"
-    ],
+    "EXTRA_METRICS": [{"key": "candid", "format": lambda x: str(x)}, "oid"],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest"},
+            "auto.offset.reset": "smallest",
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
@@ -87,23 +92,11 @@ METRICS_CONFIG = {
 }
 
 
-DB_CONFIG = {
-    "HOST": os.getenv("MONGO_HOST", None),
-    "USERNAME": os.getenv("MONGO_USER", None),
-    "PASSWORD": os.getenv("MONGO_PASSWORD", None),
-    "PORT": int(os.getenv("MONGO_PORT", 27017)),
-    "DATABASE": os.getenv("MONGO_NAME", None),
-    "REPLICA_SET": "rs0",
-    "READ_PREFERENCE": "secondaryPreferred",
-    "RETRY_WRITES": False
-}
-
-
 STEP_CONFIG = {
-    "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "PRODUCER_CONFIG": OUTPUT_PRODUCER_CONFIG,
+    "SCRIBE_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "MODEL_NAME": os.getenv("MODEL_NAME", "atlas_stamp_classifier"),
     "MODEL_VERSION": os.getenv("MODEL_VERSION", "1.0.0"),
     "METRICS_CONFIG": METRICS_CONFIG,
     "MODEL_PATH": os.environ["MODEL_PATH"],
-    "DB_CONFIG": DB_CONFIG,
 }
