@@ -1,13 +1,13 @@
+from apf.consumers import GenericConsumer
 import numpy as np
 import pandas as pd
 import os
 import datetime
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
-from atlas_stamp_classifier.inference import AtlasStampClassifier
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from apf.producers import GenericProducer
+from db_plugins.db.generic import DatabaseConnection
 from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities_bulk
+from atlas_stamp_classifier.inference import AtlasStampClassifier
 import gzip
 import io
 import warnings
@@ -29,28 +29,30 @@ class AtlasStampClassifierStep(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    def __init__(self, consumer=None, config=None, level=logging.INFO, db_connection=None, producer=None, **step_args):
+
+    def __init__(
+        self,
+        consumer: GenericConsumer,
+        config: dict,
+        db_connection: DatabaseConnection,
+        producer: GenericProducer,
+        model: AtlasStampClassifier,
+        level=logging.INFO,
+        **step_args,
+    ):
         super().__init__(consumer, config=config, level=level)
         self.model_version = os.getenv("MODEL_VERSION", "1.0.0")
         self.model_name = os.getenv("MODEL_NAME", "atlas_stamp_classifier")
-
         self.logger.info("Loading model")
-        self.model = AtlasStampClassifier(model_dir=None, batch_size=50)
-        self.driver = db_connection or new_DBConnection(MongoDatabaseCreator)
-        self.driver.connect(config['DB_CONFIG'])
+        self.model = model
+        self.driver = db_connection
+        self.driver.connect(config["DB_CONFIG"])
+        self.producer = producer
+        self.fits_fields = ["FILTER", "AIRMASS", "SEEING", "SUNELONG", "MANGLE"]
 
-        prod_config = self.config.get("PRODUCER_CONFIG", None)
-        self.producer = producer or KafkaProducer(prod_config)
-
-        self.fits_fields = [
-            'FILTER',
-            'AIRMASS',
-            'SEEING',
-            'SUNELONG',
-            'MANGLE'
-        ]
-
-    def format_output_message(self, predictions: pd.DataFrame, stamps: pd.DataFrame) -> List[dict]:
+    def format_output_message(
+        self, predictions: pd.DataFrame, stamps: pd.DataFrame
+    ) -> List[dict]:
         def classifications(x):
             output = []
             for predicted_class, predicted_prob in x.iteritems():
@@ -74,16 +76,18 @@ class AtlasStampClassifierStep(GenericStep):
         )
         response = response.join(stamps)
         response.replace({np.nan: None}, inplace=True)
-        response.index.name = 'oid'
+        response.index.name = "oid"
         response.reset_index(inplace=True)
 
         return response.to_dict(orient="records")
 
     def extract_image_from_fits(self, stamp_byte, with_metadata=False):
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', AstropyWarning)
-            with gzip.open(io.BytesIO(stamp_byte), 'rb') as f:
-                with fits_open(io.BytesIO(f.read()), memmap=False, ignore_missing_simple=True) as hdul:
+            warnings.simplefilter("ignore", AstropyWarning)
+            with gzip.open(io.BytesIO(stamp_byte), "rb") as f:
+                with fits_open(
+                    io.BytesIO(f.read()), memmap=False, ignore_missing_simple=True
+                ) as hdul:
                     im = hdul[0].data
                     header = hdul[0].header
             if not with_metadata:
@@ -94,18 +98,18 @@ class AtlasStampClassifierStep(GenericStep):
 
             # Extract RA/DEC
 
-            header['CTYPE1'] += '-SIP'
-            header['CTYPE2'] += '-SIP'
-            header['RADESYSa'] = header['RADECSYS']
+            header["CTYPE1"] += "-SIP"
+            header["CTYPE2"] += "-SIP"
+            header["RADESYSa"] = header["RADECSYS"]
 
             del_fields = [
-                'CNPIX1',
-                'CNPIX2',
-                'RADECSYS',
-                'RADESYS',
-                'RP_SCHIN',
-                'CDANAM',
-                'CDSKEW'
+                "CNPIX1",
+                "CNPIX2",
+                "RADECSYS",
+                "RADESYS",
+                "RP_SCHIN",
+                "CDANAM",
+                "CDSKEW",
             ]
             for field in del_fields:
                 if field in header.keys():
@@ -118,19 +122,16 @@ class AtlasStampClassifierStep(GenericStep):
 
             for i in [1, 2]:
                 for j in np.arange(30):
-                    pv_name = 'PV' + str(i) + '_' + str(j)
+                    pv_name = "PV" + str(i) + "_" + str(j)
                     if pv_name in header.keys():
                         pv_val = (i, j, header[pv_name])
                         pv.append(pv_val)
 
             w.wcs.set_pv(pv)
 
-            w.wcs.ctype = ['RA---TPV', 'DEC--TPV']
+            w.wcs.ctype = ["RA---TPV", "DEC--TPV"]
 
-            xy_center = [
-                header['NAXIS1'] * 0.5 + 0.5,
-                header['NAXIS2'] * 0.5 + 0.5
-            ]
+            xy_center = [header["NAXIS1"] * 0.5 + 0.5, header["NAXIS2"] * 0.5 + 0.5]
             radec_center = w.wcs_pix2world(xy_center[0], xy_center[1], 1)
             metadata.append(radec_center[0])
             metadata.append(radec_center[1])
@@ -139,20 +140,27 @@ class AtlasStampClassifierStep(GenericStep):
     def message_to_df(self, messages):
         rows = []
         for message in messages:
-            oid = message.get('oid')
-            candid = message.get('candid')
-            mjd = message.get('mjd')
-            stamps = message.get('stamps')
-            science_fits = stamps['science']
-            difference_fits = stamps['difference']
+            oid = message.get("oid")
+            candid = message.get("candid")
+            mjd = message.get("mjd")
+            stamps = message.get("stamps")
+            science_fits = stamps["science"]
+            difference_fits = stamps["difference"]
 
-            science, metadata = self.extract_image_from_fits(science_fits, with_metadata=True)
-            difference = self.extract_image_from_fits(difference_fits, with_metadata=False)
+            science, metadata = self.extract_image_from_fits(
+                science_fits, with_metadata=True
+            )
+            difference = self.extract_image_from_fits(
+                difference_fits, with_metadata=False
+            )
 
             row_df = pd.DataFrame(
-                data=[candid, mjd, science, difference] + metadata,
+                data=[[candid, mjd, science, difference] + metadata],
                 index=[oid],
-                columns=['candid', 'mjd', 'red', 'diff'] + self.fits_fields + ['ra', 'dec'])
+                columns=["candid", "mjd", "red", "diff"]
+                + self.fits_fields
+                + ["ra", "dec"],
+            )
             rows.append(row_df)
         return pd.concat(rows, axis=0)
 
@@ -174,6 +182,9 @@ class AtlasStampClassifierStep(GenericStep):
         classification = predictions.idxmax(axis=1).tolist()
         self.metrics["class"] = classification
 
+    def predict(self, stamps: pd.DataFrame):
+        return self.model.predict_probs(stamps)
+
     def execute(self, messages: List[dict]):
         self.logger.info(f"Processing {len(messages)} messages.")
         self.logger.info("Getting batch alert data")
@@ -181,7 +192,7 @@ class AtlasStampClassifierStep(GenericStep):
         self.logger.info(f"Found {len(stamps_dataframe)} stamp pairs.")
 
         self.logger.info("Doing inference")
-        predictions = self.model.predict_proba(stamps_dataframe)
+        predictions = self.predict(stamps_dataframe)
 
         self.logger.info("Inserting/Updating results on database")
         self.save_predictions(predictions)  # should predictions be in normalized form?
