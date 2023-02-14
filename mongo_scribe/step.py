@@ -1,7 +1,7 @@
+import logging
 from apf.core.step import GenericStep
 from .command.decode import db_command_factory
 from .db.operations import ScribeDbOperations
-import logging
 
 
 class MongoScribe(GenericStep):
@@ -23,7 +23,11 @@ class MongoScribe(GenericStep):
         self.db_client = ScribeDbOperations(config["DB_CONFIG"])
 
     def execute(self, messages):
-        # TODO: Pass the messages to the logic handlers, catch the errors and log them
+        """
+        Transforms a batch of messages from a topic into Scribe
+        DB Commands and executes them when they're valid.
+        NOTE: WE'RE ASSUMING THAT EVERY MESSAGE FROM THE BATCH GOES INTO THE SAME COLLECTION
+        """
         logging.info("Processing messages...")
         valid_commands, n_invalid_commands = [], 0
         for message in messages:
