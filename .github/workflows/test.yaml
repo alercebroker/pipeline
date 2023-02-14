@@ -19,4 +19,7 @@ jobs:
       sources-folder: 'atlas_stamp_classifier_step'
       test-folder: 'tests/unittests'
       test-dependencies: "pytest pytest-cov"
-      test-command: 'python -m pytest -x tests/unittest --cov atlas_stamp_classifier_step --cov-report xml'
+      test-command: |
+        export GITHUB_TOKEN=${{ secrets.ADMIN_TOKEN }}
+        git config --global url."https://$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
+        python -m pytest -x tests/unittest --cov atlas_stamp_classifier_step --cov-report xml
