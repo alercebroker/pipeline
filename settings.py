@@ -2,27 +2,22 @@
 #       sorting_hat_step   Settings File
 ##################################################
 import os
+from credentials import get_mongodb_credentials
 from schema import SCHEMA
 
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
-DB_CONFIG = {
-    "HOST": os.environ["DB_HOST"],
-    "USER": os.getenv("DB_USER", None),
-    "PASSWORD": os.getenv("DB_PASSWORD", None),
-    "PORT":  int(os.environ["DB_PORT"]),
-    "DATABASE": os.environ["DB_NAME"],
-}
+DB_CONFIG = get_mongodb_credentials()
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
     "PARAMS": {
-        "bootstrap.servers":  os.environ["CONSUMER_SERVER"],
+        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
-        'max.poll.interval.ms': 3600000
+        "max.poll.interval.ms": 3600000,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
@@ -48,7 +43,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
 }
 
 STEP_METADATA = {
@@ -59,15 +54,16 @@ STEP_METADATA = {
 }
 
 METRICS_CONFIG = {
-    "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
     ],
     "PARAMS": {
         "PARAMS": {
-            "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest"},
-        "TOPIC": os.environ["METRICS_TOPIC"],
+            "bootstrap.servers": os.getenv("METRICS_HOST"),
+            "auto.offset.reset": "smallest",
+        },
+        "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
             "$id": "http://example.com/example.json",
@@ -108,7 +104,6 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "N_PROCESS": os.getenv("N_PROCESS"),
     "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
 }

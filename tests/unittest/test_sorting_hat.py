@@ -34,6 +34,12 @@ class SortingHatTestCase(unittest.TestCase):
         aid_3 = wizard.id_generator(312.12312311, 80.99999991)
         self.assertEqual(aid_3, 1204829541805959900)
 
+        aid_4 = wizard.id_generator(-1, -1)
+        self.assertIsInstance(aid_4, int)
+
+        aid_5 = wizard.id_generator(359 + 360, -1)
+        self.assertEqual(aid_4, aid_5)
+
     def test_internal_cross_match_no_closest_objects(self):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
