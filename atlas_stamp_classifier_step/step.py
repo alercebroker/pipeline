@@ -5,8 +5,6 @@ import os
 import datetime
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
-from db_plugins.db.generic import DatabaseConnection
-from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities_bulk
 from atlas_stamp_classifier.inference import AtlasStampClassifier
 import gzip
 import io
