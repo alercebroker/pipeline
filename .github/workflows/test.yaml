@@ -15,7 +15,7 @@ jobs:
       - uses: psf/black@stable
         with:
           options: "--check --verbose"
-          src: "src/"
+          src: "atlas_stamp_classifier_step/"
   unittest:
     runs-on: ubuntu-latest
     steps:
