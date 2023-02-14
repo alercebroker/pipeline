@@ -8,6 +8,8 @@ on:
     secrets:
       PUBLISH_IMAGE_TOKEN:
         required: true
+      INSTALL_PRIVATE_REPO:
+        required: true
 jobs:
   build_and_push:
     name: Push Docker image to GitHub Packages
@@ -32,3 +34,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ inputs.tags }}
+          build-args: |
+            GITHUB_TOKEN=${{ secrets.INSTALL_PRIVATE_REPO }}

@@ -33,3 +33,4 @@ jobs:
       tags: ${{ needs.get_tags.outputs.tags }}
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
+      INSTALL_PRIVATE_REPO: ${{ secrets.ADMIN_TOKEN }}
