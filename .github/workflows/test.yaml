@@ -1,0 +1,22 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'scripts'
+
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'atlas_stamp_classifier_step'
+  unittest:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'atlas_stamp_classifier_step'
+      test-folder: 'tests/unittests'
+      test-dependencies: "pytest pytest-cov"
+      test-command: 'python -m pytest -x tests/unittest --cov atlas_stamp_classifier_step --cov-report xml'
