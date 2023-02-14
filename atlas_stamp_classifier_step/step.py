@@ -5,8 +5,6 @@ import os
 import datetime
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
-from db_plugins.db.generic import DatabaseConnection
-from db_plugins.db.mongo.helpers.update_probs import create_or_update_probabilities_bulk
 from atlas_stamp_classifier.inference import AtlasStampClassifier
 import gzip
 import io
@@ -60,7 +58,7 @@ class AtlasStampClassifierStep(GenericStep):
                 "probability": predicted_prob,
             }
             output.append(aux_dict)
-        return pd.Series(output)
+        return output
 
     def _classifications_with_ranking(self, x: pd.Series):
         sorted_x = x.sort_values(ascending=False)
