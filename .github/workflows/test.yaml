@@ -9,17 +9,26 @@ on:
 
 jobs:
   lint:
-    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
-    with:
-      sources-folder: 'atlas_stamp_classifier_step'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "src/"
   unittest:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-    with:
-      python-version: '3.8'
-      sources-folder: 'atlas_stamp_classifier_step'
-      test-folder: 'tests/unittests'
-      test-dependencies: "pytest pytest-cov"
-      test-command: |
-        export GITHUB_TOKEN=${{ secrets.ADMIN_TOKEN }}
-        git config --global url."https://$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
-        python -m pytest -x tests/unittest --cov atlas_stamp_classifier_step --cov-report xml
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Test with pytest
+      run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
