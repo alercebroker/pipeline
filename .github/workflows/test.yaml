@@ -16,6 +16,7 @@ jobs:
         with:
           options: "--check --verbose"
           src: "atlas_stamp_classifier_step/"
+          version: "22.12.0"
   unittest:
     runs-on: ubuntu-latest
     steps:
