@@ -1,6 +1,5 @@
-import pytest
+from unittest.mock import patch
 import unittest
-from unittest.mock import patch, Mock
 from mongo_scribe.db.models import get_model_collection
 from mongo_scribe.db.operations import ScribeDbOperations
 from mongo_scribe.command.commands import DbCommand

@@ -17,7 +17,7 @@ class CollectionMock:
         self.collection_name = collection_name
         pass
 
-    def insert_many(self, inserts, _=False):
+    def insert_many(self, inserts, ordered=False):
         print(f"Inserting into {self.collection_name}:")
         pprint(inserts)
 
