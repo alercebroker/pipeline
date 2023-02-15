@@ -1,6 +1,7 @@
-import unittest
-import pytest
 import json
+import os
+import pytest
+import unittest
 from time import sleep
 from mongo_scribe.step import MongoScribe
 from mongo_scribe.db.models import get_model_collection
@@ -79,3 +80,30 @@ class StepTest(unittest.TestCase):
         result = collection.find({})
         self.assertIsNotNone(result[0])
         self.assertEqual(result[0]["field"], "some_value")
+
+    def test_print_into_console(self):
+        os.environ["MOCK_DB_COLLECTION"] = "True"
+        commands = [
+            json.dumps({
+                "collection": "object",
+                "type": "insert",
+                "data": {"field": "some printed value"}
+            }),
+            json.dumps({
+                "collection": "object",
+                "type": "update",
+                "criteria": {"field": "some printed value"},
+                "data": {"field2": "hehe"}
+            })
+        ]
+        self.producer.produce({"payload": commands[0]}, key="insertion")
+        self.producer.produce({"payload": commands[1]}, key="update")
+        self.step.start()
+
+        os.environ["MOCK_DB_COLLECTION"] = "False"
+        collection = get_model_collection(
+            self.step.db_client.connection, "object"
+        )
+        result = collection.find({"field2": "hehe"})
+        self.assertEqual(len(list(result)), 0)
+
