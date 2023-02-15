@@ -14,4 +14,4 @@ def update_one_factory(command: DbCommand) -> UpdateOne:
     criteria = command.criteria
     operation = {"$set": command.data}
 
-    return UpdateOne(criteria, operation)
+    return UpdateOne(criteria, operation, upsert=True)
