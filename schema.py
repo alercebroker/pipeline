@@ -1,17 +1,14 @@
 CLASSIFICATIONS = {
-    "name": "classifications",
-    "type": {
-        "type": "array",
-        "items": {
-            "type": "record",
-            "name": "classificationDict",
-            "fields": [
-                {"name": "classifier_name", "type": "string"},
-                {"name": "model_version", "type": "string"},
-                {"name": "class_name", "type": "double"},
-                {"name": "probability", "type": "double"},
-            ],
-        },
+    "type": "array",
+    "items": {
+        "type": "record",
+        "name": "classificationDict",
+        "fields": [
+            {"name": "classifier_name", "type": "string"},
+            {"name": "model_version", "type": "string"},
+            {"name": "class_name", "type": "string"},
+            {"name": "probability", "type": "double"},
+        ],
     },
 }
 
@@ -20,7 +17,7 @@ SCHEMA = {
     "doc": "Classification of ATLAS stamps",
     "name": "atlas_stamp_classification_schema",
     "fields": [
-        {"name": "oid", "type": "string"},
+        {"name": "aid", "type": "string"},
         {"name": "classifications", "type": CLASSIFICATIONS},
         {"name": "model_version", "type": "string"},
         {

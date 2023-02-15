@@ -2,7 +2,7 @@ from pytest import fixture
 
 
 def get_binary(filename: str):
-    with open(f"tests/unittests/data/{filename}.fits.gz", "rb") as f:
+    with open(f"tests/data/{filename}.fits.gz", "rb") as f:
         data = f.read()
         return data
 

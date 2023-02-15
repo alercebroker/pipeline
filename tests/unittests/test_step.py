@@ -22,7 +22,6 @@ def test_message_to_df(alerts):
     df = step.message_to_df(alerts)
     assert df.iloc[0]["red"].shape == (61, 61)
     assert df.iloc[0]["diff"].shape == (61, 61)
-    print(df)
 
 
 def test_format_output_message():
@@ -31,7 +30,11 @@ def test_format_output_message():
         columns=["agn", "asteroid", "bogus", "sn", "vs"],
         index=["oid"],
     )
-    stamps = DataFrame([[np.zeros((61, 61))]], index=["oid"], columns=["red"])
+    stamps = DataFrame(
+        [[np.zeros((61, 61)), np.zeros((61, 61))]],
+        index=["oid"],
+        columns=["red", "diff"],
+    )
     consumer_mock = MagicMock()
     producer_mock = MagicMock()
     model_mock = MagicMock()

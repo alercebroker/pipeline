@@ -12,7 +12,7 @@ import warnings
 from astropy.io.fits import open as fits_open
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning
-from typing import List
+from typing import List, Union
 import logging
 import json
 
@@ -79,7 +79,8 @@ class AtlasStampClassifierStep(GenericStep):
     def format_output_message(
         self, predictions: pd.DataFrame, stamps: pd.DataFrame
     ) -> List[dict]:
-
+        stamps["red"] = stamps["red"].apply(lambda x: x.tobytes())
+        stamps["diff"] = stamps["diff"].apply(lambda x: x.tobytes())
         response = pd.DataFrame(
             {
                 "classifications": predictions.apply(self._classifications, axis=1),
@@ -209,7 +210,9 @@ class AtlasStampClassifierStep(GenericStep):
     def predict(self, stamps: pd.DataFrame):
         return self.model.predict_probs(stamps)
 
-    def execute(self, messages: List[dict]):
+    def execute(self, messages: Union[List[dict], dict]):
+        if isinstance(messages, dict):
+            messages = [messages]
         self.logger.info(f"Processing {len(messages)} messages.")
         self.logger.info("Getting batch alert data")
         stamps_dataframe = self.message_to_df(messages)
