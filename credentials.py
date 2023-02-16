@@ -6,7 +6,6 @@ from db_plugins.db.mongo.connection import _MongoConfig
 
 
 def get_secret(secret_name: str):
-
     secret_name = secret_name
     region_name = "us-east-1"
 
@@ -30,4 +29,5 @@ def get_mongodb_credentials():
     # check if config is valid
     # _MongoConfig will raise error if the config has missing parameters
     _MongoConfig(secret)
+    secret["port"] = int(secret["port"])
     return secret
