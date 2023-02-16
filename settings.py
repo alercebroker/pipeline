@@ -3,7 +3,7 @@
 ##################################################
 
 import os
-from schema import SCHEMA
+from schema import SCHEMA, SCRIBE_SCHEMA
 
 
 CONSUMER_CONFIG = {
@@ -46,6 +46,7 @@ SCRIBE_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
+    "SCHEMA": SCRIBE_SCHEMA,
 }
 
 METRICS_CONFIG = {
@@ -98,5 +99,4 @@ STEP_CONFIG = {
     "MODEL_NAME": os.getenv("MODEL_NAME", "atlas_stamp_classifier"),
     "MODEL_VERSION": os.getenv("MODEL_VERSION", "1.0.0"),
     "METRICS_CONFIG": METRICS_CONFIG,
-    "MODEL_PATH": os.environ["MODEL_PATH"],
 }
