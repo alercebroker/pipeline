@@ -3,8 +3,11 @@ import os
 from typing import NamedTuple
 from pprint import pprint
 from pymongo.collection import Collection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.helpers.update_probs import (
+    create_or_update_probabilities_bulk,
+)
 from mongo_scribe.command.exceptions import NonExistantCollectionException
 
 models_dictionary = {
@@ -68,7 +71,16 @@ class ScribeCollectionMongo(ScribeCollection):
             self.collection.bulk_write(updates)
 
     def update_probabilities(self, classifier: Classifier, update_data: list):
-        ...
+        if len(update_data) > 0:
+            aids, probabilities = map(list, zip(*update_data))
+
+            create_or_update_probabilities_bulk(
+                self.collection,
+                classifier=classifier.classifier_name,
+                version=classifier.classifier_version,
+                aids=aids,
+                probabilities=probabilities
+            )
 
 
 def get_model_collection(

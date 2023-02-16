@@ -3,6 +3,7 @@ from mongo_scribe.command.commands import (
     DbCommand,
     InsertDbCommand,
     UpdateDbCommand,
+    UpdateProbabilitiesDbCommand
 )
 from mongo_scribe.command.exceptions import MisformattedCommandExcepction
 
@@ -57,6 +58,14 @@ def db_command_factory(msg: str) -> DbCommand:
 
     if msg_type == "update":
         return UpdateDbCommand(
+            decoded_message["collection"],
+            decoded_message["type"],
+            decoded_message["criteria"],
+            decoded_message["data"],
+        )
+
+    if msg_type == "update_probabilities":
+        return UpdateProbabilitiesDbCommand(
             decoded_message["collection"],
             decoded_message["type"],
             decoded_message["criteria"],

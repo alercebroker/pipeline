@@ -2,9 +2,8 @@ from typing import List, TypedDict
 from operator import itemgetter
 from db_plugins.db.mongo import MongoConnection
 from mongo_scribe.command.commands import DbCommand
-from mongo_scribe.db.update_one import update_one_factory
+from mongo_scribe.db.factories.update_one import update_one_factory
 from mongo_scribe.db.models import get_model_collection
-
 
 class Operations(TypedDict):
     inserts: list
@@ -26,6 +25,10 @@ def create_operations(commands: List[DbCommand]) -> Operations:
         for command in commands
         if command.type == "update"
     ]
+
+    update_probs = UpdateProbabilitiesOperation({
+        classifier=
+    })
 
     return Operations(
         {"inserts": inserts, "updates": updates, "update_probabilities": []}
