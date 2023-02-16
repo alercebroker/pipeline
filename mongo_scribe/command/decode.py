@@ -1,5 +1,9 @@
 from json import loads
-from mongo_scribe.command.commands import DbCommand
+from mongo_scribe.command.commands import (
+    DbCommand,
+    InsertDbCommand,
+    UpdateDbCommand,
+)
 from mongo_scribe.command.exceptions import MisformattedCommandExcepction
 
 
@@ -14,6 +18,9 @@ def validate(message: dict):
 
     if "criteria" not in message:
         message["criteria"] = None
+
+    if "classifier" not in message["data"]:
+        message["data"]["classifier"] = None
 
     return message
 
@@ -32,15 +39,26 @@ def decode_message(encoded_message: str):
     return valid_message
 
 
-def db_command_factory(msg: str):
+def db_command_factory(msg: str) -> DbCommand:
     """
     Returns a DbCommand instance based on a JSON stringified.
     Raises MisformattedCommand if the JSON string is not a valid command.
     """
     decoded_message = decode_message(msg)
-    return DbCommand(
-        decoded_message["collection"],
-        decoded_message["type"],
-        decoded_message["criteria"],
-        decoded_message["data"],
-    )
+    msg_type = decoded_message["type"]
+
+    if msg_type == "insert":
+        return InsertDbCommand(
+            decoded_message["collection"],
+            decoded_message["type"],
+            decoded_message["criteria"],
+            decoded_message["data"],
+        )
+
+    if msg_type == "update":
+        return UpdateDbCommand(
+            decoded_message["collection"],
+            decoded_message["type"],
+            decoded_message["criteria"],
+            decoded_message["data"],
+        )
