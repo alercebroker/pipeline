@@ -77,7 +77,7 @@ class StepTest(unittest.TestCase):
         collection = get_model_collection(
             self.step.db_client.connection, "object"
         )
-        result = collection.find({})
+        result = collection.collection.find({})
         self.assertIsNotNone(result[0])
         self.assertEqual(result[0]["field"], "some_value")
 
@@ -104,6 +104,6 @@ class StepTest(unittest.TestCase):
         collection = get_model_collection(
             self.step.db_client.connection, "object"
         )
-        result = collection.find({"field2": "hehe"})
+        result = collection.collection.find({"field2": "hehe"})
         self.assertEqual(len(list(result)), 0)
 

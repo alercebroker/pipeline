@@ -1,17 +1,18 @@
 from pymongo import UpdateOne
-from mongo_scribe.command.commands import DbCommand
+from mongo_scribe.command.commands import DbCommand, UpdateDbCommand
 
 
 def update_one_factory(command: DbCommand) -> UpdateOne:
     """
     Creates a Pymongo operation UpdateOne based on a update command
     """
-    if command.type != "update":
+    if command.__class__ != UpdateDbCommand:
         raise Exception(
-            "Can't create an UpdateOne instance from an insert command."
+            "Can't create an UpdateOne instance from a command that is not an update command."
         )
 
-    criteria = command.criteria
-    operation = {"$set": command.data}
+
+    criteria, data = command.get_raw_operation()
+    operation = {"$set": data}
 
     return UpdateOne(criteria, operation, upsert=True)

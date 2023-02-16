@@ -41,3 +41,12 @@ class NoCollectionProvidedException(Exception):
 
     def __init__(self):
         super().__init__("No collection provided in the command")
+
+class NoClassifierInfoProvidedException(Exception):
+    """
+    Exception to raise when a command doesn't provide the classifier when 
+    updating probabilities
+    """
+
+    def __init__(self):
+        super().__init__("No classifier info provided in the command")
