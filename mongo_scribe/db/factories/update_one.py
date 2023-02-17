@@ -6,7 +6,7 @@ def update_one_factory(command: DbCommand) -> UpdateOne:
     """
     Creates a Pymongo operation UpdateOne based on a update command
     """
-    if command.__class__ != UpdateDbCommand:
+    if not isinstance(command, UpdateDbCommand):
         raise Exception(
             "Can't create an UpdateOne instance from a command that is not an update command."
         )

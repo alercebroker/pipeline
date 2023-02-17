@@ -13,7 +13,7 @@ class UpdateProbabilitiesOperation:
         self.updates = updates if updates is not None else []
 
     def add_update(self, command: DbCommand):
-        if command.__class__ != UpdateProbabilitiesDbCommand:
+        if not isinstance(command, UpdateProbabilitiesDbCommand):
             raise Exception(
                 "Invalid command to create an update probability operation"
             )
