@@ -4,13 +4,17 @@ from mongo_scribe.db.models import ScribeCollectionMock, ScribeCollectionMongo
 
 class CollectionTest(unittest.TestCase):
     @patch("builtins.print")
-    def test_mock_collection(self, mock_print):
+    @patch("mongo_scribe.db.models.pprint")
+    def test_mock_collection(self, mock_pprint, mock_print):
         collection = ScribeCollectionMock("object")
         collection.insert_many([])
         mock_print.assert_called_with("Inserting into object:")
+        mock_pprint.assert_called_with([])
 
         collection.bulk_write([])
         mock_print.assert_called_with("Bulk writing into object:")
+        mock_pprint.assert_called_with([])
+
 
     @patch("db_plugins.db.mongo.MongoConnection")
     @patch("pymongo.collection.Collection")

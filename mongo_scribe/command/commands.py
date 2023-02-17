@@ -5,6 +5,7 @@ from mongo_scribe.command.exceptions import (
     UpdateWithNoCriteriaException,
     NoCollectionProvidedException,
     NoClassifierInfoProvidedException,
+    NoAlerceIdentificationProvidedException
 )
 
 CommandTypes = Literal["insert", "update", "update_probabilities"]
@@ -76,8 +77,11 @@ class UpdateProbabilitiesDbCommand(DbCommand):
         ):
             raise NoClassifierInfoProvidedException
 
+        if "aid" not in criteria:
+            raise NoAlerceIdentificationProvidedException
+
+        self.classifier = data.pop("classifier")
         super().__init__(collection, command_type, criteria, data)
-        self.classifier = data["classifier"]
 
     def get_raw_operation(self):
         return self.classifier, self.criteria, self.data

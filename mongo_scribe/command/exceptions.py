@@ -50,3 +50,12 @@ class NoClassifierInfoProvidedException(Exception):
 
     def __init__(self):
         super().__init__("No classifier info provided in the command")
+
+class NoAlerceIdentificationProvidedException(Exception):
+    """
+    Exception to raise when a command does not provide an ALeRCE ID when
+    trying to update probabilities
+    """
+
+    def __init__(self):
+        super().__init__("No AID provided in the command")

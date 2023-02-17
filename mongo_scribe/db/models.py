@@ -3,9 +3,13 @@ import os
 from typing import NamedTuple
 from pprint import pprint
 from pymongo.collection import Collection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.helpers.update_probs import (
+    create_or_update_probabilities_bulk,
+)
 from mongo_scribe.command.exceptions import NonExistantCollectionException
+from mongo_scribe.db.factories.update_probability import UpdateProbabilitiesOperation
 
 models_dictionary = {
     "object": Object,
@@ -29,7 +33,7 @@ class ScribeCollection(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def update_probabilities(self, classifier: Classifier, update_data: list):
+    def update_probabilities(self, operation: UpdateProbabilitiesOperation):
         ...
 
 
@@ -45,9 +49,12 @@ class ScribeCollectionMock(ScribeCollection):
         print(f"Bulk writing into {self.collection_name}:")
         pprint(updates)
 
-    def update_probabilities(self, classifier: Classifier, update_data: list):
+    def update_probabilities(self, operation: UpdateProbabilitiesOperation):
         print("Updating probabilities")
-        pprint(classifier, update_data)
+        pprint({
+            "updates": operation.updates,
+            "classifier": operation.classifier
+        })
 
 
 class ScribeCollectionMongo(ScribeCollection):
@@ -67,8 +74,19 @@ class ScribeCollectionMongo(ScribeCollection):
         if len(updates) > 0:
             self.collection.bulk_write(updates)
 
-    def update_probabilities(self, classifier: Classifier, update_data: list):
-        ...
+    def update_probabilities(self, operation: UpdateProbabilitiesOperation):
+        classifier = operation.classifier
+        update_data = operation.updates
+        if len(update_data) > 0:
+            aids, probabilities = map(list, zip(*update_data))
+
+            create_or_update_probabilities_bulk(
+                self.collection,
+                classifier=classifier.classifier_name,
+                version=classifier.classifier_version,
+                aids=aids,
+                probabilities=probabilities
+            )
 
 
 def get_model_collection(
