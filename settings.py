@@ -1,4 +1,5 @@
 import os
+from credentials import get_mongodb_credentials
 
 ##################################################
 #       mongo_scribe   Settings File
@@ -12,28 +13,16 @@ LOGGING_DEBUG = True
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
-        "bootstrap.servers": "localhost:9092",
+        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": "python_example_group_1",
     },
     # "TOPICS": ["w_Object", "w_Detections", "w_Non_Detections"],
-    "TOPICS": [],
+    "TOPICS": os.environ["TOPICS"].strip().split(","),
     "NUM_MESSAGES": int(os.getenv("NUM_MESSAGES", "50")),
 }
 
-if os.getenv("TOPICS"):
-    CONSUMER_CONFIG["TOPICS"] = os.environ["TOPICS"].strip().split(",")
-else:
-    raise Exception("No command topics provided")
+DB_CONFIG = get_mongodb_credentials()
 
-DB_CONFIG = {
-    "MONGO": {
-        "HOST": os.getenv("MONGO_HOST", "localhost"),
-        "USERNAME": os.getenv("MONGO_USER", "mongo"),
-        "PASSWORD": os.getenv("MONGO_PASSWORD", "mongo"),
-        "PORT": int(os.getenv("MONGO_PORT", "27017")),
-        "DATABASE": os.getenv("MONGO_NAME", "test"),
-    }
-}
 ## Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG
