@@ -1,2 +1,2 @@
-apf_base>1.0.0
-git+https://github.com/alercebroker/db-plugins@4.0.1#egg=db_plugins
+apf_base==1.0.9
+git+https://github.com/alercebroker/db-plugins@4.0.1

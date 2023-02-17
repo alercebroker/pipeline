@@ -1,5 +1,5 @@
-apf_base>1.0.0
+apf_base==1.0.9
 pytest==7.2.0
 pytest-docker==1.0.1
 black==22.12.0
-git+https://github.com/alercebroker/db-plugins@4.0.1#egg=db_plugins
+git+https://github.com/alercebroker/db-plugins@4.0.1
