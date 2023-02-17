@@ -1,12 +1,20 @@
 from unittest.mock import patch
+from itertools import accumulate
 import unittest
 from mockdata import valid_data_dict
+from mongo_scribe.db.factories.update_probability import (
+    UpdateProbabilitiesOperation,
+)
 from mongo_scribe.db.operations import (
     Operations,
     create_operations,
     execute_operations,
 )
-from mongo_scribe.command.commands import InsertDbCommand, UpdateDbCommand
+from mongo_scribe.command.commands import (
+    InsertDbCommand,
+    UpdateDbCommand,
+    UpdateProbabilitiesDbCommand,
+)
 
 
 @patch("db_plugins.db.mongo.MongoConnection")
@@ -27,22 +35,49 @@ class OperationTest(unittest.TestCase):
             valid_data_dict["data"],
         )
 
+        self.update_probabilites_command = UpdateProbabilitiesDbCommand(
+            valid_data_dict["collection"],
+            "update_probabilities",
+            {"aid": "AID9876"},
+            {
+                "some_probs": ["prob1", "prob2"],
+                "classifier": {
+                    "classifier_name": "LC",
+                    "classifier_version": "v1",
+                },
+            },
+        )
+
     def test_create_operations_empty(self, _, __):
         operations = create_operations([])
-        self.assertEqual(
-            operations,
-            Operations(
-                {"inserts": [], "updates": [], "update_probabilities": []}
-            ),
+        self.assertEqual(operations["inserts"], [])
+        self.assertEqual(operations["updates"], [])
+        self.assertIsInstance(
+            operations["update_probabilities"], UpdateProbabilitiesOperation
         )
 
     def test_create_operations(self, _, __):
         operations = create_operations(
-            [self.update_command, self.insert_command]
+            [
+                self.update_command,
+                self.insert_command,
+                self.update_probabilites_command,
+            ]
         )
 
         self.assertEqual(len(operations["inserts"]), 1)
         self.assertEqual(len(operations["updates"]), 1)
+        
+        update_probs = operations["update_probabilities"]
+
+        self.assertEqual(len(update_probs.updates), 1)
+        self.assertEqual(
+            update_probs.classifier,
+            {
+                "classifier_name": "LC",
+                "classifier_version": "v1",
+            },
+        )
 
     @patch("mongo_scribe.db.operations.get_model_collection")
     def test_execute_operations(
@@ -51,7 +86,11 @@ class OperationTest(unittest.TestCase):
         mock_get_collection.return_value = mock_collection
 
         operations = create_operations(
-            [self.update_command, self.insert_command]
+            [
+                self.update_command,
+                self.insert_command,
+                self.update_probabilites_command,
+            ]
         )
 
         execute_operations(mock_connection, "object")(operations)
@@ -59,53 +98,14 @@ class OperationTest(unittest.TestCase):
             operations["inserts"], ordered=False
         )
         mock_collection.bulk_write.assert_called_with(operations["updates"])
+        mock_collection.update_probabilities.assert_called()
 
-    """
-    
-    def test_bulk_execute_empty(self, mock_collection, _):
-        operations = []
+    def test_create_update_probabilites_operation(self, _, __):
+        update_probs = UpdateProbabilitiesOperation()
+        for command in [
+            self.update_probabilites_command,
+            self.update_probabilites_command,
+        ]:
+            update_probs = update_probs.add_update(command)
 
-        self.executor.bulk_execute("object", operations)
-        mock_collection.insert_many.assert_not_called()
-        mock_collection.bulk_write.assert_not_called()
-
-    @patch("mongo_scribe.db.operations.get_model_collection")
-    def test_bulk_execute_insert_only(
-        self, get_model_coll_mock, mock_collection, _
-    ):
-        get_model_coll_mock.return_value = mock_collection
-        operations = [InsertDbCommand("object", "insert", None, {"field": "value"})]
-
-        self.executor.bulk_execute("object", operations)
-        mock_collection.insert_many.assert_called()
-        mock_collection.bulk_write.assert_not_called()
-
-    @patch("mongo_scribe.db.operations.get_model_collection")
-    def test_bulk_execute_update_only(
-        self, get_model_coll_mock, mock_collection, _
-    ):
-        get_model_coll_mock.return_value = mock_collection
-        operations = [
-            UpdateDbCommand(
-                "object", "update", {"_id": "AID51423"}, {"field": "value"}
-            )
-        ]
-
-        self.executor.bulk_execute("object", operations)
-        mock_collection.insert_many.assert_not_called()
-        mock_collection.bulk_write.assert_called()
-
-    @patch("mongo_scribe.db.operations.get_model_collection")
-    def test_bulk_execute(self, get_model_coll_mock, mock_collection, _):
-        get_model_coll_mock.return_value = mock_collection
-        operations = [
-            InsertDbCommand("object", "insert", None, {"field": "value"}),
-            UpdateDbCommand(
-                "object", "update", {"_id": "AID51423"}, {"field": "value"}
-            ),
-        ]
-
-        self.executor.bulk_execute("object", operations)
-        mock_collection.insert_many.assert_called()
-        mock_collection.bulk_write.assert_called()
-    """
+        self.assertEqual(len(update_probs.updates), 2)
