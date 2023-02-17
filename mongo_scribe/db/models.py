@@ -51,7 +51,10 @@ class ScribeCollectionMock(ScribeCollection):
 
     def update_probabilities(self, operation: UpdateProbabilitiesOperation):
         print("Updating probabilities")
-        pprint(operation.classifier, operation.updates)
+        pprint({
+            "updates": operation.updates,
+            "classifier": operation.classifier
+        })
 
 
 class ScribeCollectionMongo(ScribeCollection):
