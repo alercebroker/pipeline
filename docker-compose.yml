@@ -10,8 +10,6 @@ services:
       - CONSUMER_SERVER=
       - CONSUMER_GROUP_ID=
       - BUCKET_NAME=
-      - AWS_ACCESS_KEY_ID=
-      - AWS_SECRET_ACCESS_KEY=
       - DB_ENGINE=
       - DB_HOST=
       - DB_USER=
@@ -21,4 +19,4 @@ services:
       - STEP_VERSION=
       - STEP_ID=
       - STEP_NAME=
-      -STEP_COMMENTS=
+      - STEP_COMMENTS=

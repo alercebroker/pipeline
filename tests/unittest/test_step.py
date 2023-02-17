@@ -9,12 +9,7 @@ SVY2_TOPIC, SVY2_BUCKET = "svy2_topic", "test_svy2_bucket"
 
 
 STORAGE_CONFIG = {
-    "BUCKET_NAME": {
-        'svy1': SVY1_BUCKET,
-        'svy2': SVY2_BUCKET
-    },
-    "AWS_ACCESS_KEY": "fake",
-    "AWS_SECRET_ACCESS_KEY": "fake",
+    "BUCKET_NAME": {"svy1": SVY1_BUCKET, "svy2": SVY2_BUCKET},
     "REGION_NAME": "fake",
 }
 
@@ -43,10 +38,8 @@ class StepTestCase(unittest.TestCase):
         self.step.upload_file(f, candid, SVY1_BUCKET)
         mock_client.assert_called_with(
             "s3",
-            aws_access_key_id=self.step_config["STORAGE"]["AWS_ACCESS_KEY"],
-            aws_secret_access_key=self.step_config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
-            region_name=self.step_config["STORAGE"]["REGION_NAME"]
-            )
+            region_name=self.step_config["STORAGE"]["REGION_NAME"],
+        )
         mock_client().upload_fileobj.assert_called_with(f, SVY1_BUCKET, "321.avro")
 
     @mock.patch("s3_step.S3Step.upload_file")
@@ -60,7 +53,7 @@ class StepTestCase(unittest.TestCase):
         message = {"objectId": "obj", "candidate": {"candid": 123}}
         self.mock_message.topic.return_value = "svy3_topic"
         self.mock_consumer.messages = [self.mock_message]
-        with self.assertRaisesRegex(KeyError, 'svy3_topic'):
+        with self.assertRaisesRegex(KeyError, "svy3_topic"):
             self.step.execute(message)
         mock_upload.assert_not_called()
 

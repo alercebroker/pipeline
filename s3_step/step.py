@@ -1,6 +1,5 @@
 import io
 import logging
-
 import boto3
 from apf.core.step import GenericStep
 
@@ -14,12 +13,7 @@ class S3Step(GenericStep):
         Description of parameter `consumer`.
     """
 
-    def __init__(
-        self,
-        consumer=None,
-        config=None,
-        level=logging.INFO,
-    ):
+    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
 
     def get_object_url(self, bucket_name, candid):
@@ -48,8 +42,6 @@ class S3Step(GenericStep):
 
             STEP_CONFIG = {
                 "STORAGE": {
-                    "AWS_ACCESS_KEY": "",
-                    "AWS_SECRET_ACCESS_KEY": "",
                     "REGION_NAME": "",
                 }
             }
@@ -65,8 +57,6 @@ class S3Step(GenericStep):
         """
         s3 = boto3.client(
             "s3",
-            aws_access_key_id=self.config["STORAGE"]["AWS_ACCESS_KEY"],
-            aws_secret_access_key=self.config["STORAGE"]["AWS_SECRET_ACCESS_KEY"],
             region_name=self.config["STORAGE"]["REGION_NAME"],
         )
         reverse_candid = self.reverse_candid(candid)
@@ -92,9 +82,7 @@ class S3Step(GenericStep):
         try:
             bucket = self._find_bucket(serialized.topic())
         except KeyError as err:
-            self.logger.error(
-                f"{err}"
-            )
+            self.logger.error(f"{err}")
             raise
         else:
             self.upload_file(file, message["candidate"]["candid"], bucket)
@@ -109,7 +97,7 @@ class S3Step(GenericStep):
 
     def execute(self, message):
         try:
-            serialized, = self.consumer.messages
+            (serialized,) = self.consumer.messages
         except ValueError:
             for msg, serialized in zip(message, self.consumer.messages):
                 self._upload_message(msg, serialized)

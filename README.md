@@ -12,8 +12,7 @@
 - None
 
 ## Previous conditions
-
-Credentials of AWS.
+None
 
 ## Version
 - **1.0.0:** 
@@ -38,9 +37,11 @@ Credentials of AWS.
 - `ES_NETWORK_PORT`: Elasticsearch port.
 
 ### S3 setup
+<<<<<<< Updated upstream
 - `BUCKET_NAME`: Mapping of bucket name(s) to topic prefix, e.g., `bucket1:topic1,bucket2:topic2`. The example will send the inputs from topics with names starting with `topic1` to `bucket1` and analogously for `topic2` and `bucket2`.
-- `AWS_ACCESS_KEY_ID`: Access key id of your AWS account.
-- `AWS_SECRET_ACCESS_KEY`: Secret access key of your AWS account.
+=======
+- `BUCKET_NAME`: Name of bucket to store avro files.
+>>>>>>> Stashed changes
 
 ### Step metadata
 - `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
