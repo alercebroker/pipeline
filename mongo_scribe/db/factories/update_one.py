@@ -13,6 +13,7 @@ def update_one_factory(command: DbCommand) -> UpdateOne:
 
 
     criteria, data = command.get_raw_operation()
+    upsert = command.options.upsert
     operation = {"$set": data}
 
-    return UpdateOne(criteria, operation, upsert=True)
+    return UpdateOne(criteria, operation, upsert=upsert)

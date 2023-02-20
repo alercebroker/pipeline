@@ -59,3 +59,22 @@ class CommandTests(unittest.TestCase):
         )
         raw_operation = update_command.get_raw_operation()
         self.assertEqual(len(raw_operation), 2)
+
+    def test_update_db_command_options(self):
+        update_command = UpdateDbCommand(
+            valid_data_dict["collection"],
+            valid_data_dict["type"],
+            valid_data_dict["criteria"],
+            valid_data_dict["data"],
+            { "upsert": True }
+        )
+        self.assertEqual(update_command.options.upsert, True)
+
+    def test_update_db_command_default_options(self):
+        update_command = UpdateDbCommand(
+            valid_data_dict["collection"],
+            valid_data_dict["type"],
+            valid_data_dict["criteria"],
+            valid_data_dict["data"],
+        )
+        self.assertEqual(update_command.options.upsert, False)

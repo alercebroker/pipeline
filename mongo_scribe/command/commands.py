@@ -1,14 +1,24 @@
 import abc
 from typing import Literal, Union
+from dataclasses import dataclass
 from mongo_scribe.command.exceptions import (
     NoDataProvidedException,
     UpdateWithNoCriteriaException,
     NoCollectionProvidedException,
     NoClassifierInfoProvidedException,
-    NoAlerceIdentificationProvidedException
+    NoAlerceIdentificationProvidedException,
 )
 
 CommandTypes = Literal["insert", "update", "update_probabilities"]
+
+
+@dataclass
+class Options:
+    """
+    Plain class containing possible options
+    """
+
+    upsert: bool = False
 
 
 class DbCommand(abc.ABC):
@@ -23,6 +33,7 @@ class DbCommand(abc.ABC):
         command_type: CommandTypes,
         criteria=None,
         data=None,
+        options = None,
     ):
         if collection is None or collection == "":
             raise NoCollectionProvidedException
@@ -34,6 +45,12 @@ class DbCommand(abc.ABC):
         self.type = command_type
         self.criteria = criteria
         self.data = data
+
+        try:
+            self.options = Options(**options) if options is not None else Options()
+        except TypeError:
+            print("Some of the options provided are not supported. Using default values.")
+            self.options = Options()
 
     @abc.abstractmethod
     def get_raw_operation(self) -> Union[dict, tuple]:
@@ -52,12 +69,13 @@ class UpdateDbCommand(DbCommand):
         command_type: CommandTypes,
         criteria=None,
         data=None,
+        options=None,
     ):
 
         if command_type == "update" and criteria is None:
             raise UpdateWithNoCriteriaException
 
-        super().__init__(collection, command_type, criteria, data)
+        super().__init__(collection, command_type, criteria, data, options)
 
     def get_raw_operation(self):
         return self.criteria, self.data
@@ -70,6 +88,7 @@ class UpdateProbabilitiesDbCommand(DbCommand):
         command_type: CommandTypes,
         criteria=None,
         data=None,
+        options=None
     ):
         if (
             command_type == "update_probabilities"
@@ -81,7 +100,7 @@ class UpdateProbabilitiesDbCommand(DbCommand):
             raise NoAlerceIdentificationProvidedException
 
         self.classifier = data.pop("classifier")
-        super().__init__(collection, command_type, criteria, data)
+        super().__init__(collection, command_type, criteria, data, options)
 
     def get_raw_operation(self):
         return self.classifier, self.criteria, self.data
