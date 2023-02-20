@@ -18,9 +18,10 @@ def _validate_steps(steps):
 
 
 @cli.command()
-@click.argument('name')
+@click.argument("name")
 def new_step(name):
     import re
+
     BASE = os.getcwd()
 
     output_path = os.path.join(BASE, name)
@@ -46,9 +47,7 @@ def new_step(name):
 
     step_template = route.get_template("step/package/step.py")
     with open(os.path.join(output_path, package_name, "step.py"), "w") as f:
-
-        class_name = "".join(
-            [word.capitalize() for word in cleaned_name])
+        class_name = "".join([word.capitalize() for word in cleaned_name])
         f.write(step_template.render(step_name=class_name))
 
     dockerfile_template = route.get_template("step/Dockerfile")
@@ -57,23 +56,25 @@ def new_step(name):
 
     run_script_template = route.get_template("step/scripts/run_step.py")
     with open(os.path.join(output_path, "scripts", "run_step.py"), "w") as f:
-        f.write(run_script_template.render(
-            package_name=package_name, class_name=class_name))
+        f.write(
+            run_script_template.render(package_name=package_name, class_name=class_name)
+        )
 
-    run_multiprocess_template = route.get_template(
-        "step/scripts/run_multiprocess.py")
+    run_multiprocess_template = route.get_template("step/scripts/run_multiprocess.py")
     with open(os.path.join(output_path, "scripts", "run_multiprocess.py"), "w") as f:
-        f.write(run_multiprocess_template.render(
-            package_name=package_name, class_name=class_name))
+        f.write(
+            run_multiprocess_template.render(
+                package_name=package_name, class_name=class_name
+            )
+        )
 
     requirements_template = route.get_template("step/requirements.txt")
     with open(os.path.join(output_path, "requirements.txt"), "w") as f:
         try:
             apf_version = apf.__version__
         except AttributeError:
-            apf_version = '1.0.0'
-        f.write(requirements_template.render(
-            apf_version=apf_version))
+            apf_version = "1.0.0"
+        f.write(requirements_template.render(apf_version=apf_version))
 
     settings_template = route.get_template("step/settings.py")
     with open(os.path.join(output_path, "settings.py"), "w") as f:
@@ -81,8 +82,8 @@ def new_step(name):
 
 
 @cli.command()
-@click.argument('input')
-@click.argument('output')
-@click.argument('build')
+@click.argument("input")
+@click.argument("output")
+@click.argument("build")
 def build_dockerfiles():
     pass

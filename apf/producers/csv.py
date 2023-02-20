@@ -14,6 +14,7 @@ class CSVProducer(GenericProducer):
     FILE_PATH: :class:`str`
         Output CSV File Path.
     """
+
     def __init__(self, config):
         super().__init__(config=config)
 
@@ -23,5 +24,6 @@ class CSVProducer(GenericProducer):
         Doesn't add the header
         """
         serialized_message = json_normalize(message)
-        serialized_message.to_csv(self.config["FILE_PATH"],
-                                  mode='a+', index=False, header=False)
+        serialized_message.to_csv(
+            self.config["FILE_PATH"], mode="a+", index=False, header=False
+        )

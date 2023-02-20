@@ -31,6 +31,7 @@ class CSVConsumer(GenericConsumer):
         (reference `here <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html>`_)
 
     """
+
     def __init__(self, config):
         super().__init__(config)
         path = self.config.get("FILE_PATH", None)

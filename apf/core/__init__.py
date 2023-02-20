@@ -1,5 +1,6 @@
 import importlib
 
+
 def get_class(string):
     """Import class from string.
 

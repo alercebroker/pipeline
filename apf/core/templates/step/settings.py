@@ -3,7 +3,7 @@
 ##################################################
 
 ## Set the global logging level to debug
-#LOGGING_DEBUG = True
+# LOGGING_DEBUG = True
 
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation

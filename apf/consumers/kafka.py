@@ -6,6 +6,7 @@ import io
 import importlib
 import json
 
+
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 

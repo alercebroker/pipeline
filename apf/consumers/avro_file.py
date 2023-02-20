@@ -23,6 +23,7 @@ class AVROFileConsumer(GenericConsumer):
         AVRO files Directory path location
 
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -54,7 +55,7 @@ class AVROFileConsumer(GenericConsumer):
 
 
 class AVROInfiniteConsumer(GenericConsumer):
-    """ Consume from a Infinite AVRO Files Directory.
+    """Consume from a Infinite AVRO Files Directory.
 
     **Example:**
 
@@ -70,6 +71,7 @@ class AVROInfiniteConsumer(GenericConsumer):
     DIRECTORY_PATH: path
         AVRO files Directory path location
     """
+
     def __init__(self, config):
         super().__init__(config)
 
