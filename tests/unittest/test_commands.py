@@ -78,3 +78,13 @@ class CommandTests(unittest.TestCase):
             valid_data_dict["data"],
         )
         self.assertEqual(update_command.options.upsert, False)
+
+    def test_update_db_command_unsupported_options(self):
+        update_command = UpdateDbCommand(
+            valid_data_dict["collection"],
+            valid_data_dict["type"],
+            valid_data_dict["criteria"],
+            valid_data_dict["data"],
+            { "hehe": "hehe" }
+        )
+        self.assertEqual(update_command.options.upsert, False)
