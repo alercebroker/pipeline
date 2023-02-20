@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
-from apf.consumers import GenericConsumer
+from apf.consumers import GenericConsumer, KafkaConsumer
+from apf.producers import GenericProducer
 from apf.core import get_class
-
 import logging
 import datetime
 
@@ -28,19 +28,17 @@ class GenericStep:
         Additional parameters for the step.
     """
 
-    def __init__(self, consumer=None, level=logging.INFO, config=None, **step_args):
+    def __init__(self, config={}, level=logging.INFO, **step_args):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(level)
         self.logger.info(f"Creating {self.__class__.__name__}")
-        if config:
-            self.config = config
-        else:
-            self.config = {}
-        self.consumer = GenericConsumer() if consumer is None else consumer
+        self.config = config
+        self.consumer = self._get_consumer()(self.consumer_config)
+        self.producer = self._get_producer()(self.producer_config)
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
         self.metrics_sender = None
         self.extra_metrics = []
-
         if self.config.get("METRICS_CONFIG"):
             Metrics = get_class(
                 self.config["METRICS_CONFIG"].get(
@@ -51,6 +49,33 @@ class GenericStep:
             self.extra_metrics = self.config["METRICS_CONFIG"].get(
                 "EXTRA_METRICS", ["candid"]
             )
+
+    @property
+    def consumer_config(self):
+        return self.config["CONSUMER_CONFIG"]
+
+    @property
+    def producer_config(self):
+        return self.config.get("PRODUCER_CONFIG", {})
+
+    def _get_consumer(self):
+        if self.config.get("CONSUMER_CONFIG"):
+            if "CLASS" in self.consumer_config:
+                Consumer = get_class(self.consumer_config["CLASS"])
+            else:
+                Consumer = KafkaConsumer
+            return Consumer
+        raise Exception("Could not find CONSUMER_CONFIG in the step config")
+
+    def _get_producer(self):
+        if self.config.get("PRODUCER_CONFIG"):
+            producer_config = self.config["PRODUCER_CONFIG"]
+            if "CLASS" in producer_config:
+                Consumer = get_class(producer_config["CLASS"])
+            else:
+                Consumer = GenericProducer
+            return Consumer
+        return GenericProducer
 
     def send_metrics(self, **metrics):
         """Send Metrics with a metrics producer.
@@ -96,6 +121,26 @@ class GenericStep:
             metrics["source"] = self.__class__.__name__
             self.metrics_sender.send_metrics(metrics)
 
+    def _pre_consume(self):
+        self.logger.info("Starting step. Begin processing")
+        self.pre_consume()
+
+    @abstractmethod
+    def pre_consume(self):
+        pass
+
+    def _pre_execute(self):
+        self.logger.debug("Received message. Begin preprocessing")
+        self.metrics["timestamp_received"] = datetime.datetime.now(
+            datetime.timezone.utc
+        )
+        preprocessed = self.pre_execute(self.message)
+        return preprocessed or self.message
+
+    @abstractmethod
+    def pre_execute(self, message):
+        pass
+
     @abstractmethod
     def execute(self, message):
         """Execute the logic of the step. This method has to be implemented by
@@ -106,6 +151,41 @@ class GenericStep:
         message : dict, list
             Dict-like message to be processed or list of dict-like messages
         """
+        pass
+
+    def _post_execute(self, result):
+        self.logger.debug("Processed message. Begin post processing")
+        final_result = self.post_execute(result)
+        self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
+        time_difference = (
+            self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
+        )
+        self.metrics["execution_time"] = time_difference.total_seconds()
+        if self.extra_metrics:
+            extra_metrics = self.get_extra_metrics(self.message)
+            self.metrics.update(extra_metrics)
+        self.send_metrics(**self.metrics)
+        return final_result
+
+    @abstractmethod
+    def post_execute(self, result):
+        return result
+
+    def _pre_produce(self, result):
+        self.logger.debug("Finished all processing. Begin message production")
+        message_to_produce = self.pre_produce(result)
+        return message_to_produce
+
+    @abstractmethod
+    def pre_produce(self, result):
+        return result
+
+    def _post_produce(self):
+        self.logger.debug("Message produced. Begin post production")
+        self.post_produce()
+
+    @abstractmethod
+    def post_produce(self):
         pass
 
     def get_value(self, message, params):
@@ -190,21 +270,21 @@ class GenericStep:
 
     def start(self):
         """Start running the step."""
+        self._pre_consume()
         for self.message in self.consumer.consume():
-            self.metrics["timestamp_received"] = datetime.datetime.now(
-                datetime.timezone.utc
-            )
-            self.execute(self.message)
-            if self.commit:
-                self.consumer.commit()
-            self.metrics["timestamp_sent"] = datetime.datetime.now(
-                datetime.timezone.utc
-            )
-            time_difference = (
-                self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
-            )
-            self.metrics["execution_time"] = time_difference.total_seconds()
-            if self.extra_metrics:
-                extra_metrics = self.get_extra_metrics(self.message)
-                self.metrics.update(extra_metrics)
-            self.send_metrics(**self.metrics)
+            preprocessed_msg = self._pre_execute()
+            result = self.execute(preprocessed_msg)
+            result = self._post_execute(result)
+            result = self._pre_produce(result)
+            self.producer.produce(result)
+            self._post_produce()
+        self._tear_down()
+
+    def _tear_down(self):
+        self.logger.info("Processing finished. No more messages. Begin tear down.")
+        self.tear_down()
+        f = open("__SUCCESS__", "w")
+        f.close()
+
+    def tear_down(self):
+        pass
