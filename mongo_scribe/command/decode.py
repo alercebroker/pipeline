@@ -3,7 +3,7 @@ from mongo_scribe.command.commands import (
     DbCommand,
     InsertDbCommand,
     UpdateDbCommand,
-    UpdateProbabilitiesDbCommand
+    UpdateProbabilitiesDbCommand,
 )
 from mongo_scribe.command.exceptions import MisformattedCommandExcepction
 
@@ -19,6 +19,9 @@ def validate(message: dict):
 
     if "criteria" not in message:
         message["criteria"] = None
+
+    if "options" not in message:
+        message["options"] = None
 
     if "classifier" not in message["data"]:
         message["data"]["classifier"] = None
@@ -54,6 +57,7 @@ def db_command_factory(msg: str) -> DbCommand:
             decoded_message["type"],
             decoded_message["criteria"],
             decoded_message["data"],
+            decoded_message["options"],
         )
 
     if msg_type == "update":
@@ -62,6 +66,7 @@ def db_command_factory(msg: str) -> DbCommand:
             decoded_message["type"],
             decoded_message["criteria"],
             decoded_message["data"],
+            decoded_message["options"],
         )
 
     if msg_type == "update_probabilities":
@@ -70,4 +75,5 @@ def db_command_factory(msg: str) -> DbCommand:
             decoded_message["type"],
             decoded_message["criteria"],
             decoded_message["data"],
+            decoded_message["options"],
         )
