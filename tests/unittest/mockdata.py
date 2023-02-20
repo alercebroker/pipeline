@@ -7,6 +7,7 @@ valid_data_dict = {
         "field2": "some_other_field",
         "classifier": None,
     },
+    "options": None
 }
 
 valid_data_json = """
