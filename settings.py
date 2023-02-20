@@ -21,7 +21,9 @@ CONSUMER_CONFIG = {
     "NUM_MESSAGES": int(os.getenv("NUM_MESSAGES", "50")),
 }
 
-DB_CONFIG = get_mongodb_credentials()
+DB_CONFIG = {
+    "MONGO": get_mongodb_credentials()
+}
 
 ## Step Configuration
 STEP_CONFIG = {
