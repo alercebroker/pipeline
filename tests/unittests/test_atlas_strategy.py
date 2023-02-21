@@ -2,12 +2,12 @@ from unittest import mock
 
 import pandas as pd
 
-from atlas_stamp_classifier_step.strategies import AtlasStrategy
+from atlas_stamp_classifier_step.strategies import ATLASStrategy
 
 
 @mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
 def test_transform_messages_to_dataframe(mock_classifier, alerts):
-    strategy = AtlasStrategy()
+    strategy = ATLASStrategy()
 
     df = strategy._to_dataframe(alerts)
     assert df.iloc[0]["red"].shape == (61, 61)
@@ -15,7 +15,7 @@ def test_transform_messages_to_dataframe(mock_classifier, alerts):
 
 
 def test_prediction_with_stamp_classifier(alerts):
-    strategy = AtlasStrategy()
+    strategy = ATLASStrategy()
 
     df = strategy._to_dataframe(alerts)
     probs = strategy.predict(df)
@@ -30,7 +30,7 @@ def test_get_probabilities_reformats_dictionary(mock_classifier, alerts):
         columns=["agn", "asteroid", "bogus", "sn", "vs"],
         index=["ZTF20aaelulu"],
     )
-    strategy = AtlasStrategy()
+    strategy = ATLASStrategy()
 
     # alerts works as a dummy here
     probs = strategy.get_probabilities(alerts)

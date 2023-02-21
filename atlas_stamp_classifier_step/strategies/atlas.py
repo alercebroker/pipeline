@@ -12,7 +12,7 @@ from atlas_stamp_classifier.inference import AtlasStampClassifier
 from .base import BaseStrategy
 
 
-class AtlasStrategy(BaseStrategy):
+class ATLASStrategy(BaseStrategy):
     FIELDS = ["FILTER", "AIRMASS", "SEEING", "SUNELONG", "MANGLE"]
 
     def __init__(self):
