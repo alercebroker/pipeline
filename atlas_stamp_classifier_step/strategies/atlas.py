@@ -1,4 +1,3 @@
-import os
 import gzip
 import io
 import warnings
@@ -16,12 +15,9 @@ from .base import BaseStrategy
 class AtlasStrategy(BaseStrategy):
     FIELDS = ["FILTER", "AIRMASS", "SEEING", "SUNELONG", "MANGLE"]
 
-    def __init__(self, classifier: AtlasStampClassifier):
-        self.model = classifier
-        super().__init__(
-            os.getenv("ATLAS_MODEL_NAME", "atlas_stamp_classifier"),
-            os.getenv("ATLAS_MODEL_VERSION", "1.0.0"),
-        )
+    def __init__(self):
+        self.model = AtlasStampClassifier()
+        super().__init__("atlas_stamp_classifier", "1.0.0")
 
     @staticmethod
     def _extract_ra_dec(header: dict) -> Tuple[float, float]:

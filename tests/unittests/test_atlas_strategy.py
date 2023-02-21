@@ -2,13 +2,12 @@ from unittest import mock
 
 import pandas as pd
 
-from atlas_stamp_classifier.inference import AtlasStampClassifier
-from atlas_stamp_classifier_step.classifiers.atlas import AtlasStrategy
+from atlas_stamp_classifier_step.strategies.atlas import AtlasStrategy
 
 
-def test_transform_messages_to_dataframe(alerts):
-    classifier = mock.MagicMock()
-    strategy = AtlasStrategy(classifier)
+@mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
+def test_transform_messages_to_dataframe(mock_classifier, alerts):
+    strategy = AtlasStrategy()
 
     df = strategy._to_dataframe(alerts)
     assert df.iloc[0]["red"].shape == (61, 61)
@@ -16,7 +15,7 @@ def test_transform_messages_to_dataframe(alerts):
 
 
 def test_prediction_with_stamp_classifier(alerts):
-    strategy = AtlasStrategy(AtlasStampClassifier(model_dir=None, batch_size=1))
+    strategy = AtlasStrategy()
 
     df = strategy._to_dataframe(alerts)
     probs = strategy.predict(df)
@@ -24,14 +23,14 @@ def test_prediction_with_stamp_classifier(alerts):
     assert probs.idxmax(axis=1).iloc[0] == "agn"
 
 
-def test_get_probabilities_reformats_dictionary(alerts):
-    classifier = mock.MagicMock()
-    classifier.predict_probs.return_value = pd.DataFrame(
+@mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
+def test_get_probabilities_reformats_dictionary(mock_classifier, alerts):
+    mock_classifier.return_value.predict_probs.return_value = pd.DataFrame(
         [[0.5, 0.1, 0.3, 0.05, 0.05]],
         columns=["agn", "asteroid", "bogus", "sn", "vs"],
         index=["ZTF20aaelulu"],
     )
-    strategy = AtlasStrategy(classifier)
+    strategy = AtlasStrategy()
 
     # alerts works as a dummy here
     probs = strategy.get_probabilities(alerts)

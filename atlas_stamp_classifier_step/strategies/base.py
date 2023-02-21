@@ -1,14 +1,14 @@
 import abc
-from datetime import datetime
+import os
 from typing import List
 
 import pandas as pd
 
 
 class BaseStrategy(abc.ABC):
-    def __init__(self, name, version):
-        self.name = name
-        self.version = version
+    def __init__(self, default_name, default_version):
+        self.name = os.getenv("MODEL_NAME", default_name)
+        self.version = os.getenv("MODEL_VERSION", default_version)
 
     @staticmethod
     def _sort_probabilities(obj_probabilities: dict) -> List[tuple]:

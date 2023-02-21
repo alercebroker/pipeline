@@ -1,8 +1,7 @@
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
 from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
-from atlas_stamp_classifier_step.classifiers.atlas import AtlasStrategy
-from atlas_stamp_classifier.inference import AtlasStampClassifier
+from atlas_stamp_classifier_step.strategies.atlas import AtlasStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 from typing import List
 
@@ -75,7 +74,7 @@ def test_step(kafka_service):
             "SCHEMA": SCRIBE_SCHEMA,
         }
     )
-    strategy = AtlasStrategy(AtlasStampClassifier())
+    strategy = AtlasStrategy()
     step = AtlasStampClassifierStep(
         consumer=consumer,
         producer=producer,
