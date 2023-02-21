@@ -60,14 +60,6 @@ def new_step(name):
             run_script_template.render(package_name=package_name, class_name=class_name)
         )
 
-    run_multiprocess_template = route.get_template("step/scripts/run_multiprocess.py")
-    with open(os.path.join(output_path, "scripts", "run_multiprocess.py"), "w") as f:
-        f.write(
-            run_multiprocess_template.render(
-                package_name=package_name, class_name=class_name
-            )
-        )
-
     requirements_template = route.get_template("step/requirements.txt")
     with open(os.path.join(output_path, "requirements.txt"), "w") as f:
         try:
