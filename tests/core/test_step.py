@@ -117,7 +117,7 @@ def test_start(basic_config, mocker):
 def test_pre_execute(basic_config, mocker):
     # mock the abstract method
     pre_execute = mocker.patch.object(GenericStep, "pre_execute")
-    step = GenericStep(basic_config)
+    step = GenericStep(config=basic_config)
     step.message = {"msg": "message"}
     assert step.metrics.get("timestamp_received") == None
     step._pre_execute()
@@ -131,7 +131,7 @@ def test_post_execute(basic_config, mocker):
     send_metrics = mocker.patch.object(GenericMetricsProducer, "send_metrics")
     result = {"msg": "message"}
     post_execute.return_value = result
-    step = GenericStep(basic_config)
+    step = GenericStep(config=basic_config)
     step.message = result
     step.metrics["timestamp_received"] = datetime.now(timezone.utc)
     assert step.metrics.get("timestamp_sent") == None

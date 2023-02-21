@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from typing import Callable
 
-from apf.consumers import GenericConsumer, KafkaConsumer
+from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
@@ -38,26 +39,26 @@ class GenericStep:
     metrics_sender: GenericMetricsProducer
     message: dict
 
-    def __init__(self, config={}, level=logging.INFO, **step_args):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(level)
-        self.logger.info(f"Creating {self.__class__.__name__}")
+    def __init__(
+        self,
+        consumer: Callable = GenericConsumer,
+        producer: Callable = GenericProducer,
+        metrics_sender: Callable = GenericMetricsProducer,
+        config: dict = {},
+        level: int = logging.INFO,
+    ):
+        self._set_logger(level)
         self.config = config
-        self.consumer = self._get_consumer()(self.consumer_config)
-        self.producer = self._get_producer()(self.producer_config)
-        self.commit = self.config.get("COMMIT", True)
+        self.consumer = self._get_consumer(consumer)(self.consumer_config)
+        self.producer = self._get_producer(producer)(self.producer_config)
+        self.metrics_sender = self._get_metrics_sender(metrics_sender)(
+            self.metrics_config
+        )
         self.metrics = {}
         self.extra_metrics = []
-        if self.config.get("METRICS_CONFIG"):
-            Metrics = get_class(
-                self.config["METRICS_CONFIG"].get(
-                    "CLASS", "apf.metrics.KafkaMetricsProducer"
-                )
-            )
-            self.metrics_sender = Metrics(self.config["METRICS_CONFIG"]["PARAMS"])
-            self.extra_metrics = self.config["METRICS_CONFIG"].get(
-                "EXTRA_METRICS", ["candid"]
-            )
+        if self.metrics_config:
+            self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
+        self.commit = self.config.get("COMMIT", True)
 
     @property
     def consumer_config(self):
@@ -67,24 +68,35 @@ class GenericStep:
     def producer_config(self):
         return self.config.get("PRODUCER_CONFIG", {})
 
-    def _get_consumer(self):
-        if self.config.get("CONSUMER_CONFIG"):
+    @property
+    def metrics_config(self):
+        return self.config.get("METRICS_CONFIG")
+
+    def _set_logger(self, level):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(level)
+        self.logger.info(f"Creating {self.__class__.__name__}")
+
+    def _get_consumer(self, default: Callable):
+        if self.consumer_config:
+            Consumer = default
             if "CLASS" in self.consumer_config:
                 Consumer = get_class(self.consumer_config["CLASS"])
-            else:
-                Consumer = KafkaConsumer
             return Consumer
         raise Exception("Could not find CONSUMER_CONFIG in the step config")
 
-    def _get_producer(self):
-        if self.config.get("PRODUCER_CONFIG"):
-            producer_config = self.config["PRODUCER_CONFIG"]
-            if "CLASS" in producer_config:
-                Consumer = get_class(producer_config["CLASS"])
-            else:
-                Consumer = GenericProducer
-            return Consumer
-        return GenericProducer
+    def _get_producer(self, default: Callable):
+        Producer = default
+        if "CLASS" in self.producer_config:
+            Producer = get_class(self.producer_config["CLASS"])
+        return Producer
+
+    def _get_metrics_sender(self, default: Callable):
+        Metrics = default
+        if self.metrics_config:
+            if "CLASS" in self.metrics_config:
+                Metrics = get_class(self.config["METRICS_CONFIG"].get("CLASS"))
+        return Metrics
 
     def send_metrics(self, **metrics):
         """Send Metrics with a metrics producer.
