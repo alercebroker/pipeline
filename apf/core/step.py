@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from apf.consumers import GenericConsumer, KafkaConsumer
+from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
 import logging
@@ -28,6 +29,15 @@ class GenericStep:
         Additional parameters for the step.
     """
 
+    logger: logging.Logger
+    config: dict
+    consumer: GenericConsumer
+    producer: GenericProducer
+    metrics: dict
+    extra_metrics: list
+    metrics_sender: GenericMetricsProducer
+    message: dict
+
     def __init__(self, config={}, level=logging.INFO, **step_args):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(level)
@@ -37,7 +47,6 @@ class GenericStep:
         self.producer = self._get_producer()(self.producer_config)
         self.commit = self.config.get("COMMIT", True)
         self.metrics = {}
-        self.metrics_sender = None
         self.extra_metrics = []
         if self.config.get("METRICS_CONFIG"):
             Metrics = get_class(
@@ -130,7 +139,7 @@ class GenericStep:
         pass
 
     def _pre_execute(self):
-        self.logger.debug("Received message. Begin preprocessing")
+        self.logger.info("Received message. Begin preprocessing")
         self.metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
         )
@@ -154,7 +163,7 @@ class GenericStep:
         pass
 
     def _post_execute(self, result):
-        self.logger.debug("Processed message. Begin post processing")
+        self.logger.info("Processed message. Begin post processing")
         final_result = self.post_execute(result)
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
         time_difference = (
@@ -172,7 +181,7 @@ class GenericStep:
         return result
 
     def _pre_produce(self, result):
-        self.logger.debug("Finished all processing. Begin message production")
+        self.logger.info("Finished all processing. Begin message production")
         message_to_produce = self.pre_produce(result)
         return message_to_produce
 
@@ -181,7 +190,7 @@ class GenericStep:
         return result
 
     def _post_produce(self):
-        self.logger.debug("Message produced. Begin post production")
+        self.logger.info("Message produced. Begin post production")
         self.post_produce()
 
     @abstractmethod
@@ -283,6 +292,9 @@ class GenericStep:
     def _tear_down(self):
         self.logger.info("Processing finished. No more messages. Begin tear down.")
         self.tear_down()
+        self._write_success()
+
+    def _write_success(self):
         f = open("__SUCCESS__", "w")
         f.close()
 
