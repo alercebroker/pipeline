@@ -16,15 +16,17 @@ class BaseStrategy(abc.ABC):
 
     def _with_ranking(self, raw_probabilities: dict):
         return {
-            aid: {
-                "classifier_name": self.name,
-                "classifier_version": self.version,
-                "class_name": cls,
-                "probability": prob,
-                "ranking": i + 1,
-            }
+            aid: [
+                {
+                    "classifier_name": self.name,
+                    "classifier_version": self.version,
+                    "class_name": cls,
+                    "probability": prob,
+                    "ranking": i + 1,
+                }
+                for i, (cls, prob) in enumerate(self._sort_probabilities(obj))
+            ]
             for aid, obj in raw_probabilities.items()
-            for i, (cls, prob) in enumerate(self._sort_probabilities(obj))
         }
 
     @abc.abstractmethod
