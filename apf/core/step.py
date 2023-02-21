@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from typing import Callable
-
 from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
