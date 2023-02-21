@@ -1,7 +1,7 @@
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
 from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
-from atlas_stamp_classifier_step.strategies.atlas import AtlasStrategy
+from atlas_stamp_classifier_step.strategies import AtlasStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 from typing import List
 

@@ -49,6 +49,8 @@ SCRIBE_PRODUCER_CONFIG = {
     "SCHEMA": SCRIBE_SCHEMA,
 }
 
+CLASSIFIER_STRATEGY = os.environ["CLASSIFIER_STRATEGY"]
+
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [{"key": "candid", "format": lambda x: str(x)}, "oid"],
@@ -96,7 +98,7 @@ METRICS_CONFIG = {
 STEP_CONFIG = {
     "PRODUCER_CONFIG": OUTPUT_PRODUCER_CONFIG,
     "SCRIBE_CONFIG": SCRIBE_PRODUCER_CONFIG,
-    "MODEL_NAME": os.getenv("MODEL_NAME", "atlas_stamp_classifier"),
-    "MODEL_VERSION": os.getenv("MODEL_VERSION", "1.0.0"),
+    "MODEL_NAME": os.getenv("MODEL_NAME"),
+    "MODEL_VERSION": os.getenv("MODEL_VERSION"),
     "METRICS_CONFIG": METRICS_CONFIG,
 }

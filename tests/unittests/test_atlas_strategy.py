@@ -2,7 +2,7 @@ from unittest import mock
 
 import pandas as pd
 
-from atlas_stamp_classifier_step.strategies.atlas import AtlasStrategy
+from atlas_stamp_classifier_step.strategies import AtlasStrategy
 
 
 @mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
