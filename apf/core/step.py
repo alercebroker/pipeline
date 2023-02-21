@@ -4,6 +4,7 @@ from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
+from prometheus_client import Enum, Gauge, Summary
 import logging
 import datetime
 
@@ -50,6 +51,7 @@ class GenericStep:
         self.config = config
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
+        self.init_prometheus_metrics()
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
             self.metrics_config
         )
@@ -58,6 +60,7 @@ class GenericStep:
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
+        self.use_prometheus = False
 
     @property
     def consumer_config(self):
@@ -70,6 +73,22 @@ class GenericStep:
     @property
     def metrics_config(self):
         return self.config.get("METRICS_CONFIG")
+
+    def init_prometheus_metrics(self):
+        if self.config.get("PROMETHEUS"):
+            self.use_prometheus = True
+            self.prometheus_consumed_messages = Summary(
+                "consumed_messages", "Current number of messages consumed"
+            )
+            self.prometheus_processed_messages = Summary(
+                "processed_messages", "Current number of messages processed"
+            )
+            self.prometheus_execution_time = Summary(
+                "execution_time", "Execution time of processed batch"
+            )
+            self.prometheus_telescope_id = Enum(
+                "telescope_id", "Id of the telescope", states=["ZTF", "ATLAS"]
+            )
 
     def _set_logger(self, level):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -154,6 +173,19 @@ class GenericStep:
         self.metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
         )
+        if self.use_prometheus:
+            if isinstance(self.message, dict):
+                self.prometheus_consumed_messages.observe(1)
+                tid = self.message.get("tid")
+                if tid:
+                    tid = str(tid).upper()
+                    self.prometheus_telescope_id.state(tid)
+            if isinstance(self.message, list):
+                self.prometheus_consumed_messages.observe(len(self.message))
+                tid = self.message[0].get("tid")
+                if tid:
+                    tid = str(tid).upper()
+                    self.prometheus_telescope_id.state(tid)
         preprocessed = self.pre_execute(self.message)
         return preprocessed or self.message
 
@@ -185,6 +217,12 @@ class GenericStep:
             extra_metrics = self.get_extra_metrics(self.message)
             self.metrics.update(extra_metrics)
         self.send_metrics(**self.metrics)
+        if self.use_prometheus:
+            if isinstance(self.message, dict):
+                self.prometheus_processed_messages.observe(1)
+            if isinstance(self.message, list):
+                self.prometheus_processed_messages.observe(len(self.message))
+            self.prometheus_execution_time.observe(time_difference.total_seconds())
         return final_result
 
     @abstractmethod
