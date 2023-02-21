@@ -1,10 +1,12 @@
 import os
 import gzip
 import io
+import warnings
 from typing import List, Tuple
 
 import pandas as pd
 from astropy.io import fits
+from astropy.utils.exceptions import AstropyWarning
 from astropy.wcs import WCS
 from atlas_stamp_classifier.inference import AtlasStampClassifier
 
@@ -17,7 +19,8 @@ class AtlasStrategy(BaseStrategy):
     def __init__(self, classifier: AtlasStampClassifier):
         self.model = classifier
         super().__init__(
-            os.getenv("ATLAS_MODEL_NAME"), os.getenv("ATLAS_MODEL_VERSION")
+            os.getenv("ATLAS_MODEL_NAME", "atlas_stamp_classifier"),
+            os.getenv("ATLAS_MODEL_VERSION", "1.0.0"),
         )
 
     @staticmethod
@@ -39,7 +42,9 @@ class AtlasStrategy(BaseStrategy):
             if field in header.keys():
                 del header[field]
 
-        w = WCS(header, relax=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", AstropyWarning)
+            w = WCS(header, relax=True)
         w.sip = None
 
         pv = []
@@ -87,7 +92,7 @@ class AtlasStrategy(BaseStrategy):
             difference = self.extract_image_from_fits(
                 msg["stamps"]["difference"], with_metadata=False
             )
-            data.append([candid, mjd, science, difference, metadata])
+            data.append([candid, mjd, science, difference] + metadata)
 
             index.append(msg["aid"])
 

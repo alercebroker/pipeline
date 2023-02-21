@@ -16,6 +16,7 @@ from settings import (
     SCRIBE_PRODUCER_CONFIG,
     STEP_CONFIG,
 )
+from atlas_stamp_classifier_step.classifiers.atlas import AtlasStrategy
 
 level = logging.INFO
 if "LOGGING_DEBUG" in locals():
@@ -40,14 +41,14 @@ else:
 consumer = Consumer(config=CONSUMER_CONFIG)
 output_producer = KafkaProducer(config=OUTPUT_PRODUCER_CONFIG)
 scribe_producer = KafkaProducer(config=SCRIBE_PRODUCER_CONFIG)
-model = AtlasStampClassifier()
+strategy = AtlasStrategy(AtlasStampClassifier())
 
 step = AtlasStampClassifierStep(
     consumer,
     producer=output_producer,
     scribe_producer=scribe_producer,
     config=STEP_CONFIG,
-    model=model,
+    strategy=strategy,
     level=level,
 )
 step.start()
