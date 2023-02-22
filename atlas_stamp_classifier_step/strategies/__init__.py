@@ -1,14 +1,11 @@
-from .base import BaseStrategy
-from .atlas import ATLASStrategy
-from .ztf import ZTFStrategy
-
-
-__all__ = ["get_strategy", "BaseStrategy", "ATLASStrategy", "ZTFStrategy"]
+__all__ = ["get_strategy"]
 
 
 def get_strategy(name: str):
-    if name == "ATLASStrategy":
+    if name == "ATLAS":
+        from .atlas import ATLASStrategy
         return ATLASStrategy()
-    if name == "ZTFStrategy":
+    if name == "ZTF":
+        from .ztf import ZTFStrategy
         return ZTFStrategy()
     raise ValueError(f"Unrecognized strategy name {name}")

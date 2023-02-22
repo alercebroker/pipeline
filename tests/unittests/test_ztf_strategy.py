@@ -4,7 +4,7 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from atlas_stamp_classifier_step.strategies import ZTFStrategy
+from atlas_stamp_classifier_step.strategies.ztf import ZTFStrategy
 
 
 @pytest.mark.skipif(not sys.version.startswith('3.6'), reason="Incompatible Python version")

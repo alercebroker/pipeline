@@ -7,7 +7,7 @@ from apf.consumers import GenericConsumer
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
 
-from .strategies import BaseStrategy
+from .strategies.base import BaseStrategy
 
 
 class AtlasStampClassifierStep(GenericStep):
