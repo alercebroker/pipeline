@@ -20,6 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Download Model
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        repo: "alercebroker/stamp_classifier"
+        file: "model.zip"
+        token: ${{ secrets.READ_PACKAGE_TOKEN }}
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
@@ -28,14 +34,21 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-cov
+        unzip model.zip -d model
         git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
-  intnegration_test:
+  integration_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Download Model
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        repo: "alercebroker/stamp_classifier"
+        file: "model.zip"
+        token: ${{ secrets.READ_PACKAGE_TOKEN }}
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
@@ -44,6 +57,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-docker
+        unzip model.zip -d model
         git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
