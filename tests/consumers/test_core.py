@@ -10,10 +10,8 @@ class Consumer(GenericConsumer):
 
 class GenericConsumerTest(unittest.TestCase):
     component: GenericConsumer
-    params: dict
 
-    def test_consume(self):
-        self.component = Consumer()
+    def test_consume(self, use: GenericConsumer = Consumer()):
+        self.component = use
         for msj in self.component.consume():
             self.assertIsInstance(msj, dict)
-            self.component.commit()
