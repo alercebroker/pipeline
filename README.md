@@ -84,17 +84,17 @@ from the release.
 
 A ZTF classifier step expects the model inside the `model` folder, at the base of the repository.
 ```bash
-   unzip model.zip -d model
+unzip model.zip -d model
 ```
 
 Then we need to install the model's required packages.
 ```bash
-   pip install -r model/requirements.txt
+pip install -r model/requirements.txt
 ```
 
 ### Requirements (all)
 
 To install the repository specific packages run:
 ```bash
-   pip install -r requirements.txt
+pip install -r requirements.txt
 ```
