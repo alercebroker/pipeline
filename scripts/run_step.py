@@ -4,7 +4,6 @@ import sys
 import logging
 
 from apf.producers import KafkaProducer
-from atlas_stamp_classifier.inference import AtlasStampClassifier
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -14,8 +13,10 @@ from settings import (
     CONSUMER_CONFIG,
     OUTPUT_PRODUCER_CONFIG,
     SCRIBE_PRODUCER_CONFIG,
+    CLASSIFIER_STRATEGY,
     STEP_CONFIG,
 )
+from atlas_stamp_classifier_step.strategies import get_strategy
 
 level = logging.INFO
 if "LOGGING_DEBUG" in locals():
@@ -40,14 +41,14 @@ else:
 consumer = Consumer(config=CONSUMER_CONFIG)
 output_producer = KafkaProducer(config=OUTPUT_PRODUCER_CONFIG)
 scribe_producer = KafkaProducer(config=SCRIBE_PRODUCER_CONFIG)
-model = AtlasStampClassifier()
+strategy = get_strategy(CLASSIFIER_STRATEGY)
 
 step = AtlasStampClassifierStep(
     consumer,
     producer=output_producer,
     scribe_producer=scribe_producer,
     config=STEP_CONFIG,
-    model=model,
+    strategy=strategy,
     level=level,
 )
 step.start()

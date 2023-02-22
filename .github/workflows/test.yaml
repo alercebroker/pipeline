@@ -16,7 +16,7 @@ jobs:
         with:
           options: "--check --verbose"
           src: "atlas_stamp_classifier_step/"
-  unittest:
+  unittest-atlas:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,31 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
-  intnegration_test:
+  unittest-ztf:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download Model
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: "alercebroker/stamp_classifier"
+          file: "model.zip"
+          token: ${{ secrets.ADMIN_TOKEN }}
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          unzip model.zip -d model
+          pip install -r model/requirements.txt
+          git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Test with pytest
+        run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
+  integration_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
