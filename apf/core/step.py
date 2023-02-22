@@ -5,7 +5,7 @@ from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
-from prometheus_client import Enum, Gauge, Summary
+from prometheus_client import Enum, Gauge, Summary, start_http_server
 import logging
 import datetime
 
@@ -67,7 +67,6 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
-        self.use_prometheus = False
 
     @property
     def consumer_config(self):
@@ -170,6 +169,9 @@ class GenericStep(abc.ABC):
             self.metrics_sender.send_metrics(metrics)
 
     def _pre_consume(self):
+        if self.use_prometheus:
+            self.logger.info("Starting metrics server")
+            start_http_server(8000)
         self.logger.info("Starting step. Begin processing")
         self.pre_consume()
 
@@ -181,6 +183,9 @@ class GenericStep(abc.ABC):
         self.metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
         )
+        if isinstance(message, dict):
+            message = [message]
+        self.message = message
         if self.use_prometheus:
             if isinstance(self.message, dict):
                 self.prometheus_consumed_messages.observe(1)
@@ -194,9 +199,6 @@ class GenericStep(abc.ABC):
                 if tid:
                     tid = str(tid).upper()
                     self.prometheus_telescope_id.state(tid)
-        if isinstance(message, dict):
-            message = [message]
-        self.message = message
         preprocessed = self.pre_execute(self.message)
         return preprocessed or self.message
 
