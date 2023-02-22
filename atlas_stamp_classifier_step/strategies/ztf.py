@@ -47,7 +47,9 @@ class ZTFStrategy(BaseStrategy):
         idx = probabilities[probabilities.idxmax(axis=1) == "SN"].index
         selection = df.loc[idx]
         criteria = selection["isdiffpos"] == 0  # Negative difference
-        criteria |= (selection["sgscore1"] > .5) & (selection["distpsnr1"] < 1)  # Near star
+        criteria |= (selection["sgscore1"] > 0.5) & (
+            selection["distpsnr1"] < 1
+        )  # Near star
 
         probabilities.drop(criteria[criteria].index, inplace=True)
 
@@ -71,7 +73,15 @@ class ZTFStrategy(BaseStrategy):
         return pd.DataFrame(
             data=data,
             index=index,
-            columns=["oid", "cutoutScience", "cutoutTemplate", "cutoutDifference", "jd", "magpsf", "sigmapsf"]
+            columns=[
+                "oid",
+                "cutoutScience",
+                "cutoutTemplate",
+                "cutoutDifference",
+                "jd",
+                "magpsf",
+                "sigmapsf",
+            ]
             + self.FIELDS
             + self.EXTRA_FIELDS,
         )
