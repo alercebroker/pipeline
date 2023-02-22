@@ -62,7 +62,7 @@ The [scribe](https://github.com/alercebroker/alerce-scribe) will write results i
 - `MODEL_VERSION`: Model version for metadata, e.g., `1.0.0`
 
 
-### Run the released image
+## Run the released image
 
 For each release **two** images are uploaded to GitHub packages, one for each classifier. To download both:
 
