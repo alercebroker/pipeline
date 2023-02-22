@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Callable
+import abc
+from typing import Any, List, Type, Union
 from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
@@ -9,7 +10,22 @@ import logging
 import datetime
 
 
-class GenericStep:
+class DefaultConsumer(GenericConsumer):
+    def consume(self):
+        yield {}
+
+
+class DefaultProducer(GenericProducer):
+    def produce(self, message, **kwargs):
+        pass
+
+
+class DefaultMetricsProducer(GenericMetricsProducer):
+    def send_metrics(self, metrics):
+        pass
+
+
+class GenericStep(abc.ABC):
     """Generic Step for apf.
 
     Parameters
@@ -30,20 +46,11 @@ class GenericStep:
         Additional parameters for the step.
     """
 
-    logger: logging.Logger
-    config: dict
-    consumer: GenericConsumer
-    producer: GenericProducer
-    metrics: dict
-    extra_metrics: list
-    metrics_sender: GenericMetricsProducer
-    message: dict
-
     def __init__(
         self,
-        consumer: Callable = GenericConsumer,
-        producer: Callable = GenericProducer,
-        metrics_sender: Callable = GenericMetricsProducer,
+        consumer: Type[GenericConsumer] = DefaultConsumer,
+        producer: Type[GenericProducer] = DefaultProducer,
+        metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         config: dict = {},
         level: int = logging.INFO,
     ):
@@ -95,7 +102,7 @@ class GenericStep:
         self.logger.setLevel(level)
         self.logger.info(f"Creating {self.__class__.__name__}")
 
-    def _get_consumer(self, default: Callable):
+    def _get_consumer(self, default: Type[GenericConsumer]) -> Type[GenericConsumer]:
         if self.consumer_config:
             Consumer = default
             if "CLASS" in self.consumer_config:
@@ -103,13 +110,15 @@ class GenericStep:
             return Consumer
         raise Exception("Could not find CONSUMER_CONFIG in the step config")
 
-    def _get_producer(self, default: Callable):
+    def _get_producer(self, default: Type[GenericProducer]) -> Type[GenericProducer]:
         Producer = default
         if "CLASS" in self.producer_config:
             Producer = get_class(self.producer_config["CLASS"])
         return Producer
 
-    def _get_metrics_sender(self, default: Callable):
+    def _get_metrics_sender(
+        self, default: Type[GenericMetricsProducer]
+    ) -> Type[GenericMetricsProducer]:
         Metrics = default
         if self.metrics_config:
             if "CLASS" in self.metrics_config:
@@ -164,11 +173,10 @@ class GenericStep:
         self.logger.info("Starting step. Begin processing")
         self.pre_consume()
 
-    @abstractmethod
     def pre_consume(self):
         pass
 
-    def _pre_execute(self):
+    def _pre_execute(self, message: Union[dict, List[dict]]):
         self.logger.info("Received message. Begin preprocessing")
         self.metrics["timestamp_received"] = datetime.datetime.now(
             datetime.timezone.utc
@@ -186,15 +194,17 @@ class GenericStep:
                 if tid:
                     tid = str(tid).upper()
                     self.prometheus_telescope_id.state(tid)
+        if isinstance(message, dict):
+            message = [message]
+        self.message = message
         preprocessed = self.pre_execute(self.message)
         return preprocessed or self.message
 
-    @abstractmethod
-    def pre_execute(self, message):
+    def pre_execute(self, messages: List[dict]):
         pass
 
     @abstractmethod
-    def execute(self, message):
+    def execute(self, messages: List[dict]):
         """Execute the logic of the step. This method has to be implemented by
         the instanced class.
 
@@ -205,7 +215,7 @@ class GenericStep:
         """
         pass
 
-    def _post_execute(self, result):
+    def _post_execute(self, result: Any):
         self.logger.info("Processed message. Begin post processing")
         final_result = self.post_execute(result)
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
@@ -225,24 +235,21 @@ class GenericStep:
             self.prometheus_execution_time.observe(time_difference.total_seconds())
         return final_result
 
-    @abstractmethod
-    def post_execute(self, result):
+    def post_execute(self, result: Any):
         return result
 
-    def _pre_produce(self, result):
+    def _pre_produce(self, result: Any):
         self.logger.info("Finished all processing. Begin message production")
         message_to_produce = self.pre_produce(result)
         return message_to_produce
 
-    @abstractmethod
-    def pre_produce(self, result):
+    def pre_produce(self, result: Any):
         return result
 
     def _post_produce(self):
         self.logger.info("Message produced. Begin post production")
         self.post_produce()
 
-    @abstractmethod
     def post_produce(self):
         pass
 
@@ -329,8 +336,8 @@ class GenericStep:
     def start(self):
         """Start running the step."""
         self._pre_consume()
-        for self.message in self.consumer.consume():
-            preprocessed_msg = self._pre_execute()
+        for message in self.consumer.consume():
+            preprocessed_msg = self._pre_execute(message)
             result = self.execute(preprocessed_msg)
             result = self._post_execute(result)
             result = self._pre_produce(result)

@@ -1,7 +1,10 @@
 import importlib
+from typing import TypeVar
+
+APFClass = TypeVar("APFClass")
 
 
-def get_class(string):
+def get_class(string: str) -> APFClass:
     """Import class from string.
 
     Parameters

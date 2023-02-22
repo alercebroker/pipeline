@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
 import logging
-from apf.core.step import GenericStep, GenericProducer, GenericMetricsProducer
+from apf.core.step import (
+    DefaultMetricsProducer,
+    GenericStep,
+    GenericProducer,
+)
 import pytest
 
 
@@ -9,23 +13,28 @@ def basic_config():
     return {
         "CONSUMER_CONFIG": {
             "PARAMS": {},
-            "CLASS": "apf.consumers.generic.GenericConsumer",
+            "CLASS": "apf.core.step.DefaultConsumer",
         },
         "PRODUCER_CONFIG": {
             "PARAMS": {},
-            "CLASS": "apf.producers.generic.GenericProducer",
+            "CLASS": "apf.core.step.DefaultProducer",
         },
         "METRICS_CONFIG": {
-            "CLASS": "apf.metrics.GenericMetricsProducer",
+            "CLASS": "apf.core.step.DefaultMetricsProducer",
             "PARAMS": {},
             "EXTRA_METRICS": ["oid", "candid"],
         },
     }
 
 
+class MockStep(GenericStep):
+    def execute(self, _):
+        pass
+
+
 def test_get_single_extra_metrics(basic_config):
     message = {"oid": "TEST", "candid": 1}
-    gs = GenericStep(config=basic_config)
+    gs = MockStep(config=basic_config)
     extra_metrics = gs.get_extra_metrics(message)
     assert type(extra_metrics) is dict
     assert type(extra_metrics["oid"]) is str
@@ -35,7 +44,7 @@ def test_get_single_extra_metrics(basic_config):
 
 def test_get_batch_extra_metrics(basic_config):
     basic_config["METRICS_CONFIG"] = {
-        "CLASS": "apf.metrics.GenericMetricsProducer",
+        "CLASS": "apf.core.step.DefaultMetricsProducer",
         "PARAMS": {},
         "EXTRA_METRICS": [
             "oid",
@@ -44,7 +53,7 @@ def test_get_batch_extra_metrics(basic_config):
         ],
     }
     message = [{"oid": "TEST", "candid": 1}, {"oid": "TEST2"}, {"candid": 3}]
-    gs = GenericStep(config=basic_config)
+    gs = MockStep(config=basic_config)
     extra_metrics = gs.get_extra_metrics(message)
     assert type(extra_metrics) is dict
     assert type(extra_metrics["oid"]) is list
@@ -54,12 +63,12 @@ def test_get_batch_extra_metrics(basic_config):
 
 def test_get_value(basic_config):
     basic_config["METRICS_CONFIG"] = {
-        "CLASS": "apf.metrics.GenericMetricsProducer",
+        "CLASS": "apf.core.step.DefaultMetricsProducer",
         "PARAMS": {},
         "EXTRA_METRICS": ["oid", "candid"],
     }
     message = {"oid": "TEST", "candid": 1}
-    gs = GenericStep(config=basic_config)
+    gs = MockStep(config=basic_config)
 
     aliased_metric, value = gs.get_value(message, "oid")
     assert aliased_metric == "oid"
@@ -96,43 +105,42 @@ def test_get_value(basic_config):
 def test_without_consumer_config(basic_config):
     basic_config.update({"CONSUMER_CONFIG": {}})
     with pytest.raises(Exception):
-        GenericStep(config=basic_config)
+        MockStep(config=basic_config)
 
 
 def test_with_producer_config(basic_config):
-    basic_config.update(
-        {"PRODUCER_CONFIG": {"CLASS": "apf.producers.generic.GenericProducer"}}
-    )
-    gs = GenericStep(config=basic_config)
+    basic_config.update({"PRODUCER_CONFIG": {"CLASS": "apf.core.step.DefaultProducer"}})
+    gs = MockStep(config=basic_config)
     assert isinstance(gs.producer, GenericProducer)
 
 
 def test_start(basic_config, mocker):
-    write_mock = mocker.patch.object(GenericStep, "_write_success")
-    step = GenericStep(config=basic_config, level=logging.DEBUG)
+    write_mock = mocker.patch.object(MockStep, "_write_success")
+    step = MockStep(config=basic_config, level=logging.DEBUG)
     step.start()
     write_mock.assert_called()
 
 
 def test_pre_execute(basic_config, mocker):
     # mock the abstract method
-    pre_execute = mocker.patch.object(GenericStep, "pre_execute")
-    step = GenericStep(config=basic_config)
-    step.message = {"msg": "message"}
+    pre_execute = mocker.patch.object(MockStep, "pre_execute")
+    step = MockStep(config=basic_config)
+    message = {"msg": "message"}
     assert step.metrics.get("timestamp_received") == None
-    step._pre_execute()
+    step._pre_execute(message)
     pre_execute.assert_called_once_with(step.message)
     assert step.metrics.get("timestamp_received")
+    assert step.message == [message]
 
 
 def test_post_execute(basic_config, mocker):
     # mock the abstract method
-    post_execute = mocker.patch.object(GenericStep, "post_execute")
-    send_metrics = mocker.patch.object(GenericMetricsProducer, "send_metrics")
+    post_execute = mocker.patch.object(MockStep, "post_execute")
+    send_metrics = mocker.patch.object(DefaultMetricsProducer, "send_metrics")
     result = {"msg": "message"}
     post_execute.return_value = result
-    step = GenericStep(config=basic_config)
-    step.message = result
+    step = MockStep(config=basic_config)
+    step.message = [result]
     step.metrics["timestamp_received"] = datetime.now(timezone.utc)
     assert step.metrics.get("timestamp_sent") == None
     assert step.metrics.get("execution_time") == None

@@ -1,14 +1,13 @@
-from abc import abstractmethod, ABCMeta
+from abc import ABC, abstractmethod
 import logging
+from typing import Generator, Union
 
 
-class GenericConsumer:
+class GenericConsumer(ABC):
     """Generic Consumer for Alert Processing Framework.
 
     Parameters are passed through *config* as a :py:class:`dict` of params.
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, config=None):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -16,7 +15,7 @@ class GenericConsumer:
         self.config = config
 
     @abstractmethod
-    def consume(self):
+    def consume(self) -> Generator[Union[list, dict], None, None]:
         """Get a message from a data source
 
         Yields

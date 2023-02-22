@@ -1,5 +1,5 @@
 from apf.producers.generic import GenericProducer
-from pandas.io.json import json_normalize
+from pandas import json_normalize
 
 
 class CSVProducer(GenericProducer):

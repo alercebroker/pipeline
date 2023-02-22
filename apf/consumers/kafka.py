@@ -118,6 +118,8 @@ class KafkaConsumer(GenericConsumer):
         `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
     """
 
+    consumer: Consumer
+
     def __init__(self, config):
         super().__init__(config)
         # Disable auto commit
