@@ -43,7 +43,6 @@ def test_consume(basic_config, mocker):
     step = MockStep(config=basic_config)
     step.start()
     result = requests.get("http://localhost:8000")
-    print(result.text)
     assert "consumed_messages_count 1.0" in result.text
     assert "consumed_messages_sum 1.0" in result.text
     assert "processed_messages_count 1.0" in result.text
