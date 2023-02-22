@@ -1,2 +1,3 @@
 apf_base==1.0.3
+psycopg
 git+https://github.com/alercebroker/db-plugins.git
