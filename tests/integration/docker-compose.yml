@@ -35,7 +35,7 @@ services:
       - 5432:5432
 
   users_db:
-    build: docker/postgres
+    build: postgres
     environment:
       - POSTGRES_PASSWORD=password
     ports:
