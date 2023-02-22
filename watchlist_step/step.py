@@ -1,10 +1,17 @@
-from apf.core.step import GenericStep
+import datetime
 import logging
+from apf.core.step import GenericStep
 from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection
 from db_plugins.db.sql import SQLConnection
-import datetime
-BASE_RADIUS=30/3600
+from .db.match import (
+    format_values_for_query,
+    create_insertion_query,
+    create_match_query,
+)
+
+BASE_RADIUS = 30 / 3600
+
 
 class WatchlistStep(GenericStep):
     """WatchlistStep Description
@@ -51,40 +58,18 @@ class WatchlistStep(GenericStep):
         return radecs
 
     def match_user_targets(self, coordinates: List[Tuple]) -> List[Tuple]:
-        str_values = ",\n".join(
-            [f"({val[0]}, {val[1]}, '{val[2]}', '{val[3]}')" for val in coordinates]
-        )
-        query = (
-        f"""
-            WITH positions (ra, dec, oid, candid) AS (
-                    VALUES
-                    %s
-            )
-            SELECT
-            positions.oid,
-            positions.candid,
-            watchlist_target.id
-            FROM watchlist_target, positions
-            WHERE q3c_join(positions.ra, positions.dec,watchlist_target.ra, watchlist_target.dec, {BASE_RADIUS})
-            AND q3c_dist(positions.ra, positions.dec, watchlist_target.ra, watchlist_target.dec) < watchlist_target.radius
-        """
-            % str_values
-        )
+        str_values = format_values_for_query(coordinates)
+        query = create_match_query(str_values)
         res = self.users_db_connection.session.execute(query).fetchall()
         return res
 
     def insert_matches(self, matches: List[Tuple]):
-        str_values = ",\n".join(
-            [
-                f"({val[2]}, '{val[0]}', '{val[1]}', '{datetime.datetime.now()}')"
-                for val in matches
-            ]
+        def tuple_swap(tpl):
+            return (tpl[2], tpl[0], tpl[1])
+
+        str_values = format_values_for_query(
+            [(*tuple_swap(val), f"{datetime.datetime.now()}") for val in matches] 
         )
-        query = (
-            """
-        INSERT INTO watchlist_match (target_id, object_id, candid, date) VALUES %s;
-        """
-            % str_values
-        )
+        query = create_insertion_query(str_values)
         self.users_db_connection.session.execute(query)
         self.users_db_connection.session.commit()
