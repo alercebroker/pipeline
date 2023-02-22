@@ -4,10 +4,12 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+if sys.version.startswith('3.6'):
+    pytest.skip("Incompatible Python version")
+
 from atlas_stamp_classifier_step.strategies.atlas import ATLASStrategy
 
 
-@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
 @mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
 def test_transform_messages_to_dataframe(mock_classifier, alerts):
     strategy = ATLASStrategy()
@@ -17,7 +19,6 @@ def test_transform_messages_to_dataframe(mock_classifier, alerts):
     assert df.iloc[0]["diff"].shape == (61, 61)
 
 
-@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
 def test_prediction_with_stamp_classifier(alerts):
     strategy = ATLASStrategy()
 
@@ -27,7 +28,6 @@ def test_prediction_with_stamp_classifier(alerts):
     assert probs.idxmax(axis=1).iloc[0] == "agn"
 
 
-@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
 @mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
 def test_get_probabilities_reformats_dictionary(mock_classifier, alerts):
     mock_classifier.return_value.predict_probs.return_value = pd.DataFrame(

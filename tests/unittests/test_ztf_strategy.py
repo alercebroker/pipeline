@@ -4,10 +4,12 @@ from unittest import mock
 import pandas as pd
 import pytest
 
+if not sys.version.startswith('3.6'):
+    pytest.skip("Incompatible Python version")
+
 from atlas_stamp_classifier_step.strategies.ztf import ZTFStrategy
 
 
-@pytest.mark.skipif(not sys.version.startswith('3.6'), reason="Incompatible Python version")
 @mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
@@ -18,7 +20,6 @@ def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
     assert isinstance(df.iloc[0]["cutoutDifference"], bytes)
 
 
-@pytest.mark.skipif(not sys.version.startswith('3.6'), reason="Incompatible Python version")
 def test_prediction_with_stamp_classifier(ztf_alerts):
     strategy = ZTFStrategy()
 
@@ -28,7 +29,6 @@ def test_prediction_with_stamp_classifier(ztf_alerts):
     assert probs.idxmax(axis=1).iloc[0] == "AGN"
 
 
-@pytest.mark.skipif(not sys.version.startswith('3.6'), reason="Incompatible Python version")
 @mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_get_probabilities_reformats_dictionary(mock_classifier, ztf_alerts):
     mock_classifier.return_value.execute.return_value = pd.DataFrame(
