@@ -25,7 +25,7 @@ jobs:
       with:
         repo: "alercebroker/stamp_classifier"
         file: "model.zip"
-        token: ${{ secrets.READ_PACKAGE_TOKEN }}
+        token: ${{ secrets.ADMIN_TOKEN }}
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
@@ -48,7 +48,7 @@ jobs:
       with:
         repo: "alercebroker/stamp_classifier"
         file: "model.zip"
-        token: ${{ secrets.READ_PACKAGE_TOKEN }}
+        token: ${{ secrets.ADMIN_TOKEN }}
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
