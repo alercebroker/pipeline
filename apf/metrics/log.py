@@ -14,6 +14,7 @@ class LogfileMetricsProducer(GenericMetricsProducer):
 
         - "PATH": path to logfile, if not set a tempfile will be created in /tmp.
     """
+
     def __init__(self, config):
         super().__init__(config)
         self.config = config

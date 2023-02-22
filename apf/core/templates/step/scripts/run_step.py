@@ -19,13 +19,6 @@ logging.basicConfig(level=level,
 
 
 from {{package_name}} import {{class_name}}
-from apf.core import get_class
-if "CLASS" in CONSUMER_CONFIG:
-    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
-else:
-    from apf.consumers import KafkaConsumer as Consumer
 
-consumer = Consumer(config=CONSUMER_CONFIG)
-
-step = {{class_name}}(consumer,config=STEP_CONFIG,level=level)
+step = {{class_name}}(config=STEP_CONFIG,level=level)
 step.start()

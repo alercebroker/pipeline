@@ -1,13 +1,17 @@
-from apf.consumers import GenericConsumer
+from apf.consumers.generic import GenericConsumer
 
 import unittest
 
-class GenericConsumerTest(unittest.TestCase):
-    component = GenericConsumer
-    params = {}
 
-    def test_consume(self):
-        comp = self.component(self.params)
-        for msj in comp.consume():
+class Consumer(GenericConsumer):
+    def consume(self):
+        yield {}
+
+
+class GenericConsumerTest(unittest.TestCase):
+    component: GenericConsumer
+
+    def test_consume(self, use: GenericConsumer = Consumer()):
+        self.component = use
+        for msj in self.component.consume():
             self.assertIsInstance(msj, dict)
-            comp.commit()

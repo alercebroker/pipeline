@@ -3,7 +3,6 @@ from botocore.exceptions import ClientError
 
 
 def get_secret(secret_name: str, key_to_return="SecretString", region_name="us-east-1"):
-
     client = boto3.client(service_name="secretsmanager", region_name=region_name)
 
     try:

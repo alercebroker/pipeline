@@ -6,6 +6,7 @@ import io
 import importlib
 import json
 
+
 class KafkaConsumer(GenericConsumer):
     """Consume from a Kafka Topic.
 
@@ -116,6 +117,8 @@ class KafkaConsumer(GenericConsumer):
         all supported `confluent_kafka` parameters can be found
         `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
     """
+
+    consumer: Consumer
 
     def __init__(self, config):
         super().__init__(config)

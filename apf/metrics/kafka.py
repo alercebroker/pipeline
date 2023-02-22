@@ -25,6 +25,7 @@ class KafkaMetricsProducer(GenericMetricsProducer):
         An apf producer, by default is :class:`apf.producer.KafkaProducer`.
 
     """
+
     def __init__(self, config, producer=None):
         super().__init__(config)
         self.config = config

@@ -85,34 +85,34 @@ For this example we will just log the message changing the execution code to
 
 Here :attr:`self.logger` is the default logger (`logging.Logger`) from :class:`apf.core.GenericStep`.
 
-Then we can go to `scripts/run_step.py` or `scripts/run_multiprocess.py`
-this scripts runs the step, here we can define the consumers, producers and other plugins used in the *step*.
+Then we can go to `scripts/run_step.py`.
+This scripts runs the step, here we can override the consumers, producers and other plugins used in the *step*.
 
 The basic `run_step.py` comes with the following
 
 .. code-block:: python
 
     #scripts/run_step.py
-    if "CLASS" in CONSUMER_CONFIG:
-        Consumer = get_class(CONSUMER_CONFIG["CLASS"])
-    else:
-        from apf.consumers import KafkaConsumer as Consumer
-
-    consumer = Consumer(config=CONSUMER_CONFIG)
-    step = ExampleTest(consumer,config=STEP_CONFIG,level=level)
+    step = ExampleTest(config=STEP_CONFIG,level=level)
     step.start()
 
+But you can pass callables to override the consumer, producer and metrics_sender that are otherwise defined by settings file.
 
-The :class:`apf.consumers.KafkaConsumer` can be changed to another consumer, for example a :class:`apf.consumers.CSVConsumer`
-to read a *CSV* file or :class:`apf.consumers.JSONConsumer` to process a JSON file, the default
-consumer can be overridden in the `settings.py` file.
+An alternative step initialization could look like this:
 
 .. code-block:: python
 
-    #settings.py
-    CONSUMER_CONFIG = {
-      'CLASS': 'apf.consumers.KafkaConsumer'
-    }
+    #scripts/run_step.py
+    step = ExampleTest(
+                consumer=KafkaConsumer,
+                producer=KafkaProducer,
+                metrics_sender=KafkaMetricsProducer,
+                config=STEP_CONFIG,
+                level=level
+    )
+    step.start()
+
+This can be useful for tests as well, since you can pass a mock class and do not need to rely on settings, that have more boilerplate.
 
 4. Configuring the step
 ------------------------
@@ -177,16 +177,8 @@ The step can me executed as a single process with
 
 .. code-block :: bash
 
-  python scripts/run_script.py
+  python scripts/run_step.py
 
-
-Or with `multiprocessing` using
-
-.. code-block :: bash
-
-  python scripts/run_multiprocess.py
-
-The number of process can be configured in `settings.py`, adding `N_PROCESS` to `STEP_CONFIG` variable.
 
 To run the step dockerized, first we need to build the step
 
@@ -194,15 +186,6 @@ To run the step dockerized, first we need to build the step
 
   docker build -t example_step .
   docker run --rm --name example_step example_step
-
-
-Assuming that *apf* is already installed we can test our new step with
-
-.. code-block:: bash
-
-  python scripts/run_step.py
-
-This will show each row from the CSV file.
 
 
 .. note::
