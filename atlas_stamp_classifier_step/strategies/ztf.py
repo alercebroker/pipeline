@@ -21,6 +21,15 @@ class ZTFStrategy(BaseStrategy):
         "ssdistnr",
         "sgscore1",
         "distpsnr1",
+        "sgscore2",
+        "distpsnr2",
+        "sgscore3",
+        "distpsnr3",
+        "fwhm",
+        "diffmaglim",
+        "classtar",
+        "chinr",
+        "sharpnr",
     ]
 
     def __init__(self):
@@ -45,12 +54,14 @@ class ZTFStrategy(BaseStrategy):
     def _to_dataframe(self, messages: List[dict]) -> pd.DataFrame:
         data, index = [], []
         for msg in messages:
+            oid = msg["aid"]
             jd = msg["mjd"] + 2400000.5
+            mag, e_mag = msg["mag"], msg["e_mag"]
             science = msg["stamps"]["science"]
             template = msg["stamps"]["template"]
             difference = msg["stamps"]["difference"]
             data.append(
-                [science, template, difference, jd]
+                [oid, science, template, difference, jd, mag, e_mag]
                 + [msg[field] for field in self.FIELDS]
                 + [msg["extra_fields"][field] for field in self.EXTRA_FIELDS]
             )
@@ -60,7 +71,7 @@ class ZTFStrategy(BaseStrategy):
         return pd.DataFrame(
             data=data,
             index=index,
-            columns=["cutoutScience", "cutoutTemplate", "cutoutDifference", "jd"]
+            columns=["oid", "cutoutScience", "cutoutTemplate", "cutoutDifference", "jd", "magpsf", "sigmapsf"]
             + self.FIELDS
             + self.EXTRA_FIELDS,
         )
@@ -69,4 +80,5 @@ class ZTFStrategy(BaseStrategy):
         results = self.model.execute(df)
         self._set_asteroid_probability(df, results)
         self._filter_bad_sn(df, results)
+        print(results)
         return results
