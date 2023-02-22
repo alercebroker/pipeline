@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 if not sys.version.startswith('3.6'):
-    pytest.skip("Incompatible Python version")
+    pytest.skip("Incompatible Python version", allow_module_level=True)
 
 from atlas_stamp_classifier_step.strategies.ztf import ZTFStrategy
 
