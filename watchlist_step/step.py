@@ -59,7 +59,7 @@ class WatchlistStep(GenericStep):
 
     def match_user_targets(self, coordinates: List[Tuple]) -> List[Tuple]:
         str_values = format_values_for_query(coordinates)
-        query = create_match_query(str_values)
+        query = create_match_query(str_values, BASE_RADIUS)
         res = self.users_db_connection.session.execute(query).fetchall()
         return res
 
@@ -68,7 +68,7 @@ class WatchlistStep(GenericStep):
             return (tpl[2], tpl[0], tpl[1])
 
         str_values = format_values_for_query(
-            [(*tuple_swap(val), f"{datetime.datetime.now()}") for val in matches] 
+            [(*tuple_swap(val), f"{datetime.datetime.now()}") for val in matches]
         )
         query = create_insertion_query(str_values)
         self.users_db_connection.session.execute(query)
