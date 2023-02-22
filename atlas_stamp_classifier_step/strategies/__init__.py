@@ -1,7 +1,10 @@
+from .base import BaseStrategy
+
 __all__ = ["get_strategy"]
 
 
-def get_strategy(name: str):
+def get_strategy(name: str) -> BaseStrategy:
+    """Uses dynamic imports to avoid conflicts for requirements/versions"""
     if name == "ATLAS":
         from .atlas import ATLASStrategy
 

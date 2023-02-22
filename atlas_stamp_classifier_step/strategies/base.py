@@ -6,6 +6,21 @@ import pandas as pd
 
 
 class BaseStrategy(abc.ABC):
+    """Strategy base class.
+
+    Derived classes should instantiate their own classifier and implement the abstract methods:
+
+    * `to_dataframe`: Turns the messages into a pandas `DataFrame` with the columns expected by the model
+    * `predict`: Call the prediction method of the model using the data frame mentioned above
+
+    The last method should be simple, but is required since the prediction method names are not standardized
+
+    NOTE:
+        The `__init__` method here only receives defaults for the name and version of the classifier. The
+        `__init__` method of subclasses is recommended to be left without arguments, but values can also be passed
+        in the function `get_strategy` (found in the `__init__.py` file in this folder)
+    """
+
     def __init__(self, default_name, default_version):
         self.name = os.getenv("MODEL_NAME", default_name)
         self.version = os.getenv("MODEL_VERSION", default_version)
