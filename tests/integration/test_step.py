@@ -1,9 +1,13 @@
+import sys
+from typing import List
+
+import pytest
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
+
 from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
 from atlas_stamp_classifier_step.strategies import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
-from typing import List
 
 
 def consume_messages(topic) -> List[dict]:
@@ -40,7 +44,8 @@ def assert_scribe_messages_produced():
     assert '"criteria": {"aid": "aid"}' in messages[0]["payload"]
 
 
-def test_step(kafka_service):
+@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
+def test_atlas_step(kafka_service):
     consumer = KafkaConsumer(
         {
             "PARAMS": {

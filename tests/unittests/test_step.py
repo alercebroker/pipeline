@@ -1,11 +1,7 @@
+import json
 from apf.producers import KafkaProducer
-from pandas import DataFrame
 from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
 from unittest.mock import MagicMock
-import numpy as np
-import pandas as pd
-from atlas_stamp_classifier.inference import AtlasStampClassifier
-import json
 
 
 def test_format_output_message():
