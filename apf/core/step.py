@@ -5,9 +5,11 @@ from apf.consumers import GenericConsumer
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
-from prometheus_client import Enum, Gauge, Summary, start_http_server
+from prometheus_client import REGISTRY, Enum, Summary, make_wsgi_app
 import logging
 import datetime
+from wsgiref.simple_server import WSGIServer, make_server
+import threading
 
 
 class DefaultConsumer(GenericConsumer):
@@ -23,6 +25,15 @@ class DefaultProducer(GenericProducer):
 class DefaultMetricsProducer(GenericMetricsProducer):
     def send_metrics(self, metrics):
         pass
+
+
+def start_http_server(port: int) -> WSGIServer:
+    app = make_wsgi_app()
+    httpd = make_server("", 8000, app)
+    t = threading.Thread(target=httpd.serve_forever)
+    t.daemon = True
+    t.start()
+    return httpd
 
 
 class GenericStep(abc.ABC):
@@ -81,20 +92,26 @@ class GenericStep(abc.ABC):
         return self.config.get("METRICS_CONFIG")
 
     def init_prometheus_metrics(self):
-        if self.config.get("PROMETHEUS"):
-            self.use_prometheus = True
-            self.prometheus_consumed_messages = Summary(
-                "consumed_messages", "Current number of messages consumed"
-            )
-            self.prometheus_processed_messages = Summary(
-                "processed_messages", "Current number of messages processed"
-            )
-            self.prometheus_execution_time = Summary(
-                "execution_time", "Execution time of processed batch"
-            )
-            self.prometheus_telescope_id = Enum(
-                "telescope_id", "Id of the telescope", states=["ZTF", "ATLAS"]
-            )
+        self.prometheus = {
+            "use_prometheus": self.config.get("PROMETHEUS", False),
+            "consumed_messages": Summary(
+                "consumed_messages",
+                "Current number of messages consumed",
+            ),
+            "processed_messages": Summary(
+                "processed_messages",
+                "Current number of messages processed",
+            ),
+            "execution_time": Summary(
+                "execution_time",
+                "Execution time of processed batch",
+            ),
+            "telescope_id": Enum(
+                "telescope_id",
+                "Id of the telescope",
+                states=["ZTF", "ATLAS"],
+            ),
+        }
 
     def _set_logger(self, level):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -169,9 +186,9 @@ class GenericStep(abc.ABC):
             self.metrics_sender.send_metrics(metrics)
 
     def _pre_consume(self):
-        if self.use_prometheus:
+        if self.prometheus["use_prometheus"]:
             self.logger.info("Starting metrics server")
-            start_http_server(8000)
+            self.prometheus["prometheus_server"] = start_http_server(8000)
         self.logger.info("Starting step. Begin processing")
         self.pre_consume()
 
@@ -186,19 +203,19 @@ class GenericStep(abc.ABC):
         if isinstance(message, dict):
             message = [message]
         self.message = message
-        if self.use_prometheus:
+        if self.prometheus["use_prometheus"]:
             if isinstance(self.message, dict):
-                self.prometheus_consumed_messages.observe(1)
+                self.prometheus["consumed_messages"].observe(1)
                 tid = self.message.get("tid")
                 if tid:
                     tid = str(tid).upper()
-                    self.prometheus_telescope_id.state(tid)
+                    self.prometheus["prometheus_telescope_id"].state(tid)
             if isinstance(self.message, list):
-                self.prometheus_consumed_messages.observe(len(self.message))
+                self.prometheus["consumed_messages"].observe(len(self.message))
                 tid = self.message[0].get("tid")
                 if tid:
                     tid = str(tid).upper()
-                    self.prometheus_telescope_id.state(tid)
+                    self.prometheus["telescope_id"].state(tid)
         preprocessed = self.pre_execute(self.message)
         return preprocessed or self.message
 
@@ -229,12 +246,12 @@ class GenericStep(abc.ABC):
             extra_metrics = self.get_extra_metrics(self.message)
             self.metrics.update(extra_metrics)
         self.send_metrics(**self.metrics)
-        if self.use_prometheus:
+        if self.prometheus["use_prometheus"]:
             if isinstance(self.message, dict):
-                self.prometheus_processed_messages.observe(1)
+                self.prometheus["processed_messages"].observe(1)
             if isinstance(self.message, list):
-                self.prometheus_processed_messages.observe(len(self.message))
-            self.prometheus_execution_time.observe(time_difference.total_seconds())
+                self.prometheus["processed_messages"].observe(len(self.message))
+            self.prometheus["execution_time"].observe(time_difference.total_seconds())
         return final_result
 
     def post_execute(self, result: Any):
@@ -358,3 +375,12 @@ class GenericStep(abc.ABC):
 
     def tear_down(self):
         pass
+
+    def __del__(self):
+        if hasattr(self, "prometheus"):
+            REGISTRY.unregister(self.prometheus["consumed_messages"])
+            REGISTRY.unregister(self.prometheus["processed_messages"])
+            REGISTRY.unregister(self.prometheus["execution_time"])
+            REGISTRY.unregister(self.prometheus["telescope_id"])
+            if self.prometheus["use_prometheus"]:
+                self.prometheus["prometheus_server"].server_close()

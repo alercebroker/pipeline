@@ -36,6 +36,7 @@ def test_init(basic_config):
     assert "processed_messages summary" in result.text
     assert "execution_time summary" in result.text
     assert "telescope_id gauge" in result.text
+    del step
 
 
 def test_consume(basic_config, mocker):
@@ -48,3 +49,4 @@ def test_consume(basic_config, mocker):
     assert "processed_messages_count 1.0" in result.text
     assert "processed_messages_sum 1.0" in result.text
     assert "execution_time_count 1.0" in result.text
+    del step
