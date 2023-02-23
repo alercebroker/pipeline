@@ -90,5 +90,4 @@ class ZTFStrategy(BaseStrategy):
         results = self.model.execute(df)
         self._set_asteroid_probability(df, results)
         self._filter_bad_sn(df, results)
-        print(results)
         return results
