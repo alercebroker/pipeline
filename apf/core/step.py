@@ -2,14 +2,12 @@ from abc import abstractmethod
 import abc
 from typing import Any, List, Type, Union
 from apf.consumers import GenericConsumer
+from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
 from apf.metrics.generic import GenericMetricsProducer
 from apf.producers import GenericProducer
 from apf.core import get_class
-from prometheus_client import REGISTRY, Enum, Summary, make_wsgi_app
 import logging
 import datetime
-from wsgiref.simple_server import WSGIServer, make_server
-import threading
 
 
 class DefaultConsumer(GenericConsumer):
@@ -25,15 +23,6 @@ class DefaultProducer(GenericProducer):
 class DefaultMetricsProducer(GenericMetricsProducer):
     def send_metrics(self, metrics):
         pass
-
-
-def start_http_server(port: int) -> WSGIServer:
-    app = make_wsgi_app()
-    httpd = make_server("", 8000, app)
-    t = threading.Thread(target=httpd.serve_forever)
-    t.daemon = True
-    t.start()
-    return httpd
 
 
 class GenericStep(abc.ABC):
@@ -64,12 +53,12 @@ class GenericStep(abc.ABC):
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         config: dict = {},
         level: int = logging.INFO,
+        prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
     ):
         self._set_logger(level)
         self.config = config
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
-        self.init_prometheus_metrics()
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
             self.metrics_config
         )
@@ -78,6 +67,7 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
+        self.prometheus_metrics = prometheus_metrics
 
     @property
     def consumer_config(self):
@@ -90,28 +80,6 @@ class GenericStep(abc.ABC):
     @property
     def metrics_config(self):
         return self.config.get("METRICS_CONFIG")
-
-    def init_prometheus_metrics(self):
-        self.prometheus = {
-            "use_prometheus": self.config.get("PROMETHEUS", False),
-            "consumed_messages": Summary(
-                "consumed_messages",
-                "Current number of messages consumed",
-            ),
-            "processed_messages": Summary(
-                "processed_messages",
-                "Current number of messages processed",
-            ),
-            "execution_time": Summary(
-                "execution_time",
-                "Execution time of processed batch",
-            ),
-            "telescope_id": Enum(
-                "telescope_id",
-                "Id of the telescope",
-                states=["ZTF", "ATLAS"],
-            ),
-        }
 
     def _set_logger(self, level):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -186,9 +154,6 @@ class GenericStep(abc.ABC):
             self.metrics_sender.send_metrics(metrics)
 
     def _pre_consume(self):
-        if self.prometheus["use_prometheus"]:
-            self.logger.info("Starting metrics server")
-            self.prometheus["prometheus_server"] = start_http_server(8000)
         self.logger.info("Starting step. Begin processing")
         self.pre_consume()
 
@@ -203,19 +168,18 @@ class GenericStep(abc.ABC):
         if isinstance(message, dict):
             message = [message]
         self.message = message
-        if self.prometheus["use_prometheus"]:
-            if isinstance(self.message, dict):
-                self.prometheus["consumed_messages"].observe(1)
-                tid = self.message.get("tid")
-                if tid:
-                    tid = str(tid).upper()
-                    self.prometheus["prometheus_telescope_id"].state(tid)
-            if isinstance(self.message, list):
-                self.prometheus["consumed_messages"].observe(len(self.message))
-                tid = self.message[0].get("tid")
-                if tid:
-                    tid = str(tid).upper()
-                    self.prometheus["telescope_id"].state(tid)
+        if isinstance(self.message, dict):
+            self.prometheus_metrics.consumed_messages.observe(1)
+            tid = self.message.get("tid")
+            if tid:
+                tid = str(tid).upper()
+                self.prometheus_metrics.telescope_id.state(tid)
+        if isinstance(self.message, list):
+            self.prometheus_metrics.consumed_messages.observe(len(self.message))
+            tid = self.message[0].get("tid")
+            if tid:
+                tid = str(tid).upper()
+                self.prometheus_metrics.telescope_id.state(tid)
         preprocessed = self.pre_execute(self.message)
         return preprocessed or self.message
 
@@ -246,12 +210,11 @@ class GenericStep(abc.ABC):
             extra_metrics = self.get_extra_metrics(self.message)
             self.metrics.update(extra_metrics)
         self.send_metrics(**self.metrics)
-        if self.prometheus["use_prometheus"]:
-            if isinstance(self.message, dict):
-                self.prometheus["processed_messages"].observe(1)
-            if isinstance(self.message, list):
-                self.prometheus["processed_messages"].observe(len(self.message))
-            self.prometheus["execution_time"].observe(time_difference.total_seconds())
+        if isinstance(self.message, dict):
+            self.prometheus_metrics.processed_messages.observe(1)
+        if isinstance(self.message, list):
+            self.prometheus_metrics.processed_messages.observe(len(self.message))
+        self.prometheus_metrics.execution_time.observe(time_difference.total_seconds())
         return final_result
 
     def post_execute(self, result: Any):
@@ -315,6 +278,8 @@ class GenericStep(abc.ABC):
                     raise ValueError("'alias' parameter must be a string.")
             else:
                 return params["key"], val
+        else:
+            raise TypeError(f"params must be str or dict, received {type(params)}")
 
     def get_extra_metrics(self, message):
         """Generate extra metrics from the EXTRA_METRICS metrics configuration.
@@ -375,12 +340,3 @@ class GenericStep(abc.ABC):
 
     def tear_down(self):
         pass
-
-    def __del__(self):
-        if hasattr(self, "prometheus"):
-            REGISTRY.unregister(self.prometheus["consumed_messages"])
-            REGISTRY.unregister(self.prometheus["processed_messages"])
-            REGISTRY.unregister(self.prometheus["execution_time"])
-            REGISTRY.unregister(self.prometheus["telescope_id"])
-            if self.prometheus["use_prometheus"]:
-                self.prometheus["prometheus_server"].server_close()

@@ -1,7 +1,8 @@
+from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 from apf.core.step import GenericStep
 import pytest
 import requests
-from time import sleep
 
 
 @pytest.fixture
@@ -29,13 +30,19 @@ class MockStep(GenericStep):
         pass
 
 
+@pytest.fixture(scope="session")
+def prometheus_server():
+    start_http_server(8000)
+
+
+prometheus_metrics = PrometheusMetrics()
+
+
 @pytest.fixture
-def step(basic_config, mocker):
+def step(basic_config, mocker, prometheus_server):
     mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config)
+    step = MockStep(config=basic_config, prometheus_metrics=prometheus_metrics)
     yield step
-    del step
-    sleep(5)  # wait to make sure that prometheus server closes
 
 
 def test_init(step):
