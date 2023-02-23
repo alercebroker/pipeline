@@ -33,7 +33,8 @@ def basic_config():
 
 
 @pytest.fixture
-def step(basic_config):
+def step(basic_config, mocker):
+    mocker.patch.object(MockStep, "_write_success")
     step = MockStep(config=basic_config)
     yield step
     del step
