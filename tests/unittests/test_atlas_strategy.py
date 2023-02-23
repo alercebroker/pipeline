@@ -2,6 +2,7 @@ import sys
 from unittest import mock
 
 import pandas as pd
+import pandas.testing
 import pytest
 
 if sys.version.startswith('3.6'):
@@ -19,13 +20,32 @@ def test_transform_messages_to_dataframe(mock_classifier, alerts):
     assert df.iloc[0]["diff"].shape == (61, 61)
 
 
-def test_prediction_with_stamp_classifier(alerts):
+@mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
+def test_prediction_with_stamp_classifier(mock_classifier, alerts):
     strategy = ATLASStrategy()
 
     df = strategy._to_dataframe(alerts)
-    probs = strategy.predict(df)
-    # assuming that the sample stamps are from an AGN object
-    assert probs.idxmax(axis=1).iloc[0] == "agn"
+    strategy.get_probabilities(alerts)
+
+    df_called, = mock_classifier.return_value.predict_probs.call_args.args
+
+    pandas.testing.assert_frame_equal(df, df_called)
+
+
+@mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")
+def test_duplicate_aid_keeps_first(mock_classifier, alerts):
+    strategy = ATLASStrategy()
+
+    first, = alerts
+    second, third, fourth = first.copy(), first.copy(), first.copy()
+    second["mjd"], third["mjd"], fourth["aid"] = 100, 1000, "otherid"
+
+    df = strategy._to_dataframe([first, fourth])
+    strategy.get_probabilities([second, first, third, fourth])
+
+    df_called, = mock_classifier.return_value.predict_probs.call_args.args
+
+    pandas.testing.assert_frame_equal(df, df_called)
 
 
 @mock.patch("atlas_stamp_classifier_step.strategies.atlas.AtlasStampClassifier")

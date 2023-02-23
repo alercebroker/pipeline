@@ -84,7 +84,7 @@ class ZTFStrategy(BaseStrategy):
             ]
             + self.FIELDS
             + self.EXTRA_FIELDS,
-        )
+        ).sort_values("jd", ascending=True)
 
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         results = self.model.execute(df)

@@ -11,6 +11,7 @@ class BaseStrategy(abc.ABC):
     Derived classes should instantiate their own classifier and implement the abstract methods:
 
     * `to_dataframe`: Turns the messages into a pandas `DataFrame` with the columns expected by the model
+      It must be sorted by date (there's duplicate removal included in here and only first stamp should be classified)
     * `predict`: Call the prediction method of the model using the data frame mentioned above
 
     The last method should be simple, but is required since the prediction method names are not standardized
@@ -53,6 +54,6 @@ class BaseStrategy(abc.ABC):
         pass
 
     def get_probabilities(self, messages: List[dict]) -> dict:
-        return self._with_ranking(
-            self.predict(self._to_dataframe(messages)).to_dict(orient="index")
-        )
+        df = self._to_dataframe(messages)
+        df = df[~df.index.duplicated(keep="first")]
+        return self._with_ranking(self.predict(df).to_dict(orient="index"))
