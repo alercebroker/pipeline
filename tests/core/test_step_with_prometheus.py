@@ -1,3 +1,5 @@
+from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 from apf.core.step import GenericStep
 import pytest
 import requests
@@ -28,8 +30,22 @@ class MockStep(GenericStep):
         pass
 
 
-def test_init(basic_config):
-    step = MockStep(config=basic_config)
+@pytest.fixture(scope="session")
+def prometheus_server():
+    start_http_server(8000)
+
+
+prometheus_metrics = PrometheusMetrics()
+
+
+@pytest.fixture
+def step(basic_config, mocker, prometheus_server):
+    mocker.patch.object(MockStep, "_write_success")
+    step = MockStep(config=basic_config, prometheus_metrics=prometheus_metrics)
+    yield step
+
+
+def test_init(step):
     step._pre_consume()
     result = requests.get("http://localhost:8000")
     assert "consumed_messages summary" in result.text
@@ -38,9 +54,7 @@ def test_init(basic_config):
     assert "telescope_id gauge" in result.text
 
 
-def test_consume(basic_config, mocker):
-    mocker.patch.object(MockStep, "_write_success")
-    step = MockStep(config=basic_config)
+def test_consume(step):
     step.start()
     result = requests.get("http://localhost:8000")
     assert "consumed_messages_count 1.0" in result.text

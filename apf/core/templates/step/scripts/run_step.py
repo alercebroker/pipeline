@@ -2,6 +2,8 @@ import os
 import sys
 
 import logging
+
+from prometheus_client import start_http_server
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH,".."))
 
@@ -19,6 +21,9 @@ logging.basicConfig(level=level,
 
 
 from {{package_name}} import {{class_name}}
+
+if PROMETHEUS:
+    start_http_server(8000)
 
 step = {{class_name}}(config=STEP_CONFIG,level=level)
 step.start()
