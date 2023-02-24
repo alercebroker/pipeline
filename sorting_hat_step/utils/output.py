@@ -52,10 +52,10 @@ def _parse_stamps(stamps: dict, tid: str) -> dict:
         }
         return parsed_stamp
 
-    if tid == "ZTF":
+    if tid.lower().startswith("ztf"):
         return parse_ztf(stamps)
 
-    if tid == "ATLAS":
+    if tid.lower().startswith("atlas"):
         return parse_atlas(stamps)
     return stamps
 
