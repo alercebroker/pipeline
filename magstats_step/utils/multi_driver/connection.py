@@ -1,7 +1,7 @@
 from db_plugins.db.generic import DatabaseConnection
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.sql import SQLConnection
-from ingestion_step.utils.multi_driver.query import MultiQuery
+from magstats_step.utils.multi_driver.query import MultiQuery
 
 
 class MultiDriverConnection(DatabaseConnection):

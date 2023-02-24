@@ -14,8 +14,7 @@ from typing import List
 
 from lc_correction.compute import (
     apply_mag_stats,
-    do_dmdt,
-    insert_magstats)
+    do_dmdt)
 
 # Temporal, why?
 def get_catalog(

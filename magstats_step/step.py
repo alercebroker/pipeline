@@ -1,8 +1,6 @@
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 
-from .utils.magstats import do_magstats, insert_magstats, compute_dmdt
-
 from typing import Tuple, List
 
 import numpy as np
@@ -13,10 +11,13 @@ import sys
 
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 
-from .utils.old_preprocess import (
+from magstats_step.utils.old_preprocess import (
     get_catalog,
     compute_dmdt,
-    insert_magstats)
+    insert_magstats,
+    do_magstats,
+    compute_dmdt)
+
 
 sys.path.insert(0, "../../../../")
 pd.options.mode.chained_assignment = None
@@ -33,8 +34,7 @@ class MagstatsStep(GenericStep):
     **step_args : type
         Other args passed to step (DB connections, API requests, etc.)
     """
- def __init__(
-        self,
+    def __init__(self,
         consumer=None,
         config=None,
         level=logging.INFO,
@@ -53,7 +53,7 @@ class MagstatsStep(GenericStep):
         )
         self.driver.connect()
 
- def execute(self, messages):
+    def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} alerts")
         # Let's assume that alerts have id, detection and non detections keys.
         alerts = pd.DataFrame(messages)
