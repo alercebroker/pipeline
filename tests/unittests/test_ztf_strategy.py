@@ -2,6 +2,7 @@ import sys
 from unittest import mock
 
 import pandas as pd
+import pandas.testing
 import pytest
 
 if not sys.version.startswith('3.6'):
@@ -20,13 +21,32 @@ def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
     assert isinstance(df.iloc[0]["cutoutDifference"], bytes)
 
 
-def test_prediction_with_stamp_classifier(ztf_alerts):
+@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+def test_prediction_with_stamp_classifier(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
 
     df = strategy._to_dataframe(ztf_alerts)
-    probs = strategy.predict(df)
-    # assuming that the sample stamps are from an AGN object
-    assert probs.idxmax(axis=1).iloc[0] == "AGN"
+    strategy.get_probabilities(ztf_alerts)
+
+    df_called, = mock_classifier.return_value.execute.call_args[0]
+
+    pandas.testing.assert_frame_equal(df, df_called)
+
+
+@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+def test_duplicate_aid_keeps_first(mock_classifier, ztf_alerts):
+    strategy = ZTFStrategy()
+
+    first, = ztf_alerts
+    second, third, fourth = first.copy(), first.copy(), first.copy()
+    second["mjd"], third["mjd"], fourth["aid"] = 59995, 59996, "otherid"
+
+    df = strategy._to_dataframe([first, fourth])
+    strategy.get_probabilities([second, first, third, fourth])
+
+    df_called, = mock_classifier.return_value.execute.call_args[0]
+
+    pandas.testing.assert_frame_equal(df, df_called)
 
 
 @mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")

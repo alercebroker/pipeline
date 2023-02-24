@@ -96,4 +96,4 @@ class ATLASStrategy(BaseStrategy):
             data=data,
             index=index,
             columns=["candid", "mjd", "red", "diff"] + self.FIELDS + ["ra", "dec"],
-        )
+        ).sort_values("mjd", ascending=True)
