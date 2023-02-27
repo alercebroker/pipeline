@@ -90,6 +90,9 @@ class AtlasStampClassifierStep(GenericStep):
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)
+        if not len(predictions):
+            self.logger.info("No output to write")
+            return
 
         self.logger.info("Inserting/Updating results on database")
         self.write_predictions(predictions)  # should predictions be in normalized form?

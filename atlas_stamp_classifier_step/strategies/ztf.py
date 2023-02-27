@@ -37,7 +37,9 @@ class ZTFStrategy(BaseStrategy):
         super().__init__("ztf_stamp_classifier", "1.0.1")
 
     @staticmethod
-    def _drop_asteroids(df: pd.DataFrame, probabilities: pd.DataFrame) -> pd.DataFrame:
+    def _insert_asteroids(
+        df: pd.DataFrame, probabilities: pd.DataFrame
+    ) -> pd.DataFrame:
         """Current classifier quietly drops this case, they must be reinserted manually"""
         idx = df[df["ssdistnr"] != -999].index
         df.drop(idx, inplace=True)
@@ -89,6 +91,6 @@ class ZTFStrategy(BaseStrategy):
 
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         results = self.model.execute(df)
-        results = self._drop_asteroids(df, results)
+        results = self._insert_asteroids(df, results)
         self._drop_bad_sn(df, results)
         return results
