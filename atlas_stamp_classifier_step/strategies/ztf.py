@@ -37,21 +37,22 @@ class ZTFStrategy(BaseStrategy):
         super().__init__("ztf_stamp_classifier", "1.0.1")
 
     @staticmethod
-    def _set_asteroid_probability(df: pd.DataFrame, probabilities: pd.DataFrame):
+    def _drop_asteroids(df: pd.DataFrame, probabilities: pd.DataFrame) -> pd.DataFrame:
+        """Current classifier quietly drops this case, they must be reinserted manually"""
         idx = df[df["ssdistnr"] != -999].index
-        probabilities.loc[idx] = 0
-        probabilities.loc[idx]["asteroid"] = 1
+        df.drop(idx, inplace=True)
+
+        asteroids = pd.DataFrame(data=0, columns=probabilities.columns, index=idx)
+        return pd.concat((probabilities, asteroids))
 
     @staticmethod
-    def _filter_bad_sn(df: pd.DataFrame, probabilities: pd.DataFrame):
+    def _drop_bad_sn(df: pd.DataFrame, probabilities: pd.DataFrame):
         idx = probabilities[probabilities.idxmax(axis=1) == "SN"].index
-        selection = df.loc[idx]
-        criteria = selection["isdiffpos"] == 0  # Negative difference
-        criteria |= (selection["sgscore1"] > 0.5) & (
-            selection["distpsnr1"] < 1
-        )  # Near star
+        snae = df.loc[idx]
+        check = snae["isdiffpos"] == 0  # Negative difference
+        check |= (snae["sgscore1"] > 0.5) & (snae["distpsnr1"] < 1)  # Near star
 
-        probabilities.drop(criteria[criteria].index, inplace=True)
+        probabilities.drop(check[check].index, inplace=True)
 
     def _to_dataframe(self, messages: List[dict]) -> pd.DataFrame:
         data, index = [], []
@@ -88,6 +89,6 @@ class ZTFStrategy(BaseStrategy):
 
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         results = self.model.execute(df)
-        self._set_asteroid_probability(df, results)
-        self._filter_bad_sn(df, results)
+        results = self._drop_asteroids(df, results)
+        self._drop_bad_sn(df, results)
         return results
