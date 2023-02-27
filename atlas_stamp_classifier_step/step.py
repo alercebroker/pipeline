@@ -17,9 +17,6 @@ class AtlasStampClassifierStep(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-
     """
 
     def __init__(
@@ -90,6 +87,9 @@ class AtlasStampClassifierStep(GenericStep):
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)
+        if not len(predictions):
+            self.logger.info("No output to write")
+            return
 
         self.logger.info("Inserting/Updating results on database")
         self.write_predictions(predictions)  # should predictions be in normalized form?

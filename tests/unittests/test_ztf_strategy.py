@@ -25,6 +25,12 @@ def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
 def test_prediction_with_stamp_classifier(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
 
+    mock_classifier.return_value.execute.return_value = pd.DataFrame(
+        [[0.5, 0.1, 0.3, 0.05, 0.05]],
+        columns=["AGN", "asteroid", "bogus", "SN", "VS"],
+        index=["ZTF20aaelulu"],
+    )
+
     df = strategy._to_dataframe(ztf_alerts)
     strategy.get_probabilities(ztf_alerts)
 
@@ -36,6 +42,12 @@ def test_prediction_with_stamp_classifier(mock_classifier, ztf_alerts):
 @mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_duplicate_aid_keeps_first(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
+
+    mock_classifier.return_value.execute.return_value = pd.DataFrame(
+        [[0.5, 0.1, 0.3, 0.05, 0.05]],
+        columns=["AGN", "asteroid", "bogus", "SN", "VS"],
+        index=["ZTF20aaelulu"],
+    )
 
     first, = ztf_alerts
     second, third, fourth = first.copy(), first.copy(), first.copy()
