@@ -9,7 +9,7 @@ import pytest
 
 class MockStep(GenericStep):
     def execute(self, _):
-        pass
+        return {}
 
 
 @pytest.fixture
@@ -156,3 +156,14 @@ def test_post_execute(step, mocker):
     post_execute.assert_called_once_with(result)
     assert step.metrics.get("timestamp_sent")
     send_metrics.assert_called()
+
+
+def test_start_with_execute_returning_iterable(basic_config, mocker):
+    class StepWithIterableExecute(GenericStep):
+        def execute(self, _):
+            return [{}]
+
+    write_mock = mocker.patch.object(StepWithIterableExecute, "_write_success")
+    step = StepWithIterableExecute(config=basic_config)
+    step.start()
+    write_mock.assert_called()

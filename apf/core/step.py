@@ -233,7 +233,7 @@ class GenericStep(abc.ABC):
         return result
 
     def _post_produce(self):
-        self.logger.info("Message produced. Begin post production")
+        self.logger.info("Messages produced. Begin post production")
         self.post_produce()
 
     def post_produce(self):
@@ -322,17 +322,15 @@ class GenericStep(abc.ABC):
         return extra_metrics
 
     def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        n_messages = 0
         if isinstance(result, dict):
-            self.producer.produce(result)
+            to_produce = [result]
         else:
-            try:
-                for prod_message in result:
-                    self.producer.produce(prod_message)
-            except TypeError:
-                self.logger.debug(
-                    "Execute result not iterable or dict. Assuming single message"
-                )
-                self.producer.produce(result)
+            to_produce = result
+        for prod_message in to_produce:
+            self.producer.produce(prod_message)
+            n_messages += 1
+        self.logger.info(f"Produced {n_messages} messages")
 
     def start(self):
         """Start running the step."""
