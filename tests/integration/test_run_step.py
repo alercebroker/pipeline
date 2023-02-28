@@ -1,16 +1,17 @@
 import logging
+from apf.metrics.prometheus import PrometheusMetrics
+import requests
 from typing import List
-from apf.core.step import GenericConsumer
-from apf.producers import KafkaProducer
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 import pytest
 import unittest
-
+from unittest import mock
 from apf.consumers import KafkaConsumer
 from sorting_hat_step import SortingHatStep
 from schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
+from prometheus_client import start_http_server
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -22,6 +23,7 @@ DB_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
     "TOPIC": "sorting_hat_stream",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
@@ -30,6 +32,7 @@ PRODUCER_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
         "group.id": "sorting_hat_consumer",
@@ -39,37 +42,39 @@ CONSUMER_CONFIG = {
     },
     "consume.timeout": 10,
     "consume.messages": 1,
-    "TOPICS": ["sorting_hat_stream"],
+    "TOPICS": ["survey_stream"],
 }
 
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
 class MongoIntegrationTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        consumer = KafkaConsumer(config=CONSUMER_CONFIG)
-        producer = KafkaProducer(config=PRODUCER_CONFIG)
-        database = new_DBConnection(MongoDatabaseCreator)
-        cls.step_config = {
+    def setUp(self):
+        self.database = new_DBConnection(MongoDatabaseCreator)
+        self.step_config = {
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "STEP_METADATA": {
-                "STEP_ID": "ingestion",
-                "STEP_NAME": "ingestion",
-                "STEP_VERSION": "test",
-                "STEP_COMMENTS": "developing and testing it",
-            },
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
-        cls.step = SortingHatStep(
-            consumer, cls.step_config, producer, database, level=logging.DEBUG
-        )
 
-    def test_execute(self):
-        batch = generate_alerts_batch(
-            100, nearest=10
-        )  # generate 110 alerts where 10 alerts are near of another alerts
-        self.step.execute(batch)
+    def test_step(self):
+        """
+        Nota: este test hace trampa. Lo correcto sería llamar a
+        step.start() con un KafkaConsumer y tener poblado los tópicos
+        de ztf y atlas.
+        """
+        with mock.patch("apf.consumers.KafkaConsumer") as consumer_mock:
+            with mock.patch.object(SortingHatStep, "_write_success"):
+                step = SortingHatStep(
+                    config=self.step_config,
+                    db_connection=self.database,
+                    level=logging.DEBUG,
+                )
+                batch = generate_alerts_batch(
+                    100, nearest=10
+                )  # generate 110 alerts where 10 alerts are near of another alerts
+                consumer_mock().consume.return_value = [batch]
+                step.start()
         messages = self.consume_messages()
         for message in messages:
             # TODO add other assertions
@@ -78,6 +83,7 @@ class MongoIntegrationTest(unittest.TestCase):
     def consume_messages(self) -> List[dict]:
         config = CONSUMER_CONFIG.copy()
         config["PARAMS"]["group.id"] = "assert"
+        config["TOPICS"] = ["sorting_hat_stream"]
         consumer = KafkaConsumer(config)
         messages = []
         for message in consumer.consume():
@@ -92,3 +98,45 @@ class MongoIntegrationTest(unittest.TestCase):
         if message["tid"] == "ATLAS":
             assert message["stamps"]["template"] == None
         assert message["stamps"]["difference"] == b"difference"
+
+
+@pytest.mark.usefixtures("mongo_service")
+@pytest.mark.usefixtures("kafka_service")
+class PrometheusIntegrationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.prometheus_metrics = PrometheusMetrics()
+        start_http_server(8000)
+
+    def setUp(self):
+        self.database = new_DBConnection(MongoDatabaseCreator)
+        self.step_config = {
+            "PROMETHEUS": True,
+            "DB_CONFIG": DB_CONFIG,
+            "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
+        }
+
+    def test_step(self):
+        """
+        Nota: este test hace trampa. Lo correcto sería llamar a
+        step.start() con un KafkaConsumer y tener poblado los tópicos de ztf y atlas.
+
+        Por ahora para poder actualizar la versión se harán los llamados
+        a los métodos necesarios de forma manual.
+        """
+        with mock.patch("apf.consumers.KafkaConsumer") as consumer_mock:
+            with mock.patch.object(SortingHatStep, "_write_success"):
+                step = SortingHatStep(
+                    config=self.step_config,
+                    db_connection=self.database,
+                    level=logging.DEBUG,
+                    prometheus_metrics=self.prometheus_metrics,
+                )
+                batch = generate_alerts_batch(
+                    100, nearest=10
+                )  # generate 110 alerts where 10 alerts are near of another alerts
+                consumer_mock().consume.return_value = [batch]
+                step.start()
+        result = requests.get("http://localhost:8000")
+        self.assertIn("processed_messages_sum 110.0", result.text)

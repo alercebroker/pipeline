@@ -1,6 +1,4 @@
-from apf.consumers import GenericConsumer
 from apf.core.step import GenericStep
-from apf.producers import GenericProducer
 from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
 from typing import List
@@ -15,34 +13,31 @@ from operator import itemgetter
 class SortingHatStep(GenericStep):
     def __init__(
         self,
-        consumer: GenericConsumer,
-        config: dict,
-        producer: GenericProducer,
         db_connection: DatabaseConnection,
+        config: dict,
         level=logging.INFO,
+        **kwargs,
     ):
-        super().__init__(consumer, config=config, level=level)
-        self.producer = producer
+        super().__init__(config=config, level=level, **kwargs)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
-        self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.parser = ALeRCEParser()
         self.oid_query, self.conesearch_query = itemgetter(
             "oid_query", "conesearch_query"
         )(db_queries(self.driver))
 
-    def produce(self, alerts: pd.DataFrame) -> None:
+    def pre_produce(self, result: pd.DataFrame):
         """
-        Produce generic alerts to producer with configuration of PRODUCER_CONFIG from settings.py.
-        :param alerts: Dataframe of generic alerts with alerce_id
-        :return:
+        Format output that will be taken by the producer.
         """
         n_messages = 0
-        for _, alert in alerts.iterrows():
+        output_result = []
+        for _, alert in result.iterrows():
             output = output_parser.parse_output(alert)
-            self.producer.produce(output, key=str(output["aid"]))
+            output_result.append(output)
             n_messages += 1
-        self.logger.info(f"{n_messages} messages Produced")
+        self.logger.info(f"{n_messages} messages to be produced")
+        return output_result
 
     def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics["ra"] = alerts["ra"].tolist()
@@ -51,11 +46,11 @@ class SortingHatStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(self, messages: List[dict]) -> None:
+    def execute(self, messages: List[dict]):
         """
-        Execute method of APF. This method consume message from CONSUMER_SETTINGS.
+        Execute method of APF. Consumes message from CONSUMER_SETTINGS.
         :param messages: List of deserialized messages
-        :return:
+        :return: Dataframe with the alerts
         """
         response = self.parser.parse(messages)
         alerts = pd.DataFrame(response)
@@ -63,11 +58,7 @@ class SortingHatStep(GenericStep):
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
         self._add_metrics(alerts)
-        if self.producer:
-            self.produce(alerts)
-        del alerts
-        del messages
-        del response
+        return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
         """
