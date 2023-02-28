@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import abc
-from typing import Any, List, Type, Union
+from typing import Any, Dict, Iterable, List, Type, Union
 from apf.consumers import GenericConsumer
 from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
 from apf.metrics.generic import GenericMetricsProducer
@@ -181,13 +181,15 @@ class GenericStep(abc.ABC):
                 tid = str(tid).upper()
                 self.prometheus_metrics.telescope_id.state(tid)
         preprocessed = self.pre_execute(self.message)
-        return preprocessed or self.message
+        return preprocessed
 
     def pre_execute(self, messages: List[dict]):
-        pass
+        return messages
 
     @abstractmethod
-    def execute(self, messages: List[dict]):
+    def execute(
+        self, messages: List[dict]
+    ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         """Execute the logic of the step. This method has to be implemented by
         the instanced class.
 
@@ -198,7 +200,7 @@ class GenericStep(abc.ABC):
         """
         pass
 
-    def _post_execute(self, result: Any):
+    def _post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
         self.logger.info("Processed message. Begin post processing")
         final_result = self.post_execute(result)
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
@@ -217,19 +219,21 @@ class GenericStep(abc.ABC):
         self.prometheus_metrics.execution_time.observe(time_difference.total_seconds())
         return final_result
 
-    def post_execute(self, result: Any):
+    def post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
         return result
 
-    def _pre_produce(self, result: Any):
+    def _pre_produce(
+        self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]
+    ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         self.logger.info("Finished all processing. Begin message production")
         message_to_produce = self.pre_produce(result)
         return message_to_produce
 
-    def pre_produce(self, result: Any):
+    def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
         return result
 
     def _post_produce(self):
-        self.logger.info("Message produced. Begin post production")
+        self.logger.info("Messages produced. Begin post production")
         self.post_produce()
 
     def post_produce(self):
@@ -317,6 +321,17 @@ class GenericStep(abc.ABC):
             extra_metrics["n_messages"] = 1
         return extra_metrics
 
+    def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        n_messages = 0
+        if isinstance(result, dict):
+            to_produce = [result]
+        else:
+            to_produce = result
+        for prod_message in to_produce:
+            self.producer.produce(prod_message)
+            n_messages += 1
+        self.logger.info(f"Produced {n_messages} messages")
+
     def start(self):
         """Start running the step."""
         self._pre_consume()
@@ -325,7 +340,7 @@ class GenericStep(abc.ABC):
             result = self.execute(preprocessed_msg)
             result = self._post_execute(result)
             result = self._pre_produce(result)
-            self.producer.produce(result)
+            self.produce(result)
             self._post_produce()
         self._tear_down()
 

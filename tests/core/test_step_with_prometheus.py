@@ -27,7 +27,7 @@ def basic_config():
 
 class MockStep(GenericStep):
     def execute(self, _):
-        pass
+        return {}
 
 
 @pytest.fixture(scope="session")
