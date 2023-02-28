@@ -6,7 +6,8 @@ from typing import List, Union
 from apf.consumers import GenericConsumer
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
-from db_plugins.db.mongo.connection import MongoConnection
+from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.mongo.models import Object
 
 from .strategies.base import BaseStrategy
 
@@ -81,11 +82,24 @@ class AtlasStampClassifierStep(GenericStep):
             if probability["ranking"] == 1
         ]
 
+    def _remove_objects_in_database(self, messages: List[dict]):
+        aids = [msg["aid"] for msg in messages]
+        objects = self.db_connection.query(Object).find_all({"_id": {"$in": aids}})
+
+        exists = [obj["_id"] for obj in objects if any(p["classifier_name"] == self.strategy.name for p in obj["probabilities"])]
+        return [msg for msg, aid in zip(messages, aids) if aid in exists]
+
     def execute(self, messages: Union[List[dict], dict]):
         if isinstance(messages, dict):
             messages = [messages]
         self.logger.info(f"Processing {len(messages)} messages.")
         self.logger.info("Getting batch alert data")
+
+        messages = self._remove_objects_in_database(messages)
+        if not len(messages):
+            self.logger.info("Messages only contain already classified objects")
+            return
+        self.logger.info(f"Keeping {len(messages)} messages from objects without classification.")
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)
