@@ -47,9 +47,10 @@ def test_format_output_message():
     consumer_mock = MagicMock()
     producer_mock = MagicMock()
     strategy_mock = MagicMock()
+    db_mock = MagicMock()
     step = AtlasStampClassifierStep(
         consumer=consumer_mock,
-        config={},
+        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=producer_mock,
         strategy=strategy_mock,
@@ -89,9 +90,10 @@ def test_write_predictions():
     producer_mock = MagicMock()
     scribe_producer = MagicMock(spec=KafkaProducer)
     strategy_mock = MagicMock()
+    db_mock = MagicMock()
     step = AtlasStampClassifierStep(
         consumer=consumer_mock,
-        config={},
+        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=scribe_producer,
         strategy=strategy_mock,
@@ -190,9 +192,10 @@ def test_produce():
     producer_mock = MagicMock()
     scribe_producer = MagicMock(spec=KafkaProducer)
     strategy_mock = MagicMock()
+    db_mock = MagicMock()
     step = AtlasStampClassifierStep(
         consumer=consumer_mock,
-        config={"DB_CONFIG": {}},
+        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=scribe_producer,
         strategy=strategy_mock,

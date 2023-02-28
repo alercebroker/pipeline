@@ -6,6 +6,7 @@ from typing import List, Union
 from apf.consumers import GenericConsumer
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
+from db_plugins.db.mongo.connection import MongoConnection
 
 from .strategies.base import BaseStrategy
 
@@ -24,15 +25,16 @@ class AtlasStampClassifierStep(GenericStep):
         consumer: GenericConsumer,
         producer: GenericProducer,
         scribe_producer: GenericProducer,
-        config: dict,
         strategy: BaseStrategy,
+        db_connection: MongoConnection,
         level=logging.INFO,
     ):
-        super().__init__(consumer, config=config, level=level)
+        super().__init__(consumer, level=level)
         self.logger.info("Loading model")
-        self.strategy = strategy
         self.producer = producer
         self.scribe_producer = scribe_producer
+        self.strategy = strategy
+        self.db_connection = db_connection
 
     def format_output_message(self, predictions: dict) -> List[dict]:
         return [

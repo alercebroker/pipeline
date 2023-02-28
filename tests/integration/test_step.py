@@ -4,10 +4,21 @@ from typing import List
 import pytest
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
+from db_plugins.db.mongo import MongoConnection
 
 from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
 from atlas_stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
+
+
+DB_CONFIG = {
+    "HOST": "localhost",
+    "USERNAME": "test_user",
+    "PASSWORD": "test_password",
+    "PORT": 27017,
+    "DATABASE": "test_db",
+    "AUTH_SOURCE": "test_db",
+}
 
 
 def consume_messages(topic) -> List[dict]:
@@ -79,12 +90,13 @@ def test_atlas_step(kafka_service):
             "SCHEMA": SCRIBE_SCHEMA,
         }
     )
+    db_connection = MongoConnection(DB_CONFIG)
     strategy = ATLASStrategy()
     step = AtlasStampClassifierStep(
         consumer=consumer,
         producer=producer,
         scribe_producer=scribe_producer,
-        config={},
+        db_connection=db_connection,
         strategy=strategy,
     )
     step.start()

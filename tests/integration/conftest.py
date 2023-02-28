@@ -1,8 +1,10 @@
 import os
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
+from db_plugins.db.mongo.initialization import init_mongo_database
+from pymongo import MongoClient
+
 import pytest
-from confluent_kafka.admin import AdminClient, NewTopic
 from .schema import SCHEMA
 
 
@@ -39,6 +41,47 @@ def consume_messages() -> list:
     for message in consumer.consume():
         messages.append(message)
     return messages
+
+
+def is_responsive_mongo():
+    try:
+        client = MongoClient(
+            "localhost", 27017, username="root", password="root", authSource="admin"
+        )
+        client.server_info()  # check connection
+        # Create test test_user and test_db
+        db = client.test_db
+        db.command(
+            "createUser",
+            "test_user",
+            pwd="test_password",
+            roles=["dbOwner", "readWrite"],
+        )
+        # put credentials to init database (create collections and indexes)
+        settings = {
+            "HOST": "localhost",
+            "USERNAME": "test_user",
+            "PASSWORD": "test_password",
+            "PORT": 27017,
+            "DATABASE": "test_db",
+            "AUTH_SOURCE": "test_db",
+        }
+        init_mongo_database(settings)
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+@pytest.fixture(scope="session")
+def mongo_service(docker_ip, docker_services):
+    """Ensure that mongo service is up and responsive."""
+    port = docker_services.port_for("mongo", 27017)
+    server = "{}:{}".format(docker_ip, port)
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo()
+    )
+    return server
 
 
 def is_responsive_kafka(url):

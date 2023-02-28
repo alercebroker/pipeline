@@ -3,8 +3,11 @@
 ##################################################
 
 import os
+from credentials import get_mongodb_credentials
 from schema import SCHEMA, SCRIBE_SCHEMA
 
+
+DB_CONFIG = get_mongodb_credentials()
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
