@@ -8,11 +8,15 @@ from schema import SCHEMA
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
+# Export prometheus metrics
+PROMETHEUS = True
+
 DB_CONFIG = get_mongodb_credentials()
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -39,6 +43,7 @@ else:
 
 # Producer configuration
 PRODUCER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaProducer",
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
@@ -46,12 +51,6 @@ PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "preprocess"),
-    "STEP_NAME": os.getenv("STEP_NAME", "preprocess"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-}
 
 METRICS_CONFIG = {
     "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
@@ -101,9 +100,9 @@ METRICS_CONFIG = {
 
 # Step Configuration
 STEP_CONFIG = {
+    "PROMETHEUS": PROMETHEUS,
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
 }
