@@ -19,7 +19,6 @@ class SortingHatStep(GenericStep):
         **kwargs,
     ):
         super().__init__(config=config, level=level, **kwargs)
-        print("created consumer", self.consumer)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
         self.parser = ALeRCEParser()
