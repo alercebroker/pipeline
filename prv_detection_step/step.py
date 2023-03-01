@@ -38,16 +38,20 @@ class PrvDetectionStep(GenericStep):
         self.prv_candidates_processor = Processor(
             ZTFPrvCandidatesStrategy()
         )  # initial strategy (can change)
+        self.producers = {
+            "scribe": producer,
+            "alerts": None
+        }
 
     def execute(self, messages):
-        self.logger.info(f"Processing {len(messages)} alerts")
+        self.logger.info("Processing %s alerts", str(len(messages)))
         alerts = pd.DataFrame(messages)
         # If is an empiric alert must has stamp
         alerts["has_stamp"] = True
         # Process previous candidates of each alert
         (
             dets_from_prv_candidates,
-            non_dets_from_prv_candidates,
+            _,
         ) = process_prv_candidates(self.prv_candidates_processor, alerts)
         # If is an alert from previous candidate hasn't stamps
         # Concat detections from alerts and detections from previous candidates
