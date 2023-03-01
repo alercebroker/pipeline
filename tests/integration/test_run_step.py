@@ -45,6 +45,51 @@ CONSUMER_CONFIG = {
     "TOPICS": ["survey_stream"],
 }
 
+METRICS_CONFIG = {
+    "CLASS": "apf.metrics.KafkaMetricsProducer",
+    "EXTRA_METRICS": [
+        {"key": "candid", "format": lambda x: str(x)},
+    ],
+    "PARAMS": {
+        "PARAMS": {
+            "bootstrap.servers": "localhost:9092",
+            "auto.offset.reset": "smallest",
+        },
+        "TOPIC": "metrics",
+        "SCHEMA": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "http://example.com/example.json",
+            "type": "object",
+            "title": "The root schema",
+            "description": "The root schema comprises the entire JSON document.",
+            "default": {},
+            "examples": [
+                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+            ],
+            "required": ["timestamp_sent", "timestamp_received"],
+            "properties": {
+                "timestamp_sent": {
+                    "$id": "#/properties/timestamp_sent",
+                    "type": "string",
+                    "title": "The timestamp_sent schema",
+                    "description": "Timestamp sent refers to the time at which a message is sent.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+                "timestamp_received": {
+                    "$id": "#/properties/timestamp_received",
+                    "type": "string",
+                    "title": "The timestamp_received schema",
+                    "description": "Timestamp received refers to the time at which a message is received.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
+                },
+            },
+            "additionalProperties": True,
+        },
+    },
+}
+
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -55,6 +100,7 @@ class MongoIntegrationTest(unittest.TestCase):
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "METRICS_CONFIG": METRICS_CONFIG,
         }
 
     def test_step(self):
@@ -115,6 +161,7 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "METRICS_CONFIG": METRICS_CONFIG,
         }
 
     def test_step(self):
