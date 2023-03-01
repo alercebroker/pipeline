@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-from survey_parser_plugins import __version__
 
 with open("requirements.txt") as f:
     required_packages = f.readlines()
 
 setup(
     name="survey-parser-plugins",
-    version=__version__,
+    version="1.0.1",
     description="ALeRCE Survey Parser Plugins",
     author="ALeRCE Team",
     author_email="contact@alerce.online",
