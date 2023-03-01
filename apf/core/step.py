@@ -60,7 +60,7 @@ class GenericStep(abc.ABC):
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
-            self.metrics_config
+            self.metrics_producer_params
         )
         self.metrics = {}
         self.extra_metrics = []
@@ -80,6 +80,12 @@ class GenericStep(abc.ABC):
     @property
     def metrics_config(self):
         return self.config.get("METRICS_CONFIG")
+
+    @property
+    def metrics_producer_params(self) -> dict:
+        if self.metrics_config:
+            return self.metrics_config["PARAMS"]
+        return {}
 
     def _set_logger(self, level):
         self.logger = logging.getLogger(self.__class__.__name__)
