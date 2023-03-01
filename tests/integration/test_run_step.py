@@ -185,5 +185,5 @@ class PrometheusIntegrationTest(unittest.TestCase):
                 )  # generate 110 alerts where 10 alerts are near of another alerts
                 consumer_mock().consume.return_value = [batch]
                 step.start()
-        result = requests.get("http://localhost:8000")
+        result = requests.get("http://localhost:8000/metrics")
         self.assertIn("processed_messages_sum 110.0", result.text)

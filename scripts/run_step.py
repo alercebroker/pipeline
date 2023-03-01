@@ -5,6 +5,8 @@ import logging
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +31,13 @@ from sorting_hat_step import SortingHatStep
 
 database = new_DBConnection(MongoDatabaseCreator)
 
+prometheus_metrics = PrometheusMetrics()
+start_http_server(8000)
 
-step = SortingHatStep(db_connection=database, config=STEP_CONFIG, level=level)
+step = SortingHatStep(
+    db_connection=database,
+    config=STEP_CONFIG,
+    level=level,
+    prometheus_metrics=prometheus_metrics,
+)
 step.start()
