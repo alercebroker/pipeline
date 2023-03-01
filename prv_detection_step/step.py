@@ -34,7 +34,6 @@ class PrvDetectionStep(GenericStep):
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.version = config["STEP_METADATA"]["STEP_VERSION"]
         self.prv_candidates_processor = Processor(
             ZTFPrvCandidatesStrategy()
         )  # initial strategy (can change)
