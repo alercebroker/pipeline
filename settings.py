@@ -43,7 +43,7 @@ else:
 
 # Producer configuration
 PRODUCER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaProducer",
+    "CLASS": "apf.producers.KafkaProducer",
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
