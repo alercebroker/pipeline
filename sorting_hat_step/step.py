@@ -30,12 +30,10 @@ class SortingHatStep(GenericStep):
         """
         Format output that will be taken by the producer.
         """
-        n_messages = 0
-        output_result = []
-        for _, alert in result.iterrows():
-            output = output_parser.parse_output(alert)
-            output_result.append(output)
-            n_messages += 1
+        output_result = [
+            output_parser.parse_output(alert) for _, alert in result.iterrows()
+        ]
+        n_messages = len(output_result)
         self.logger.info(f"{n_messages} messages to be produced")
         return output_result
 
