@@ -122,15 +122,6 @@ class KafkaProducer(GenericProducer):
             self.topic = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f"Producing to {self.topic}")
-            self._producer_key = None
-
-    @property
-    def producer_key(self):
-        return self._producer_key
-
-    @producer_key.setter
-    def producer_key(self, key: str):
-        self._producer_key = key
 
     def _serialize_message(self, message):
         out = io.BytesIO()
@@ -144,17 +135,13 @@ class KafkaProducer(GenericProducer):
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             try:
-                self.producer.produce(
-                    topic, value=message, key=self.producer_key, **kwargs
-                )
+                self.producer.produce(topic, value=message, **kwargs)
                 self.producer.poll(0)
             except BufferError as e:
                 self.logger.info(f"Error producing message: {e}")
                 self.logger.info("Calling poll to empty queue and producing again")
                 self.producer.flush()
-                self.producer.produce(
-                    topic, value=message, key=self.producer_key, **kwargs
-                )
+                self.producer.produce(topic, value=message, **kwargs)
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
