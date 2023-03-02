@@ -1,6 +1,6 @@
 git+https://github.com/alercebroker/atlas_stamp_classifier.git@main
 git+https://github.com/alercebroker/db-plugins@4.0.1
 apf_base<2.0
-boto3==1.26.69
+boto3==1.23.10
 astropy
 pandas
