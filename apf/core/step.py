@@ -328,16 +328,39 @@ class GenericStep(abc.ABC):
         return extra_metrics
 
     def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        """
+        Produces messages using the configured producer class.
+
+        Parameters
+        ----------
+        result: dict | list[dict]
+            The result of the step's execution.
+            This parameter can be an iterable or a single message, where the message should be
+            a dictionary that matches the output schema of the step.
+
+        NOTE: If you want to produce with a key, use the set_producer_key_field(key_field)
+        method somewhere in the lifecycle of the step prior to the produce state.
+        """
         n_messages = 0
         if isinstance(result, dict):
             to_produce = [result]
         else:
             to_produce = result
-        key = self.producer.producer_key
         for prod_message in to_produce:
-            self.producer.produce(prod_message, key=key)
+            self.producer.produce(prod_message)
             n_messages += 1
         self.logger.info(f"Produced {n_messages} messages")
+
+    def set_producer_key_field(self, key_field: str):
+        """
+        Set the producer key, used in producer.produce(message, key=message[key_field])
+
+        Parameters
+        ----------
+        key_field : str
+            the key of the message which value will be used as key for the producer
+        """
+        self.producer.set_key_field(key_field)
 
     def start(self):
         """Start running the step."""

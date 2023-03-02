@@ -129,19 +129,37 @@ class KafkaProducer(GenericProducer):
         return out.getvalue()
 
     def produce(self, message=None, **kwargs):
-        """Produce Message to a topic."""
+        """Produce Message to a topic.
+
+        Parameters
+        ----------
+        message: dict | None
+            The value of the message to be produced.
+            Should match the schema defined in the config["SCHEMA"]
+
+        **kwargs: dict
+            Any other keyword argument will be passed as **kwargs to the produce method of the producer.
+            Do not specify the key argument, as it will be duplicated.
+
+        NOTE: To set a key for the message, use the set_key_field(key_field) method prior to consuming
+        The producer will have a key_field attribute that will be either None, or some specified value,
+        and will use that for each produce() call.
+        """
+        key = None
+        if message:
+            key = message[self.key_field] if self.key_field else None
         message = self._serialize_message(message)
         if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             try:
-                self.producer.produce(topic, value=message, **kwargs)
+                self.producer.produce(topic, value=message, key=key, **kwargs)
                 self.producer.poll(0)
             except BufferError as e:
                 self.logger.info(f"Error producing message: {e}")
                 self.logger.info("Calling poll to empty queue and producing again")
                 self.producer.flush()
-                self.producer.produce(topic, value=message, **kwargs)
+                self.producer.produce(topic, value=message, key=key, **kwargs)
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")

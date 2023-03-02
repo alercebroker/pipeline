@@ -30,15 +30,16 @@ class KafkaProducerTest(GenericProducerTest):
     def test_produce_with_key(self, producer_mock):
         producer_mock.reset_mock()
         self.component = KafkaProducer(self.params)
-        self.component.producer_key = "test"
-        super().test_produce(use=self.component, key=self.component.producer_key)
+        self.component.set_key_field("key")
+        super().test_produce(use=self.component)
+        print(producer_mock().produce.call_args[1]["key"])
         assert producer_mock().produce.call_args[1]["key"] == "test"
 
     def test_produce_with_none(self, producer_mock):
         producer_mock.reset_mock()
         self.component = KafkaProducer(self.params)
-        self.component.producer_key = None
-        super().test_produce(use=self.component, key=self.component.producer_key)
+        self.component.set_key_field(None)
+        super().test_produce(use=self.component)
         assert producer_mock().produce.call_args[1]["key"] == None
 
     def test_topic_strategy(self, _):
