@@ -7,8 +7,8 @@ from apf.producers import KafkaProducer
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Object
 
-from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
-from atlas_stamp_classifier_step.strategies.atlas import ATLASStrategy
+from stamp_classifier_step.step import AtlasStampClassifierStep
+from stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 
 from .conftest import generate_messages

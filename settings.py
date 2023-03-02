@@ -1,5 +1,5 @@
 ##################################################
-#       atlas_stamp_classifier_step   Settings File
+#       stamp_classifier_step   Settings File
 ##################################################
 
 import os

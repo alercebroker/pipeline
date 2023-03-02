@@ -17,7 +17,7 @@ from settings import (
     CLASSIFIER_STRATEGY,
     DB_CONFIG,
 )
-from atlas_stamp_classifier_step.strategies import get_strategy
+from stamp_classifier_step.strategies import get_strategy
 
 level = logging.INFO
 if "LOGGING_DEBUG" in locals():
@@ -31,7 +31,7 @@ logging.basicConfig(
 )
 
 
-from atlas_stamp_classifier_step import AtlasStampClassifierStep
+from stamp_classifier_step import AtlasStampClassifierStep
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:

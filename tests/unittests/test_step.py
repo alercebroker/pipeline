@@ -1,6 +1,6 @@
 import json
 from apf.producers import KafkaProducer
-from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
+from stamp_classifier_step.step import AtlasStampClassifierStep
 from unittest.mock import MagicMock
 
 

@@ -15,7 +15,7 @@ jobs:
       - uses: psf/black@stable
         with:
           options: "--check --verbose"
-          src: "atlas_stamp_classifier_step/"
+          src: "stamp_classifier_step/"
   unittest-atlas:
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +31,7 @@ jobs:
         git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
-      run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
+      run: 'pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
   unittest-ztf:
     runs-on: ubuntu-20.04
     steps:
@@ -55,7 +55,7 @@ jobs:
           git config --global url."https://${{ secrets.ADMIN_TOKEN }}@github.com/".insteadOf "https://github.com/"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Test with pytest
-        run: 'pytest -x tests/unittests --cov atlas_stamp_classifier_step --cov-report xml'
+        run: 'pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
   integration_test:
     runs-on: ubuntu-latest
     steps:
