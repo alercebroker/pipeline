@@ -327,14 +327,29 @@ class GenericStep(abc.ABC):
             extra_metrics["n_messages"] = 1
         return extra_metrics
 
-    def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
-        n_messages = 0
-        if isinstance(result, dict):
-            to_produce = [result]
+    def _is_iterable(self, something: Any):
+        try:
+            for _ in something:
+                break
+            return True
+        except TypeError:
+            return False
+
+    def _convert_to_iterable(self, something: Any):
+        if self._is_iterable(something):
+            result = something
         else:
-            to_produce = result
+            result = [something]
+        return result
+
+    def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        to_produce = self._convert_to_iterable(result)
+        n_messages = 0
         for prod_message in to_produce:
-            self.producer.produce(prod_message)
+            key = None
+            if self.producer.producer_key is not None:
+                key = prod_message[self.producer.producer_key]
+            self.producer.produce(prod_message, key=key)
             n_messages += 1
         self.logger.info(f"Produced {n_messages} messages")
 
