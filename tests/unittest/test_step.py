@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-from unittest.mock import MagicMock
 from apf.consumers import KafkaConsumer
 from apf.core.step import logging
 
@@ -45,6 +44,7 @@ class SortingHatStepTestCase(unittest.TestCase):
         assert result["aid"] is not None
 
     def test_pre_produce(self):
+        self.step.producer = mock.MagicMock(KafkaProducer)
         alerts = generate_alerts_batch(100)
         parsed = self.step.parser.parse(alerts)
         parsed = pd.DataFrame(parsed)

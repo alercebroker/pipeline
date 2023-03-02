@@ -28,12 +28,33 @@ class SortingHatStep(GenericStep):
 
     def pre_produce(self, result: pd.DataFrame):
         """
-        Format output that will be taken by the producer.
+        Step lifecycle method.
+        Format output that will be taken by the producer and set the producer key.
+
+        Calling self.set_producer_key_field("aid") will make that each message produced has the
+        aid value as key.
+
+        For example if message looks like this:
+
+        message = {"aid": "ALabc123"}
+
+        Then, the produced kafka message will have "ALabc123" as key.
+
+        Parameters
+        ----------
+        result: pd.DataFrame
+            Data returned by the execute method
+
+        Returns
+        -------
+        output_result: pd.DataFrame
+            The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
         output_result = [
             output_parser.parse_output(alert) for _, alert in result.iterrows()
         ]
         n_messages = len(output_result)
+        self.set_producer_key_field("aid")
         self.logger.info(f"{n_messages} messages to be produced")
         return output_result
 

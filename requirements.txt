@@ -1,4 +1,4 @@
-apf_base==2.1.1
+apf_base==2.1.3
 scipy
 boto3==1.26.69
 
