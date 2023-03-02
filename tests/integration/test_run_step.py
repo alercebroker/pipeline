@@ -1,7 +1,6 @@
 import logging
 from apf.metrics.prometheus import PrometheusMetrics
 import requests
-from typing import List
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
 import pytest
@@ -12,6 +11,7 @@ from sorting_hat_step import SortingHatStep
 from schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
+import time
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -121,23 +121,25 @@ class MongoIntegrationTest(unittest.TestCase):
                 )  # generate 110 alerts where 10 alerts are near of another alerts
                 consumer_mock().consume.return_value = [batch]
                 step.start()
+        step.producer.producer.flush()
         messages = self.consume_messages()
+        assert len(messages) == 110
         for message in messages:
             # TODO add other assertions
             self.assert_message_stamps(message)
 
-    def consume_messages(self) -> List[dict]:
+    def consume_messages(self):
         config = CONSUMER_CONFIG.copy()
         config["PARAMS"]["group.id"] = "assert"
         config["TOPICS"] = ["sorting_hat_stream"]
         consumer = KafkaConsumer(config)
         messages = []
         for message in consumer.consume():
+            assert consumer.messages[0].key().startswith(b"AL")
             messages.append(message)
         return messages
 
     def assert_message_stamps(self, message: dict):
-        print(message)
         assert message["stamps"]["science"] == b"science"
         if message["tid"] == "ZTF":
             assert message["stamps"]["template"] == b"template"

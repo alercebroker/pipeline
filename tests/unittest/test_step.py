@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-from unittest.mock import MagicMock
 from apf.consumers import KafkaConsumer
 from apf.core.step import logging
 
@@ -51,6 +50,7 @@ class SortingHatStepTestCase(unittest.TestCase):
         alerts = self.step.add_aid(parsed)
         result = self.step.pre_produce(alerts)
         assert len(result) == len(alerts)
+        assert self.step.producer.producer_key == "aid"
         for msg in result:
             assert isinstance(msg, dict)
 

@@ -34,6 +34,7 @@ class SortingHatStep(GenericStep):
             output_parser.parse_output(alert) for _, alert in result.iterrows()
         ]
         n_messages = len(output_result)
+        self.producer.producer_key = "aid"
         self.logger.info(f"{n_messages} messages to be produced")
         return output_result
 
