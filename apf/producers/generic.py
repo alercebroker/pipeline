@@ -10,15 +10,14 @@ class GenericProducer(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config
-        self._producer_key = None
+        self._key_field = None
 
     @property
-    def producer_key(self):
-        return self._producer_key
+    def key_field(self):
+        return self._key_field
 
-    @producer_key.setter
-    def producer_key(self, key: Union[str, None]):
-        self._producer_key = key
+    def set_key_field(self, key):
+        self._key_field = key
 
     @abstractmethod
     def produce(self, message=None, **kwargs):
