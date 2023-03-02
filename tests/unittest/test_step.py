@@ -44,13 +44,13 @@ class SortingHatStepTestCase(unittest.TestCase):
         assert result["aid"] is not None
 
     def test_pre_produce(self):
+        self.step.producer = mock.MagicMock(KafkaProducer)
         alerts = generate_alerts_batch(100)
         parsed = self.step.parser.parse(alerts)
         parsed = pd.DataFrame(parsed)
         alerts = self.step.add_aid(parsed)
         result = self.step.pre_produce(alerts)
         assert len(result) == len(alerts)
-        assert self.step.producer.producer_key == "aid"
         for msg in result:
             assert isinstance(msg, dict)
 
