@@ -32,7 +32,7 @@ class KafkaProducerTest(GenericProducerTest):
         self.component = KafkaProducer(self.params)
         self.component.producer_key = "test"
         super().test_produce(use=self.component, key=self.component.producer_key)
-        assert producer_mock().produce.call_args.kwargs["key"] == "test"
+        assert producer_mock().produce.call_args[1]["key"] == "test"
 
     def test_topic_strategy(self, _):
         import copy
