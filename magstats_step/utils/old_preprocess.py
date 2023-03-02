@@ -28,36 +28,6 @@ def get_catalog(
     catalog.replace({np.nan: None}, inplace=True)
     return catalog
 
-def do_magstats(
-    light_curves: dict,
-    magstats: pd.DataFrame,
-    ps1: pd.DataFrame,
-    reference: pd.DataFrame,
-    version: str,
-):
-    if len(magstats) == 0:
-        magstats = pd.DataFrame(columns=["oid", "fid"])
-    magstats_index = pd.MultiIndex.from_frame(magstats[["oid", "fid"]])
-    detections = light_curves["detections"]
-    ps1.set_index("oid", inplace=True)
-    reference.set_index(["oid", "rfid"], inplace=True)
-    det_ps1 = detections.join(ps1, on="oid", rsuffix="ps1")
-    det_ps1_ref = det_ps1.join(reference, on=["oid", "rfid"], rsuffix="ref")
-    det_ps1_ref.reset_index(inplace=True)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        new_magstats = det_ps1_ref.groupby(["oid", "fid"], sort=False).apply(
-            apply_mag_stats
-        )
-    new_magstats.reset_index(inplace=True)
-    new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
-    new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
-    new_magstats["step_id_corr"] = version
-    new_magstats.drop_duplicates(["oid", "fid"], inplace=True)
-    reference.reset_index(inplace=True)
-    ps1.reset_index(inplace=True)
-    return new_magstats
-
 def do_dmdt_df(magstats, non_dets, dt_min=0.5):
     magstats.set_index(["objectId", "fid"], inplace=True, drop=True)
     non_dets_magstats = non_dets.join(

@@ -7,9 +7,9 @@ from apf.producers import KafkaProducer
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 from magstats_step.step import MagstatsStep
 
-#from data.messages import (
-#    generate_message,
-#)
+from data.messages import (
+    LC_MESSAGE,
+)
 
 DB_CONFIG = {
     "PSQL": {
@@ -53,5 +53,7 @@ class StepTestCase(unittest.TestCase):
         del self.step
 
     def test_step(self):
+        self.step.execute(LC_MESSAGE)
+        # Verify magstats insert call
         return
 
