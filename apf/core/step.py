@@ -333,8 +333,9 @@ class GenericStep(abc.ABC):
             to_produce = [result]
         else:
             to_produce = result
+        key = self.producer.producer_key
         for prod_message in to_produce:
-            self.producer.produce(prod_message)
+            self.producer.produce(prod_message, key=key)
             n_messages += 1
         self.logger.info(f"Produced {n_messages} messages")
 
