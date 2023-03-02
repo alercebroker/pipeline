@@ -84,10 +84,14 @@ class AtlasStampClassifierStep(GenericStep):
 
     def _remove_objects_in_database(self, messages: List[dict]):
         def exists(obj):
-            return any(p["classifier_name"] == self.strategy.name for p in obj["probabilities"])
+            return any(
+                p["classifier_name"] == self.strategy.name for p in obj["probabilities"]
+            )
 
         aids = [msg["aid"] for msg in messages]
-        objects = self.db_connection.query(Object).find_all({"_id": {"$in": aids}}, paginate=False)
+        objects = self.db_connection.query(Object).find_all(
+            {"_id": {"$in": aids}}, paginate=False
+        )
 
         objects_in_db = [obj["_id"] for obj in objects if exists(obj)]
         return [msg for msg in messages if msg["aid"] not in objects_in_db]
@@ -102,7 +106,9 @@ class AtlasStampClassifierStep(GenericStep):
         if not len(messages):
             self.logger.info("Messages only contain already classified objects")
             return
-        self.logger.info(f"Keeping {len(messages)} messages from objects without classification.")
+        self.logger.info(
+            f"Keeping {len(messages)} messages from objects without classification."
+        )
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)

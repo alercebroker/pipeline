@@ -11,6 +11,8 @@ from atlas_stamp_classifier_step.step import AtlasStampClassifierStep
 from atlas_stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 
+from .conftest import generate_messages
+
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -124,7 +126,7 @@ def test_atlas_step_skips_objects_in_database():
                 "enable.partition.eof": True,
             },
             "consume.timeout": 10,
-            "consume.messages": 1,
+            "consume.messages": 2,
             "TOPICS": ["sorting_hat"],
         }
     )
@@ -150,24 +152,24 @@ def test_atlas_step_skips_objects_in_database():
     db_connection = MongoConnection(DB_CONFIG)
     db_connection.connect()
 
-    # obj = {
-    #     "oid": "oid",
-    #     "tid": "tid",
-    #     "corrected": False,
-    #     "stellar": False,
-    #     "firstmjd": 1,
-    #     "lastmjd": 1,
-    #     "ndet": 1,
-    #     "meanra": 1,
-    #     "sigmara": 1,
-    #     "meandec": 1,
-    #     "sigmadec": 1,
-    #     "probabilities": [{"classifier_name": "atlas_stamp_classifier"}],
-    # }
-    #
-    # db_connection.query(Object).get_or_create({"_id": "aid1"}, **obj)
+    obj = {
+        "oid": "oid",
+        "tid": "tid",
+        "corrected": False,
+        "stellar": False,
+        "firstmjd": 1,
+        "lastmjd": 1,
+        "ndet": 1,
+        "meanra": 1,
+        "sigmara": 1,
+        "meandec": 1,
+        "sigmadec": 1,
+        "probabilities": [{"classifier_name": "atlas_stamp_classifier"}],
+    }
 
-    # generate_messages("aid")
+    db_connection.query(Object).get_or_create({"_id": "aid1"}, **obj)
+
+    generate_messages("aid1")
 
     strategy = ATLASStrategy()
     step = AtlasStampClassifierStep(
