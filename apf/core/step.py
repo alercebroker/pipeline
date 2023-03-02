@@ -207,6 +207,8 @@ class GenericStep(abc.ABC):
         pass
 
     def _post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        if self.commit:
+            self.consumer.commit()
         self.logger.info("Processed message. Begin post processing")
         final_result = self.post_execute(result)
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
