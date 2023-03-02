@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
+from typing import Union
 
 
 class GenericProducer(ABC):
@@ -16,7 +17,7 @@ class GenericProducer(ABC):
         return self._producer_key
 
     @producer_key.setter
-    def producer_key(self, key: str):
+    def producer_key(self, key: Union[str, None]):
         self._producer_key = key
 
     @abstractmethod
