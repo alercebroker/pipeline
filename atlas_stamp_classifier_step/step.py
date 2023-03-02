@@ -83,11 +83,14 @@ class AtlasStampClassifierStep(GenericStep):
         ]
 
     def _remove_objects_in_database(self, messages: List[dict]):
-        aids = [msg["aid"] for msg in messages]
-        objects = self.db_connection.query(Object).find_all({"_id": {"$in": aids}})
+        def exists(obj):
+            return any(p["classifier_name"] == self.strategy.name for p in obj["probabilities"])
 
-        exists = [obj["_id"] for obj in objects if any(p["classifier_name"] == self.strategy.name for p in obj["probabilities"])]
-        return [msg for msg, aid in zip(messages, aids) if aid in exists]
+        aids = [msg["aid"] for msg in messages]
+        objects = self.db_connection.query(Object).find_all({"_id": {"$in": aids}}, paginate=False)
+
+        objects_in_db = [obj["_id"] for obj in objects if exists(obj)]
+        return [msg for msg in messages if msg["aid"] not in objects_in_db]
 
     def execute(self, messages: Union[List[dict], dict]):
         if isinstance(messages, dict):
