@@ -68,6 +68,7 @@ class GenericStep(abc.ABC):
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
         self.commit = self.config.get("COMMIT", True)
         self.prometheus_metrics = prometheus_metrics
+        self._producer_key = ""
 
     @property
     def consumer_config(self):
@@ -86,6 +87,14 @@ class GenericStep(abc.ABC):
         if self.metrics_config:
             return self.metrics_config["PARAMS"]
         return {}
+
+    @property
+    def producer_key(self):
+        return self._producer_key
+
+    @producer_key.setter
+    def producer_key(self, key):
+        self._producer_key = key
 
     def _set_logger(self, level):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -334,7 +343,7 @@ class GenericStep(abc.ABC):
         else:
             to_produce = result
         for prod_message in to_produce:
-            self.producer.produce(prod_message)
+            self.producer.produce(prod_message, key=self.producer_key)
             n_messages += 1
         self.logger.info(f"Produced {n_messages} messages")
 
