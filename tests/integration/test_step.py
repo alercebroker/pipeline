@@ -1,11 +1,16 @@
-import sys
 from typing import List
 
-import pytest
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Object
+
+import tensorflow as tf
+import pytest
+
+if tf.__version__.startswith('1'):
+    pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
+
 
 from stamp_classifier_step.step import AtlasStampClassifierStep
 from stamp_classifier_step.strategies.atlas import ATLASStrategy
@@ -60,7 +65,6 @@ def assert_scribe_messages_produced(aid="aid"):
     assert f'"criteria": {{"aid": "{aid}"}}' in messages[0]["payload"]
 
 
-@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
 @pytest.mark.usefixtures("kafka_service")
 @pytest.mark.usefixtures("mongo_service")
 def test_atlas_step():
@@ -112,7 +116,6 @@ def test_atlas_step():
     assert_scribe_messages_produced()
 
 
-@pytest.mark.skipif(sys.version.startswith('3.6'), reason="Incompatible Python version")
 @pytest.mark.usefixtures("kafka_service")
 @pytest.mark.usefixtures("mongo_service")
 def test_atlas_step_skips_objects_in_database():

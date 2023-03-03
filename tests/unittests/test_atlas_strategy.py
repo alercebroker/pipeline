@@ -1,12 +1,13 @@
-import sys
 from unittest import mock
 
 import pandas as pd
 import pandas.testing
+
+import tensorflow as tf
 import pytest
 
-if sys.version.startswith('3.6'):
-    pytest.skip("Incompatible Python version", allow_module_level=True)
+if tf.__version__.startswith('1'):
+    pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 from stamp_classifier_step.strategies.atlas import ATLASStrategy
 

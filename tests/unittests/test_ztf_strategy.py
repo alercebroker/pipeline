@@ -1,12 +1,12 @@
-import sys
 from unittest import mock
 
 import pandas as pd
 import pandas.testing
+import tensorflow as tf
 import pytest
 
-if not sys.version.startswith('3.6'):
-    pytest.skip("Incompatible Python version", allow_module_level=True)
+if not tf.__version__.startswith('1'):
+    pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 from stamp_classifier_step.strategies.ztf import ZTFStrategy
 
