@@ -100,20 +100,17 @@ class AtlasStampClassifierStep(GenericStep):
         if isinstance(messages, dict):
             messages = [messages]
         self.logger.info(f"Processing {len(messages)} messages.")
-        self.logger.info("Getting batch alert data")
 
+        self.logger.info("Removing messages from alredy classified objects")
         messages = self._remove_objects_in_database(messages)
+        self.logger.info(f"Processing {len(messages)} messages from new objects")
         if not len(messages):
-            self.logger.info("Messages only contain already classified objects")
             return
-        self.logger.info(
-            f"Keeping {len(messages)} messages from objects without classification."
-        )
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)
+        self.logger.info(f"Classified {len(predictions)} unique objects")
         if not len(predictions):
-            self.logger.info("No output to write")
             return
 
         self.logger.info("Inserting/Updating results on database")
