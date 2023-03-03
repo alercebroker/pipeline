@@ -13,14 +13,10 @@ import sys
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 
 from magstats_step.utils.old_preprocess import (
-    get_catalog,
-    compute_dmdt,
-    insert_magstats,
-    compute_dmdt)
+    get_catalog)
 
-from lc_correction.compute import (
-    apply_mag_stats
-    )
+from .dmdt import DmdtCalculator
+from .magstats import MagStatsCalculator
 
 
 sys.path.insert(0, "../../../../")
@@ -56,6 +52,9 @@ class MagstatsStep(GenericStep):
             config["DB_CONFIG"]
         )
         self.driver.connect()
+
+        self.magstats_calculator = MagStatsCalculator()
+
 
     def parse_lightcurves(self, alerts : pd.DataFrame) -> dict:
         """Parses the message data and returns a dictionary with detections and
@@ -97,23 +96,6 @@ class MagstatsStep(GenericStep):
 
         return light_curves
 
-    def do_magstats(
-        self,
-        light_curves: dict,
-        version: str,
-        ) -> pd.DataFrame:
-
-        detections = light_curves["detections"]
-        # TODO Why are we ignoring warnings?
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            new_magstats = detections.groupby(["oid", "fid"], sort=False).apply(
-                apply_mag_stats
-            )
-        new_magstats.reset_index(inplace=True)
-        new_magstats["step_id_corr"] = version
-        new_magstats.drop_duplicates(["oid", "fid"], inplace=True)
-        return new_magstats
 
     def recalculate_magstats(self,
                              unique_ids : list,
@@ -127,7 +109,8 @@ class MagstatsStep(GenericStep):
         :returns: The new recalculated magstats for the objects.
         """
 
-        new_magstats = self.do_magstats(
+
+        new_magstats = self.magstats_calculator.calculate(
             light_curves, self.version
         )
 
@@ -137,7 +120,8 @@ class MagstatsStep(GenericStep):
         new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
         new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
 
-        dmdt = compute_dmdt(light_curves, new_magstats)
+        dmdt_calculator = DmdtCalculator()
+        dmdt = dmdt_calculator.compute(light_curves, new_magstats)
         if len(dmdt) > 0:
             new_stats = new_magstats.set_index(["oid", "fid"]).join(
                 dmdt.set_index(["oid", "fid"])
