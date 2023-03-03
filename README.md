@@ -6,6 +6,18 @@ Process alert stream using the selected stamp classifier, either for
 [ZTF](https://github.com/alercebroker/stamp_classifier) or 
 [ATLAS](https://github.com/alercebroker/atlas_stamp_classifier).
 
+Since only the first alert for a given object has to be classified, the step checks
+the database for the object and if it has been classified already, these objects will be removed
+from the messages and not classified. To ensure if the classification already exists, it will only 
+check for the classifier name, i.e., even if the step is using a different version, it will
+not classify new alerts for the same object. On the other hand, since the classifier names differ,
+the first alert from ZTF will be added to the classifications *and* the first ATLAS alert as well
+if the given object has alerts from both surveys.
+
+In case the same object has more than one alert in the same message processing batch, only the earliest
+alert will be classified. This is based on the `mjd` field of the alert. It is perfectly normal for the
+step to classify fewer alerts than it consumes based on the previous two restrictions.
+
 #### Previous steps:
 - [Sorting Hat](https://github.com/alercebroker/sorting_hat_step)
 
@@ -14,17 +26,22 @@ Process alert stream using the selected stamp classifier, either for
 
 ## IMPORTANT NOTE ABOUT VERSIONS
 
+Requires Python 3.7.
+
 Due to the different versions of tensorflow used by each classifier, it is not possible to run both on
 the same environment:
 
-- ZTF: The classifier has to be included as a zip file and requires Python 3.6
-- ATLAS: The classifier is installed using pip as part of the requirements and uses Python 3.8
+- ZTF: The classifier has to be included as a [zip file](https://github.com/alercebroker/stamp_classifier/releases/download/1.0.0/model.zip) (uses tensorflow 1) 
+- ATLAS: The classifier is installed using pip as part of the requirements (uses tensorflow 2)
 
 Due to it being in the requirements, the ATLAS classifier is installed even when intending to create
 the step for the ZTF stream. This won't result in version conflicts **as long as the requirements in
-the ATLAS classifier do not have fixed versions**.
+the ATLAS classifier do not have fixed versions**. However, it won't be possible to run the ATLAS stamp classifier
+in an environment set for the ZTF environment.
 
 ## Environment variables
+
+These are required only when running through the scripts, as is the case for the Docker images.
 
 ### Consumer setup
 
@@ -61,6 +78,10 @@ The [scribe](https://github.com/alercebroker/alerce-scribe) will write results i
 - `MODEL_NAME`: Model name for metadata, e.g., `ztf_stamp_classifier`
 - `MODEL_VERSION`: Model version for metadata, e.g., `1.0.0`
 
+### Database setup
+
+- `MONGODB_SECRET_NAME`: Name for the MongoDB secret inside AWS
+
 
 ## Run the released image
 
@@ -71,11 +92,6 @@ docker pull ghcr.io/alercebroker/ztf_stamp_classifier_step:latest
 docker pull ghcr.io/alercebroker/stamp_classifier_step:latest
 ```
 ## Local Installation
-
-**REMINDER:** Python versions required:
-
-- ZTF: Python 3.6
-- ATLAS: Python 3.8
 
 ### Downloading and installing ZTF model (only for ZTF)
 
