@@ -1,4 +1,5 @@
 import os
+from fastavro import schema
 
 ##################################################
 #       prv_candidates_step   Settings File
@@ -17,6 +18,15 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
+}
+
+PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "PARAMS": {
+        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
+    },
+    "TOPIC": "prv-candidates",
+    "SCHEMA": schema.load_schema("schema.avsc"),
 }
 
 METRICS_CONFIG = {
@@ -68,4 +78,5 @@ METRICS_CONFIG = {
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG,
 }

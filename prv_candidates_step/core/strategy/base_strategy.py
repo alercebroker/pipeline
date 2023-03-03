@@ -1,6 +1,6 @@
-import pandas as pd
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Any
+
 
 class BasePrvCandidatesStrategy(ABC):
     """
@@ -10,7 +10,5 @@ class BasePrvCandidatesStrategy(ABC):
     """
 
     @abstractmethod
-    def process_prv_candidates(
-        self, data: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def process_prv_candidates(self, data: dict) -> Any:
         pass
