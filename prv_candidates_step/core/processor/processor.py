@@ -1,5 +1,5 @@
 from __future__ import annotations
-from prv_detection_step.core.strategy.base_strategy import BasePrvCandidatesStrategy
+from prv_candidates_step.core.strategy.base_strategy import BasePrvCandidatesStrategy
 import pandas as pd
 
 

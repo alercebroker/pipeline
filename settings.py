@@ -1,7 +1,7 @@
 import os
 
 ##################################################
-#       prv_detection_step   Settings File
+#       prv_candidates_step   Settings File
 ##################################################
 
 ## Set the global logging level to debug
@@ -10,6 +10,7 @@ import os
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],

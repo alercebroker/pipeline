@@ -1,8 +1,8 @@
 import pandas as pd
 from typing import Tuple
-from prv_detection_step.core.processor.processor import Processor
-from prv_detection_step.core.strategy.atlas_strategy import ATLASPrvCandidatesStrategy
-from prv_detection_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
+from prv_candidates_step.core.processor.processor import Processor
+from prv_candidates_step.core.strategy.atlas_strategy import ATLASPrvCandidatesStrategy
+from prv_candidates_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
 
 
 def process_prv_candidates(

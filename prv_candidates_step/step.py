@@ -1,19 +1,18 @@
 from apf.core.step import GenericStep
 
-from prv_detection_step.core.candidates.process_prv_candidates import (
+from prv_candidates_step.core.candidates.process_prv_candidates import (
     process_prv_candidates,
 )
-from prv_detection_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
-from prv_detection_step.core.processor.processor import Processor
+from prv_candidates_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
+from prv_candidates_step.core.processor.processor import Processor
 
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import logging
 
 
-class PrvDetectionStep(GenericStep):
+class PrvCandidatesStep(GenericStep):
     """PrvDetectionStep Description
 
     Parameters
@@ -33,14 +32,11 @@ class PrvDetectionStep(GenericStep):
         producer=None,
         **step_args,
     ):
-        super().__init__(consumer, config=config, level=level)
+        super().__init__(consumer, config=config, level=level, **step_args)
         self.prv_candidates_processor = Processor(
             ZTFPrvCandidatesStrategy()
         )  # initial strategy (can change)
-        self.producers = {
-            "scribe": producer,
-            "alerts": None
-        }
+        self.producers = {"scribe": producer, "alerts": None}
 
     def execute(self, messages):
         self.logger.info("Processing %s alerts", str(len(messages)))
