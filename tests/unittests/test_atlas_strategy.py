@@ -27,7 +27,7 @@ def test_prediction_with_stamp_classifier(mock_classifier, alerts):
     df = strategy._to_dataframe(alerts)
     strategy.get_probabilities(alerts)
 
-    df_called, = mock_classifier.return_value.predict_probs.call_args.args
+    df_called, = mock_classifier.return_value.predict_probs.call_args[0]
 
     pandas.testing.assert_frame_equal(df, df_called)
 
@@ -43,7 +43,7 @@ def test_duplicate_aid_keeps_first(mock_classifier, alerts):
     df = strategy._to_dataframe([first, fourth])
     strategy.get_probabilities([second, first, third, fourth])
 
-    df_called, = mock_classifier.return_value.predict_probs.call_args.args
+    df_called, = mock_classifier.return_value.predict_probs.call_args[0]
 
     pandas.testing.assert_frame_equal(df, df_called)
 
