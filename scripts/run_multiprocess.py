@@ -18,7 +18,7 @@ logging.basicConfig(level=level,
                     format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
-from atlas_stamp_classifier_step import AtlasStampClassifierStep
+from stamp_classifier_step import AtlasStampClassifierStep
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:

@@ -4,6 +4,7 @@ import sys
 import logging
 
 from apf.producers import KafkaProducer
+from db_plugins.db.mongo import MongoConnection
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -14,9 +15,9 @@ from settings import (
     OUTPUT_PRODUCER_CONFIG,
     SCRIBE_PRODUCER_CONFIG,
     CLASSIFIER_STRATEGY,
-    STEP_CONFIG,
+    DB_CONFIG,
 )
-from atlas_stamp_classifier_step.strategies import get_strategy
+from stamp_classifier_step.strategies import get_strategy
 
 level = logging.INFO
 if "LOGGING_DEBUG" in locals():
@@ -30,7 +31,7 @@ logging.basicConfig(
 )
 
 
-from atlas_stamp_classifier_step import AtlasStampClassifierStep
+from stamp_classifier_step import AtlasStampClassifierStep
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:
@@ -41,13 +42,14 @@ else:
 consumer = Consumer(config=CONSUMER_CONFIG)
 output_producer = KafkaProducer(config=OUTPUT_PRODUCER_CONFIG)
 scribe_producer = KafkaProducer(config=SCRIBE_PRODUCER_CONFIG)
+db_connection = MongoConnection(DB_CONFIG)
 strategy = get_strategy(CLASSIFIER_STRATEGY)
 
 step = AtlasStampClassifierStep(
     consumer,
     producer=output_producer,
     scribe_producer=scribe_producer,
-    config=STEP_CONFIG,
+    db_connection=db_connection,
     strategy=strategy,
     level=level,
 )

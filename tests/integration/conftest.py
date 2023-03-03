@@ -1,8 +1,11 @@
 import os
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
+from confluent_kafka.admin import AdminClient
+from confluent_kafka.cimpl import KafkaException
+from pymongo import MongoClient
+
 import pytest
-from confluent_kafka.admin import AdminClient, NewTopic
 from .schema import SCHEMA
 
 
@@ -41,7 +44,37 @@ def consume_messages() -> list:
     return messages
 
 
+def is_responsive_mongo():
+    try:
+        client = MongoClient(
+            "localhost", 27017, username="root", password="root", authSource="admin"
+        )
+        client.server_info()  # check connection
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+@pytest.fixture(scope="class")
+def mongo_service(docker_ip, docker_services):
+    """Ensure that mongo service is up and responsive."""
+    port = docker_services.port_for("mongo", 27017)
+    server = "{}:{}".format(docker_ip, port)
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo()
+    )
+    return server
+
+
 def is_responsive_kafka(url):
+    client = AdminClient({"bootstrap.servers": url})
+    fs = client.delete_topics(["sorting_hat"])
+    for _, f in fs.items():
+        try:
+            f.result()
+        except KafkaException as e:
+            pass
     try:
         generate_messages()
         messages = consume_messages()
@@ -52,7 +85,7 @@ def is_responsive_kafka(url):
     return True
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
@@ -69,7 +102,7 @@ def get_binary(filename: str):
         return data
 
 
-def generate_messages():
+def generate_messages(aid="aid"):
     alert = {
         "oid": "oid",
         "tid": "tid",
@@ -88,7 +121,7 @@ def generate_messages():
         "e_ra": 1,
         "e_dec": 1,
         "extra_fields": {},
-        "aid": "aid",
+        "aid": aid,
         "stamps": {
             "science": get_binary("science"),
             "template": None,

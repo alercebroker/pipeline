@@ -1,17 +1,17 @@
-import sys
 from unittest import mock
 
 import pandas as pd
 import pandas.testing
+import tensorflow as tf
 import pytest
 
-if not sys.version.startswith('3.6'):
-    pytest.skip("Incompatible Python version", allow_module_level=True)
+if not tf.__version__.startswith('1'):
+    pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
-from atlas_stamp_classifier_step.strategies.ztf import ZTFStrategy
+from stamp_classifier_step.strategies.ztf import ZTFStrategy
 
 
-@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+@mock.patch("stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
 
@@ -21,7 +21,7 @@ def test_transform_messages_to_dataframe(mock_classifier, ztf_alerts):
     assert isinstance(df.iloc[0]["cutoutDifference"], bytes)
 
 
-@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+@mock.patch("stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_prediction_with_stamp_classifier(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
 
@@ -39,7 +39,7 @@ def test_prediction_with_stamp_classifier(mock_classifier, ztf_alerts):
     pandas.testing.assert_frame_equal(df, df_called)
 
 
-@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+@mock.patch("stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_duplicate_aid_keeps_first(mock_classifier, ztf_alerts):
     strategy = ZTFStrategy()
 
@@ -61,7 +61,7 @@ def test_duplicate_aid_keeps_first(mock_classifier, ztf_alerts):
     pandas.testing.assert_frame_equal(df, df_called)
 
 
-@mock.patch("atlas_stamp_classifier_step.strategies.ztf.StampClassifier")
+@mock.patch("stamp_classifier_step.strategies.ztf.StampClassifier")
 def test_get_probabilities_reformats_dictionary(mock_classifier, ztf_alerts):
     mock_classifier.return_value.execute.return_value = pd.DataFrame(
         [[0.5, 0.1, 0.3, 0.05, 0.05]],
