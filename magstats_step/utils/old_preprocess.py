@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 # Should make this a separate package
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection

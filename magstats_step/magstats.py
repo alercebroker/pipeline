@@ -1,10 +1,7 @@
 import pandas as pd
 import warnings
 
-from magstats_step.utils.constants import (
-    MAGSTATS_TRANSLATE,
-    MAGSTATS_UPDATE_KEYS,
-)
+from magstats_step.utils.constants import * 
 
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 
@@ -62,7 +59,7 @@ class MagStatsCalculator:
         """
         return (nearZTF & nearPS1 & stellarPS1) | (nearZTF & ~nearPS1 & stellarZTF)
 
-    def apply_mag_stats(self, df, distnr=None, distpsnr1=None, sgscore1=None, chinr=None, sharpnr=None, flags=False):
+    def apply_mag_stats(self, df, distnr=None, distpsnr1=None, sgscore1=None, chinr=None, sharpnr=None):
         """
         :param df: A dataframe with corrected detections of a candidate.
         :type df: :py:class:`pd.DataFrame`
@@ -82,9 +79,6 @@ class MagStatsCalculator:
         :param sharpnr: DAOPhot sharp parameter of nearest source in reference image PSF-catalog within 30 arcsec
         :type sharpnr: :py:class:`float`
 
-        :param flags: If you want compute flags, set it like True
-        :type flags: boolean
-
         :return: A pandas dataframe with magnitude statistics
         :rtype: :py:class:`pd.DataFrame`
         """
@@ -99,6 +93,7 @@ class MagStatsCalculator:
         # corrected at the first detection?
         response['corrected'] = df_min["corrected"]
 
+        # Check if distances are in the dataframe
         distnr = df_min.distnr if distnr is None else distnr
         distpsnr1 = df_min.distpsnr1 if distpsnr1 is None else distpsnr1
         sgscore1 = df_min.sgscore1 if sgscore1 is None else sgscore1
@@ -116,20 +111,23 @@ class MagStatsCalculator:
         response["ndubious"] = df.dubious.sum()
 
         # reference id
-        rfids = df.rfid.unique().astype(np.float)
+        rfids = df.rfid.unique().astype(float)
         rfids = rfids[~np.isnan(rfids)]
         response["nrfid"] = len(rfids)
 
         # psf magnitude statatistics
         response["magpsf_mean"] = df.magpsf.mean()
         response["magpsf_median"] = df.magpsf.median()
-        response["magpsf_max"] = df(detections.columns).magpsf.max()
+        response["magpsf_max"] = df.magpsf.max()
         response["magpsf_min"] = df.magpsf.min()
         response["sigmapsf"] = df.magpsf.std()
         response["magpsf_first"] = df_min.magpsf
         response["sigmapsf_first"] = df_min.sigmapsf
         response["magpsf_last"] = df_max.magpsf
 
+        # TODO: How will this apply now, since the corrections are done?
+
+        """
         # psf corrected magnitude statatistics
         response["magpsf_corr_mean"] = df.magpsf_corr.mean()
         response["magpsf_corr_median"] = df.magpsf_corr.median()
@@ -147,14 +145,14 @@ class MagStatsCalculator:
         response["sigmap"] = df.magap.std()
         response["magap_first"] = df_min.magap
         response["magap_last"] = df_max.magap
+        """
 
         # time statistics
         response["first_mjd"] = df_min.mjd
         response["last_mjd"] = df_max.mjd
 
-        # flags
-        if flags:
-            response["saturation_rate"] = get_flag_saturation(df)
+        response["saturation_rate"] = self.get_saturation_rate(df)
+
         return pd.Series(response)
     def insert(self, magstats: pd.DataFrame, driver: MultiDriverConnection):
         new_magstats = magstats["new"].astype(bool)
@@ -202,3 +200,21 @@ class MagStatsCalculator:
         new_magstats["step_id_corr"] = version
         new_magstats.drop_duplicates(["oid", "fid"], inplace=True)
         return new_magstats
+
+    def get_saturation_rate(self, detections):
+        """ Calculates the proportion of detections that are saturated
+        TODO: I assume we just have to use magpsf since it's already corrected
+
+        """
+        # Old code
+        #detections = detections[detections.corrected]
+        #total = detections['magpsf_corr'].count()
+        #if total == 0:
+        #    return np.nan
+        #satured = (detections["magpsf_corr"] < MAGNITUDE_THRESHOLD).sum()
+        satured = (detections["magpsf"] < MAGNITUDE_THRESHOLD).sum()
+        total = detections['magpsf'].count()
+        if total == 0:
+            return np.nan
+        return satured/total
+

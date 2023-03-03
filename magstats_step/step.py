@@ -86,6 +86,13 @@ class MagstatsStep(GenericStep):
         detections.reset_index(inplace=True)
         non_detections.reset_index(inplace=True)
 
+        # Create a new dataframe with extra fields and remove it from detections
+        extra_fields = list(detections["extra_fields"].values)
+        extra_fields = pd.DataFrame(extra_fields)
+        del detections["extra_fields"]
+        # Join detections with extra fields (old format of detections)
+        detections = detections.join(extra_fields)
+
         detections["magpsf"] = detections["mag"]
         detections["sigmapsf"] = detections["e_mag"]
 
@@ -116,7 +123,11 @@ class MagstatsStep(GenericStep):
 
         # Identify new entries
         old_magstats = get_catalog(unique_ids, "MagStats", self.driver)
-        magstats_index = pd.MultiIndex.from_frame(magstats[["oid", "fid"]])
+        if not old_magstats.empty:
+            magstats_index = pd.MultiIndex.from_frame(old_magstats[["oid", "fid"]])
+        else:
+            magstats_index = pd.Index([])
+
         new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
         new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
 
@@ -139,7 +150,6 @@ class MagstatsStep(GenericStep):
             )
 
         new_stats.set_index(["oid", "fid"], inplace=True)
-        new_stats.loc[magstat_flags.index, "saturation_rate"] = magstat_flags
         new_stats.reset_index(inplace=True)
 
         return new_stats

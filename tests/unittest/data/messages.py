@@ -23,6 +23,14 @@ LC_MESSAGE = [
                 "parent_candidate" : None,
                 "has_stamp" : False,
                 "step_id_corr" : 0,
+                "extra_fields" : {
+                    "distnr" : 0.5,
+                    "distpsnr1" : 2,
+                    "sgscore1" : 0.9,
+                    "chinr" : 0.5,
+                    "sharpnr" : -0.1,
+                    "rfid": 0,
+                    }
                 },
                 {
                 "_id" : 1,
@@ -45,6 +53,14 @@ LC_MESSAGE = [
                 "parent_candidate" : None,
                 "has_stamp" : False,
                 "step_id_corr" : 0,
+                "extra_fields" : {
+                    "distnr" : 0.5,
+                    "distpsnr1" : 2,
+                    "sgscore1" : 0.9,
+                    "chinr" : 0.5,
+                    "sharpnr" : -0.1,
+                    "rfid": 0,
+                    }
                 }
             ],
             'non_detections': [

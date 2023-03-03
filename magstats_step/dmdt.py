@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import warnings
 
 class DmdtCalculator:
@@ -68,12 +69,12 @@ class DmdtCalculator:
         magstats["objectId"] = magstats["oid"]
 
         magstats.set_index(["objectId", "fid"], inplace=True, drop=True)
-        non_dets_magstats = non_dets.join(
+        non_dets_magstats = non_detections.join(
             magstats, on=["objectId", "fid"], how="inner", rsuffix="_stats"
         )
         responses = []
         for i, g in non_dets_magstats.groupby(["objectId", "fid"]):
-            response = do_dmdt(g)
+            response = self.do_dmdt(g)
             response["oid"] = i[0]
             response["fid"] = i[1]
             responses.append(response)
