@@ -30,6 +30,15 @@ PRODUCER_CONFIG = {
     "SCHEMA": schema.load_schema("schema.avsc"),
 }
 
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
+    "PARAMS": {
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+    },
+    "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
+    "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+}
+
 METRICS_CONFIG = {
     "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
     "EXTRA_METRICS": [
@@ -80,4 +89,5 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
 }

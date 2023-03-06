@@ -62,6 +62,7 @@ def env_variables():
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "prv-candidates",
         "ENABLE_PARTITION_EOF": "True",
+        "SCRIBE_PRODUCER_TOPIC": "w_non_detections",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
@@ -99,6 +100,22 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["prv-candidates"],
+        }
+    )
+    yield consumer
+
+
+@pytest.fixture(scope="session")
+def scribe_consumer():
+    consumer = KafkaConsumer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": "test_step",
+                "auto.offset.reset": "beginning",
+                "enable.partition.eof": True,
+            },
+            "TOPICS": ["w_non_detections"],
         }
     )
     yield consumer

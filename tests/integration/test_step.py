@@ -1,5 +1,6 @@
 from apf.consumers import KafkaConsumer
 from prv_candidates_step.step import PrvCandidatesStep
+import json
 
 
 def test_step_initialization(kafka_service, env_variables):
@@ -41,13 +42,17 @@ def assert_result_has_alert(message):
     assert message["new_alert"] is not None
 
 
-def test_scribe_has_non_detections():
-    pass
+def test_scribe_has_non_detections(kafka_service, env_variables, scribe_consumer):
+    from scripts.run_step import step
+
+    step.start()
+    for message in scribe_consumer.consume():
+        assert_scribe_has_non_detections(message)
 
 
-def test_works_with_ztf_messages():
-    pass
-
-
-def test_works_with_atlas_message():
-    pass
+def assert_scribe_has_non_detections(message):
+    data = json.loads(message["payload"])
+    assert data["collection"] == "non_detection"
+    assert data["type"] == "update"
+    assert data["criteria"]["aid"] is not None
+    assert len(data["data"]) > 0
