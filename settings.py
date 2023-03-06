@@ -16,6 +16,7 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
+        "enable.partition.eof": True if os.getenv("ENABLE_PARTITION_EOF") else False,
     },
     "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
 }
@@ -23,9 +24,9 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "CLASS": "apf.producers.KafkaProducer",
     "PARAMS": {
-        "bootstrap.servers": os.environ["CONSUMER_SERVER"],
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "TOPIC": "prv-candidates",
+    "TOPIC": os.environ["PRODUCER_TOPIC"],
     "SCHEMA": schema.load_schema("schema.avsc"),
 }
 

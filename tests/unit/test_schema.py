@@ -4,9 +4,10 @@ from fastavro import schema, utils
 def test_load_schema():
     loaded = schema.load_schema("schema.avsc")
     assert isinstance(loaded, dict)
-    assert "new_alert" == loaded["fields"][0]["name"]
-    assert "prv_detections" == loaded["fields"][1]["name"]
-    assert "non_detections" == loaded["fields"][2]["name"]
+    assert "aid" == loaded["fields"][0]["name"]
+    assert "new_alert" == loaded["fields"][1]["name"]
+    assert "prv_detections" == loaded["fields"][2]["name"]
+    assert "non_detections" == loaded["fields"][3]["name"]
 
 
 def test_data():

@@ -1,0 +1,2 @@
+from .ztf_strategy import ZTFPrvCandidatesStrategy
+from .atlas_strategy import ATLASPrvCandidatesStrategy

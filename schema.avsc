@@ -4,6 +4,10 @@
   "name": "prv_candidates",
   "fields": [
     {
+      "name": "aid",
+      "type": "string"
+    },
+    {
       "name": "new_alert",
       "type": {
         "type": "record",
