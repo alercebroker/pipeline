@@ -5,7 +5,9 @@ from apf.producers import KafkaProducer
 
 
 def test_produce_scribe(env_variables):
-    from scripts.run_step import step
+    from scripts.run_step import step_creator
+
+    step = step_creator()
 
     non_detection = {
         "aid": "aid",
@@ -30,7 +32,9 @@ def test_produce_scribe(env_variables):
 
 
 def test_post_execute(env_variables):
-    from scripts.run_step import step
+    from scripts.run_step import step_creator
+
+    step = step_creator()
 
     non_detection = {
         "aid": "aid",
