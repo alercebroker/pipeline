@@ -178,8 +178,7 @@ class MagstatsStep(GenericStep):
 
         new_stats = self.recalculate_magstats(unique_ids, light_curves)
 
-
-        #insert_magstats(new_stats)
+        self.magstats_calculator.insert(new_stats, self.driver)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts

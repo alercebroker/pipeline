@@ -1,15 +1,14 @@
 import unittest
 import pytest
 import pandas as pd
+import numpy as np
 from unittest import mock
 
 from apf.producers import KafkaProducer
 from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 from magstats_step.step import MagstatsStep
 
-from data.messages import (
-    LC_MESSAGE,
-)
+from data.messages import *
 
 DB_CONFIG = {
     "PSQL": {
@@ -55,5 +54,10 @@ class StepTestCase(unittest.TestCase):
     def test_step(self):
         self.step.execute(LC_MESSAGE)
         # Verify magstats insert call
+        dict_to_insert = pd.DataFrame.from_dict(MAGSTATS_RESULT).replace({np.nan: None}).to_dict("records")
+        self.step.driver.query().bulk_insert.assert_called_with(dict_to_insert)
         return
+
+    def test_lightcurve_parse(self):
+        pass
 
