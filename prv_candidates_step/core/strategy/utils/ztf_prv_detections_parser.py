@@ -1,9 +1,6 @@
 from survey_parser_plugins.core import SurveyParser
 from typing import List, Union
 
-# Keys used on non detections for ZTF
-NON_DET_KEYS = ["aid", "tid", "oid", "mjd", "diffmaglim", "fid"]
-
 
 # Implementation a new parser for PreviousCandidates with SurveyParser signs.
 class ZTFPreviousDetectionsParser(SurveyParser):

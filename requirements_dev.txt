@@ -1,4 +1,4 @@
-apf_base==2.1.4
+apf_base==2.1.5
 git+https://github.com/alercebroker/survey-parser-plugins@1.0.1
 pytest
 pytest-mock
