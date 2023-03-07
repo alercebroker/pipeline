@@ -89,7 +89,7 @@ For each release **two** images are uploaded to GitHub packages, one for each cl
 
 ```bash
 docker pull ghcr.io/alercebroker/ztf_stamp_classifier_step:latest
-docker pull ghcr.io/alercebroker/stamp_classifier_step:latest
+docker pull ghcr.io/alercebroker/atlas_stamp_classifier_step:latest
 ```
 ## Local Installation
 

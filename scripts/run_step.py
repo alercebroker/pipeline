@@ -45,6 +45,8 @@ scribe_producer = KafkaProducer(config=SCRIBE_PRODUCER_CONFIG)
 db_connection = MongoConnection(DB_CONFIG)
 strategy = get_strategy(CLASSIFIER_STRATEGY)
 
+db_connection.connect()
+
 step = AtlasStampClassifierStep(
     consumer,
     producer=output_producer,
