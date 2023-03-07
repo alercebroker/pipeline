@@ -12,7 +12,7 @@ from db_plugins.db.mongo.models import Object
 from .strategies.base import BaseStrategy
 
 
-class AtlasStampClassifierStep(GenericStep):
+class StampClassifierStep(GenericStep):
     """AtlasStampClassifierStep Description
 
     Parameters
@@ -84,9 +84,13 @@ class AtlasStampClassifierStep(GenericStep):
 
     def _remove_objects_in_database(self, messages: List[dict]):
         def exists(obj):
-            return any(
-                p["classifier_name"] == self.strategy.name for p in obj["probabilities"]
-            )
+            try:
+                return any(
+                    p["classifier_name"] == self.strategy.name
+                    for p in obj["probabilities"]
+                )
+            except KeyError:  # In case the object doesn't have a probabilities field
+                return False
 
         aids = [msg["aid"] for msg in messages]
         objects = self.db_connection.query(Object).find_all(

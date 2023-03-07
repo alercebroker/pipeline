@@ -31,7 +31,7 @@ logging.basicConfig(
 )
 
 
-from stamp_classifier_step import AtlasStampClassifierStep
+from stamp_classifier_step import StampClassifierStep
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:
@@ -47,7 +47,7 @@ strategy = get_strategy(CLASSIFIER_STRATEGY)
 
 db_connection.connect()
 
-step = AtlasStampClassifierStep(
+step = StampClassifierStep(
     consumer,
     producer=output_producer,
     scribe_producer=scribe_producer,
