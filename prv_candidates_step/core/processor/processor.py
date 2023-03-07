@@ -1,5 +1,8 @@
 from __future__ import annotations
-from prv_detection_step.core.strategy.base_strategy import BasePrvCandidatesStrategy
+from typing import Tuple
+
+from apf.core.step import List
+from prv_candidates_step.core.strategy.base_strategy import BasePrvCandidatesStrategy
 import pandas as pd
 
 
@@ -30,14 +33,11 @@ class Processor:
         """
         self._strategy = strategy
 
-    def compute(self, data: pd.DataFrame):
+    def compute(self, data: dict) -> Tuple[List[dict], List[dict]]:
         """
         The Context delegates some work to the Strategy object instead of
         implementing multiple versions of the algorithm on its own.
         """
 
-        # ...
-        if len(data):
-            det, non_det = self.strategy.process_prv_candidates(data)
-            return det, non_det
-        return None, None
+        prv_detections, non_detections = self.strategy.process_prv_candidates(data)
+        return prv_detections, non_detections

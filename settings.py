@@ -1,7 +1,8 @@
 import os
+from fastavro import schema
 
 ##################################################
-#       prv_detection_step   Settings File
+#       prv_candidates_step   Settings File
 ##################################################
 
 ## Set the global logging level to debug
@@ -10,12 +11,23 @@ import os
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
+        "enable.partition.eof": True if os.getenv("ENABLE_PARTITION_EOF") else False,
     },
     "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
+}
+
+PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "PARAMS": {
+        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+    },
+    "TOPIC": os.environ["PRODUCER_TOPIC"],
+    "SCHEMA": schema.load_schema("schema.avsc"),
 }
 
 METRICS_CONFIG = {
@@ -67,4 +79,5 @@ METRICS_CONFIG = {
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG,
 }
