@@ -4,17 +4,17 @@ import json
 
 
 def test_step_initialization(kafka_service, env_variables):
-    from scripts.run_step import step
+    from scripts.run_step import step_creator
 
-    assert isinstance(step, PrvCandidatesStep)
+    assert isinstance(step_creator(), PrvCandidatesStep)
 
 
 def test_result_has_everything(
     kafka_service, env_variables, kafka_consumer: KafkaConsumer
 ):
-    from scripts.run_step import step
+    from scripts.run_step import step_creator
 
-    step.start()
+    step_creator().start()
     for message in kafka_consumer.consume():
         assert_result_has_non_detections(message)
         assert_result_has_prv_detections(message)
@@ -43,11 +43,14 @@ def assert_result_has_alert(message):
 
 
 def test_scribe_has_non_detections(kafka_service, env_variables, scribe_consumer):
-    from scripts.run_step import step
+    from scripts.run_step import step_creator
 
+    step = step_creator()
     step.start()
+
     for message in scribe_consumer.consume():
         assert_scribe_has_non_detections(message)
+        scribe_consumer.commit()
 
 
 def assert_scribe_has_non_detections(message):

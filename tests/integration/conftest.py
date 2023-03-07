@@ -8,6 +8,7 @@ from fastavro.utils import generate_many
 import random
 from tests.shared.sorting_hat_schema import SCHEMA
 from tests.mocks.mock_alerts import extra_fields_generator
+import uuid
 
 
 @pytest.fixture(scope="session")
@@ -54,10 +55,11 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def env_variables():
+    random_string = uuid.uuid4().hex
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "sorting-hat",
-        "CONSUMER_GROUP_ID": "prv-test",
+        "CONSUMER_GROUP_ID": random_string,
         "METRICS_HOST": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "prv-candidates",
@@ -111,7 +113,7 @@ def scribe_consumer():
         {
             "PARAMS": {
                 "bootstrap.servers": "localhost:9092",
-                "group.id": "test_step",
+                "group.id": "test_step_",
                 "auto.offset.reset": "beginning",
                 "enable.partition.eof": True,
             },
