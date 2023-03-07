@@ -4,6 +4,7 @@ from apf.producers import KafkaProducer
 from prv_candidates_step.core.candidates.process_prv_candidates import (
     process_prv_candidates,
 )
+from prv_candidates_step.core.utils.remove_keys import remove_keys_from_dictionary
 from prv_candidates_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
 from prv_candidates_step.core.processor.processor import Processor
 from prv_candidates_step.core import ZTFPreviousDetectionsParser, ZTFNonDetectionsParser
@@ -49,10 +50,11 @@ class PrvCandidatesStep(GenericStep):
             parsed_non_detections = ztf_non_detections_parser.parse(
                 result[2][index], alert["aid"], alert["tid"], alert["oid"]
             )
+            stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
             output.append(
                 {
                     "aid": alert["aid"],
-                    "new_alert": alert,
+                    "new_alert": stampless_alert,
                     "prv_detections": parsed_prv_detections,
                     "non_detections": parsed_non_detections,
                 }
@@ -68,8 +70,10 @@ class PrvCandidatesStep(GenericStep):
         return messages, prv_detections, non_detections
 
     def post_execute(self, result: Tuple):
+        # Produce a message with the non_detections
         for index, alert in enumerate(result[0]):
-            self.produce_scribe(result[2][index], aid=alert["aid"])
+            non_detections = result[2][index]
+            self.produce_scribe(non_detections, aid=alert["aid"])
 
         return result
 
