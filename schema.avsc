@@ -88,30 +88,6 @@
           {
             "name": "aid",
             "type": "string"
-          },
-          {
-            "name": "stamps",
-            "type": {
-              "type": "record",
-              "name": "stamps",
-              "fields": [
-                {
-                  "default": null,
-                  "name": "science",
-                  "type": ["null", "bytes"]
-                },
-                {
-                  "default": null,
-                  "name": "template",
-                  "type": ["null", "bytes"]
-                },
-                {
-                  "default": null,
-                  "name": "difference",
-                  "type": ["null", "bytes"]
-                }
-              ]
-            }
           }
         ]
       }

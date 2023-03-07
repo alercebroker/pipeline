@@ -1,2 +1,6 @@
 .pytest_cache/
 __pycache__/
+*.pyc
+.env
+*.env
+__SUCCESS__
