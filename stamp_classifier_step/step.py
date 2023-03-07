@@ -12,7 +12,7 @@ from db_plugins.db.mongo.models import Object
 from .strategies.base import BaseStrategy
 
 
-class AtlasStampClassifierStep(GenericStep):
+class StampClassifierStep(GenericStep):
     """AtlasStampClassifierStep Description
 
     Parameters

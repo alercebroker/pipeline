@@ -12,7 +12,7 @@ if tf.__version__.startswith('1'):
     pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 
-from stamp_classifier_step.step import AtlasStampClassifierStep
+from stamp_classifier_step.step import StampClassifierStep
 from stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 
@@ -104,7 +104,7 @@ def test_atlas_step():
     db_connection = MongoConnection(DB_CONFIG)
     db_connection.connect()
     strategy = ATLASStrategy()
-    step = AtlasStampClassifierStep(
+    step = StampClassifierStep(
         consumer=consumer,
         producer=producer,
         scribe_producer=scribe_producer,
@@ -175,7 +175,7 @@ def test_atlas_step_skips_objects_in_database():
     generate_messages("aid1")
 
     strategy = ATLASStrategy()
-    step = AtlasStampClassifierStep(
+    step = StampClassifierStep(
         consumer=consumer,
         producer=producer,
         scribe_producer=scribe_producer,

@@ -18,7 +18,7 @@ logging.basicConfig(level=level,
                     format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',)
 
-from stamp_classifier_step import AtlasStampClassifierStep
+from stamp_classifier_step import StampClassifierStep
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:
@@ -32,7 +32,7 @@ n_process = STEP_CONFIG.get("N_PROCESS",1)
 def create_and_run(idx, Consumer):
     CONSUMER_CONFIG["ID"] = idx
     consumer = Consumer(config=CONSUMER_CONFIG)
-    step = AtlasStampClassifierStep(consumer,config=STEP_CONFIG,level=level)
+    step = StampClassifierStep(consumer, config=STEP_CONFIG, level=level)
     step.start()
 
 process_list = []
