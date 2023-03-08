@@ -65,6 +65,7 @@ class Command(abc.ABC):
 
 class InsertCommand(Command):
     """Directly inserts `data` into the database"""
+
     type = ValidCommands.insert
 
     def get_operations(self) -> list:
@@ -76,6 +77,7 @@ class UpdateCommand(Command):
 
     Uses MongoDB `$set` operator over the given `data`.
     """
+
     type = ValidCommands.update
 
     def _check_inputs(self, collection, data, criteria):
@@ -107,6 +109,7 @@ class UpdateProbabilitiesCommand(Command):
 
     When getting the operations, the ranking will be automatically included.
     """
+
     type = ValidCommands.update_probabilities
 
     def _check_inputs(self, collection, data, criteria):
@@ -122,22 +125,42 @@ class UpdateProbabilitiesCommand(Command):
     def get_operations(self) -> list:
         ops = []
         for i, (cls, p) in enumerate(self._sort()):
-            array_filter = {
+            criteria = {
+                "probabilities.classifier_name": {"$ne": self.classifier_name},
+                "probabilities.classifier_version": {
+                    "$ne": self.classifier_version
+                },
+                "probabilities.class_name": {"$ne": cls},
+                **self.criteria,
+            }
+            insert = {
+                "$push": {
+                    "probabilities": {
+                        "classifier_name": self.classifier_name,
+                        "classifier_version": self.classifier_version,
+                        "class_name": cls,
+                        "probability": p,
+                        "ranking": i + 1,
+                    }
+                }
+            }
+            filters = {
                 "el.classifier_name": self.classifier_name,
                 "el.classifier_version": self.classifier_version,
                 "el.class_name": cls,
             }
-            data = {
+            update = {
                 "$set": {
                     "probabilities.$[el].probability": p,
                     "probabilities.$[el].ranking": i + 1,
                 }
             }
+            ops.append(UpdateOne(criteria, insert, upsert=self.options.upsert))
             ops.append(
                 UpdateOne(
                     self.criteria,
-                    data,
-                    array_filters=[array_filter],
+                    update,
+                    array_filters=[filters],
                     upsert=self.options.upsert,
                 )
             )
@@ -160,16 +183,22 @@ class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
 
     When getting the operations, the ranking will be automatically included.
     """
+
     type = ValidCommands.insert_probabilities
 
     def get_operations(self) -> list:
         ops = []
-        criteria = {
-            "probabilities.classifier_name": {"$ne": self.classifier_name},
-            **self.criteria,
-        }
+
         for i, (cls, p) in enumerate(self._sort()):
-            data = {
+            criteria = {
+                "probabilities.classifier_name": {"$ne": self.classifier_name},
+                "probabilities.classifier_version": {
+                    "$ne": self.classifier_version
+                },
+                "probabilities.class_name": {"$ne": cls},
+                **self.criteria,
+            }
+            insert = {
                 "$push": {
                     "probabilities": {
                         "classifier_name": self.classifier_name,
@@ -180,5 +209,5 @@ class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
                     }
                 }
             }
-            ops.append(UpdateOne(criteria, data, upsert=self.options.upsert))
+            ops.append(UpdateOne(criteria, insert, upsert=self.options.upsert))
         return ops
