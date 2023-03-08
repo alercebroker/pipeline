@@ -60,3 +60,17 @@ def assert_scribe_has_non_detections(message):
     assert data["type"] == "update"
     assert data["criteria"]["aid"] is not None
     assert len(data["data"]) > 0
+
+
+def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaConsumer):
+    from scripts.run_step import step_creator
+    import os
+
+    os.environ["CONSUME_MESSAGES"] = "10"
+    step_creator().start()
+
+    for message in kafka_consumer.consume():
+        assert_result_has_non_detections(message)
+        assert_result_has_prv_detections(message)
+        assert_result_has_alert(message)
+        kafka_consumer.commit()

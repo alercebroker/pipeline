@@ -23,6 +23,8 @@ def settings_creator():
             else False,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
+        "consume.messages": int(os.getenv("CONSUME_MESSAGES", "1")),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
     }
 
     PRODUCER_CONFIG = {
