@@ -17,6 +17,10 @@ class Options:
     upsert: bool = False
 
 
+def sort_by_values(dictionary, reverse=False):
+    return sorted(dictionary.items(), key=lambda x: x[1], reverse=reverse)
+
+
 class Command(abc.ABC):
     """
     Plain class that contains the business rules of a Scribe DB Operation.
@@ -53,34 +57,29 @@ class Command(abc.ABC):
             raise NoDataProvidedException()
 
     @abc.abstractmethod
-    def get_raw_operation(self) -> Union[dict, tuple]:
-        pass
-
-    @abc.abstractmethod
     def get_operations(self) -> list:
         pass
 
 
 class InsertDbCommand(Command):
+    """Directly inserts `data` into the database"""
     type = ValidCommands.insert
-
-    def get_raw_operation(self):
-        return self.data
 
     def get_operations(self) -> list:
         return [InsertOne(self.data)]
 
 
 class UpdateDbCommand(Command):
+    """Updates object in database based on a given criteria.
+
+    Uses MongoDB `$set` operator over the given `data`.
+    """
     type = ValidCommands.update
 
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
         if not criteria:
             raise UpdateWithNoCriteriaException()
-
-    def get_raw_operation(self):
-        return self.criteria, self.data
 
     def get_operations(self) -> list:
         return [
@@ -91,6 +90,21 @@ class UpdateDbCommand(Command):
 
 
 class UpdateProbabilitiesDbCommand(Command):
+    """Updates probabilities for document with given criteria.
+
+    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
+
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
+
+    .. code-block::
+       {
+           "class1": 0.12,
+           "class2": 0.23,
+           ...
+       }
+
+    When getting the operations, the ranking will be automatically included.
+    """
     type = ValidCommands.update_probabilities
 
     def _check_inputs(self, collection, data, criteria):
@@ -100,15 +114,9 @@ class UpdateProbabilitiesDbCommand(Command):
         self.classifier_name = data.pop("classifier_name")
         self.classifier_version = data.pop("classifier_version")
 
-    def get_raw_operation(self):
-        return self.classifier_name, self.criteria, self.data
-
     def get_operations(self) -> list:
-        def sort():
-            return sorted(self.data.items(), key=lambda x: x[1], reverse=True)
-
         ops = []
-        for i, (cls, p) in enumerate(sort()):
+        for i, (cls, p) in enumerate(sort_by_values(self.data, reverse=True)):
             array_filter = {
                 "el.classifier_name": self.classifier_name,
                 "el.classifier_version": self.classifier_version,
@@ -132,6 +140,21 @@ class UpdateProbabilitiesDbCommand(Command):
 
 
 class InsertProbabilitiesDbCommand(Command):
+    """Adds probabilities to array only if the classifier name is not present for document with given criteria.
+
+    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
+
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
+
+    .. code-block::
+       {
+           "class1": 0.12,
+           "class2": 0.23,
+           ...
+       }
+
+    When getting the operations, the ranking will be automatically included.
+    """
     type = ValidCommands.insert_probabilities
 
     def _check_inputs(self, collection, data, criteria):
@@ -141,19 +164,13 @@ class InsertProbabilitiesDbCommand(Command):
         self.classifier_name = data.pop("classifier_name")
         self.classifier_version = data.pop("classifier_version")
 
-    def get_raw_operation(self):
-        return self.classifier_name, self.criteria, self.data
-
     def get_operations(self) -> list:
-        def sort():
-            return sorted(self.data.items(), key=lambda x: x[1], reverse=True)
-
         ops = []
         criteria = {
             "probabilities.classifier_name": {"$ne": self.classifier_name},
             **self.criteria,
         }
-        for i, (cls, p) in enumerate(sort()):
+        for i, (cls, p) in enumerate(sort_by_values(self.data, reverse=True)):
             data = {
                 "$push": {
                     "probabilities": {
