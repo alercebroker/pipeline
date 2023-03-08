@@ -15,15 +15,16 @@ The commands must be formatted as follows:
     "options": "(Optional) JSON or dictionary which represents supported DB options"
 }
 ```
- - The command must include a collection to work with. Currently the supported collections are ``"object"``, ``"detections"`` and ``"non_detections"``.
- - To be published to the topic, this JSON or dictionary must be stringified (*tested with json.dumps*) and published in a dictionary with the key **payload** and serialized as AVRO.
- - An update command must include a non-null criteria.
- - Criteria and data haven't been tested with MongoDB operations.
- - 
 
- ## Suggested schema
- ```python
- PRODUCER_CONFIG = {
+- The command must include a collection to work with. Currently, the supported collections are ``"object"``, ``"detections"`` and ``"non_detections"``.
+- To be published to the topic, this JSON or dictionary must be stringified (*tested with `json.dumps`*) and published in a dictionary with the key **payload** and serialized as AVRO.
+- An update command must include a non-null criteria.
+- Criteria and data haven't been tested with MongoDB operations.
+
+## Suggested schema
+
+```python
+PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
     "PARAMS": {
         "bootstrap.servers": "localhost:9094"
@@ -37,4 +38,4 @@ The commands must be formatted as follows:
         ],
     },
 }
- ```
+```
