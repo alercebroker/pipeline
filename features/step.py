@@ -228,7 +228,9 @@ class FeaturesComputer(GenericStep):
 
     def check_feature_name(self, name):
         fid = name.rsplit("_", 1)[-1]
-        if fid.isdigit() and not name.lower().startswith("power_rate"):
+        if name.startswith("Power_rate"):
+            return name
+        if fid.isdigit():
             return name.rsplit("_", 1)[0]
 
         return name

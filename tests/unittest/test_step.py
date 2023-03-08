@@ -108,8 +108,6 @@ class StepTestCase(unittest.TestCase):
                 "oid": ["ZTF1"],
                 "feature_1": [123],
                 "feature_2": [np.nan],
-                "power_rate_1/2": [np.nan],
-                "power_rate_2": [np.nan],
                 "not_a_feature": [-1],
             }
         )
@@ -131,20 +129,6 @@ class StepTestCase(unittest.TestCase):
                 "_oid": "ZTF1",
                 "_name": "feature",
                 "_fid": 2,
-                "_value": None,
-                "_version": "test",
-            },
-            {
-                "_oid": "ZTF1",
-                "_name": "power_rate_1/2",
-                "_fid": 12,
-                "_value": None,
-                "_version": "test",
-            },
-            {
-                "_oid": "ZTF1",
-                "_name": "power_rate_2",
-                "_fid": 12,
                 "_value": None,
                 "_version": "test",
             },
@@ -176,6 +160,7 @@ class StepTestCase(unittest.TestCase):
                 "oid": ["ZTF1"],
                 "feature_1": [123],
                 "feature_2": [456],
+                "Power_rate_1/2": [2.0],
                 "not_a_feature": [-1],
             }
         )
@@ -199,6 +184,13 @@ class StepTestCase(unittest.TestCase):
                 "fid": 2,
                 "name": "feature",
                 "value": 456,
+                "version": "test",
+            },
+            {
+                "oid": "ZTF1",
+                "fid": 12,
+                "name": "Power_rate_1/2",
+                "value": 2.0,
                 "version": "test",
             },
             {
