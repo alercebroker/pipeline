@@ -5,9 +5,8 @@ valid_data_dict = {
     "data": {
         "field1": "some_field",
         "field2": "some_other_field",
-        "classifier": None,
     },
-    "options": None
+    "options": {}
 }
 
 valid_data_json = """

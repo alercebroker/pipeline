@@ -1,6 +1,4 @@
 import unittest
-import pytest
-from json import loads
 
 from mongo_scribe.command.decode import decode_message
 from mongo_scribe.command.exceptions import WrongFormatCommandException

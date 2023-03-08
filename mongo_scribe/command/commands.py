@@ -1,15 +1,10 @@
 import abc
 from typing import Literal, Union
 from dataclasses import dataclass
-from mongo_scribe.command.exceptions import (
-    NoDataProvidedException,
-    UpdateWithNoCriteriaException,
-    NoCollectionProvidedException,
-    NoClassifierInfoProvidedException,
-    NoAlerceIdentificationProvidedException,
-)
 
-CommandTypes = Literal["insert", "update", "update_probabilities"]
+
+from .exceptions import *
+from .commons import ValidCommands
 
 
 @dataclass
@@ -24,83 +19,69 @@ class Options:
 class DbCommand(abc.ABC):
     """
     Plain class that contains the business rules of a Scribe DB Operation.
-    Raises a exception when trying to instantiate an invalid command.
+    Raises an exception when trying to instantiate an invalid command.
     """
+    type: str
 
     def __init__(
         self,
         collection: str,
-        command_type: CommandTypes,
+        data,
         criteria=None,
-        data=None,
-        **kwargs,
+        options=None,
     ):
-        if not collection:
-            raise NoCollectionProvidedException()
-
-        if data is None:
-            raise NoDataProvidedException()
-
+        self._check_inputs(collection, data, criteria)
         self.collection = collection
-        self.type = command_type
-        self.criteria = criteria
+        self.criteria = criteria if criteria else {}
         self.data = data
 
         try:
-            self.options = Options(**kwargs)
+            options = options if options else {}
+            self.options = Options(**options)
         except TypeError:
             print("Some of the options provided are not supported. Using default values.")
             self.options = Options()
 
+    def _check_inputs(self, collection, data, criteria):
+        if not collection:
+            raise NoCollectionProvidedException()
+        if not data:
+            raise NoDataProvidedException()
+
     @abc.abstractmethod
     def get_raw_operation(self) -> Union[dict, tuple]:
-        ...
+        pass
 
 
 class InsertDbCommand(DbCommand):
+    type = ValidCommands.insert
+
     def get_raw_operation(self):
         return self.data
 
 
 class UpdateDbCommand(DbCommand):
-    def __init__(
-        self,
-        collection: str,
-        command_type: CommandTypes,
-        criteria=None,
-        data=None,
-        **kwargs
-    ):
+    type = ValidCommands.update
 
-        if command_type == "update" and criteria is None:
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if not criteria:
             raise UpdateWithNoCriteriaException()
-
-        super().__init__(collection, command_type, criteria, data, **kwargs)
 
     def get_raw_operation(self):
         return self.criteria, self.data
 
 
 class UpdateProbabilitiesDbCommand(DbCommand):
-    def __init__(
-        self,
-        collection: str,
-        command_type: CommandTypes,
-        criteria=None,
-        data=None,
-        **kwargs
-    ):
-        if (
-            command_type == "update_probabilities"
-            and data["classifier"] is None
-        ):
-            raise NoClassifierInfoProvidedException()
+    type = ValidCommands.update_probabilities
 
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if "classifier" not in data:
+            raise NoClassifierInfoProvidedException()
+        self.classifier = data.pop("classifier")
         if "aid" not in criteria:
             raise NoAlerceIdentificationProvidedException()
-
-        self.classifier = data.pop("classifier")
-        super().__init__(collection, command_type, criteria, data, **kwargs)
 
     def get_raw_operation(self):
         return self.classifier, self.criteria, self.data

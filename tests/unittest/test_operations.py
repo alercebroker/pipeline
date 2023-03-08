@@ -1,12 +1,10 @@
 from unittest.mock import patch
-from itertools import accumulate
 import unittest
 from mockdata import valid_data_dict
 from mongo_scribe.db.factories.update_probability import (
     UpdateProbabilitiesOperation,
 )
 from mongo_scribe.db.operations import (
-    Operations,
     create_operations,
     execute_operations,
 )
@@ -23,22 +21,18 @@ class OperationTest(unittest.TestCase):
     def setUp(self):
         self.insert_command = InsertDbCommand(
             valid_data_dict["collection"],
-            valid_data_dict["type"],
-            valid_data_dict["criteria"],
             valid_data_dict["data"],
+            valid_data_dict["criteria"],
         )
 
         self.update_command = UpdateDbCommand(
             valid_data_dict["collection"],
-            "update",
-            valid_data_dict["criteria"],
             valid_data_dict["data"],
+            valid_data_dict["criteria"],
         )
 
         self.update_probabilites_command = UpdateProbabilitiesDbCommand(
             valid_data_dict["collection"],
-            "update_probabilities",
-            {"aid": "AID9876"},
             {
                 "some_probs": ["prob1", "prob2"],
                 "classifier": {
@@ -46,6 +40,7 @@ class OperationTest(unittest.TestCase):
                     "classifier_version": "v1",
                 },
             },
+            {"aid": "AID9876"},
         )
 
     def test_create_operations_empty(self, _, __):
