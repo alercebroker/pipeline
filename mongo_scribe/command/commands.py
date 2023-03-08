@@ -1,5 +1,4 @@
 import abc
-from typing import Union
 from dataclasses import dataclass
 
 from pymongo.operations import InsertOne, UpdateOne
@@ -17,14 +16,17 @@ class Options:
     upsert: bool = False
 
 
-def sort_by_values(dictionary, reverse=False):
-    return sorted(dictionary.items(), key=lambda x: x[1], reverse=reverse)
-
-
 class Command(abc.ABC):
-    """
-    Plain class that contains the business rules of a Scribe DB Operation.
-    Raises an exception when trying to instantiate an invalid command.
+    """Creates a base command.
+
+    The fields `collection` and `data` are required. The `collection` refers to the collection name in a
+    Mongo database and the `data` has forms specified in subclasses.
+
+    The field `criteria` is only relevant for specific subclasses.
+
+    Finally, `options` can be a dictionary with possible additional settings defined in the class `Options`.
+    Whether a specific option is used or not, will depend on subclass implementation. If unrecognized options
+    or wrong types are provided, the command will use the default options.
     """
 
     type: str
@@ -61,7 +63,7 @@ class Command(abc.ABC):
         pass
 
 
-class InsertDbCommand(Command):
+class InsertCommand(Command):
     """Directly inserts `data` into the database"""
     type = ValidCommands.insert
 
@@ -69,7 +71,7 @@ class InsertDbCommand(Command):
         return [InsertOne(self.data)]
 
 
-class UpdateDbCommand(Command):
+class UpdateCommand(Command):
     """Updates object in database based on a given criteria.
 
     Uses MongoDB `$set` operator over the given `data`.
@@ -89,7 +91,7 @@ class UpdateDbCommand(Command):
         ]
 
 
-class UpdateProbabilitiesDbCommand(Command):
+class UpdateProbabilitiesCommand(Command):
     """Updates probabilities for document with given criteria.
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
@@ -114,9 +116,12 @@ class UpdateProbabilitiesDbCommand(Command):
         self.classifier_name = data.pop("classifier_name")
         self.classifier_version = data.pop("classifier_version")
 
+    def _sort(self, reverse=True):
+        return sorted(self.data.items(), key=lambda x: x[1], reverse=reverse)
+
     def get_operations(self) -> list:
         ops = []
-        for i, (cls, p) in enumerate(sort_by_values(self.data, reverse=True)):
+        for i, (cls, p) in enumerate(self._sort()):
             array_filter = {
                 "el.classifier_name": self.classifier_name,
                 "el.classifier_version": self.classifier_version,
@@ -139,7 +144,7 @@ class UpdateProbabilitiesDbCommand(Command):
         return ops
 
 
-class InsertProbabilitiesDbCommand(Command):
+class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
     """Adds probabilities to array only if the classifier name is not present for document with given criteria.
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
@@ -157,20 +162,13 @@ class InsertProbabilitiesDbCommand(Command):
     """
     type = ValidCommands.insert_probabilities
 
-    def _check_inputs(self, collection, data, criteria):
-        super()._check_inputs(collection, data, criteria)
-        if "classifier" not in data:
-            raise NoClassifierInfoProvidedException()
-        self.classifier_name = data.pop("classifier_name")
-        self.classifier_version = data.pop("classifier_version")
-
     def get_operations(self) -> list:
         ops = []
         criteria = {
             "probabilities.classifier_name": {"$ne": self.classifier_name},
             **self.criteria,
         }
-        for i, (cls, p) in enumerate(sort_by_values(self.data, reverse=True)):
+        for i, (cls, p) in enumerate(self._sort()):
             data = {
                 "$push": {
                     "probabilities": {

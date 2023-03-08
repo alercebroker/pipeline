@@ -41,10 +41,10 @@ def db_command_factory(msg: str) -> Command:
     decoded_message = decode_message(msg)
     msg_type = decoded_message.pop("type")
 
-    if msg_type == InsertDbCommand.type:
-        return InsertDbCommand(**decoded_message)
-    if msg_type == UpdateDbCommand.type:
-        return UpdateDbCommand(**decoded_message)
-    if msg_type == UpdateProbabilitiesDbCommand.type:
-        return UpdateProbabilitiesDbCommand(**decoded_message)
+    if msg_type == InsertCommand.type:
+        return InsertCommand(**decoded_message)
+    if msg_type == UpdateCommand.type:
+        return UpdateCommand(**decoded_message)
+    if msg_type == UpdateProbabilitiesCommand.type:
+        return UpdateProbabilitiesCommand(**decoded_message)
     raise ValueError(f"Unrecognized command type {msg_type}")
