@@ -6,6 +6,4 @@ RUN pip install -r /app/requirements.txt
 WORKDIR /app
 COPY . /app
 
-WORKDIR /app/scripts
-
 CMD ["python", "scripts/run_step.py"]
