@@ -8,7 +8,7 @@ from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from db_plugins.db.mongo.helpers.update_probs import (
     create_or_update_probabilities_bulk,
 )
-from mongo_scribe.command.exceptions import NonExistantCollectionException
+from mongo_scribe.command.exceptions import NonExistentCollectionException
 from mongo_scribe.db.factories.update_probability import UpdateProbabilitiesOperation
 
 models_dictionary = {
@@ -64,7 +64,7 @@ class ScribeCollectionMongo(ScribeCollection):
             self.connection = connection
             self.collection: Collection = connection.query(db_model).collection
         except KeyError as exc:
-            raise NonExistantCollectionException from exc
+            raise NonExistentCollectionException from exc
 
     def insert_many(self, inserts, ordered=False):
         if len(inserts) > 0:

@@ -33,13 +33,13 @@ class DbCommand(abc.ABC):
         command_type: CommandTypes,
         criteria=None,
         data=None,
-        options = None,
+        **kwargs,
     ):
-        if collection is None or collection == "":
-            raise NoCollectionProvidedException
+        if not collection:
+            raise NoCollectionProvidedException()
 
         if data is None:
-            raise NoDataProvidedException
+            raise NoDataProvidedException()
 
         self.collection = collection
         self.type = command_type
@@ -47,7 +47,7 @@ class DbCommand(abc.ABC):
         self.data = data
 
         try:
-            self.options = Options(**options) if options is not None else Options()
+            self.options = Options(**kwargs)
         except TypeError:
             print("Some of the options provided are not supported. Using default values.")
             self.options = Options()
@@ -69,13 +69,13 @@ class UpdateDbCommand(DbCommand):
         command_type: CommandTypes,
         criteria=None,
         data=None,
-        options=None,
+        **kwargs
     ):
 
         if command_type == "update" and criteria is None:
-            raise UpdateWithNoCriteriaException
+            raise UpdateWithNoCriteriaException()
 
-        super().__init__(collection, command_type, criteria, data, options)
+        super().__init__(collection, command_type, criteria, data, **kwargs)
 
     def get_raw_operation(self):
         return self.criteria, self.data
@@ -88,19 +88,19 @@ class UpdateProbabilitiesDbCommand(DbCommand):
         command_type: CommandTypes,
         criteria=None,
         data=None,
-        options=None
+        **kwargs
     ):
         if (
             command_type == "update_probabilities"
             and data["classifier"] is None
         ):
-            raise NoClassifierInfoProvidedException
+            raise NoClassifierInfoProvidedException()
 
         if "aid" not in criteria:
-            raise NoAlerceIdentificationProvidedException
+            raise NoAlerceIdentificationProvidedException()
 
         self.classifier = data.pop("classifier")
-        super().__init__(collection, command_type, criteria, data, options)
+        super().__init__(collection, command_type, criteria, data, **kwargs)
 
     def get_raw_operation(self):
         return self.classifier, self.criteria, self.data

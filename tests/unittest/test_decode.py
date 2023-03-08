@@ -3,7 +3,7 @@ import pytest
 from json import loads
 
 from mongo_scribe.command.decode import decode_message
-from mongo_scribe.command.exceptions import MisformattedCommandExcepction
+from mongo_scribe.command.exceptions import WrongFormatCommandException
 
 from mockdata import valid_data_dict, valid_data_json
 
@@ -15,6 +15,6 @@ class DecodeTest(unittest.TestCase):
 
     def test_decode_message_failure(self):
         self.assertRaises(
-            MisformattedCommandExcepction,
+            WrongFormatCommandException,
             lambda: decode_message('{ "lol": "men" }'),
         )

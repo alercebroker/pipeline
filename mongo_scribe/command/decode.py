@@ -5,7 +5,7 @@ from mongo_scribe.command.commands import (
     UpdateDbCommand,
     UpdateProbabilitiesDbCommand,
 )
-from mongo_scribe.command.exceptions import MisformattedCommandExcepction
+from mongo_scribe.command.exceptions import WrongFormatCommandException
 
 
 def validate(message: dict):
@@ -38,7 +38,7 @@ def decode_message(encoded_message: str):
     valid_message = validate(decoded)
 
     if valid_message is None:
-        raise MisformattedCommandExcepction
+        raise WrongFormatCommandException
 
     return valid_message
 
