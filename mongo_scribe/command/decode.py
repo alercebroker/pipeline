@@ -33,7 +33,7 @@ def decode_message(encoded_message: str):
     return valid_message
 
 
-def db_command_factory(msg: str) -> DbCommand:
+def db_command_factory(msg: str) -> Command:
     """
     Returns a DbCommand instance based on a JSON stringified.
     Raises MisformattedCommand if the JSON string is not a valid command.

@@ -2,9 +2,7 @@ import json
 import os
 import pytest
 import unittest
-from time import sleep
 from mongo_scribe.step import MongoScribe
-from mongo_scribe.db.models import get_model_collection
 from apf.consumers.kafka import KafkaConsumer
 from apf.producers.kafka import KafkaProducer
 
@@ -74,10 +72,8 @@ class StepTest(unittest.TestCase):
         self.producer.produce({"payload": command}, key="insertion_2")
 
         self.step.start()
-        collection = get_model_collection(
-            self.step.db_client.connection, "object"
-        )
-        result = collection.collection.find({})
+        collection = self.step.db_client.connection.database["object"]
+        result = collection.find({})
         self.assertIsNotNone(result[0])
         self.assertEqual(result[0]["field"], "some_value")
 
@@ -100,10 +96,8 @@ class StepTest(unittest.TestCase):
         self.producer.produce({"payload": commands[1]}, key="update")
         self.step.start()
 
-        os.environ["MOCK_DB_COLLECTION"] = "False"
-        collection = get_model_collection(
-            self.step.db_client.connection, "object"
-        )
-        result = collection.collection.find({"field2": "hehe"})
+        os.environ["MOCK_DB_COLLECTION"] = ""
+        collection = self.step.db_client.connection.database["object"]
+        result = collection.find({"field2": "hehe"})
         self.assertEqual(len(list(result)), 0)
 

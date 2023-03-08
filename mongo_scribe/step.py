@@ -11,14 +11,9 @@ class MongoScribe(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-
     """
 
-    def __init__(
-        self, consumer=None, config=None, level=logging.INFO, **step_args
-    ):
+    def __init__(self, consumer=None, config=None, level=logging.INFO):
         super().__init__(consumer, config=config, level=level)
         self.db_client = ScribeCommandExecutor(config["DB_CONFIG"])
 
