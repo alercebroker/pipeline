@@ -45,7 +45,7 @@ class NoCollectionProvidedException(ValueError):
 
 class NoClassifierInfoProvidedException(ValueError):
     """
-    Exception to raise when a command doesn't provide the classifier when 
+    Exception to raise when a command doesn't provide the classifier when
     updating probabilities
     """
 

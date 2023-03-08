@@ -21,6 +21,7 @@ class DbCommand(abc.ABC):
     Plain class that contains the business rules of a Scribe DB Operation.
     Raises an exception when trying to instantiate an invalid command.
     """
+
     type: str
 
     def __init__(
@@ -39,7 +40,9 @@ class DbCommand(abc.ABC):
             options = options if options else {}
             self.options = Options(**options)
         except TypeError:
-            print("Some of the options provided are not supported. Using default values.")
+            print(
+                "Some of the options provided are not supported. Using default values."
+            )
             self.options = Options()
 
     def _check_inputs(self, collection, data, criteria):

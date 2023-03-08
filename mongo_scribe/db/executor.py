@@ -3,6 +3,7 @@ from db_plugins.db.mongo import MongoConnection
 from mongo_scribe.db.operations import create_operations, execute_operations
 from mongo_scribe.command.commands import DbCommand
 
+
 class ScribeCommandExecutor:
     """
     Class which contains all availible Scribe DB Operations
