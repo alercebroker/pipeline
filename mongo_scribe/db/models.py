@@ -69,9 +69,9 @@ class ScribeCollectionMongo(ScribeCollection):
         if len(inserts) > 0:
             self.collection.insert_many(inserts, ordered=ordered)
 
-    def bulk_write(self, updates):
+    def bulk_write(self, updates, ordered=False):
         if len(updates) > 0:
-            self.collection.bulk_write(updates)
+            self.collection.bulk_write(updates, ordered=ordered)
 
     def update_probabilities(self, operation: UpdateProbabilitiesOperation):
         classifier = operation.classifier
