@@ -114,7 +114,7 @@ class InsertProbabilitiesCommand(Command):
 
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
-        if "classifier" not in data:
+        if "classifier_name" not in data or "classifier_version" not in data:
             raise NoClassifierInfoProvidedException()
         self.classifier_name = data.pop("classifier_name")
         self.classifier_version = data.pop("classifier_version")
@@ -127,11 +127,13 @@ class InsertProbabilitiesCommand(Command):
 
         for i, (cls, p) in enumerate(self._sort()):
             criteria = {
-                "probabilities.classifier_name": {"$ne": self.classifier_name},
-                "probabilities.classifier_version": {
-                    "$ne": self.classifier_version
+                "probabilities": {
+                    "$elemMatch": {
+                        "classifier_name": {"$ne": self.classifier_name},
+                        "classifier_version": {"$ne": self.classifier_version},
+                        "class_name": {"$ne": cls},
+                    }
                 },
-                "probabilities.class_name": {"$ne": cls},
                 **self.criteria,
             }
             insert = {

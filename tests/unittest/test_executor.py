@@ -18,9 +18,5 @@ class ExecutorTest(unittest.TestCase):
         executor = ScribeCommandExecutor(db_config)
         self.executor = executor
 
-    # @patch("mongo_scribe.db.executor.create_operations")
-    # @patch("mongo_scribe.db.executor.execute_operations")
     def test_bulk_execute(self):
         self.executor.bulk_execute("object", [])
-        # mock_create.assert_called()
-        # mock_execute.assert_called()
