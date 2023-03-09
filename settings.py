@@ -39,21 +39,6 @@ elif os.getenv("CONSUMER_TOPICS"):
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
-PRODUCER_CONFIG = {
-    "TOPIC": os.environ["PRODUCER_TOPIC"],
-    "PARAMS": {
-        "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "message.max.bytes": 6291456,
-    },
-    "SCHEMA": SCHEMA,
-}
-
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "preprocess"),
-    "STEP_NAME": os.getenv("STEP_NAME", "preprocess"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-}
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
@@ -107,7 +92,5 @@ METRICS_CONFIG = {
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
-    "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
 }

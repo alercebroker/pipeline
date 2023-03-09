@@ -20,8 +20,8 @@ from .magstats import MagStatsCalculator
 
 
 sys.path.insert(0, "../../../../")
+#TODO: Check what this is for
 pd.options.mode.chained_assignment = None
-logging.getLogger("GP").setLevel(logging.WARNING)
 np.seterr(divide="ignore")
 
 
@@ -38,15 +38,9 @@ class MagstatsStep(GenericStep):
         consumer=None,
         config=None,
         level=logging.INFO,
-        producer=None,
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.version = config["STEP_METADATA"]["STEP_VERSION"]
-        self.producer = producer
-        if config.get("PRODUCER_CONFIG", False):
-            self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
-
         self.magstats_calculator = MagStatsCalculator()
 
 
