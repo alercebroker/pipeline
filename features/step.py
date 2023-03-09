@@ -228,10 +228,12 @@ class FeaturesComputer(GenericStep):
 
     def check_feature_name(self, name):
         fid = name.rsplit("_", 1)[-1]
+        if name.startswith("Power_rate"):
+            return name
         if fid.isdigit():
             return name.rsplit("_", 1)[0]
-        else:
-            return name
+
+        return name
 
     def add_to_db(self, result):
         """Insert the `dict` result in database.
@@ -351,7 +353,7 @@ class FeaturesComputer(GenericStep):
                     "oid": message.get("oid"),
                     "aid": message.get("aid"),
                     "tid": message.get("tid"),
-                    "candid": message.get("candid", np.nan)
+                    "candid": message.get("candid", np.nan),
                 }
                 for message in messages
             ]
@@ -378,7 +380,9 @@ class FeaturesComputer(GenericStep):
             non_detections.set_index("oid", inplace=True)
 
         self.logger.info(f"Calculating features")
-        features = self.compute_features(detections, non_detections, metadata, xmatches, objects)
+        features = self.compute_features(
+            detections, non_detections, metadata, xmatches, objects
+        )
         self.logger.info(f"Features calculated: {features.shape}")
         if len(features) > 0:
             self.add_to_db(features)

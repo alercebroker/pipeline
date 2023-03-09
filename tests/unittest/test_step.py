@@ -160,6 +160,7 @@ class StepTestCase(unittest.TestCase):
                 "oid": ["ZTF1"],
                 "feature_1": [123],
                 "feature_2": [456],
+                "Power_rate_1/2": [2.0],
                 "not_a_feature": [-1],
             }
         )
@@ -183,6 +184,13 @@ class StepTestCase(unittest.TestCase):
                 "fid": 2,
                 "name": "feature",
                 "value": 456,
+                "version": "test",
+            },
+            {
+                "oid": "ZTF1",
+                "fid": 12,
+                "name": "Power_rate_1/2",
+                "value": 2.0,
                 "version": "test",
             },
             {
