@@ -93,81 +93,7 @@ class UpdateCommand(Command):
         ]
 
 
-class UpdateProbabilitiesCommand(Command):
-    """Updates probabilities for document with given criteria.
-
-    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
-
-    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
-
-    .. code-block::
-       {
-           "class1": 0.12,
-           "class2": 0.23,
-           ...
-       }
-
-    When getting the operations, the ranking will be automatically included.
-    """
-
-    type = ValidCommands.update_probabilities
-
-    def _check_inputs(self, collection, data, criteria):
-        super()._check_inputs(collection, data, criteria)
-        if "classifier" not in data:
-            raise NoClassifierInfoProvidedException()
-        self.classifier_name = data.pop("classifier_name")
-        self.classifier_version = data.pop("classifier_version")
-
-    def _sort(self, reverse=True):
-        return sorted(self.data.items(), key=lambda x: x[1], reverse=reverse)
-
-    def get_operations(self) -> list:
-        ops = []
-        for i, (cls, p) in enumerate(self._sort()):
-            criteria = {
-                "probabilities.classifier_name": {"$ne": self.classifier_name},
-                "probabilities.classifier_version": {
-                    "$ne": self.classifier_version
-                },
-                "probabilities.class_name": {"$ne": cls},
-                **self.criteria,
-            }
-            insert = {
-                "$push": {
-                    "probabilities": {
-                        "classifier_name": self.classifier_name,
-                        "classifier_version": self.classifier_version,
-                        "class_name": cls,
-                        "probability": p,
-                        "ranking": i + 1,
-                    }
-                }
-            }
-            filters = {
-                "el.classifier_name": self.classifier_name,
-                "el.classifier_version": self.classifier_version,
-                "el.class_name": cls,
-            }
-            update = {
-                "$set": {
-                    "probabilities.$[el].probability": p,
-                    "probabilities.$[el].ranking": i + 1,
-                }
-            }
-            ops.append(UpdateOne(criteria, insert, upsert=self.options.upsert))
-            ops.append(
-                UpdateOne(
-                    self.criteria,
-                    update,
-                    array_filters=[filters],
-                    upsert=self.options.upsert,
-                )
-            )
-        return ops
-
-
-class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
+class InsertProbabilitiesCommand(Command):
     """Adds probabilities to array only if the classifier name is not present for document with given criteria.
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
@@ -186,6 +112,16 @@ class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
 
     type = ValidCommands.insert_probabilities
 
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if "classifier" not in data:
+            raise NoClassifierInfoProvidedException()
+        self.classifier_name = data.pop("classifier_name")
+        self.classifier_version = data.pop("classifier_version")
+
+    def _sort(self, reverse=True):
+        return sorted(self.data.items(), key=lambda x: x[1], reverse=reverse)
+
     def get_operations(self) -> list:
         ops = []
 
@@ -210,4 +146,48 @@ class InsertProbabilitiesCommand(UpdateProbabilitiesCommand):
                 }
             }
             ops.append(UpdateOne(criteria, insert, upsert=self.options.upsert))
+        return ops
+
+
+class UpdateProbabilitiesCommand(InsertProbabilitiesCommand):
+    """Updates probabilities for document with given criteria.
+
+    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
+
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
+
+    .. code-block::
+       {
+           "class1": 0.12,
+           "class2": 0.23,
+           ...
+       }
+
+    When getting the operations, the ranking will be automatically included.
+    """
+
+    type = ValidCommands.update_probabilities
+
+    def get_operations(self) -> list:
+        ops = super().get_operations()
+        for i, (cls, p) in enumerate(self._sort()):
+            filters = {
+                "el.classifier_name": self.classifier_name,
+                "el.classifier_version": self.classifier_version,
+                "el.class_name": cls,
+            }
+            update = {
+                "$set": {
+                    "probabilities.$[el].probability": p,
+                    "probabilities.$[el].ranking": i + 1,
+                }
+            }
+            ops.append(
+                UpdateOne(
+                    self.criteria,
+                    update,
+                    array_filters=[filters],
+                    upsert=self.options.upsert,
+                )
+            )
         return ops
