@@ -30,14 +30,14 @@ class MongoScribe(GenericStep):
                 new_command = db_command_factory(message["payload"])
                 valid_commands.append(new_command)
             except Exception as exc:
-                logging.error(f"[ERROR] Error processing message: {exc}")
+                logging.error(f"Error processing message: {exc}")
                 n_invalid_commands += 1
 
         logging.info(
-            f"[INFO] Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages."
+            f"Processed {len(valid_commands)} messages successfully. Found {n_invalid_commands} invalid messages."
         )
 
         if len(valid_commands) > 0:
-            logging.info("[INFO] Writing commands into database")
+            logging.info("Writing commands into database")
             collection = valid_commands[0].collection
             self.db_client.bulk_execute(collection, valid_commands)
