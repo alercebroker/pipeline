@@ -33,7 +33,7 @@ The commands must be formatted as follows:
   * `"object"`
   * `"detections"`
   * `"non_detections"`
-- Except for `"insert"`, all other types require a non-empty criteria to match documents in respective database.
+- Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in respective database. This must include an `_id` match.
 - The only supported option at the time is `"upsert"`. This is ignored by the `"insert"` type.
 
 ## Suggested schema
