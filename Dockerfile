@@ -1,10 +1,11 @@
-FROM python:3.10
+FROM python:3.9
 
 RUN pip install poetry
-RUN poetry install --with dev
 
-WORKDIR /app
 COPY . /app
+WORKDIR /app
+COPY pyproject.toml pyproject.toml
+RUN poetry install --with dev
 
 WORKDIR /app/scripts
 
