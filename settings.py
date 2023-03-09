@@ -77,10 +77,7 @@ STEP_METADATA = {
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
         {"key": "oid", "alias": "oid"},
-        {"key": "aid", "alias": "aid"},
-        {"key": "tid", "format": lambda x: str(x)},
     ],
     "PARAMS": {
         "PARAMS": {
