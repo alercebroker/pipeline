@@ -113,13 +113,16 @@ class CommandTests(unittest.TestCase):
             valid_probabilities_dict["criteria"],
         )
         operations = update_command.get_operations()
-        for op in operations:
+        for op in operations:  # All include AID as criteria
             self.assertTrue(all(pair in op._filter.items() for pair in valid_probabilities_dict["criteria"].items()))
-            insert = op._doc.pop("$push").pop("probabilities")
+
+        self.assertEqual(operations[0]._doc, {"$setOnInsert": {"probabilities": []}})
+        insert = operations[1]._doc.pop("$push").pop("probabilities").pop("$each")
+        for element in insert:
             self.assertEqual(
-                {"probability", "ranking", "classifier_name", "classifier_version", "class_name"}, set(insert)
+                {"probability", "ranking", "classifier_name", "classifier_version", "class_name"}, set(element)
             )
-            self.assertEqual(op._doc, {})
+        self.assertEqual(operations[1]._doc, {})
 
     def test_insert_probabilities_options(self):
         update_command = InsertProbabilitiesCommand(
@@ -129,7 +132,8 @@ class CommandTests(unittest.TestCase):
             {"upsert": True}
         )
         operations = update_command.get_operations()
-        self.assertTrue(all(op._upsert for op in operations))
+        self.assertTrue(operations[0]._upsert)
+        self.assertFalse(operations[1]._upsert)
 
     def test_update_probabilities_get_operation(self):
         update_command = UpdateProbabilitiesCommand(
@@ -149,11 +153,17 @@ class CommandTests(unittest.TestCase):
             valid_probabilities_dict["criteria"],
         )
         operations = update_command.get_operations()
-        for op in operations[:len(operations)//2]:
+        for op in operations:  # All include AID as criteria
             self.assertTrue(all(pair in op._filter.items() for pair in valid_probabilities_dict["criteria"].items()))
-            op._doc.pop("$push")
-            self.assertEqual(op._doc, {})
-        for op in operations[len(operations) // 2:]:
+
+        self.assertEqual(operations[0]._doc, {"$setOnInsert": {"probabilities": []}})
+        insert = operations[1]._doc.pop("$push").pop("probabilities").pop("$each")
+        for element in insert:
+            self.assertEqual(
+                {"probability", "ranking", "classifier_name", "classifier_version", "class_name"}, set(element)
+            )
+        self.assertEqual(operations[1]._doc, {})
+        for op in operations[2:]:
             self.assertTrue(all(pair in op._filter.items() for pair in valid_probabilities_dict["criteria"].items()))
             update = op._doc.pop("$set")
             self.assertEqual({"probabilities.$[el].probability", "probabilities.$[el].ranking"}, set(update))
@@ -167,7 +177,8 @@ class CommandTests(unittest.TestCase):
             {"upsert": True}
         )
         operations = update_command.get_operations()
-        self.assertTrue(all(op._upsert for op in operations))
+        self.assertTrue(operations[0]._upsert)
+        self.assertFalse(any(op._upsert for op in operations[1:]))
 
     def test_update_db_command_default_options(self):
         update_command = UpdateCommand(

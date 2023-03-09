@@ -84,6 +84,8 @@ class UpdateCommand(Command):
         super()._check_inputs(collection, data, criteria)
         if not criteria:
             raise UpdateWithNoCriteriaException()
+        if "_id" not in criteria:
+            raise NoAlerceIdentificationProvidedException()
 
     def get_operations(self) -> list:
         return [
@@ -93,7 +95,7 @@ class UpdateCommand(Command):
         ]
 
 
-class InsertProbabilitiesCommand(Command):
+class InsertProbabilitiesCommand(UpdateCommand):
     """Adds probabilities to array only if the classifier name is not present for document with given criteria.
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
