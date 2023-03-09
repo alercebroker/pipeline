@@ -181,11 +181,9 @@ class MagStatsCalculator:
     def calculate(
         self,
         light_curves: dict,
-        version: str,
         ) -> pd.DataFrame:
         """ Applies the magstats calculation to every object separated by filter
         :light_curves: light curves containing detections and non detections
-        :version: TODO
         :return: A Dataframe with the calculated magstats
         """
 
@@ -197,7 +195,6 @@ class MagStatsCalculator:
                 self.apply_mag_stats
             )
         new_magstats.reset_index(inplace=True)
-        new_magstats["step_id_corr"] = version
         new_magstats.drop_duplicates(["oid", "fid"], inplace=True)
         return new_magstats
 

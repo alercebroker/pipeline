@@ -106,7 +106,7 @@ class MagstatsStep(GenericStep):
 
 
         new_magstats = self.magstats_calculator.calculate(
-            light_curves, self.version
+            light_curves
         )
 
         """
