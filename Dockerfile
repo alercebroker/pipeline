@@ -1,11 +1,11 @@
 FROM python:3.10
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+RUN pip install poetry
+RUN poetry install --with dev
 
 WORKDIR /app
 COPY . /app
 
 WORKDIR /app/scripts
 
-CMD ["python", "run_step.py"]
+CMD ["poetry", "run", "python", "run_step.py"]
