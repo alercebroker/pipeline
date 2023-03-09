@@ -1,5 +1,6 @@
 import os
 import sys
+from apf.core import get_class
 
 import logging
 
@@ -21,8 +22,7 @@ logging.basicConfig(
 )
 
 
-from magstats_step import MagstatsStep
-from apf.core import get_class
+from magstats_step.step import MagstatsStep
 
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
