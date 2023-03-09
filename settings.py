@@ -8,18 +8,6 @@ from schema import SCHEMA
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
-DB_CONFIG = {
-    "PSQL": {
-        "ENGINE": "postgresql",
-        "HOST": os.getenv("PSQL_HOST", None),
-        "USER": os.getenv("PSQL_USER", None),
-        "PASSWORD": os.getenv("PSQL_PASSWORD", None),
-        "PORT": int(os.getenv("PSQL_PORT", 5432)),
-        "DB_NAME": os.getenv("PSQL_NAME", None),
-    }
-}
-
-
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {

@@ -39,7 +39,6 @@ class MagstatsStep(GenericStep):
         config=None,
         level=logging.INFO,
         producer=None,
-        db_connection=None,
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
@@ -47,11 +46,6 @@ class MagstatsStep(GenericStep):
         self.producer = producer
         if config.get("PRODUCER_CONFIG", False):
             self.producer = KafkaProducer(config["PRODUCER_CONFIG"])
-
-        self.driver = db_connection or MultiDriverConnection(
-            config["DB_CONFIG"]
-        )
-        self.driver.connect()
 
         self.magstats_calculator = MagStatsCalculator()
 
@@ -121,6 +115,7 @@ class MagstatsStep(GenericStep):
             light_curves, self.version
         )
 
+        """
         # Identify new entries
         old_magstats = get_catalog(unique_ids, "MagStats", self.driver)
         if not old_magstats.empty:
@@ -130,6 +125,8 @@ class MagstatsStep(GenericStep):
 
         new_magstats_index = pd.MultiIndex.from_frame(new_magstats[["oid", "fid"]])
         new_magstats["new"] = ~new_magstats_index.isin(magstats_index)
+        """
+        new_magstats["new"] = True
 
         dmdt_calculator = DmdtCalculator()
         dmdt = dmdt_calculator.compute(light_curves, new_magstats)
@@ -178,7 +175,7 @@ class MagstatsStep(GenericStep):
 
         new_stats = self.recalculate_magstats(unique_ids, light_curves)
 
-        self.magstats_calculator.insert(new_stats, self.driver)
+        #self.magstats_calculator.insert(new_stats, self.driver)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
