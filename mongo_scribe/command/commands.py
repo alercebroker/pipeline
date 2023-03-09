@@ -98,10 +98,14 @@ class InsertProbabilitiesCommand(Command):
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
 
-    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value.
+
+    Example `data`:
 
     .. code-block::
        {
+           "classifier_name": "classifier",
+           "classifier_version": "1.0.0",
            "class1": 0.12,
            "class2": 0.23,
            ...
@@ -123,31 +127,28 @@ class InsertProbabilitiesCommand(Command):
         return sorted(self.data.items(), key=lambda x: x[1], reverse=reverse)
 
     def get_operations(self) -> list:
-        ops = []
+        criteria = {
+            "probabilities.classifier_name": {"$ne": self.classifier_name},
+            **self.criteria,
+        }
+        probabilities = [
+            {
+                "classifier_name": self.classifier_name,
+                "classifier_version": self.classifier_version,
+                "class_name": cls,
+                "probability": p,
+                "ranking": i + 1,
+            }
+            for i, (cls, p) in enumerate(self._sort())
+        ]
+        insert = {"$push": {"probabilities": {"$each": probabilities}}}
 
-        for i, (cls, p) in enumerate(self._sort()):
-            criteria = {
-                "probabilities": {
-                    "$elemMatch": {
-                        "classifier_name": {"$ne": self.classifier_name},
-                        "classifier_version": {"$ne": self.classifier_version},
-                        "class_name": {"$ne": cls},
-                    }
-                },
-                **self.criteria,
-            }
-            insert = {
-                "$push": {
-                    "probabilities": {
-                        "classifier_name": self.classifier_name,
-                        "classifier_version": self.classifier_version,
-                        "class_name": cls,
-                        "probability": p,
-                        "ranking": i + 1,
-                    }
-                }
-            }
-            ops.append(UpdateOne(criteria, insert, upsert=self.options.upsert))
+        # Insert empty probabilities if AID doesn't exist
+        upsert = {"$setOnInsert": {"probabilities": []}}
+        ops = [
+            UpdateOne(self.criteria, upsert, upsert=self.options.upsert),
+            UpdateOne(criteria, insert),
+        ]
         return ops
 
 
@@ -156,10 +157,14 @@ class UpdateProbabilitiesCommand(InsertProbabilitiesCommand):
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
 
-    Additional fields in `data` must be pairs of class names from the classifier and the probability value:
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value.
+
+    Example `data`:
 
     .. code-block::
        {
+           "classifier_name": "classifier",
+           "classifier_version": "1.0.0",
            "class1": 0.12,
            "class2": 0.23,
            ...
@@ -189,7 +194,6 @@ class UpdateProbabilitiesCommand(InsertProbabilitiesCommand):
                     self.criteria,
                     update,
                     array_filters=[filters],
-                    upsert=self.options.upsert,
                 )
             )
         return ops

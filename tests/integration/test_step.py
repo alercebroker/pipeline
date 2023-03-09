@@ -161,7 +161,7 @@ class StepTest(unittest.TestCase):
         command = json.dumps(
             {
                 "collection": "object",
-                "type": "insert_probabilities",
+                "type": "update_probabilities",
                 "criteria": {"_id": "update_probabilities_id"},
                 "data": {"class1": 0.5, "class2": 0.3, "classifier_name": "classifier", "classifier_version": "1"},
                 "options": {"upsert": True}
