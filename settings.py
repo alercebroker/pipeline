@@ -16,14 +16,7 @@ DB_CONFIG = {
         "PASSWORD": os.getenv("PSQL_PASSWORD", None),
         "PORT": int(os.getenv("PSQL_PORT", 5432)),
         "DB_NAME": os.getenv("PSQL_NAME", None),
-    },
-    "MONGO": {
-        "HOST": os.getenv("MONGO_HOST", None),
-        "USER": os.getenv("MONGO_USER", None),
-        "PASSWORD": os.getenv("MONGO_PASSWORD", None),
-        "PORT": int(os.getenv("MONGO_PORT", 27017)),
-        "DATABASE": os.getenv("MONGO_NAME", None),
-    },
+    }
 }
 
 
@@ -127,7 +120,6 @@ STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "N_PROCESS": os.getenv("N_PROCESS"),
     "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
 }
