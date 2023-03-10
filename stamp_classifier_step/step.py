@@ -61,9 +61,10 @@ class StampClassifierStep(GenericStep):
                 "payload": json.dumps(
                     {
                         "collection": "object",
-                        "type": "update-probabilities",
+                        "type": "insert_probabilities",
                         "criteria": {"aid": aid},
-                        "data": {"probabilities": probabilities},
+                        "data": probabilities,
+                        "options": {"upsert": True}
                     }
                 )
             }
