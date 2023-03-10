@@ -42,17 +42,13 @@ class StampClassifierStep(GenericStep):
             {
                 "aid": aid,
                 "classifications": [
-                    {
-                        k: v
-                        for k, v in probability.items()
-                        if k not in ("classifier_version", "ranking")
-                    }
-                    for probability in probabilities
+                    {"class_name": cls, "probability": p} for cls, p in probs.items()
                 ],
-                "model_version": self.strategy.version,
+                "classifier_name": self.strategy.name,
+                "classifier_version": self.strategy.version,
                 "brokerPublishTime": int(datetime.utcnow().timestamp() * 1000),
             }
-            for aid, probabilities in predictions.items()
+            for aid, probs in predictions.items()
         ]
 
     def write_predictions(self, predictions: dict):
@@ -62,7 +58,7 @@ class StampClassifierStep(GenericStep):
                     {
                         "collection": "object",
                         "type": "insert_probabilities",
-                        "criteria": {"aid": aid},
+                        "criteria": {"_id": aid},
                         "data": probabilities,
                         "options": {"upsert": True},
                     }
