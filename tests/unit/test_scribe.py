@@ -23,8 +23,9 @@ def test_produce_scribe(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"aid": "aid"},
+        "criteria": {"_id": "aid"},
         "data": non_detection,
+        "options": {"upsert": True}
     }
     step.scribe_producer.produce.assert_called_once_with(
         {"payload": json.dumps(expected_data)}
@@ -50,8 +51,9 @@ def test_post_execute(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"aid": "aid"},
+        "criteria": {"_id": "aid"},
         "data": non_detection,
+        "options": {"upsert": True}
     }
     step.scribe_producer.produce.assert_called_once_with(
         {"payload": json.dumps(expected_data)}
