@@ -53,13 +53,13 @@ class StampClassifierStep(GenericStep):
 
     def write_predictions(self, predictions: dict):
         with_metadata = {
-                aid: {
-                    "classifier_name": self.strategy.name,
-                    "classifier_version": self.strategy.version,
-                    **probs,
-                }
-                for aid, probs in predictions.items()
+            aid: {
+                "classifier_name": self.strategy.name,
+                "classifier_version": self.strategy.version,
+                **probs,
             }
+            for aid, probs in predictions.items()
+        }
 
         for aid, probabilities in with_metadata.items():
             data_to_produce = {
