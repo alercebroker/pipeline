@@ -20,41 +20,6 @@ class BaseStrategy(abc.ABC):
         self.name = os.getenv("MODEL_NAME", default_name)
         self.version = os.getenv("MODEL_VERSION", default_version)
 
-    @staticmethod
-    def _sort_probabilities(obj_probabilities: dict) -> List[tuple]:
-        """Sorts class name to probability mapping from highest to lowest probability.
-
-        Args:
-            obj_probabilities (dict): Mapping from class names to probabilities
-
-        Returns:
-            list[tuple]: Sorted list of 2-tuples with first value being class name and second the probability
-        """
-        return sorted(obj_probabilities.items(), key=lambda x: x[1], reverse=True)
-
-    def _with_ranking(self, raw_probabilities: dict):
-        """Adds ranking and classifier metadata to raw probabilities
-
-        Args:
-            raw_probabilities (dict): Mapping from AID to another mapping from class names to probabilities
-
-        Returns:
-            dict: Dictionary with AIDs as keys and a list of dictionaries with probabilities as values
-        """
-        return {
-            aid: [
-                {
-                    "classifier_name": self.name,
-                    "classifier_version": self.version,
-                    "class_name": cls,
-                    "probability": prob,
-                    "ranking": i + 1,
-                }
-                for i, (cls, prob) in enumerate(self._sort_probabilities(obj))
-            ]
-            for aid, obj in raw_probabilities.items()
-        }
-
     @abc.abstractmethod
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         """Call the prediction method of the model.
@@ -84,24 +49,18 @@ class BaseStrategy(abc.ABC):
             messages (list[dict]): List of messages containing alert data
 
         Returns:
-            dict: Dictionary with AIDs as keys and a list of dictionaries with probabilities as values, e.g.:
+            dict: Dictionary with AIDs as keys and a mapping of class to probability as values, e.g.:
 
-            .. code-block:: py
-               {
-                   "AID1": [
-                       {
-                           "classifier_name": "ztf_stamp_classifier",
-                           "classifier_version": "1.0.0",
-                           "class_name": "SN",
-                           "probability": 0.8,
-                           "ranking": 1
+                .. code-block:: python
+                   {
+                       "AID1": {
+                           "class1": 0.12,
+                           "class2": 0.14,
+                           ...: ...
                        },
-                       ...
-                   ]
-               }
-
-            There is one entry in the list for each class in the classifier.
+                       ...: ...
+                   }
         """
         df = self._to_dataframe(messages)
         df = df[~df.index.duplicated(keep="first")]
-        return self._with_ranking(self.predict(df).to_dict(orient="index"))
+        return self.predict(df).to_dict(orient="index")

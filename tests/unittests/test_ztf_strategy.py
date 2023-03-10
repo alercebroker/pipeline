@@ -73,42 +73,12 @@ def test_get_probabilities_reformats_dictionary(mock_classifier, ztf_alerts):
     # alerts works as a dummy here
     probs = strategy.get_probabilities(ztf_alerts)
     expected = {
-            "ZTF20aaelulu": [
-                {
-                    "ranking": 1,
-                    "class_name": "AGN",
-                    "classifier_name": "ztf_stamp_classifier",
-                    "classifier_version": "1.0.1",
-                    "probability": 0.5,
-                },
-                {
-                    "ranking": 2,
-                    "class_name": "bogus",
-                    "classifier_name": "ztf_stamp_classifier",
-                    "classifier_version": "1.0.1",
-                    "probability": 0.3,
-                },
-                {
-                    "ranking": 3,
-                    "class_name": "asteroid",
-                    "classifier_name": "ztf_stamp_classifier",
-                    "classifier_version": "1.0.1",
-                    "probability": 0.1,
-                },
-                {
-                    "ranking": 4,
-                    "class_name": "SN",
-                    "classifier_name": "ztf_stamp_classifier",
-                    "classifier_version": "1.0.1",
-                    "probability": 0.05,
-                },
-                {
-                    "ranking": 5,
-                    "class_name": "VS",
-                    "classifier_name": "ztf_stamp_classifier",
-                    "classifier_version": "1.0.1",
-                    "probability": 0.05,
-                },
-            ]
+            "ZTF20aaelulu": {
+                "AGN": 0.5,
+                "bogus": 0.3,
+                "asteroid": 0.1,
+                "SN": 0.05,
+                "VS": 0.05,
+            },
         }
     assert probs == expected

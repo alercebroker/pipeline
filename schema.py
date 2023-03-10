@@ -4,7 +4,7 @@ CLASSIFICATIONS = {
         "type": "record",
         "name": "classificationDict",
         "fields": [
-            {"name": "classifier_name", "type": "string"},
+            # {"name": "classifier_name", "type": "string"},
             # {"name": "model_version", "type": "string"},
             {"name": "class_name", "type": "string"},
             {"name": "probability", "type": "double"},
@@ -19,7 +19,8 @@ SCHEMA = {
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "classifications", "type": CLASSIFICATIONS},
-        {"name": "model_version", "type": "string"},
+        {"name": "classifier_name", "type": "string"},
+        {"name": "classifier_version", "type": "string"},
         {
             "name": "brokerPublishTimestamp",
             "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],

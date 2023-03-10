@@ -61,8 +61,8 @@ def assert_scribe_messages_produced(aid="aid"):
     messages = consume_messages("object")
     assert type(messages[0]["payload"]) == str
     assert '"collection": "object"' in messages[0]["payload"]
-    assert '"type": "update-probabilities"' in messages[0]["payload"]
-    assert f'"criteria": {{"aid": "{aid}"}}' in messages[0]["payload"]
+    assert '"type": "insert_probabilities"' in messages[0]["payload"]
+    assert f'"criteria": {{"_id": "{aid}"}}' in messages[0]["payload"]
 
 
 @pytest.mark.usefixtures("kafka_service")

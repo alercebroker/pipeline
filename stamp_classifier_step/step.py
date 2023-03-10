@@ -42,28 +42,34 @@ class StampClassifierStep(GenericStep):
             {
                 "aid": aid,
                 "classifications": [
-                    {
-                        k: v
-                        for k, v in probability.items()
-                        if k not in ("classifier_version", "ranking")
-                    }
-                    for probability in probabilities
+                    {"class_name": cls, "probability": p} for cls, p in probs.items()
                 ],
-                "model_version": self.strategy.version,
+                "classifier_name": self.strategy.name,
+                "classifier_version": self.strategy.version,
                 "brokerPublishTime": int(datetime.utcnow().timestamp() * 1000),
             }
-            for aid, probabilities in predictions.items()
+            for aid, probs in predictions.items()
         ]
 
     def write_predictions(self, predictions: dict):
-        for aid, probabilities in predictions.items():
+        with_metadata = {
+            aid: {
+                "classifier_name": self.strategy.name,
+                "classifier_version": self.strategy.version,
+                **probs,
+            }
+            for aid, probs in predictions.items()
+        }
+
+        for aid, probabilities in with_metadata.items():
             data_to_produce = {
                 "payload": json.dumps(
                     {
                         "collection": "object",
-                        "type": "update-probabilities",
-                        "criteria": {"aid": aid},
-                        "data": {"probabilities": probabilities},
+                        "type": "insert_probabilities",
+                        "criteria": {"_id": aid},
+                        "data": probabilities,
+                        "options": {"upsert": True},
                     }
                 )
             }
@@ -75,12 +81,9 @@ class StampClassifierStep(GenericStep):
             self.producer.produce(message, key=str(aid))
 
     def add_class_metrics(self, predictions: dict) -> None:
-        self.metrics["class"] = [
-            probability["class_name"]
-            for probabilities in predictions.values()
-            for probability in probabilities
-            if probability["ranking"] == 1
-        ]
+        self.metrics["class"] = {
+            aid: max(probs, key=probs.get) for aid, probs in predictions.items()
+        }
 
     def _remove_objects_in_database(self, messages: List[dict]):
         def exists(obj):
@@ -118,7 +121,7 @@ class StampClassifierStep(GenericStep):
             return
 
         self.logger.info("Inserting/Updating results on database")
-        self.write_predictions(predictions)  # should predictions be in normalized form?
+        self.write_predictions(predictions)
 
         self.logger.info("Producing messages")
         output = self.format_output_message(predictions)
