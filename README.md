@@ -6,14 +6,6 @@ Process alert stream using the selected stamp classifier, either for
 [ZTF](https://github.com/alercebroker/stamp_classifier) or 
 [ATLAS](https://github.com/alercebroker/atlas_stamp_classifier).
 
-Since only the first alert for a given object has to be classified, the step checks
-the database for the object and if it has been classified already, these objects will be removed
-from the messages and not classified. To ensure if the classification already exists, it will only 
-check for the classifier name, i.e., even if the step is using a different version, it will
-not classify new alerts for the same object. On the other hand, since the classifier names differ,
-the first alert from ZTF will be added to the classifications *and* the first ATLAS alert as well
-if the given object has alerts from both surveys.
-
 In case the same object has more than one alert in the same message processing batch, only the earliest
 alert will be classified. This is based on the `mjd` field of the alert. It is perfectly normal for the
 step to classify fewer alerts than it consumes based on the previous two restrictions.
@@ -77,11 +69,6 @@ The [scribe](https://github.com/alercebroker/alerce-scribe) will write results i
 - `CLASSIFIER_STRATEGY`: Which classifier to use. Either `ZTF` or `ATLAS`
 - `MODEL_NAME`: Model name for metadata, e.g., `ztf_stamp_classifier`
 - `MODEL_VERSION`: Model version for metadata, e.g., `1.0.0`
-
-### Database setup
-
-- `MONGODB_SECRET_NAME`: Name for the MongoDB secret inside AWS
-
 
 ## Run the released image
 
