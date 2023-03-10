@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from prv_candidates_step.core.candidates.process_prv_candidates import (
@@ -76,16 +76,16 @@ class PrvCandidatesStep(GenericStep):
         # Produce a message with the non_detections
         for index, alert in enumerate(result[0]):
             non_detections = result[2][index]
-            self.produce_scribe(non_detections, aid=alert["aid"])
+            self.produce_scribe(non_detections, candid=alert["candid"])
 
         return result
 
-    def produce_scribe(self, non_detections: List[dict], aid: str):
+    def produce_scribe(self, non_detections: List[dict], candid: Union[str, int]):
         for non_detection in non_detections:
             scribe_data = {
                 "collection": "non_detection",
                 "type": "update",
-                "criteria": {"_id": aid},
+                "criteria": {"_id": candid},
                 "data": non_detection,
                 "options": {"upsert": True},
             }
