@@ -6,8 +6,6 @@ from typing import List, Union
 from apf.consumers import GenericConsumer
 from apf.core.step import GenericStep
 from apf.producers import GenericProducer
-from db_plugins.db.mongo import MongoConnection
-from db_plugins.db.mongo.models import Object
 
 from .strategies.base import BaseStrategy
 
@@ -27,7 +25,6 @@ class StampClassifierStep(GenericStep):
         producer: GenericProducer,
         scribe_producer: GenericProducer,
         strategy: BaseStrategy,
-        db_connection: MongoConnection,
         level=logging.INFO,
     ):
         super().__init__(consumer, level=level)
@@ -35,7 +32,6 @@ class StampClassifierStep(GenericStep):
         self.producer = producer
         self.scribe_producer = scribe_producer
         self.strategy = strategy
-        self.db_connection = db_connection
 
     def format_output_message(self, predictions: dict) -> List[dict]:
         return [
@@ -85,34 +81,10 @@ class StampClassifierStep(GenericStep):
             aid: max(probs, key=probs.get) for aid, probs in predictions.items()
         }
 
-    def _remove_objects_in_database(self, messages: List[dict]):
-        def exists(obj):
-            try:
-                return any(
-                    p["classifier_name"] == self.strategy.name
-                    for p in obj["probabilities"]
-                )
-            except KeyError:  # In case the object doesn't have a probabilities field
-                return False
-
-        aids = [msg["aid"] for msg in messages]
-        objects = self.db_connection.query(Object).find_all(
-            {"_id": {"$in": aids}}, paginate=False
-        )
-
-        objects_in_db = [obj["_id"] for obj in objects if exists(obj)]
-        return [msg for msg in messages if msg["aid"] not in objects_in_db]
-
     def execute(self, messages: Union[List[dict], dict]):
         if isinstance(messages, dict):
             messages = [messages]
         self.logger.info(f"Processing {len(messages)} messages.")
-
-        self.logger.info("Removing messages from alredy classified objects")
-        messages = self._remove_objects_in_database(messages)
-        self.logger.info(f"Processing {len(messages)} messages from new objects")
-        if not len(messages):
-            return
 
         self.logger.info("Doing inference")
         predictions = self.strategy.get_probabilities(messages)

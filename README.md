@@ -6,14 +6,6 @@ Process alert stream using the selected stamp classifier, either for
 [ZTF](https://github.com/alercebroker/stamp_classifier) or 
 [ATLAS](https://github.com/alercebroker/atlas_stamp_classifier).
 
-Since only the first alert for a given object has to be classified, the step checks
-the database for the object and if it has been classified already, these objects will be removed
-from the messages and not classified. To ensure if the classification already exists, it will only 
-check for the classifier name, i.e., even if the step is using a different version, it will
-not classify new alerts for the same object. On the other hand, since the classifier names differ,
-the first alert from ZTF will be added to the classifications *and* the first ATLAS alert as well
-if the given object has alerts from both surveys.
-
 In case the same object has more than one alert in the same message processing batch, only the earliest
 alert will be classified. This is based on the `mjd` field of the alert. It is perfectly normal for the
 step to classify fewer alerts than it consumes based on the previous two restrictions.
@@ -45,20 +37,28 @@ These are required only when running through the scripts, as is the case for the
 
 ### Consumer setup
 
-- `CONSUMER_TOPICS`: Some topics. String separated by commas, e.g., `topic_one` or `topic_two,topic_three`
 - `CONSUMER_SERVER`: Kafka host with port, e.g., `localhost:9092`
+- `CONSUMER_TOPICS`: Some topics. String separated by commas, e.g., `topic_one` or `topic_two,topic_three`
 - `CONSUMER_GROUP_ID`: Name for consumer group, e.g., `correction`
 - `CONSUME_TIMEOUT`: (optional) Timeout for consumer
 - `CONSUME_MESSAGES`: (optional) Number of messages consumed in a batch
 
 ### Output producer setup
 
-- `PRODUCER_TOPIC_FORMAT`: 
 - `PRODUCER_SERVER`: Kafka host with port, e.g., `localhost:9092`
-- `PRODUCER_CHANGE_HOUR`: 
-- `PRODUCER_RETENTION_DAYS`:
-- `PRODUCER_SASL_USERNAME`:
-- `PRODUCER_SASL_PASSWORD`:
+- `PRODUCER_TOPIC_FORMAT`: Format for topics produced (use `%s` to add the date)
+- `PRODUCER_DATE_FORMAT`: Format for date inside output topic
+- `PRODUCER_CHANGE_HOUR`: Starting at this hour, the date will be changed to the following day
+- `PRODUCER_RETENTION_DAYS`: Number of days the message will be retained
+- `PRODUCER_SASL_USERNAME`: Authentication. Ignored if `KAFKA_USERNAME` and `KAFKA_PASSWORD` are used
+- `PRODUCER_SASL_PASSWORD`: Authentication. Ignored if `KAFKA_USERNAME` and `KAFKA_PASSWORD` are used
+
+### SSL authentication
+
+When using SSL authentication for the whole cluster, the following must be provided
+
+- `KAFKA_USERNAME`: Username for the step authentication
+- `KAFKA_PASSWORD`: Password for the step authentication
 
 ### Scribe producer setup
 
@@ -77,11 +77,6 @@ The [scribe](https://github.com/alercebroker/alerce-scribe) will write results i
 - `CLASSIFIER_STRATEGY`: Which classifier to use. Either `ZTF` or `ATLAS`
 - `MODEL_NAME`: Model name for metadata, e.g., `ztf_stamp_classifier`
 - `MODEL_VERSION`: Model version for metadata, e.g., `1.0.0`
-
-### Database setup
-
-- `MONGODB_SECRET_NAME`: Name for the MongoDB secret inside AWS
-
 
 ## Run the released image
 

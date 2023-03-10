@@ -3,11 +3,8 @@
 ##################################################
 
 import os
-from credentials import get_mongodb_credentials
 from schema import SCHEMA, SCRIBE_SCHEMA
 
-
-DB_CONFIG = get_mongodb_credentials()
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -36,10 +33,6 @@ OUTPUT_PRODUCER_CONFIG = {
     },
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "security.protocol": os.getenv("PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"),
-        "sasl.mechanism": os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"),
-        "sasl.username": os.environ["PRODUCER_SASL_USERNAME"],
-        "sasl.password": os.environ["PRODUCER_SASL_PASSWORD"],
     },
     "SCHEMA": SCHEMA,
 }
@@ -114,6 +107,11 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+else:
+    OUTPUT_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = os.getenv("PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT")
+    OUTPUT_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256")
+    OUTPUT_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.environ["PRODUCER_SASL_USERNAME"]
+    OUTPUT_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.environ["PRODUCER_SASL_PASSWORD"]
 
 STEP_CONFIG = {
     "PRODUCER_CONFIG": OUTPUT_PRODUCER_CONFIG,
