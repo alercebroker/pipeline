@@ -56,7 +56,7 @@ class StampClassifierStep(GenericStep):
         ]
 
     def write_predictions(self, predictions: dict):
-        for aid, probabilities in predictions.items():
+        for aid, probabilities in self.strategy.insert_metadata(predictions).items():
             data_to_produce = {
                 "payload": json.dumps(
                     {
@@ -64,7 +64,7 @@ class StampClassifierStep(GenericStep):
                         "type": "insert_probabilities",
                         "criteria": {"aid": aid},
                         "data": probabilities,
-                        "options": {"upsert": True}
+                        "options": {"upsert": True},
                     }
                 )
             }
@@ -116,7 +116,7 @@ class StampClassifierStep(GenericStep):
             return
 
         self.logger.info("Inserting/Updating results on database")
-        self.write_predictions(predictions)  # should predictions be in normalized form?
+        self.write_predictions(predictions)
 
         self.logger.info("Producing messages")
         output = self.format_output_message(predictions)

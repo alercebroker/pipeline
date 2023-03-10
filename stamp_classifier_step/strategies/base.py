@@ -63,11 +63,12 @@ class BaseStrategy(abc.ABC):
         """
         df = self._to_dataframe(messages)
         df = df[~df.index.duplicated(keep="first")]
-        as_dict = self.predict(df).to_dict(orient="index")
-        return as_dict
+        return self.predict(df).to_dict(orient="index")
 
-    def _insert_classifier_metadata(self, raw_probabilities):
-        """
+    def insert_metadata(self, raw_probabilities):
+        """Generates new dictionary based on output from `predict`.
+
+        The new dictionary is very similar, but now each object also includes classifier metadata.
 
         Args:
             raw_probabilities (dict): Mapping from AIDs to a mapping of class to probability, e.g.:
