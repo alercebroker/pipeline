@@ -15,15 +15,6 @@ from stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 
 
-DB_CONFIG = {
-    "HOST": "localhost",
-    "USERNAME": "root",
-    "PASSWORD": "root",
-    "PORT": 27017,
-    "DATABASE": "test_db",
-}
-
-
 def consume_messages(topic) -> List[dict]:
     config = {
         "PARAMS": {
