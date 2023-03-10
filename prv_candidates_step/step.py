@@ -85,8 +85,9 @@ class PrvCandidatesStep(GenericStep):
             scribe_data = {
                 "collection": "non_detection",
                 "type": "update",
-                "criteria": {"aid": aid},
+                "criteria": {"_id": aid},
                 "data": non_detection,
+                "options": {"upsert": True},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(scribe_payload)
