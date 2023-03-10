@@ -65,8 +65,8 @@ class ZTFStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: Same as `probabilities` but with the additional objects added as asteroids
         """
-        asteroids = pd.DataFrame(data=0., columns=probabilities.columns, index=idx)
-        asteroids["asteroid"] = 1.
+        asteroids = pd.DataFrame(data=0.0, columns=probabilities.columns, index=idx)
+        asteroids["asteroid"] = 1.0
         return pd.concat((probabilities, asteroids))
 
     @staticmethod
@@ -177,4 +177,6 @@ class ZTFStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: Empty prediction-like data frame
         """
-        return pd.DataFrame(columns=["AGN", "SN", "VS", "asteroid", "bogus"], dtype=float)
+        return pd.DataFrame(
+            columns=["AGN", "SN", "VS", "asteroid", "bogus"], dtype=float
+        )
