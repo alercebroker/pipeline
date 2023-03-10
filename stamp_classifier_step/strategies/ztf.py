@@ -40,8 +40,7 @@ class ZTFStrategy(BaseStrategy):
     def _get_asteroids_idx(df: pd.DataFrame) -> pd.Index:
         """Returns the index of stamps that should be classified as asteroids.
 
-        Current stamp classifier just quietly drops these objects, but they should be re-inserted after
-        prediction is made for the proper classification of these stamps.
+        It also drops all things considered asteroids from the data frame.
 
         Args:
             df (pd.DataFrame): Data frame of objects to classified (must be passed before executing prediction)
@@ -50,6 +49,7 @@ class ZTFStrategy(BaseStrategy):
             pd.Index: Index (AIDs) of objects that should be classified as asteroids
         """
         idx = df[df["ssdistnr"] != -999].index
+        df.drop(idx, inplace=True)
         return idx
 
     @staticmethod
@@ -65,8 +65,8 @@ class ZTFStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: Same as `probabilities` but with the additional objects added as asteroids
         """
-        asteroids = pd.DataFrame(data=0, columns=probabilities.columns, index=idx)
-        asteroids["asteroid"] = 1
+        asteroids = pd.DataFrame(data=0.0, columns=probabilities.columns, index=idx)
+        asteroids["asteroid"] = 1.0
         return pd.concat((probabilities, asteroids))
 
     @staticmethod
@@ -159,7 +159,24 @@ class ZTFStrategy(BaseStrategy):
             pd.DataFrame: Class probabilities. Its columns should be the classifier's classes, and indexed by AID
         """
         idx = self._get_asteroids_idx(df)
-        results = self.model.execute(df)
+        n_objects = df.index.size
+        if n_objects:
+            results = self.model.execute(df)
+        else:
+            results = self._empty_predictions()
         results = self._insert_asteroids(results, idx)
         self._drop_bad_sn(df, results)
         return results
+
+    @staticmethod
+    def _empty_predictions() -> pd.DataFrame:
+        """Generates empty data frame.
+
+        The classes are hardcoded since there is no way to read them from the classifier.
+
+        Returns:
+            pd.DataFrame: Empty prediction-like data frame
+        """
+        return pd.DataFrame(
+            columns=["AGN", "SN", "VS", "asteroid", "bogus"], dtype=float
+        )
