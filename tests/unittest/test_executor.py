@@ -1,10 +1,10 @@
-from unittest.mock import patch
 import unittest
+from unittest import mock
 
 from mongo_scribe.db.executor import ScribeCommandExecutor
 
 
-class ExecutorTest(unittest.TestCase):
+class TestExecutor(unittest.TestCase):
     def setUp(self):
         db_config = {
             "MONGO": {
@@ -17,10 +17,14 @@ class ExecutorTest(unittest.TestCase):
         }
         executor = ScribeCommandExecutor(db_config)
         self.executor = executor
+        self.executor.connection = mock.MagicMock()
 
-    @patch("mongo_scribe.db.executor.create_operations")
-    @patch("mongo_scribe.db.executor.execute_operations")
-    def test_bulk_execute(self, mock_execute, mock_create):
+    def test_bulk_execute_skips_empty(self):
         self.executor.bulk_execute("object", [])
-        mock_create.assert_called()
-        mock_execute.assert_called()
+        self.executor.connection.database.__getitem__.return_value.bulk_write.assert_not_called()
+
+    def test_bulk_execute_runs_bulk_write(self):
+        command = mock.MagicMock()
+        command.get_operations.return_value = [mock.MagicMock(), mock.MagicMock()]
+        self.executor.bulk_execute("object", [command])
+        self.executor.connection.database.__getitem__.return_value.bulk_write.assert_called_once()

@@ -1,15 +1,10 @@
 import abc
-from typing import Literal, Union
 from dataclasses import dataclass
-from mongo_scribe.command.exceptions import (
-    NoDataProvidedException,
-    UpdateWithNoCriteriaException,
-    NoCollectionProvidedException,
-    NoClassifierInfoProvidedException,
-    NoAlerceIdentificationProvidedException,
-)
 
-CommandTypes = Literal["insert", "update", "update_probabilities"]
+from pymongo.operations import InsertOne, UpdateOne
+
+from .exceptions import *
+from .commons import ValidCommands
 
 
 @dataclass
@@ -21,86 +16,186 @@ class Options:
     upsert: bool = False
 
 
-class DbCommand(abc.ABC):
+class Command(abc.ABC):
+    """Creates a base command.
+
+    The fields `collection` and `data` are required. The `collection` refers to the collection name in a
+    Mongo database and the `data` has forms specified in subclasses.
+
+    The field `criteria` is only relevant for specific subclasses.
+
+    Finally, `options` can be a dictionary with possible additional settings defined in the class `Options`.
+    Whether a specific option is used or not, will depend on subclass implementation. If unrecognized options
+    or wrong types are provided, the command will use the default options.
     """
-    Plain class that contains the business rules of a Scribe DB Operation.
-    Raises a exception when trying to instantiate an invalid command.
-    """
+
+    type: str
 
     def __init__(
         self,
         collection: str,
-        command_type: CommandTypes,
+        data,
         criteria=None,
-        data=None,
-        options = None,
+        options=None,
     ):
-        if collection is None or collection == "":
-            raise NoCollectionProvidedException
-
-        if data is None:
-            raise NoDataProvidedException
-
+        self._check_inputs(collection, data, criteria)
         self.collection = collection
-        self.type = command_type
-        self.criteria = criteria
+        self.criteria = criteria if criteria else {}
         self.data = data
 
         try:
-            self.options = Options(**options) if options is not None else Options()
+            options = options if options else {}
+            self.options = Options(**options)
         except TypeError:
-            print("Some of the options provided are not supported. Using default values.")
+            print(
+                "Some of the options provided are not supported. Using default values."
+            )
             self.options = Options()
 
+    def _check_inputs(self, collection, data, criteria):
+        if not collection:
+            raise NoCollectionProvidedException()
+        if not data:
+            raise NoDataProvidedException()
+
     @abc.abstractmethod
-    def get_raw_operation(self) -> Union[dict, tuple]:
-        ...
+    def get_operations(self) -> list:
+        pass
 
 
-class InsertDbCommand(DbCommand):
-    def get_raw_operation(self):
-        return self.data
+class InsertCommand(Command):
+    """Directly inserts `data` into the database"""
+
+    type = ValidCommands.insert
+
+    def get_operations(self) -> list:
+        return [InsertOne(self.data)]
 
 
-class UpdateDbCommand(DbCommand):
-    def __init__(
-        self,
-        collection: str,
-        command_type: CommandTypes,
-        criteria=None,
-        data=None,
-        options=None,
-    ):
+class UpdateCommand(Command):
+    """Updates object in database based on a given criteria.
 
-        if command_type == "update" and criteria is None:
-            raise UpdateWithNoCriteriaException
+    Uses MongoDB `$set` operator over the given `data`.
+    """
 
-        super().__init__(collection, command_type, criteria, data, options)
+    type = ValidCommands.update
 
-    def get_raw_operation(self):
-        return self.criteria, self.data
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if not criteria:
+            raise UpdateWithNoCriteriaException()
+        if "_id" not in criteria:
+            raise NoAlerceIdentificationProvidedException()
+
+    def get_operations(self) -> list:
+        return [
+            UpdateOne(
+                self.criteria, {"$set": self.data}, upsert=self.options.upsert
+            )
+        ]
 
 
-class UpdateProbabilitiesDbCommand(DbCommand):
-    def __init__(
-        self,
-        collection: str,
-        command_type: CommandTypes,
-        criteria=None,
-        data=None,
-        options=None
-    ):
-        if (
-            command_type == "update_probabilities"
-            and data["classifier"] is None
-        ):
-            raise NoClassifierInfoProvidedException
+class InsertProbabilitiesCommand(UpdateCommand):
+    """Adds probabilities to array only if the classifier name is not present for document with given criteria.
 
-        if "aid" not in criteria:
-            raise NoAlerceIdentificationProvidedException
+    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
 
-        self.classifier = data.pop("classifier")
-        super().__init__(collection, command_type, criteria, data, options)
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value.
 
-    def get_raw_operation(self):
-        return self.classifier, self.criteria, self.data
+    Example `data`:
+
+    .. code-block::
+       {
+           "classifier_name": "classifier",
+           "classifier_version": "1.0.0",
+           "class1": 0.12,
+           "class2": 0.23,
+           ...
+       }
+
+    When getting the operations, the ranking will be automatically included.
+    """
+
+    type = ValidCommands.insert_probabilities
+
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if "classifier_name" not in data or "classifier_version" not in data:
+            raise NoClassifierInfoProvidedException()
+        self.classifier_name = data.pop("classifier_name")
+        self.classifier_version = data.pop("classifier_version")
+
+    def _sort(self, reverse=True):
+        return sorted(self.data.items(), key=lambda x: x[1], reverse=reverse)
+
+    def get_operations(self) -> list:
+        criteria = {
+            "probabilities.classifier_name": {"$ne": self.classifier_name},
+            **self.criteria,
+        }
+        probabilities = [
+            {
+                "classifier_name": self.classifier_name,
+                "classifier_version": self.classifier_version,
+                "class_name": cls,
+                "probability": p,
+                "ranking": i + 1,
+            }
+            for i, (cls, p) in enumerate(self._sort())
+        ]
+        insert = {"$push": {"probabilities": {"$each": probabilities}}}
+
+        # Insert empty probabilities if AID doesn't exist
+        upsert = {"$setOnInsert": {"probabilities": []}}
+        ops = [
+            UpdateOne(self.criteria, upsert, upsert=self.options.upsert),
+            UpdateOne(criteria, insert),
+        ]
+        return ops
+
+
+class UpdateProbabilitiesCommand(InsertProbabilitiesCommand):
+    """Updates probabilities for document with given criteria.
+
+    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
+
+    Additional fields in `data` must be pairs of class names from the classifier and the probability value.
+
+    Example `data`:
+
+    .. code-block::
+       {
+           "classifier_name": "classifier",
+           "classifier_version": "1.0.0",
+           "class1": 0.12,
+           "class2": 0.23,
+           ...
+       }
+
+    When getting the operations, the ranking will be automatically included.
+    """
+
+    type = ValidCommands.update_probabilities
+
+    def get_operations(self) -> list:
+        ops = super().get_operations()
+        for i, (cls, p) in enumerate(self._sort()):
+            filters = {
+                "el.classifier_name": self.classifier_name,
+                "el.classifier_version": self.classifier_version,
+                "el.class_name": cls,
+            }
+            update = {
+                "$set": {
+                    "probabilities.$[el].probability": p,
+                    "probabilities.$[el].ranking": i + 1,
+                }
+            }
+            ops.append(
+                UpdateOne(
+                    self.criteria,
+                    update,
+                    array_filters=[filters],
+                )
+            )
+        return ops

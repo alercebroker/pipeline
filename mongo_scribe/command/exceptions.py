@@ -1,4 +1,4 @@
-class NoDataProvidedException(Exception):
+class NoDataProvidedException(ValueError):
     """
     Exception to raise when the command doesn't have any data
     """
@@ -7,7 +7,7 @@ class NoDataProvidedException(Exception):
         super().__init__("The command must contain data to insert or update")
 
 
-class UpdateWithNoCriteriaException(Exception):
+class UpdateWithNoCriteriaException(ValueError):
     """
     Exception to raise when an update command doesn't have a filter (or criteria)
     """
@@ -16,25 +16,25 @@ class UpdateWithNoCriteriaException(Exception):
         super().__init__("The Update command must contain an update criteria")
 
 
-class MisformattedCommandExcepction(Exception):
+class WrongFormatCommandException(ValueError):
     """
     Exception to raise when a dictionary doesn't have valid command fields
     """
 
     def __init__(self):
-        super().__init__("Received a misformatted message")
+        super().__init__("Received a badly formatted message")
 
 
-class NonExistantCollectionException(Exception):
+class NonExistentCollectionException(ValueError):
     """
-    Exception to raise when trying to obtain a non-existant collection
+    Exception to raise when trying to obtain a non-existent collection
     """
 
     def __init__(self):
         super().__init__("Collection doesn't exist")
 
 
-class NoCollectionProvidedException(Exception):
+class NoCollectionProvidedException(ValueError):
     """
     Exception to raise when a command doesn't provide a collection to write on
     """
@@ -42,16 +42,18 @@ class NoCollectionProvidedException(Exception):
     def __init__(self):
         super().__init__("No collection provided in the command")
 
-class NoClassifierInfoProvidedException(Exception):
+
+class NoClassifierInfoProvidedException(ValueError):
     """
-    Exception to raise when a command doesn't provide the classifier when 
+    Exception to raise when a command doesn't provide the classifier when
     updating probabilities
     """
 
     def __init__(self):
         super().__init__("No classifier info provided in the command")
 
-class NoAlerceIdentificationProvidedException(Exception):
+
+class NoAlerceIdentificationProvidedException(ValueError):
     """
     Exception to raise when a command does not provide an ALeRCE ID when
     trying to update probabilities
