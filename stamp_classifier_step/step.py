@@ -75,12 +75,9 @@ class StampClassifierStep(GenericStep):
             self.producer.produce(message, key=str(aid))
 
     def add_class_metrics(self, predictions: dict) -> None:
-        self.metrics["class"] = [
-            probability["class_name"]
-            for probabilities in predictions.values()
-            for probability in probabilities
-            if probability["ranking"] == 1
-        ]
+        self.metrics["class"] = {
+            aid: max(probs, key=probs.get) for aid, probs in predictions.items()
+        }
 
     def _remove_objects_in_database(self, messages: List[dict]):
         def exists(obj):
