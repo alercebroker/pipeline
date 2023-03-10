@@ -51,6 +51,9 @@ class PrvCandidatesStep(GenericStep):
                 result[2][index], alert["aid"], alert["tid"], alert["oid"]
             )
             stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
+            stampless_alert["extra_fields"] = remove_keys_from_dictionary(
+                stampless_alert["extra_fields"], ["prv_candidates"]
+            )
             output.append(
                 {
                     "aid": alert["aid"],

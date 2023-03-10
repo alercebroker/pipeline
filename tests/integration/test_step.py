@@ -41,6 +41,7 @@ def assert_result_has_non_detections(message):
 def assert_result_has_alert(message):
     assert message["new_alert"] is not None
     assert message["new_alert"].get("stamps") is None
+    assert message["new_alert"]["extra_fields"].get("prv_candidates") is None
 
 
 def test_scribe_has_non_detections(kafka_service, env_variables, scribe_consumer):
