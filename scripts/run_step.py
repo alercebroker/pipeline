@@ -1,6 +1,5 @@
 import os
 import sys
-from apf.core import get_class
 
 import logging
 
@@ -8,28 +7,25 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import *
 
-level = logging.INFO
-if "LOGGING_DEBUG" in locals():
-    if LOGGING_DEBUG:
+
+def step_factory():
+    from magstats_step.step import MagstatsStep
+    from settings import settings_factory
+
+    step_config = settings_factory()
+
+    level = logging.INFO
+    if step_config["LOGGING_DEBUG"]:
         level = logging.DEBUG
 
-logging.basicConfig(
-    level=level,
-    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    return MagstatsStep(config=step_config, level=level)
 
 
-from magstats_step.step import MagstatsStep
-
-if "CLASS" in CONSUMER_CONFIG:
-    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
-else:
-    from apf.consumers import KafkaConsumer as Consumer
-
-consumer = Consumer(config=CONSUMER_CONFIG)
-
-step = MagstatsStep(consumer, config=STEP_CONFIG, level=level)
-step.start()
+if __name__ == "__main__":
+    step_factory().start()

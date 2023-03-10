@@ -1,28 +1,6 @@
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
-import warnings
-
-from typing import Tuple, List
-
-import numpy as np
 import pandas as pd
 import logging
-import sys
-
-
-from magstats_step.utils.multi_driver.connection import MultiDriverConnection
-
-from magstats_step.utils.old_preprocess import (
-    get_catalog)
-
-from .dmdt import DmdtCalculator
-from .magstats import MagStatsCalculator
-
-
-sys.path.insert(0, "../../../../")
-#TODO: Check what this is for
-pd.options.mode.chained_assignment = None
-np.seterr(divide="ignore")
 
 
 class MagstatsStep(GenericStep):
@@ -34,17 +12,16 @@ class MagstatsStep(GenericStep):
     **step_args : type
         Other args passed to step (DB connections, API requests, etc.)
     """
-    def __init__(self,
-        consumer=None,
-        config=None,
+
+    def __init__(
+        self,
+        config={},
         level=logging.INFO,
         **step_args,
     ):
-        super().__init__(consumer, config=config, level=level)
-        self.magstats_calculator = MagStatsCalculator()
+        super().__init__(config=config, level=level, **step_args)
 
-
-    def parse_lightcurves(self, alerts : pd.DataFrame) -> dict:
+    def parse_lightcurves(self, alerts: pd.DataFrame) -> dict:
         """Parses the message data and returns a dictionary with detections and
         non detections
 
@@ -57,11 +34,11 @@ class MagstatsStep(GenericStep):
         object_non_detections_list = []
 
         for alerce_id, alerce_object in alerts.iterrows():
-            object_detections = pd.DataFrame(alerce_object['detections'])
-            object_detections['id'] = alerce_id
+            object_detections = pd.DataFrame(alerce_object["detections"])
+            object_detections["id"] = alerce_id
 
-            object_non_detections = pd.DataFrame(alerce_object['non_detections'])
-            object_non_detections['id'] = alerce_id
+            object_non_detections = pd.DataFrame(alerce_object["non_detections"])
+            object_non_detections["id"] = alerce_id
 
             object_detections_list.append(object_detections)
             object_non_detections_list.append(object_non_detections)
@@ -84,19 +61,14 @@ class MagstatsStep(GenericStep):
         detections["magpsf"] = detections["mag"]
         detections["sigmapsf"] = detections["e_mag"]
 
-        light_curves = {
-                'detections': detections,
-                'non_detections' : non_detections
-                }
+        light_curves = {"detections": detections, "non_detections": non_detections}
 
         return light_curves
 
-
-    def recalculate_magstats(self,
-                             unique_ids : list,
-                             light_curves : dict
-                             ) -> pd.DataFrame:
-        """ Given a lightcurve, this function recalculates the magstats using
+    def recalculate_magstats(
+        self, unique_ids: list, light_curves: dict
+    ) -> pd.DataFrame:
+        """Given a lightcurve, this function recalculates the magstats using
         the data recieved in the alerts
 
         :unique_ids: Unique alerce ids to query the database
@@ -104,10 +76,7 @@ class MagstatsStep(GenericStep):
         :returns: The new recalculated magstats for the objects.
         """
 
-
-        new_magstats = self.magstats_calculator.calculate(
-            light_curves
-        )
+        new_magstats = self.magstats_calculator.calculate(light_curves)
 
         """
         # Identify new entries
@@ -145,7 +114,7 @@ class MagstatsStep(GenericStep):
 
         return new_stats
 
-    def execute(self, messages : list):
+    def execute(self, messages: list):
         """TODO: Docstring for execute.
         TODO:
 
@@ -163,13 +132,13 @@ class MagstatsStep(GenericStep):
         unique_ids = alerts["id"].unique().tolist()
 
         # Reference
-        #reference = get_catalog(unique_oids, "Reference", self.driver)
+        # reference = get_catalog(unique_oids, "Reference", self.driver)
         # PS1
-        #ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
+        # ps1 = get_catalog(unique_oids, "Ps1_ztf", self.driver)
 
         new_stats = self.recalculate_magstats(unique_ids, light_curves)
 
-        #self.magstats_calculator.insert(new_stats, self.driver)
+        # self.magstats_calculator.insert(new_stats, self.driver)
 
         self.logger.info(f"Clean batch of data\n")
         del alerts
