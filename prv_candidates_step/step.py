@@ -85,7 +85,7 @@ class PrvCandidatesStep(GenericStep):
             scribe_data = {
                 "collection": "non_detection",
                 "type": "update",
-                "criteria": {"_id": candid},
+                "criteria": {"_id": str(candid)},
                 "data": non_detection,
                 "options": {"upsert": True},
             }
