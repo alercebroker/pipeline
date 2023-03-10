@@ -3,7 +3,6 @@ from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import KafkaException
-from pymongo import MongoClient
 
 import pytest
 from .schema import SCHEMA
@@ -42,29 +41,6 @@ def consume_messages() -> list:
     for message in consumer.consume():
         messages.append(message)
     return messages
-
-
-def is_responsive_mongo():
-    try:
-        client = MongoClient(
-            "localhost", 27017, username="root", password="root", authSource="admin"
-        )
-        client.server_info()  # check connection
-        return True
-    except Exception as e:
-        print(e)
-        return False
-
-
-@pytest.fixture(scope="class")
-def mongo_service(docker_ip, docker_services):
-    """Ensure that mongo service is up and responsive."""
-    port = docker_services.port_for("mongo", 27017)
-    server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo()
-    )
-    return server
 
 
 def is_responsive_kafka(url):

@@ -1,7 +1,6 @@
 import json
 from apf.producers import KafkaProducer
 from stamp_classifier_step.step import StampClassifierStep
-from stamp_classifier_step.strategies import BaseStrategy
 from unittest.mock import MagicMock
 
 
@@ -18,10 +17,8 @@ def test_format_output_message():
     consumer_mock = MagicMock()
     producer_mock = MagicMock()
     strategy_mock = MagicMock()
-    db_mock = MagicMock()
     step = StampClassifierStep(
         consumer=consumer_mock,
-        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=producer_mock,
         strategy=strategy_mock,
@@ -58,10 +55,8 @@ def test_write_predictions():
     strategy_mock = MagicMock()
     strategy_mock.name = "atlas_stamp_classifier"
     strategy_mock.version = "1.0.0"
-    db_mock = MagicMock()
     step = StampClassifierStep(
         consumer=consumer_mock,
-        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=scribe_producer,
         strategy=strategy_mock,
@@ -102,10 +97,8 @@ def test_produce():
     producer_mock = MagicMock()
     scribe_producer = MagicMock(spec=KafkaProducer)
     strategy_mock = MagicMock()
-    db_mock = MagicMock()
     step = StampClassifierStep(
         consumer=consumer_mock,
-        db_connection=db_mock,
         producer=producer_mock,
         scribe_producer=scribe_producer,
         strategy=strategy_mock,
