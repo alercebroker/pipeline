@@ -86,7 +86,7 @@ class ZTFStrategy(BaseStrategy):
         """
         idx = probabilities[probabilities.idxmax(axis=1) == "SN"].index
         snae = df.loc[idx]
-        check = snae["isdiffpos"] == 0  # Negative difference
+        check = snae["isdiffpos"] == -1  # Negative difference
         check |= (snae["sgscore1"] > 0.5) & (snae["distpsnr1"] < 1)  # Near star
 
         probabilities.drop(check[check].index, inplace=True)
