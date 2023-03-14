@@ -7,9 +7,9 @@ from apf.core import get_class
 from apf.core.step import GenericStep
 
 from .core.correction.corrector import Corrector
-from .core.strategies import (
-    ZTFCorrectionStrategy,
-    ATLASCorrectionStrategy,
+from .core.strategy import (
+    ZTFStrategy,
+    ATLASStrategy,
 )
 
 
@@ -28,7 +28,7 @@ class CorrectionStep(GenericStep):
     ):
         super().__init__(config=config, level=level, **step_args)
         self.detections_corrector = Corrector(
-            ZTFCorrectionStrategy()
+            ZTFStrategy()
         )  # initial strategy (can change)
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -61,9 +61,9 @@ class CorrectionStep(GenericStep):
         for message in messages:
             detections = message["prv_detections"] + [message["new_alert"]]
             if "ZTF" == message["new_alert"]["tid"]:
-                self.detections_corrector.strategy = ZTFCorrectionStrategy()
+                self.detections_corrector.strategy = ZTFStrategy()
             elif "ATLAS" == message["new_alert"]["tid"]:
-                self.detections_corrector.strategy = ATLASCorrectionStrategy()
+                self.detections_corrector.strategy = ATLASStrategy()
             df = pd.DataFrame(detections).replace({np.nan: None})
             df["rfid"] = df["rfid"].astype("Int64")
             correction_df = self.detections_corrector.compute(df)
