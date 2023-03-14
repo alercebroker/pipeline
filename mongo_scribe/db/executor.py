@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Dict
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Object, Detection, NonDetection
 from ..command.commands import Command
@@ -22,7 +22,7 @@ class ScribeCommandExecutor:
         connection.connect(config["MONGO"])
         self.connection = connection
 
-    def bulk_execute(self, collection_name: str, commands: List[Command]):
+    def _bulk_execute(self, collection_name: str, commands: List[Command]):
         """
         Executes a list of commands obtained from a Kafka topic
         Does nothing when the command list is empty
@@ -40,3 +40,18 @@ class ScribeCommandExecutor:
             self.connection.database[collection_name].bulk_write(operations)
         else:
             return
+        
+    def bulk_execute(self, commands: List[Command]):
+        """
+        Recieves all commands and separates them according to their collection
+        """
+        classificated_commands: Dict[List] = {}
+        for command in commands:
+            collection = command.collection
+            if collection not in classificated_commands.keys():
+                classificated_commands[collection] = []
+            classificated_commands[collection].append(command)
+
+        for collection_name, command_list in classificated_commands:
+            self._bulk_execute(collection_name, command_list)
+            
