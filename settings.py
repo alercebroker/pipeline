@@ -23,8 +23,8 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset":"beginning",
-        "max.poll.interval.ms": 3600000, 
+        "auto.offset.reset": "beginning",
+        "max.poll.interval.ms": 3600000,
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
@@ -36,7 +36,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
 }
 
 METRICS_CONFIG = {
@@ -50,7 +50,8 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
+            "auto.offset.reset": "smallest",
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
@@ -86,12 +87,26 @@ METRICS_CONFIG = {
     },
 }
 
+if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
+    CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
     "STEP_ID": os.getenv("STEP_ID", "features"),
     "STEP_NAME": os.getenv("STEP_NAME", "features"),
     "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev")
+    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
 }
 
 STEP_CONFIG = {
