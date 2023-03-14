@@ -164,6 +164,8 @@ class ZTFStrategy(BaseStrategy):
             pd.DataFrame: Prediction-like data frame
         """
         return pd.DataFrame(
-            columns=["AGN", "SN", "VS", "asteroid", "bogus"], dtype=float,
-            data=data, index=idx
+            columns=["AGN", "SN", "VS", "asteroid", "bogus"],
+            dtype=float,
+            data=data,
+            index=idx,
         )
