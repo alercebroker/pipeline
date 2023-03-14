@@ -105,11 +105,11 @@ class EarlyClassifierTest(unittest.TestCase):
 
     def test_insert_db_doesnt_exist(self):
         probabilities = {
-            "AGN": 1,
-            "SN": 2,
-            "bogus": 3,
-            "asteroid": 4,
             "VS": 5,
+            "asteroid": 4,
+            "bogus": 3,
+            "SN": 2,
+            "AGN": 1,
         }
         probabilities_with_ranking = {
             "AGN": {"probability": 1, "ranking": 5},
