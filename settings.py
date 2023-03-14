@@ -1,9 +1,5 @@
 import os
 
-##################################################
-#       atlas_id_step   Settings File
-##################################################
-
 
 def settings_factory():
     # Set the global logging level to debug

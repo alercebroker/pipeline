@@ -4,17 +4,14 @@ import pandas as pd
 import numpy as np
 from unittest import mock
 
-from apf.producers import KafkaProducer
-from magstats_step.utils.multi_driver.connection import MultiDriverConnection
 from magstats_step.step import MagstatsStep
 
-from data.messages import *
+from data.messages import data
 
 class StepTestCase(unittest.TestCase):
     def setUp(self) -> None:
         step_config = {
         }
-        mock_producer = mock.create_autospec(KafkaProducer)
         self.step = MagstatsStep(
             config=step_config,
         )
@@ -23,11 +20,12 @@ class StepTestCase(unittest.TestCase):
         del self.step
 
     def test_step(self):
-        self.step.execute(LC_MESSAGE)
-        # Verify magstats insert call
-        dict_to_insert = pd.DataFrame.from_dict(MAGSTATS_RESULT).replace({np.nan: None}).to_dict("records")
-        return
-
-    def test_lightcurve_parse(self):
+        self.step.execute(data)
         pass
+
+    def test_compute_magstats(self):
+        stats = self.step.compute_magstats(data)
+        assert 'aid' in stats[0]
+        assert 'magstats' in stats[0]
+        assert len(stats) == len(data)
 

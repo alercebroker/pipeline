@@ -1,7 +1,7 @@
 {
   "type": "record",
-  "doc": "Previous candidates schema with new alert and previous detections and non detections",
-  "name": "prv_candidates",
+  "doc": "Schema for magstats step, with detections and non detections",
+  "name": "magstats",
   "fields": [
     {
       "name": "aid",

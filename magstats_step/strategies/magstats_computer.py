@@ -15,7 +15,7 @@ class MagstatsComputer:
     def strategy(self, strategy: BaseStrategy):
         self._strategy = strategy
 
-    def compute_magtats(
+    def compute_magstats(
         self, detections: List[dict], non_detections: List[dict]
     ) -> pd.DataFrame:
         return self.strategy.compute_magstats(detections, non_detections)
