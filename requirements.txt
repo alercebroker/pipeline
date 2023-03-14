@@ -1,0 +1,2 @@
+apf_base==2.1.5
+git+https://github.com/alercebroker/lc_correction
