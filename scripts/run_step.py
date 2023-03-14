@@ -9,7 +9,7 @@ PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 sys.path.append(PACKAGE_PATH)
 
 
-from correction_step import DetectionStep
+from correction_step import CorrectionStep
 
 def step_creator():
     from settings import settings_creator
@@ -24,7 +24,7 @@ def step_creator():
     if "LOGGING_DEBUG" in locals():
         if settings["LOGGING_DEBUG"]:
             level = logging.DEBUG
-    return DetectionStep(config=settings, level=level)
+    return CorrectionStep(config=settings, level=level)
 
 
 if __name__ == "__main__":
