@@ -14,14 +14,14 @@ files = [
 
 [[package]]
 name = "apf-base"
-version = "2.1.5"
+version = "1.0.9"
 description = "ALeRCE Alert Processing Framework."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "apf_base-2.1.5-py3-none-any.whl", hash = "sha256:13f87e0d29da9cf3f5599091bed139572b3e57e3662c20b5e690b4febabeafd5"},
-    {file = "apf_base-2.1.5.tar.gz", hash = "sha256:118f328afdfc956f969f6f9576766a88702482ee8044d61c260f0725d1a96685"},
+    {file = "apf_base-1.0.9-py3-none-any.whl", hash = "sha256:ecc4ee4dc3fb32e156edc24bdca480605ba97c0f15eb00bbaedd9f5ea96fb373"},
+    {file = "apf_base-1.0.9.tar.gz", hash = "sha256:84b7e1680f0d2899763766e98a628a88b551acd8b3251ad808eef0f771554e41"},
 ]
 
 [package.dependencies]
@@ -32,7 +32,6 @@ fastavro = ">=0.22.0,<1.5.0"
 Jinja2 = ">=2.10.0"
 numpydoc = ">=0.9.0"
 pandas = ">=0.24"
-prometheus-client = "0.16.0"
 
 [[package]]
 name = "attrs"
@@ -612,21 +611,6 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
-name = "prometheus-client"
-version = "0.16.0"
-description = "Python client for the Prometheus monitoring system."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "prometheus_client-0.16.0-py3-none-any.whl", hash = "sha256:0836af6eb2c8f4fed712b2f279f6c0a8bbab29f9f4aa15276b91c7cb0d1616ab"},
-    {file = "prometheus_client-0.16.0.tar.gz", hash = "sha256:a03e35b359f14dd1630898543e2120addfdeacd1a6069c1367ae90fd93ad3f48"},
-]
-
-[package.extras]
-twisted = ["twisted"]
-
-[[package]]
 name = "pygments"
 version = "2.14.0"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -935,4 +919,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.9.0"
-content-hash = "b4099fb5c7a7751180c5c3884088330aec2333fbe56329bddb7f7445807d807e"
+content-hash = "4c69b0c28ede528849cbe0f424e7facb7b6df3069ea96037b36351276ce44776"
