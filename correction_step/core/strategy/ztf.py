@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 
-from .base_correction_strategy import BaseCorrectionStrategy
+from .base import BaseStrategy
 from lc_correction.compute import correction, is_dubious, DISTANCE_THRESHOLD
 
 
-class ZTFCorrectionStrategy(BaseCorrectionStrategy):
+class ZTFStrategy(BaseStrategy):
     @classmethod
     def get_first_corrected(cls, df):
         min_candid = df["candid"].values.argmin()

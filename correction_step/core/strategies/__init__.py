@@ -1,2 +1,0 @@
-from .atlas_correction_strategy import ATLASCorrectionStrategy
-from .ztf_correction_strategy import ZTFCorrectionStrategy
