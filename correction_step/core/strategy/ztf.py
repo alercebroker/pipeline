@@ -6,11 +6,9 @@ import pandas as pd
 from .base import BaseStrategy
 
 
-DISTANCE_THRESHOLD = 1.4
-
-
 class ZTFStrategy(BaseStrategy):
-    EXTRA_FIELDS = ["magnr", "sigmagnr"]
+    EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr"]
+    DISTANCE_THRESHOLD = 1.4
     ZERO_MAG = 100.
 
     @classmethod
@@ -19,9 +17,21 @@ class ZTFStrategy(BaseStrategy):
         first_corr = df["corrected"].iloc[min_candid]
         return first_corr
 
+    @property
+    def corrected(self) -> pd.Series:
+        return self._extra["distnr"] < self.DISTANCE_THRESHOLD
+
+    @property
+    def dubious(self):
+        return
+
+    @property
+    def first_corrected(self):
+        return
+
     def correction(self) -> pd.DataFrame:
         columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        corrections = pd.DataFrame(columns=columns, index=self._generic.index)
+        corrections = pd.DataFrame(columns=columns, index=self._generic.index, dtype=float)
 
         aux1 = 10 ** (-.4 * self._extra["magnr"])
         aux2 = 10 ** (-.4 * self._generic["mag"])
@@ -36,11 +46,11 @@ class ZTFStrategy(BaseStrategy):
             corrections["e_mag_corr"] = np.sqrt(aux4) / aux3
             corrections["e_mag_corr_ext"] = aux2 * self._generic["e_mag"] / aux3
 
-        # these values are invalid
-        mask = (self._extra["magnr"] < 0) & (self._generic["mag"] < 0)
-        corrections[mask] = np.nan
-        corrections.replace(np.inf, self.ZERO_MAG)
+        bad = (self._extra["magnr"] < 0) & (self._generic["mag"] < 0)
 
+        corrections[bad | self.corrected] = np.nan
+
+        corrections.replace(np.inf, self.ZERO_MAG)
         return corrections
 
     def do_dubious(self, df: pd.DataFrame):
