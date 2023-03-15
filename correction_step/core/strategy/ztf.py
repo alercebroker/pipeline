@@ -1,16 +1,47 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 
 from .base import BaseStrategy
-from lc_correction.compute import correction, is_dubious, DISTANCE_THRESHOLD
+
+
+DISTANCE_THRESHOLD = 1.4
 
 
 class ZTFStrategy(BaseStrategy):
+    EXTRA_FIELDS = ["magnr", "sigmagnr"]
+    ZERO_MAG = 100.
+
     @classmethod
     def get_first_corrected(cls, df):
         min_candid = df["candid"].values.argmin()
         first_corr = df["corrected"].iloc[min_candid]
         return first_corr
+
+    def correction(self) -> pd.DataFrame:
+        columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+        corrections = pd.DataFrame(columns=columns, index=self._generic.index)
+
+        aux1 = 10 ** (-.4 * self._extra["magnr"])
+        aux2 = 10 ** (-.4 * self._generic["mag"])
+        aux3 = np.maximum(aux1 + self._generic["isdiffpos"] * aux2, 0.0)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            corrections["mag_corr"] = -2.5 * np.log10(aux3)
+
+        aux4 = aux2 ** 2 * self._generic["e_mag"] ** 2 - aux1 ** 2 * self._extra["sigmagnr"] ** 2
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            corrections["e_mag_corr"] = np.sqrt(aux4) / aux3
+            corrections["e_mag_corr_ext"] = aux2 * self._generic["e_mag"] / aux3
+
+        # these values are invalid
+        mask = (self._extra["magnr"] < 0) & (self._generic["mag"] < 0)
+        corrections[mask] = np.nan
+        corrections.replace(np.inf, self.ZERO_MAG)
+
+        return corrections
 
     def do_dubious(self, df: pd.DataFrame):
         # was the first detection corrected?
