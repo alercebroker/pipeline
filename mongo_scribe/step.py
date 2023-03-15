@@ -39,5 +39,5 @@ class MongoScribe(GenericStep):
 
         if len(valid_commands) > 0:
             logging.info("Writing commands into database")
-            collection = valid_commands[0].collection
-            self.db_client.bulk_execute(collection, valid_commands)
+            # collection = valid_commands[0].collection
+            self.db_client.bulk_execute(valid_commands)

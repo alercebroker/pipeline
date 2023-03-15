@@ -19,7 +19,7 @@ DB_CONFIG = {
 CONSUMER_CONFIG = {
     "TOPICS": ["test_topic"],
     "PARAMS": {
-        "bootstrap.servers": "localhost:9094",
+        "bootstrap.servers": "localhost:9092",
         "group.id": "command_consumer_1",
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
@@ -29,7 +29,7 @@ CONSUMER_CONFIG = {
 
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
-    "PARAMS": {"bootstrap.servers": "localhost:9094"},
+    "PARAMS": {"bootstrap.servers": "localhost:9092"},
     "SCHEMA": {
         "namespace": "db_operation",
         "type": "record",
@@ -84,6 +84,34 @@ class StepTest(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result["field"], "some_value")
 
+    def test_insert_into_multiple_collections(self):
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "insert",
+                "data": {"_id": "inserted_id10", "field": "some_value"},
+            }
+        )
+        self.producer.produce({"payload": command}, key="insertion_1")
+        command = json.dumps(
+            {
+                "collection": "detection",
+                "type": "insert",
+                "data": {"_id": "inserted_id2", "field": "some_value2"},
+            }
+        )
+        self.producer.produce({"payload": command}, key="insertion_2")
+
+        self.step.start()
+        collection = self.step.db_client.connection.database["object"]
+        detection_coll = self.step.db_client.connection.database["detection"]
+        result = collection.find_one({"_id": "inserted_id1"})
+        self.assertIsNotNone(result)
+        self.assertEqual(result["field"], "some_value")
+        result_detection = detection_coll.find_one({"_id": "inserted_id2"})
+        self.assertIsNotNone(result_detection)
+        self.assertEqual(result_detection["field"], "some_value2")
+
     def test_upsert_into_database(self):
         command = json.dumps(
             {
@@ -102,6 +130,8 @@ class StepTest(unittest.TestCase):
         result = collection.find_one({"_id": "upserted_id"})
         self.assertIsNotNone(result)
         self.assertEqual(result["field"], "some_value")
+        
+
 
     def test_insert_probabilities_into_database(self):
         command = json.dumps(

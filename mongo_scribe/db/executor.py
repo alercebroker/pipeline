@@ -52,6 +52,6 @@ class ScribeCommandExecutor:
                 classificated_commands[collection] = []
             classificated_commands[collection].append(command)
 
-        for collection_name, command_list in classificated_commands:
+        for collection_name, command_list in classificated_commands.items():
             self._bulk_execute(collection_name, command_list)
             
