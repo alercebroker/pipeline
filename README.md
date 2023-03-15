@@ -42,7 +42,7 @@ The commands must be formatted as follows:
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
     "PARAMS": {
-        "bootstrap.servers": "localhost:9094"
+        "bootstrap.servers": "localhost:9092"
     },
     "SCHEMA": {
         "namespace": "db_operation",
