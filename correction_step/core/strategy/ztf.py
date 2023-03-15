@@ -26,8 +26,7 @@ class ZTFStrategy(BaseStrategy):
         return full.groupby(["aid", "fid"])["corrected"].transform(min, "mjd")
 
     def _correct(self) -> pd.DataFrame:
-        columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        corrections = pd.DataFrame(columns=columns, index=self._generic.index, dtype=float)
+        corrections = super()._correct()
 
         aux1 = 10 ** (-.4 * self._extra["magnr"])
         aux2 = 10 ** (-.4 * self._generic["mag"])
