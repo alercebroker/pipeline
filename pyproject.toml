@@ -8,10 +8,7 @@ packages = [{include = "magstats_step"}]
 
 [tool.poetry.dependencies]
 python = "~3.9.0"
-lc-correction = "^1.0.0"
 apf-base = "^1.0.9"
-db-plugins = {git = "https://github.com/alercebroker/db-plugins.git"}
-
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
