@@ -23,11 +23,13 @@ class ZTFStrategy(BaseStrategy):
 
     @property
     def dubious(self):
-        return
+        negative = ~self.corrected & (self._generic["isdiffpos"] == -1)
+        return (~self.corrected & negative) | (self.first & ~self.corrected) | (~self.first & self.corrected)
 
     @property
-    def first_corrected(self):
-        return
+    def first(self):
+        full = self._generic.assign(corrected=self.corrected)
+        return full.groupby(["aid", "fid"])["corrected"].transform(min, "mjd")
 
     def correction(self) -> pd.DataFrame:
         columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
