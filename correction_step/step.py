@@ -24,18 +24,9 @@ class CorrectionStep(GenericStep):
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
 
-    def pre_produce(self, result: tuple):
+    def pre_produce(self, result: list[dict]):
         self.set_producer_key_field("aid")
-        output = []
-        for index, alert in enumerate(result[0]):
-            output.append(
-                {
-                    "aid": alert["aid"],
-                    "detections": result[1][index],
-                    "non_detections": alert["non_detections"],
-                }
-            )
-        return output
+        return result
 
     def execute(self, messages: list[dict]) -> list[dict]:
         self.logger.info(f"Processing {len(messages)} new alerts")
