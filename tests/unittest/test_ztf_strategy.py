@@ -14,7 +14,7 @@ def test_ztf_strategy_corrected_is_based_on_distance():
     assert (corrector.corrected == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
 
 
-def test_ztf_strategy_first_detection_is_corrected_splits_by_aid_and_fid():
+def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
     mjds = np.linspace(2, 3, 3)
     alerts = [utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="fn")]
     alerts.extend([
@@ -54,6 +54,51 @@ def test_ztf_strategy_first_detection_is_corrected_splits_by_aid_and_fid():
     assert ~corrector.first[corrector.first.index.str.startswith("fn")].all()
     assert corrector.first[corrector.first.index.str.startswith("sy")].all()
     assert ~corrector.first[corrector.first.index.str.startswith("sn")].all()
+
+
+def test_ztf_strategy_dubious_for_negative_difference_without_close_source():
+    alerts = [utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), isdiffpos=-1)]
+    corrector = ZTFStrategy(alerts)
+    assert corrector.dubious.all()
+
+    alerts = [utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), isdiffpos=1)]
+    corrector = ZTFStrategy(alerts)
+    assert ~corrector.dubious.all()
+
+
+def test_ztf_strategy_dubious_for_first_with_close_source_and_follow_up_without():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="first"),
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="second", mjd=2),
+    ]
+    corrector = ZTFStrategy(alerts)
+    assert ~corrector.dubious.loc["first"]
+    assert corrector.dubious.loc["second"]
+
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="first"),
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="second", mjd=2),
+    ]
+    corrector = ZTFStrategy(alerts)
+    assert ~corrector.dubious.all()
+
+
+def test_ztf_strategy_dubious_for_follow_up_with_close_source_and_first_without():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="first"),
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="second", mjd=2),
+    ]
+    corrector = ZTFStrategy(alerts)
+    assert ~corrector.dubious.loc["first"]
+    assert corrector.dubious.loc["second"]
+
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="first"),
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="second", mjd=2),
+    ]
+    corrector = ZTFStrategy(alerts)
+    assert ~corrector.dubious.all()
+
 #
 #
 # def test_atlas_strategy_correction_is_all_nan():
