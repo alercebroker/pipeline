@@ -72,6 +72,10 @@
             "type": ["float", "null"]
           },
           {
+            "name": "e_mag_corr_ext",
+            "type": ["float", "null"]
+          },
+          {
             "name": "isdiffpos",
             "type": "int"
           },

@@ -1,90 +1,57 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 
 from .base import BaseStrategy
-from lc_correction.compute import correction, is_dubious, DISTANCE_THRESHOLD
 
 
 class ZTFStrategy(BaseStrategy):
-    @classmethod
-    def get_first_corrected(cls, df):
-        min_candid = df["candid"].values.argmin()
-        first_corr = df["corrected"].iloc[min_candid]
-        return first_corr
+    """Strategy for ZTF corrections.
 
-    def do_dubious(self, df: pd.DataFrame):
-        # was the first detection corrected?
-        min_corr = df.groupby(["oid", "fid"], sort=False).apply(
-            self.get_first_corrected
-        )
-        min_corr.name = "first_corrected"
-        # join with detections dataframe
-        df = df.join(min_corr, on=["oid", "fid"], how="left")
-        # get dubious data
-        dubious = is_dubious(df.corrected, df.isdiffpos, df.first_corrected)
-        return dubious
+    Whether an alert is considered near a source is based on `distnr` being less than `DISTANCE_THRESHOLD`.
 
-    def do_correction(self, detections: pd.DataFrame) -> pd.DataFrame:
-        # Retrieve some metadata for do correction
-        fields = detections["extra_fields"].apply(
-            lambda x: [x["distnr"], x["magnr"], x["sigmagnr"]]
-        )
-        # Create an auxiliary dataframe for correction
-        df = pd.DataFrame(
-            list(fields), columns=["distnr", "magnr", "sigmagnr"]
-        )
-        # Uses candid like index
-        df.index = detections["candid"]
-        # Additional columns for correction
-        df.loc[:, ["magpsf", "sigmapsf"]] = detections[["mag", "e_mag"]].values
-        df.loc[:, "isdiffpos"] = detections["isdiffpos"].values
-        # Is possible correct that detection?
-        df["corrected"] = df["distnr"] < DISTANCE_THRESHOLD
-        # Apply formula of correction: corrected is the dataframe with response
-        corrected = df.apply(
-            lambda x: correction(
-                x.magnr, x.magpsf, x.sigmagnr, x.sigmapsf, x.isdiffpos
-            )
-            if x["corrected"]
-            else (np.nan, np.nan, np.nan),
-            axis=1,
-            result_type="expand",
-        )
-        corrected.columns = [
-            "magpsf_corr",
-            "sigmapsf_corr",
-            "sigmapsf_corr_ext",
-        ]
-        corrected["corrected"] = df["corrected"]
-        # Create new columns for correction fields: use candid index to join.
-        detections = detections.set_index("candid")
-        detections = detections.join(corrected)
-        # Reset index and get candid column again
-        detections.reset_index(inplace=True)
-        # Apply dubious logic
-        detections["dubious"] = self.do_dubious(detections)
-        # Move correction field to extra_fields
-        detections["extra_fields"] = detections.apply(
-            lambda x: {
-                **x["extra_fields"],
-                "magpsf_corr": x["magpsf_corr"],
-                "sigmapsf_corr": x["sigmapsf_corr"],
-                "sigmapsf_corr_ext": x["sigmapsf_corr_ext"],
-                "dubious": x["dubious"],
-            },
-            axis=1,
-        )
-        # Remove correction columns of dataframe
-        detections.drop(
-            columns=[
-                "magpsf_corr",
-                "sigmapsf_corr",
-                "sigmapsf_corr_ext",
-                "dubious",
-            ],
-            inplace=True,
-        )
-        del fields
-        del df
-        del corrected
-        return detections
+    There are 3 criteria for dubiousness:
+
+    * If the object is not near a source but has a negative flux difference (these should be VSs, with a known source)
+    * If the first detection for its AID and FID is near a source, but the detection isn't (has it moved?)
+    * If the first detection for its AID and FID is not near a source, but the detection is (has it moved?)
+    """
+    EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr"]
+    DISTANCE_THRESHOLD = 1.4
+
+    @property
+    def near_source(self) -> pd.Series:
+        return self._extras["distnr"] < self.DISTANCE_THRESHOLD
+
+    @property
+    def dubious(self) -> pd.Series:
+        negative = self._generic["isdiffpos"] == -1
+        return (~self.near_source & negative) | (self._first & ~self.near_source) | (~self._first & self.near_source)
+
+    @property
+    def _first(self) -> pd.Series:
+        """Whether the first detection for each AID and FID has a nearby known source"""
+        corrected = self.near_source[self._generic.groupby(["aid", "fid"])["mjd"].transform("idxmin")]
+        corrected.index = self.near_source.index
+        return corrected
+
+    def _correct(self) -> pd.DataFrame:
+        corrections = super()._correct()
+
+        aux1 = 10 ** (-.4 * self._extras["magnr"].astype(float))
+        aux2 = 10 ** (-.4 * self._generic["mag"])
+        aux3 = np.maximum(aux1 + self._generic["isdiffpos"] * aux2, 0.0)
+        with warnings.catch_warnings():
+            # possible log10 of 0; expected and proper result are given
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            corrections["mag_corr"] = -2.5 * np.log10(aux3)
+
+        aux4 = (aux2 * self._generic["e_mag"]) ** 2 - (aux1 * self._extras["sigmagnr"].astype(float)) ** 2
+        with warnings.catch_warnings():
+            # possible sqrt of negative and division by 0; expected and proper results are given
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            corrections["e_mag_corr"] = np.where(aux4 < 0, np.inf, np.sqrt(aux4) / aux3)
+            corrections["e_mag_corr_ext"] = aux2 * self._generic["e_mag"] / aux3
+
+        return corrections
