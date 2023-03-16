@@ -22,8 +22,7 @@ class ZTFStrategy(BaseStrategy):
 
     @property
     def first(self) -> pd.Series:
-        full = self._generic.assign(corrected=self.corrected)
-        return full.groupby(["aid", "fid"])["corrected"].transform(min, "mjd")
+        return self.corrected[self._generic.groupby(["aid", "fid"])["mjd"].transform("idxmin")]
 
     def _correct(self) -> pd.DataFrame:
         corrections = super()._correct()
