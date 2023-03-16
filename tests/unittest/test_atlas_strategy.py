@@ -1,6 +1,6 @@
 from correction_step.core.strategy import ATLASStrategy
 
-import utils
+from tests import utils
 
 
 def test_atlas_strategy_corrected_is_always_false():

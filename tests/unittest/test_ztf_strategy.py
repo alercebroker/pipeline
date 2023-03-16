@@ -2,7 +2,7 @@ import numpy as np
 
 from correction_step.core.strategy import ZTFStrategy
 
-import utils
+from tests import utils
 
 
 def test_ztf_strategy_corrected_is_based_on_distance():
