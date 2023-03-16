@@ -5,8 +5,8 @@ from .base import BaseStrategy
 
 class ATLASStrategy(BaseStrategy):
     @property
-    def corrected(self) -> pd.Series:
-        return super().corrected
+    def near_source(self) -> pd.Series:
+        return super().near_source
 
     @property
     def dubious(self) -> pd.Series:

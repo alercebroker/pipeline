@@ -2,7 +2,8 @@ def ztf_extra_fields(**kwargs):
     extra_fields = {
         "magnr": 10.,
         "sigmagnr": 1.,
-        "distnr": 1.
+        "distnr": 1.,
+        "unused": None,
     }
     extra_fields.update(kwargs)
     return extra_fields

@@ -11,6 +11,7 @@ class BaseStrategy(abc.ABC):
     The Context uses this interface to call the algorithm defined
     by Concrete Strategies.
     """
+    ZERO_MAG = 100.  # Not really zero mag, but zero flux (very high magnitude)
     EXTRA_FIELDS = []
 
     def __init__(self, alerts: list[dict]):
@@ -22,7 +23,7 @@ class BaseStrategy(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def corrected(self) -> pd.Series:
+    def near_source(self) -> pd.Series:
         return pd.Series(False, index=self._generic.index)
 
     @property
@@ -33,11 +34,13 @@ class BaseStrategy(abc.ABC):
     @abc.abstractmethod
     def _correct(self) -> pd.DataFrame:
         columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        return pd.DataFrame(columns=columns, index=self._generic.index)
+        return pd.DataFrame(np.inf, columns=columns, index=self._generic.index)
 
     def corrected_frame(self) -> pd.DataFrame:
-        alerts = self._generic.join(self._correct(), lsuffix="_old").replace(np.nan, None)
-        return alerts.assign(corrected=self.corrected, dubious=self.dubious)
+        corrected = self._correct().replace(np.inf, self.ZERO_MAG)
+        corrected[~self.near_source] = np.nan
+        alerts = self._generic.join(corrected, lsuffix="_old").replace(np.nan, None)
+        return alerts.assign(corrected=self.near_source, dubious=self.dubious)
 
     def corrected_message(self) -> list[dict]:
         alerts = self.corrected_frame().reset_index().to_dict("records")

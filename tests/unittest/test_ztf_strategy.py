@@ -11,7 +11,7 @@ def test_ztf_strategy_corrected_is_based_on_distance():
     corrector = ZTFStrategy(alerts)
 
     assert (dists >= ZTFStrategy.DISTANCE_THRESHOLD).any()  # Fix test
-    assert (corrector.corrected == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
+    assert (corrector.near_source == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
 
 
 def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
@@ -50,10 +50,10 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
         ) for mjd in mjds])
     corrector = ZTFStrategy(alerts)
 
-    assert corrector.first[corrector.first.index.str.startswith("fy")].all()
-    assert ~corrector.first[corrector.first.index.str.startswith("fn")].all()
-    assert corrector.first[corrector.first.index.str.startswith("sy")].all()
-    assert ~corrector.first[corrector.first.index.str.startswith("sn")].all()
+    assert corrector._first[corrector._first.index.str.startswith("fy")].all()
+    assert ~corrector._first[corrector._first.index.str.startswith("fn")].all()
+    assert corrector._first[corrector._first.index.str.startswith("sy")].all()
+    assert ~corrector._first[corrector._first.index.str.startswith("sn")].all()
 
 
 def test_ztf_strategy_dubious_for_negative_difference_without_close_source():
@@ -99,33 +99,71 @@ def test_ztf_strategy_dubious_for_follow_up_with_close_source_and_first_without(
     corrector = ZTFStrategy(alerts)
     assert ~corrector.dubious.all()
 
-#
-#
-# def test_atlas_strategy_correction_is_all_nan():
-#     alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
-#     corrector = ATLASStrategy(alerts)
-#
-#     correction = corrector.corrected_frame()
-#     assert (correction["corrected"] == corrector.corrected).all()
-#     assert (correction["dubious"] == corrector.dubious).all()
-#
-#     assert (correction["mag_corr"].isna()).all()
-#     assert (correction["e_mag_corr"].isna()).all()
-#     assert (correction["e_mag_corr_ext"].isna()).all()
-#
-#
-# def test_atlas_strategy_message_correction_preserves_old_fields():
-#     alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
-#     corrector = ATLASStrategy(alerts)
-#
-#     correction = corrector.corrected_message()
-#     assert all(alert[f] == corr[f] for alert, corr in zip(alerts, correction) for f in alert)
-#
-#
-# def test_atlas_strategy_message_correction_includes_corrected_fields():
-#     alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
-#     corrector = ATLASStrategy(alerts)
-#     check_fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "candid"]
-#
-#     correction = corrector.corrected_message()
-#     assert all(all(f in corr for f in check_fields) for corr in correction)
+
+def test_ztf_strategy_correction_with_low_reference_flux_equals_difference_magnitude():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(magnr=200., sigmagnr=2.), mag=5., e_mag=.1)
+    ]
+    corrector = ZTFStrategy(alerts)
+
+    correction = corrector.corrected_frame()
+
+    assert np.isclose(correction["mag_corr"], 5.)
+    assert np.isclose(correction["e_mag_corr"], .1)
+    assert np.isclose(correction["e_mag_corr_ext"], .1)
+
+
+def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magnitude():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(magnr=5., sigmagnr=2.), mag=200., e_mag=.1)
+    ]
+    corrector = ZTFStrategy(alerts)
+
+    correction = corrector.corrected_frame()
+
+    assert np.isclose(correction["mag_corr"], 5.)
+    assert np.isclose(correction["e_mag_corr"], ZTFStrategy.ZERO_MAG)
+    assert np.isclose(correction["e_mag_corr_ext"], 0)
+
+
+def test_ztf_strategy_correction_with_null_nr_fields_results_in_null_corrections():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(magnr=None, sigmagnr=None), mag=5., e_mag=.1)
+    ]
+    corrector = ZTFStrategy(alerts)
+
+    correction = corrector.corrected_frame()
+
+    assert correction["mag_corr"].item() is None
+    assert correction["e_mag_corr"].item() is None
+    assert correction["e_mag_corr_ext"].item() is None
+
+
+def test_ztf_strategy_correction_without_source_beyond_threshold_results_in_null_corrections():
+    alerts = [
+        utils.generate_alert(extra_fields=utils.ztf_extra_fields(magnr=5., sigmagnr=1., distnr=2), mag=5., e_mag=.1)
+    ]
+    corrector = ZTFStrategy(alerts)
+
+    correction = corrector.corrected_frame()
+
+    assert correction["mag_corr"].item() is None
+    assert correction["e_mag_corr"].item() is None
+    assert correction["e_mag_corr_ext"].item() is None
+
+
+def test_ztf_strategy_message_correction_preserves_old_fields():
+    alerts = [utils.generate_alert(extra_fields=utils.ztf_extra_fields(), mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    corrector = ZTFStrategy(alerts)
+
+    correction = corrector.corrected_message()
+    assert all(alert[f] == corr[f] for alert, corr in zip(alerts, correction) for f in alert)
+
+
+def test_ztf_strategy_message_correction_includes_corrected_fields():
+    alerts = [utils.generate_alert(extra_fields=utils.ztf_extra_fields(), mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    corrector = ZTFStrategy(alerts)
+    check_fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+
+    correction = corrector.corrected_message()
+    assert all(all(f in corr for f in check_fields) for corr in correction)
