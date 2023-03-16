@@ -13,11 +13,11 @@ class ZTFStrategy(BaseStrategy):
 
     @property
     def corrected(self) -> pd.Series:
-        return self._extra["distnr"] < self.DISTANCE_THRESHOLD
+        return self._extras["distnr"] < self.DISTANCE_THRESHOLD
 
     @property
     def dubious(self) -> pd.Series:
-        negative = ~self.corrected & (self._generic["isdiffpos"] == -1)
+        negative = self._generic["isdiffpos"] == -1
         return (~self.corrected & negative) | (self.first & ~self.corrected) | (~self.first & self.corrected)
 
     @property
@@ -28,20 +28,20 @@ class ZTFStrategy(BaseStrategy):
     def _correct(self) -> pd.DataFrame:
         corrections = super()._correct()
 
-        aux1 = 10 ** (-.4 * self._extra["magnr"])
+        aux1 = 10 ** (-.4 * self._extras["magnr"])
         aux2 = 10 ** (-.4 * self._generic["mag"])
         aux3 = np.maximum(aux1 + self._generic["isdiffpos"] * aux2, 0.0)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             corrections["mag_corr"] = -2.5 * np.log10(aux3)
 
-        aux4 = aux2 ** 2 * self._generic["e_mag"] ** 2 - aux1 ** 2 * self._extra["sigmagnr"] ** 2
+        aux4 = aux2 ** 2 * self._generic["e_mag"] ** 2 - aux1 ** 2 * self._extras["sigmagnr"] ** 2
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             corrections["e_mag_corr"] = np.sqrt(aux4) / aux3
             corrections["e_mag_corr_ext"] = aux2 * self._generic["e_mag"] / aux3
 
-        bad = (self._extra["magnr"] < 0) & (self._generic["mag"] < 0)
+        bad = (self._extras["magnr"] < 0) & (self._generic["mag"] < 0)
 
         corrections[bad | self.corrected] = np.nan
 

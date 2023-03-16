@@ -32,6 +32,6 @@ class Corrector:
         """
 
         if len(data):
-            corrected_data = self.strategy.do_correction(data)
+            corrected_data = self.strategy.corrected_frame(data)
             return corrected_data
         return data

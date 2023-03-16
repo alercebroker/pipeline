@@ -14,9 +14,11 @@ class BaseStrategy(abc.ABC):
     EXTRA_FIELDS = []
 
     def __init__(self, alerts: list[dict]):
-        extra_fields = [alert["extra_fields"] for alert in alerts]
-        self._generic = pd.DataFrame.from_records(alerts, exclude={"extra_fields"}, index="candid")
-        self._extra = pd.DataFrame(extra_fields, index=self._generic.index, columns=self.EXTRA_FIELDS)
+        candid, extras = "candid", "extra_fields"
+        self.__extras = {alert[candid]: alert[extras] for alert in alerts}
+        self._generic = pd.DataFrame.from_records(alerts, exclude={extras}, index=candid)
+        self._extras = pd.DataFrame(self.__extras.values(), index=self.__extras.keys(), columns=self.EXTRA_FIELDS)
+        self._extras.index.name = candid
 
     @property
     @abc.abstractmethod
@@ -33,6 +35,10 @@ class BaseStrategy(abc.ABC):
         columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
         return pd.DataFrame(columns=columns, index=self._generic.index)
 
-    def do_correction(self) -> list[dict]:
-        full = self._generic.join(self._correct()).replace(np.nan, None)
-        return full.assign(corrected=self.corrected, dubious=self.dubious).to_dict("records")
+    def corrected_frame(self) -> pd.DataFrame:
+        alerts = self._generic.join(self._correct(), lsuffix="_old").replace(np.nan, None)
+        return alerts.assign(corrected=self.corrected, dubious=self.dubious)
+
+    def corrected_message(self) -> list[dict]:
+        alerts = self.corrected_frame().reset_index().to_dict("records")
+        return [{**alert, "extra_fields": self.__extras[alert["candid"]]} for alert in alerts]
