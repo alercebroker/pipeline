@@ -122,7 +122,7 @@ def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magni
     correction = corrector.corrected_frame()
 
     assert np.isclose(correction["mag_corr"], 5.)
-    assert np.isclose(correction["e_mag_corr"], ZTFStrategy.ZERO_MAG)
+    assert np.isclose(correction["e_mag_corr"], ZTFStrategy._ZERO_MAG)
     assert np.isclose(correction["e_mag_corr_ext"], 0)
 
 
