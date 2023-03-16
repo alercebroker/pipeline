@@ -32,15 +32,16 @@ class CorrectionStep(GenericStep):
         self.logger.info(f"Processing {len(messages)} new alerts")
         result = []
         for message in messages:
-            tid = message["new_alert"]["tid"]
-            detections = message["prv_detections"] + [message["new_alert"]]
+            detections = [{**message["new_alert"], "has_stamp": True}] + \
+                         [{**prv, "has_stamp": False} for prv in message["prv_detections"]]
+            strategy = corrector_factory(detections, message["new_alert"]["tid"])
+            out_message = {
+                "aid": message["aid"],
+                "detections": strategy.corrected_message(),
+                "non_detections": message["non_detections"]
+            }
 
-            strategy = corrector_factory(detections, tid)
-            detections = strategy.corrected_message()
-
-            result.append(
-                {"aid": message["aid"], "detections": detections, "non_detections": message["non_detections"]}
-            )
+            result.append(out_message)
         return result
 
     def post_execute(self, result: list[dict]):
