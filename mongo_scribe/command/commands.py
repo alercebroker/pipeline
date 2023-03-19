@@ -98,9 +98,9 @@ class UpdateCommand(Command):
 
 
 class UpdateProbabilitiesCommand(UpdateCommand):
-    """Adds probabilities to array only if the classifier name is not present for document with given criteria.
+    """Update probabilities for a given object.
 
-    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
+    The `data` must have the fields `classifier_name` and `classifier_version`.
 
     Additional fields in `data` must be pairs of class names from the classifier and the probability value.
 
@@ -116,9 +116,14 @@ class UpdateProbabilitiesCommand(UpdateCommand):
        }
 
     When getting the operations, the ranking will be automatically included.
+
+    When using the option `set_on_insert`, probabilities will be added only if the classifier name cannot be
+    found among the existing probabilities.
+
+    Using the `upsert` option will create the object if it doesn't already exist.
     """
 
-    type = ValidCommands.insert_probabilities
+    type = ValidCommands.update_probabilities
 
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
