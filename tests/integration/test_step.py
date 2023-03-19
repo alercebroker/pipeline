@@ -130,27 +130,54 @@ class StepTest(unittest.TestCase):
         result = collection.find_one({"_id": "upserted_id"})
         self.assertIsNotNone(result)
         self.assertEqual(result["field"], "some_value")
-        
 
+    def test_upsert_only_into_database(self):
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "update",
+                "criteria": {"_id": "upserted_only_id"},
+                "data": {"field": "some_value"},
+                "options": {"upsert": True, "set_on_insert": True}
+            }
+        )
+        self.producer.produce({"payload": command}, key="upsert_only")
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "update",
+                "criteria": {"_id": "upserted_only_id"},
+                "data": {"field": "other_value"},
+                "options": {"upsert": True, "set_on_insert": True}
+            }
+        )
+        self.producer.produce({"payload": command}, key="upsert_only_1")
+        self.producer.produce({"payload": command}, key="upsert_only_2")
+
+        self.step.start()
+        collection = self.step.db_client.connection.database["object"]
+        result = collection.find_one({"_id": "upserted_only_id"})
+        self.assertIsNotNone(result)
+        self.assertEqual(result["field"], "some_value")
 
     def test_insert_probabilities_into_database(self):
         command = json.dumps(
             {
                 "collection": "object",
-                "type": "insert_probabilities",
+                "type": "update_probabilities",
                 "criteria": {"_id": "insert_probabilities_id"},
                 "data": {"class1": 0.1, "class2": 0.9, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True}
+                "options": {"upsert": True, "set_on_insert": True}
             }
         )
         self.producer.produce({"payload": command}, key="insertion_5")
         command = json.dumps(
             {
                 "collection": "object",
-                "type": "insert_probabilities",
+                "type": "update_probabilities",
                 "criteria": {"_id": "insert_probabilities_id"},
                 "data": {"class1": 0.5, "class2": 0.3, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True}
+                "options": {"upsert": True, "set_on_insert": True}
             }
         )
         self.producer.produce({"payload": command}, key="insertion_6")
