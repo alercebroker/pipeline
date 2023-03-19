@@ -14,6 +14,7 @@ class Options:
     """
 
     upsert: bool = False
+    set_on_insert: bool = False
 
 
 class Command(abc.ABC):
@@ -88,14 +89,15 @@ class UpdateCommand(Command):
             raise NoAlerceIdentificationProvidedException()
 
     def get_operations(self) -> list:
+        op = "$setOnInsert" if self.options.set_on_insert else "$set"
         return [
             UpdateOne(
-                self.criteria, {"$set": self.data}, upsert=self.options.upsert
+                self.criteria, {op: self.data}, upsert=self.options.upsert
             )
         ]
 
 
-class InsertProbabilitiesCommand(UpdateCommand):
+class UpdateProbabilitiesCommand(UpdateCommand):
     """Adds probabilities to array only if the classifier name is not present for document with given criteria.
 
     The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
@@ -151,34 +153,10 @@ class InsertProbabilitiesCommand(UpdateCommand):
             UpdateOne(self.criteria, upsert, upsert=self.options.upsert),
             UpdateOne(criteria, insert),
         ]
-        return ops
 
+        if self.options.set_on_insert:
+            return ops
 
-class UpdateProbabilitiesCommand(InsertProbabilitiesCommand):
-    """Updates probabilities for document with given criteria.
-
-    The `data` must have the fields `classifier_name` and `classifier_version` (self-explanatory).
-
-    Additional fields in `data` must be pairs of class names from the classifier and the probability value.
-
-    Example `data`:
-
-    .. code-block::
-       {
-           "classifier_name": "classifier",
-           "classifier_version": "1.0.0",
-           "class1": 0.12,
-           "class2": 0.23,
-           ...
-       }
-
-    When getting the operations, the ranking will be automatically included.
-    """
-
-    type = ValidCommands.update_probabilities
-
-    def get_operations(self) -> list:
-        ops = super().get_operations()
         for i, (cls, p) in enumerate(self._sort()):
             filters = {
                 "el.classifier_name": self.classifier_name,
