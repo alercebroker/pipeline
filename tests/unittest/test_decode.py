@@ -2,7 +2,7 @@ import unittest
 
 from mongo_scribe.command.decode import decode_message, db_command_factory
 from mongo_scribe.command.exceptions import WrongFormatCommandException
-from mongo_scribe.command.commands import InsertCommand, UpdateCommand, InsertProbabilitiesCommand, UpdateProbabilitiesCommand
+from mongo_scribe.command.commands import InsertCommand, UpdateCommand, UpdateProbabilitiesCommand
 
 from mockdata import valid_data_dict, valid_data_json
 
@@ -30,10 +30,6 @@ class TestCommandFactory(unittest.TestCase):
     def test_factory_generates_update(self):
         msg = '{"type": "update", "criteria": {"_id": "id"}, "data": {"field": "value"}, "collection": "object"}'
         self.assertTrue(type(db_command_factory(msg)) == UpdateCommand)
-
-    def test_factory_generates_insert_probabilities(self):
-        msg = '{"type": "insert_probabilities", "criteria": {"_id": "id"}, "data": {"classifier_name": "c", "classifier_version": "1.0"}, "collection": "object"}'
-        self.assertTrue(type(db_command_factory(msg)) == InsertProbabilitiesCommand)
 
     def test_factory_generates_update_probabilities(self):
         msg = '{"type": "update_probabilities", "criteria": {"_id": "id"}, "data": {"classifier_name": "c", "classifier_version": "1.0"}, "collection": "object"}'

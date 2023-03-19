@@ -5,7 +5,6 @@ from pymongo.operations import InsertOne, UpdateOne
 from mongo_scribe.command.commands import (
     InsertCommand,
     UpdateCommand,
-    InsertProbabilitiesCommand,
     UpdateProbabilitiesCommand
 )
 from mongo_scribe.command.exceptions import (
@@ -75,7 +74,7 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(len(operations), 1)
         self.assertIsInstance(operations[0], UpdateOne)
 
-    def test_update_dbcommand_get_operation_has_data_with_set_as_document(self):
+    def test_update_get_operation_without_set_on_insert_has_data_with_set_as_document(self):
         update_command = UpdateCommand(
             valid_data_dict["collection"],
             valid_data_dict["data"],
@@ -84,6 +83,17 @@ class CommandTests(unittest.TestCase):
         operations = update_command.get_operations()
         self.assertEqual(operations[0]._filter, valid_data_dict["criteria"])
         self.assertEqual(operations[0]._doc, {"$set": valid_data_dict["data"]})
+
+    def test_update_get_operation_with_set_on_insert_has_data_with_set_on_insert_as_document(self):
+        update_command = UpdateCommand(
+            valid_data_dict["collection"],
+            valid_data_dict["data"],
+            valid_data_dict["criteria"],
+            {"set_on_insert": True}
+        )
+        operations = update_command.get_operations()
+        self.assertEqual(operations[0]._filter, valid_data_dict["criteria"])
+        self.assertEqual(operations[0]._doc, {"$setOnInsert": valid_data_dict["data"]})
 
     def test_update_db_command_options(self):
         update_command = UpdateCommand(
@@ -95,22 +105,24 @@ class CommandTests(unittest.TestCase):
         operations = update_command.get_operations()
         self.assertTrue(operations[0]._upsert)
 
-    def test_insert_probabilities_get_operation(self):
-        update_command = InsertProbabilitiesCommand(
+    def test_update_probabilities_with_set_on_insert_get_operation(self):
+        update_command = UpdateProbabilitiesCommand(
             valid_probabilities_dict["collection"],
             valid_probabilities_dict["data"].copy(),
             valid_probabilities_dict["criteria"],
+            {"set_on_insert": True}
         )
         operations = update_command.get_operations()
         self.assertEqual(len(operations), 2)
         self.assertTrue(all(isinstance(op, UpdateOne) for op in operations))
         self.assertFalse(any(op._upsert for op in operations))
 
-    def test_insert_probabilities_get_operation_has_data_with_push_as_document(self):
-        update_command = InsertProbabilitiesCommand(
+    def test_update_probabilities_with_set_on_insert_get_operation_has_data_with_push_as_document(self):
+        update_command = UpdateProbabilitiesCommand(
             valid_probabilities_dict["collection"],
             valid_probabilities_dict["data"].copy(),
             valid_probabilities_dict["criteria"],
+            {"set_on_insert": True}
         )
         operations = update_command.get_operations()
         for op in operations:  # All include AID as criteria
@@ -124,12 +136,12 @@ class CommandTests(unittest.TestCase):
             )
         self.assertEqual(operations[1]._doc, {})
 
-    def test_insert_probabilities_options(self):
-        update_command = InsertProbabilitiesCommand(
+    def test_insert_probabilities_with_set_on_insert_options(self):
+        update_command = UpdateProbabilitiesCommand(
             valid_probabilities_dict["collection"],
             valid_probabilities_dict["data"].copy(),
             valid_probabilities_dict["criteria"],
-            {"upsert": True}
+            {"upsert": True, "set_on_insert": True}
         )
         operations = update_command.get_operations()
         self.assertTrue(operations[0]._upsert)
