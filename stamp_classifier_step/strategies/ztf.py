@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List
+from typing import List, Any
 
 import pandas as pd
 
@@ -36,38 +36,24 @@ class ZTFStrategy(BaseStrategy):
         self.model = StampClassifier()
         super().__init__("ztf_stamp_classifier", "1.0.1")
 
-    @staticmethod
-    def _get_asteroids_idx(df: pd.DataFrame) -> pd.Index:
-        """Returns the index of stamps that should be classified as asteroids.
+    @classmethod
+    def _get_asteroids_idx(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """Returns object probabilities that should be classified as asteroids.
 
-        It also drops all things considered asteroids from the data frame.
+        It will remove these objects from the input the data frame inplace.
 
         Args:
             df (pd.DataFrame): Data frame of objects to classified (must be passed before executing prediction)
 
         Returns:
-            pd.Index: Index (AIDs) of objects that should be classified as asteroids
+            pd.DataFrame: Data frame with objects classified as asteroids
         """
         idx = df[df["ssdistnr"] != -999].index
-        df.drop(idx, inplace=True)
-        return idx
-
-    @staticmethod
-    def _insert_asteroids(probabilities: pd.DataFrame, idx: pd.Index) -> pd.DataFrame:
-        """Adds objects that should be classified as asteroids to the predicted probabilities.
-
-        The AIDs should normally be those extracted by `_get_asteroids_idx`.
-
-        Args:
-            probabilities (pd.DataFrame): Predictions from the model
-            idx (pd.Index): AIDs of objects that should be classified as asteroids
-
-        Returns:
-            pd.DataFrame: Same as `probabilities` but with the additional objects added as asteroids
-        """
-        asteroids = pd.DataFrame(data=0.0, columns=probabilities.columns, index=idx)
+        asteroids = cls._prediction_df(0.0, idx=idx)
         asteroids["asteroid"] = 1.0
-        return pd.concat((probabilities, asteroids))
+
+        df.drop(idx, inplace=True)
+        return asteroids
 
     @staticmethod
     def _drop_bad_sn(df: pd.DataFrame, probabilities: pd.DataFrame):
@@ -86,7 +72,7 @@ class ZTFStrategy(BaseStrategy):
         """
         idx = probabilities[probabilities.idxmax(axis=1) == "SN"].index
         snae = df.loc[idx]
-        check = snae["isdiffpos"] == 0  # Negative difference
+        check = snae["isdiffpos"] == -1  # Negative difference
         check |= (snae["sgscore1"] > 0.5) & (snae["distpsnr1"] < 1)  # Near star
 
         probabilities.drop(check[check].index, inplace=True)
@@ -158,25 +144,28 @@ class ZTFStrategy(BaseStrategy):
         Returns:
             pd.DataFrame: Class probabilities. Its columns should be the classifier's classes, and indexed by AID
         """
-        idx = self._get_asteroids_idx(df)
-        n_objects = df.index.size
-        if n_objects:
-            results = self.model.execute(df)
-        else:
-            results = self._empty_predictions()
-        results = self._insert_asteroids(results, idx)
+        asteroids = self._get_asteroids_idx(df)
+        results = self.model.execute(df) if df.index.size else self._prediction_df()
+        results = pd.concat((results, asteroids))
         self._drop_bad_sn(df, results)
         return results
 
     @staticmethod
-    def _empty_predictions() -> pd.DataFrame:
-        """Generates empty data frame.
+    def _prediction_df(data: Any = None, idx: pd.Index = None) -> pd.DataFrame:
+        """Generates a predictions-like data frame.
 
-        The classes are hardcoded since there is no way to read them from the classifier.
+        The classes (columns) are hardcoded since there is no way to read them from the classifier.
+
+        Args:
+            data (float, array_like[float]): Data to fill the frame with
+            idx (pd.Index): Indexes for the frame
 
         Returns:
-            pd.DataFrame: Empty prediction-like data frame
+            pd.DataFrame: Prediction-like data frame
         """
         return pd.DataFrame(
-            columns=["AGN", "SN", "VS", "asteroid", "bogus"], dtype=float
+            columns=["AGN", "SN", "VS", "asteroid", "bogus"],
+            dtype=float,
+            data=data,
+            index=idx,
         )
