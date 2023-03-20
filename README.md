@@ -4,13 +4,16 @@ This step will process the commands published in the consumer topics and perform
 
 ## Command Format
 
-The commands must be formatted as follows:
+This step expects the message to come with a single field named `payload`, whose content must be a
+stringified JSON containing a single command.
 
-```js
+The command must be formatted as follows:
+
+```json
 {
     "collection": "name",
     "type": "insert",
-    "criteria": {"field": "value", ...},
+    "criteria": {"_id": "value", ...},
     "data": {"field": "value", ...},
     "options": {"upsert": true}
 }
@@ -18,31 +21,34 @@ The commands must be formatted as follows:
 - Accepted `type` for operations are one of the following:
   * `"insert"`: The data will be inserted as a new document in the collection
   * `"update"`: The first document matching the criteria will have the data added/modified in the collection 
-  * `"insert_probabilities"`: Adds a new set of probabilities in the document matching the criteria, unless it's already present. Data example:
-    ```python
+  * `"update_probabilities"`: Updates an existing probability, otherwise adds it. Data structure, e.g.,
+    ```json
     {
         "classifier_name": "stamp_classifier",
         "classifier_version": "1.0.0",
         "SN": 0.12,
         "AGN": 0.34,
-        ...: ...  # Remaining classes
+        ...
     }
     ```
-  * `"update_probabilities"`: Updates an existing probability, otherwise adds it. Data has the same structure as that for `insert_probabilities`
 - The command *must* include a collection to work with. Currently, the supported collections are:
   * `"object"`
   * `"detections"`
   * `"non_detections"`
 - Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in respective database. This must include an `_id` match.
-- The only supported option at the time is `"upsert"`. This is ignored by the `"insert"` type.
+- The supported options are `"upsert"` and `"set_on_insert"`. These are ignored by the `"insert"` type.
+  * `"upsert"` will add a new document with the updated data if one doesn't exist
+  * `"set_on_insert"` will only add the new document (or new set of probabilities) if it doesn't exist, without modifying the existing one
 
 ## Suggested schema
 
+For steps that sand data to the scribe, the following producer configuration is recommended, specially for the schema:
+
 ```python
-PRODUCER_CONFIG = {
-    "TOPIC": "test_topic",
+SCRIBE_PRODUCER_CONFIG = {
+    "TOPIC": os.environ["SCRIBE_TOPIC"],
     "PARAMS": {
-        "bootstrap.servers": "localhost:9092"
+        "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
     "SCHEMA": {
         "namespace": "db_operation",

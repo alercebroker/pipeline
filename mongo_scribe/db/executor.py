@@ -43,15 +43,15 @@ class ScribeCommandExecutor:
         
     def bulk_execute(self, commands: List[Command]):
         """
-        Recieves all commands and separates them according to their collection
+        Receives all commands and separates them according to their collection
         """
-        classificated_commands: Dict[List] = {}
+        commands_per_collection: Dict[str, list] = {}
         for command in commands:
             collection = command.collection
-            if collection not in classificated_commands.keys():
-                classificated_commands[collection] = []
-            classificated_commands[collection].append(command)
+            if collection not in commands_per_collection:
+                commands_per_collection[collection] = []
+            commands_per_collection[collection].append(command)
 
-        for collection_name, command_list in classificated_commands.items():
+        for collection_name, command_list in commands_per_collection.items():
             self._bulk_execute(collection_name, command_list)
             
