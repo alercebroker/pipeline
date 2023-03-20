@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock
 from data.messages import data
 from scripts.run_step import step_factory
+from pytest import fixture
 
+#TODO: patch every calculator before calling this one
 
 def test_execute():
     step = step_factory()

@@ -4,6 +4,7 @@ import logging
 
 from .strategies.magstats_computer import MagstatsComputer
 from .strategies.ztf_strategy import ZTFMagstatsStrategy
+from .core.factories.object import alerce_object_factory
 
 class MagstatsStep(GenericStep):
     """MagstatsStep Description
@@ -23,6 +24,9 @@ class MagstatsStep(GenericStep):
     ):
         super().__init__(config=config, level=level, **step_args)
         self.magstats_computer = MagstatsComputer(ZTFMagstatsStrategy())
+    
+    def object_creator(self, alert):
+        return alerce_object_factory(alert) 
 
     def compute_magstats(self, alerts):
         magstats_list = []
