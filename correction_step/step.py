@@ -51,12 +51,15 @@ class CorrectionStep(GenericStep):
 
     def produce_scribe(self, detections: list[dict]):
         for detection in detections:
+            detection = detection.copy()  # Prevent modification for next step
+            candid = detection.pop("candid")
+            set_on_insert = not detection["has_stamp"]
             scribe_data = {
                 "collection": "detection",
                 "type": "update",
-                "criteria": {"_id": detection["candid"]},
+                "criteria": {"_id": candid},
                 "data": detection,
-                "options": {"upsert": True},
+                "options": {"upsert": True, "set_on_insert": set_on_insert},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(scribe_payload)
