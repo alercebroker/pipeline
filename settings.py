@@ -23,8 +23,8 @@ def settings_creator():
             else False,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
-        "consume.messages": int(os.getenv("CONSUME_MESSAGES", "1")),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
+        "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     }
 
     producer_config = {
@@ -39,9 +39,9 @@ def settings_creator():
     scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
-            "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+            "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
-        "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
+        "TOPIC": os.environ["SCRIBE_TOPIC"],
         "SCHEMA": schema.load_schema("scribe_schema.avsc"),
     }
 
@@ -52,7 +52,7 @@ def settings_creator():
         ],
         "PARAMS": {
             "PARAMS": {
-                "bootstrap.servers": os.getenv("METRICS_HOST"),
+                "bootstrap.servers": os.getenv("METRICS_SERVER"),
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
