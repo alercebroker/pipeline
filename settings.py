@@ -14,7 +14,7 @@ CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
-        "group.id": "python_example_group_1",
+        "group.id": os.environ["CONSUMER_GROUP_ID"],
     },
     # "TOPICS": ["w_Object", "w_Detections", "w_Non_Detections"],
     "TOPICS": os.environ["TOPICS"].strip().split(","),
