@@ -5,6 +5,17 @@
 Process alerts and applies correction to pass from difference magnitude to apparent magnitude. This
 includes the previous detections coming from the ZTF alerts.
 
+The correction for ZTF is as follows:
+
+$$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \sgn 10^{-0.4 m_\mathrm{diff}}\right)$$
+
+For the error, the following is used:
+
+$$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathrm{diff}^2 - 10^{-0.8 m_\mathrm{ref}} \delta m_\mathrm{ref}^2}}{10^{-0.4 m_\mathrm{ref}} + \sgn 10^{-0.4 m_\mathrm{diff}}}$$
+
+An additional error, for extended sources, is also calculated:
+$$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \sgn 10^{-0.4 m_\mathrm{diff}}}$$
+
 Presently, there is no correction for ATLAS alerts.
 
 #### Previous step:
