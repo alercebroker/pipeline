@@ -5,13 +5,14 @@ from fastavro import schema
 #       detection_step   Settings File
 ##################################################
 
-def settings_creator():
-    ## Set the global logging level to debug
-    LOGGING_DEBUG = False
 
-    ## Consumer configuration
-    ### Each consumer has different parameters and can be found in the documentation
-    CONSUMER_CONFIG = {
+def settings_creator():
+    # Set the global logging level to debug
+    logging_debug = False
+
+    # Consumer configuration
+    # Each consumer has different parameters and can be found in the documentation
+    consumer_config = {
         "CLASS": "apf.consumers.KafkaConsumer",
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
@@ -26,7 +27,7 @@ def settings_creator():
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
     }
 
-    PRODUCER_CONFIG = {
+    producer_config = {
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
@@ -35,7 +36,7 @@ def settings_creator():
         "SCHEMA": schema.load_schema("schema.avsc"),
     }
 
-    SCRIBE_PRODUCER_CONFIG = {
+    scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
@@ -44,7 +45,7 @@ def settings_creator():
         "SCHEMA": schema.load_schema("scribe_schema.avsc"),
     }
 
-    METRICS_CONFIG = {
+    metrics_config = {
         "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
         "EXTRA_METRICS": [
             {"key": "candid", "format": lambda x: str(x)},
@@ -89,12 +90,12 @@ def settings_creator():
         },
     }
 
-    ## Step Configuration
-    STEP_CONFIG = {
-        "CONSUMER_CONFIG": CONSUMER_CONFIG,
-        "METRICS_CONFIG": METRICS_CONFIG,
-        "PRODUCER_CONFIG": PRODUCER_CONFIG,
-        "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-        "LOGGING_DEBUG": LOGGING_DEBUG,
+    # Step Configuration
+    step_config = {
+        "CONSUMER_CONFIG": consumer_config,
+        "METRICS_CONFIG": metrics_config,
+        "PRODUCER_CONFIG": producer_config,
+        "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
+        "LOGGING_DEBUG": logging_debug,
     }
-    return STEP_CONFIG
+    return step_config

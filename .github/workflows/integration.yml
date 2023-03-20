@@ -1,4 +1,4 @@
-name: unittest
+name: integration
 
 on:
   pull_request:
@@ -19,14 +19,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest coverage
+        pip install pytest pytest-docker
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        coverage run --source correction_step -m pytest -x -s tests/unittest/
-        coverage xml
-    - name: Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
+        python -m pytest -x -s tests/unittest/

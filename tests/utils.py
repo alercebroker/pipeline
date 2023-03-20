@@ -9,7 +9,22 @@ def ztf_extra_fields(**kwargs):
     return extra_fields
 
 
-def generate_alert(**kwargs):
+def ztf_alert(**kwargs):
+    alert = {
+        "candid": "candid",
+        "mag": 10.,
+        "e_mag": 10.,
+        "isdiffpos": 1,
+        "aid": "AID1",
+        "fid": 1,
+        "mjd": 1.,
+        "extra_fields": ztf_extra_fields()
+    }
+    alert.update(kwargs)
+    return alert
+
+
+def atlas_alert(**kwargs):
     alert = {
         "candid": "candid",
         "mag": 10.,

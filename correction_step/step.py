@@ -1,16 +1,10 @@
-import logging
 import json
+import logging
 
-import pandas as pd
-import numpy as np
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from .core.correction.corrector import Corrector
-from .core.strategy import (
-    ZTFStrategy,
-    ATLASStrategy,
-)
+from .core.strategy import corrector_factory
 
 
 class CorrectionStep(GenericStep):
@@ -27,67 +21,42 @@ class CorrectionStep(GenericStep):
         **step_args,
     ):
         super().__init__(config=config, level=level, **step_args)
-        self.detections_corrector = Corrector(
-            ZTFStrategy()
-        )  # initial strategy (can change)
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
 
-    def pre_produce(self, result: tuple):
+    def pre_produce(self, result: list[dict]):
         self.set_producer_key_field("aid")
-        output = []
-        for index, alert in enumerate(result[0]):
-            output.append(
-                {
-                    "aid": alert["aid"],
-                    "detections": result[1][index],
-                    "non_detections": alert["non_detections"],
-                }
-            )
-        return output
-
-    def correct(self, messages: list[dict]) -> list[dict]:
-        """Correct Detections.
-
-        Parameters
-        ----------
-        messages
-
-        Returns
-        -------
-
-        """
-        corrections = []
-        for message in messages:
-            detections = message["prv_detections"] + [message["new_alert"]]
-            if "ZTF" == message["new_alert"]["tid"]:
-                self.detections_corrector.strategy = ZTFStrategy()
-            elif "ATLAS" == message["new_alert"]["tid"]:
-                self.detections_corrector.strategy = ATLASStrategy()
-            df = pd.DataFrame(detections).replace({np.nan: None})
-            df["rfid"] = df["rfid"].astype("Int64")
-            correction_df = self.detections_corrector.compute(df)
-            alert_corrections = correction_df.to_dict("records")
-            corrections.append(alert_corrections)
-        return corrections
-
-    def execute(self, messages):
-        self.logger.info(f"Processing {len(messages)} alerts")
-        detections = self.correct(messages)
-        return detections
-
-    def post_execute(self, result: list[dict]):
-        for detection in result:
-            self.produce_scribe(detection)
         return result
 
-    def produce_scribe(self, detection: dict):
-        scribe_data = {
-            "collection": "detection",
-            "type": "update",
-            "criteria": {"_id": detection["candid"]},
-            "data": detection,
-            "options": {"upsert": True},
-        }
-        scribe_payload = {"payload": json.dumps(scribe_data)}
-        self.scribe_producer.produce(scribe_payload)
+    def execute(self, messages: list[dict]) -> list[dict]:
+        self.logger.info(f"Processing {len(messages)} new alerts")
+        result = []
+        for message in messages:
+            detections = [{**message["new_alert"], "has_stamp": True}] + \
+                         [{**prv, "has_stamp": False} for prv in message["prv_detections"]]
+            strategy = corrector_factory(detections, message["new_alert"]["tid"])
+            out_message = {
+                "aid": message["aid"],
+                "detections": strategy.corrected_message(),
+                "non_detections": message["non_detections"]
+            }
+
+            result.append(out_message)
+        return result
+
+    def post_execute(self, result: list[dict]):
+        for message in result:
+            self.produce_scribe(message["detections"])
+        return result
+
+    def produce_scribe(self, detections: list[dict]):
+        for detection in detections:
+            scribe_data = {
+                "collection": "detection",
+                "type": "update",
+                "criteria": {"_id": detection["candid"]},
+                "data": detection,
+                "options": {"upsert": True},
+            }
+            scribe_payload = {"payload": json.dumps(scribe_data)}
+            self.scribe_producer.produce(scribe_payload)

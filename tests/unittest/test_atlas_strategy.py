@@ -1,24 +1,24 @@
 from correction_step.core.strategy import ATLASStrategy
 
-import utils
+from tests import utils
 
 
 def test_atlas_strategy_corrected_is_always_false():
-    alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    alerts = [utils.atlas_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
     corrector = ATLASStrategy(alerts)
 
     assert (~corrector.near_source).all()
 
 
 def test_atlas_strategy_dubious_is_always_false():
-    alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    alerts = [utils.atlas_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
     corrector = ATLASStrategy(alerts)
 
     assert (~corrector.dubious).all()
 
 
 def test_atlas_strategy_correction_is_all_nan():
-    alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    alerts = [utils.atlas_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
     corrector = ATLASStrategy(alerts)
 
     correction = corrector.corrected_frame()
@@ -31,7 +31,7 @@ def test_atlas_strategy_correction_is_all_nan():
 
 
 def test_atlas_strategy_message_correction_preserves_old_fields():
-    alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    alerts = [utils.atlas_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
     corrector = ATLASStrategy(alerts)
 
     correction = corrector.corrected_message()
@@ -39,7 +39,7 @@ def test_atlas_strategy_message_correction_preserves_old_fields():
 
 
 def test_atlas_strategy_message_correction_includes_corrected_fields():
-    alerts = [utils.generate_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
+    alerts = [utils.atlas_alert(mag=m, candid=f"c{m}") for m in range(-5, 15)]
     corrector = ATLASStrategy(alerts)
     check_fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
 
