@@ -74,7 +74,7 @@ def test_write_predictions():
     step.write_predictions(predictions)
     scribe_data = {
         "collection": "object",
-        "type": "insert_probabilities",
+        "type": "update_probabilities",
         "criteria": {"_id": "ZTF20aaelulu"},
         "data": {
             "classifier_name": "atlas_stamp_classifier",
@@ -85,7 +85,7 @@ def test_write_predictions():
             "sn": 0.05,
             "vs": 0.05,
         },
-        "options": {"upsert": True}
+        "options": {"upsert": True, "set_on_insert": True}
     }
     scribe_producer.produce.assert_called_once_with(
         {"payload": json.dumps(scribe_data)}
