@@ -15,7 +15,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=ghcr.io/alercebroker/prv_candidates_step
+          DOCKER_IMAGE=ghcr.io/alercebroker/correction_step
           SHA=$(git rev-parse --short HEAD)
           VERSION=rc-$SHA
           if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -28,7 +28,7 @@ jobs:
           echo ::set-output name=tags::${TAGS}
   push_image:
     needs: get_tags
-    uses: ./.github/workflows/build.yaml
+    uses: ./.github/workflows/build.yml
     with:
       tags: ${{ needs.get_tags.outputs.tags }}
     secrets:
