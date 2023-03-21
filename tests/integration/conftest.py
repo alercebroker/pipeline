@@ -61,12 +61,14 @@ def env_variables():
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "prv-candidates",
+        "CONSUME_MESSAGES": "10",
         "CONSUMER_GROUP_ID": random_string,
         "METRICS_HOST": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "corrections",
         "ENABLE_PARTITION_EOF": "True",
-        "SCRIBE_PRODUCER_TOPIC": "w_detections",
+        "SCRIBE_SERVER": "localhost:9092",
+        "SCRIBE_TOPIC": "w_detections",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
