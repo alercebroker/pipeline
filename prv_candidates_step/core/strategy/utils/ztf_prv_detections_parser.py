@@ -41,7 +41,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         prv_content["aid"] = aid
         prv_content["mjd"] = prv_content["mjd"] - 2400000.5
         prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
-        prv_content["parent_candid"] = parent_candid
+        prv_content["extra_fields"]["parent_candid"] = parent_candid
         e_radec = cls._celestial_errors[prv_content["fid"]]
         prv_content["e_ra"] = (
             prv_content["sigmara"] if "sigmara" in prv_content else e_radec
