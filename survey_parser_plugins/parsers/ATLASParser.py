@@ -4,7 +4,7 @@ import numpy as np
 
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
-    _generic_alert_message_key_mapping = {
+    _mapping = {
         "candid": "candid",
         "mjd": "mjd",
         "fid": None,  # This field is modified below in the code
@@ -39,7 +39,7 @@ class ATLASParser(SurveyParser):
             }
 
             candidate = message["candidate"]
-            generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
+            generic_alert_message = cls._generic_alert_message(candidate)
 
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid

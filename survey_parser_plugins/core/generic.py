@@ -1,5 +1,6 @@
 import abc
 from dataclasses import dataclass, field
+from typing import Union
 
 
 @dataclass
@@ -10,7 +11,7 @@ class GenericAlert:
     oid: str  # name of object (name from survey)
     tid: str  # identifier of survey (name of survey)
     pid: int
-    candid: int
+    candid: str
     mjd: float
     fid: int
     ra: float
@@ -21,8 +22,8 @@ class GenericAlert:
     e_mag: float
     rfid: int
     isdiffpos: int 
-    e_ra: float = None
-    e_dec: float = None
+    e_ra: float
+    e_dec: float
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 
@@ -32,12 +33,12 @@ class GenericAlert:
 
 class SurveyParser(abc.ABC):
     _source = None
-    _generic_alert_message_key_mapping = {}
+    _mapping = {}
 
     @abc.abstractmethod
-    def parse_message(self, message: GenericAlert) -> GenericAlert:
+    def parse_message(self, message: dict) -> GenericAlert:
         """
-        :param message: A single message from an astronomical survey. Typically this corresponds a dict.
+        :param message: A single message from an astronomical survey
 
         Note that the Creator may also provide some default implementation of the factory method.
         """
@@ -49,17 +50,14 @@ class SurveyParser(abc.ABC):
         """
 
     @classmethod
-    def _generic_alert_message(cls, message: dict, generic_alert_message_key_mapping: dict) -> dict:
+    def _generic_alert_message(cls, message: dict) -> dict:
         """
         Create the generic content from any survey. Also add `extra_fields` key with all data that isn't generic key.
 
         :param message: message of any survey.
-        :param generic_alert_message_key_mapping: dictionary with the mapping from GenericAlert to survey schema.
-        for example {"generic_key": "survey_key"}. If the survey hasn't some key from generic schema, put None.
-        :return:
         """
         generic_alert_message = {}
-        for key, value in generic_alert_message_key_mapping.items():
+        for key, value in cls._mapping.items():
             if value is None:
                 generic_alert_message[key] = None
             else:
@@ -68,7 +66,7 @@ class SurveyParser(abc.ABC):
         generic_alert_message["extra_fields"] = {
             k: message[k]
             for k in message.keys()
-            if k not in generic_alert_message_key_mapping.values()
+            if k not in cls._mapping.values()
         }
         return generic_alert_message
 
@@ -86,4 +84,4 @@ class SurveyParser(abc.ABC):
 
         :return: dictionary for map raw message to generic alerts.
         """
-        return cls._generic_alert_message_key_mapping
+        return cls._mapping

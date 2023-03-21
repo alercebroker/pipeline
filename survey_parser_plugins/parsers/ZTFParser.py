@@ -8,7 +8,7 @@ class ZTFParser(SurveyParser):
         2: 0.085,
         3: 0.01,
     }
-    _generic_alert_message_key_mapping = {
+    _mapping = {
         "candid": "candid",
         "mjd": "jd",
         "fid": "fid",
@@ -36,7 +36,7 @@ class ZTFParser(SurveyParser):
             }
 
             candidate = message["candidate"]
-            generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
+            generic_alert_message = cls._generic_alert_message(candidate)
 
             # inclusion of extra attributes
             generic_alert_message['oid'] = oid
