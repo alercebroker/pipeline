@@ -47,7 +47,7 @@ def test_post_execute(env_variables):
     }
     non_detections = [non_detection]
     step.scribe_producer = MagicMock(KafkaProducer)
-    step.post_execute(([{"aid": "aid", "candid": "candid"}], [], [non_detections]))
+    step.post_execute([{"aid": "aid", "new_alert": {"candid": "candid"}, "non_detections": non_detections}])
     expected_data = {
         "collection": "non_detection",
         "type": "update",

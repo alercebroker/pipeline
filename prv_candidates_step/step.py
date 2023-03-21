@@ -1,6 +1,5 @@
-from typing import List, Tuple, Union
+from typing import List, Union
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
 from prv_candidates_step.core.candidates.process_prv_candidates import (
     process_prv_candidates,
 )
@@ -38,14 +37,21 @@ class PrvCandidatesStep(GenericStep):
         producer_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = producer_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
-    def pre_produce(self, result: Tuple):
+    def pre_produce(self, result: List[dict]):
         self.set_producer_key_field("aid")
+        return result
+
+    def execute(self, messages):
+        self.logger.info("Processing %s alerts", str(len(messages)))
+        prv_detections, non_detections = process_prv_candidates(
+            self.prv_candidates_processor, messages
+        )
         output = []
-        for index, alert in enumerate(result[0]):
+        for index, alert in enumerate(messages):
             ztf_prv_detections_parser = ZTFPreviousDetectionsParser()
             ztf_non_detections_parser = ZTFNonDetectionsParser()
             parsed_prv_detections = ztf_prv_detections_parser.parse(
-                result[1][index], alert["oid"], alert["aid"], alert["candid"]
+                prv_detections[index], alert["oid"], alert["aid"], alert["candid"]
             )
             parsed_prv_detections = [
                 remove_keys_from_dictionary(
@@ -54,7 +60,7 @@ class PrvCandidatesStep(GenericStep):
                 for prv in parsed_prv_detections
             ]
             parsed_non_detections = ztf_non_detections_parser.parse(
-                result[2][index], alert["aid"], alert["tid"], alert["oid"]
+                non_detections[index], alert["aid"], alert["tid"], alert["oid"]
             )
             stampless_alert = remove_keys_from_dictionary(
                 alert, ["stamps", "rfid", "rb", "rbversion"]
@@ -72,20 +78,11 @@ class PrvCandidatesStep(GenericStep):
             )
         return output
 
-    def execute(self, messages):
-        self.logger.info("Processing %s alerts", str(len(messages)))
-        prv_detections, non_detections = process_prv_candidates(
-            self.prv_candidates_processor, messages
-        )
-
-        return messages, prv_detections, non_detections
-
-    def post_execute(self, result: Tuple):
+    def post_execute(self, result: List[dict]):
         # Produce a message with the non_detections
-        for index, alert in enumerate(result[0]):
-            non_detections = result[2][index]
-            self.produce_scribe(non_detections, candid=alert["candid"])
-
+        for alert in result:
+            non_detections = alert["non_detections"]
+            self.produce_scribe(non_detections, alert["new_alert"]["candid"])
         return result
 
     def produce_scribe(self, non_detections: List[dict], candid: Union[str, int]):
