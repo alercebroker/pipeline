@@ -40,6 +40,10 @@
             "type": "int"
           },
           {
+            "name": "pid",
+            "type": "long"
+          },
+          {
             "name": "ra",
             "type": "double"
           },
