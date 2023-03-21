@@ -49,7 +49,7 @@ class PrvCandidatesStep(GenericStep):
             )
             parsed_prv_detections = [
                 remove_keys_from_dictionary(
-                    prv, ["stamps", "rfid", "rb", "rbversion", "pid"]
+                    prv, ["stamps", "rfid", "rb", "rbversion"]
                 )
                 for prv in parsed_prv_detections
             ]
@@ -57,7 +57,7 @@ class PrvCandidatesStep(GenericStep):
                 result[2][index], alert["aid"], alert["tid"], alert["oid"]
             )
             stampless_alert = remove_keys_from_dictionary(
-                alert, ["stamps", "rfid", "rb", "rbversion", "pid"]
+                alert, ["stamps", "rfid", "rb", "rbversion"]
             )
             stampless_alert["extra_fields"] = remove_keys_from_dictionary(
                 stampless_alert["extra_fields"], ["prv_candidates"]
