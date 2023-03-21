@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 from apf.core.step import GenericStep
 from prv_candidates_step.core.candidates.process_prv_candidates import (
     process_prv_candidates,
@@ -82,17 +82,22 @@ class PrvCandidatesStep(GenericStep):
         # Produce a message with the non_detections
         for alert in result:
             non_detections = alert["non_detections"]
-            self.produce_scribe(non_detections, alert["new_alert"]["candid"])
+            self.produce_scribe(non_detections)
+
         return result
 
-    def produce_scribe(self, non_detections: List[dict], candid: Union[str, int]):
+    def produce_scribe(self, non_detections: List[dict]):
         for non_detection in non_detections:
             scribe_data = {
                 "collection": "non_detection",
                 "type": "update",
-                "criteria": {"_id": str(candid)},
+                "criteria": {"_id": self._generate_id(non_detection)},
                 "data": non_detection,
                 "options": {"upsert": True},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(scribe_payload)
+
+    @staticmethod
+    def _generate_id(non_detection):
+        return hash((non_detection["oid"], non_detection["fid"], non_detection["mjd"]))

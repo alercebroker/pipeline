@@ -19,11 +19,11 @@ def test_produce_scribe(env_variables):
     }
     non_detections = [non_detection]
     step.scribe_producer = MagicMock(KafkaProducer)
-    step.produce_scribe(non_detections, "candid")
+    step.produce_scribe(non_detections)
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"_id": "candid"},
+        "criteria": {"_id": step._generate_id(non_detection)},
         "data": non_detection,
         "options": {"upsert": True},
     }
@@ -47,11 +47,11 @@ def test_post_execute(env_variables):
     }
     non_detections = [non_detection]
     step.scribe_producer = MagicMock(KafkaProducer)
-    step.post_execute([{"aid": "aid", "new_alert": {"candid": "candid"}, "non_detections": non_detections}])
+    step.post_execute([{"aid": "aid", "non_detections": non_detections}])
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"_id": "candid"},
+        "criteria": {"_id": step._generate_id(non_detection)},
         "data": non_detection,
         "options": {"upsert": True},
     }
