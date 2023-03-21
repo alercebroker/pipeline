@@ -1,5 +1,6 @@
 import os
 
+
 def pytest_generate_tests(metafunc):
     os.environ["INCLUDED_CALCULATORS"] = "dmdt,ra,dec"
     os.environ["CONSUMER_SERVER"] = "localhost"
