@@ -1,15 +1,16 @@
-from typing import List
-from apf.core.step import GenericStep
-from prv_candidates_step.core.candidates.process_prv_candidates import (
-    process_prv_candidates,
-)
-from prv_candidates_step.core.utils.remove_keys import remove_keys_from_dictionary
-from prv_candidates_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
-from prv_candidates_step.core.processor.processor import Processor
-from prv_candidates_step.core import ZTFPreviousDetectionsParser, ZTFNonDetectionsParser
-import logging
 import json
+import logging
+import uuid
+from typing import List
+
 from apf.core import get_class
+from apf.core.step import GenericStep
+
+from .core.candidates.process_prv_candidates import process_prv_candidates
+from .core.utils.remove_keys import remove_keys_from_dictionary
+from .core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
+from .core.processor.processor import Processor
+from .core import ZTFPreviousDetectionsParser, ZTFNonDetectionsParser
 
 
 class PrvCandidatesStep(GenericStep):
@@ -98,4 +99,9 @@ class PrvCandidatesStep(GenericStep):
 
     @staticmethod
     def _generate_id(non_detection):
-        return hash((non_detection["oid"], non_detection["fid"], non_detection["mjd"]))
+        keys = ["oid", "fid", "mjd"]
+
+        source = {k: v for k, v in non_detection.items() if k in keys}
+        assert all(k in keys for k in source)
+
+        return uuid.uuid5(uuid.NAMESPACE_URL, json.dumps(source)).hex
