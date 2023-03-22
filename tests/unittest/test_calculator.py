@@ -19,7 +19,7 @@ def setup_blank_dto(alert):
     return ObjectDTO(alerce_object, detections, non_detections, extra_fields)
 
 def test_magstats_intersection():
-    excluded_calcs = ["dmdt"]
+    excluded_calcs = ["dmdt", "mjd", "ndet", "nrfid", "stellar"]
     result = magstats_intersection(excluded_calcs)
     expected_result = [calculate_ra, calculate_dec]
     assert set(result.values()) == set(expected_result)
@@ -67,3 +67,10 @@ def test_calculate_ndet():
     result_dto = calculate_ndet(object_dto)
 
     assert result_dto.alerce_object["ndet"] != -999
+
+def test_calculate_nrfid():
+    object_dto = setup_blank_dto(data[0])
+    result_dto = calculate_nrfid(object_dto)
+
+    assert len(result_dto.alerce_object["magstats"]) == 1
+    assert result_dto.alerce_object["magstats"][0]["name"] == "nrfid"

@@ -7,7 +7,11 @@ def magstats_intersection(excluded_calculators: List[str]):
     calculators = {
         "ra": calculate_ra,
         "dec": calculate_dec,
+        "mjd": calculate_mjd,
+        "ndet": calculate_ndet,
+        "nrfid": calculate_nrfid,
         "dmdt": calculate_dmdt,
+        "stellar": calculate_stellar
     }
 
     for calc in excluded_calculators:
