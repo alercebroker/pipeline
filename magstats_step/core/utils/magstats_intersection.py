@@ -4,7 +4,11 @@ from ..calculators import *
 
 
 def magstats_intersection(excluded_calculators: List[str]):
-    calculators = {"dmdt": calculate_dmdt, "ra": calculate_ra, "dec": calculate_dec}
+    calculators = {
+        "ra": calculate_ra,
+        "dec": calculate_dec,
+        "dmdt": calculate_dmdt,
+    }
 
     for calc in excluded_calculators:
         calculators.pop(calc)

@@ -1,3 +1,4 @@
+import pandas as pd
 from dataclasses import dataclass
 
 
@@ -8,5 +9,6 @@ class ObjectDTO:
     """
 
     alerce_object: dict
-    detections: list
-    non_detections: list
+    detections: pd.DataFrame
+    non_detections: pd.DataFrame
+    extra_fields: pd.DataFrame

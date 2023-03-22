@@ -3,9 +3,8 @@ from .coordinate_calculator import calculate_stats_coordinates
 
 
 def calculate_ra(object_dto: ObjectDTO) -> ObjectDTO:
-    ra_list = [det["ra"] for det in object_dto.detections]
-    e_ra_list = [det["e_ra"] for det in object_dto.detections]
-    meanra, ra_error = calculate_stats_coordinates(ra_list, e_ra_list)
+    ra_series, e_ra_series = object_dto.detections["ra"], object_dto.detections["e_ra"]
+    meanra, ra_error = calculate_stats_coordinates(ra_series, e_ra_series)
 
     populated_object = object_dto.alerce_object.copy()
     populated_object["meanra"] = meanra
@@ -14,5 +13,6 @@ def calculate_ra(object_dto: ObjectDTO) -> ObjectDTO:
     return ObjectDTO(
         populated_object,
         object_dto.detections,
-        object_dto.non_detections
+        object_dto.non_detections,
+        object_dto.extra_fields
     )

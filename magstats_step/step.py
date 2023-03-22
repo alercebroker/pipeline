@@ -4,6 +4,7 @@ import logging
 
 from .core.factories.object import alerce_object_factory
 from .core.utils.magstats_intersection import create_magstats_calculator
+from .core.utils.create_dataframe import *
 from .core.utils.object_dto import ObjectDTO
 
 
@@ -36,15 +37,17 @@ class MagstatsStep(GenericStep):
     def compute_magstats(self, alerts):
         magstats_list = []
         for object_dict in alerts:
-            detections = list(object_dict["detections"]).sort(
-                key=lambda det: det["mjd"]
-            )
-            non_detections = list(object_dict["non_detections"]).sort(
-                key=lambda nondet: nondet["mjd"]
+            detections_df = generic_dataframe_from_detections(object_dict["detections"])
+            extra_fields_df = extra_dataframe_from_detections(object_dict["detections"])
+            non_detections_df = generic_dataframe_from_non_detections(
+                object_dict["non_detections"]
             )
             # TODO: Check if object is atlas or ztf
             object_dto = ObjectDTO(
-                self.object_creator(alerts), detections, non_detections
+                self.object_creator(alerts),
+                detections_df,
+                non_detections_df,
+                extra_fields_df,
             )
             object_with_magstats = self.magstats_calculator(object_dto)
             magstats_list.append(object_with_magstats.alerce_object)

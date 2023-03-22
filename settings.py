@@ -5,7 +5,7 @@ def settings_factory():
     # Set the global logging level to debug
     logging_debug = os.getenv("LOGGING_DEBUG", False)
 
-    excluded_calculators = os.getenv("INCLUDED_CALCULATORS", "").strip().split(",")
+    excluded_calculators = os.getenv("EXCLUDED_CALCULATORS", "").strip().split(",")
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
