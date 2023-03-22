@@ -25,7 +25,7 @@ class ZTFParser(SurveyParser):
         Mapper("e_dec", lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
         Mapper("mag", origin="magpsf"),
         Mapper("e_mag", origin="sigmapsf"),
-        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos")
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
     ]
 
     @classmethod
@@ -44,4 +44,4 @@ class ZTFParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'publisher' in message and cls._source in message["publisher"]
+        return "publisher" in message and cls._source in message["publisher"]

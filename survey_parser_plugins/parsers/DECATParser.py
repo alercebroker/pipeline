@@ -25,7 +25,7 @@ class DECATParser(SurveyParser):
         Mapper("dec", origin="dec"),
         Mapper("mag", origin="mag"),
         Mapper("e_mag", origin="magerr"),
-        Mapper("isdiffpos", lambda: 1)
+        Mapper("isdiffpos", lambda: 1),
     ]
 
     @classmethod

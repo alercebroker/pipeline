@@ -58,7 +58,4 @@ class ParserSelector:
 class ALeRCEParser(ParserSelector):
     def __init__(self):
         super().__init__()
-        self.parsers = {
-            ATLASParser,
-            ZTFParser
-        }
+        self.parsers = {ATLASParser, ZTFParser}

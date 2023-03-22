@@ -11,6 +11,7 @@ class GenericAlert:
     """
     Class for keeping track of an alert of astronomical surveys.
     """
+
     oid: str  # name of object (name from survey)
     tid: str  # identifier of survey (name of survey)
     pid: int

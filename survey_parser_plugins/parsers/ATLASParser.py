@@ -37,7 +37,7 @@ class ATLASParser(SurveyParser):
         Mapper("e_dec", lambda x: x if x else ERROR, origin="sigmadec", required=False),
         Mapper("mag", origin="Mag"),
         Mapper("e_mag", origin="Dmag"),
-        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos")
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
     ]
 
     @classmethod
@@ -56,4 +56,4 @@ class ATLASParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'publisher' in message and cls._source in message["publisher"]
+        return "publisher" in message and cls._source in message["publisher"]

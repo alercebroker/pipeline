@@ -2,7 +2,15 @@ from typing import Any, Callable, Dict, Union
 
 
 class Mapper:
-    def __init__(self, field: str, function: Callable = None, *, origin: str = None, extras: list[str] = None, required: bool = True):
+    def __init__(
+        self,
+        field: str,
+        function: Callable = None,
+        *,
+        origin: str = None,
+        extras: list[str] = None,
+        required: bool = True
+    ):
         if origin is None and function is None:
             raise ValueError("Parameters 'origin' and 'function' cannot be both 'None'")
         self._field = field
