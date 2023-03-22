@@ -13,7 +13,6 @@ FID = {
 
 class LSSTParser(SurveyParser):
     _source = "LSST"
-    _ignore_in_extra_fields = ["cutoutScience", "cutoutDifference", "cutoutTemplate"]
 
     _mapping = [
         Mapper("candid", origin="diaSourceId"),

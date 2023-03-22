@@ -44,7 +44,7 @@ class SurveyParser(abc.ABC):
     """
     _source: str
     _mapping: Sequence[Mapper]
-    _ignore_in_extra_fields: Sequence[str] = []
+    _ignore_in_extra_fields: Sequence[str] = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     @classmethod
     @functools.lru_cache(1)

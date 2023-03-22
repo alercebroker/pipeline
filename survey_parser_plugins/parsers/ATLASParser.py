@@ -22,7 +22,6 @@ def _e_ra(dec):
 
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
-    _ignore_in_extra_fields = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     _mapping = [
         Mapper("candid", origin="candid"),

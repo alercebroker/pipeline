@@ -10,7 +10,6 @@ ERRORS = {
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
-    _ignore_in_extra_fields = ["prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     _mapping = [
         Mapper("candid", origin="candid"),
