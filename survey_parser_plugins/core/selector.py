@@ -45,6 +45,4 @@ class ALeRCEParser(ParserSelector):
 class ELAsTiCCParser(ParserSelector):
     def __init__(self):
         super().__init__()
-        self.parsers = {
-            LSSTParser
-        }
+        self.parsers = {LSSTParser}

@@ -12,8 +12,8 @@ class GenericAlert:
 
     oid: str  # name of object (from survey)
     tid: str  # telescope identifier
-    pid: int
-    candid: str  # alert identifier
+    pid: int  # processing identifier for image
+    candid: str  # candidate identifier (from survey)
     mjd: float  # modified Julian date
     fid: int  # filter identifier
     ra: float  # right ascension
