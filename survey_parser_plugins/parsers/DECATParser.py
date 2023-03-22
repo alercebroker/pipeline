@@ -23,6 +23,7 @@ class DECATParser(SurveyParser):
         Mapper("mjd", origin="mjd"),
         Mapper("ra", origin="ra"),
         Mapper("dec", origin="dec"),
+        # TODO: We're missing e_ra and e_dec. Object meanra, meandec calculations won't work
         Mapper("mag", origin="mag"),
         Mapper("e_mag", origin="magerr"),
         Mapper("isdiffpos", lambda: 1),
