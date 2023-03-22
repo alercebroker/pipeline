@@ -17,15 +17,15 @@ class DECATParser(SurveyParser):
     _mapping = [
         Mapper("candid", origin="sourceid"),
         Mapper("oid", origin="objectid"),
-        Mapper("tid", lambda _: DECATParser._source),
-        Mapper("pid", lambda _: ""),
-        Mapper("fid", lambda m, f: FID[m[f][0]], origin="filter"),
+        Mapper("tid", lambda: DECATParser._source),
+        Mapper("pid", lambda: ""),
+        Mapper("fid", lambda x: FID[x[0]], origin="filter"),
         Mapper("mjd", origin="mjd"),
         Mapper("ra", origin="ra"),
         Mapper("dec", origin="dec"),
         Mapper("mag", origin="mag"),
         Mapper("e_mag", origin="magerr"),
-        Mapper("isdiffpos", lambda _: 1)
+        Mapper("isdiffpos", lambda: 1)
     ]
 
     @classmethod

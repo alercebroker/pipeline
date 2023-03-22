@@ -16,6 +16,10 @@ FID = {
 ERROR = 0.14
 
 
+def _e_ra(dec):
+    return ERROR / abs(math.cos(dec))
+
+
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
     _from_top = ["objectId", "publisher", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
@@ -25,15 +29,15 @@ class ATLASParser(SurveyParser):
         Mapper("oid", origin="objectId"),
         Mapper("tid", origin="publisher"),
         Mapper("pid", origin="pid"),
-        Mapper("fid", lambda m, f: FID[m[f]], origin="filter"),
+        Mapper("fid", lambda x: FID[x], origin="filter"),
         Mapper("mjd", origin="mjd"),
         Mapper("ra", origin="RA"),
-        Mapper("e_ra", lambda m, f: m[f] if f in m else ERROR/abs(math.cos(m["Dec"])), origin="sigmara"),
+        Mapper("e_ra", lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
         Mapper("dec", origin="Dec"),
-        Mapper("e_dec", lambda m, f: m[f] if f in m else ERROR, origin="sigmadec"),
+        Mapper("e_dec", lambda x: x if x else ERROR, origin="sigmadec", required=False),
         Mapper("mag", origin="Mag"),
         Mapper("e_mag", origin="Dmag"),
-        Mapper("isdiffpos", lambda m, f: 1 if m[f] in ["t", "1"] else -1, origin="isdiffpos")
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos")
     ]
 
     @classmethod

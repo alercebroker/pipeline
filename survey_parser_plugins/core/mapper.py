@@ -2,12 +2,14 @@ from typing import Any, Callable, Dict, Union
 
 
 class Mapper:
-    def __init__(self, field: str, function: Callable[[Dict[str, Any]], Any] = None, *, origin: str = None):
+    def __init__(self, field: str, function: Callable = None, *, origin: str = None, extras: list[str] = None, required: bool = True):
         if origin is None and function is None:
             raise ValueError("Parameters 'origin' and 'function' cannot be both 'None'")
         self._field = field
         self._origin = origin
-        self._function = function
+        self._required = required
+        self._function = function if function else lambda x: x
+        self._extras = extras if extras else []
 
     @property
     def field(self) -> str:
@@ -18,8 +20,8 @@ class Mapper:
         return self._origin
 
     def __call__(self, message: Dict[str, Any]):
-        if self._function is not None and self._origin is not None:
-            return self._function(message, self._origin)
-        if self._function is not None and self._origin is None:
-            return self._function(message)
-        return message[self.origin]
+        extras = [message[field] if self._required else message.get(field) for field in self._extras]
+        if self._origin is None:
+            return self._function(*extras)
+        origin = message[self._origin] if self._required else message.get(self._origin)
+        return self._function(origin, *extras)

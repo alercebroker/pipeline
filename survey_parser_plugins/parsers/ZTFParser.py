@@ -15,17 +15,17 @@ class ZTFParser(SurveyParser):
     _mapping = [
         Mapper("candid", origin="candid"),
         Mapper("oid", origin="objectId"),
-        Mapper("tid", lambda _: ZTFParser._source),
+        Mapper("tid", lambda: ZTFParser._source),
         Mapper("pid", origin="pid"),
         Mapper("fid", origin="fid"),
-        Mapper("mjd", lambda m, f: m[f] - 2400000.5, origin="jd"),
+        Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
         Mapper("ra", origin="ra"),
-        Mapper("e_ra", lambda m, f: m[f] if f in m else ERRORS[m["fid"]], origin="sigmara"),
+        Mapper("e_ra", lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
         Mapper("dec", origin="dec"),
-        Mapper("e_dec", lambda m, f: m[f] if f in m else ERRORS[m["fid"]], origin="sigmadec"),
+        Mapper("e_dec", lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
         Mapper("mag", origin="magpsf"),
         Mapper("e_mag", origin="sigmapsf"),
-        Mapper("isdiffpos", lambda m, f: 1 if m[f] in ["t", "1"] else -1, origin="isdiffpos")
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos")
     ]
 
     @classmethod
