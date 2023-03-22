@@ -39,7 +39,7 @@ The parsers receive a list of messages (dictionaries in python) and return a lis
 If you want does some modifications on source code, install package as develop in your system.
 
 ```
-pip install -e .
+pip install -e .[dev]
 ```
 
 ## Usage
