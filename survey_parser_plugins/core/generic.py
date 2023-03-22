@@ -47,7 +47,7 @@ class SurveyParser(abc.ABC):
     _ignore_in_extra_fields: Sequence[str] = []
 
     @classmethod
-    @functools.lru_cache
+    @functools.lru_cache(1)
     def _exclude_from_extra_fields(cls) -> Set[str]:
         """Returns a set of fields that should not be present in `extra_fields` for `GenericAlert`"""
         ignore = {mapper.origin for mapper in cls._mapping if mapper.origin is not None}
