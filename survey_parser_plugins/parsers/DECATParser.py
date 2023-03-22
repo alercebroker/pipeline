@@ -39,6 +39,6 @@ class DECATParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        if "objectid" in message.keys() and "sources" in message.keys():
+        if "objectid" in message and "sources" in message:
             return "DC" in message["objectid"] and "DECam" in message["sources"][0]["filter"]
         return False

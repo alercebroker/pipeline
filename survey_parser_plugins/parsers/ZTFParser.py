@@ -10,7 +10,7 @@ ERRORS = {
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
-    _ignore_in_extra_fields = ["objectId", "prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+    _ignore_in_extra_fields = ["prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     _mapping = [
         Mapper("candid", origin="candid"),
@@ -38,8 +38,11 @@ class ZTFParser(SurveyParser):
 
     @classmethod
     def parse_message(cls, message) -> GenericAlert:
+        # the alert data is actually in candidate
         candidate = message["candidate"].copy()
-        candidate.update({k: v for k, v in message.items() if k in cls._ignore_in_extra_fields})
+        # additional fields from top-level message are included here
+        fields_from_top = ["objectId", "prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+        candidate.update({k: v for k, v in message.items() if k in fields_from_top})
         return super(ZTFParser, cls).parse_message(candidate)
 
     @classmethod
