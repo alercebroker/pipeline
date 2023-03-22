@@ -30,7 +30,7 @@ class DECATParser(SurveyParser):
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
-        return {}
+        super(DECATParser, cls)._extract_stamps(message)
 
     @classmethod
     def parse_message(cls, message) -> List[GenericAlert]:

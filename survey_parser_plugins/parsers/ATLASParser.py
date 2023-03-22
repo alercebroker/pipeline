@@ -22,7 +22,7 @@ def _e_ra(dec):
 
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
-    _from_top = ["objectId", "publisher", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+    _ignore_in_extra_fields = ["objectId", "publisher", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     _mapping = [
         Mapper("candid", origin="candid"),
@@ -51,7 +51,7 @@ class ATLASParser(SurveyParser):
     @classmethod
     def parse_message(cls, message) -> GenericAlert:
         candidate = message["candidate"].copy()
-        candidate.update({k: v for k, v in message.items() if k in cls._from_top})
+        candidate.update({k: v for k, v in message.items() if k in cls._ignore_in_extra_fields})
         return super(ATLASParser, cls).parse_message(candidate)
 
     @classmethod
