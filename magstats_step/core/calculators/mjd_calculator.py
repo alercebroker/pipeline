@@ -6,8 +6,8 @@ def calculate_mjd(object_dto: ObjectDTO) -> ObjectDTO:
         return object_dto
 
     populated_object = object_dto.alerce_object.copy()
-    populated_object["firstmjd"] = detections.iloc[0]["mjd"]
-    populated_object["lastmjd"] = detections.iloc[-1]["mjd"]
+    populated_object["firstmjd"] = detections["mjd"].min()
+    populated_object["lastmjd"] = detections["mjd"].max()
 
     return ObjectDTO(
         populated_object,
