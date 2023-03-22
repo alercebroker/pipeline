@@ -10,30 +10,29 @@ The generic schema is:
 ```python
 @dataclass
 class GenericAlert:
-    oid: str # object identifier by telescope. e.g: ZTF20aaelulu
-    tid: str # telescope identifier. e.g: ATLAS-01b
-    candid: int # candidate identifier by telescope: e.g: 100219327768932647823 
-    pid: int # processing identifier for image
-    rfid: int # processing identifier for reference image to facilitate archive retrieval
-    mjd: float
-    fid: int
-    ra: float
-    e_ra: float # error in right ascension
-    dec: float
-    e_dec: float # error in declination
-    mag: float
-    e_mag: float
-    isdiffpos: str
-    rb: float
-    rbversion: str
+    oid: str  # name of object (from survey)
+    tid: str  # telescope identifier
+    pid: int  # processing identifier for image
+    candid: str  # candidate identifier (from survey)
+    mjd: float  # modified Julian date
+    fid: int  # filter identifier
+    ra: float  # right ascension
+    dec: float  # declination
+    mag: float  # difference magnitude
+    e_mag: float  # difference magnitude uncertainty
+    isdiffpos: int  # sign of the flux difference
+    e_ra: float = None  # right ascension uncertainty
+    e_dec: float = None  # declination uncertainty
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 ```
 
 Where `extra_fields` is a dictionary that has the complement of data that is not generic, that is, the rest of the data that comes from the alert.
-The `stamps` is a dictionary with respective cutouts.
 
-The parsers receive a list of messages (messages = dictionaries in python) and return a list of dictionaries with the selected key-value.
+The `stamps` is a dictionary with `cutoutScience`, `cutoutTemplate` and `cutoutDifference`. One or more can be `None` if not
+provided by the source.
+
+The parsers receive a list of messages (dictionaries in python) and return a list of generic alerts.
 
 ## Developer set up
 
