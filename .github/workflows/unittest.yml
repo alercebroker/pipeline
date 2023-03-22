@@ -24,7 +24,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        sudo apt-get -y install libsnappy-dev
+        pip install --upgrade pip
         pip install -e .[dev]
     - name: Test with pytest
       run: |
