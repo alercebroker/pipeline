@@ -61,6 +61,10 @@ class PrvCandidatesStep(GenericStep):
             parsed_non_detections = ztf_non_detections_parser.parse(
                 non_detections[index], alert["aid"], alert["tid"], alert["oid"]
             )
+            # move fields to extra_fields before removing them
+            alert["extra_fields"]["rfid"] = alert["rfid"]
+            alert["extra_fields"]["rb"] = alert["rb"]
+            alert["extra_fields"]["rbversion"] = alert["rbversion"]
             stampless_alert = remove_keys_from_dictionary(
                 alert, ["stamps", "rfid", "rb", "rbversion"]
             )
