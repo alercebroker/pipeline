@@ -16,7 +16,7 @@ def test_prv_detections_parser():
     result = parser.parse(data, "oid", "aid", "parent_candid")
     assert result[0]["aid"] == "aid"
     assert result[0]["oid"] == "oid"
-    assert result[0]["parent_candid"] == "parent_candid"
+    assert result[0]["extra_fields"]["parent_candid"] == "parent_candid"
 
 
 def test_non_detections_parser():
