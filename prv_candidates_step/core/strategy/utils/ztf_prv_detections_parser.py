@@ -41,7 +41,6 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         prv_content["aid"] = aid
         prv_content["mjd"] = prv_content["mjd"] - 2400000.5
         prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
-        prv_content["extra_fields"]["rfid"] = prv_content["rfid"]
         prv_content["extra_fields"]["rb"] = prv_content["rb"]
         prv_content["extra_fields"]["rbversion"] = prv_content["rbversion"]
         prv_content["extra_fields"]["parent_candid"] = parent_candid
