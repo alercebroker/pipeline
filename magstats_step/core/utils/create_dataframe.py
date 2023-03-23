@@ -8,12 +8,23 @@ def generic_dataframe_from_detections(detections: List[dict]) -> pd.DataFrame:
     ).sort_values("mjd")
 
 
+def generate_detections_dataframe(detections: List[dict]) -> pd.DataFrame:
+    extra_columns = ["distpsnr1", "sgscore1", "chinr", "sharpnr"]
+    detections = pd.DataFrame.from_records(detections, exclude="extra_fields", index="candid")
+    extras = [{"candid": det["candid"], **det["extra_fields"]} for det in detections]
+    extras = pd.DataFrame.from_records(extras, columns=extra_columns, index="candid")
+    return detections.join(extras)
+
+
 def generic_dataframe_from_non_detections(nd: List[dict]) -> pd.DataFrame:
     return pd.DataFrame.from_records(nd).sort_values("mjd")
 
 
+def generate_non_detections_dataframe(nd: List[dict]) -> pd.DataFrame:
+    return pd.DataFrame.from_records(nd).sort_values("mjd")
+
+
 def extra_dataframe_from_detections(detections: List[dict]) -> pd.DataFrame:
-    extra_fields_list = ["distpsnr1", "sgscore1", "chinr", "sharpnr"]
     chosen_fields = {
         detection["candid"]: detection["extra_field"]
         for detection in detections
