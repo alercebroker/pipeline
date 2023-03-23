@@ -9,6 +9,7 @@ def settings_factory():
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
+        "CLASS": os.environ["CONSUMER_CLASS"],
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
