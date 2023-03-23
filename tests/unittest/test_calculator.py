@@ -7,6 +7,11 @@ from magstats_step.core.utils.magstats_intersection import (
     magstats_intersection,
 )
 from magstats_step.core.calculators import *
+from magstats_step.core.calculators.coordinate_calculator import (
+    calculate_e_coord,
+    calculate_mean_coordinate,
+    calculate_weights,
+)
 from data.messages import data
 from data.utils import setup_blank_dto
 
@@ -36,10 +41,29 @@ def test_magstats_calculators_composition():
     assert result_dto.alerce_object["meandec"] != None
 
 
+def test_calculate_weights():
+    e_coordinates = pd.Series([3600, 3600])
+    result = calculate_weights(e_coordinates)
+    assert (result == [1, 1]).all()
+
+
+def test_calculate_mean_coordinate():
+    coordinates = pd.Series([100, 150, 200])
+    weights = pd.Series([1, 1, 1])
+    result = calculate_mean_coordinate(coordinates, weights)
+    assert result == 150
+
+
+def test_calculate_e_coord():
+    weights = pd.Series([1, 1, 1])
+    result = calculate_e_coord(weights)
+    assert result == math.sqrt(1 / 3) * 3600
+
+
 def test_calculate_stats_coordinates():
     coords = pd.Series([250, 250, 250])
     e_coords = pd.Series([3600, 3600, 3600])
-    expected_result = (250, math.sqrt(1 / 3) * 3600)
+    expected_result = (250.0, math.sqrt(1 / 3) * 3600)
     result = calculate_stats_coordinates(coords, e_coords)
     assert result == expected_result
 
