@@ -81,12 +81,30 @@ def settings_factory():
         },
     }
 
+    if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+        consumer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        consumer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        consumer_config["PARAMS"]["sasl.username"] = os.getenv(
+            "CONSUMER_KAFKA_USERNAME"
+        )
+        consumer_config["PARAMS"]["sasl.password"] = os.getenv(
+            "CONSUMER_KAFKA_PASSWORD"
+        )
+    if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
+        metrics_config["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
+        metrics_config["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        metrics_config["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+            "METRICS_KAFKA_USERNAME"
+        )
+        metrics_config["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+            "METRICS_KAFKA_PASSWORD"
+        )
     # Step Configuration
     step_config = {
         "CONSUMER_CONFIG": consumer_config,
         "METRICS_CONFIG": metrics_config,
         "LOGGING_DEBUG": logging_debug,
-        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators)
+        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators),
     }
 
     return step_config
