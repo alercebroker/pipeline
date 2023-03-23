@@ -1,0 +1,121 @@
+{
+  "type": "record",
+  "doc": "Lightcurve schema with detections and non-detections",
+  "name": "Lightcurve",
+  "fields": [
+    {
+      "name": "aid",
+      "type": "string"
+    },
+    {
+      "name": "detections",
+      "type": {
+        "type": "array",
+        "items": {
+            "type": "record",
+            "name": "alert",
+            "fields": [
+              {
+                  "name": "aid",
+                  "type": "string"
+              },
+              {
+                  "name": "oid",
+                  "type": "string"
+              },
+              {
+                  "name": "tid",
+                  "type": "string"
+              },
+              {
+                  "name": "candid",
+                  "type": ["long", "string"]
+              },
+              {
+                  "name": "mjd",
+                  "type": "double"
+              },
+              {
+                  "name": "fid",
+                  "type": "int"
+              },
+              {
+                  "name": "ra",
+                  "type": "double"
+              },
+              {
+                  "name": "dec",
+                  "type": "double"
+              },
+              {
+                  "name": "mag",
+                  "type": "float"
+              },
+              {
+                  "name": "e_mag",
+                  "type": "float"
+              },
+              {
+                  "name": "isdiffpos",
+                  "type": "int"
+              },
+              {
+                  "name": "e_ra",
+                  "type": "float"
+              },
+              {
+                  "name": "e_dec",
+                  "type": "float"
+              },
+              {
+                  "name": "extra_fields",
+                  "type": {
+                  "default": {},
+                  "type": "map",
+                  "values": ["null", "int", "float", "string", "bytes"]
+                  }
+              }
+            ]
+        },
+        "default": []
+      }
+    },
+    {
+      "name": "non_detections",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "non_detection",
+          "fields": [
+            {
+              "name": "aid",
+              "type": "string"
+            },
+            {
+              "name": "tid",
+              "type": "string"
+            },
+            {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "mjd",
+              "type": "double"
+            },
+            {
+              "name": "fid",
+              "type": "int"
+            },
+            {
+              "name": "diffmaglim",
+              "type": "int"
+            }
+          ]
+        }
+      },
+      "default": []
+    }
+  ]
+}
