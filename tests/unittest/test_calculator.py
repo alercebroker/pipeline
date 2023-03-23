@@ -2,7 +2,10 @@ import math
 import pandas as pd
 from unittest import mock
 from magstats_step.core.utils.compose import compose as super_magstats_calculator
-from magstats_step.core.utils.magstats_intersection import CALCULATORS_LIST, magstats_intersection
+from magstats_step.core.utils.magstats_intersection import (
+    CALCULATORS_LIST,
+    magstats_intersection,
+)
 from magstats_step.core.calculators import *
 from data.messages import data
 from data.utils import setup_blank_dto
@@ -29,8 +32,8 @@ def test_magstats_calculators_composition():
     data_dto = setup_blank_dto(data[0])
     result_dto = super_magstats_calculator(*calculators.values())(data_dto)
 
-    assert result_dto.alerce_object["meanra"] != -999
-    assert result_dto.alerce_object["meandec"] != -999
+    assert result_dto.alerce_object["meanra"] != None
+    assert result_dto.alerce_object["meandec"] != None
 
 
 def test_calculate_stats_coordinates():
@@ -41,19 +44,28 @@ def test_calculate_stats_coordinates():
     assert result == expected_result
 
 
+def test_calculate_stats_with_equal_weights():
+    coords = pd.Series([100, 150, 200])
+    e_coords = pd.Series([1, 1, 1])
+    expected_result = (150, math.sqrt(1 / 3))
+    result = calculate_stats_coordinates(coords, e_coords)
+    assert math.isclose(result[0], expected_result[0])
+    assert math.isclose(result[1], expected_result[1])
+
+
 def test_calculate_dec():
     object_dto = setup_blank_dto(data[0])
     result_dto = calculate_dec(object_dto)
-    assert result_dto.alerce_object["meandec"] != -999
-    assert result_dto.alerce_object["sigmadec"] != -999
+    assert result_dto.alerce_object["meandec"] != None
+    assert result_dto.alerce_object["sigmadec"] != None
 
 
 def test_calculate_ra():
     object_dto = setup_blank_dto(data[0])
 
     result_dto = calculate_ra(object_dto)
-    assert result_dto.alerce_object["meanra"] != -999
-    assert result_dto.alerce_object["sigmara"] != -999
+    assert result_dto.alerce_object["meanra"] != None
+    assert result_dto.alerce_object["sigmara"] != None
 
 
 def test_calculate_mjd():
@@ -67,7 +79,7 @@ def test_calculate_ndet():
     object_dto = setup_blank_dto(data[0])
     result_dto = calculate_ndet(object_dto)
 
-    assert result_dto.alerce_object["ndet"] != -999
+    assert result_dto.alerce_object["ndet"] != None
 
 
 def test_calculate_magnitude_statistics():
