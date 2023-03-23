@@ -18,7 +18,9 @@ def settings_creator():
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": True if os.getenv("ENABLE_PARTITION_EOF") else False,
+            "enable.partition.eof": True
+            if os.getenv("ENABLE_PARTITION_EOF")
+            else False,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
@@ -79,7 +81,7 @@ def settings_creator():
         },
     }
 
-    prometheus = False
+    prometheus = os.getenv("USE_PROMETHEUS", False)
 
     # Step Configuration
     step_config = {
