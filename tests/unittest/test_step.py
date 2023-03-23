@@ -9,13 +9,13 @@ def test_object_creator():
     step = step_factory()
     object = step.object_creator(data[0])
     assert object["aid"] == data[0]["aid"]
-    assert object["meanra"] == -999
-    assert object["meandec"] == -999
+    assert object["meanra"] == None
+    assert object["meandec"] == None
     assert object["magstats"] == []
     assert object["oid"] == []
     assert object["tid"] == []
-    assert object["firstmjd"] == -999
-    assert object["lastmjd"] == -999
-    assert object["ndet"] == -999
-    assert object["sigmara"] == -999
-    assert object["sigmadec"] == -999
+    assert object["firstmjd"] == None
+    assert object["lastmjd"] == None
+    assert object["ndet"] == None
+    assert object["sigmara"] == None
+    assert object["sigmadec"] == None

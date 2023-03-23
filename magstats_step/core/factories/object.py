@@ -4,14 +4,14 @@ def alerce_object_factory(raw_object_info: dict):
 
     return {
         "aid": raw_object_info["aid"],
-        "meanra": -999,
-        "meandec": -999,
+        "meanra": None,
+        "meandec": None,
         "magstats": [],
         "oid": [],
         "tid": [],
-        "firstmjd": -999,
-        "lastmjd": -999,
-        "ndet": -999,
-        "sigmara": -999,
-        "sigmadec": -999,
+        "firstmjd": None,
+        "lastmjd": None,
+        "ndet": None,
+        "sigmara": None,
+        "sigmadec": None,
     }
