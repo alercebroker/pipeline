@@ -12,7 +12,7 @@ from data.utils import setup_blank_dto
 
 
 def test_magstats_intersection():
-    excluded_calcs = ["dmdt", "mjd", "ndet", "stellar"]
+    excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec"]))
     result = magstats_intersection(excluded_calcs)
     expected_result = [calculate_ra, calculate_dec]
     assert set(result.values()) == set(expected_result)
@@ -22,18 +22,18 @@ def test_super_magstats_calculator():
     ra_calculator = mock.MagicMock()
     dec_calculator = mock.MagicMock()
     functions = [ra_calculator, dec_calculator]
-    super_magstats_calculator(*functions)(data)
-    ra_calculator.assert_called_with(dec_calculator(data))
+    super_magstats_calculator(*functions)([data[0]])
+    ra_calculator.assert_called_with(dec_calculator(data[0]))
 
 
 def test_magstats_calculators_composition():
     excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec"]))
     calculators = magstats_intersection(excluded_calcs)
-    data_dto = setup_blank_dto(data[0])
-    result_dto = super_magstats_calculator(*calculators.values())(data_dto)
+    obj, det, nondet = setup_blank_dto(data[0])
+    alerce_object, _, __ = super_magstats_calculator(*calculators.values())(obj, det, nondet)
 
-    assert result_dto.alerce_object["meanra"] != None
-    assert result_dto.alerce_object["meandec"] != None
+    assert alerce_object.meanra is not None
+    assert alerce_object.meandec is not None
 
 
 def test_calculate_stats_coordinates():
@@ -54,36 +54,36 @@ def test_calculate_stats_with_equal_weights():
 
 
 def test_calculate_dec():
-    object_dto = setup_blank_dto(data[0])
-    result_dto = calculate_dec(object_dto)
-    assert result_dto.alerce_object["meandec"] != None
-    assert result_dto.alerce_object["sigmadec"] != None
+    obj, det, nondet = setup_blank_dto(data[0])
+    alerce_object = calculate_dec(obj, det, nondet)[0]
+    assert alerce_object.meandec is not None
+    assert alerce_object.sigmadec is not None
 
 
 def test_calculate_ra():
-    object_dto = setup_blank_dto(data[0])
+    obj, det, nondet = setup_blank_dto(data[0])
 
-    result_dto = calculate_ra(object_dto)
-    assert result_dto.alerce_object["meanra"] != None
-    assert result_dto.alerce_object["sigmara"] != None
+    alerce_object = calculate_ra(obj, det, nondet)[0]
+    assert alerce_object.meanra is not None
+    assert alerce_object.sigmara is not None
 
 
 def test_calculate_mjd():
-    object_dto = setup_blank_dto(data[0])
-    result_dto = calculate_mjd(object_dto)
+    obj, det, nondet = setup_blank_dto(data[0])
+    alerce_object = calculate_mjd(obj, det, nondet)[0]
 
-    assert result_dto.alerce_object["firstmjd"] < result_dto.alerce_object["lastmjd"]
+    assert alerce_object.firstmjd < alerce_object.lastmjd
 
 
 def test_calculate_ndet():
-    object_dto = setup_blank_dto(data[0])
-    result_dto = calculate_ndet(object_dto)
+    args = setup_blank_dto(data[0])
+    alerce_object = calculate_ndet(*args)[0]
 
-    assert result_dto.alerce_object["ndet"] != None
+    assert alerce_object.ndet is not None
 
 
 def test_calculate_magnitude_statistics():
-    object_dto = setup_blank_dto(data[0])
-    result_dto = calculate_magnitude_statistics(object_dto)
+    args = setup_blank_dto(data[0])
+    alerce_object = calculate_magnitude_statistics(*args)
 
-    assert result_dto
+    assert alerce_object

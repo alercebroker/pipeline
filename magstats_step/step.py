@@ -2,7 +2,7 @@ from apf.core.step import GenericStep
 import pandas as pd
 import logging
 
-from .core.factories.object import AlerceObject
+from .core.factories.object import AlerceObject, alerce_object_factory
 from .core.utils.magstats_intersection import create_magstats_calculator
 from .core.utils.create_dataframe import *
 from .core.utils.object_dto import ObjectDTO
