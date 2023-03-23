@@ -3,7 +3,7 @@ import logging
 from prometheus_client import start_http_server
 
 try:
-    from correction_step import CorrectionStep
+    from lightcurve_step import LightcurveStep
 except ImportError:
     import os
     import sys
