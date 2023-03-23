@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: "lightcurve_step"
+  # unittest:
+  #   uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+  #   with:
+  #     python-version: "3.10"
+  #     sources-folder: "lightcurve_step"
+  #     test-folder: "tests/unit"
+  #     test-dependencies: "pytest pytest-cov pytest-mock"
+  #     test-command: "python -m pytest -x tests/unit --cov prv_candidates_step --cov-report xml"
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: "3.10"
+      sources-folder: "lightcurve_step"
+      test-folder: "tests/integration"
+      test-dependencies: "pytest pytest-docker"
+      codecov-flags: "" # Do not upload
+      test-command: "python -m pytest -x tests/integration"
