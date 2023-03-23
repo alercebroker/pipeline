@@ -13,7 +13,7 @@ def generic_dataframe_from_non_detections(nd: List[dict]) -> pd.DataFrame:
 
 
 def extra_dataframe_from_detections(detections: List[dict]) -> pd.DataFrame:
-    extra_fields_list = ["rfid", "distpsnr1", "sgscore1", "chinr", "sharpnr"]
+    extra_fields_list = ["distpsnr1", "sgscore1", "chinr", "sharpnr"]
     chosen_fields = {
         detection["candid"]: detection["extra_field"]
         for detection in detections

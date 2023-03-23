@@ -2,24 +2,14 @@ import math
 import pandas as pd
 from unittest import mock
 from magstats_step.core.utils.compose import compose as super_magstats_calculator
-from magstats_step.core.utils.magstats_intersection import magstats_intersection
-from magstats_step.core.factories.object import alerce_object_factory
-from magstats_step.core.utils.object_dto import ObjectDTO
+from magstats_step.core.utils.magstats_intersection import CALCULATORS_LIST, magstats_intersection
 from magstats_step.core.calculators import *
-from magstats_step.core.utils.create_dataframe import *
 from data.messages import data
+from data.utils import setup_blank_dto
 
-def setup_blank_dto(alert):
-    detections, non_detections, extra_fields = (
-        generic_dataframe_from_detections(alert["detections"]),
-        generic_dataframe_from_non_detections(alert["non_detections"]),
-        extra_dataframe_from_detections(alert["detections"]),
-    )
-    alerce_object = alerce_object_factory(alert)
-    return ObjectDTO(alerce_object, detections, non_detections, extra_fields)
 
 def test_magstats_intersection():
-    excluded_calcs = ["dmdt", "mjd", "ndet", "nrfid", "stellar"]
+    excluded_calcs = ["dmdt", "mjd", "ndet", "stellar"]
     result = magstats_intersection(excluded_calcs)
     expected_result = [calculate_ra, calculate_dec]
     assert set(result.values()) == set(expected_result)
@@ -31,6 +21,16 @@ def test_super_magstats_calculator():
     functions = [ra_calculator, dec_calculator]
     super_magstats_calculator(*functions)(data)
     ra_calculator.assert_called_with(dec_calculator(data))
+
+
+def test_magstats_calculators_composition():
+    excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec"]))
+    calculators = magstats_intersection(excluded_calcs)
+    data_dto = setup_blank_dto(data[0])
+    result_dto = super_magstats_calculator(*calculators.values())(data_dto)
+
+    assert result_dto.alerce_object["meanra"] != -999
+    assert result_dto.alerce_object["meandec"] != -999
 
 
 def test_calculate_stats_coordinates():
@@ -62,15 +62,16 @@ def test_calculate_mjd():
 
     assert result_dto.alerce_object["firstmjd"] < result_dto.alerce_object["lastmjd"]
 
+
 def test_calculate_ndet():
     object_dto = setup_blank_dto(data[0])
     result_dto = calculate_ndet(object_dto)
 
     assert result_dto.alerce_object["ndet"] != -999
 
-def test_calculate_nrfid():
-    object_dto = setup_blank_dto(data[0])
-    result_dto = calculate_nrfid(object_dto)
 
-    assert len(result_dto.alerce_object["magstats"]) == 1
-    assert result_dto.alerce_object["magstats"][0]["name"] == "nrfid"
+def test_calculate_magnitude_statistics():
+    object_dto = setup_blank_dto(data[0])
+    result_dto = calculate_magnitude_statistics(object_dto)
+
+    assert result_dto

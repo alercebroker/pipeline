@@ -44,7 +44,7 @@ class MagstatsStep(GenericStep):
             )
             # TODO: Check if object is atlas or ztf
             object_dto = ObjectDTO(
-                self.object_creator(alerts),
+                self.object_creator(object_dict),
                 detections_df,
                 non_detections_df,
                 extra_fields_df,
@@ -68,4 +68,5 @@ class MagstatsStep(GenericStep):
 
         # self.magstats_calculator.insert(new_stats, self.driver)
         self.logger.info(f"Clean batch of data\n")
+        print(magstats)
         return magstats

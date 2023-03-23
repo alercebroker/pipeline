@@ -47,7 +47,7 @@ def test_ndet():
     ndet = strategy.compute_ndet(df)
     assert ndet == 3
 
-def test_ndet():
+def test_ndubious():
     df = pd.DataFrame([True, False, True], columns=['dubious'])
     strategy = ZTFMagstatsStrategy()
     ndubious = strategy.compute_ndubious(df)

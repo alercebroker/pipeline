@@ -48,24 +48,12 @@
             "type": "double"
           },
           {
-            "name": "rb",
-            "type": ["null", "float"]
-          },
-          {
-            "name": "rbversion",
-            "type": ["null", "string"]
-          },
-          {
             "name": "mag",
             "type": "float"
           },
           {
             "name": "e_mag",
             "type": "float"
-          },
-          {
-            "name": "rfid",
-            "type": ["null", "int"]
           },
           {
             "name": "isdiffpos",
@@ -94,6 +82,26 @@
           {
             "name": "corrected",
             "type": "boolean"
+          },
+          {
+            "name": "dubious",
+            "type": "boolean"
+          },
+          {
+            "name": "has_stamp",
+            "type": "boolean"
+          },
+          {
+            "name": "mag_corr",
+            "type": ["float", "null"]
+          },
+          {
+            "name": "e_mag_corr",
+            "type": ["float", "null"]
+          },
+          {
+            "name": "e_mag_corr_ext",
+            "type": ["float", "null"]
           }
         ]
       },
