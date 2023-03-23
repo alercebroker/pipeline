@@ -1,31 +1,21 @@
-import unittest
-import pytest
-import pandas as pd
-import numpy as np
-from unittest import mock
-
-from magstats_step.step import MagstatsStep
-
+from unittest.mock import MagicMock
 from data.messages import data
+from data.utils import setup_blank_dto
+from scripts.run_step import step_factory
+from pytest import fixture
 
-class StepTestCase(unittest.TestCase):
-    def setUp(self) -> None:
-        step_config = {
-        }
-        self.step = MagstatsStep(
-            config=step_config,
-        )
 
-    def tearDown(self) -> None:
-        del self.step
-
-    def test_step(self):
-        self.step.execute(data)
-        pass
-
-    def test_compute_magstats(self):
-        stats = self.step.compute_magstats(data)
-        assert 'aid' in stats[0]
-        assert 'magstats' in stats[0]
-        assert len(stats) == len(data)
-
+def test_object_creator():
+    step = step_factory()
+    object = step.object_creator(data[0])
+    assert object["aid"] == data[0]["aid"]
+    assert object["meanra"] == None
+    assert object["meandec"] == None
+    assert object["magstats"] == []
+    assert object["oid"] == []
+    assert object["tid"] == []
+    assert object["firstmjd"] == None
+    assert object["lastmjd"] == None
+    assert object["ndet"] == None
+    assert object["sigmara"] == None
+    assert object["sigmadec"] == None

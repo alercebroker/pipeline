@@ -3,11 +3,12 @@ import os
 
 def settings_factory():
     # Set the global logging level to debug
-    LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
+    logging_debug = os.getenv("LOGGING_DEBUG", False)
 
+    excluded_calculators = os.getenv("EXCLUDED_CALCULATORS", "").strip().split(",")
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
-    CONSUMER_CONFIG = {
+    consumer_config = {
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -19,7 +20,7 @@ def settings_factory():
     }
 
     if os.getenv("TOPIC_STRATEGY_FORMAT"):
-        CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
+        consumer_config["TOPIC_STRATEGY"] = {
             "CLASS": "apf.core.topic_management.DailyTopicStrategy",
             "PARAMS": {
                 "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
@@ -28,11 +29,11 @@ def settings_factory():
             },
         }
     elif os.getenv("CONSUMER_TOPICS"):
-        CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+        consumer_config["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
     else:
         raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
-    METRICS_CONFIG = {
+    metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
         "EXTRA_METRICS": [
             {"key": "oid", "alias": "oid"},
@@ -81,10 +82,11 @@ def settings_factory():
     }
 
     # Step Configuration
-    STEP_CONFIG = {
-        "CONSUMER_CONFIG": CONSUMER_CONFIG,
-        "METRICS_CONFIG": METRICS_CONFIG,
-        "LOGGING_DEBUG": LOGGING_DEBUG,
+    step_config = {
+        "CONSUMER_CONFIG": consumer_config,
+        "METRICS_CONFIG": metrics_config,
+        "LOGGING_DEBUG": logging_debug,
+        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators)
     }
 
-    return STEP_CONFIG
+    return step_config
