@@ -9,6 +9,7 @@ from fastavro import schema
 def settings_creator():
     # Set the global logging level to debug
     logging_debug = False
+    prometheus = os.getenv("USE_PROMETHEUS", False)
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -119,4 +120,5 @@ def settings_creator():
         "PRODUCER_CONFIG": producer_config,
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
+        "USE_PROMETHEUS": prometheus,
     }
