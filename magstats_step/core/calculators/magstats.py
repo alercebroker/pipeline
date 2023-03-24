@@ -51,7 +51,6 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
 
     def _calculate_stats_over_time(self, corrected: bool = False):
         suffix = "_corr" if corrected else ""
-
         first_mag = self._val_by_fid(f"mag{suffix}", which="first", corrected=corrected)
         last_mag = self._val_by_fid(f"mag{suffix}", which="last", corrected=corrected)
         return pd.DataFrame({f"magfirst{suffix}": first_mag, f"maglast{suffix}": last_mag})
@@ -67,12 +66,15 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
         last_mjd = self._val_by_fid("mjd", which="last")
         return pd.DataFrame({"firstmjd": first_mjd, "lastmjd": last_mjd})
 
+    def calculate_corrected(self) -> pd.DataFrame:
+        return pd.DataFrame({"corrected": self._val_by_fid("corrected", which="first")})
+
     def calculate_ndet(self) -> pd.DataFrame:
         # The column selected for ndet is irrelevant as long as it has no NaN values
-        return pd.DataFrame({"ndet": (self._detections_by_fid()["oid"].count())})
+        return pd.DataFrame({"ndet": self._detections_by_fid()["oid"].count()})
 
     def calculate_ndubious(self) -> pd.DataFrame:
-        return pd.DataFrame({"ndubious": (self._detections_by_fid()["dubious"].sum())})
+        return pd.DataFrame({"ndubious": self._detections_by_fid()["dubious"].sum()})
 
     def calculate_dmdt(self) -> pd.DataFrame:
         columns = ["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
