@@ -10,7 +10,6 @@ PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
 
-
 from prv_candidates_step import PrvCandidatesStep
 
 

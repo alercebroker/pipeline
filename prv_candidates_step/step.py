@@ -20,9 +20,6 @@ class PrvCandidatesStep(GenericStep):
     ----------
     consumer : GenericConsumer
         Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-
     """
 
     def __init__(
