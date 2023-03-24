@@ -6,15 +6,6 @@ from .core.calculators.object import ObjectStatistics
 
 
 class MagstatsStep(GenericStep):
-    """MagstatsStep Description
-    Parameters
-    ----------
-    consumer : GenericConsumer
-        Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-    """
-
     def __init__(
         self,
         config={},
@@ -27,18 +18,11 @@ class MagstatsStep(GenericStep):
     def compute_magstats(self, alerts):
         outputs = []
         for alert in alerts:
-            calculator = ObjectStatistics(**alert)
-            outputs.append(calculator.generate_object(self.excluded))
+            calculator = ObjectStatistics(**alert, exclude=self.excluded)
+            outputs.append(calculator.generate_object())
         return outputs
 
     def execute(self, messages: list):
-        """TODO: Docstring for execute.
-        TODO:
-
-        :messages: TODO
-        :returns: TODO
-
-        """
         self.logger.info(f"Processing {len(messages)} alerts")
         magstats = self.compute_magstats(messages)
         self.logger.info(f"Clean batch of data\n")
