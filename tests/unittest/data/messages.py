@@ -3,6 +3,7 @@ from fastavro import utils
 
 loaded = schema.load_schema("schema.avsc")
 
+
 def extra_fields_generator():
     extra_fields_schema = {
         'doc': 'Extra Fields',
@@ -14,7 +15,7 @@ def extra_fields_generator():
             {'name': 'sgscore1', 'type': 'float'},
             {'name': 'chinr', 'type': 'float'},
             {'name': 'sharpnr', 'type': 'float'},
-            #TODO: For the magap statistics. Not sure if this is the actual name.
+            # TODO: For the magap statistics. Not sure if this is the actual name.
             {'name': 'mjd', 'type': 'float'},
             {'name': 'mag', 'type': 'float'},
             {'name': 'e_mag', 'type': 'float'},

@@ -2,7 +2,7 @@ import logging
 
 from apf.core.step import GenericStep
 
-from .core.calculators.object import ObjectStatistics
+from magstats_step.core.objectstats import ObjectStatistics
 
 
 class MagstatsStep(GenericStep):
