@@ -13,7 +13,7 @@ jobs:
   # unittest:
   #   uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
   #   with:
-  #     python-version: "3.10"
+  #     python-version: "3.9"
   #     sources-folder: "lightcurve_step"
   #     test-folder: "tests/unit"
   #     test-dependencies: "pytest pytest-cov pytest-mock"
@@ -21,7 +21,7 @@ jobs:
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
-      python-version: "3.10"
+      python-version: "3.9"
       sources-folder: "lightcurve_step"
       test-folder: "tests/integration"
       test-dependencies: "pytest pytest-docker"
