@@ -1,11 +1,12 @@
-from apf.core.step import GenericStep
-import pandas as pd
+import json
 import logging
+import pandas as pd
 
+from apf.core import get_class
+from apf.core.step import GenericStep
 from .core.factories.object import AlerceObject, alerce_object_factory
 from .core.utils.magstats_intersection import create_magstats_calculator
 from .core.utils.create_dataframe import *
-from .core.utils.object_dto import ObjectDTO
 
 
 class MagstatsStep(GenericStep):
@@ -28,6 +29,8 @@ class MagstatsStep(GenericStep):
         self.magstats_calculator = create_magstats_calculator(
             config["EXCLUDED_CALCULATORS"]
         )
+        ProducerClass = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = ProducerClass(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def object_creator(self, alert):
         return alerce_object_factory(alert)
@@ -61,3 +64,18 @@ class MagstatsStep(GenericStep):
         self.logger.info(f"Clean batch of data\n")
         print(magstats)
         return magstats
+    
+    def post_execute(self, result: List[dict]):
+        self.produce_scribe(result)
+        return result
+
+    def produce_scribe(self, alerce_objects: List[dict]):
+        for obj in alerce_objects:
+            #TODO: What should be published and where?
+            command = {
+                "collection": "object",
+                "type": "insert",
+                "data": obj
+            }
+            payload = { "payload": json.dumps(command) }
+            self.scribe_producer.produce(payload)

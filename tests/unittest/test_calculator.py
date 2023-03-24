@@ -87,5 +87,4 @@ def test_calculate_ndet():
 def test_calculate_magnitude_statistics():
     args = setup_calculator_args(data[0])
     alerce_object = calculate_magnitude_statistics(*args)[0]
-    print(alerce_object.magstats)
     assert len(alerce_object.magstats) > 0

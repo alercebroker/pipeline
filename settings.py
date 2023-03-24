@@ -1,4 +1,5 @@
 import os
+from fastavro import schema
 
 
 def settings_factory():
@@ -32,6 +33,15 @@ def settings_factory():
         consumer_config["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
     else:
         raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
+
+    scribe_producer_config = {
+        "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
+        "PARAMS": {
+            "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+        },
+        "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
+        "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+    }
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
@@ -99,11 +109,21 @@ def settings_factory():
         metrics_config["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
             "METRICS_KAFKA_PASSWORD"
         )
+    if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+        scribe_producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        scribe_producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        scribe_producer_config["PARAMS"]["sasl.username"] = os.getenv(
+            "SCRIBE_KAFKA_USERNAME"
+        )
+        scribe_producer_config["PARAMS"]["sasl.password"] = os.getenv(
+            "SCRIBE_KAFKA_PASSWORD"
+        )
     # Step Configuration
     step_config = {
         "CONSUMER_CONFIG": consumer_config,
         "METRICS_CONFIG": metrics_config,
         "LOGGING_DEBUG": logging_debug,
+        "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators),
     }
 

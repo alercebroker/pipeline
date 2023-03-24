@@ -42,6 +42,6 @@ def calculate_magnitude_statistics(alerce_object: AlerceObject, detections: pd.D
     stats_corr = stats_corr.assign(magfirst_corr=first_corr, maglast_corr=last_corr)
 
     stats = stats.join(stats_corr)
-    alerce_object.magstats = stats
+    alerce_object.magstats = stats.to_dict('records')
 
     return alerce_object, detections, non_detections
