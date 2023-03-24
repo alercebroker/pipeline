@@ -15,6 +15,10 @@ class S3Step(GenericStep):
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
+        self.s3_client = boto3.client(
+            "s3",
+            region_name=self.config["STORAGE"]["REGION_NAME"],
+        )
 
     def get_object_url(self, bucket_name, candid):
         """
@@ -55,13 +59,9 @@ class S3Step(GenericStep):
         bucket_name : str
             name of the s3 bucket
         """
-        s3 = boto3.client(
-            "s3",
-            region_name=self.config["STORAGE"]["REGION_NAME"],
-        )
         reverse_candid = self.reverse_candid(candid)
         object_name = "{}.avro".format(reverse_candid)
-        s3.upload_fileobj(f, bucket_name, object_name)
+        self.s3_client.upload_fileobj(f, bucket_name, object_name)
         return self.get_object_url(bucket_name, candid)
 
     @staticmethod
