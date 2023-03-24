@@ -7,13 +7,19 @@ from .magstats import MagnitudeStatistics
 
 
 class ObjectStatistics:
+    CALCULATOR_PREFIX = "calculate_"
     EXTRA_COLUMNS = ["distpsnr1", "sgscore1", "chinr", "sharpnr"]
 
-    def __init__(self, aid: str, detections: dict, non_detections: dict):
+    def __init__(self, aid: str, detections: dict, non_detections: dict, exclude: Union[set, None] = None):
         self._aid = aid
-
-        self._non_detections = pd.DataFrame.from_records(non_detections)
         self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
+        if non_detections:
+            self._non_detections = pd.DataFrame.from_records(non_detections)
+        else:
+            self._non_detections = pd.DataFrame()
+
+        exclude = exclude or set()
+        self._exclude = {f"{self.CALCULATOR_PREFIX}{n}" for n in exclude if not n.startswith(self.CALCULATOR_PREFIX)}
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
@@ -66,11 +72,9 @@ class ObjectStatistics:
         return {"corrected": self._detections["corrected"][idx]}
 
     def calculate_magstats(self) -> dict:
-        return {"magstats": MagnitudeStatistics(self._detections).calculate()}
+        calculator = MagnitudeStatistics(self._detections, self._non_detections, self._exclude)
+        return {"magstats": calculator.generate_magstats()}
 
-    def generate_object(self, exclude: Union[set, None] = None) -> dict:
-        exclude = exclude or set()
-        exclude = {f"calculate_{name}" for name in exclude if not name.startswith("calculate_")}
-
-        compute = [method for method in self.__dict__ if method.startswith("calculate_") and method not in exclude]
-        return {k: v for method in compute for k, v in getattr(self, method)().items()}
+    def generate_object(self) -> dict:
+        methods = [m for m in self.__dict__ if m.startswith("calculate_") and m not in self._exclude]
+        return {k: v for method in methods for k, v in getattr(self, method)().items()}

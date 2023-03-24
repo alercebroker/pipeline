@@ -1,5 +1,6 @@
+from functools import reduce
 from methodtools import lru_cache
-from typing import Literal
+from typing import Literal, Union
 
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
@@ -7,10 +8,11 @@ from pandas.core.groupby import DataFrameGroupBy
 Which = Literal["first", "last"]
 
 
-class MagnitudeStatistics:
-    def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame):
+class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
+    def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame, exclude: set):
         self._detections = detections
         self._non_detections = non_detections
+        self._exclude = exclude
 
     @lru_cache()
     def _corrected_detections(self):
@@ -73,6 +75,10 @@ class MagnitudeStatistics:
         return pd.DataFrame({"ndubious": (self._detections_by_fid()["dubious"].sum())})
 
     def calculate_dmdt(self) -> pd.DataFrame:
+        columns = ["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
+        if self._non_detections.size == 0:
+            index = pd.Series(self._detections["fid"].unique(), name="fid")
+            return pd.DataFrame(pd.NA, columns=columns, index=index)
         first_mag = self._val_by_fid("mag", which="first")
         first_e_mag = self._val_by_fid("e_mag", which="first")
         first_mjd = self._val_by_fid("mjd", which="first")
@@ -91,3 +97,8 @@ class MagnitudeStatistics:
 
         results = results.loc[idx].set_index("fid")
         return results.rename(columns={c: f"{c}_first" for c in results.columns})
+
+    def generate_magstats(self):
+        methods = [m for m in self.__dict__ if m.startswith("calculate_") and m not in self._exclude]
+        magstats = [getattr(self, method)() for method in methods]
+        return reduce(lambda left, right: left.join(right, how="outer"), magstats).reset_index().to_dict("records")
