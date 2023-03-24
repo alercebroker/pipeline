@@ -119,5 +119,4 @@ def settings_creator():
         "PRODUCER_CONFIG": producer_config,
         "scribe_producer_config": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
-        "PROMETHEUS": True,
     }
