@@ -1,3 +1,5 @@
+import random
+
 from fastavro import schema
 from fastavro import utils
 
@@ -27,5 +29,7 @@ def extra_fields_generator():
 data = list(utils.generate_many(loaded, 10))
 for d in data:
     for detection in d['detections']:
+        detection["fid"] = 1 if random.random() < .5 else 2
         detection["extra_fields"] = extra_fields_generator()
-
+    for non_detection in d["non_detections"]:
+        non_detection["fid"] = 1 if random.random() < .5 else 2

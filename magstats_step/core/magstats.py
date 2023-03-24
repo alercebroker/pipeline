@@ -77,8 +77,10 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
         return pd.DataFrame({"ndubious": self._detections_by_fid()["dubious"].sum()})
 
     def calculate_dmdt(self) -> pd.DataFrame:
+        dt_min = 0.5
         columns = ["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
-        if self._non_detections.size == 0:
+
+        if self._non_detections.size == 0:  # Handle no non-detection case
             index = pd.Series(self._detections["fid"].unique(), name="fid")
             return pd.DataFrame(pd.NA, columns=columns, index=index)
         first_mag = self._val_by_fid("mag", which="first")
@@ -86,7 +88,6 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
         first_mjd = self._val_by_fid("mjd", which="first")
 
         nd = self._non_detections.set_index("fid")  # Index by fid to compute based on it
-        nd = nd[nd["mjd"] < first_mjd - 0.5]
 
         dt = first_mjd - nd["mjd"]
         dm = first_mag - nd["diffmaglim"]
@@ -95,12 +96,14 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
 
         # Include back fid for grouping and unique identification
         results = pd.DataFrame({"dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt}).reset_index()
-        idx = results.groupby("fid")["dmdt"].idxmin()
+        # Only include non-detections before dt_min
+        idx = results[results["dt"] > dt_min].groupby("fid")["dmdt"].idxmin().dropna()
 
-        results = results.loc[idx].set_index("fid")
+        # Drop NaN, since they result from no non-detection before first detection
+        results = results.dropna().loc[idx].set_index("fid")
         return results.rename(columns={c: f"{c}_first" for c in results.columns})
 
     def generate_magstats(self):
-        methods = [m for m in self.__dict__ if m.startswith("calculate_") and m not in self._exclude]
+        methods = [m for m in MagnitudeStatistics.__dict__ if m.startswith("calculate_") and m not in self._exclude]
         magstats = [getattr(self, method)() for method in methods]
         return reduce(lambda left, right: left.join(right, how="outer"), magstats).reset_index().to_dict("records")
