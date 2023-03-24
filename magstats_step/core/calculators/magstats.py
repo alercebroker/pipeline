@@ -1,6 +1,6 @@
 from functools import reduce
 from methodtools import lru_cache
-from typing import Literal, Union
+from typing import Literal
 
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
