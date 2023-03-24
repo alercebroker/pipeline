@@ -60,6 +60,7 @@ def env_variables():
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "lightcurve",
         "ENABLE_PARTITION_EOF": "True",
+        "MONGODB_SECRET_NAME": "mongo_secret",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
