@@ -1,4 +1,6 @@
 import logging
+from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
+from prometheus_client import start_http_server
 
 try:
     from correction_step import CorrectionStep
@@ -22,9 +24,17 @@ def step_creator():
         format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    if settings["PROMETHEUS"]:
+        start_http_server(8000)
+        prometheus_metrics = PrometheusMetrics()
+    else:
+        prometheus_metrics = DefaultPrometheusMetrics()
     if settings["LOGGING_DEBUG"]:
         level = logging.DEBUG
-    return CorrectionStep(config=settings, level=level)
+
+    return CorrectionStep(
+        config=settings, level=level, prometheus_metrics=prometheus_metrics
+    )
 
 
 if __name__ == "__main__":
