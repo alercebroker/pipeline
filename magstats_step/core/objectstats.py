@@ -8,7 +8,6 @@ from .magstats import MagnitudeStatistics
 
 class ObjectStatistics:
     CALCULATOR_PREFIX = "calculate_"
-    EXTRA_COLUMNS = ["distpsnr1", "sgscore1", "chinr", "sharpnr"]
 
     def __init__(self, aid: str, detections: dict, non_detections: dict, exclude: Union[set, None] = None):
         self._aid = aid
@@ -77,4 +76,6 @@ class ObjectStatistics:
 
     def generate_object(self) -> dict:
         methods = [m for m in ObjectStatistics.__dict__ if m.startswith("calculate_") and m not in self._exclude]
-        return {k: v for method in methods for k, v in getattr(self, method)().items()}
+        alerce_object = {"aid": self._aid}
+        alerce_object.update({k: v for method in methods for k, v in getattr(self, method)().items()})
+        return alerce_object
