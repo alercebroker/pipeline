@@ -117,6 +117,6 @@ def settings_creator():
         "CONSUMER_CONFIG": consumer_config,
         "METRICS_CONFIG": metrics_config,
         "PRODUCER_CONFIG": producer_config,
-        "scribe_producer_config": scribe_producer_config,
+        "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
     }
