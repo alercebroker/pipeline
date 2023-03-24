@@ -1,4 +1,3 @@
-import numpy as np
 from methodtools import lru_cache
 from typing import Literal
 
@@ -28,10 +27,10 @@ class MagnitudeStatistics:
         return self._detections_by_fid(corrected)["mjd"].agg(function)
 
     @lru_cache()
-    def _val_by_fid(self, source: str, label: str, which: Which, corrected: bool = False) -> pd.Series:
+    def _val_by_fid(self, source: str, which: Which, corrected: bool = False) -> pd.Series:
         idx = self._idx_by_fid(which, corrected)
         df = self._corrected_detections() if corrected else self._detections
-        return df[source][idx].rename(label).set_axis(idx.index)
+        return df[source][idx].set_axis(idx.index)
 
     @lru_cache()
     def _detections_by_fid(self, corrected: bool = False) -> DataFrameGroupBy:
@@ -51,9 +50,9 @@ class MagnitudeStatistics:
     def _calculate_stats_over_time(self, corrected: bool = False):
         suffix = "_corr" if corrected else ""
 
-        first_mag = self._val_by_fid(f"mag{suffix}", f"magfirst{suffix}", which="first", corrected=corrected)
-        last_mag = self._val_by_fid(f"mag{suffix}", f"maglast{suffix}", which="last", corrected=corrected)
-        return pd.concat([first_mag, last_mag], axis=1)
+        first_mag = self._val_by_fid(f"mag{suffix}", which="first", corrected=corrected)
+        last_mag = self._val_by_fid(f"mag{suffix}", which="last", corrected=corrected)
+        return pd.DataFrame({f"magfirst{suffix}": first_mag, f"maglast{suffix}": last_mag})
 
     def calculate_stats(self) -> pd.DataFrame:
         stats = self._calculate_stats(corrected=False)
@@ -62,20 +61,21 @@ class MagnitudeStatistics:
         return stats.join(self._calculate_stats_over_time(corrected=True))
 
     def calculate_mjd(self) -> pd.DataFrame:
-        first_mjd = self._val_by_fid("mjd", "firstmjd", which="first")
-        last_mjd = self._val_by_fid("mjd", "lastmjd", which="last")
-        return pd.concat([first_mjd, last_mjd], axis=1)
+        first_mjd = self._val_by_fid("mjd", which="first")
+        last_mjd = self._val_by_fid("mjd", which="last")
+        return pd.DataFrame({"firstmjd": first_mjd, "lastmjd": last_mjd})
 
-    def calculate_counts(self) -> pd.DataFrame:
+    def calculate_ndet(self) -> pd.DataFrame:
         # The column selected for ndet is irrelevant as long as it has no NaN values
-        ndet = self._detections_by_fid()["oid"].count().rename("ndet")
-        ndubious = self._detections_by_fid()["dubious"].sum().rename("ndubious")
-        return pd.concat([ndet, ndubious], axis=1)
+        return pd.DataFrame({"ndet": (self._detections_by_fid()["oid"].count())})
+
+    def calculate_ndubious(self) -> pd.DataFrame:
+        return pd.DataFrame({"ndubious": (self._detections_by_fid()["dubious"].sum())})
 
     def calculate_dmdt(self) -> pd.DataFrame:
-        first_mag = self._val_by_fid("mag", "magfirst", which="first")
-        first_e_mag = self._val_by_fid("e_mag", "emagfirst", which="first")
-        first_mjd = self._val_by_fid("mjd", "firstmjd", which="first")
+        first_mag = self._val_by_fid("mag", which="first")
+        first_e_mag = self._val_by_fid("e_mag", which="first")
+        first_mjd = self._val_by_fid("mjd", which="first")
 
         nd = self._non_detections.set_index("fid")  # Index by fid to compute based on it
         nd = nd[nd["mjd"] < first_mjd - 0.5]
@@ -85,9 +85,9 @@ class MagnitudeStatistics:
         sigmadm = first_e_mag - nd["diffmaglim"]
         dmdt = (first_mag + first_e_mag - nd["diffmaglim"]) / dt
 
-        # Include back fid for grouping
+        # Include back fid for grouping and unique identification
         results = pd.DataFrame({"dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt}).reset_index()
-        idx = results["dmdt"].idxmin()
+        idx = results.groupby("fid")["dmdt"].idxmin()
 
         results = results.loc[idx].set_index("fid")
         return results.rename(columns={c: f"{c}_first" for c in results.columns})

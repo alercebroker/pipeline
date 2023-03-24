@@ -11,12 +11,9 @@ class ObjectStatistics:
 
     def __init__(self, aid: str, detections: dict, non_detections: dict):
         self._aid = aid
-        extras = [{"candid": det["candid"], **det["extra_fields"]} for det in detections]
-        detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
-        extras = pd.DataFrame.from_records(extras, columns=self.EXTRA_COLUMNS + ["candid"], index="candid")
 
         self._non_detections = pd.DataFrame.from_records(non_detections)
-        self._detections = detections.join(extras)
+        self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
@@ -71,7 +68,7 @@ class ObjectStatistics:
     def calculate_magstats(self) -> dict:
         return {"magstats": MagnitudeStatistics(self._detections).calculate()}
 
-    def calculate_all(self, exclude: Union[set, None] = None) -> dict:
+    def generate_object(self, exclude: Union[set, None] = None) -> dict:
         exclude = exclude or set()
         exclude = {f"calculate_{name}" for name in exclude if not name.startswith("calculate_")}
 
