@@ -1,7 +1,9 @@
 import os
 import sys
-
 import logging
+
+from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -22,10 +24,12 @@ def step_creator():
         format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    if "LOGGING_DEBUG" in locals():
-        if settings["LOGGING_DEBUG"]:
-            level = logging.DEBUG
-    return PrvCandidatesStep(config=settings, level=level)
+    if settings["LOGGING_DEBUG"]:
+        level = logging.DEBUG
+
+    prometheus_metrics = PrometheusMetrics()
+    start_http_server(8000)
+    return PrvCandidatesStep(config=settings, level=level, prometheus_metrics=prometheus_metrics)
 
 
 if __name__ == "__main__":
