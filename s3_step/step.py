@@ -15,10 +15,7 @@ class S3Step(GenericStep):
 
     def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level)
-        self.s3_client = boto3.client(
-            "s3",
-            region_name=self.config["STORAGE"]["REGION_NAME"],
-        )
+        self.s3_client = step_args["s3_client"]
 
     def get_object_url(self, bucket_name, candid):
         """

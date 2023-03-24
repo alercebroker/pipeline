@@ -84,7 +84,7 @@ class TestIntegration(unittest.TestCase):
     def test_step_execution(self):
         external = Producer({"bootstrap.servers": "localhost:9092"})
         consumer = KafkaConsumer(CONSUMER_CONFIG)
-        step = S3Step(consumer=consumer, config=STEP_CONFIG)
+        step = S3Step(consumer=consumer, config=STEP_CONFIG, s3_client=boto3.client("s3"))
 
         for msg, topic in zip(self.serialized, self.topics):
             external.produce(topic=topic, value=msg)
