@@ -11,7 +11,7 @@ def test_ztf_strategy_corrected_is_based_on_distance():
     corrector = ZTFStrategy(alerts)
 
     assert (dists >= ZTFStrategy.DISTANCE_THRESHOLD).any()  # Fix test
-    assert (corrector.near_source == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
+    assert (corrector.corrected == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
 
 
 def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():

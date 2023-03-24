@@ -3,6 +3,10 @@ def ztf_extra_fields(**kwargs):
         "magnr": 10.,
         "sigmagnr": 1.,
         "distnr": 1.,
+        "distpsnr1": 1.,
+        "sgscore1": .5,
+        "chinr": 1,
+        "sharpnr": 0.,
         "unused": None,
     }
     extra_fields.update(kwargs)

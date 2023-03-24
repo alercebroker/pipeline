@@ -96,6 +96,10 @@
             "type": "boolean"
           },
           {
+            "name": "stellar",
+            "type": "boolean"
+          },
+          {
             "name": "extra_fields",
             "type": {
               "default": {},

@@ -21,7 +21,7 @@ def test_result_has_everything(
 
 
 def assert_result_has_correction_fields(message):
-    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "has_stamp"]
+    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "has_stamp", "corrected", "stellar"]
     assert "detections" in message
     assert all(all(f in det for f in fields) for det in message["detections"])
 
