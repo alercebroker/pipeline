@@ -12,4 +12,3 @@ def pytest_generate_tests(metafunc):
     os.environ["SCRIBE_PRODUCER_TOPIC"] = "w_something"
     os.environ["SCRIBE_PRODUCER_CLASS"] = "unittest.mock.MagicMock"
     os.environ["PRODUCER_SERVER"] = "localhost"
-

@@ -13,4 +13,6 @@ def generate_detections_dataframe(detections: List[dict]) -> pd.DataFrame:
 
 
 def generate_non_detections_dataframe(nd: List[dict]) -> pd.DataFrame:
+    if len(nd) == 0:
+        return pd.DataFrame()
     return pd.DataFrame.from_records(nd).sort_values("mjd")
