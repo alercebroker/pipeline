@@ -1,7 +1,7 @@
 from magstats_step.core.factories.object import alerce_object_factory
 from magstats_step.core.utils.create_dataframe import *
 
-def setup_blank_dto(alert):
+def setup_calculator_args(alert):
     detections, non_detections = (
         generate_detections_dataframe(alert["detections"]),
         generate_non_detections_dataframe(alert["non_detections"]),

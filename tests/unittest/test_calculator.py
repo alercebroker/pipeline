@@ -8,7 +8,7 @@ from magstats_step.core.utils.magstats_intersection import (
 )
 from magstats_step.core.calculators import *
 from data.messages import data
-from data.utils import setup_blank_dto
+from data.utils import setup_calculator_args
 
 
 def test_magstats_intersection():
@@ -29,11 +29,13 @@ def test_super_magstats_calculator():
 def test_magstats_calculators_composition():
     excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec"]))
     calculators = magstats_intersection(excluded_calcs)
-    obj, det, nondet = setup_blank_dto(data[0])
+    obj, det, nondet = setup_calculator_args(data[0])
     alerce_object, _, __ = super_magstats_calculator(*calculators.values())(obj, det, nondet)
 
     assert alerce_object.meanra is not None
+    assert alerce_object.sigmara is not None
     assert alerce_object.meandec is not None
+    assert alerce_object.sigmadec is not None
 
 
 def test_calculate_stats_coordinates():
@@ -54,14 +56,14 @@ def test_calculate_stats_with_equal_weights():
 
 
 def test_calculate_dec():
-    obj, det, nondet = setup_blank_dto(data[0])
+    obj, det, nondet = setup_calculator_args(data[0])
     alerce_object = calculate_dec(obj, det, nondet)[0]
     assert alerce_object.meandec is not None
     assert alerce_object.sigmadec is not None
 
 
 def test_calculate_ra():
-    obj, det, nondet = setup_blank_dto(data[0])
+    obj, det, nondet = setup_calculator_args(data[0])
 
     alerce_object = calculate_ra(obj, det, nondet)[0]
     assert alerce_object.meanra is not None
@@ -69,21 +71,21 @@ def test_calculate_ra():
 
 
 def test_calculate_mjd():
-    obj, det, nondet = setup_blank_dto(data[0])
+    obj, det, nondet = setup_calculator_args(data[0])
     alerce_object = calculate_mjd(obj, det, nondet)[0]
 
     assert alerce_object.firstmjd < alerce_object.lastmjd
 
 
 def test_calculate_ndet():
-    args = setup_blank_dto(data[0])
+    args = setup_calculator_args(data[0])
     alerce_object = calculate_ndet(*args)[0]
 
     assert alerce_object.ndet is not None
 
 
 def test_calculate_magnitude_statistics():
-    args = setup_blank_dto(data[0])
-    alerce_object = calculate_magnitude_statistics(*args)
-
-    assert alerce_object
+    args = setup_calculator_args(data[0])
+    alerce_object = calculate_magnitude_statistics(*args)[0]
+    print(alerce_object.magstats)
+    assert len(alerce_object.magstats) > 0
