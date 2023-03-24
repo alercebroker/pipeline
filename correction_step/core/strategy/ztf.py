@@ -17,23 +17,36 @@ class ZTFStrategy(BaseStrategy):
     * If the first detection for its AID and FID is near a source, but the detection isn't (has it moved?)
     * If the first detection for its AID and FID is not near a source, but the detection is (has it moved?)
     """
-    EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr"]
+    EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr", "distpsnr1", "sgscore1", "chinr", "sharpnr"]
     DISTANCE_THRESHOLD = 1.4
+    SCORE_THRESHOLD = 0.4
+    CHINR_THRESHOLD = 2
+    SHARPNR_MAX = 0.1
+    SHARPNR_MIN = -0.13
 
     @property
-    def near_source(self) -> pd.Series:
+    def corrected(self) -> pd.Series:
         return self._extras["distnr"] < self.DISTANCE_THRESHOLD
 
     @property
     def dubious(self) -> pd.Series:
         negative = self._generic["isdiffpos"] == -1
-        return (~self.near_source & negative) | (self._first & ~self.near_source) | (~self._first & self.near_source)
+        return (~self.corrected & negative) | (self._first & ~self.corrected) | (~self._first & self.corrected)
+
+    @property
+    def stellar(self) -> pd.Series:
+        near_ps1 = self._extras["distpsnr1"] < self.DISTANCE_THRESHOLD
+        stellar_ps1 = self._extras["sgscore1"] > self.SCORE_THRESHOLD
+
+        within_sharpnr = self.SHARPNR_MIN < self._extras["sharpnr"] < self.SHARPNR_MAX
+        stellar_ztf = (self._extras["chinr"] < self.CHINR_THRESHOLD) & within_sharpnr
+        return (self.corrected & near_ps1 & stellar_ps1) | (self.corrected & ~near_ps1 & stellar_ztf)
 
     @property
     def _first(self) -> pd.Series:
         """Whether the first detection for each AID and FID has a nearby known source"""
-        corrected = self.near_source[self._generic.groupby(["aid", "fid"])["mjd"].transform("idxmin")]
-        corrected.index = self.near_source.index
+        corrected = self.corrected[self._generic.groupby(["aid", "fid"])["mjd"].transform("idxmin")]
+        corrected.index = self.corrected.index
         return corrected
 
     def _correct(self) -> pd.DataFrame:

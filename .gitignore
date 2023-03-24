@@ -133,3 +133,5 @@ dmypy.json
 src/
 
 .idea/
+
+__SUCCESS__

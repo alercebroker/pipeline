@@ -26,7 +26,7 @@ class BaseStrategy(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def near_source(self) -> pd.Series:
+    def corrected(self) -> pd.Series:
         """Whether the detection has a nearby known source"""
         return pd.Series(False, index=self._generic.index)
 
@@ -34,6 +34,12 @@ class BaseStrategy(abc.ABC):
     @abc.abstractmethod
     def dubious(self) -> pd.Series:
         """Whether the correction or lack thereof is dubious"""
+        return pd.Series(False, index=self._generic.index)
+
+    @property
+    @abc.abstractmethod
+    def stellar(self) -> pd.Series:
+        """Whether the source is likely stellar"""
         return pd.Series(False, index=self._generic.index)
 
     @abc.abstractmethod
@@ -48,9 +54,9 @@ class BaseStrategy(abc.ABC):
         Corrected magnitudes for objects considered far from a nearby source are set to NaN.
         """
         corrected = self._correct().replace(np.inf, inf_to)
-        corrected[~self.near_source] = np.nan
+        corrected[~self.corrected] = np.nan
         alerts = self._generic.join(corrected, lsuffix="_old").replace(np.nan, None)
-        return alerts.assign(corrected=self.near_source, dubious=self.dubious)
+        return alerts.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
 
     def corrected_message(self) -> list[dict]:
         """Recreates initialization message, including magnitude corrections"""
