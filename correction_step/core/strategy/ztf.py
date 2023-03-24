@@ -38,7 +38,7 @@ class ZTFStrategy(BaseStrategy):
         near_ps1 = self._extras["distpsnr1"] < self.DISTANCE_THRESHOLD
         stellar_ps1 = self._extras["sgscore1"] > self.SCORE_THRESHOLD
 
-        within_sharpnr = self.SHARPNR_MIN < self._extras["sharpnr"] < self.SHARPNR_MAX
+        within_sharpnr = (self.SHARPNR_MIN < self._extras["sharpnr"]) < self.SHARPNR_MAX
         stellar_ztf = (self._extras["chinr"] < self.CHINR_THRESHOLD) & within_sharpnr
         return (self.corrected & near_ps1 & stellar_ps1) | (self.corrected & ~near_ps1 & stellar_ztf)
 
