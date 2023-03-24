@@ -37,9 +37,9 @@ def settings_factory():
     scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
-            "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+            "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
-        "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
+        "TOPIC": os.environ["SCRIBE_TOPIC"],
         "SCHEMA": schema.load_schema("scribe_schema.avsc"),
     }
 
