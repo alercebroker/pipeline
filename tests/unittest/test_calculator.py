@@ -32,7 +32,7 @@ def test_super_magstats_calculator():
 
 
 def test_magstats_calculators_composition():
-    excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec"]))
+    excluded_calcs = list(set(CALCULATORS_LIST) - set(["ra", "dec", "mjd", "ndet"]))
     calculators = magstats_intersection(excluded_calcs)
     obj, det, nondet = setup_calculator_args(data[0])
     alerce_object, _, __ = super_magstats_calculator(*calculators.values())(obj, det, nondet)
@@ -41,6 +41,7 @@ def test_magstats_calculators_composition():
     assert alerce_object.sigmara is not None
     assert alerce_object.meandec is not None
     assert alerce_object.sigmadec is not None
+    assert alerce_object.ndet is not None
 
 
 def test_calculate_weights():

@@ -43,7 +43,7 @@ class MagstatsStep(GenericStep):
 
             alerce_object = AlerceObject(object_dict["aid"])
 
-            alerce_object = self.magstats_calculator([alerce_object, detections, non_detections])
+            alerce_object = self.magstats_calculator(alerce_object, detections, non_detections)
             objects.append(alerce_object.as_dict())
 
         return objects
