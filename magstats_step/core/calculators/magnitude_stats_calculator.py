@@ -1,5 +1,6 @@
 import numpy as np
-from ..utils.object_dto import ObjectDTO
+import pandas as pd
+from ..factories.object import AlerceObject
 
 
 def _get_mag_from_index(df, idx):
@@ -14,8 +15,7 @@ def create_new_names(column_names, corr=False):
     return [f"mag{c if c != 'std' else 'sigma'}{corr_suffix}" for c in column_names]
 
 
-def calculate_magnitude_statistics(object_dto: ObjectDTO):
-    detections = object_dto.detections
+def calculate_magnitude_statistics(alerce_object: AlerceObject, detections: pd.DataFrame, non_detections: pd.DataFrame):
     detections_grouped = detections.groupby("fid")
     corrected_dets = detections[detections.corrected]
     corrected_dets_grouped = corrected_dets.groupby("fid")
@@ -42,5 +42,6 @@ def calculate_magnitude_statistics(object_dto: ObjectDTO):
     stats_corr = stats_corr.assign(magfirst_corr=first_corr, maglast_corr=last_corr)
 
     stats = stats.join(stats_corr)
+    alerce_object.magstats = stats.to_dict('records')
 
-    return object_dto
+    return alerce_object, detections, non_detections
