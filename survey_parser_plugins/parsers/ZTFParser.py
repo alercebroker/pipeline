@@ -1,61 +1,49 @@
 from ..core import GenericAlert, SurveyParser
+from ..core.mapper import Mapper
+
+ERRORS = {
+    1: 0.065,
+    2: 0.085,
+    3: 0.01,
+}
 
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
-    _celestial_errors = {
-        1: 0.065,
-        2: 0.085,
-        3: 0.01,
-    }
-    _generic_alert_message_key_mapping = {
-        "candid": "candid",
-        "mjd": "jd",
-        "fid": "fid",
-        "pid": "pid",
-        "rfid": "rfid",
-        "ra": "ra",
-        "dec": "dec",
-        "mag": "magpsf",
-        "e_mag": "sigmapsf",
-        "isdiffpos": "isdiffpos",
-        "rb": "rb",
-        "rbversion": "rbversion"
-    }
+
+    _mapping = [
+        Mapper("candid", origin="candid"),
+        Mapper("oid", origin="objectId"),
+        Mapper("tid", lambda: ZTFParser._source),
+        Mapper("pid", origin="pid"),
+        Mapper("fid", origin="fid"),
+        Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
+        Mapper("ra", origin="ra"),
+        Mapper("e_ra", lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
+        Mapper("dec", origin="dec"),
+        Mapper("e_dec", lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
+        Mapper("mag", origin="magpsf"),
+        Mapper("e_mag", origin="sigmapsf"),
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
+    ]
+
+    @classmethod
+    def _extract_stamps(cls, message: dict) -> dict:
+        return {
+            "cutoutScience": message["cutoutScience"]["stampData"],
+            "cutoutTemplate": message["cutoutTemplate"]["stampData"],
+            "cutoutDifference": message["cutoutDifference"]["stampData"],
+        }
 
     @classmethod
     def parse_message(cls, message) -> GenericAlert:
-        try:
-            oid = message["objectId"]
-            prv_candidates = message["prv_candidates"]
-            # get stamps
-            stamps = {
-                "cutoutScience": message["cutoutScience"]["stampData"],
-                "cutoutTemplate": message["cutoutTemplate"]["stampData"],
-                "cutoutDifference": message["cutoutDifference"]["stampData"]
-            }
-
-            candidate = message["candidate"]
-            generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
-
-            # inclusion of extra attributes
-            generic_alert_message['oid'] = oid
-            generic_alert_message['tid'] = cls._source
-            generic_alert_message["extra_fields"]["prv_candidates"] = prv_candidates
-            # inclusion of stamps
-            generic_alert_message["stamps"] = stamps
-            # attributes modification
-            generic_alert_message["isdiffpos"] = 1 if generic_alert_message["isdiffpos"] in ["t", "1"] else -1
-            generic_alert_message['mjd'] = generic_alert_message['mjd'] - 2400000.5
-
-            # possible attributes
-            e_radec = cls._celestial_errors[candidate["fid"]]
-            generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_radec 
-            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_radec 
-            return GenericAlert(**generic_alert_message)
-        except KeyError as e:
-            raise KeyError(f"This parser can't parse message: missing {e} key")
+        # the alert data is actually in candidate
+        candidate = message["candidate"].copy()
+        # additional fields from top-level message are included here
+        fields_from_top = ["objectId", "prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+        candidate.update({k: v for k, v in message.items() if k in fields_from_top})
+        return super(ZTFParser, cls).parse_message(candidate)
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'publisher' in message.keys() and cls._source in message["publisher"]
+        return "publisher" in message and cls._source in message["publisher"]

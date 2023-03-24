@@ -1,7 +1,9 @@
-from ..core import GenericAlert, SurveyParser
 from typing import List
 
-MAP_FID = {
+from ..core import GenericAlert, SurveyParser
+from ..core.mapper import Mapper
+
+FID = {
     "g": 1,
     "r": 2,
     "i": 3,
@@ -11,42 +13,33 @@ MAP_FID = {
 
 class DECATParser(SurveyParser):
     _source = "DECAT"
-    _exclude_keys = []
+
+    _mapping = [
+        Mapper("candid", origin="sourceid"),
+        Mapper("oid", origin="objectid"),
+        Mapper("tid", lambda: DECATParser._source),
+        Mapper("pid", lambda: ""),
+        Mapper("fid", lambda x: FID[x[0]], origin="filter"),
+        Mapper("mjd", origin="mjd"),
+        Mapper("ra", origin="ra"),
+        Mapper("dec", origin="dec"),
+        # TODO: We're missing e_ra and e_dec. Object meanra, meandec calculations won't work
+        Mapper("mag", origin="mag"),
+        Mapper("e_mag", origin="magerr"),
+        Mapper("isdiffpos", lambda: 1),
+    ]
 
     @classmethod
-    def _get_filter(cls, fid) -> int:
-        fid = fid[0]
-        return MAP_FID[fid]
+    def _extract_stamps(cls, message: dict) -> dict:
+        return super(DECATParser, cls)._extract_stamps(message)
 
     @classmethod
     def parse_message(cls, message) -> List[GenericAlert]:
-        try:
-            oid = message["objectid"]
-            message = message["sources"].copy()
-            return [GenericAlert(
-                oid=oid,
-                tid=cls._source,
-                pid="",
-                rfid="",
-                rbversion="",
-                isdiffpos=1,
-                candid=msg['sourceid'],
-                mjd=msg['mjd'],
-                fid=cls._get_filter(msg['filter']),
-                ra=msg['ra'],
-                dec=msg['dec'],
-                rb=msg['rb'],
-                mag=msg['mag'],
-                e_mag=msg["magerr"],
-                )
-                for msg in message
-            ]
-        except KeyError:
-            raise KeyError("This parser can't parse message")
-
+        candidates = [{"objectid": message["objectid"], **msg} for msg in message["sources"]]
+        return [super(DECATParser, cls).parse_message(cand) for cand in candidates]
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        if "objectid" in message.keys() and "sources" in message.keys():
+        if "objectid" in message and "sources" in message:
             return "DC" in message["objectid"] and "DECam" in message["sources"][0]["filter"]
         return False

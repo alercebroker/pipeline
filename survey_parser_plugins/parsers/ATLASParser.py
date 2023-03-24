@@ -1,64 +1,61 @@
+import math
+
 from ..core import GenericAlert, SurveyParser
-import numpy as np
+from ..core.mapper import Mapper
+
+
+FID = {
+    "g": 1,
+    "r": 2,
+    "i": 3,
+    "c": 4,
+    "o": 5,
+    "H": 6,
+}
+
+ERROR = 0.14
+
+
+def _e_ra(dec):
+    return ERROR / abs(math.cos(dec))
 
 
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
-    _generic_alert_message_key_mapping = {
-        "candid": "candid",
-        "mjd": "mjd",
-        "fid": None,  # This field is modified below in the code
-        "rfid": None,
-        "isdiffpos": "isdiffpos",
-        "pid": "pid",
-        "ra": "RA",
-        "dec": "Dec",
-        "rb": None,
-        "rbversion": None,
-        "mag": "Mag",
-        "e_mag": "Dmag",
-    }
 
-    _fid_mapper = {
-        "g": 1,
-        "r": 2,
-        "i": 3,
-        "c": 4,
-        "o": 5,
-        "H": 6
-    }
+    _mapping = [
+        Mapper("candid", origin="candid"),
+        Mapper("oid", origin="objectId"),
+        Mapper("tid", origin="publisher"),
+        Mapper("pid", origin="pid"),
+        Mapper("fid", lambda x: FID[x], origin="filter"),
+        Mapper("mjd", origin="mjd"),
+        Mapper("ra", origin="RA"),
+        Mapper("e_ra", lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
+        Mapper("dec", origin="Dec"),
+        Mapper("e_dec", lambda x: x if x else ERROR, origin="sigmadec", required=False),
+        Mapper("mag", origin="Mag"),
+        Mapper("e_mag", origin="Dmag"),
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
+    ]
+
+    @classmethod
+    def _extract_stamps(cls, message: dict) -> dict:
+        return {
+            "cutoutScience": message["cutoutScience"]["stampData"],
+            "cutoutTemplate": None,
+            "cutoutDifference": message["cutoutDifference"]["stampData"],
+        }
 
     @classmethod
     def parse_message(cls, message) -> GenericAlert:
-        try:
-            oid = message["objectId"]
-            # get stamps
-            stamps = {
-                "cutoutScience": message["cutoutScience"]["stampData"],
-                "cutoutDifference": message["cutoutDifference"]["stampData"]
-            }
-
-            candidate = message["candidate"]
-            generic_alert_message = cls._generic_alert_message(candidate, cls._generic_alert_message_key_mapping)
-
-            # inclusion of extra attributes
-            generic_alert_message['oid'] = oid
-            generic_alert_message['tid'] = message["publisher"]
-            generic_alert_message['fid'] = cls._fid_mapper[candidate["filter"]]
-            # inclusion of stamps
-            generic_alert_message["stamps"] = stamps
-            # attributes modification
-            generic_alert_message["isdiffpos"] = 1 if generic_alert_message["isdiffpos"] in ["t", "1"] else -1
-            generic_alert_message["mag"] = abs(generic_alert_message["mag"])
-            # possible attributes
-            e_dec = 0.14
-            e_ra = 0.14/abs(np.cos(generic_alert_message["dec"]))
-            generic_alert_message["e_ra"] = candidate["sigmara"] if "sigmara" in candidate else e_ra
-            generic_alert_message["e_dec"] = candidate["sigmadec"] if "sigmadec" in candidate else e_dec
-            return GenericAlert(**generic_alert_message)
-        except KeyError as e:
-            raise KeyError(f"This parser can't parse message: missing {e} key")
+        # the alert data is actually in candidate
+        candidate = message["candidate"].copy()
+        # additional fields from top-level message are included here
+        fields_from_top = ["objectId", "publisher", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+        candidate.update({k: v for k, v in message.items() if k in fields_from_top})
+        return super(ATLASParser, cls).parse_message(candidate)
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'publisher' in message.keys() and cls._source in message["publisher"]
+        return "publisher" in message and cls._source in message["publisher"]
