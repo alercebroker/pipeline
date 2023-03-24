@@ -2,6 +2,8 @@ import logging
 
 from prometheus_client import start_http_server
 
+from db_plugins.db.mongo.connection import MongoConnection
+
 try:
     from lightcurve_step import LightcurveStep
 except ImportError:
@@ -19,6 +21,7 @@ def step_creator():
 
     settings = settings_creator()
     level = logging.INFO
+
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
@@ -28,7 +31,9 @@ def step_creator():
         level = logging.DEBUG
     if settings["PROMETHEUS"]:
         start_http_server(8000)
-    return LightcurveStep(config=settings, level=level)
+
+    db = MongoConnection()
+    return LightcurveStep(config=settings, level=level, db_client=db)
 
 
 if __name__ == "__main__":

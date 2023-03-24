@@ -1,6 +1,8 @@
 import os
 from fastavro import schema
 
+from credentials import get_mongodb_credentials
+
 ##################################################
 #       lightcurve_step   Settings File
 ##################################################
@@ -9,6 +11,8 @@ from fastavro import schema
 def settings_creator():
     # Set the global logging level to debug
     logging_debug = False
+
+    db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -89,6 +93,7 @@ def settings_creator():
         "PRODUCER_CONFIG": producer_config,
         "METRICS_CONFIG": metrics_config,
         "PROMETHEUS": prometheus,
+        "DB_CONFIG": db_config,
         "LOGGING_DEBUG": logging_debug,
     }
     return step_config

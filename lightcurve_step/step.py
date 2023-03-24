@@ -12,6 +12,7 @@ class LightcurveStep(GenericStep):
     ):
         super().__init__(config=config, level=level)
         self.db_client = db_client
+        self.db_client.connect(config["DB_CONFIG"])
 
     @staticmethod
     def unique_detections(old_detections, new_detections):
