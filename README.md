@@ -7,14 +7,14 @@ includes the previous detections coming from the ZTF alerts.
 
 The correction for ZTF is as follows:
 
-$$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}\right)$$
+$$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\. 10^{-0.4 m_\mathrm{diff}}\right)$$
 
 For the error, the following is used:
 
-$$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathrm{diff}^2 - 10^{-0.8 m_\mathrm{ref}} \delta m_\mathrm{ref}^2}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}}$$
+$$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathrm{diff}^2 - 10^{-0.8 m_\mathrm{ref}} \delta m_\mathrm{ref}^2}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\. 10^{-0.4 m_\mathrm{diff}}}$$
 
 An additional error, for extended sources, is also calculated:
-$$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}}$$
+$$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\. 10^{-0.4 m_\mathrm{diff}}}$$
 
 Presently, there is no correction for ATLAS alerts.
 
@@ -90,3 +90,18 @@ Run tests using:
 ```bash
 python -m pytest tests
 ```
+
+## Adding new strategies
+
+New strategies (assumed to be survey based) can be added directly inside the module `core.strategy` as a new 
+Python file. The name of the file must coincide with a unique prefix for the survey (case insensitive), 
+i.e., a file `atlas` will work on detections with `tid`s such as `ATLAS-01`, `AtLAsS`, etc.
+
+Strategy modules are required to have 4 functions: 
+* `is_corrected`: Returns boolean pandas data series showing if the detection can be corrected
+* `is_dubious`: Returns boolean pandas data series showing whether the detection correction status is dubious
+* `is_stellar`: Returns boolean pandas data series showing whether the detection is likely to be stellar
+* `correct`: Returns pandas data frame with 3 columns (`mag_corr`, `e_mag_corr` and `e_mag_corr_ext`)
+
+If detections with no survey strategy defined are part of the messages, these will be quietly filled with default 
+values (`False` for the boolean fields and `NaN` for the corrected magnitudes).
