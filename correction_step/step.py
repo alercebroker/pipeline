@@ -1,10 +1,11 @@
 import json
 import logging
+from functools import reduce
 
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from .core.strategy import corrector_factory
+from .core.strategy import ZTFStrategy
 
 
 class CorrectionStep(GenericStep):
@@ -28,20 +29,25 @@ class CorrectionStep(GenericStep):
         self.set_producer_key_field("aid")
         return result
 
-    def execute(self, messages: list[dict]) -> list[dict]:
-        self.logger.info(f"Processing {len(messages)} new alerts")
-        result = []
-        for message in messages:
-            detections = [{**message["new_alert"], "has_stamp": True}] + \
-                         [{**prv, "has_stamp": False} for prv in message["prv_detections"]]
-            strategy = corrector_factory(detections, message["new_alert"]["tid"])
-            out_message = {
-                "aid": message["aid"],
-                "detections": strategy.corrected_message(),
-                "non_detections": message["non_detections"]
-            }
+    @staticmethod
+    def _get_detections(message: dict) -> list:
+        def has_stamp(detection, stamp=True):
+            return {**detection, "has_stamp": stamp}
 
-            result.append(out_message)
+        return [has_stamp(message["new_alert"])] + [has_stamp(prv, False) for prv in message["prv_detections"]]
+
+    def pre_execute(self, messages: list[dict]) -> dict:
+        detections, non_detections = [], []
+        for msg in messages:
+            detections.extend(self._get_detections(msg))
+            non_detections.extend(msg["non_detections"])
+        return {"detections": detections, "non_detections": non_detections}
+
+    def execute(self, message: dict) -> list[dict]:
+        self.logger.info(f"Processing {len(message)} new alerts")
+        corrector = ZTFStrategy(**message)
+        output = corrector.corrected_message()
+
         return result
 
     def post_execute(self, result: list[dict]):
