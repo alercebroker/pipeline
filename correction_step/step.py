@@ -1,11 +1,10 @@
 import json
 import logging
-from functools import reduce
 
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from .core.strategy import ZTFStrategy
+from .core import Corrector
 
 
 class CorrectionStep(GenericStep):
@@ -45,10 +44,10 @@ class CorrectionStep(GenericStep):
 
     def execute(self, message: dict) -> list[dict]:
         self.logger.info(f"Processing {len(message)} new alerts")
-        corrector = ZTFStrategy(**message)
-        output = corrector.corrected_message()
+        corrector = Corrector(**message)
+        output = corrector.corrected_dataframe()
 
-        return result
+        return output
 
     def post_execute(self, result: list[dict]):
         for message in result:
