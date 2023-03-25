@@ -24,7 +24,7 @@ class Corrector:
     def _survey_mask(self, survey: str):
         return self._detections["tid"].str.lower().str.startswith(survey.lower())
 
-    def _apply_all_surveys(self, function: str, default=None, columns=None):
+    def _apply_all_surveys(self, function: str, *, default=None, columns=None):
         if columns:
             basic = pd.DataFrame(default, index=self._detections.index, columns=columns)
         else:
@@ -43,22 +43,21 @@ class Corrector:
     @property
     def corrected(self) -> pd.Series:
         """Whether the detection has a nearby known source"""
-        return self._apply_all_surveys("is_corrected", False)
+        return self._apply_all_surveys("is_corrected", default=False)
 
     @property
     def dubious(self) -> pd.Series:
         """Whether the correction or lack thereof is dubious"""
-        return self._apply_all_surveys("is_dubious", False)
+        return self._apply_all_surveys("is_dubious", default=False)
 
     @property
     def stellar(self) -> pd.Series:
         """Whether the source is likely stellar"""
-        return self._apply_all_surveys("is_stellar", False)
+        return self._apply_all_surveys("is_stellar", default=False)
 
     def _correct(self) -> pd.DataFrame:
         """Convert difference magnitude into apparent magnitude"""
-        columns = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        return pd.DataFrame(columns=columns, index=self._detections.index)
+        return self._apply_all_surveys("correct", columns=["mag_corr", "e_mag_corr", "e_mag_corr_ext"])
 
     def corrected_dataframe(self) -> pd.DataFrame:
         """Alert dataframe including corrected magnitudes.
