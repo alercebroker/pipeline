@@ -1,9 +1,9 @@
+from unittest import mock
+
 import numpy as np
 import pandas as pd
 
 from correction_step.core.strategy import ztf
-
-from tests import utils
 
 
 def test_ztf_strategy_corrected_is_based_on_distance():
@@ -11,17 +11,21 @@ def test_ztf_strategy_corrected_is_based_on_distance():
 
     corrected = ztf.is_corrected(detections)
 
-    assert (detections["distnr"] >= ztf.DISTANCE_THRESHOLD).any()  # Fix test
+    assert (detections["distnr"] >= ztf.DISTANCE_THRESHOLD).any()
     assert (corrected == (detections["distnr"] < ztf.DISTANCE_THRESHOLD)).all()
 
 
-def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mock_corrected):
+    candids = ["fn", "fy", "sy", "sn", "fy2", "fy3", "fn2", "fn3", "sy2", "sy3", "sn2", "sn3"]
+    mock_corrected.return_value = pd.Series(
+        [False, True, True, False, True, False, True, False, True, False, True, False], index=candids
+    )
     detections = pd.DataFrame.from_records({
-        "candid": ["fn", "fy", "sy", "sn", "fy2", "fy3", "fn2", "fn3", "sy2", "sy3", "sn2", "sn3"],
+        "candid": candids,
         "aid": ["AID1", "AID1", "AID2", "AID2", "AID1", "AID1", "AID1", "AID1", "AID2", "AID2", "AID2", "AID2"],
         "fid": [1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2],
         "mjd": [1, 1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3],
-        "distnr": [2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
     }, index="candid")
 
     first_corrected = ztf.is_first_corrected(detections)
@@ -32,46 +36,52 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
     assert ~first_corrected[first_corrected.index.str.startswith("sn")].all()
 
 
-def test_ztf_strategy_dubious_for_negative_difference_without_close_source():
-    detections = pd.DataFrame.from_records({"distnr": [2], "isdiffpos": [-1], "aid": ["aid"], "fid": [1], "mjd": [1]})
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+def test_ztf_strategy_dubious_for_negative_difference_without_close_source(mock_first, mock_corrected):
+    mock_corrected.return_value = pd.Series([False, True])
+    mock_first.return_value = pd.Series([True, True])
+    detections = pd.DataFrame.from_records({"isdiffpos": [-1, -1]})
     dubious = ztf.is_dubious(detections)
-    assert dubious.all()
+    assert (dubious == pd.Series([True, False])).all()
 
-    detections = pd.DataFrame.from_records({"distnr": [2], "isdiffpos": [1], "aid": ["aid"], "fid": [1], "mjd": [1]})
+
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+def test_ztf_strategy_dubious_true_for_follow_up_without_close_source_and_first_with(mock_first, mock_corrected):
+    mock_corrected.return_value = pd.Series([True, False])
+    mock_first.return_value = pd.Series([True, True])
+    detections = pd.DataFrame.from_records({"isdiffpos": [1, 1]})
+    dubious = ztf.is_dubious(detections)
+    assert (dubious == pd.Series([False, True])).all()
+
+
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+def test_ztf_strategy_dubious_true_for_follow_up_with_close_source_and_first_without(mock_first, mock_corrected):
+    mock_corrected.return_value = pd.Series([False, True])
+    mock_first.return_value = pd.Series([False, False])
+    detections = pd.DataFrame.from_records({"isdiffpos": [1, 1]})
+    dubious = ztf.is_dubious(detections)
+    assert (dubious == pd.Series([False, True])).all()
+
+
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+def test_ztf_strategy_dubious_false_for_follow_up_without_close_source_and_first_without(mock_first, mock_corrected):
+    mock_corrected.return_value = pd.Series([False, False])
+    mock_first.return_value = pd.Series([False, False])
+    detections = pd.DataFrame.from_records({"isdiffpos": [1, 1]})
     dubious = ztf.is_dubious(detections)
     assert ~dubious.all()
 
 
-def test_ztf_strategy_dubious_for_first_with_close_source_and_follow_up_without():
-    detections = pd.DataFrame.from_records(
-        {"distnr": [1, 2], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
-         "candid": ["a", "b"]}, index="candid"
-    )
-    dubious = ztf.is_dubious(detections)
-    assert ~dubious.loc["a"]
-    assert dubious.loc["b"]
-
-    detections = pd.DataFrame.from_records(
-        {"distnr": [1, 1], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
-         "candid": ["a", "b"]}, index="candid"
-    )
-    dubious = ztf.is_dubious(detections)
-    assert ~dubious.all()
-
-
-def test_ztf_strategy_dubious_for_follow_up_with_close_source_and_first_without():
-    detections = pd.DataFrame.from_records(
-        {"distnr": [2, 1], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
-         "candid": ["a", "b"]}, index="candid"
-    )
-    dubious = ztf.is_dubious(detections)
-    assert ~dubious.loc["a"]
-    assert dubious.loc["b"]
-
-    detections = pd.DataFrame.from_records(
-        {"distnr": [2, 2], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
-         "candid": ["a", "b"]}, index="candid"
-    )
+@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+def test_ztf_strategy_dubious_false_for_follow_up_with_close_source_and_first_with(mock_first, mock_corrected):
+    mock_corrected.return_value = pd.Series([True, True])
+    mock_first.return_value = pd.Series([True, True])
+    detections = pd.DataFrame.from_records({"isdiffpos": [1, 1]})
     dubious = ztf.is_dubious(detections)
     assert ~dubious.all()
 
