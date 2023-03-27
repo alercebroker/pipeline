@@ -1,5 +1,4 @@
 import warnings
-from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -18,7 +17,7 @@ def is_corrected(detections: pd.DataFrame) -> pd.Series:
 def is_dubious(detections: pd.DataFrame) -> pd.Series:
     negative = detections["isdiffpos"] == -1
     corrected = is_corrected(detections)
-    first = _is_first_corrected(detections)
+    first = is_first_corrected(detections)
     return (~corrected & negative) | (first & ~corrected) | (~first & corrected)
 
 
@@ -51,8 +50,8 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext})
 
 
-def _is_first_corrected(detections: pd.DataFrame) -> pd.Series:
+def is_first_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the first detection for each AID and FID has a nearby known source"""
     corrected = is_corrected(detections)
     idxmin = detections.groupby(["aid", "fid"])["mjd"].transform("idxmin")
-    return corrected[idxmin]
+    return corrected[idxmin].set_axis(idxmin.index)

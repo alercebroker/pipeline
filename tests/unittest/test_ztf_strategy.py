@@ -1,169 +1,127 @@
 import numpy as np
+import pandas as pd
 
-from correction_step.core.strategy import ZTFStrategy
+from correction_step.core.strategy import ztf
 
 from tests import utils
 
 
 def test_ztf_strategy_corrected_is_based_on_distance():
-    dists = np.linspace(1, 2, 10)
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=d), candid=f"c{d}") for d in dists]
-    corrector = ZTFStrategy(alerts)
+    detections = pd.DataFrame({"distnr": np.linspace(1, 2, 10)})
 
-    assert (dists >= ZTFStrategy.DISTANCE_THRESHOLD).any()  # Fix test
-    assert (corrector.corrected == (dists < ZTFStrategy.DISTANCE_THRESHOLD)).all()
+    corrected = ztf.is_corrected(detections)
+
+    assert (detections["distnr"] >= ztf.DISTANCE_THRESHOLD).any()  # Fix test
+    assert (corrected == (detections["distnr"] < ztf.DISTANCE_THRESHOLD)).all()
 
 
 def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid():
-    mjds = np.linspace(2, 3, 3)
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="fn")]
-    alerts.extend([
-        utils.ztf_alert(
-            extra_fields=utils.ztf_extra_fields(distnr=np.random.random() * 2),
-            candid=f"fn{mjd}",
-            mjd=mjd,
-        ) for mjd in mjds])
-    alerts.append(utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="fy", fid=2))
-    alerts.extend([
-        utils.ztf_alert(
-            extra_fields=utils.ztf_extra_fields(distnr=np.random.random() * 2),
-            candid=f"fy{mjd}",
-            mjd=mjd,
-            fid=2
-        ) for mjd in mjds])
-    alerts.append(utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="sy", aid="AID2"))
-    alerts.extend([
-        utils.ztf_alert(
-            extra_fields=utils.ztf_extra_fields(distnr=np.random.random() * 2),
-            candid=f"sy{mjd}",
-            mjd=mjd,
-            aid="AID2"
-        ) for mjd in mjds])
-    alerts.append(utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="sn", aid="AID2", fid=2))
-    alerts.extend([
-        utils.ztf_alert(
-            extra_fields=utils.ztf_extra_fields(distnr=np.random.random() * 2),
-            candid=f"sn{mjd}",
-            mjd=mjd,
-            fid=2,
-            aid="AID2"
-        ) for mjd in mjds])
-    corrector = ZTFStrategy(alerts)
+    detections = pd.DataFrame.from_records({
+        "candid": ["fn", "fy", "sy", "sn", "fy2", "fy3", "fn2", "fn3", "sy2", "sy3", "sn2", "sn3"],
+        "aid": ["AID1", "AID1", "AID2", "AID2", "AID1", "AID1", "AID1", "AID1", "AID2", "AID2", "AID2", "AID2"],
+        "fid": [1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2],
+        "mjd": [1, 1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3],
+        "distnr": [2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+    }, index="candid")
 
-    assert corrector._first[corrector._first.index.str.startswith("fy")].all()
-    assert ~corrector._first[corrector._first.index.str.startswith("fn")].all()
-    assert corrector._first[corrector._first.index.str.startswith("sy")].all()
-    assert ~corrector._first[corrector._first.index.str.startswith("sn")].all()
+    first_corrected = ztf.is_first_corrected(detections)
+
+    assert first_corrected[first_corrected.index.str.startswith("fy")].all()
+    assert ~first_corrected[first_corrected.index.str.startswith("fn")].all()
+    assert first_corrected[first_corrected.index.str.startswith("sy")].all()
+    assert ~first_corrected[first_corrected.index.str.startswith("sn")].all()
 
 
 def test_ztf_strategy_dubious_for_negative_difference_without_close_source():
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), isdiffpos=-1)]
-    corrector = ZTFStrategy(alerts)
-    assert corrector.dubious.all()
+    detections = pd.DataFrame.from_records({"distnr": [2], "isdiffpos": [-1], "aid": ["aid"], "fid": [1], "mjd": [1]})
+    dubious = ztf.is_dubious(detections)
+    assert dubious.all()
 
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), isdiffpos=1)]
-    corrector = ZTFStrategy(alerts)
-    assert ~corrector.dubious.all()
+    detections = pd.DataFrame.from_records({"distnr": [2], "isdiffpos": [1], "aid": ["aid"], "fid": [1], "mjd": [1]})
+    dubious = ztf.is_dubious(detections)
+    assert ~dubious.all()
 
 
 def test_ztf_strategy_dubious_for_first_with_close_source_and_follow_up_without():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="first"),
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="second", mjd=2),
-    ]
-    corrector = ZTFStrategy(alerts)
-    assert ~corrector.dubious.loc["first"]
-    assert corrector.dubious.loc["second"]
+    detections = pd.DataFrame.from_records(
+        {"distnr": [1, 2], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
+         "candid": ["a", "b"]}, index="candid"
+    )
+    dubious = ztf.is_dubious(detections)
+    assert ~dubious.loc["a"]
+    assert dubious.loc["b"]
 
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="first"),
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="second", mjd=2),
-    ]
-    corrector = ZTFStrategy(alerts)
-    assert ~corrector.dubious.all()
+    detections = pd.DataFrame.from_records(
+        {"distnr": [1, 1], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
+         "candid": ["a", "b"]}, index="candid"
+    )
+    dubious = ztf.is_dubious(detections)
+    assert ~dubious.all()
 
 
 def test_ztf_strategy_dubious_for_follow_up_with_close_source_and_first_without():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="first"),
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=1), candid="second", mjd=2),
-    ]
-    corrector = ZTFStrategy(alerts)
-    assert ~corrector.dubious.loc["first"]
-    assert corrector.dubious.loc["second"]
+    detections = pd.DataFrame.from_records(
+        {"distnr": [2, 1], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
+         "candid": ["a", "b"]}, index="candid"
+    )
+    dubious = ztf.is_dubious(detections)
+    assert ~dubious.loc["a"]
+    assert dubious.loc["b"]
 
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="first"),
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(distnr=2), candid="second", mjd=2),
-    ]
-    corrector = ZTFStrategy(alerts)
-    assert ~corrector.dubious.all()
+    detections = pd.DataFrame.from_records(
+        {"distnr": [2, 2], "isdiffpos": [1, 1], "aid": ["aid", "aid"], "fid": [1, 1], "mjd": [1, 2],
+         "candid": ["a", "b"]}, index="candid"
+    )
+    dubious = ztf.is_dubious(detections)
+    assert ~dubious.all()
 
 
 def test_ztf_strategy_correction_with_low_reference_flux_equals_difference_magnitude():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(magnr=200., sigmagnr=2.), mag=5., e_mag=.1)
-    ]
-    corrector = ZTFStrategy(alerts)
+    detections = pd.DataFrame.from_records(
+        {"magnr": [200.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [1]}
+    )
+    corrected = ztf.correct(detections)
 
-    correction = corrector.corrected_frame()
-
-    assert np.isclose(correction["mag_corr"], 5.)
-    assert np.isclose(correction["e_mag_corr"], .1)
-    assert np.isclose(correction["e_mag_corr_ext"], .1)
+    assert np.isclose(corrected["mag_corr"], 5.)
+    assert np.isclose(corrected["e_mag_corr"], .1)
+    assert np.isclose(corrected["e_mag_corr_ext"], .1)
 
 
 def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magnitude():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(magnr=5., sigmagnr=2.), mag=200., e_mag=.1)
-    ]
-    corrector = ZTFStrategy(alerts)
+    detections = pd.DataFrame.from_records(
+        {"magnr": [5.], "sigmagnr": [2.], "mag": [200.], "e_mag": [.1], "isdiffpos": [1]}
+    )
+    corrected = ztf.correct(detections)
 
-    correction = corrector.corrected_frame()
+    assert np.isclose(corrected["mag_corr"], 5.)
+    assert np.isclose(corrected["e_mag_corr"], np.inf)
+    assert np.isclose(corrected["e_mag_corr_ext"], 0)
 
-    assert np.isclose(correction["mag_corr"], 5.)
-    assert np.isclose(correction["e_mag_corr"], ZTFStrategy._ZERO_MAG)
-    assert np.isclose(correction["e_mag_corr_ext"], 0)
+
+def test_ztf_strategy_correction_with_positive_difference_has_lower_corrected_magnitude_than_reference():
+    detections = pd.DataFrame.from_records(
+        {"magnr": [5.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [1]}
+    )
+    corrected = ztf.correct(detections)
+
+    assert (corrected["mag_corr"] < 5.).all()
+
+
+def test_ztf_strategy_correction_with_negative_difference_has_higher_corrected_magnitude_than_reference():
+    detections = pd.DataFrame.from_records(
+        {"magnr": [5.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [-1]}
+    )
+    corrected = ztf.correct(detections)
+
+    assert (corrected["mag_corr"] > 5.).all()
 
 
 def test_ztf_strategy_correction_with_null_nr_fields_results_in_null_corrections():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(magnr=None, sigmagnr=None), mag=5., e_mag=.1)
-    ]
-    corrector = ZTFStrategy(alerts)
+    detections = pd.DataFrame.from_records(
+        {"magnr": [None], "sigmagnr": [None], "mag": [200.], "e_mag": [.1], "isdiffpos": [1]}
+    )
+    corrected = ztf.correct(detections)
 
-    correction = corrector.corrected_frame()
-
-    assert correction["mag_corr"].item() is None
-    assert correction["e_mag_corr"].item() is None
-    assert correction["e_mag_corr_ext"].item() is None
-
-
-def test_ztf_strategy_correction_without_source_beyond_threshold_results_in_null_corrections():
-    alerts = [
-        utils.ztf_alert(extra_fields=utils.ztf_extra_fields(magnr=5., sigmagnr=1., distnr=2), mag=5., e_mag=.1)
-    ]
-    corrector = ZTFStrategy(alerts)
-
-    correction = corrector.corrected_frame()
-
-    assert correction["mag_corr"].item() is None
-    assert correction["e_mag_corr"].item() is None
-    assert correction["e_mag_corr_ext"].item() is None
-
-
-def test_ztf_strategy_message_correction_preserves_old_fields():
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(), mag=m, candid=f"c{m}") for m in range(-5, 15)]
-    corrector = ZTFStrategy(alerts)
-
-    correction = corrector.corrected_message()
-    assert all(alert[f] == corr[f] for alert, corr in zip(alerts, correction) for f in alert)
-
-
-def test_ztf_strategy_message_correction_includes_corrected_fields():
-    alerts = [utils.ztf_alert(extra_fields=utils.ztf_extra_fields(), mag=m, candid=f"c{m}") for m in range(-5, 15)]
-    corrector = ZTFStrategy(alerts)
-    check_fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-
-    correction = corrector.corrected_message()
-    assert all(all(f in corr for f in check_fields) for corr in correction)
+    assert corrected["mag_corr"].isna().all()
+    assert corrected["e_mag_corr"].isna().all()
+    assert corrected["e_mag_corr_ext"].isna().all()
