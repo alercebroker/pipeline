@@ -7,7 +7,7 @@ from .magstats import MagnitudeStatistics
 
 
 class ObjectStatistics:
-    CALCULATOR_PREFIX = "calculate_"
+    _PREFIX = "calculate_"
 
     def __init__(self, aid: str, detections: dict, non_detections: dict, exclude: Union[set, None] = None):
         self._aid = aid
@@ -18,7 +18,7 @@ class ObjectStatistics:
             self._non_detections = pd.DataFrame()
 
         exclude = exclude or set()
-        self._exclude = {f"{self.CALCULATOR_PREFIX}{n}" for n in exclude if not n.startswith(self.CALCULATOR_PREFIX)}
+        self._exclude = {f"{self._PREFIX}{n}" for n in exclude if not n.startswith(self._PREFIX)}
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
@@ -75,7 +75,7 @@ class ObjectStatistics:
         return {"magstats": calculator.generate_magstats()}
 
     def generate_object(self) -> dict:
-        methods = [m for m in ObjectStatistics.__dict__ if m.startswith("calculate_") and m not in self._exclude]
+        methods = [m for m in ObjectStatistics.__dict__ if m.startswith(self._PREFIX) and m not in self._exclude]
         alerce_object = {"aid": self._aid}
         alerce_object.update({k: v for method in methods for k, v in getattr(self, method)().items()})
         return alerce_object

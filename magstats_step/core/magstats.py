@@ -89,15 +89,13 @@ class MagnitudeStatistics:
         with warnings.catch_warnings():
             # possible 0 divided by 0; this is expected and returned NaN is correct value
             warnings.filterwarnings("ignore", category=RuntimeWarning)
-        return pd.DataFrame({"saturation_rate": saturated / total})
+            return pd.DataFrame({"saturation_rate": saturated / total})
 
     def calculate_dmdt(self) -> pd.DataFrame:
         dt_min = 0.5
-        columns = ["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
 
         if self._non_detections.size == 0:  # Handle no non-detection case
-            index = pd.Series(self._detections["fid"].unique(), name="fid")
-            return pd.DataFrame(pd.NA, columns=columns, index=index)
+            return pd.DataFrame(columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"])
         first_mag = self._val_by_fid("mag", which="first")
         first_e_mag = self._val_by_fid("e_mag", which="first")
         first_mjd = self._val_by_fid("mjd", which="first")
