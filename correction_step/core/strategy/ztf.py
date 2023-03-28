@@ -11,10 +11,17 @@ SHARPNR_MIN = -0.13
 
 
 def is_corrected(detections: pd.DataFrame) -> pd.Series:
+    """Whether the nearest source is closer than `DISTANCE_THRESHOLD`"""
     return detections["distnr"] < DISTANCE_THRESHOLD
 
 
 def is_dubious(detections: pd.DataFrame) -> pd.Series:
+    """A correction/non-correction is dubious if,
+
+    * the flux difference is negative and there is no nearby source, or
+    * the first detection for its AID and FID has a nearby source, but the detection doesn't, or
+    * the first detection for its AID and FID doesn't have a nearby source, but the detection does.
+    """
     negative = detections["isdiffpos"] == -1
     corrected = is_corrected(detections)
     first = is_first_corrected(detections)
@@ -22,6 +29,21 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
 
 
 def is_stellar(detections: pd.DataFrame) -> pd.Series:
+    r"""A source is considered likely stellar in one of two cases.
+
+    First,
+
+    * there is a nearby source according to ZTF, and
+    * there is a nearby source according to the PS1 catalogue, and
+    * the source has a high start-to-galaxy score according to the PS1 catalogue.
+
+    Second,
+
+    * there is a nearby source according to ZTF, and
+    * there is NOT a nearby source according to the PS1 catalogue, and
+    * the nearest source sharpness parameter is within a range around zero, and
+    * the nearest source $\chi$ parameter is low.
+    """
     near_ps1 = detections["distpsnr1"] < DISTANCE_THRESHOLD
     stellar_ps1 = detections["sgscore1"] > SCORE_THRESHOLD
 
@@ -32,6 +54,7 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
+    """Apply magnitude correction and compute its associated errors. See `README` for details"""
     aux1 = 10 ** (-.4 * detections["magnr"].astype(float))
     aux2 = 10 ** (-.4 * detections["mag"])
     aux3 = np.maximum(aux1 + detections["isdiffpos"] * aux2, 0.0)
@@ -51,7 +74,7 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
 
 
 def is_first_corrected(detections: pd.DataFrame) -> pd.Series:
-    """Whether the first detection for each AID and FID has a nearby known source"""
+    """Whether the first detection for each AID and FID has a nearby source"""
     corrected = is_corrected(detections)
     idxmin = detections.groupby(["aid", "fid"])["mjd"].transform("idxmin")
     return corrected[idxmin].set_axis(idxmin.index)

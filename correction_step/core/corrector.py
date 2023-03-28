@@ -5,10 +5,11 @@ from . import strategy
 
 
 class Corrector:
-    """Class for applying corrections"""
+    """Class for applying corrections to a list of detections"""
     _ZERO_MAG = 100.  # Not really zero mag, but zero flux (very high magnitude)
 
     def __init__(self, detections: list[dict]):
+        """Will remove duplicate `candid`s in detection list, preferring to keep always those with stamps"""
         self.__extra_fields = {alert["candid"]: alert["extra_fields"] for alert in detections}
         extras_df = pd.DataFrame.from_dict(self.__extra_fields, orient="index")
         detections_df = pd.DataFrame.from_records(detections, exclude={"extra_fields"}, index="candid")
@@ -21,31 +22,52 @@ class Corrector:
         self.__extra_columns = extras_df.columns
 
     def _survey_mask(self, survey: str):
+        """Creates boolean mask of detections whose `tid` starts with given survey name (case-insensitive)
+
+        Args:
+            survey: Name of the survey of interest
+
+        Returns:
+            pd.Series: Mask of detections corresponding to the survey
+        """
         return self._detections["tid"].str.lower().str.startswith(survey.lower())
 
     def _apply_all_surveys(self, function: str, *, default=None, columns=None, dtype=object):
+        """Applies given function for all surveys defined in `strategy` module.
+
+        Any survey without defined strategies will keep the default value.
+
+        Args:
+            function: Name of the function to apply. It must exist as a function in all strategy modules
+            default (any): Default value for surveys without a defined strategy
+            columns (list[str]): Create a dataframe with these columns. If not provided, it will create a series
+            dtype (dtype): Type of the output values
+
+        Returns:
+            pd.Series or pd.DataFrame: Result of the applied function for all detections
+        """
         if columns:
             basic = pd.DataFrame(default, index=self._detections.index, columns=columns, dtype=dtype)
         else:
             basic = pd.Series(default, index=self._detections.index, dtype=dtype)
-        for name in strategy.__dict__:
-            if name.startswith("_"):
+        for name in strategy.__dict__:  # Will loop through the modules inside strategy
+            if name.startswith("_"):  # Skip protected/private modules/variables
                 continue
-            mask = self._survey_mask(name)
-            if mask.any():
-                module = getattr(strategy, name)
+            mask = self._survey_mask(name)  # Module must match survey prefix uniquely
+            if mask.any():  # Skip if there are no detections of the given survey
+                module = getattr(strategy, name)  # Get module containing strategy for survey
+                # Get function and call it over the detections belonging to the survey
                 basic[mask] = getattr(module, function)(self._detections[mask])
-        # The way of computing can sometimes change the types
-        return basic.astype(dtype)
+        return basic.astype(dtype)  # Ensure correct output type
 
     @property
     def corrected(self) -> pd.Series:
-        """Whether the detection has a nearby known source"""
+        """Whether the detection has a corrected magnitude"""
         return self._apply_all_surveys("is_corrected", default=False, dtype=bool)
 
     @property
     def dubious(self) -> pd.Series:
-        """Whether the correction or lack thereof is dubious"""
+        """Whether the correction (or lack thereof) is dubious"""
         return self._apply_all_surveys("is_dubious", default=False, dtype=bool)
 
     @property
@@ -54,14 +76,14 @@ class Corrector:
         return self._apply_all_surveys("is_stellar", default=False, dtype=bool)
 
     def _correct(self) -> pd.DataFrame:
-        """Convert difference magnitude into apparent magnitude"""
+        """Calculate corrected magnitudes and corrected errors for detections"""
         cols = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
         return self._apply_all_surveys("correct", columns=cols, dtype=float)
 
     def corrected_dataframe(self) -> pd.DataFrame:
-        """Alert dataframe including corrected magnitudes.
+        """Detection dataframe including corrected magnitudes. Only includes generic fields as columns.
 
-        Corrected magnitudes for objects considered far from a nearby source are set to NaN.
+        Corrected magnitudes and errors for sources without corrections are set to `None`.
         """
         corrected = self._correct().replace(np.inf, self._ZERO_MAG)
         corrected[~self.corrected] = np.nan
@@ -71,7 +93,7 @@ class Corrector:
     def corrected_records(self) -> list[dict]:
         """Corrected alerts as records.
 
-        The output is the same as the input passed on creation, with additional fields corresponding to
+        The output is the same as the input passed on creation, with additional generic fields corresponding to
         the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
         """
         corrected = self.corrected_dataframe().reset_index().to_dict("records")
