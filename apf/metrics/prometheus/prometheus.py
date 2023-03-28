@@ -16,11 +16,11 @@ class PrometheusMetrics:
             "execution_time",
             "Execution time of processed batch",
         )
-        self.telescope_id = Enum(
-            "telescope_id",
-            "Id of the telescope",
-            states=["ZTF", "ATLAS"],
-        )
+        # self.telescope_id = Enum(
+        #     "telescope_id",
+        #     "Id of the telescope",
+        #     states=["ZTF", "ATLAS"],
+        # )
 
 
 class DefaultPrometheusMetrics(PrometheusMetrics):
