@@ -8,13 +8,11 @@ class Corrector:
     """Class for applying corrections"""
     _ZERO_MAG = 100.  # Not really zero mag, but zero flux (very high magnitude)
 
-    def __init__(self, detections: list[dict], non_detections: list[dict]):
-        self._non_detections = pd.DataFrame.from_records(non_detections)
-        self._non_detections = self._non_detections.drop_duplicates(["oid", "fid", "mjd"])
-
+    def __init__(self, detections: list[dict]):
         self.__extra_fields = {alert["candid"]: alert["extra_fields"] for alert in detections}
         extras_df = pd.DataFrame.from_dict(self.__extra_fields, orient="index")
         detections_df = pd.DataFrame.from_records(detections, exclude={"extra_fields"}, index="candid")
+
         # Remove duplicate detections by candid, always keeping those with stamps
         self._detections = detections_df.join(extras_df).sort_values("has_stamp", ascending=False)
         self._detections = self._detections[~self._detections.index.duplicated(keep="first")]
@@ -69,3 +67,12 @@ class Corrector:
         corrected[~self.corrected] = np.nan
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
         return self._detections.join(corrected).replace(np.nan, None).drop(columns=self.__extra_columns)
+
+    def corrected_records(self) -> list[dict]:
+        """Corrected alerts as records.
+
+        The output is the same as the input passed on creation, with additional fields corresponding to
+        the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
+        """
+        corrected = self.corrected_dataframe().reset_index().to_dict("records")
+        return [{**record, "extra_fields": self.__extra_fields[record["candid"]]} for record in corrected]
