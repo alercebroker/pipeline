@@ -61,7 +61,7 @@ def env_variables():
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "prv-candidates",
-        "CONSUME_MESSAGES": "10",
+        "CONSUME_MESSAGES": "1",
         "CONSUMER_GROUP_ID": random_string,
         "METRICS_HOST": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
