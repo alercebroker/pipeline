@@ -14,11 +14,11 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
         self._non_detections = non_detections
         self._exclude = exclude
 
-    @lru_cache()
+    @lru_cache(1)
     def _corrected_detections(self):
         return self._detections[self._detections["corrected"]]
 
-    @lru_cache()
+    @lru_cache(4)
     def _idx_by_fid(self, which: Which, corrected: bool = False) -> pd.Series:
         if which == "first":
             function = "idxmin"
@@ -28,13 +28,13 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
             raise ValueError(f"Unrecognized value for 'which': {which}")
         return self._detections_by_fid(corrected)["mjd"].agg(function)
 
-    @lru_cache()
+    @lru_cache(20)
     def _val_by_fid(self, source: str, which: Which, corrected: bool = False) -> pd.Series:
         idx = self._idx_by_fid(which, corrected)
         df = self._corrected_detections() if corrected else self._detections
         return df[source][idx].set_axis(idx.index)
 
-    @lru_cache()
+    @lru_cache(2)
     def _detections_by_fid(self, corrected: bool = False) -> DataFrameGroupBy:
         return self._corrected_detections().groupby("fid") if corrected else self._detections.groupby("fid")
 
