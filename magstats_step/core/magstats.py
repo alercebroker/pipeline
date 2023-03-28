@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce
 from methodtools import lru_cache
 from typing import Literal
@@ -8,7 +9,9 @@ from pandas.core.groupby import DataFrameGroupBy
 Which = Literal["first", "last"]
 
 
-class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
+class MagnitudeStatistics:
+    MAGNITUDE_THRESHOLD = 13.2
+
     def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame, exclude: set):
         self._detections = detections
         self._non_detections = non_detections
@@ -69,12 +72,24 @@ class MagnitudeStatistics:  # TODO: Missing stellar, saturation rate
     def calculate_corrected(self) -> pd.DataFrame:
         return pd.DataFrame({"corrected": self._val_by_fid("corrected", which="first")})
 
+    def calculate_stellar(self) -> pd.DataFrame:
+        return pd.DataFrame({"stellar": self._val_by_fid("stellar", which="first")})
+
     def calculate_ndet(self) -> pd.DataFrame:
         # The column selected for ndet is irrelevant as long as it has no NaN values
         return pd.DataFrame({"ndet": self._detections_by_fid()["oid"].count()})
 
     def calculate_ndubious(self) -> pd.DataFrame:
         return pd.DataFrame({"ndubious": self._detections_by_fid()["dubious"].sum()})
+
+    def calculate_saturation_rate(self) -> pd.DataFrame:
+        # Doesn't matter if there are NaNs (non-corrected), since the comparison is always false
+        saturated = (self._detections.set_index("fid")["mag_corr"] < self.MAGNITUDE_THRESHOLD).groupby("fid").sum()
+        total = self._detections_by_fid()["mag_corr"].count()  # Count also excludes NaNs
+        with warnings.catch_warnings():
+            # possible 0 divided by 0; this is expected and returned NaN is correct value
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+        return pd.DataFrame({"saturation_rate": saturated / total})
 
     def calculate_dmdt(self) -> pd.DataFrame:
         dt_min = 0.5
