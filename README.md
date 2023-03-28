@@ -5,6 +5,8 @@
 Process alerts and applies correction to pass from difference magnitude to apparent magnitude. This
 includes the previous detections coming from the ZTF alerts.
 
+### ZTF
+
 The correction for ZTF is as follows:
 
 $$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\, 10^{-0.4 m_\mathrm{diff}}\right)$$
@@ -16,7 +18,11 @@ $$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathr
 An additional error, for extended sources, is also calculated:
 $$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\, 10^{-0.4 m_\mathrm{diff}}}$$
 
-Presently, there is no correction for ATLAS alerts.
+### Others
+
+Presently, there are no correction strategies for any other surveys, but they are supported.
+
+Any other survey will get the correction fields added, but filled with `null` values.
 
 #### Previous step:
 - [Previous candidates](https://github.com/alercebroker/prv_candidates_step)
