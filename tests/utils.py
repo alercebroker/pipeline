@@ -45,3 +45,11 @@ def atlas_alert(**kwargs):
     }
     alert.update(kwargs)
     return alert
+
+
+def non_detection(**kwargs):
+    alert = {
+        "aid": "AID1",
+    }
+    alert.update(kwargs)
+    return alert
