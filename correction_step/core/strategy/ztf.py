@@ -59,13 +59,13 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     aux2 = 10 ** (-.4 * detections["mag"])
     aux3 = np.maximum(aux1 + detections["isdiffpos"] * aux2, 0.0)
     with warnings.catch_warnings():
-        # possible log10 of 0; expected and proper result are given
+        # possible log10 of 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
 
     aux4 = (aux2 * detections["e_mag"]) ** 2 - (aux1 * detections["sigmagnr"].astype(float)) ** 2
     with warnings.catch_warnings():
-        # possible sqrt of negative and division by 0; expected and proper results are given
+        # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         e_mag_corr = np.where(aux4 < 0, np.inf, np.sqrt(aux4) / aux3)
         e_mag_corr_ext = aux2 * detections["e_mag"] / aux3
