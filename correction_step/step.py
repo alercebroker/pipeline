@@ -1,6 +1,7 @@
 import json
 import logging
 
+import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 
@@ -23,35 +24,43 @@ class CorrectionStep(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
-
-    def pre_produce(self, result: list[dict]):
         self.set_producer_key_field("aid")
-        return result
+
+    @classmethod
+    def pre_produce(cls, result: dict):
+        detections = pd.DataFrame(result["detections"]).groupby("aid")
+        non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+        output = []
+        for aid, dets in detections:
+            try:
+                nd = non_detections.get_group(aid).to_dict("records")
+            except KeyError:
+                nd = []
+            output.append({"aid": aid, "detections": dets.to_dict("records"), "non_detections": nd})
+        return output
 
     @staticmethod
     def _get_detections(message: dict) -> list:
         def has_stamp(detection, stamp=True):
             return {**detection, "has_stamp": stamp}
-
         return [has_stamp(message["new_alert"])] + [has_stamp(prv, False) for prv in message["prv_detections"]]
 
-    def pre_execute(self, messages: list[dict]) -> dict:
+    @classmethod
+    def pre_execute(cls, messages: list[dict]) -> dict:
         detections, non_detections = [], []
         for msg in messages:
-            detections.extend(self._get_detections(msg))
+            detections.extend(cls._get_detections(msg))
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections}
 
-    def execute(self, message: dict) -> list[dict]:
-        self.logger.info(f"Processing {len(message)} new alerts")
-        corrector = Corrector(**message)
-        output = corrector.corrected_dataframe()
+    @classmethod
+    def execute(cls, message: dict) -> dict:
+        corrector = Corrector(message["detections"])
+        output = corrector.corrected_records()
+        return {"detections": output, "non_detections": message["non_detections"]}
 
-        return output
-
-    def post_execute(self, result: list[dict]):
-        for message in result:
-            self.produce_scribe(message["detections"])
+    def post_execute(self, result: dict):
+        self.produce_scribe(result["detections"])
         return result
 
     def produce_scribe(self, detections: list[dict]):
