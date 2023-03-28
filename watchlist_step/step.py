@@ -43,6 +43,9 @@ class WatchlistStep(GenericStep):
     def execute(self, messages: list):
         candids = [message["candid"] for message in messages]
         coordinates = self.get_coordinates(candids)
+        if len(coordinates) == 0:
+            return
+
         matches = self.match_user_targets(coordinates)
         if len(matches) > 0:
             self.insert_matches(matches)
