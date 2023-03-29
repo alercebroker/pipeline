@@ -5,6 +5,8 @@ from apf.producers import KafkaProducer
 import uuid
 from fastavro.utils import generate_many
 from fastavro.schema import load_schema
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 
 @pytest.fixture(scope="session")
@@ -47,6 +49,26 @@ def kafka_service(docker_ip, docker_services):
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
     return server
+
+
+def is_mongo_responsive(ip, port):
+    client = MongoClient(f"mongodb://mongo:mongo@{ip}:{port}")
+    try:
+        client.admin.command("ismaster")
+        return True
+    except ConnectionFailure:
+        return False
+
+
+@pytest.fixture(scope="session")
+def mongo_service(docker_ip, docker_services):
+    port = docker_services.port_for("mongodb", 27017)
+    docker_services.wait_until_responsive(
+        timeout=90.0,
+        pause=0.1,
+        check=lambda: is_mongo_responsive(docker_ip, port),
+    )
+    return docker_ip, port
 
 
 @pytest.fixture
