@@ -10,14 +10,14 @@ jobs:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
     with:
       sources-folder: "lightcurve_step"
-  # unittest:
-  #   uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-  #   with:
-  #     python-version: "3.9"
-  #     sources-folder: "lightcurve_step"
-  #     test-folder: "tests/unit"
-  #     test-dependencies: "pytest pytest-cov pytest-mock"
-  #     test-command: "python -m pytest -x tests/unit --cov prv_candidates_step --cov-report xml"
+  unittest:
+     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+     with:
+       python-version: "3.9"
+       sources-folder: "lightcurve_step"
+       test-folder: "tests/unittest"
+       test-dependencies: "pytest pytest-cov"
+       test-command: "python -m pytest -x tests/unittest --cov lightcurve_step --cov-report xml"
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
