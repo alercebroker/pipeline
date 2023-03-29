@@ -1,5 +1,5 @@
 import pandas as pd
-from magstats_step.core.objectstats import ObjectStatistics
+from magstats_step.core.objstats import ObjectStatistics
 
 from data.messages import data
 

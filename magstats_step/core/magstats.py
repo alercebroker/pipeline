@@ -1,49 +1,27 @@
 import warnings
 from functools import reduce
-from methodtools import lru_cache
-from typing import Literal, Union
+from typing import List, Union
 
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
-Which = Literal["first", "last"]
+from ._base import BaseStatistics
 
 
-class MagnitudeStatistics:
+class MagnitudeStatistics(BaseStatistics):
     _PREFIX = "calculate_"
     MAGNITUDE_THRESHOLD = 13.2
 
-    def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame):
-        self._detections = detections
-        self._non_detections = non_detections
-
-    @lru_cache(1)
-    def _corrected(self):
-        return self._detections[self._detections["corrected"]]
-
-    @lru_cache(4)
-    def _grouped_index(self, which: Which, corrected: bool = False) -> pd.Series:
-        if which == "first":
-            function = "idxmin"
-        elif which == "last":
-            function = "idxmax"
+    def __init__(self, detections: List[dict], non_detections: List[dict]):
+        super().__init__(detections)
+        if non_detections:
+            self._non_detections = pd.DataFrame.from_records(non_detections)
         else:
-            raise ValueError(f"Unrecognized value for 'which': {which}")
-        return self._grouped_detections(corrected)["mjd"].agg(function)
-
-    @lru_cache(20)
-    def _grouped_value(self, source: str, which: Which, corrected: bool = False) -> pd.Series:
-        idx = self._grouped_index(which, corrected)
-        df = self._corrected() if corrected else self._detections
-        return df[source][idx].set_axis(idx.index)
-
-    @lru_cache(2)
-    def _grouped_detections(self, corrected: bool = False) -> DataFrameGroupBy:
-        return self._group(self._corrected()) if corrected else self._group(self._detections)
+            self._non_detections = pd.DataFrame()
 
     @staticmethod
     def _group(df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return df.groupby("fid")
+        return df.groupby(["aid", "fid"])
 
     def _calculate_stats(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
@@ -120,8 +98,3 @@ class MagnitudeStatistics:
         # Drop NaN, since they result from no non-detection before first detection
         results = results.dropna().loc[idx].set_index("fid")
         return results.rename(columns={c: f"{c}_first" for c in results.columns})
-
-    def generate_magstats(self):
-        methods = [m for m in MagnitudeStatistics.__dict__ if m.startswith(self._PREFIX)]
-        magstats = [getattr(self, method)() for method in methods]
-        return reduce(lambda left, right: left.join(right, how="outer"), magstats).reset_index().to_dict("records")
