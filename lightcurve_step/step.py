@@ -1,15 +1,29 @@
-from apf.core.step import GenericStep
 import logging
+from typing import List
+
+from apf.core.step import GenericStep
+from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.mongo.models import Detection, NonDetection
 
 
 class LightcurveStep(GenericStep):
-    def __init__(self, config: dict, level: int = logging.INFO):
+    def __init__(
+        self, config: dict, db_client: MongoConnection, level: int = logging.INFO
+    ):
         super().__init__(config=config, level=level)
-        # self.db_client = None  # TODO: include client
+        self.db_client = db_client
+        self.db_client.connect(config["DB_CONFIG"])
 
     @staticmethod
     def unique_detections(old_detections, new_detections):
         """Return only non-duplicate detections (based on candid). Keeps the ones in old"""
+        new_candids_with_stamp = [
+            det["candid"] for det in new_detections if det["has_stamp"]
+        ]
+
+        old_detections = [
+            det for det in old_detections if det["candid"] not in new_candids_with_stamp
+        ]
         candids = [det["candid"] for det in old_detections]
 
         new_detections = [det for det in new_detections if det["candid"] not in candids]
@@ -29,16 +43,17 @@ class LightcurveStep(GenericStep):
         ]
         return old_non_detections + new_non_detections
 
-    def pre_execute(self, messages: list[dict]):
+    @classmethod
+    def pre_execute(cls, messages: List[dict]):
         """If multiple AIDs in the same batch create a single message with all of them"""
         aids, output = {}, []
         for message in messages:
             if message["aid"] in aids:
                 idx = aids[message["aid"]]
-                output[idx]["detections"] = self.unique_detections(
+                output[idx]["detections"] = cls.unique_detections(
                     output[idx]["detections"], message["detections"]
                 )
-                output[idx]["non_detections"] = self.unique_non_detections(
+                output[idx]["non_detections"] = cls.unique_non_detections(
                     output[idx]["non_detections"], message["non_detections"]
                 )
             else:
@@ -46,14 +61,15 @@ class LightcurveStep(GenericStep):
                 aids[message["aid"]] = len(output) - 1
         return output
 
-    def execute(self, messages: list[dict]):
+    def execute(self, messages: List[dict]):
         for message in messages:
-            # TODO: Connection to DB are placeholders
-            detections_in_db = []  # self.db_client.query_detections(message["aid"])
+            detections_in_db = self.db_client.query(Detection).find_all(
+                {"aid": message["aid"]}
+            )
             self.clean_detections_from_db(detections_in_db)
-            non_detections_in_db = (
-                []
-            )  # self.db_client.query_non_detections(message["aid"])
+            non_detections_in_db = self.db_client.query(NonDetection).find_all(
+                {"aid": message["aid"]}
+            )
             self.clean_non_detections_from_db(non_detections_in_db)
 
             message["detections"] = self.unique_detections(
@@ -69,7 +85,8 @@ class LightcurveStep(GenericStep):
     def clean_detections_from_db(detections):
         """Modifies inplace"""
         for detection in detections:
-            detection["candid"] = detection["_id"]
+            if "candid" not in detection:  # Compatibility with old DB definitions
+                detection["candid"] = detection["_id"]
             detection.pop("_id")
 
     @staticmethod
