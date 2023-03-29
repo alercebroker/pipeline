@@ -9,16 +9,13 @@ from .magstats import MagnitudeStatistics
 class ObjectStatistics:
     _PREFIX = "calculate_"
 
-    def __init__(self, aid: str, detections: dict, non_detections: dict, exclude: Union[set, None] = None):
+    def __init__(self, aid: str, detections: dict, non_detections: dict):
         self._aid = aid
         self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
         if non_detections:
             self._non_detections = pd.DataFrame.from_records(non_detections)
         else:
             self._non_detections = pd.DataFrame()
-
-        exclude = exclude or set()
-        self._exclude = {f"{self._PREFIX}{n}" for n in exclude if not n.startswith(self._PREFIX)}
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
@@ -71,11 +68,11 @@ class ObjectStatistics:
         return {"corrected": self._detections["corrected"][idx]}
 
     def calculate_magstats(self) -> dict:
-        calculator = MagnitudeStatistics(self._detections, self._non_detections, self._exclude)
+        calculator = MagnitudeStatistics(self._detections, self._non_detections)
         return {"magstats": calculator.generate_magstats()}
 
     def generate_object(self) -> dict:
-        methods = [m for m in ObjectStatistics.__dict__ if m.startswith(self._PREFIX) and m not in self._exclude]
+        methods = [m for m in ObjectStatistics.__dict__ if m.startswith(self._PREFIX)]
         alerce_object = {"aid": self._aid}
         alerce_object.update({k: v for method in methods for k, v in getattr(self, method)().items()})
         return alerce_object

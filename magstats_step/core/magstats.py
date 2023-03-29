@@ -10,12 +10,12 @@ Which = Literal["first", "last"]
 
 
 class MagnitudeStatistics:
+    _PREFIX = "calculate_"
     MAGNITUDE_THRESHOLD = 13.2
 
-    def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame, exclude: set):
+    def __init__(self, detections: pd.DataFrame, non_detections: pd.DataFrame):
         self._detections = detections
         self._non_detections = non_detections
-        self._exclude = exclude
 
     @lru_cache(1)
     def _corrected(self):
@@ -100,6 +100,7 @@ class MagnitudeStatistics:
 
         if self._non_detections.size == 0:  # Handle no non-detection case
             return pd.DataFrame(columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"])
+
         first_mag = self._grouped_value("mag", which="first")
         first_e_mag = self._grouped_value("e_mag", which="first")
         first_mjd = self._grouped_value("mjd", which="first")
@@ -121,6 +122,6 @@ class MagnitudeStatistics:
         return results.rename(columns={c: f"{c}_first" for c in results.columns})
 
     def generate_magstats(self):
-        methods = [m for m in MagnitudeStatistics.__dict__ if m.startswith("calculate_") and m not in self._exclude]
+        methods = [m for m in MagnitudeStatistics.__dict__ if m.startswith(self._PREFIX)]
         magstats = [getattr(self, method)() for method in methods]
         return reduce(lambda left, right: left.join(right, how="outer"), magstats).reset_index().to_dict("records")
