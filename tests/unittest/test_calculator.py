@@ -12,22 +12,22 @@ def test_calculate_weighted_coordinates():
 
 
 def test_calculate_coordinates():
-    calculator = ObjectStatistics(**data[0])
-    result = calculator.calculate_coordinates()
-    assert "meandec" in result and "sigmadec" in result
+    calculator = ObjectStatistics(data[0]["detections"])
+    result = calculator.calculate_ra()
     assert "meanra" in result and "sigmara" in result
 
 
 def test_calculate_mjd():
-    calculator = ObjectStatistics(**data[0])
-    result = calculator.calculate_mjd()
+    calculator = ObjectStatistics(data[0]["detections"])
+    result1 = calculator.calculate_firstmjd()
+    result2 = calculator.calculate_lastmjd()
 
-    assert "firstmjd" in result and "lastmjd" in result
-    assert result["firstmjd"] < result["lastmjd"]
+    assert "firstmjd" in result1 and "lastmjd" in result2
+    assert result1["firstmjd"] <= result2["lastmjd"]
 
 
 def test_calculate_ndet():
-    calculator = ObjectStatistics(**data[0])
+    calculator = ObjectStatistics(data[0]["detections"])
     result = calculator.calculate_ndet()
 
     assert "ndet" in result

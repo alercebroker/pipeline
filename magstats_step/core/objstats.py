@@ -14,7 +14,7 @@ class ObjectStatistics(BaseStatistics):
 
     @staticmethod
     def _group(df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return super()._group(df)
+        return super(ObjectStatistics, ObjectStatistics)._group(df)
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
@@ -37,9 +37,10 @@ class ObjectStatistics(BaseStatistics):
             return self.weighted_mean(series, weights.loc[series.index])
 
         weights = 1 / self.arcsec2dec(self._detections[f"e_{label}"]) ** 2
+        weights_by_aid = weights.set_axis(self._detections["aid"])
         return {
             f"mean{label}": self._grouped_detections()[label].agg(_average),
-            f"sigma{label}": self.dec2arcsec(self._group(weights).agg(self.weighted_error))
+            f"sigma{label}": self.dec2arcsec(self._group(weights_by_aid).agg(self.weighted_error))
         }
 
     def _calculate_unique(self, label: str) -> dict:
