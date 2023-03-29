@@ -17,9 +17,13 @@ class LightcurveStep(GenericStep):
     @staticmethod
     def unique_detections(old_detections, new_detections):
         """Return only non-duplicate detections (based on candid). Keeps the ones in old"""
-        new_candids_with_stamp = [det["candid"] for det in new_detections if det["has_stamp"]]
+        new_candids_with_stamp = [
+            det["candid"] for det in new_detections if det["has_stamp"]
+        ]
 
-        old_detections = [det for det in old_detections if det["candid"] not in new_candids_with_stamp]
+        old_detections = [
+            det for det in old_detections if det["candid"] not in new_candids_with_stamp
+        ]
         candids = [det["candid"] for det in old_detections]
 
         new_detections = [det for det in new_detections if det["candid"] not in candids]
