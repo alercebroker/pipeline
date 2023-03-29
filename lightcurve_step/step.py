@@ -17,6 +17,9 @@ class LightcurveStep(GenericStep):
     @staticmethod
     def unique_detections(old_detections, new_detections):
         """Return only non-duplicate detections (based on candid). Keeps the ones in old"""
+        new_candids_with_stamp = [det["candid"] for det in new_detections if det["has_stamp"]]
+
+        old_detections = [det for det in old_detections if det["candid"] not in new_candids_with_stamp]
         candids = [det["candid"] for det in old_detections]
 
         new_detections = [det for det in new_detections if det["candid"] not in candids]
@@ -36,16 +39,17 @@ class LightcurveStep(GenericStep):
         ]
         return old_non_detections + new_non_detections
 
-    def pre_execute(self, messages: List[dict]):
+    @classmethod
+    def pre_execute(cls, messages: List[dict]):
         """If multiple AIDs in the same batch create a single message with all of them"""
         aids, output = {}, []
         for message in messages:
             if message["aid"] in aids:
                 idx = aids[message["aid"]]
-                output[idx]["detections"] = self.unique_detections(
+                output[idx]["detections"] = cls.unique_detections(
                     output[idx]["detections"], message["detections"]
                 )
-                output[idx]["non_detections"] = self.unique_non_detections(
+                output[idx]["non_detections"] = cls.unique_non_detections(
                     output[idx]["non_detections"], message["non_detections"]
                 )
             else:
