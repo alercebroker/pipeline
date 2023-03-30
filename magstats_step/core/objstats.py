@@ -50,7 +50,7 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(self._calculate_coordinates("ra"))
 
     def calculate_dec(self) -> pd.DataFrame:
-        return pd.DataFrame(self._calculate_coordinates("ra"))
+        return pd.DataFrame(self._calculate_coordinates("dec"))
 
     def calculate_ndet(self) -> pd.DataFrame:
         return pd.DataFrame({"ndet": self._grouped_detections()["oid"].count()})
