@@ -94,6 +94,10 @@
           {
             "name": "dubious",
             "type": "boolean"
+          },
+          {
+            "name": "stellar",
+            "type": "boolean"
           }
         ]
       },
