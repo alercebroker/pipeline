@@ -10,6 +10,8 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 class BaseStatistics(abc.ABC):
     _JOIN: Union[str, List[str]]
     _PREFIX = "calculate_"
+    _CORRECTED = ["ZTF"]
+    _STELLAR = ["ZTF"]
 
     def __init__(self, detections: List[dict]):
         self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
@@ -18,29 +20,44 @@ class BaseStatistics(abc.ABC):
     def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
         return df.groupby(cls._JOIN)
 
-    @lru_cache(1)
-    def _corrected(self):
-        return self._detections[self._detections["corrected"]]
+    @lru_cache(10)
+    def _survey_mask(self, survey: str) -> pd.Series:
+        return self._detections["tid"].str.lower().str.startswith(survey.lower())
 
-    @lru_cache(4)
-    def _grouped_index(self, which: Literal["first", "last"], corrected: bool = False) -> pd.Series:
+    @lru_cache(3)
+    def _surveys_mask(self, surveys: List[str] = None) -> pd.Series:
+        if surveys is not None:
+            return reduce(lambda l, r: l.__or__(r), [self._survey_mask(survey) for survey in surveys])
+        return pd.Series(True, index=self._detections.index)
+
+    @lru_cache(6)
+    def _select_detections(self, *, surveys: List[str] = None, corrected: bool = False) -> pd.Series:
+        mask = self._detections["corrected"] if corrected else pd.Series(True, index=self._detections.index)
+        return self._detections[self._surveys_mask(surveys) & mask]
+
+    @lru_cache(12)
+    def _grouped_index(
+        self, *, which: Literal["first", "last"], surveys: List[str] = None, corrected: bool = False
+    ) -> pd.Series:
         if which == "first":
             function = "idxmin"
         elif which == "last":
             function = "idxmax"
         else:
             raise ValueError(f"Unrecognized value for 'which': {which}")
-        return self._grouped_detections(corrected)["mjd"].agg(function)
+        return self._grouped_detections(surveys=surveys, corrected=corrected)["mjd"].agg(function)
 
-    @lru_cache(10)
-    def _grouped_value(self, source: str, which: Literal["first", "last"], corrected: bool = False) -> pd.Series:
-        idx = self._grouped_index(which, corrected)
-        df = self._corrected() if corrected else self._detections
-        return df[source][idx].set_axis(idx.index)
+    @lru_cache(36)
+    def _grouped_value(
+        self, column: str, *, which: Literal["first", "last"], surveys: List[str] = None, corrected: bool = False
+    ) -> pd.Series:
+        idx = self._grouped_index(which=which, surveys=surveys, corrected=corrected)
+        df = self._select_detections(surveys=surveys, corrected=corrected)
+        return df[column][idx].set_axis(idx.index)
 
-    @lru_cache(2)
-    def _grouped_detections(self, corrected: bool = False) -> DataFrameGroupBy:
-        return self._group(self._corrected()) if corrected else self._group(self._detections)
+    @lru_cache(6)
+    def _grouped_detections(self, *, surveys: List[str] = None, corrected: bool = False) -> DataFrameGroupBy:
+        return self._group(self._select_detections(surveys=surveys, corrected=corrected))
 
     def generate_statistics(self, exclude: Set[str] = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default

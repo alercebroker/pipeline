@@ -22,11 +22,11 @@ class ObjectStatistics(BaseStatistics):
 
     @staticmethod
     def arcsec2dec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values / 3600.
+        return values / 3600.0
 
     @staticmethod
     def dec2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values * 3600.
+        return values * 3600.0
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
         def _average(series):
@@ -36,7 +36,7 @@ class ObjectStatistics(BaseStatistics):
         weights_by_aid = weights.set_axis(self._detections["aid"])
         return {
             f"mean{label}": self._grouped_detections()[label].agg(_average),
-            f"sigma{label}": self.dec2arcsec(self._group(weights_by_aid).agg(self.weighted_error))
+            f"sigma{label}": self.dec2arcsec(self._group(weights_by_aid).agg(self.weighted_error)),
         }
 
     def _calculate_unique(self, label: str) -> dict:
@@ -49,6 +49,7 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(self._calculate_coordinates("dec"))
 
     def calculate_ndet(self) -> pd.DataFrame:
+        # The column selected for ndet is irrelevant as long as it has no NaN values
         return pd.DataFrame({"ndet": self._grouped_detections()["oid"].count()})
 
     def calculate_firstmjd(self) -> pd.DataFrame:
@@ -64,7 +65,7 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(self._calculate_unique("tid"))
 
     def calculate_corrected(self) -> pd.DataFrame:
-        return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first")})
+        return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first", surveys=self._CORRECTED)})
 
     def calculate_stellar(self) -> pd.DataFrame:
-        return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first")})
+        return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first", surveys=self._STELLAR)})

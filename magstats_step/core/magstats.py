@@ -20,7 +20,7 @@ class MagnitudeStatistics(BaseStatistics):
     def _calculate_stats(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
 
-        grouped = self._grouped_detections(corrected)
+        grouped = self._grouped_detections(corrected=corrected)
         functions = {"mean": "mean", "median": "median", "max": "max", "min": "min", "std": "sigma"}
 
         aggregated = grouped[f"mag{suffix}"].agg(list(functions.keys()))
