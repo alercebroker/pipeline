@@ -53,5 +53,5 @@ class BaseStatistics(abc.ABC):
         methods = {name for name in self.__class__.__dict__ if name.startswith(self._PREFIX) and name not in exclude}
 
         # Compute all statistics and join into single dataframe
-        stats = {getattr(self, method)() for method in methods}
+        stats = [getattr(self, method)() for method in methods]
         return reduce(lambda left, right: left.join(right, how="outer"), stats)
