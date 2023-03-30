@@ -51,6 +51,10 @@ These are required only when running the scripts, as is the case for the Docker 
 - `METRICS_TOPIC`: (optional) Topic name, e.g., `topic_one`
 - `METRICS_SERVER`: Kafka host with port, e.g., `localhost:9092`
 
+### DB connection
+
+- `MONGODB_SECRET_NAME`: Name of MongoDB secrets in AWS
+
 ## Run the released image
 
 For each release, an image is uploaded to GitHub packages. To download:
