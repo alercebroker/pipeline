@@ -16,7 +16,11 @@ class LightcurveStep(GenericStep):
 
     @staticmethod
     def unique_detections(old_detections, new_detections):
-        """Return only non-duplicate detections (based on candid). Keeps the ones in old"""
+        """Return only non-duplicate detections (based on candid).
+
+        Will always keep detections with stamps over ones without. Otherwise, it will keep the
+        ones in `old_detections` over those in `new_detections`.
+        """
         new_candids_with_stamp = [
             det["candid"] for det in new_detections if det["has_stamp"]
         ]
@@ -31,7 +35,10 @@ class LightcurveStep(GenericStep):
 
     @staticmethod
     def unique_non_detections(old_non_detections, new_non_detections):
-        """Return only non-duplicate non-detections (based on oid, fid and mjd). Keeps the ones in old"""
+        """Return only non-duplicate non-detections (based on `oid`, `fid` and `mjd`).
+
+        Keeps the ones in `old_non_detections` over those in `new_non_detections`.
+        """
 
         def create_id(detection):
             return {k: v for k, v in detection.items() if k in ["oid", "fid", "mjd"]}
@@ -44,8 +51,8 @@ class LightcurveStep(GenericStep):
         return old_non_detections + new_non_detections
 
     @classmethod
-    def pre_execute(cls, messages: List[dict]):
-        """If multiple AIDs in the same batch create a single message with all of them"""
+    def pre_execute(cls, messages: List[dict]) -> List[dict]:
+        """If multiple AIDs are in the same batch create a single message with all of them"""
         aids, output = {}, []
         for message in messages:
             if message["aid"] in aids:
@@ -61,7 +68,8 @@ class LightcurveStep(GenericStep):
                 aids[message["aid"]] = len(output) - 1
         return output
 
-    def execute(self, messages: List[dict]):
+    def execute(self, messages: List[dict]) -> List[dict]:
+        """Queries the database for all detections and non-detections for each AID and removes duplicates"""
         for message in messages:
             detections_in_db = self.db_client.query(Detection).find_all(
                 {"aid": message["aid"]}
@@ -83,7 +91,14 @@ class LightcurveStep(GenericStep):
 
     @staticmethod
     def clean_detections_from_db(detections):
-        """Modifies inplace"""
+        """Removes field `_id` from detections coming from the database.
+
+        For compatibility with old database, if the field `candid` is present in the detections, this
+        will simply remove the `_id` field. If `candid` is not present, assumes that `_id` is the candid.
+        In that case, it will remove `_id` and set it as the `candid` field.
+
+        **Modifies detections inplace**
+        """
         for detection in detections:
             if "candid" not in detection:  # Compatibility with old DB definitions
                 detection["candid"] = detection["_id"]
@@ -91,6 +106,9 @@ class LightcurveStep(GenericStep):
 
     @staticmethod
     def clean_non_detections_from_db(non_detections):
-        """Modifies inplace"""
+        """Removes field `_id` from non detections coming from the database.
+
+        **Modifies inplace**
+        """
         for non_detection in non_detections:
             non_detection.pop("_id")
