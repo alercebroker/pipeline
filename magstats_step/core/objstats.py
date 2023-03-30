@@ -2,19 +2,15 @@ from typing import Union, Literal, List
 
 import numpy as np
 import pandas as pd
-from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
 from ._base import BaseStatistics
 
 
 class ObjectStatistics(BaseStatistics):
+    _JOIN = "aid"
 
     def __init__(self, detections: List[dict]):
         super().__init__(detections)
-
-    @staticmethod
-    def _group(df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return super(ObjectStatistics, ObjectStatistics)._group(df)
 
     @staticmethod
     def weighted_mean(values: pd.Series, weights: pd.Series) -> float:

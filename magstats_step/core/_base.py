@@ -6,26 +6,24 @@ import pandas as pd
 from methodtools import lru_cache
 from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
-Which = Literal["first", "last"]
-
 
 class BaseStatistics(abc.ABC):
+    _JOIN: Union[str, List[str]]
     _PREFIX = "calculate_"
 
     def __init__(self, detections: List[dict]):
         self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
 
-    @staticmethod
-    @abc.abstractmethod
-    def _group(df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return df.groupby("aid")
+    @classmethod
+    def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
+        return df.groupby(cls._JOIN)
 
     @lru_cache(1)
     def _corrected(self):
         return self._detections[self._detections["corrected"]]
 
     @lru_cache(4)
-    def _grouped_index(self, which: Which, corrected: bool = False) -> pd.Series:
+    def _grouped_index(self, which: Literal["first", "last"], corrected: bool = False) -> pd.Series:
         if which == "first":
             function = "idxmin"
         elif which == "last":
@@ -35,7 +33,7 @@ class BaseStatistics(abc.ABC):
         return self._grouped_detections(corrected)["mjd"].agg(function)
 
     @lru_cache(10)
-    def _grouped_value(self, source: str, which: Which, corrected: bool = False) -> pd.Series:
+    def _grouped_value(self, source: str, which: Literal["first", "last"], corrected: bool = False) -> pd.Series:
         idx = self._grouped_index(which, corrected)
         df = self._corrected() if corrected else self._detections
         return df[source][idx].set_axis(idx.index)

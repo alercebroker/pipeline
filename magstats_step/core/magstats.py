@@ -1,15 +1,13 @@
 import warnings
-from functools import reduce
-from typing import List, Union
+from typing import List
 
 import pandas as pd
-from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 
 from ._base import BaseStatistics
 
 
 class MagnitudeStatistics(BaseStatistics):
-    _PREFIX = "calculate_"
+    _JOIN = ["aid", "fid"]
     MAGNITUDE_THRESHOLD = 13.2
 
     def __init__(self, detections: List[dict], non_detections: List[dict]):
@@ -18,10 +16,6 @@ class MagnitudeStatistics(BaseStatistics):
             self._non_detections = pd.DataFrame.from_records(non_detections)
         else:
             self._non_detections = pd.DataFrame()
-
-    @staticmethod
-    def _group(df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
-        return df.groupby(["aid", "fid"])
 
     def _calculate_stats(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
