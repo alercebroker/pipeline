@@ -77,7 +77,7 @@ class MagnitudeStatistics(BaseStatistics):
         first_e_mag = self._grouped_value("e_mag", which="first")
         first_mjd = self._grouped_value("mjd", which="first")
 
-        nd = self._non_detections.set_index("fid")  # Index by fid to compute based on it
+        nd = self._non_detections.set_index(self._JOIN)  # Index by join to compute based on it
 
         dt = first_mjd - nd["mjd"]
         dm = first_mag - nd["diffmaglim"]
