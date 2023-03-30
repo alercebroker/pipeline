@@ -13,7 +13,7 @@ class MagnitudeStatistics(BaseStatistics):
     def __init__(self, detections: List[dict], non_detections: List[dict]):
         super().__init__(detections)
         if non_detections:
-            self._non_detections = pd.DataFrame.from_records(non_detections)
+            self._non_detections = pd.DataFrame.from_records(non_detections).drop_duplicates(["oid", "fid", "mjd"])
         else:
             self._non_detections = pd.DataFrame()
 
@@ -40,10 +40,11 @@ class MagnitudeStatistics(BaseStatistics):
         stats = stats.join(self._calculate_stats(corrected=True))
         return stats.join(self._calculate_stats_over_time(corrected=True))
 
-    def calculate_mjd(self) -> pd.DataFrame:
-        first_mjd = self._grouped_value("mjd", which="first")
-        last_mjd = self._grouped_value("mjd", which="last")
-        return pd.DataFrame({"firstmjd": first_mjd, "lastmjd": last_mjd})
+    def calculate_firstmjd(self) -> pd.DataFrame:
+        return pd.DataFrame({"firstmjd": self._grouped_value("mjd", which="first")})
+
+    def calculate_lastmjd(self) -> pd.DataFrame:
+        return pd.DataFrame({"lastmjd": self._grouped_value("mjd", which="last")})
 
     def calculate_corrected(self) -> pd.DataFrame:
         return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first")})

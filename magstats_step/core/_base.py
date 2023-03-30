@@ -14,7 +14,8 @@ class BaseStatistics(abc.ABC):
     _STELLAR = ["ZTF"]
 
     def __init__(self, detections: List[dict]):
-        self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"], index="candid")
+        self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"]).drop_duplicates("candid")
+        self._detections.set_index("candid", inplace=True)
 
     @classmethod
     def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
