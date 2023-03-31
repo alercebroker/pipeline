@@ -57,11 +57,11 @@ class SurveyParser(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def _extract_stamps(cls, message: dict) -> dict:
-        """Keys are `cutoutScience`, `cutoutTemplate` and `cutoutDifference`. Values are of type `byte` or `None`"""
+        """Keys are `science`, `template` and `difference`. Values are of type `byte` or `None`"""
         return {
-            "cutoutScience": None,
-            "cutoutTemplate": None,
-            "cutoutDifference": None,
+            "science": None,
+            "template": None,
+            "difference": None,
         }
 
     @classmethod

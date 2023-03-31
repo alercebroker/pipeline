@@ -29,7 +29,7 @@ class GenericAlert:
 
 Where `extra_fields` is a dictionary that has the complement of data that is not generic, that is, the rest of the data that comes from the alert.
 
-The `stamps` is a dictionary with `cutoutScience`, `cutoutTemplate` and `cutoutDifference`. One or more can be `None` if not
+The `stamps` is a dictionary with `science`, `template` and `difference`. One or more can be `None` if not
 provided by the source.
 
 The parsers receive a list of messages (dictionaries in python) and return a list of generic alerts.
