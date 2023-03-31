@@ -4,7 +4,7 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 
 from sorting_hat_step.utils.database import db_queries
-from .utils import sorting_hat as wizard, output as output_parser
+from .utils import wizard, parser
 import logging
 import pandas as pd
 from operator import itemgetter
@@ -51,7 +51,7 @@ class SortingHatStep(GenericStep):
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
         output_result = [
-            output_parser.parse_output(alert) for _, alert in result.iterrows()
+            parser.parse_output(alert) for _, alert in result.iterrows()
         ]
         n_messages = len(output_result)
         self.set_producer_key_field("aid")
