@@ -3,7 +3,7 @@ import pandas as pd
 from unittest import mock
 
 from db_plugins.db.mongo.connection import MongoConnection
-from sorting_hat_step.utils import sorting_hat as wizard
+from sorting_hat_step.utils import wizard as wizard
 from data.batch import generate_batch_ra_dec
 
 
