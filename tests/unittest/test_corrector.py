@@ -13,6 +13,12 @@ MAG_CORR_COLS = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
 ALL_NEW_COLS = MAG_CORR_COLS + ["dubious", "stellar", "corrected"]
 
 
+def test_corrector_removes_duplicate_candids():
+    detections_duplicate = [ztf_alert(candid="c"), atlas_alert(candid="c")]
+    corrector = Corrector(detections_duplicate)
+    assert (corrector._detections.index == ["c"]).all()
+
+
 def test_mask_survey_returns_only_alerts_from_requested_survey():
     corrector = Corrector(detections)
     expected_ztf = pd.Series([True, False], index=["c1", "c2"])

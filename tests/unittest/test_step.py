@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from unittest import mock
 
 from correction_step.step import CorrectionStep
@@ -16,7 +17,7 @@ messages = [
         "aid": "AID2",
         "new_alert": ztf_alert(aid="AID2", candid="c"),
         "prv_detections": [ztf_alert(aid="AID2", candid="d")],
-        "non_detections": [non_detection(aid="AID2")]
+        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)]
     },
     {
         "aid": "AID3",
@@ -35,7 +36,7 @@ message4produce = [
     {
         "aid": "AID2",
         "detections": [ztf_alert(aid="AID2", candid="c"), ztf_alert(aid="AID2", candid="d", has_stamp=False)],
-        "non_detections": [non_detection(aid="AID2")]
+        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)]
     },
     {
         "aid": "AID3",
@@ -53,7 +54,7 @@ message4execute = {
         atlas_alert(aid="AID3", candid="e"),
     ],
     "non_detections": [
-        non_detection(aid="AID2")
+        non_detection(aid="AID2", mjd=1, oid="oid1", fid=1),
     ]
 }
 
@@ -74,6 +75,24 @@ def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(
     assert formatted["non_detections"] == message4execute["non_detections"]
     mock_corrector.assert_called_with(message4execute["detections"])
     mock_corrector.return_value.corrected_records.assert_called_once()
+
+
+@mock.patch("correction_step.step.Corrector")
+def test_execute_removes_duplicate_non_detections(mock_corrector):
+    message4execute_copy = deepcopy(message4execute)
+    message4execute_copy["non_detections"] = message4execute_copy["non_detections"] + message4execute_copy["non_detections"]
+    formatted = CorrectionStep.execute(message4execute_copy)
+    assert "non_detections" in formatted
+    assert formatted["non_detections"] == message4execute["non_detections"]
+
+
+@mock.patch("correction_step.step.Corrector")
+def test_execute_works_with_empty_non_detections(mock_corrector):
+    message4execute_copy = deepcopy(message4execute)
+    message4execute_copy["non_detections"] = []
+    formatted = CorrectionStep.execute(message4execute_copy)
+    assert "non_detections" in formatted
+    assert formatted["non_detections"] == []
 
 
 def test_post_execute_calls_scribe_producer_for_each_detection():

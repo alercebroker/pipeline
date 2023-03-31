@@ -56,8 +56,10 @@ class CorrectionStep(GenericStep):
     @classmethod
     def execute(cls, message: dict) -> dict:
         corrector = Corrector(message["detections"])
-        output = corrector.corrected_records()
-        return {"detections": output, "non_detections": message["non_detections"]}
+        detections = corrector.corrected_records()
+        non_detections = pd.DataFrame(message["non_detections"])
+        non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
+        return {"detections": detections, "non_detections": non_detections.to_dict("records")}
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["detections"])
