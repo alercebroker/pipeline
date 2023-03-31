@@ -32,9 +32,9 @@ class LSSTParser(SurveyParser):
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
         return {
-            "cutoutScience": None,
-            "cutoutTemplate": message["cutoutTemplate"],
-            "cutoutDifference": message["cutoutDifference"],
+            "science": None,
+            "template": message["cutoutTemplate"],
+            "difference": message["cutoutDifference"],
         }
 
     @classmethod

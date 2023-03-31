@@ -30,9 +30,9 @@ class ZTFParser(SurveyParser):
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
         return {
-            "cutoutScience": message["cutoutScience"]["stampData"],
-            "cutoutTemplate": message["cutoutTemplate"]["stampData"],
-            "cutoutDifference": message["cutoutDifference"]["stampData"],
+            "science": message["cutoutScience"]["stampData"],
+            "template": message["cutoutTemplate"]["stampData"],
+            "difference": message["cutoutDifference"]["stampData"],
         }
 
     @classmethod
