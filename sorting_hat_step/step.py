@@ -50,9 +50,7 @@ class SortingHatStep(GenericStep):
         output_result: pd.DataFrame
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
-        output_result = [
-            parser.parse_output(alert) for _, alert in result.iterrows()
-        ]
+        output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
         n_messages = len(output_result)
         self.set_producer_key_field("aid")
         self.logger.info(f"{n_messages} messages to be produced")
