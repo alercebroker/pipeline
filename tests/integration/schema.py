@@ -11,6 +11,7 @@ DETECTION = {
     "type": "record",
     "name": "alert",
     "fields": [
+        {"name": "aid", "type": "string"},
         {"name": "oid", "type": "string"},
         {"name": "tid", "type": "string"},
         {"name": "pid", "type": "long"},
@@ -18,17 +19,17 @@ DETECTION = {
         {"name": "mjd", "type": "double"},
         {"name": "fid", "type": "int"},
         {"name": "ra", "type": "double"},
+        {"name": "e_ra", "type": "float"},
         {"name": "dec", "type": "double"},
+        {"name": "e_dec", "type": "float"},
         {"name": "mag", "type": "float"},
         {"name": "e_mag", "type": "float"},
+        {"name": "has_stamp", "type": "boolean"},
         {"name": "isdiffpos", "type": "int"},
-        {"name": "e_ra", "type": "float"},
-        {"name": "e_dec", "type": "float"},
         {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
         },
-        {"name": "aid", "type": "string"},
     ]
 }
 
@@ -51,8 +52,7 @@ SCHEMA = {
     "name": "alerce.alert",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "new_alert", "type": DETECTION},
-        {"name": "prv_detections", "type": {"type": "array", "items": "alert"}},
+        {"name": "detections", "type": {"type": "array", "items": DETECTION}},
         {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}}
     ],
 }

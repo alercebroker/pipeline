@@ -89,11 +89,10 @@ def produce_messages(topic):
     random.seed(42)
 
     for message in messages:
-        message["new_alert"]["tid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
-        if str(message["new_alert"]["tid"]).lower() == "ztf":
-            message["new_alert"]["extra_fields"] = ztf_extra_fields()
-            for prv in message["prv_detections"]:
-                prv["extra_fields"] = ztf_extra_fields()
+        for detection in message["detections"]:
+            detection["tid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
+            if str(detection["tid"]).lower() == "ztf":
+                detection["extra_fields"] = ztf_extra_fields()
         producer.produce(message)
 
 

@@ -39,17 +39,11 @@ class CorrectionStep(GenericStep):
             output.append({"aid": aid, "detections": dets.to_dict("records"), "non_detections": nd})
         return output
 
-    @staticmethod
-    def _get_detections(message: dict) -> list:
-        def has_stamp(detection, stamp=True):
-            return {**detection, "has_stamp": stamp}
-        return [has_stamp(message["new_alert"])] + [has_stamp(prv, False) for prv in message["prv_detections"]]
-
     @classmethod
     def pre_execute(cls, messages: list[dict]) -> dict:
         detections, non_detections = [], []
         for msg in messages:
-            detections.extend(cls._get_detections(msg))
+            detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections}
 
