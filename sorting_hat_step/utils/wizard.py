@@ -98,9 +98,8 @@ def internal_cross_match(
 ) -> pd.DataFrame:
     """
     Do an internal cross-match in data input (batch vs batch) to get the closest objects. This method uses
-    cKDTree class to get the nearest object. Returns a new dataframe with another column named tmp_id to
-    reference unique objects :param data: alerts in a dataframe :param ra_col: how the ra column is called in
-    data :param dec_col: how the dec column is called in data :return:
+    cKDTree class to get the nearest object(s). Returns a new dataframe with another column named `tmp_id` to
+    reference unique objects and a column `aid` filled with `None`
     """
     data = data.copy()
     radius = RADIUS / 3600
@@ -118,41 +117,41 @@ def internal_cross_match(
     for i, j in close_pairs:
         data.loc[j, "tmp_id"] = data["tmp_id"][i]
 
+    data["aid"] = None
+
     return data
 
 
 def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     """
-    Assigns aid column to a dataframe that has tmp_id column.
-    The aid column will be the existing alerce id obtained by the injected database_id_getter.
-    If no id is found, the resulting aid column will contain null values.
+    The aid column will be assigned the existing alerce id obtained from the database (if found).
 
     Input:
-            oid    tmp_id
+            oid    tmp_id  aid
         0   A      X
         1   B      X
         2   C      Y
 
     Output:
-            oid    tmp_id
+            oid    tmp_id  aid
         0   A      X      aid1
         1   B      X      aid1
         2   C      Y      None
     """
-    def _find_existing_id(data: pd.DataFrame):
-        oids = data["oid"].unique().tolist()
-        aid = oid_query(db, oids)
-        return pd.Series({"aid": aid})
-
-    tmp_id_aid = alerts.groupby("tmp_id").apply(_find_existing_id)
-    return alerts.join(tmp_id_aid, on="tmp_id")
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        alerts_wo_aid.loc[group.index, "aid"] = oid_query(db, group["oid"].unique().tolist())
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts
 
 
 def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
-    """
-    Assigns aid column to a dataframe that has tmp_id column.
-    The aid column will be the existing alerce id obtained by the injected conesearch_id_getter.
-    If no id is found, the resulting aid column will contain null values.
+    """Assigns aid based on a conesearch in the database.
 
     Input:
             oid    tmp_id  aid   ra   dec
