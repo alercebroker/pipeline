@@ -21,7 +21,9 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[int, None]:
     return None
 
 
-def conesearch_query(db: DatabaseConnection, ra: float, dec: float, radius: float) -> List[dict]:
+def conesearch_query(
+    db: DatabaseConnection, ra: float, dec: float, radius: float
+) -> List[dict]:
     """
     Query the database and check if there is an alerce_id
     for the specified coordinates and search radius

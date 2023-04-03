@@ -145,7 +145,9 @@ def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     if not len(alerts_wo_aid.index):
         return alerts
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
-        alerts_wo_aid.loc[group.index, "aid"] = oid_query(db, group["oid"].unique().tolist())
+        alerts_wo_aid.loc[group.index, "aid"] = oid_query(
+            db, group["oid"].unique().tolist()
+        )
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
