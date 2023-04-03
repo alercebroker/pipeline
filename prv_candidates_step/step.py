@@ -59,9 +59,7 @@ class PrvCandidatesStep(GenericStep):
                 non_detections[index], alert["aid"], alert["tid"], alert["oid"]
             )
             # move fields to extra_fields before removing them
-            stampless_alert = remove_keys_from_dictionary(
-                alert, ["stamps"]
-            )
+            stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
             stampless_alert["extra_fields"] = remove_keys_from_dictionary(
                 stampless_alert["extra_fields"], ["prv_candidates"]
             )

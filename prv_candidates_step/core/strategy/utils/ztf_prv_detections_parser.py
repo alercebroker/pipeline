@@ -49,7 +49,9 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         return True
 
     @classmethod
-    def parse(cls, messages: List[dict], oid: str, aid: str, parent_candid: Union[str, int]) -> List[dict]:
+    def parse(
+        cls, messages: List[dict], oid: str, aid: str, parent_candid: Union[str, int]
+    ) -> List[dict]:
         def parse_to_dict(message: dict) -> dict:
             alert = asdict(cls.parse_message(message))
             alert["aid"] = aid
