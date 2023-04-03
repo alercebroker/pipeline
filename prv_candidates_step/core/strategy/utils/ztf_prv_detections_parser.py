@@ -1,68 +1,61 @@
-from survey_parser_plugins.core import SurveyParser
 from typing import List, Union
+from dataclasses import asdict
+from survey_parser_plugins.core import SurveyParser
+from survey_parser_plugins.parsers.ZTFParser import ERRORS
+from survey_parser_plugins.core.mapper import Mapper
 
 
 # Implementation a new parser for PreviousCandidates with SurveyParser signs.
 class ZTFPreviousDetectionsParser(SurveyParser):
     _source = "ZTF"
-    _celestial_errors = {
-        1: 0.065,
-        2: 0.085,
-        3: 0.01,
-    }
-    _generic_alert_message_key_mapping = {
-        "candid": "candid",
-        "mjd": "jd",
-        "fid": "fid",
-        "pid": "pid",
-        "ra": "ra",
-        "dec": "dec",
-        "mag": "magpsf",
-        "e_mag": "sigmapsf",
-        "isdiffpos": "isdiffpos",
-        "rb": "rb",
-        "rbversion": "rbversion",
-    }
+    _mapping = [
+        Mapper("oid", lambda: ZTFPreviousDetectionsParser._oid),
+        Mapper("tid", lambda: ZTFPreviousDetectionsParser._source),
+        Mapper("candid", origin="candid"),
+        Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
+        Mapper("fid", origin="fid"),
+        Mapper("pid", origin="pid"),
+        Mapper("ra", origin="ra"),
+        Mapper(
+            "e_ra",
+            lambda x, y: x if x else ERRORS[y],
+            origin="sigmara",
+            extras=["fid"],
+            required=False,
+        ),
+        Mapper("dec", origin="dec"),
+        Mapper(
+            "e_dec",
+            lambda x, y: x if x else ERRORS[y],
+            origin="sigmadec",
+            extras=["fid"],
+            required=False,
+        ),
+        Mapper("mag", origin="magpsf"),
+        Mapper("e_mag", origin="sigmapsf"),
+        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
+    ]
 
     @classmethod
-    def parse_message(
-        cls, message: dict, oid: str, aid: str, parent_candid: Union[str, int]
-    ) -> dict:
-        if not cls.can_parse(message):
-            raise KeyError("This parser can't parse message")
-        prv_content = cls._generic_alert_message(
-            message, cls._generic_alert_message_key_mapping
-        )
-        # inclusion of extra attributes
-        prv_content["oid"] = oid
-        # prv_content["aid"] = id_generator(prv_content["ra"], prv_content["dec"])
-        prv_content["tid"] = cls._source
-        # attributes modification
-        prv_content["aid"] = aid
-        prv_content["mjd"] = prv_content["mjd"] - 2400000.5
-        prv_content["isdiffpos"] = 1 if prv_content["isdiffpos"] in ["t", "1"] else -1
-        prv_content["extra_fields"]["rb"] = prv_content["rb"]
-        prv_content["extra_fields"]["rbversion"] = prv_content["rbversion"]
-        prv_content["extra_fields"]["parent_candid"] = parent_candid
-        e_radec = cls._celestial_errors[prv_content["fid"]]
-        prv_content["e_ra"] = (
-            prv_content["sigmara"] if "sigmara" in prv_content else e_radec
-        )
-        prv_content["e_dec"] = (
-            prv_content["sigmadec"] if "sigmadec" in prv_content else e_radec
-        )
-        prv_content["stamps"] = {"science": None, "difference": None, "template": None}
-        return prv_content
+    def set_oid(cls, oid: str):
+        cls._oid = oid
+
+    @classmethod
+    def _extract_stamps(cls, message: dict) -> dict:
+        return {"science": None, "template": None, "difference": None}
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
         return True
 
     @classmethod
-    def parse(
-        cls, messages: List[dict], oid: str, aid: str, parent_candid: Union[str, int]
-    ) -> List[dict]:
-        def curry_parse(message: dict):
-            return cls.parse_message(message, oid, aid, parent_candid)
+    def parse(cls, messages: List[dict], oid: str, aid: str, parent_candid: Union[str, int]) -> List[dict]:
+        def parse_to_dict(message: dict) -> dict:
+            alert = asdict(cls.parse_message(message))
+            alert["aid"] = aid
+            alert["extra_fields"]["parent_candid"] = parent_candid
+            alert["has_stamp"] = False
+            return alert
 
-        return list(map(curry_parse, messages))
+        cls.set_oid(oid)
+        return list(map(parse_to_dict, messages))
