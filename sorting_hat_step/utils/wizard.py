@@ -1,41 +1,18 @@
-import numpy as np
-import pandas as pd
 import time
 import string
 
+import numpy as np
+import pandas as pd
 from scipy.spatial import cKDTree
-from typing import Callable, List, Union
+from db_plugins.db.mongo import DatabaseConnection
+
+from .database import oid_query, conesearch_query
 
 
 CHARACTERS = string.ascii_lowercase
 
-RADIUS = 1.5
-# Values from WGS 84
-AXIS = 6378137.000000000000  # Semi-major axis of Earth
-ECCENTRICITY = 0.081819190842600  # eccentricity
-ANGLE = np.radians(1.0)
+RADIUS = 1.5  # arcsec
 BASE = len(CHARACTERS)
-
-# https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
-
-
-def wgs_scale(lat: float) -> float:
-    """
-    Get scaling to convert degrees to meters at a given geodetic latitude (declination)
-    :param lat: geodetic latitude (declination)
-    :return:
-    """
-    # Compute radius of curvature along meridian (see https://en.wikipedia.org/wiki/Meridian_arc)
-    rm = (
-        AXIS
-        * (1 - np.power(ECCENTRICITY, 2))
-        / np.power(
-            (1 - np.power(ECCENTRICITY, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5
-        )
-    )
-    # Compute length of arc at this latitude (meters/degree)
-    arc = rm * ANGLE
-    return arc
 
 
 def encode(long_number: int) -> str:
@@ -170,10 +147,7 @@ def internal_cross_match(
     return data
 
 
-def find_existing_id(
-    alerts: pd.DataFrame,
-    database_id_getter: Callable[[list], Union[int, None]],
-):
+def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     """
     Assigns aid column to a dataframe that has tmp_id column.
     The aid column will be the existing alerce id obtained by the injected database_id_getter.
@@ -191,22 +165,16 @@ def find_existing_id(
         1   B      X      aid1
         2   C      Y      None
     """
-    alerts_copy = alerts.copy()
-
     def _find_existing_id(data: pd.DataFrame):
-        aid = None
         oids = data["oid"].unique().tolist()
-        aid = database_id_getter(oids)
+        aid = oid_query(db, oids)
         return pd.Series({"aid": aid})
 
-    tmp_id_aid = alerts_copy.groupby("tmp_id").apply(_find_existing_id)
-    return alerts_copy.join(tmp_id_aid, on="tmp_id")
+    tmp_id_aid = alerts.groupby("tmp_id").apply(_find_existing_id)
+    return alerts.join(tmp_id_aid, on="tmp_id")
 
 
-def find_id_by_conesearch(
-    alerts: pd.DataFrame,
-    conesearch_id_getter: Callable[[float, float, float], List[dict]],
-):
+def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
     """
     Assigns aid column to a dataframe that has tmp_id column.
     The aid column will be the existing alerce id obtained by the injected conesearch_id_getter.
@@ -234,12 +202,7 @@ def find_id_by_conesearch(
         ra = first_alert["ra"]
         dec = first_alert["dec"]
 
-        radius = RADIUS / 3600
-        scaling = wgs_scale(dec)
-        meter_radius = radius * scaling
-        lon, lat = ra - 180.0, dec
-
-        near_objects = conesearch_id_getter(lon, lat, meter_radius)
+        near_objects = conesearch_query(db, ra, dec, RADIUS)
         aid = None
         if len(near_objects):
             aid = near_objects[0]["aid"]

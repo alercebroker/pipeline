@@ -3,11 +3,9 @@ from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
 from typing import List
 
-from sorting_hat_step.utils.database import db_queries
 from .utils import wizard, parser
 import logging
 import pandas as pd
-from operator import itemgetter
 
 
 class SortingHatStep(GenericStep):
@@ -22,9 +20,6 @@ class SortingHatStep(GenericStep):
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
         self.parser = ALeRCEParser()
-        self.oid_query, self.conesearch_query = itemgetter(
-            "oid_query", "conesearch_query"
-        )(db_queries(self.driver))
 
     def pre_produce(self, result: pd.DataFrame):
         """
@@ -86,8 +81,8 @@ class SortingHatStep(GenericStep):
         # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
         alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
-        alerts = wizard.find_existing_id(alerts, self.oid_query)
-        alerts = wizard.find_id_by_conesearch(alerts, self.conesearch_query)
+        alerts = wizard.find_existing_id(self.driver, alerts)
+        alerts = wizard.find_id_by_conesearch(self.driver, alerts)
         alerts = wizard.generate_new_id(alerts)
         alerts.drop(columns=["tmp_id"])
         return alerts
