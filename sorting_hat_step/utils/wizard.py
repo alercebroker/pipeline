@@ -1,41 +1,18 @@
-import numpy as np
-import pandas as pd
 import time
 import string
 
+import numpy as np
+import pandas as pd
 from scipy.spatial import cKDTree
-from typing import Callable, List, Union
+from db_plugins.db.mongo import DatabaseConnection
+
+from .database import oid_query, conesearch_query
 
 
 CHARACTERS = string.ascii_lowercase
 
-RADIUS = 1.5
-# Values from WGS 84
-AXIS = 6378137.000000000000  # Semi-major axis of Earth
-ECCENTRICITY = 0.081819190842600  # eccentricity
-ANGLE = np.radians(1.0)
+RADIUS = 1.5  # arcsec
 BASE = len(CHARACTERS)
-
-# https://media.giphy.com/media/JDAVoX2QSjtWU/giphy.gif
-
-
-def wgs_scale(lat: float) -> float:
-    """
-    Get scaling to convert degrees to meters at a given geodetic latitude (declination)
-    :param lat: geodetic latitude (declination)
-    :return:
-    """
-    # Compute radius of curvature along meridian (see https://en.wikipedia.org/wiki/Meridian_arc)
-    rm = (
-        AXIS
-        * (1 - np.power(ECCENTRICITY, 2))
-        / np.power(
-            (1 - np.power(ECCENTRICITY, 2) * np.power(np.sin(np.radians(lat)), 2)), 1.5
-        )
-    )
-    # Compute length of arc at this latitude (meters/degree)
-    arc = rm * ANGLE
-    return arc
 
 
 def encode(long_number: int) -> str:
@@ -121,96 +98,62 @@ def internal_cross_match(
 ) -> pd.DataFrame:
     """
     Do an internal cross-match in data input (batch vs batch) to get the closest objects. This method uses
-    cKDTree class to get the nearest object. Returns a new dataframe with another column named tmp_id to
-    reference unique objects :param data: alerts in a dataframe :param ra_col: how the ra column is called in
-    data :param dec_col: how the dec column is called in data :return:
+    cKDTree class to get the nearest object(s). Returns a new dataframe with another column named `tmp_id` to
+    reference unique objects and a column `aid` filled with `None`
     """
     data = data.copy()
     radius = RADIUS / 3600
     values = data[[ra_col, dec_col]].to_numpy()
     tree = cKDTree(values)
-    sdm = tree.sparse_distance_matrix(
-        tree, radius, output_type="coo_matrix"
-    )  # get sparse distance matrix
-    # Get the matrix representation -> rows x cols
-    matrix = sdm.toarray()
 
     # Put the index as a tmp_id
     data["tmp_id"] = data.index
     # Get unique object_ids
-    oids = data["oid"].unique()
-    for index, oid in enumerate(oids):  # join the same objects
-        indexes = data[data["oid"] == oid].index  # get all indexes of this oid
-        if (
-            len(indexes) > 1
-        ):  # if exists an oid with more than 1 occurrences put the same tmp_id
-            data.loc[indexes, "tmp_id"] = index
-            # for remove neighbors get the combination or all indexes of the same object
-            a, b = np.meshgrid(indexes, indexes, sparse=True)
-            # remove in adjacency matrix
-            matrix[a, b] = 0
-    while matrix.sum():  # while exists matches
-        matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
-        # get rows with max matches (can be more than 1)
-        max_matches = np.argwhere(matches == matches.max(axis=0)).flatten()
-        dist_matches = matrix[max_matches].sum(
-            axis=1
-        )  # compute sum of distance of each element in max_matches
-        min_dist = np.argmin(dist_matches)  # get index of min sum of distance
-        node = max_matches[
-            min_dist
-        ]  # chosen node: with most matches and the least distance
-        neighbours = matrix[node, :]  # get all neighbours of the node
-        neighbours_indexes = np.flatnonzero(neighbours)  # get indexes of the neighbours
-        data.loc[neighbours_indexes, "tmp_id"] = data["tmp_id"][
-            node
-        ]  # put tmp_id of the neighbours
-        matrix[neighbours_indexes, :] = 0  # turn off neighbours
-        matrix[:, neighbours_indexes] = 0
+    _, idx = np.unique(data["oid"], return_inverse=True)
+    data["tmp_id"] = data.index[idx]
+
+    # Sort all closest pairs to ensure idx of i increases after than j
+    close_pairs = sorted((_ for _ in tree.query_pairs(radius)), key=lambda x: x[0])
+    for i, j in close_pairs:
+        data.loc[j, "tmp_id"] = data["tmp_id"][i]
+
+    data["aid"] = None
+
     return data
 
 
-def find_existing_id(
-    alerts: pd.DataFrame,
-    database_id_getter: Callable[[list], Union[int, None]],
-):
+def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     """
-    Assigns aid column to a dataframe that has tmp_id column.
-    The aid column will be the existing alerce id obtained by the injected database_id_getter.
-    If no id is found, the resulting aid column will contain null values.
+    The aid column will be assigned the existing alerce id obtained from the database (if found).
 
     Input:
-            oid    tmp_id
+            oid    tmp_id  aid
         0   A      X
         1   B      X
         2   C      Y
 
     Output:
-            oid    tmp_id
+            oid    tmp_id  aid
         0   A      X      aid1
         1   B      X      aid1
         2   C      Y      None
     """
-    alerts_copy = alerts.copy()
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        alerts_wo_aid.loc[group.index, "aid"] = oid_query(
+            db, group["oid"].unique().tolist()
+        )
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts
 
-    def _find_existing_id(data: pd.DataFrame):
-        aid = None
-        oids = data["oid"].unique().tolist()
-        aid = database_id_getter(oids)
-        return pd.Series({"aid": aid})
 
-    tmp_id_aid = alerts_copy.groupby("tmp_id").apply(_find_existing_id)
-    return alerts_copy.join(tmp_id_aid, on="tmp_id")
-
-
-def find_id_by_conesearch(
-    alerts: pd.DataFrame,
-    conesearch_id_getter: Callable[[float, float, float], List[dict]],
-):
-    """
-    Assigns aid column to a dataframe that has tmp_id column.
-    The aid column will be the existing alerce id obtained by the injected conesearch_id_getter.
-    If no id is found, the resulting aid column will contain null values.
+def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
+    """Assigns aid based on a conesearch in the database.
 
     Input:
             oid    tmp_id  aid   ra   dec
@@ -224,32 +167,17 @@ def find_id_by_conesearch(
         1   B      X     aid1   123   456
         2   C      Y     aid2   123   456
     """
-    alerts_copy = alerts.copy()
-    alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
-    if len(alerts_without_aid) == 0:
-        return alerts_copy
-
-    def _find_id_by_conesearch(data: pd.DataFrame):
-        first_alert = data.iloc[0]
-        ra = first_alert["ra"]
-        dec = first_alert["dec"]
-
-        radius = RADIUS / 3600
-        scaling = wgs_scale(dec)
-        meter_radius = radius * scaling
-        lon, lat = ra - 180.0, dec
-
-        near_objects = conesearch_id_getter(lon, lat, meter_radius)
-        aid = None
-        if len(near_objects):
-            aid = near_objects[0]["aid"]
-        return pd.Series({"aid": aid})
-
-    tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_find_id_by_conesearch)
-    alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
-    alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
-    alerts_copy = alerts_copy.drop(columns=["aid_found"])
-    return alerts_copy
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        nearby = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
+        alerts_wo_aid.loc[group.index, "aid"] = nearby[0]["aid"] if nearby else None
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts
 
 
 def generate_new_id(alerts: pd.DataFrame):
@@ -269,21 +197,14 @@ def generate_new_id(alerts: pd.DataFrame):
         1   B      X     aid1   123   456
         2   C      Y     ALid   123   456
     """
-    alerts_copy = alerts.copy()
-    alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
-    if len(alerts_without_aid) == 0:
-        return alerts_copy
-
-    def _generate_new_id(data: pd.DataFrame):
-        first_alert = data.iloc[0]
-        aid = id_generator(first_alert["ra"], first_alert["dec"])  # this is the long id
-        aid = encode(aid)  # this is the long id encoded to string id
-        year = time.strftime("%y")  # get year in short form. e.g: 21 means 2021
-        aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
-        return pd.Series({"aid": aid})
-
-    tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_generate_new_id)
-    alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
-    alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
-    alerts_copy = alerts_copy.drop(columns=["aid_found"])
-    return alerts_copy
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
+        alerts_wo_aid.loc[group.index, "aid"] = f"AL{time.strftime('%y')}{encode(id_)}"
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts

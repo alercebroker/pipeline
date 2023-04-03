@@ -38,12 +38,16 @@ class SortingHatStepTestCase(unittest.TestCase):
         del self.step
 
     @mock.patch("sorting_hat_step.step.SortingHatStep._add_metrics")
-    def test_execute(self, _):
+    @mock.patch("sorting_hat_step.utils.wizard.oid_query")
+    def test_execute(self, mock_query, _):
         alerts = generate_alerts_batch(100)
+        mock_query.return_value = "aid"
         result = self.step.execute(alerts)
-        assert result["aid"] is not None
+        assert "aid" in result
 
-    def test_pre_produce(self):
+    @mock.patch("sorting_hat_step.utils.wizard.oid_query")
+    def test_pre_produce(self, mock_query):
+        mock_query.return_value = "aid"
         self.step.producer = mock.MagicMock(KafkaProducer)
         alerts = generate_alerts_batch(100)
         parsed = self.step.parser.parse(alerts)
