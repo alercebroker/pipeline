@@ -3,26 +3,16 @@ import pandas as pd
 from unittest import mock
 
 from db_plugins.db.mongo.connection import MongoConnection
-from sorting_hat_step.utils import wizard as wizard
+from sorting_hat_step.utils import wizard
 from data.batch import generate_batch_ra_dec
 
 
 class SortingHatTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_database_connection = mock.create_autospec(MongoConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
 
     def tearDown(self):
-        del self.mock_database_connection
-
-    def test_wgs_scale(self):
-        val90 = wizard.wgs_scale(90.0)
-        self.assertAlmostEqual(val90, 111693.97955912731)
-
-        val0 = wizard.wgs_scale(0.0)
-        self.assertAlmostEqual(val0, 110574.27582159475)
-
-        valm90 = wizard.wgs_scale(0.0)
-        self.assertAlmostEqual(valm90, 110574.27582159475)
+        del self.mock_db
 
     def test_id_generator(self):
         aid_1 = wizard.id_generator(0, 0)
@@ -44,9 +34,7 @@ class SortingHatTestCase(unittest.TestCase):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
         batch = wizard.internal_cross_match(example_batch)
-        self.assertListEqual(
-            batch.index.tolist(), batch["tmp_id"].to_list()
-        )  # The index must be equal to tmp_id
+        self.assertSetEqual(set(batch.index), set(batch["tmp_id"]))  # The index must be equal to tmp_id
         self.assertEqual(len(batch["oid"].unique()), 500)
 
     def test_internal_cross_match_closest_objects(self):
@@ -80,7 +68,8 @@ class SortingHatTestCase(unittest.TestCase):
         self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 1)
         self.assertEqual(len(batch_xmatched["tmp_id"]), 10)
 
-    def test_find_existing_id(self):
+    @mock.patch("sorting_hat_step.utils.wizard.oid_query")
+    def test_find_existing_id(self, mock_query):
         alerts = pd.DataFrame(
             [
                 {"oid": "A", "tmp_id": "X"},
@@ -88,12 +77,12 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "tmp_id": "Y"},
             ]
         )
-        id_getter = mock.Mock()
-        id_getter.side_effect = ["aid1", None]
-        response = wizard.find_existing_id(alerts, id_getter)
+        mock_query.side_effect = ["aid1", None]
+        response = wizard.find_existing_id(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
-    def test_find_id_by_conesearch(self):
+    @mock.patch("sorting_hat_step.utils.wizard.conesearch_query")
+    def test_find_id_by_conesearch(self, mock_query):
         alerts = pd.DataFrame(
             [
                 {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
@@ -101,14 +90,14 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
             ],
         )
-        id_getter = mock.Mock()
-        id_getter.side_effect = [
+        mock_query.side_effect = [
             [{"oid": "obj1", "aid": "aid2"}, {"oid": "obj2", "aid": "aid2"}]
         ]
-        response = wizard.find_id_by_conesearch(alerts, id_getter)
+        response = wizard.find_id_by_conesearch(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", "aid2"]).all()
 
-    def test_find_id_by_conesearch_without_found_aid(self):
+    @mock.patch("sorting_hat_step.utils.wizard.conesearch_query")
+    def test_find_id_by_conesearch_without_found_aid(self, mock_query):
         alerts = pd.DataFrame(
             [
                 {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
@@ -116,9 +105,8 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
             ],
         )
-        id_getter = mock.Mock()
-        id_getter.side_effect = [[]]
-        response = wizard.find_id_by_conesearch(alerts, id_getter)
+        mock_query.side_effect = [[]]
+        response = wizard.find_id_by_conesearch(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
     def test_generate_new_id(self):

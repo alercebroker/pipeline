@@ -106,44 +106,18 @@ def internal_cross_match(
     radius = RADIUS / 3600
     values = data[[ra_col, dec_col]].to_numpy()
     tree = cKDTree(values)
-    sdm = tree.sparse_distance_matrix(
-        tree, radius, output_type="coo_matrix"
-    )  # get sparse distance matrix
-    # Get the matrix representation -> rows x cols
-    matrix = sdm.toarray()
 
     # Put the index as a tmp_id
     data["tmp_id"] = data.index
     # Get unique object_ids
-    oids = data["oid"].unique()
-    for index, oid in enumerate(oids):  # join the same objects
-        indexes = data[data["oid"] == oid].index  # get all indexes of this oid
-        if (
-            len(indexes) > 1
-        ):  # if exists an oid with more than 1 occurrences put the same tmp_id
-            data.loc[indexes, "tmp_id"] = index
-            # for remove neighbors get the combination or all indexes of the same object
-            a, b = np.meshgrid(indexes, indexes, sparse=True)
-            # remove in adjacency matrix
-            matrix[a, b] = 0
-    while matrix.sum():  # while exists matches
-        matches = np.count_nonzero(matrix, axis=1)  # count of matches per node (row)
-        # get rows with max matches (can be more than 1)
-        max_matches = np.argwhere(matches == matches.max(axis=0)).flatten()
-        dist_matches = matrix[max_matches].sum(
-            axis=1
-        )  # compute sum of distance of each element in max_matches
-        min_dist = np.argmin(dist_matches)  # get index of min sum of distance
-        node = max_matches[
-            min_dist
-        ]  # chosen node: with most matches and the least distance
-        neighbours = matrix[node, :]  # get all neighbours of the node
-        neighbours_indexes = np.flatnonzero(neighbours)  # get indexes of the neighbours
-        data.loc[neighbours_indexes, "tmp_id"] = data["tmp_id"][
-            node
-        ]  # put tmp_id of the neighbours
-        matrix[neighbours_indexes, :] = 0  # turn off neighbours
-        matrix[:, neighbours_indexes] = 0
+    _, idx = np.unique(data["oid"], return_inverse=True)
+    data["tmp_id"] = data.index[idx]
+
+    # Sort all closest pairs to ensure idx of i increases after than j
+    close_pairs = sorted((_ for _ in tree.query_pairs(radius)), key=lambda x: x[0])
+    for i, j in close_pairs:
+        data.loc[j, "tmp_id"] = data["tmp_id"][i]
+
     return data
 
 

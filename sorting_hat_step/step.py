@@ -84,5 +84,5 @@ class SortingHatStep(GenericStep):
         alerts = wizard.find_existing_id(self.driver, alerts)
         alerts = wizard.find_id_by_conesearch(self.driver, alerts)
         alerts = wizard.generate_new_id(alerts)
-        alerts.drop(columns=["tmp_id"])
+        alerts.drop(columns=["tmp_id"], inplace=True)
         return alerts
