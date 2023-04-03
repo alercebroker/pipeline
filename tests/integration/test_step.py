@@ -23,25 +23,25 @@ def test_result_has_everything(
 
 
 def assert_result_has_prv_detections(message):
-    assert message["prv_detections"] is not None
-    if message["new_alert"]["tid"].lower() == "atlas":
-        assert len(message["prv_detections"]) == 0
+    assert message["detections"] is not None
+    if message["detections"][0]["tid"].lower() == "atlas":
+        assert len(message["detections"]) == 1
     else:
-        assert len(message["prv_detections"]) == 2
+        assert len(message["detections"]) == 3
 
 
 def assert_result_has_non_detections(message):
     assert message["non_detections"] is not None
-    if message["new_alert"]["tid"].lower() == "atlas":
+    if message["detections"][0]["tid"].lower() == "atlas":
         assert len(message["non_detections"]) == 0
     else:
         assert len(message["non_detections"]) == 2
 
 
 def assert_result_has_alert(message):
-    assert message["new_alert"] is not None
-    assert message["new_alert"].get("stamps") is None
-    assert message["new_alert"]["extra_fields"].get("prv_candidates") is None
+    assert message["detections"][0] is not None
+    assert message["detections"][0].get("stamps") is None
+    assert message["detections"][0]["extra_fields"].get("prv_candidates") is None
 
 
 def test_scribe_has_non_detections(kafka_service, env_variables, scribe_consumer):

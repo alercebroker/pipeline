@@ -8,83 +8,83 @@
       "type": "string"
     },
     {
-      "name": "new_alert",
-      "type": {
-        "type": "record",
-        "name": "alert",
-        "fields": [
-          {
-            "name": "oid",
-            "type": "string"
-          },
-          {
-            "name": "tid",
-            "type": "string"
-          },
-          {
-            "name": "pid",
-            "type": "long"
-          },
-          {
-            "name": "candid",
-            "type": ["long", "string"]
-          },
-          {
-            "name": "mjd",
-            "type": "double"
-          },
-          {
-            "name": "fid",
-            "type": "int"
-          },
-          {
-            "name": "ra",
-            "type": "double"
-          },
-          {
-            "name": "dec",
-            "type": "double"
-          },
-          {
-            "name": "mag",
-            "type": "float"
-          },
-          {
-            "name": "e_mag",
-            "type": "float"
-          },
-          {
-            "name": "isdiffpos",
-            "type": "int"
-          },
-          {
-            "name": "e_ra",
-            "type": "float"
-          },
-          {
-            "name": "e_dec",
-            "type": "float"
-          },
-          {
-            "name": "extra_fields",
-            "type": {
-              "default": {},
-              "type": "map",
-              "values": ["null", "int", "float", "string", "bytes"]
-            }
-          },
-          {
-            "name": "aid",
-            "type": "string"
-          }
-        ]
-      }
-    },
-    {
-      "name": "prv_detections",
+      "name": "detections",
       "type": {
         "type": "array",
-        "items": "alert",
+        "items": {
+          "type": "record",
+          "name": "detection",
+          "fields": [
+            {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "tid",
+              "type": "string"
+            },
+            {
+              "name": "pid",
+              "type": "long"
+            },
+            {
+              "name": "candid",
+              "type": ["long", "string"]
+            },
+            {
+              "name": "mjd",
+              "type": "double"
+            },
+            {
+              "name": "fid",
+              "type": "int"
+            },
+            {
+              "name": "ra",
+              "type": "double"
+            },
+            {
+              "name": "dec",
+              "type": "double"
+            },
+            {
+              "name": "mag",
+              "type": "float"
+            },
+            {
+              "name": "e_mag",
+              "type": "float"
+            },
+            {
+              "name": "isdiffpos",
+              "type": "int"
+            },
+            {
+              "name": "e_ra",
+              "type": "float"
+            },
+            {
+              "name": "e_dec",
+              "type": "float"
+            },
+            {
+              "name": "has_stamp",
+              "type": "boolean"
+            },
+            {
+              "name": "extra_fields",
+              "type": {
+                "default": {},
+                "type": "map",
+                "values": ["null", "int", "float", "string", "bytes"]
+              }
+            },
+            {
+              "name": "aid",
+              "type": "string"
+            }
+          ]
+        },
         "default": []
       }
     },

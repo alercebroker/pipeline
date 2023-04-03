@@ -52,27 +52,22 @@ class PrvCandidatesStep(GenericStep):
                 prv_detections[index], alert["oid"], alert["aid"], alert["candid"]
             )
             parsed_prv_detections = [
-                remove_keys_from_dictionary(prv, ["stamps", "rb", "rbversion"])
+                remove_keys_from_dictionary(prv, ["stamps"])
                 for prv in parsed_prv_detections
             ]
             parsed_non_detections = ztf_non_detections_parser.parse(
                 non_detections[index], alert["aid"], alert["tid"], alert["oid"]
             )
             # move fields to extra_fields before removing them
-            alert["extra_fields"]["rfid"] = alert["rfid"]
-            alert["extra_fields"]["rb"] = alert["rb"]
-            alert["extra_fields"]["rbversion"] = alert["rbversion"]
-            stampless_alert = remove_keys_from_dictionary(
-                alert, ["stamps", "rfid", "rb", "rbversion"]
-            )
+            stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
             stampless_alert["extra_fields"] = remove_keys_from_dictionary(
                 stampless_alert["extra_fields"], ["prv_candidates"]
             )
+            stampless_alert["has_stamp"] = True
             output.append(
                 {
                     "aid": alert["aid"],
-                    "new_alert": stampless_alert,
-                    "prv_detections": parsed_prv_detections,
+                    "detections": [stampless_alert, *parsed_prv_detections],
                     "non_detections": parsed_non_detections,
                 }
             )

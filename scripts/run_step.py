@@ -26,10 +26,10 @@ def step_creator():
     if settings["LOGGING_DEBUG"]:
         level = logging.DEBUG
 
-    prometheus_metrics = PrometheusMetrics()
-    if settings["USE_PROMETHEUS"]:
-        start_http_server(8000)
-    return PrvCandidatesStep(config=settings, level=level, prometheus_metrics=prometheus_metrics)
+    # prometheus_metrics = PrometheusMetrics()
+    # if settings["USE_PROMETHEUS"]:
+    #    start_http_server(8000)
+    return PrvCandidatesStep(config=settings, level=level)
 
 
 if __name__ == "__main__":
