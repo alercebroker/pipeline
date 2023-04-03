@@ -165,27 +165,17 @@ def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
         1   B      X     aid1   123   456
         2   C      Y     aid2   123   456
     """
-    alerts_copy = alerts.copy()
-    alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
-    if len(alerts_without_aid) == 0:
-        return alerts_copy
-
-    def _find_id_by_conesearch(data: pd.DataFrame):
-        first_alert = data.iloc[0]
-        ra = first_alert["ra"]
-        dec = first_alert["dec"]
-
-        near_objects = conesearch_query(db, ra, dec, RADIUS)
-        aid = None
-        if len(near_objects):
-            aid = near_objects[0]["aid"]
-        return pd.Series({"aid": aid})
-
-    tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_find_id_by_conesearch)
-    alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
-    alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
-    alerts_copy = alerts_copy.drop(columns=["aid_found"])
-    return alerts_copy
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        nearby = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
+        alerts_wo_aid.loc[group.index, "aid"] = nearby[0]["aid"] if nearby else None
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts
 
 
 def generate_new_id(alerts: pd.DataFrame):
@@ -205,21 +195,14 @@ def generate_new_id(alerts: pd.DataFrame):
         1   B      X     aid1   123   456
         2   C      Y     ALid   123   456
     """
-    alerts_copy = alerts.copy()
-    alerts_without_aid = alerts_copy[alerts_copy["aid"].isna()]
-    if len(alerts_without_aid) == 0:
-        return alerts_copy
-
-    def _generate_new_id(data: pd.DataFrame):
-        first_alert = data.iloc[0]
-        aid = id_generator(first_alert["ra"], first_alert["dec"])  # this is the long id
-        aid = encode(aid)  # this is the long id encoded to string id
-        year = time.strftime("%y")  # get year in short form. e.g: 21 means 2021
-        aid = f"AL{year}{aid}"  # put prefix of ALeRCE to string id. e.g: 'AL{year}{long_id}'
-        return pd.Series({"aid": aid})
-
-    tmp_id_aid = alerts_without_aid.groupby("tmp_id").apply(_generate_new_id)
-    alerts_copy = alerts_copy.join(tmp_id_aid, on="tmp_id", rsuffix="_found")
-    alerts_copy["aid"] = alerts_copy["aid"].fillna(alerts_copy["aid_found"])
-    alerts_copy = alerts_copy.drop(columns=["aid_found"])
-    return alerts_copy
+    alerts = alerts.copy()
+    if "aid" not in alerts:
+        alerts["aid"] = None
+    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    if not len(alerts_wo_aid.index):
+        return alerts
+    for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
+        id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
+        alerts_wo_aid.loc[group.index, "aid"] = f"AL{time.strftime('%y')}{encode(id_)}"
+    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alerts
