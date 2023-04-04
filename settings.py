@@ -10,12 +10,14 @@ from schema_old import SCHEMA
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
         "max.poll.interval.ms": 3600000,
     },
+    "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
@@ -169,6 +171,7 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
 # Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
     "STEP_METADATA": STEP_METADATA,

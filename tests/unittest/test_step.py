@@ -18,6 +18,19 @@ DB_CONFIG = {
     }
 }
 
+CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
+    "PARAMS": {
+        "bootstrap.servers": "server",
+        "group.id": "group_id",
+        "auto.offset.reset": "beginning",
+        "enable.partition.eof": False,
+    },
+    "TOPICS": ["topic"],
+    "consume.messages": "1",
+    "consume.timeout": "10",
+}
+
 PRODUCER_CONFIG = {
     "TOPIC": "test",
     "PARAMS": {
@@ -57,6 +70,7 @@ class StepXmatchTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         step_config = {
             "DB_CONFIG": DB_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "STEP_METADATA": {
                 "STEP_VERSION": "xmatch",
