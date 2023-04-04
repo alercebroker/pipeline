@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 
@@ -98,3 +100,34 @@ class Corrector:
         """
         corrected = self.corrected_dataframe().reset_index().to_dict("records")
         return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
+
+    @staticmethod
+    def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
+        return np.average(values, weights=weights)
+
+    @staticmethod
+    def weighted_error(weights: pd.Series) -> float:
+        return np.sqrt(1 / np.sum(weights))
+
+    @staticmethod
+    def arcsec2dec(values: pd.Series | float) -> pd.Series | float:
+        return values / 3600.0
+
+    @staticmethod
+    def dec2arcsec(values: pd.Series | float) -> pd.Series | float:
+        return values * 3600.0
+
+    def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
+        def _average(series):
+            return self.weighted_mean(series, weights.loc[series.index])
+
+        weights = 1 / self.arcsec2dec(self._detections[f"e_{label}"]) ** 2
+        return {f"mean{label}": self._detections.groupby("aid")[label].agg(_average)}
+
+    def coordinates_dataframe(self) -> pd.DataFrame:
+        coords = self._calculate_coordinates("ra")
+        coords.update(self._calculate_coordinates("dec"))
+        return pd.DataFrame(coords)
+
+    def coordinates_records(self) -> dict:
+        return self.coordinates_dataframe().to_dict("index")
