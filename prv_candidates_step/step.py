@@ -88,7 +88,8 @@ class PrvCandidatesStep(GenericStep):
                 "criteria": {
                     "oid": non_detection["oid"],
                     "fid": non_detection["fid"],
-                    "mjd": non_detection["mjd"]},
+                    "mjd": non_detection["mjd"],
+                },
                 "data": non_detection,
                 "options": {"upsert": True},
             }
