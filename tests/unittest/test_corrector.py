@@ -141,3 +141,33 @@ def test_corrected_records_restores_is_same_as_original_input_with_new_corrected
         for col in ALL_NEW_COLS:
             record.pop(col)
     assert records == detections
+
+
+def test_weighted_mean_with_equal_weights_is_same_as_ordinary_mean():
+    vals, weights = pd.Series([100, 200]), pd.Series([5, 5])
+    assert Corrector.weighted_mean(vals, weights) == 150
+
+
+def test_weighted_mean_with_a_zero_weight_value_does_not_consider_value_in_mean():
+    vals, weights = pd.Series([100, 200]), pd.Series([5, 0])
+    assert Corrector.weighted_mean(vals, weights) == 100
+
+
+def test_weighted_mean_with_an_almost_infinite_weight_value_is_mean_value():
+    vals, weights = pd.Series([100, 200]), pd.Series([1, 1e6])
+    assert np.isclose(Corrector.weighted_mean(vals, weights), 200)
+
+
+def test_weighted_mean_error_with_equal_weights_is_sqrt_variance_over_number_of_elements():
+    weights = pd.Series([4, 4])  # equivalent to 1/2 sigma for each
+    assert np.isclose(Corrector.weighted_error(weights), np.sqrt(0.5) / 2)
+
+
+def test_weighted_mean_error_with_a_zero_weight_value_does_not_consider_value_in_error():
+    weights = pd.Series([4, 0])
+    assert np.isclose(Corrector.weighted_error(weights), 0.5)
+
+
+def test_weighted_mean_error_with_an_almost_infinite_weight_value_is_only_value_in_error():
+    weights = pd.Series([1, 1e6])
+    assert np.isclose(Corrector.weighted_error(weights), 1e-3)
