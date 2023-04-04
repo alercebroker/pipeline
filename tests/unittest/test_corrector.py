@@ -193,3 +193,21 @@ def test_coordinates_dataframe_calculates_mean_for_each_aid():
 def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
     corrector = Corrector(detections)
     assert corrector.coordinates_dataframe().columns.isin(["meanra", "meandec"]).all()
+
+
+def test_coordinates_records_has_one_entry_per_aid():
+    corrector = Corrector(detections)
+    assert set(corrector.coordinates_records()) == {"AID1"}
+
+    altered_detections = deepcopy(detections)
+    altered_detections[0]["aid"] = "AID2"
+    corrector = Corrector(altered_detections)
+    assert set(corrector.coordinates_records()) == {"AID1", "AID2"}
+
+
+def test_coordinates_records_has_mean_ra_and_mean_dec_for_each_record():
+    altered_detections = deepcopy(detections)
+    altered_detections[0]["aid"] = "AID2"
+    corrector = Corrector(altered_detections)
+    for values in corrector.coordinates_records().values():
+        assert set(values) == {"meanra", "meandec"}
