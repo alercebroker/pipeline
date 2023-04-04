@@ -55,8 +55,8 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
     """Apply magnitude correction and compute its associated errors. See `README` for details"""
-    aux1 = 10 ** (-.4 * detections["magnr"].astype(float))
-    aux2 = 10 ** (-.4 * detections["mag"])
+    aux1 = 10 ** (-0.4 * detections["magnr"].astype(float))
+    aux2 = 10 ** (-0.4 * detections["mag"])
     aux3 = np.maximum(aux1 + detections["isdiffpos"] * aux2, 0.0)
     with warnings.catch_warnings():
         # possible log10 of 0; this is expected and returned inf is correct value

@@ -8,9 +8,10 @@ from . import strategy
 
 class Corrector:
     """Class for applying corrections to a list of detections"""
+
     # _EXTRA_FIELDS must include columns from all surveys that are needed in their respective strategy
     _EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr", "distpsnr1", "sgscore1", "sharpnr", "chinr"]
-    _ZERO_MAG = 100.  # Not really zero mag, but zero flux (very high magnitude)
+    _ZERO_MAG = 100.0  # Not really zero mag, but zero flux (very high magnitude)
 
     def __init__(self, detections: list[dict]):
         """Duplicate detections are dropped from all calculations and outputs."""

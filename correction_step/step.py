@@ -36,7 +36,15 @@ class CorrectionStep(GenericStep):
                 nd = non_detections.get_group(aid).to_dict("records")
             except KeyError:
                 nd = []
-            output.append({"aid": aid, "detections": dets.to_dict("records"), "non_detections": nd})
+            output.append(
+                {
+                    "aid": aid,
+                    "meanra": result["coords"][aid]["meanra"],
+                    "meandec": result["coords"][aid]["meandec"],
+                    "detections": dets.to_dict("records"),
+                    "non_detections": nd,
+                }
+            )
         return output
 
     @classmethod
@@ -51,9 +59,9 @@ class CorrectionStep(GenericStep):
     def execute(cls, message: dict) -> dict:
         corrector = Corrector(message["detections"])
         detections = corrector.corrected_records()
-        non_detections = pd.DataFrame(message["non_detections"])
-        non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
-        return {"detections": detections, "non_detections": non_detections.to_dict("records")}
+        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        coords = corrector.coordinates_records()
+        return {"detections": detections, "non_detections": non_detections.to_dict("records"), "coords": coords}
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["detections"])
