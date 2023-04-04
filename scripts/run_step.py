@@ -19,11 +19,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-
 from xmatch_step import XmatchStep
-from apf.consumers import KafkaConsumer as Consumer
 
-consumer = Consumer(config=CONSUMER_CONFIG)
-
-step = XmatchStep(consumer, config=STEP_CONFIG, level=level)
+step = XmatchStep(config=STEP_CONFIG, level=level)
 step.start()
