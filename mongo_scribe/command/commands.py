@@ -85,8 +85,6 @@ class UpdateCommand(Command):
         super()._check_inputs(collection, data, criteria)
         if not criteria:
             raise UpdateWithNoCriteriaException()
-        if "_id" not in criteria:
-            raise NoAlerceIdentificationProvidedException()
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
