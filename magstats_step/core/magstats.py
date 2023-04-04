@@ -25,7 +25,8 @@ class MagnitudeStatistics(BaseStatistics):
         functions = {f"mag{k}{suffix}": v for k, v in functions.items()}
 
         aggregated = grouped[f"mag{suffix}"].agg(**functions)
-        return aggregated["sigma"].fillna(0)  # pandas std gives NaN if there is only one sample
+        aggregated[f"magsigma{suffix}"].fillna(0, inplace=True)  # pandas std gives NaN if there is only one sample
+        return aggregated
 
     def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
@@ -52,8 +53,7 @@ class MagnitudeStatistics(BaseStatistics):
         return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first")})
 
     def calculate_ndet(self) -> pd.DataFrame:
-        # The column selected for ndet is irrelevant as long as it has no NaN values
-        return pd.DataFrame({"ndet": self._grouped_detections()["oid"].count()})
+        return super().calculate_ndet()
 
     def calculate_ndubious(self) -> pd.DataFrame:
         return pd.DataFrame({"ndubious": self._grouped_detections()["dubious"].sum()})
@@ -90,5 +90,5 @@ class MagnitudeStatistics(BaseStatistics):
         idx = self._group(results[results["dt"] > dt_min])["dmdt"].idxmin().dropna()
 
         # Drop NaN, since they result from no non-detection before first detection
-        results = results.dropna().loc[idx].set_index("fid")
+        results = results.dropna().loc[idx].set_index(self._JOIN)
         return results.rename(columns={c: f"{c}_first" for c in results.columns})

@@ -1,6 +1,6 @@
 import abc
 from functools import reduce
-from typing import Union, Literal, List, Set
+from typing import Union, Literal, List, Set, Tuple
 
 import pandas as pd
 from methodtools import lru_cache
@@ -10,8 +10,8 @@ from pandas.core.groupby import DataFrameGroupBy, SeriesGroupBy
 class BaseStatistics(abc.ABC):
     _JOIN: Union[str, List[str]]
     _PREFIX = "calculate_"
-    _CORRECTED = ["ZTF"]
-    _STELLAR = ["ZTF"]
+    _CORRECTED = ("ZTF",)
+    _STELLAR = ("ZTF",)
 
     def __init__(self, detections: List[dict]):
         self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"]).drop_duplicates("candid")
@@ -26,19 +26,19 @@ class BaseStatistics(abc.ABC):
         return self._detections["tid"].str.lower().str.startswith(survey.lower())
 
     @lru_cache(3)
-    def _surveys_mask(self, surveys: List[str] = None) -> pd.Series:
+    def _surveys_mask(self, surveys: Tuple[str] = None) -> pd.Series:
         if surveys is not None:
             return reduce(lambda l, r: l.__or__(r), [self._survey_mask(survey) for survey in surveys])
         return pd.Series(True, index=self._detections.index)
 
     @lru_cache(6)
-    def _select_detections(self, *, surveys: List[str] = None, corrected: bool = False) -> pd.Series:
+    def _select_detections(self, *, surveys: Tuple[str] = None, corrected: bool = False) -> pd.Series:
         mask = self._detections["corrected"] if corrected else pd.Series(True, index=self._detections.index)
         return self._detections[self._surveys_mask(surveys) & mask]
 
     @lru_cache(12)
     def _grouped_index(
-        self, *, which: Literal["first", "last"], surveys: List[str] = None, corrected: bool = False
+        self, *, which: Literal["first", "last"], surveys: Tuple[str] = None, corrected: bool = False
     ) -> pd.Series:
         if which == "first":
             function = "idxmin"
@@ -50,15 +50,18 @@ class BaseStatistics(abc.ABC):
 
     @lru_cache(36)
     def _grouped_value(
-        self, column: str, *, which: Literal["first", "last"], surveys: List[str] = None, corrected: bool = False
+        self, column: str, *, which: Literal["first", "last"], surveys: Tuple[str] = None, corrected: bool = False
     ) -> pd.Series:
         idx = self._grouped_index(which=which, surveys=surveys, corrected=corrected)
         df = self._select_detections(surveys=surveys, corrected=corrected)
         return df[column][idx].set_axis(idx.index)
 
     @lru_cache(6)
-    def _grouped_detections(self, *, surveys: List[str] = None, corrected: bool = False) -> DataFrameGroupBy:
+    def _grouped_detections(self, *, surveys: Tuple[str] = None, corrected: bool = False) -> DataFrameGroupBy:
         return self._group(self._select_detections(surveys=surveys, corrected=corrected))
+
+    def calculate_ndet(self) -> pd.DataFrame:
+        return pd.DataFrame({"ndet": self._detections.value_counts(subset=self._JOIN, sort=False)})
 
     def generate_statistics(self, exclude: Set[str] = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default

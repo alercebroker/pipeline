@@ -51,8 +51,7 @@ class ObjectStatistics(BaseStatistics):
         return self._calculate_coordinates("dec")
 
     def calculate_ndet(self) -> pd.DataFrame:
-        # The column selected for ndet is irrelevant as long as it has no NaN values
-        return pd.DataFrame({"ndet": self._grouped_detections()["oid"].count()})
+        return super().calculate_ndet()
 
     def calculate_firstmjd(self) -> pd.DataFrame:
         return pd.DataFrame({"firstmjd": self._grouped_value("mjd", which="first")})
