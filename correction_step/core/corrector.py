@@ -6,20 +6,20 @@ from . import strategy
 
 class Corrector:
     """Class for applying corrections to a list of detections"""
+    # _EXTRA_FIELDS must include columns from all surveys that are needed in their respective strategy
+    _EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr", "distpsnr1", "sgscore1", "sharpnr", "chinr"]
     _ZERO_MAG = 100.  # Not really zero mag, but zero flux (very high magnitude)
 
     def __init__(self, detections: list[dict]):
-        """Will remove duplicate `candid`s in detection list, preferring to keep always those with stamps"""
-        self.__extra_fields = {alert["candid"]: alert["extra_fields"] for alert in detections}
-        extras_df = pd.DataFrame.from_dict(self.__extra_fields, orient="index")
-        detections_df = pd.DataFrame.from_records(detections, exclude={"extra_fields"}, index="candid")
+        """Duplicate detections are dropped from all calculations and outputs."""
+        self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
+        self._detections = self._detections.drop_duplicates("candid").set_index("candid")
 
-        # Remove duplicate detections by candid, always keeping those with stamps
-        self._detections = detections_df.join(extras_df).sort_values("has_stamp", ascending=False)
-        self._detections = self._detections[~self._detections.index.duplicated(keep="first")]
+        self.__extras = {alert["candid"]: alert["extra_fields"] for alert in detections}
+        extras = pd.DataFrame.from_dict(self.__extras, orient="index", columns=self._EXTRA_FIELDS)
+        extras = extras.reset_index(names=["candid"]).drop_duplicates("candid").set_index("candid")
 
-        # Used only for output formatting
-        self.__extra_columns = extras_df.columns
+        self._detections = self._detections.join(extras)
 
     def _survey_mask(self, survey: str):
         """Creates boolean mask of detections whose `tid` starts with given survey name (case-insensitive)
@@ -88,7 +88,7 @@ class Corrector:
         corrected = self._correct().replace(np.inf, self._ZERO_MAG)
         corrected[~self.corrected] = np.nan
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
-        return self._detections.join(corrected).replace(np.nan, None).drop(columns=self.__extra_columns)
+        return self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
 
     def corrected_records(self) -> list[dict]:
         """Corrected alerts as records.
@@ -97,4 +97,4 @@ class Corrector:
         the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
         """
         corrected = self.corrected_dataframe().reset_index().to_dict("records")
-        return [{**record, "extra_fields": self.__extra_fields[record["candid"]]} for record in corrected]
+        return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
