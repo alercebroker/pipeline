@@ -13,7 +13,7 @@ The command must be formatted as follows:
 {
     "collection": "name",
     "type": "insert",
-    "criteria": {"_id": "value", ...},
+    "criteria": {"field": "value", ...},
     "data": {"field": "value", ...},
     "options": {"upsert": true}
 }
@@ -35,7 +35,7 @@ The command must be formatted as follows:
   * `"object"`
   * `"detections"`
   * `"non_detections"`
-- Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in respective database. This must include an `_id` match.
+- Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in the respective collection.
 - The supported options are `"upsert"` and `"set_on_insert"`. These are ignored by the `"insert"` type.
   * `"upsert"` will add a new document with the updated data if one doesn't exist
   * `"set_on_insert"` will only add the new document (or new set of probabilities) if it doesn't exist, without modifying the existing one
