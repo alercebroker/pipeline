@@ -9,26 +9,27 @@ includes the previous detections coming from the ZTF alerts.
 
 The correction for ZTF is as follows:
 
-$$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\, 10^{-0.4 m_\mathrm{diff}}\right)$$
+$$m_\mathrm{corr} = -2.5 \log_{10}\left(10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}\right)$$
 
 For the error, the following is used:
 
-$$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathrm{diff}^2 - 10^{-0.8 m_\mathrm{ref}} \delta m_\mathrm{ref}^2}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\, 10^{-0.4 m_\mathrm{diff}}}$$
+$$\delta m_\mathrm{corr} = \frac{\sqrt{10^{-0.8 m_\mathrm{diff}} \delta m_\mathrm{diff}^2 - 10^{-0.8 m_\mathrm{ref}} \delta m_\mathrm{ref}^2}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}}$$
 
 An additional error, for extended sources, is also calculated:
-$$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn}\, 10^{-0.4 m_\mathrm{diff}}}$$
+$$\delta m_\mathrm{corr} = \frac{10^{-0.4 m_\mathrm{diff}} \delta m_\mathrm{diff}}{10^{-0.4 m_\mathrm{ref}} + \mathrm{sgn} 10^{-0.4 m_\mathrm{diff}}}$$
 
 ### Others
 
-Presently, there are no correction strategies for any other surveys, but they are supported.
+Presently, there are no correction strategies for any other surveys.
 
 Any other survey will get the correction fields added, but filled with `null` values.
 
 #### Previous step:
-- [Previous candidates](https://github.com/alercebroker/prv_candidates_step)
+- [Light curve](https://github.com/alercebroker/lightcurve-step)
 
 #### Next step:
-- [Light curve](https://github.com/alercebroker/lightcurve-step)
+- [Magnitude statistics](https://github.com/alercebroker/magstats_step)
+- [Cross-match](https://github.com/alercebroker/xmatch_step)
 
 ## Environment variables
 

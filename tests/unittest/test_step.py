@@ -9,20 +9,17 @@ from tests.utils import ztf_alert, atlas_alert, non_detection
 messages = [
     {
         "aid": "AID1",
-        "new_alert": ztf_alert(candid="a"),
-        "prv_detections": [ztf_alert(candid="b")],
+        "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False)],
         "non_detections": []
     },
     {
         "aid": "AID2",
-        "new_alert": ztf_alert(aid="AID2", candid="c"),
-        "prv_detections": [ztf_alert(aid="AID2", candid="d")],
+        "detections": [ztf_alert(aid="AID2", candid="c"), ztf_alert(aid="AID2", candid="d", has_stamp=False)],
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)]
     },
     {
         "aid": "AID3",
-        "new_alert": atlas_alert(aid="AID3", candid="e"),
-        "prv_detections": [],
+        "detections": [atlas_alert(aid="AID3", candid="e")],
         "non_detections": []
     },
 ]
