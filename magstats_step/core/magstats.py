@@ -21,14 +21,13 @@ class MagnitudeStatistics(BaseStatistics):
         suffix = "_corr" if corrected else ""
 
         grouped = self._grouped_detections(corrected=corrected)
-        functions = {"mean": "mean", "median": "median", "max": "max", "min": "min", "std": "sigma"}
+        functions = {"mean": "mean", "median": "median", "max": "max", "min": "min", "sigma": "std"}
+        functions = {f"mag{k}{suffix}": v for k, v in functions.items()}
 
-        aggregated = grouped[f"mag{suffix}"].agg(list(functions.keys()))
-        if "std" in functions:  # pandas std gives NaN if only one sample
-            aggregated["std"].fillna(0, inplace=True)
-        return aggregated.rename(columns={k: f"mag{v}{suffix}" for k, v in functions.items()})
+        aggregated = grouped[f"mag{suffix}"].agg(**functions)
+        return aggregated["sigma"].fillna(0)  # pandas std gives NaN if there is only one sample
 
-    def _calculate_stats_over_time(self, corrected: bool = False):
+    def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
         first_mag = self._grouped_value(f"mag{suffix}", which="first", corrected=corrected)
         last_mag = self._grouped_value(f"mag{suffix}", which="last", corrected=corrected)
