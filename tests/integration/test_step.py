@@ -16,13 +16,17 @@ def test_result_has_everything(
 
     step_creator().start()
     for message in kafka_consumer.consume():
+        assert "aid" in message
+        assert "detections" in message
+        assert "non_detections" in message
+        assert "meanra" in message
+        assert "meandec" in message
         assert_result_has_correction_fields(message)
         kafka_consumer.commit()
 
 
 def assert_result_has_correction_fields(message):
     fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "has_stamp", "corrected", "stellar"]
-    assert "detections" in message
     assert all(all(f in det for f in fields) for det in message["detections"])
 
 
