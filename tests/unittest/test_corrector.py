@@ -113,7 +113,7 @@ def test_correct_is_nan_for_surveys_without_strategy():
 
 def test_corrected_dataframe_has_generic_columns_and_new_ones_from_corrected():
     corrector = Corrector(detections)
-    generic = ["aid", "oid", "tid", "fid", "mjd", "has_stamp", "isdiffpos", "mag", "e_mag"]
+    generic = ["aid", "oid", "tid", "fid", "mjd", "has_stamp", "isdiffpos", "mag", "e_mag", "ra", "e_ra", "dec", "e_dec"]
     new_columns = ALL_NEW_COLS
     assert (corrector.corrected_dataframe().columns.isin(generic + new_columns)).all()
 
@@ -148,26 +148,48 @@ def test_weighted_mean_with_equal_weights_is_same_as_ordinary_mean():
     assert Corrector.weighted_mean(vals, weights) == 150
 
 
-def test_weighted_mean_with_a_zero_weight_value_does_not_consider_value_in_mean():
+def test_weighted_mean_with_a_zero_weight_does_not_consider_its_value_in_mean():
     vals, weights = pd.Series([100, 200]), pd.Series([5, 0])
     assert Corrector.weighted_mean(vals, weights) == 100
 
 
-def test_weighted_mean_with_an_almost_infinite_weight_value_is_mean_value():
+def test_weighted_mean_with_an_almost_infinite_weight_only_considers_its_value_in_mean():
     vals, weights = pd.Series([100, 200]), pd.Series([1, 1e6])
     assert np.isclose(Corrector.weighted_mean(vals, weights), 200)
 
 
-def test_weighted_mean_error_with_equal_weights_is_sqrt_variance_over_number_of_elements():
-    weights = pd.Series([4, 4])  # equivalent to 1/2 sigma for each
-    assert np.isclose(Corrector.weighted_error(weights), np.sqrt(0.5) / 2)
+def test_arcsec2deg_applies_proper_conversion():
+    assert np.isclose(Corrector.arcsec2dec(1), 1 / 3600)
 
 
-def test_weighted_mean_error_with_a_zero_weight_value_does_not_consider_value_in_error():
-    weights = pd.Series([4, 0])
-    assert np.isclose(Corrector.weighted_error(weights), 0.5)
+def test_calculate_coordinates_with_equal_weights_is_same_as_ordinary_mean():
+    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=5)]
+    corrector = Corrector(wdetections)
+    assert corrector._calculate_coordinates("ra")["meanra"].loc["AID1"] == 150
 
 
-def test_weighted_mean_error_with_an_almost_infinite_weight_value_is_only_value_in_error():
-    weights = pd.Series([1, 1e6])
-    assert np.isclose(Corrector.weighted_error(weights), 1e-3)
+def test_calculate_coordinates_with_a_very_high_error_does_not_consider_its_value_in_mean():
+    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=1e6)]
+    corrector = Corrector(wdetections)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 100)
+
+
+def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value_in_mean():
+    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=1e-6)]
+    corrector = Corrector(wdetections)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 200)
+
+
+def test_coordinates_dataframe_calculates_mean_for_each_aid():
+    corrector = Corrector(detections)
+    assert corrector.coordinates_dataframe().index == ["AID1"]
+
+    altered_detections = deepcopy(detections)
+    altered_detections[0]["aid"] = "AID2"
+    corrector = Corrector(altered_detections)
+    assert corrector.coordinates_dataframe().index.isin(["AID1", "AID2"]).all()
+
+
+def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
+    corrector = Corrector(detections)
+    assert corrector.coordinates_dataframe().columns.isin(["meanra", "meandec"]).all()

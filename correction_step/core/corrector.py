@@ -107,16 +107,8 @@ class Corrector:
         return np.average(values, weights=weights)
 
     @staticmethod
-    def weighted_error(weights: pd.Series) -> float:
-        return np.sqrt(1 / np.sum(weights))
-
-    @staticmethod
     def arcsec2dec(values: pd.Series | float) -> pd.Series | float:
         return values / 3600.0
-
-    @staticmethod
-    def dec2arcsec(values: pd.Series | float) -> pd.Series | float:
-        return values * 3600.0
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
         def _average(series):
