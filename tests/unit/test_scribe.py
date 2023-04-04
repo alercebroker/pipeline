@@ -51,7 +51,7 @@ def test_post_execute(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"_id": step._generate_id(non_detection)},
+        "criteria": {"oid": non_detection["oid"], "fid": non_detection["fid"], "mjd": non_detection["mjd"]},
         "data": non_detection,
         "options": {"upsert": True},
     }
