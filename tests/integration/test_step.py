@@ -59,7 +59,9 @@ def assert_scribe_has_non_detections(message):
     data = json.loads(message["payload"])
     assert data["collection"] == "non_detection"
     assert data["type"] == "update"
-    assert data["criteria"]["_id"] is not None
+    assert "oid" in data["criteria"]
+    assert "fid" in data["criteria"]
+    assert "mjd" in data["criteria"]
     assert len(data["data"]) > 0
 
 
