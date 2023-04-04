@@ -1,11 +1,19 @@
 {
   "type": "record",
-  "doc": "Previous candidates schema with new alert and previous detections and non detections",
-  "name": "prv_candidates",
+  "doc": "Correction step schema with corrected magnitudes for detections and mean RA/Dec for each object",
+  "name": "correction",
   "fields": [
     {
       "name": "aid",
       "type": "string"
+    },
+    {
+      "name": "meanra",
+      "type": "float"
+    },
+    {
+      "name": "meandec",
+      "type": "float"
     },
     {
       "name": "detections",
