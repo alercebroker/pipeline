@@ -1,6 +1,5 @@
 import json
 import logging
-import uuid
 from typing import List
 
 from apf.core import get_class
@@ -86,18 +85,12 @@ class PrvCandidatesStep(GenericStep):
             scribe_data = {
                 "collection": "non_detection",
                 "type": "update",
-                "criteria": {"_id": self._generate_id(non_detection)},
+                "criteria": {
+                    "oid": non_detection["oid"],
+                    "fid": non_detection["fid"],
+                    "mjd": non_detection["mjd"]},
                 "data": non_detection,
                 "options": {"upsert": True},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
             self.scribe_producer.produce(scribe_payload)
-
-    @staticmethod
-    def _generate_id(non_detection):
-        keys = ["oid", "fid", "mjd"]
-
-        source = {k: v for k, v in non_detection.items() if k in keys}
-        assert all(k in keys for k in source)
-
-        return uuid.uuid5(uuid.NAMESPACE_URL, json.dumps(source)).hex
