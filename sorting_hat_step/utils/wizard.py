@@ -174,8 +174,9 @@ def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
     if not len(alerts_wo_aid.index):
         return alerts
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
-        nearby = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
-        alerts_wo_aid.loc[group.index, "aid"] = nearby[0]["aid"] if nearby else None
+        alerts_wo_aid.loc[group.index, "aid"] = conesearch_query(
+            db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS
+        )
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
