@@ -70,7 +70,7 @@ class PrvCandidatesStep(GenericStep):
                 stampless_alert["extra_fields"] = remove_keys_from_dictionary(
                     stampless_alert["extra_fields"], ["prv_candidates"]
                 )
-                
+
             if stampless_alert["tid"].lower().startswith("ztf"):
                 stampless_alert["extra_fields"]["parent_candid"] = None
 
