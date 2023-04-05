@@ -7,8 +7,6 @@ from apf.core.step import GenericStep
 
 from .core.candidates.process_prv_candidates import process_prv_candidates
 from .core.utils.remove_keys import remove_keys_from_dictionary
-from .core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
-from .core.processor.processor import Processor
 from .core import ZTFPreviousDetectionsParser, ZTFNonDetectionsParser
 
 
@@ -28,9 +26,6 @@ class PrvCandidatesStep(GenericStep):
         **step_args,
     ):
         super().__init__(config=config, level=level, **step_args)
-        self.prv_candidates_processor = Processor(
-            ZTFPrvCandidatesStrategy()
-        )  # initial strategy (can change)
         producer_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = producer_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
@@ -38,33 +33,47 @@ class PrvCandidatesStep(GenericStep):
         self.set_producer_key_field("aid")
         return result
 
+    def _get_parsers(self, survey: str):
+        if survey.lower().startswith("ztf"):
+            return ZTFPreviousDetectionsParser(), ZTFNonDetectionsParser()
+
+        return None, None
+
     def execute(self, messages):
         self.logger.info("Processing %s alerts", str(len(messages)))
-        prv_detections, non_detections = process_prv_candidates(
-            self.prv_candidates_processor, messages
-        )
+        prv_detections, non_detections = process_prv_candidates(messages)
         output = []
         for index, alert in enumerate(messages):
-            ztf_prv_detections_parser = ZTFPreviousDetectionsParser()
-            ztf_non_detections_parser = ZTFNonDetectionsParser()
-            parsed_prv_detections = ztf_prv_detections_parser.parse(
-                prv_detections[index], alert["oid"], alert["aid"], alert["candid"]
+            prv_detections_parser, non_detections_parser = self._get_parsers(
+                alert["tid"]
             )
-            parsed_prv_detections = [
-                remove_keys_from_dictionary(prv, ["stamps"])
-                for prv in parsed_prv_detections
-            ]
-            parsed_non_detections = ztf_non_detections_parser.parse(
-                non_detections[index], alert["aid"], alert["tid"], alert["oid"]
-            )
-            # move fields to extra_fields before removing them
+
             stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
-            stampless_alert["extra_fields"] = remove_keys_from_dictionary(
-                stampless_alert["extra_fields"], ["prv_candidates"]
-            )
             stampless_alert["has_stamp"] = True
+
+            if prv_detections_parser is None:
+                parsed_prv_detections = []
+                parsed_non_detections = []
+
+            else:
+                parsed_prv_detections = prv_detections_parser.parse(
+                    prv_detections[index], alert["oid"], alert["aid"], alert["candid"]
+                )
+                parsed_prv_detections = [
+                    remove_keys_from_dictionary(prv, ["stamps"])
+                    for prv in parsed_prv_detections
+                ]
+                parsed_non_detections = non_detections_parser.parse(
+                    non_detections[index], alert["aid"], alert["tid"], alert["oid"]
+                )
+                # move fields to extra_fields before removing them
+                stampless_alert["extra_fields"] = remove_keys_from_dictionary(
+                    stampless_alert["extra_fields"], ["prv_candidates"]
+                )
+
             if stampless_alert["tid"].lower().startswith("ztf"):
                 stampless_alert["extra_fields"]["parent_candid"] = None
+
             output.append(
                 {
                     "aid": alert["aid"],
