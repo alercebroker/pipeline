@@ -90,9 +90,7 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
             ],
         )
-        mock_query.side_effect = [
-            [{"oid": "obj1", "aid": "aid2"}, {"oid": "obj2", "aid": "aid2"}]
-        ]
+        mock_query.side_effect = ["aid2", "aid2"]
         response = wizard.find_id_by_conesearch(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", "aid2"]).all()
 
@@ -105,7 +103,7 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
             ],
         )
-        mock_query.side_effect = [[]]
+        mock_query.side_effect = [None]
         response = wizard.find_id_by_conesearch(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
