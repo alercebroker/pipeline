@@ -1,11 +1,10 @@
 from typing import Tuple, List
-from prv_candidates_step.core.processor.processor import Processor
 from prv_candidates_step.core.strategy.atlas_strategy import ATLASPrvCandidatesStrategy
 from prv_candidates_step.core.strategy.ztf_strategy import ZTFPrvCandidatesStrategy
 
 
 def process_prv_candidates(
-    processor: Processor, alerts: List[dict]
+    alerts: List[dict],
 ) -> Tuple[List[List[dict]], List[List[dict]]]:
     """Separate previous candidates from alerts.
 
@@ -15,17 +14,22 @@ def process_prv_candidates(
     ----------
     nalerts: list
         a list of alerts as they come from kafka. Same as messages argument for step.execute
-    processor: Processor
-        context for the strategy pattern, where strategies are for atlas and ztf prv_candidates processes
     """
+    strategy = None
+
     prv_detections = []
     non_detections = []
     for alert in alerts:
-        if alert["tid"].lower() == "ztf":
-            processor.strategy = ZTFPrvCandidatesStrategy()
+        survey = alert["tid"]
+        if survey.lower().startswith("ztf"):
+            strategy = ZTFPrvCandidatesStrategy()
+        elif survey.lower().startswith("atlas"):
+            strategy = ATLASPrvCandidatesStrategy()
         else:
-            processor.strategy = ATLASPrvCandidatesStrategy()
-        alert_prv_detections, alert_non_detections = processor.compute(alert)
+            raise ValueError(f"Not recognized survey: {survey}")
+        alert_prv_detections, alert_non_detections = strategy.process_prv_candidates(
+            alert
+        )
         prv_detections.append(alert_prv_detections)
         non_detections.append(alert_non_detections)
     return prv_detections, non_detections
