@@ -24,9 +24,8 @@ class MagnitudeStatistics(BaseStatistics):
         functions = {"mean": "mean", "median": "median", "max": "max", "min": "min", "sigma": "std"}
         functions = {f"mag{k}{suffix}": v for k, v in functions.items()}
 
-        aggregated = grouped[f"mag{suffix}"].agg(**functions)
-        aggregated[f"magsigma{suffix}"].fillna(0, inplace=True)  # pandas std gives NaN if there is only one sample
-        return aggregated
+        # fillna handles cases where there's one detection. Pandas std returns NaN in those cases
+        return grouped[f"mag{suffix}"].agg(**functions).fillna(0)
 
     def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
