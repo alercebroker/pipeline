@@ -2,10 +2,8 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal, assert_frame_equal
+from pandas.testing import assert_series_equal
 from magstats_step.core import ObjectStatistics
-
-from data.messages import data
 
 
 def test_arcsec_to_degree_conversion():
@@ -129,6 +127,20 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
             assert_series_equal(err, pd.Series([4 / 3600], index=pd.Index(["c"], name="candid"), name="e_dec"))
 
 
+def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
+    detections = [
+        {"aid": "AID1", "candid": "a", "extra": "A"},
+        {"aid": "AID2", "candid": "c", "extra": "A"},
+        {"aid": "AID1", "candid": "b", "extra": "A"},
+        {"aid": "AID1", "candid": "d", "extra": "B"},
+    ]
+    calculator = ObjectStatistics(detections)
+    result = calculator._calculate_unique("extra")
+
+    assert "extra" in result
+    assert_series_equal(result["extra"], pd.Series([["A", "B"], ["A"]], index=pd.Index(["AID1", "AID2"], name="aid"), name="extra"))
+
+
 def test_calculate_ra_uses_calculate_coordinates():
     detections = [{"candid": "a"}]
     calculator = ObjectStatistics(detections)
@@ -147,6 +159,20 @@ def test_calculate_dec_uses_calculate_coordinates():
     calculator.calculate_dec()
 
     calculator._calculate_coordinates.assert_called_once_with("dec")
+
+
+def test_calculate_ndet_gives_number_of_detections_per_aid():
+    detections = [
+        {"aid": "AID1", "candid": "a"},
+        {"aid": "AID2", "candid": "c"},
+        {"aid": "AID1", "candid": "b"},
+        {"aid": "AID1", "candid": "d"},
+    ]
+    calculator = ObjectStatistics(detections)
+    result = calculator.calculate_ndet()
+
+    assert "ndet" in result
+    assert_series_equal(result["ndet"], pd.Series([3, 1], index=pd.Index(["AID1", "AID2"], name="aid"), name="ndet"))
 
 
 def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
@@ -177,13 +203,55 @@ def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
     assert_series_equal(result["lastmjd"], pd.Series([3, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="lastmjd"))
 
 
-def test_calculate_ndet_gives_number_of_detections_per_aid():
-    calculator = ObjectStatistics(data[0]["detections"])
-    result = calculator.calculate_ndet()
+def test_calculate_oid_uses_calculate_unique_with_oid():
+    detections = [{"candid": "a"}]
+    calculator = ObjectStatistics(detections)
 
-    sums = {}
-    for det in data[0]["detections"]:
-        sums[det["aid"]] = 1 if det["aid"] not in sums else sums[det["aid"]] + 1
+    calculator._calculate_unique = mock.Mock()
+    calculator.calculate_oid()
 
-    assert "ndet" in result
-    assert (result["ndet"] == list(sums.values())).all()
+    calculator._calculate_unique.assert_called_once_with("oid")
+
+
+def test_calculate_tid_uses_calculate_unique_with_tid():
+    detections = [{"candid": "a"}]
+    calculator = ObjectStatistics(detections)
+
+    calculator._calculate_unique = mock.Mock()
+    calculator.calculate_tid()
+
+    calculator._calculate_unique.assert_called_once_with("tid")
+
+
+def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
+    detections = [
+        {"aid": "AID1", "tid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a"},  # Should ignore
+        {"aid": "AID1", "tid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b"},  # True for AID1
+        {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c"},
+        {"aid": "AID2", "tid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d"},  # Should ignore
+        {"aid": "AID3", "tid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e"},  # False for AID3
+        {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f"},
+    ]
+    calculator = ObjectStatistics(detections)
+    calculator._CORRECTED = ("SURVEY",)
+    result = calculator.calculate_corrected()
+
+    assert "corrected" in result
+    assert_series_equal(result["corrected"], pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="corrected"))
+
+
+def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
+    detections = [
+        {"aid": "AID1", "tid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a"},  # Should ignore
+        {"aid": "AID1", "tid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b"},  # True for AID1
+        {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c"},
+        {"aid": "AID2", "tid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d"},  # Should ignore
+        {"aid": "AID3", "tid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e"},  # False for AID3
+        {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f"},
+    ]
+    calculator = ObjectStatistics(detections)
+    calculator._STELLAR = ("SURVEY",)
+    result = calculator.calculate_stellar()
+
+    assert "stellar" in result
+    assert_series_equal(result["stellar"], pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"))
