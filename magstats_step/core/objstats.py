@@ -13,31 +13,35 @@ class ObjectStatistics(BaseStatistics):
         super().__init__(detections)
 
     @staticmethod
-    def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
-        return np.average(values, weights=weights)
+    def _compute_weights(sigmas: pd.Series) -> pd.Series:
+        return sigmas.astype(float) ** -2  # Integers cannot be raised to negative powers
+
+    @classmethod
+    def _weighted_mean(cls, values: pd.Series, sigmas: pd.Series) -> float:
+        return np.average(values, weights=cls._compute_weights(sigmas))
+
+    @classmethod
+    def _weighted_mean_error(cls, sigmas: pd.Series) -> float:
+        return np.sqrt(1 / np.sum(cls._compute_weights(sigmas)))
 
     @staticmethod
-    def weighted_error(weights: pd.Series) -> float:
-        return np.sqrt(1 / np.sum(weights))
-
-    @staticmethod
-    def arcsec2dec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+    def _arcsec2dec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
         return values / 3600.0
 
     @staticmethod
-    def dec2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+    def _dec2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
         return values * 3600.0
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> pd.DataFrame:
         def _average(series):
-            return self.weighted_mean(series, weights.loc[series.index])
+            return self._weighted_mean(series, sigmas.loc[series.index])
 
-        weights = 1 / self.arcsec2dec(self._detections[f"e_{label}"]) ** 2
-        weights_by_aid = weights.set_axis(self._detections["aid"])
+        sigmas = self._arcsec2dec(self._detections[f"e_{label}"])
+        grouped_sigmas = self._group(sigmas.set_axis(self._detections["aid"]))
         return pd.DataFrame(
             {
                 f"mean{label}": self._grouped_detections()[label].agg(_average),
-                f"sigma{label}": self.dec2arcsec(self._group(weights_by_aid).agg(self.weighted_error)),
+                f"sigma{label}": self._dec2arcsec(grouped_sigmas.agg(self._weighted_mean_error)),
             }
         )
 
