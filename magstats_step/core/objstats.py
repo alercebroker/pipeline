@@ -13,7 +13,15 @@ class ObjectStatistics(BaseStatistics):
         super().__init__(detections)
 
     @staticmethod
-    def _compute_weights(sigmas: pd.Series) -> pd.Series:
+    def _arcsec2deg(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+        return values / 3600.0
+
+    @staticmethod
+    def _deg2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+        return values * 3600.0
+
+    @staticmethod
+    def _compute_weights(sigmas: Union[pd.Series, float]) -> Union[pd.Series, float]:
         return sigmas.astype(float) ** -2  # Integers cannot be raised to negative powers
 
     @classmethod
@@ -24,24 +32,16 @@ class ObjectStatistics(BaseStatistics):
     def _weighted_mean_error(cls, sigmas: pd.Series) -> float:
         return np.sqrt(1 / np.sum(cls._compute_weights(sigmas)))
 
-    @staticmethod
-    def _arcsec2dec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values / 3600.0
-
-    @staticmethod
-    def _dec2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return values * 3600.0
-
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> pd.DataFrame:
-        def _average(series):
+        def average(series):  # Needs wrapper to use the sigmas in the agg call
             return self._weighted_mean(series, sigmas.loc[series.index])
 
-        sigmas = self._arcsec2dec(self._detections[f"e_{label}"])
+        sigmas = self._arcsec2deg(self._detections[f"e_{label}"])
         grouped_sigmas = self._group(sigmas.set_axis(self._detections["aid"]))
         return pd.DataFrame(
             {
-                f"mean{label}": self._grouped_detections()[label].agg(_average),
-                f"sigma{label}": self._dec2arcsec(grouped_sigmas.agg(self._weighted_mean_error)),
+                f"mean{label}": self._grouped_detections()[label].agg(average),
+                f"sigma{label}": self._deg2arcsec(grouped_sigmas.agg(self._weighted_mean_error)),
             }
         )
 

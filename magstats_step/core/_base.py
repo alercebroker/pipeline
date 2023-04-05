@@ -14,8 +14,11 @@ class BaseStatistics(abc.ABC):
     _STELLAR = ("ZTF",)
 
     def __init__(self, detections: List[dict]):
-        self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"]).drop_duplicates("candid")
-        self._detections.set_index("candid", inplace=True)
+        try:
+            self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"])
+        except KeyError:  # extra_fields is not present
+            self._detections = pd.DataFrame.from_records(detections)
+        self._detections = self._detections.drop_duplicates("candid").set_index("candid")
 
     @classmethod
     def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
