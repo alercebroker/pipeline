@@ -10,7 +10,7 @@ class MagnitudeStatistics(BaseStatistics):
     _JOIN = ["aid", "fid"]
     MAGNITUDE_THRESHOLD = 13.2
 
-    def __init__(self, detections: List[dict], non_detections: List[dict]):
+    def __init__(self, detections: List[dict], non_detections: List[dict] = None):
         super().__init__(detections)
         if non_detections:
             self._non_detections = pd.DataFrame.from_records(non_detections).drop_duplicates(["oid", "fid", "mjd"])
@@ -19,21 +19,25 @@ class MagnitudeStatistics(BaseStatistics):
 
     def _calculate_stats(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
+        in_label, out_label = f"mag{suffix}", f"mag{{}}{suffix}"
 
         grouped = self._grouped_detections(corrected=corrected)
-        functions = {"mean": "mean", "median": "median", "max": "max", "min": "min", "sigma": "std"}
-        functions = {f"mag{k}{suffix}": v for k, v in functions.items()}
+        functions = {"mean", "median", "max", "min"}
+        functions = {out_label.format(func): func for func in functions}
 
-        # fillna handles cases where there's one detection. Pandas std returns NaN in those cases
-        return grouped[f"mag{suffix}"].agg(**functions).fillna(0)
+        stats = grouped[in_label].agg(**functions)
+        # Pandas std requires additional kwarg, that's why it needs to be added apart
+        return stats.join(grouped[in_label].agg("std", ddof=0).rename(out_label.format("sigma")))
 
     def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
-        first_mag = self._grouped_value(f"mag{suffix}", which="first", corrected=corrected)
-        last_mag = self._grouped_value(f"mag{suffix}", which="last", corrected=corrected)
-        return pd.DataFrame({f"magfirst{suffix}": first_mag, f"maglast{suffix}": last_mag})
+        in_label, out_label = f"mag{suffix}", f"mag{{}}{suffix}"
 
-    def calculate_stats(self) -> pd.DataFrame:
+        first = self._grouped_value(in_label, which="first", corrected=corrected)
+        last = self._grouped_value(in_label, which="last", corrected=corrected)
+        return pd.DataFrame({out_label.format("first"): first, out_label.format("last"): last})
+
+    def calculate_statistics(self) -> pd.DataFrame:
         stats = self._calculate_stats(corrected=False)
         stats = stats.join(self._calculate_stats_over_time(corrected=False))
         stats = stats.join(self._calculate_stats(corrected=True))
