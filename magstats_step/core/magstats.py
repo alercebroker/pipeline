@@ -8,7 +8,8 @@ from ._base import BaseStatistics
 
 class MagnitudeStatistics(BaseStatistics):
     _JOIN = ["aid", "fid"]
-    MAGNITUDE_THRESHOLD = 13.2
+    # Saturation threshold for each filter
+    _THRESHOLD = pd.Series([13.2, 13.2, 13.2], index=pd.Index([1, 2, 3], name="fid"))
 
     def __init__(self, detections: List[dict], non_detections: List[dict] = None):
         super().__init__(detections)
@@ -27,7 +28,7 @@ class MagnitudeStatistics(BaseStatistics):
 
         stats = grouped[in_label].agg(**functions)
         # Pandas std requires additional kwarg, that's why it needs to be added apart
-        return stats.join(grouped[in_label].agg("std", ddof=0).rename(out_label.format("sigma")))
+        return stats.join(grouped[in_label].agg("std", ddof=0).rename(out_label.format("sigma")), how="outer")
 
     def _calculate_stats_over_time(self, corrected: bool = False) -> pd.DataFrame:
         suffix = "_corr" if corrected else ""
@@ -39,9 +40,9 @@ class MagnitudeStatistics(BaseStatistics):
 
     def calculate_statistics(self) -> pd.DataFrame:
         stats = self._calculate_stats(corrected=False)
-        stats = stats.join(self._calculate_stats_over_time(corrected=False))
-        stats = stats.join(self._calculate_stats(corrected=True))
-        return stats.join(self._calculate_stats_over_time(corrected=True))
+        stats = stats.join(self._calculate_stats_over_time(corrected=False), how="outer")
+        stats = stats.join(self._calculate_stats(corrected=True), how="outer")
+        return stats.join(self._calculate_stats_over_time(corrected=True), how="outer")
 
     def calculate_firstmjd(self) -> pd.DataFrame:
         return pd.DataFrame({"firstmjd": self._grouped_value("mjd", which="first")})
@@ -62,9 +63,9 @@ class MagnitudeStatistics(BaseStatistics):
         return pd.DataFrame({"ndubious": self._grouped_detections()["dubious"].sum()})
 
     def calculate_saturation_rate(self) -> pd.DataFrame:
-        mask = self._detections["mag_corr"] < self.MAGNITUDE_THRESHOLD
-        saturated = self._group(self._detections[mask])["mag_corr"].count()
-        total = self._grouped_detections()["mag_corr"].count()  # Count also excludes NaNs
+        total = self._grouped_detections()["mag_corr"].count()  # Count will exclude NaNs
+        saturated = self._detections.set_index("fid").query("mag_corr < @self._THRESHOLD.reindex(fid)").reset_index()
+        saturated = self._group(saturated)["mag_corr"].count().reindex(total.index, fill_value=0)
         with warnings.catch_warnings():
             # possible 0 divided by 0; this is expected and returned NaN is correct value
             warnings.filterwarnings("ignore", category=RuntimeWarning)

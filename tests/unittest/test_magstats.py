@@ -232,3 +232,26 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         "fid": [1, 1, 2]
     })
     assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
+
+
+def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
+    detections = [
+        {"aid": "AID1", "fid": 1, "mag_corr": 0, "candid": "a"},
+        {"aid": "AID1", "fid": 1, "mag_corr": 100, "candid": "b"},
+        {"aid": "AID1", "fid": 1, "mag_corr": 100, "candid": "c"},
+        {"aid": "AID1", "fid": 1, "mag_corr": 0, "candid": "c1"},
+        {"aid": "AID2", "fid": 2, "mag_corr": np.nan, "candid": "d"},
+        {"aid": "AID2", "fid": 3, "mag_corr": np.nan, "candid": "d1"},
+        {"aid": "AID2", "fid": 3, "mag_corr": 100, "candid": "d2"},
+        {"aid": "AID1", "fid": 10, "mag_corr": 0, "candid": "e"},  # No threshold
+        {"aid": "AID1", "fid": 10, "mag_corr": 100, "candid": "f"},  # No threshold
+    ]
+    calculator = MagnitudeStatistics(detections)
+    result = calculator.calculate_saturation_rate()
+
+    expected = pd.DataFrame({
+        "saturation_rate": [.5, np.nan, 0, 0],
+        "aid": ["AID1", "AID2", "AID2", "AID1"],
+        "fid": [1, 2, 3, 10]
+    })
+    assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
