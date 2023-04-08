@@ -3,7 +3,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 
-from correction_step.core.strategy import ztf
+from correction.core.strategy import ztf
 
 
 def test_ztf_strategy_corrected_is_based_on_distance():
@@ -15,7 +15,7 @@ def test_ztf_strategy_corrected_is_based_on_distance():
     assert (corrected == (detections["distnr"] < ztf.DISTANCE_THRESHOLD)).all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
 def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mock_corrected):
     candids = ["fn", "fy", "sy", "sn", "fy2", "fy3", "fn2", "fn3", "sy2", "sy3", "sn2", "sn3"]
     mock_corrected.return_value = pd.Series(
@@ -36,8 +36,8 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mo
     assert ~first_corrected[first_corrected.index.str.startswith("sn")].all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
-@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_first_corrected")
 def test_ztf_strategy_dubious_for_negative_difference_without_close_source(mock_first, mock_corrected):
     mock_corrected.return_value = pd.Series([False, True])
     mock_first.return_value = pd.Series([True, True])
@@ -46,8 +46,8 @@ def test_ztf_strategy_dubious_for_negative_difference_without_close_source(mock_
     assert (dubious == pd.Series([True, False])).all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
-@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_first_corrected")
 def test_ztf_strategy_dubious_true_for_follow_up_without_close_source_and_first_with(mock_first, mock_corrected):
     mock_corrected.return_value = pd.Series([True, False])
     mock_first.return_value = pd.Series([True, True])
@@ -56,8 +56,8 @@ def test_ztf_strategy_dubious_true_for_follow_up_without_close_source_and_first_
     assert (dubious == pd.Series([False, True])).all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
-@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_first_corrected")
 def test_ztf_strategy_dubious_true_for_follow_up_with_close_source_and_first_without(mock_first, mock_corrected):
     mock_corrected.return_value = pd.Series([False, True])
     mock_first.return_value = pd.Series([False, False])
@@ -66,8 +66,8 @@ def test_ztf_strategy_dubious_true_for_follow_up_with_close_source_and_first_wit
     assert (dubious == pd.Series([False, True])).all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
-@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_first_corrected")
 def test_ztf_strategy_dubious_false_for_follow_up_without_close_source_and_first_without(mock_first, mock_corrected):
     mock_corrected.return_value = pd.Series([False, False])
     mock_first.return_value = pd.Series([False, False])
@@ -76,8 +76,8 @@ def test_ztf_strategy_dubious_false_for_follow_up_without_close_source_and_first
     assert ~dubious.all()
 
 
-@mock.patch("correction_step.core.strategy.ztf.is_corrected")
-@mock.patch("correction_step.core.strategy.ztf.is_first_corrected")
+@mock.patch("correction.core.strategy.ztf.is_corrected")
+@mock.patch("correction.core.strategy.ztf.is_first_corrected")
 def test_ztf_strategy_dubious_false_for_follow_up_with_close_source_and_first_with(mock_first, mock_corrected):
     mock_corrected.return_value = pd.Series([True, True])
     mock_first.return_value = pd.Series([True, True])

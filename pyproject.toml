@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "correction"
+version = "2.0.0"
+description = "Correction library for ALeRCE pipeline"
+authors = ["Philipp <philipp@realpython.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.24.2"
+pandas = "^1.5.3"
+fastavro = {version = "^1.4.12", optional = true}
+apf_base = {version = "^2.1.5", optional = true}
+
+[tool.poetry.extras]
+step = ["fastavro", "apf_base"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -3,7 +3,7 @@ from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
 from prometheus_client import start_http_server
 
 try:
-    from correction_step import CorrectionStep
+    from correction import CorrectionStep
 except ImportError:
     import os
     import sys
@@ -11,7 +11,7 @@ except ImportError:
     SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
     PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
     sys.path.append(PACKAGE_PATH)
-    from correction_step import CorrectionStep
+    from correction import CorrectionStep
 
 
 def step_creator():
