@@ -33,4 +33,4 @@ version = {attr = "correction.__version__"}
 #dbp = "db_plugins.cli.manage:cli"
 
 [project.urls]
-repository = "https://github.com/alercebroker/db-plugins"
+repository = "https://github.com/alercebroker/correction_step"

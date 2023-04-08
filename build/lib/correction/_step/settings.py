@@ -4,8 +4,8 @@ from fastavro import schema
 
 def settings_creator():
     # Set the global logging level to debug
-    logging_debug = bool(os.getenv("LOGGING_DEBUG"))
-    prometheus = bool(os.getenv("USE_PROMETHEUS"))
+    logging_debug = False
+    prometheus = os.getenv("USE_PROMETHEUS", False)
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -28,7 +28,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("schemas/output.avsc"),
+        "SCHEMA": schema.load_schema("../../output.avsc"),
     }
 
     scribe_producer_config = {
@@ -37,7 +37,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": schema.load_schema("schemas/scribe.avsc"),
+        "SCHEMA": schema.load_schema("../../scribe.avsc"),
     }
 
     metrics_config = {
