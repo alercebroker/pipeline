@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from unittest import mock
 
-from correction._step.step import CorrectionStep
+from correction import CorrectionStep
 
 from tests.utils import ztf_alert, atlas_alert, non_detection
 
@@ -75,7 +75,7 @@ def test_pre_execute_formats_message_with_all_detections_and_non_detections():
     assert formatted["non_detections"] == message4execute["non_detections"]
 
 
-@mock.patch("correction.step.Corrector")
+@mock.patch("correction._step.step.Corrector")
 def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(mock_corrector):
     formatted = CorrectionStep.execute(message4execute)
     assert "detections" in formatted
@@ -85,8 +85,8 @@ def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(
     mock_corrector.return_value.corrected_records.assert_called_once()
 
 
-@mock.patch("correction.step.Corrector")
-def test_execute_removes_duplicate_non_detections(mock_corrector):
+@mock.patch("correction._step.step.Corrector")
+def test_execute_removes_duplicate_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
     message4execute_copy["non_detections"] = message4execute_copy["non_detections"] + message4execute_copy["non_detections"]
     formatted = CorrectionStep.execute(message4execute_copy)
@@ -94,8 +94,8 @@ def test_execute_removes_duplicate_non_detections(mock_corrector):
     assert formatted["non_detections"] == message4execute["non_detections"]
 
 
-@mock.patch("correction.step.Corrector")
-def test_execute_works_with_empty_non_detections(mock_corrector):
+@mock.patch("correction._step.step.Corrector")
+def test_execute_works_with_empty_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
     message4execute_copy["non_detections"] = []
     formatted = CorrectionStep.execute(message4execute_copy)

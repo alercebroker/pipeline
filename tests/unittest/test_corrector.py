@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal
 
-from correction.core import Corrector
+from correction import Corrector
 from tests.utils import ztf_alert, atlas_alert
 
 detections = [ztf_alert(candid="c1"), atlas_alert(candid="c2")]
