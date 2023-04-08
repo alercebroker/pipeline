@@ -5,7 +5,7 @@ import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from .core import Corrector
+from ..core.corrector import Corrector
 
 
 class CorrectionStep(GenericStep):

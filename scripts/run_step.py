@@ -15,7 +15,7 @@ except ImportError:
 
 
 def step_creator():
-    from settings import settings_creator
+    from correction._step.settings import settings_creator
 
     settings = settings_creator()
     level = logging.INFO

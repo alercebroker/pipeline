@@ -1,10 +1,6 @@
 import os
 from fastavro import schema
 
-##################################################
-#       detection_step   Settings File
-##################################################
-
 
 def settings_creator():
     # Set the global logging level to debug
@@ -32,7 +28,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("schema.avsc"),
+        "SCHEMA": schema.load_schema("../../schema.avsc"),
     }
 
     scribe_producer_config = {
@@ -41,7 +37,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+        "SCHEMA": schema.load_schema("../../scribe_schema.avsc"),
     }
 
     metrics_config = {

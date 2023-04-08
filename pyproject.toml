@@ -1,19 +1,36 @@
-[tool.poetry]
+[project]
 name = "correction"
-version = "2.0.0"
-description = "Correction library for ALeRCE pipeline"
-authors = ["Philipp <philipp@realpython.com>"]
+dynamic = ["version"]
+description = "Correction library for ALeRCE pipeline."
+authors = [
+    {email = "contact@alerce.online"},
+    {name = "ALeRCE Team"}
+]
+readme = "README.md"
+requires-python = "~=3.10"
+dependencies = [
+    "numpy~=1.24.2",
+    "pandas~=1.5.3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^1.24.2"
-pandas = "^1.5.3"
-fastavro = {version = "^1.4.12", optional = true}
-apf_base = {version = "^2.1.5", optional = true}
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-docker",
+    "coverage",
+    "black",
+]
+pipeline = [
+    "fastavro~=1.4.12",
+    "prometheus-client~=0.16.0",
+    "apf_base~=2.1.5",
+]
 
-[tool.poetry.extras]
-step = ["fastavro", "apf_base"]
+[tool.setuptools.dynamic]
+version = {attr = "correction.__version__"}
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+#[project.scripts]
+#dbp = "db_plugins.cli.manage:cli"
+
+[project.urls]
+repository = "https://github.com/alercebroker/db-plugins"
