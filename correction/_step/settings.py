@@ -1,5 +1,14 @@
+import json
 import os
+
 from fastavro import schema
+
+SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
+
+
+def load_json(path: str) -> dict:
+    with open(path, "r") as fh:
+        return json.load(fh)
 
 
 def settings_creator():
@@ -28,7 +37,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("schemas/output.avsc"),
+        "SCHEMA": schema.load_schema(os.path.join(SCHEMA_DIR, "output.avsc")),
     }
 
     scribe_producer_config = {
@@ -37,51 +46,18 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": schema.load_schema("schemas/scribe.avsc"),
+        "SCHEMA": schema.load_schema(os.path.join(SCHEMA_DIR, "scribe.avsc")),
     }
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
-        "EXTRA_METRICS": [
-            {"key": "candid", "format": lambda x: str(x)},
-        ],
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "http://example.com/example.json",
-                "type": "object",
-                "title": "The root schema",
-                "description": "The root schema comprises the entire JSON document.",
-                "default": {},
-                "examples": [
-                    {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-                ],
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "$id": "#/properties/timestamp_sent",
-                        "type": "string",
-                        "title": "The timestamp_sent schema",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "$id": "#/properties/timestamp_received",
-                        "type": "string",
-                        "title": "The timestamp_received schema",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA": load_json(os.path.join(SCHEMA_DIR, "metrics.json")),
         },
     }
 
