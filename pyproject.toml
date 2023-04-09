@@ -1,36 +1,29 @@
-[project]
+[tool.poetry]
 name = "correction"
-dynamic = ["version"]
+version = "2.0.0"
 description = "Correction library for ALeRCE pipeline."
-authors = [
-    {email = "contact@alerce.online"},
-    {name = "ALeRCE Team"}
-]
+authors = ["ALeRCE Broker <alercebroker@gmail.com>"]
 readme = "README.md"
-requires-python = "~=3.10"
-dependencies = [
-    "numpy~=1.24.2",
-    "pandas~=1.5.3",
-]
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-docker",
-    "coverage",
-    "black",
-]
-pipeline = [
-    "fastavro~=1.4.12",
-    "prometheus-client~=0.16.0",
-    "apf_base~=2.1.5",
-]
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "~1.24.2"
+pandas = "~1.5.3"
+fastavro = { version = "~1.4.12", optional = true }
+prometheus-client = { version = "~0.16.0", optional = true }
+apf_base = { version = "~2.1.5", optional = true }
+pytest = { version = "^7.2.0", optional = true }
+pytest-cov = { version = "^4.0.0", optional = true }
+pytest-docker = { version = "^1.0.1", optional = true }
+black = { version = "^22.12.0", optional = true }
 
-[tool.setuptools.dynamic]
-version = {attr = "correction.__version__"}
+[tool.poetry.extras]
+apf = ["fastavro", "prometheus-client", "apf_base"]
+dev = ["fastavro", "prometheus-client", "apf_base", "pytest", "pytest-cov", "pytest-docker", "black"]
 
-#[project.scripts]
-#dbp = "db_plugins.cli.manage:cli"
+[tool.black]
+line-length = 120
 
-[project.urls]
-repository = "https://github.com/alercebroker/correction_step"
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
