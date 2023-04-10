@@ -14,7 +14,7 @@ jobs:
     with:
       python-version: '3.10'
       sources-folder: 'correction'
-      test-folder: 'tests/unittest'
+      test-folder: 'tests/unittests'
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
     with:
