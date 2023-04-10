@@ -24,7 +24,7 @@ pytest-docker = "^1.0.1"
 black = "^22.12.0"
 
 [tool.poetry.scripts]
-run-step = "correction._step:run_step"
+run-step = { callable = "correction._step:run_step", extras = ["apf"] }
 
 [tool.black]
 line-length = 120
