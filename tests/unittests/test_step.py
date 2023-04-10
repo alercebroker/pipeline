@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from unittest import mock
 
-from correction import CorrectionStep
+from correction._step import CorrectionStep
 
 from tests.utils import ztf_alert, atlas_alert, non_detection
 

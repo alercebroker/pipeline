@@ -1,6 +1,6 @@
 import json
 from apf.consumers import KafkaConsumer
-from correction import CorrectionStep
+from correction._step import CorrectionStep
 
 
 def test_step_initialization(kafka_service, env_variables):
