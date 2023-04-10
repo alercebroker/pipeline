@@ -1,5 +1,6 @@
 import os
 import pathlib
+import logging
 import random
 import uuid
 
@@ -15,30 +16,17 @@ from tests.utils import ztf_extra_fields
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return (
-        pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml"
-    ).absolute()
-
-
-@pytest.fixture(scope="session")
-def docker_compose_command():
-    v2 = False
-    if os.getenv("COMPOSE", "v1") == "v2":
-        v2 = True
-    return "docker compose" if v2 else "docker-compose"
+    return (pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml").absolute()
 
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    topics = ["prv-candidates"]
-    new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
-    fs = client.create_topics(new_topics)
-    for topic, f in fs.items():
+    futures = client.create_topics([NewTopic("prv-candidates", num_partitions=1)])
+    for topic, future in futures.items():
         try:
-            f.result()
+            future.result()
         except Exception as e:
-            print(f"Can't create topic {topic}")
-            print(e)
+            logging.error(f"Can't create topic {topic}: {e}")
             return False
     produce_messages("prv-candidates")
     return True
@@ -60,15 +48,15 @@ def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
+        "PRODUCER_SERVER": "localhost:9092",
+        "SCRIBE_SERVER": "localhost:9092",
+        "METRICS_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "prv-candidates",
+        "PRODUCER_TOPIC": "corrections",
+        "SCRIBE_TOPIC": "w_detections",
         "CONSUME_MESSAGES": "1",
         "CONSUMER_GROUP_ID": random_string,
-        "METRICS_HOST": "localhost:9092",
-        "PRODUCER_SERVER": "localhost:9092",
-        "PRODUCER_TOPIC": "corrections",
         "ENABLE_PARTITION_EOF": "True",
-        "SCRIBE_SERVER": "localhost:9092",
-        "SCRIBE_TOPIC": "w_detections",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
@@ -98,6 +86,7 @@ def produce_messages(topic):
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
+    print("HEERREEE!!!+++??!!")
     consumer = KafkaConsumer(
         {
             "PARAMS": {
@@ -110,6 +99,7 @@ def kafka_consumer():
         }
     )
     yield consumer
+    consumer.consumer.close()
 
 
 @pytest.fixture(scope="session")
@@ -126,3 +116,4 @@ def scribe_consumer():
         }
     )
     yield consumer
+    consumer.consumer.close()

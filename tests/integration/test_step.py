@@ -7,11 +7,13 @@ def test_step_initialization(kafka_service, env_variables):
     assert isinstance(CorrectionStep.create_step(), CorrectionStep)
 
 
-def test_result_has_everything(
-    kafka_service, env_variables, kafka_consumer: KafkaConsumer
-):
+def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
+    print("HERE")
     CorrectionStep.create_step().start()
+    print("HeRe!!!!!!!")
+    print(kafka_consumer.config)
     for message in kafka_consumer.consume():
+        print(message)
         assert "aid" in message
         assert "detections" in message
         assert "non_detections" in message
