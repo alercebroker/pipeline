@@ -10,7 +10,7 @@ from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
 
-from schema import SCHEMA
+from tests.integration.schema import SCHEMA
 from tests.utils import ztf_extra_fields
 
 
