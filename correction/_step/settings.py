@@ -6,7 +6,16 @@ from fastavro import schema
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
 
 
-def load_json(path: str) -> dict:
+def get_output_schema() -> dict:
+    return schema.load_schema(os.path.join(SCHEMA_DIR, "output.avsc"))
+
+
+def get_scribe_schema() -> dict:
+    return schema.load_schema(os.path.join(SCHEMA_DIR, "scribe.avsc"))
+
+
+def get_metrics_schema() -> dict:
+    path = os.path.join(SCHEMA_DIR, "metrics.json")
     with open(path, "r") as fh:
         return json.load(fh)
 
@@ -37,7 +46,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema(os.path.join(SCHEMA_DIR, "output.avsc")),
+        "SCHEMA": get_output_schema(),
     }
 
     scribe_producer_config = {
@@ -46,7 +55,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": schema.load_schema(os.path.join(SCHEMA_DIR, "scribe.avsc")),
+        "SCHEMA": get_scribe_schema(),
     }
 
     metrics_config = {
@@ -57,7 +66,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": load_json(os.path.join(SCHEMA_DIR, "metrics.json")),
+            "SCHEMA": get_metrics_schema(),
         },
     }
 
