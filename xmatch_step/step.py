@@ -1,11 +1,11 @@
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
-from cds_xmatch_client import XmatchClient
+from xmatch_step.core.xmatch_client import XmatchClient
 from db_plugins.db.sql.models import Allwise, Xmatch, Step
 from db_plugins.db.sql import SQLConnection
 from typing import List, Set
-from xmatch_step.utils.constants import ALLWISE_MAP
+from xmatch_step.core.utils.constants import ALLWISE_MAP
 
 import numpy as np
 import pandas as pd
