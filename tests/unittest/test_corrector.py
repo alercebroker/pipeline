@@ -36,7 +36,7 @@ def test_apply_all_calls_requested_function_to_masked_detections_for_each_submod
 
     corrector = Corrector(detections)
     corrector._apply_all_surveys("function")
-    called, = mock_strategy.ztf.function.call_args.args
+    (called,) = mock_strategy.ztf.function.call_args.args
     assert_frame_equal(called, corrector._detections.loc[["c1"]])
     mock_strategy.dummy.function.assert_not_called()
 
@@ -113,7 +113,21 @@ def test_correct_is_nan_for_surveys_without_strategy():
 
 def test_corrected_dataframe_has_generic_columns_and_new_ones_from_corrected():
     corrector = Corrector(detections)
-    generic = ["aid", "oid", "tid", "fid", "mjd", "has_stamp", "isdiffpos", "mag", "e_mag", "ra", "e_ra", "dec", "e_dec"]
+    generic = [
+        "aid",
+        "oid",
+        "tid",
+        "fid",
+        "mjd",
+        "has_stamp",
+        "isdiffpos",
+        "mag",
+        "e_mag",
+        "ra",
+        "e_ra",
+        "dec",
+        "e_dec",
+    ]
     new_columns = ALL_NEW_COLS
     assert (corrector.corrected_dataframe().columns.isin(generic + new_columns)).all()
 

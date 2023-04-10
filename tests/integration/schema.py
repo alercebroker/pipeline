@@ -30,7 +30,7 @@ DETECTION = {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
         },
-    ]
+    ],
 }
 
 NON_DETECTION = {
@@ -43,7 +43,7 @@ NON_DETECTION = {
         {"name": "mjd", "type": "double"},
         {"name": "fid", "type": "int"},
         {"name": "diffmaglim", "type": "double"},
-    ]
+    ],
 }
 
 SCHEMA = {
@@ -53,6 +53,6 @@ SCHEMA = {
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "detections", "type": {"type": "array", "items": DETECTION}},
-        {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}}
+        {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}},
     ],
 }

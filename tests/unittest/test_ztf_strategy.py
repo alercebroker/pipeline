@@ -21,12 +21,15 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mo
     mock_corrected.return_value = pd.Series(
         [False, True, True, False, True, False, True, False, True, False, True, False], index=candids
     )
-    detections = pd.DataFrame.from_records({
-        "candid": candids,
-        "aid": ["AID1", "AID1", "AID2", "AID2", "AID1", "AID1", "AID1", "AID1", "AID2", "AID2", "AID2", "AID2"],
-        "fid": [1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2],
-        "mjd": [1, 1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3],
-    }, index="candid")
+    detections = pd.DataFrame.from_records(
+        {
+            "candid": candids,
+            "aid": ["AID1", "AID1", "AID2", "AID2", "AID1", "AID1", "AID1", "AID1", "AID2", "AID2", "AID2", "AID2"],
+            "fid": [1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2],
+            "mjd": [1, 1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3],
+        },
+        index="candid",
+    )
 
     first_corrected = ztf.is_first_corrected(detections)
 
@@ -88,47 +91,47 @@ def test_ztf_strategy_dubious_false_for_follow_up_with_close_source_and_first_wi
 
 def test_ztf_strategy_correction_with_low_reference_flux_equals_difference_magnitude():
     detections = pd.DataFrame.from_records(
-        {"magnr": [200.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [1]}
+        {"magnr": [200.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [1]}
     )
     corrected = ztf.correct(detections)
 
-    assert np.isclose(corrected["mag_corr"], 5.)
-    assert np.isclose(corrected["e_mag_corr"], .1)
-    assert np.isclose(corrected["e_mag_corr_ext"], .1)
+    assert np.isclose(corrected["mag_corr"], 5.0)
+    assert np.isclose(corrected["e_mag_corr"], 0.1)
+    assert np.isclose(corrected["e_mag_corr_ext"], 0.1)
 
 
 def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magnitude():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.], "sigmagnr": [2.], "mag": [200.], "e_mag": [.1], "isdiffpos": [1]}
+        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [200.0], "e_mag": [0.1], "isdiffpos": [1]}
     )
     corrected = ztf.correct(detections)
 
-    assert np.isclose(corrected["mag_corr"], 5.)
+    assert np.isclose(corrected["mag_corr"], 5.0)
     assert np.isclose(corrected["e_mag_corr"], np.inf)
     assert np.isclose(corrected["e_mag_corr_ext"], 0)
 
 
 def test_ztf_strategy_correction_with_positive_difference_has_lower_corrected_magnitude_than_reference():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [1]}
+        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [1]}
     )
     corrected = ztf.correct(detections)
 
-    assert (corrected["mag_corr"] < 5.).all()
+    assert (corrected["mag_corr"] < 5.0).all()
 
 
 def test_ztf_strategy_correction_with_negative_difference_has_higher_corrected_magnitude_than_reference():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.], "sigmagnr": [2.], "mag": [5.], "e_mag": [.1], "isdiffpos": [-1]}
+        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [-1]}
     )
     corrected = ztf.correct(detections)
 
-    assert (corrected["mag_corr"] > 5.).all()
+    assert (corrected["mag_corr"] > 5.0).all()
 
 
 def test_ztf_strategy_correction_with_null_nr_fields_results_in_null_corrections():
     detections = pd.DataFrame.from_records(
-        {"magnr": [None], "sigmagnr": [None], "mag": [200.], "e_mag": [.1], "isdiffpos": [1]}
+        {"magnr": [None], "sigmagnr": [None], "mag": [200.0], "e_mag": [0.1], "isdiffpos": [1]}
     )
     corrected = ztf.correct(detections)
 

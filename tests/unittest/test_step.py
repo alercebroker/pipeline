@@ -10,18 +10,14 @@ messages = [
     {
         "aid": "AID1",
         "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False)],
-        "non_detections": []
+        "non_detections": [],
     },
     {
         "aid": "AID2",
         "detections": [ztf_alert(aid="AID2", candid="c"), ztf_alert(aid="AID2", candid="d", has_stamp=False)],
-        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)]
+        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
-    {
-        "aid": "AID3",
-        "detections": [atlas_alert(aid="AID3", candid="e")],
-        "non_detections": []
-    },
+    {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e")], "non_detections": []},
 ]
 
 message4produce = [
@@ -30,21 +26,21 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False)],
-        "non_detections": []
+        "non_detections": [],
     },
     {
         "aid": "AID2",
         "meanra": 1,
         "meandec": 1,
         "detections": [ztf_alert(aid="AID2", candid="c"), ztf_alert(aid="AID2", candid="d", has_stamp=False)],
-        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)]
+        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
     {
         "aid": "AID3",
         "meanra": 1,
         "meandec": 1,
         "detections": [atlas_alert(aid="AID3", candid="e")],
-        "non_detections": []
+        "non_detections": [],
     },
 ]
 
@@ -63,7 +59,7 @@ message4execute = {
         "AID1": {"meanra": 1, "meandec": 1},
         "AID2": {"meanra": 1, "meandec": 1},
         "AID3": {"meanra": 1, "meandec": 1},
-    }
+    },
 }
 
 
@@ -88,7 +84,9 @@ def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(
 @mock.patch("correction._step.step.Corrector")
 def test_execute_removes_duplicate_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
-    message4execute_copy["non_detections"] = message4execute_copy["non_detections"] + message4execute_copy["non_detections"]
+    message4execute_copy["non_detections"] = (
+        message4execute_copy["non_detections"] + message4execute_copy["non_detections"]
+    )
     formatted = CorrectionStep.execute(message4execute_copy)
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]

@@ -1,12 +1,12 @@
 def ztf_extra_fields(**kwargs):
     extra_fields = {
-        "magnr": 10.,
-        "sigmagnr": 1.,
-        "distnr": 1.,
-        "distpsnr1": 1.,
-        "sgscore1": .5,
+        "magnr": 10.0,
+        "sigmagnr": 1.0,
+        "distnr": 1.0,
+        "distpsnr1": 1.0,
+        "sgscore1": 0.5,
         "chinr": 1,
-        "sharpnr": 0.,
+        "sharpnr": 0.0,
         "unused": None,
     }
     extra_fields.update(kwargs)
@@ -17,8 +17,8 @@ def ztf_alert(**kwargs):
     alert = {
         "candid": "candid",
         "tid": "ZTF",
-        "mag": 10.,
-        "e_mag": 10.,
+        "mag": 10.0,
+        "e_mag": 10.0,
         "ra": 1,
         "e_ra": 1,
         "dec": 1,
@@ -26,9 +26,9 @@ def ztf_alert(**kwargs):
         "isdiffpos": 1,
         "aid": "AID1",
         "fid": 1,
-        "mjd": 1.,
+        "mjd": 1.0,
         "has_stamp": True,
-        "extra_fields": ztf_extra_fields()
+        "extra_fields": ztf_extra_fields(),
     }
     alert.update(kwargs)
     return alert
@@ -38,8 +38,8 @@ def atlas_alert(**kwargs):
     alert = {
         "candid": "candid",
         "tid": "ATLAS-0",
-        "mag": 10.,
-        "e_mag": 10.,
+        "mag": 10.0,
+        "e_mag": 10.0,
         "ra": 1,
         "e_ra": 1,
         "dec": 1,
@@ -47,9 +47,9 @@ def atlas_alert(**kwargs):
         "isdiffpos": 1,
         "aid": "AID1",
         "fid": 1,
-        "mjd": 1.,
+        "mjd": 1.0,
         "has_stamp": True,
-        "extra_fields": {"dummy": None}
+        "extra_fields": {"dummy": None},
     }
     alert.update(kwargs)
     return alert
