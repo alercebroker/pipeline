@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import logging
 
@@ -5,7 +6,7 @@ import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from .core import Corrector
+from ..core.corrector import Corrector
 
 
 class CorrectionStep(GenericStep):
@@ -25,6 +26,25 @@ class CorrectionStep(GenericStep):
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
         self.set_producer_key_field("aid")
+
+    @staticmethod
+    def create_step() -> CorrectionStep:
+        from .settings import settings_creator
+        from prometheus_client import start_http_server
+        from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
+
+        settings = settings_creator()
+        level = logging.DEBUG if settings["LOGGING_DEBUG"] else logging.INFO
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
+        if settings["PROMETHEUS"]:
+            start_http_server(8000)
+
+        return CorrectionStep(config=settings, level=level, prometheus_metrics=prometheus_metrics)
 
     @classmethod
     def pre_produce(cls, result: dict):

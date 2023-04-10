@@ -81,21 +81,26 @@ docker pull ghcr.io/alercebroker/correction_step:latest
 
 ### Requirements
 
-To install the repository specific packages run:
+To install the repository without support for running the step (only including tools for correction) run:
 ```bash
-pip install -r requirements.txt
+pip install .
+```
+
+To include the step itself:
+```bash
+pip install .[apf]
 ```
 
 ### Development
 
-The following additional packages are required to run the tests:
+Including the development dependencies is only possible using [poetry](https://python-poetry.org/):
 ```bash
-pip install pytest pytest-docker
+poetry install -E apf
 ```
 
 Run tests using:
 ```bash
-python -m pytest tests
+poetry run pytest
 ```
 
 ## Adding new strategies

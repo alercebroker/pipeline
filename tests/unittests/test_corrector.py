@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal
 
-from correction_step.core import Corrector
+from correction import Corrector
 from tests.utils import ztf_alert, atlas_alert
 
 detections = [ztf_alert(candid="c1"), atlas_alert(candid="c2")]
@@ -26,7 +26,7 @@ def test_mask_survey_returns_only_alerts_from_requested_survey():
     assert (corrector._survey_mask("ATla") == ~expected_ztf).all()
 
 
-@mock.patch("correction_step.core.corrector.strategy")
+@mock.patch("correction.core.corrector.strategy")
 def test_apply_all_calls_requested_function_to_masked_detections_for_each_submodule(mock_strategy):
     mock_strategy.ztf = mock.MagicMock()
     mock_strategy.ztf.function = mock.MagicMock()
@@ -36,12 +36,12 @@ def test_apply_all_calls_requested_function_to_masked_detections_for_each_submod
 
     corrector = Corrector(detections)
     corrector._apply_all_surveys("function")
-    called, = mock_strategy.ztf.function.call_args.args
+    (called,) = mock_strategy.ztf.function.call_args.args
     assert_frame_equal(called, corrector._detections.loc[["c1"]])
     mock_strategy.dummy.function.assert_not_called()
 
 
-@mock.patch("correction_step.core.corrector.strategy")
+@mock.patch("correction.core.corrector.strategy")
 def test_apply_all_returns_a_series_with_default_value_and_dtype_if_no_columns_are_given(mock_strategy):
     corrector = Corrector(detections)
     output = corrector._apply_all_surveys("function", default=-1, dtype=float)
@@ -51,7 +51,7 @@ def test_apply_all_returns_a_series_with_default_value_and_dtype_if_no_columns_a
     assert (output == -1).all()
 
 
-@mock.patch("correction_step.core.corrector.strategy")
+@mock.patch("correction.core.corrector.strategy")
 def test_apply_all_returns_a_df_with_default_value_and_dtype_if_columns_are_given(mock_strategy):
     corrector = Corrector(detections)
     output = corrector._apply_all_surveys("function", default=-1, columns=["a", "b"], dtype=float)
@@ -113,7 +113,21 @@ def test_correct_is_nan_for_surveys_without_strategy():
 
 def test_corrected_dataframe_has_generic_columns_and_new_ones_from_corrected():
     corrector = Corrector(detections)
-    generic = ["aid", "oid", "tid", "fid", "mjd", "has_stamp", "isdiffpos", "mag", "e_mag", "ra", "e_ra", "dec", "e_dec"]
+    generic = [
+        "aid",
+        "oid",
+        "tid",
+        "fid",
+        "mjd",
+        "has_stamp",
+        "isdiffpos",
+        "mag",
+        "e_mag",
+        "ra",
+        "e_ra",
+        "dec",
+        "e_dec",
+    ]
     new_columns = ALL_NEW_COLS
     assert (corrector.corrected_dataframe().columns.isin(generic + new_columns)).all()
 

@@ -1,20 +1,14 @@
 import json
 from apf.consumers import KafkaConsumer
-from correction_step.step import CorrectionStep
+from correction._step import CorrectionStep
 
 
 def test_step_initialization(kafka_service, env_variables):
-    from scripts.run_step import step_creator
-
-    assert isinstance(step_creator(), CorrectionStep)
+    assert isinstance(CorrectionStep.create_step(), CorrectionStep)
 
 
-def test_result_has_everything(
-    kafka_service, env_variables, kafka_consumer: KafkaConsumer
-):
-    from scripts.run_step import step_creator
-
-    step_creator().start()
+def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
+    CorrectionStep.create_step().start()
     for message in kafka_consumer.consume():
         assert "aid" in message
         assert "detections" in message
@@ -31,10 +25,7 @@ def assert_result_has_correction_fields(message):
 
 
 def test_scribe_has_detections(kafka_service, env_variables, scribe_consumer):
-    from scripts.run_step import step_creator
-
-    step = step_creator()
-    step.start()
+    CorrectionStep.create_step().start()
 
     for message in scribe_consumer.consume():
         assert_scribe_has_detections(message)
@@ -58,11 +49,10 @@ def assert_scribe_has_detections(message):
 
 
 def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaConsumer):
-    from scripts.run_step import step_creator
     import os
 
     os.environ["CONSUME_MESSAGES"] = "10"
-    step_creator().start()
+    CorrectionStep.create_step().start()
 
     for message in kafka_consumer.consume():
         assert_result_has_correction_fields(message)
