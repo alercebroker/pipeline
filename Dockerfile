@@ -1,10 +1,17 @@
-FROM python:3.10
+FROM python:3.10-slim
+MAINTAINER ALeRCE
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /app/
 
-COPY requirements.txt /app/
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir poetry
+COPY ./poetry.lock ./pyproject.toml /app/
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-interaction --no-cache -E apf --without=dev --no-root
 
-COPY . /app
+COPY ./correction /app/correction
+COPY ./README.md /app/
+RUN poetry install --no-interaction --no-cache -E apf --only-root
 
-CMD ["python", "scripts/run_step.py"]
+CMD ["poetry", "run", "run-step"]
