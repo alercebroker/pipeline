@@ -75,7 +75,7 @@ The [scribe](https://github.com/alercebroker/alerce-scribe) will write results i
 For each release, an image is uploaded to GitHub packages. To download:
 
 ```bash
-docker pull ghcr.io/alercebroker/correction:latest
+docker pull ghcr.io/alercebroker/correction_step:latest
 ```
 ## Local Installation
 
