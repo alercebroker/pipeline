@@ -25,10 +25,7 @@ def assert_result_has_correction_fields(message):
 
 
 def test_scribe_has_detections(kafka_service, env_variables, scribe_consumer):
-    from scripts.run_step import step_creator
-
-    step = step_creator()
-    step.start()
+    CorrectionStep.create_step().start()
 
     for message in scribe_consumer.consume():
         assert_scribe_has_detections(message)
