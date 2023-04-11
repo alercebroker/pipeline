@@ -24,6 +24,63 @@ Presently, there are no correction strategies for any other surveys.
 
 Any other survey will get the correction fields added, but filled with `null` values.
 
+## Local Installation
+
+### Requirements
+
+To install the repository without support for running the step (only including tools for correction) run:
+```bash
+pip install .
+```
+
+To include the step itself:
+```bash
+pip install .[apf]
+```
+
+#### Usage
+
+```python
+from correction import Corrector
+
+detections = [{"aid": "AID1", "tid": "ZTF", ...: ..., "extra_fields": {"distnr": 1, ...: ...}}, ...]
+corr = Corrector(detections)
+
+corr.corrected  # Gets boolean pandas series on whether the detection can be corrected
+corr.dubious  # Gets boolean pandas series on whether the correction/non-correction is dubious
+corr.stellar  # Get boolean pandas series on whether the source is star-like
+corr.corrected_magnitudes()  # Computes pandas dataframe with corrected magnitudes and errors
+```
+
+### Development
+
+Including the development dependencies is only possible using [poetry](https://python-poetry.org/):
+```bash
+poetry install -E apf
+```
+
+Run tests using:
+```bash
+poetry run pytest
+```
+
+## Adding new strategies
+
+New strategies (assumed to be survey based) can be added directly inside the module `core.strategy` as a new 
+Python file. The name of the file must coincide with a unique prefix for the survey (case insensitive), 
+i.e., a file `atlas` will work on detections with `tid`s such as `ATLAS-01`, `AtLAsS`, etc.
+
+Strategy modules are required to have 4 functions: 
+* `is_corrected`: Returns boolean pandas data series showing if the detection can be corrected
+* `is_dubious`: Returns boolean pandas data series showing whether the detection correction status is dubious
+* `is_stellar`: Returns boolean pandas data series showing whether the detection is likely to be stellar
+* `correct`: Returns pandas data frame with 3 columns (`mag_corr`, `e_mag_corr` and `e_mag_corr_ext`)
+
+If detections with no survey strategy defined are part of the messages, these will be quietly filled with default 
+values (`False` for the boolean fields and `NaN` for the corrected magnitudes).
+
+## Step information
+
 #### Previous step:
 - [Light curve](https://github.com/alercebroker/lightcurve-step)
 
@@ -77,43 +134,3 @@ For each release, an image is uploaded to GitHub packages. To download:
 ```bash
 docker pull ghcr.io/alercebroker/correction_step:latest
 ```
-## Local Installation
-
-### Requirements
-
-To install the repository without support for running the step (only including tools for correction) run:
-```bash
-pip install .
-```
-
-To include the step itself:
-```bash
-pip install .[apf]
-```
-
-### Development
-
-Including the development dependencies is only possible using [poetry](https://python-poetry.org/):
-```bash
-poetry install -E apf
-```
-
-Run tests using:
-```bash
-poetry run pytest
-```
-
-## Adding new strategies
-
-New strategies (assumed to be survey based) can be added directly inside the module `core.strategy` as a new 
-Python file. The name of the file must coincide with a unique prefix for the survey (case insensitive), 
-i.e., a file `atlas` will work on detections with `tid`s such as `ATLAS-01`, `AtLAsS`, etc.
-
-Strategy modules are required to have 4 functions: 
-* `is_corrected`: Returns boolean pandas data series showing if the detection can be corrected
-* `is_dubious`: Returns boolean pandas data series showing whether the detection correction status is dubious
-* `is_stellar`: Returns boolean pandas data series showing whether the detection is likely to be stellar
-* `correct`: Returns pandas data frame with 3 columns (`mag_corr`, `e_mag_corr` and `e_mag_corr_ext`)
-
-If detections with no survey strategy defined are part of the messages, these will be quietly filled with default 
-values (`False` for the boolean fields and `NaN` for the corrected magnitudes).
