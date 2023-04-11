@@ -78,7 +78,7 @@ def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]
     mock_corrector.assert_called_with(message4execute["detections"])
-    mock_corrector.return_value.corrected_records.assert_called_once()
+    mock_corrector.return_value.corrected_as_records.assert_called_once()
 
 
 @mock.patch("correction._step.step.Corrector")

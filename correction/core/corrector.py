@@ -79,28 +79,22 @@ class Corrector:
         """Whether the source is likely stellar"""
         return self._apply_all_surveys("is_stellar", default=False, dtype=bool)
 
-    def _correct(self) -> pd.DataFrame:
-        """Calculate corrected magnitudes and corrected errors for detections"""
+    def corrected_magnitudes(self) -> pd.DataFrame:
+        """Dataframe with corrected magnitudes and errors. Non-corrected magnitudes are set to NaN."""
         cols = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        return self._apply_all_surveys("correct", columns=cols, dtype=float)
+        corrected = self._apply_all_surveys("correct", columns=cols, dtype=float)
+        return corrected.where(self.corrected)  # NaN for non-corrected magnitudes
 
-    def corrected_dataframe(self) -> pd.DataFrame:
-        """Detection dataframe including corrected magnitudes. Only includes generic fields as columns.
-
-        Corrected magnitudes and errors for sources without corrections are set to `None`.
-        """
-        corrected = self._correct().replace(np.inf, self._ZERO_MAG)
-        corrected[~self.corrected] = np.nan
-        corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
-        return self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
-
-    def corrected_records(self) -> list[dict]:
+    def corrected_as_records(self) -> list[dict]:
         """Corrected alerts as records.
 
         The output is the same as the input passed on creation, with additional generic fields corresponding to
         the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
         """
-        corrected = self.corrected_dataframe().reset_index().to_dict("records")
+        corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
+        corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
+        corrected = self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
+        corrected = corrected.reset_index().to_dict("records")
         return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
 
     @staticmethod
@@ -118,10 +112,10 @@ class Corrector:
         weights = 1 / self.arcsec2dec(self._detections[f"e_{label}"]) ** 2
         return {f"mean{label}": self._detections.groupby("aid")[label].agg(_average)}
 
-    def coordinates_dataframe(self) -> pd.DataFrame:
+    def mean_coordinates(self) -> pd.DataFrame:
         coords = self._calculate_coordinates("ra")
         coords.update(self._calculate_coordinates("dec"))
         return pd.DataFrame(coords)
 
-    def coordinates_records(self) -> dict:
-        return self.coordinates_dataframe().to_dict("index")
+    def coordinates_as_records(self) -> dict:
+        return self.mean_coordinates().to_dict("index")

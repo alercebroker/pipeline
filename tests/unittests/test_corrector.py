@@ -98,59 +98,36 @@ def test_stellar_is_false_for_surveys_without_strategy():
     assert (corrector.stellar == pd.Series([True, False], index=["c1", "c2"])).all()
 
 
-def test_correct_calls_apply_all_with_function_correct():
+def test_corrected_magnitudes_calls_apply_all_with_function_correct():
     corrector = Corrector(detections)
     corrector._apply_all_surveys = mock.MagicMock()
-    corrector._correct()
-    corrector._apply_all_surveys.assert_called_with("correct", columns=MAG_CORR_COLS, dtype=float)
+    corrector.corrected_magnitudes()
+    corrector._apply_all_surveys.assert_any_call("correct", columns=MAG_CORR_COLS, dtype=float)
 
 
-def test_correct_is_nan_for_surveys_without_strategy():
+def test_corrected_magnitudes_is_nan_for_surveys_without_strategy():
     corrector = Corrector(detections)
-    assert ~corrector._correct().loc["c1"].isna().any()
-    assert corrector._correct().loc["c2"].isna().all()
+    assert ~corrector.corrected_magnitudes().loc["c1"].isna().any()
+    assert corrector.corrected_magnitudes().loc["c2"].isna().all()
 
 
-def test_corrected_dataframe_has_generic_columns_and_new_ones_from_corrected():
-    corrector = Corrector(detections)
-    generic = [
-        "aid",
-        "oid",
-        "tid",
-        "fid",
-        "mjd",
-        "has_stamp",
-        "isdiffpos",
-        "mag",
-        "e_mag",
-        "ra",
-        "e_ra",
-        "dec",
-        "e_dec",
-    ]
-    new_columns = ALL_NEW_COLS
-    assert (corrector.corrected_dataframe().columns.isin(generic + new_columns)).all()
-
-
-def test_corrected_dataframe_sets_non_corrected_detections_to_nan():
+def test_corrected_magnitudes_sets_non_corrected_detections_to_nan():
     altered_detections = deepcopy(detections)
     altered_detections[0]["extra_fields"]["distnr"] = 2
     corrector = Corrector(altered_detections)
-    assert ~corrector._correct().loc["c1"].isna().any()
-    assert corrector.corrected_dataframe().loc["c1"][MAG_CORR_COLS].isna().all()
+    assert corrector.corrected_magnitudes().loc["c1"][MAG_CORR_COLS].isna().all()
 
 
-def test_corrected_dataframe_sets_infinite_values_to_zero_magnitude():
+def test_corrected_as_records_sets_infinite_values_to_zero_magnitude():
     altered_detections = deepcopy(detections)
     altered_detections[0]["isdiffpos"] = -1
     corrector = Corrector(altered_detections)
-    assert np.isinf(corrector._correct().loc["c1"]).any()
-    assert (corrector.corrected_dataframe().loc["c1"][MAG_CORR_COLS] == Corrector._ZERO_MAG).all()
+    assert all(corrector.corrected_as_records()[0][col] == Corrector._ZERO_MAG for col in MAG_CORR_COLS)
 
 
-def test_corrected_records_restores_is_same_as_original_input_with_new_corrected_fields():
+def test_corrected_as_records_restores_original_input_with_new_corrected_fields():
     corrector = Corrector(detections)
-    records = corrector.corrected_records()
+    records = corrector.corrected_as_records()
     for record in records:
         for col in ALL_NEW_COLS:
             record.pop(col)
@@ -196,32 +173,32 @@ def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value
 
 def test_coordinates_dataframe_calculates_mean_for_each_aid():
     corrector = Corrector(detections)
-    assert corrector.coordinates_dataframe().index == ["AID1"]
+    assert corrector.mean_coordinates().index == ["AID1"]
 
     altered_detections = deepcopy(detections)
     altered_detections[0]["aid"] = "AID2"
     corrector = Corrector(altered_detections)
-    assert corrector.coordinates_dataframe().index.isin(["AID1", "AID2"]).all()
+    assert corrector.mean_coordinates().index.isin(["AID1", "AID2"]).all()
 
 
 def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
     corrector = Corrector(detections)
-    assert corrector.coordinates_dataframe().columns.isin(["meanra", "meandec"]).all()
+    assert corrector.mean_coordinates().columns.isin(["meanra", "meandec"]).all()
 
 
 def test_coordinates_records_has_one_entry_per_aid():
     corrector = Corrector(detections)
-    assert set(corrector.coordinates_records()) == {"AID1"}
+    assert set(corrector.coordinates_as_records()) == {"AID1"}
 
     altered_detections = deepcopy(detections)
     altered_detections[0]["aid"] = "AID2"
     corrector = Corrector(altered_detections)
-    assert set(corrector.coordinates_records()) == {"AID1", "AID2"}
+    assert set(corrector.coordinates_as_records()) == {"AID1", "AID2"}
 
 
 def test_coordinates_records_has_mean_ra_and_mean_dec_for_each_record():
     altered_detections = deepcopy(detections)
     altered_detections[0]["aid"] = "AID2"
     corrector = Corrector(altered_detections)
-    for values in corrector.coordinates_records().values():
+    for values in corrector.coordinates_as_records().values():
         assert set(values) == {"meanra", "meandec"}
