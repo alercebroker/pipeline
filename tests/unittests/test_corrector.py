@@ -139,14 +139,14 @@ def test_weighted_mean_with_equal_weights_is_same_as_ordinary_mean():
     assert Corrector.weighted_mean(vals, weights) == 150
 
 
-def test_weighted_mean_with_a_zero_weight_does_not_consider_its_value_in_mean():
-    vals, weights = pd.Series([100, 200]), pd.Series([5, 0])
-    assert Corrector.weighted_mean(vals, weights) == 100
+def test_weighted_mean_with_very_high_error_does_not_consider_its_value_in_mean():
+    vals, sigmas = pd.Series([100, 200]), pd.Series([1, 1e6])
+    assert np.isclose(Corrector.weighted_mean(vals, sigmas), 100)
 
 
-def test_weighted_mean_with_an_almost_infinite_weight_only_considers_its_value_in_mean():
-    vals, weights = pd.Series([100, 200]), pd.Series([1, 1e6])
-    assert np.isclose(Corrector.weighted_mean(vals, weights), 200)
+def test_weighted_mean_with_very_small_error_only_considers_its_value_in_mean():
+    vals, sigmas = pd.Series([100, 200]), pd.Series([1, 1e-6])
+    assert np.isclose(Corrector.weighted_mean(vals, sigmas), 200)
 
 
 def test_arcsec2deg_applies_proper_conversion():

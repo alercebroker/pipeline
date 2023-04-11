@@ -98,8 +98,8 @@ class Corrector:
         return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
 
     @staticmethod
-    def weighted_mean(values: pd.Series, weights: pd.Series) -> float:
-        return np.average(values, weights=weights)
+    def weighted_mean(values: pd.Series, sigmas: pd.Series) -> float:
+        return np.average(values, weights=1 / sigmas ** 2)
 
     @staticmethod
     def arcsec2dec(values: pd.Series | float) -> pd.Series | float:
@@ -107,9 +107,9 @@ class Corrector:
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
         def _average(series):
-            return self.weighted_mean(series, weights.loc[series.index])
+            return self.weighted_mean(series, sigmas.loc[series.index])
 
-        weights = 1 / self.arcsec2dec(self._detections[f"e_{label}"]) ** 2
+        sigmas = self.arcsec2dec(self._detections[f"e_{label}"])
         return {f"mean{label}": self._detections.groupby("aid")[label].agg(_average)}
 
     def mean_coordinates(self) -> pd.DataFrame:
