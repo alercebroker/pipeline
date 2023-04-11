@@ -134,8 +134,8 @@ if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD")
     PRODUCER_CONFIG["PARAMS"]["security.protocol"] = os.getenv(
         "PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"
     )
-    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = (
-        os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"),
+    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = os.getenv(
+        "PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"
     )
     PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
     PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
