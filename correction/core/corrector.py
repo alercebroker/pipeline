@@ -116,7 +116,7 @@ class Corrector:
         Returns:
             float: Weighted mean of the values
         """
-        return np.average(values, weights=1 / sigmas ** 2)
+        return np.average(values, weights=1 / sigmas**2)
 
     @staticmethod
     def arcsec2dec(values: pd.Series | float) -> pd.Series | float:
@@ -139,6 +139,7 @@ class Corrector:
         Returns:
             dict: Mapping from `mean<label>` to weighted means of the coordinates
         """
+
         def _average(series):
             return self.weighted_mean(series, sigmas.loc[series.index])
 
