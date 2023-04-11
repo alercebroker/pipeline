@@ -15,7 +15,13 @@ class Corrector:
     _ZERO_MAG = 100.0  # Not really zero mag, but zero flux (very high magnitude)
 
     def __init__(self, detections: list[dict]):
-        """Duplicate detections are dropped from all calculations and outputs."""
+        """Creates objet that handles detection corrections.
+
+        Duplicate `candids` are dropped from all calculations and outputs.
+
+        Args:
+            detections: List of mappings with all values from generic alert (must include `extra_fields`)
+        """
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
         self._detections = self._detections.drop_duplicates("candid").set_index("candid")
 
@@ -90,6 +96,8 @@ class Corrector:
 
         The output is the same as the input passed on creation, with additional generic fields corresponding to
         the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
+
+        The records are a list of mappings with the original input pairs and the new pairs together.
         """
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
@@ -99,13 +107,38 @@ class Corrector:
 
     @staticmethod
     def weighted_mean(values: pd.Series, sigmas: pd.Series) -> float:
+        """Compute error weighted mean of values. The weights used are the inverse square of the errors.
+
+        Args:
+            values: Values for which to compute the mean
+            sigmas: Errors associated with the values
+
+        Returns:
+            float: Weighted mean of the values
+        """
         return np.average(values, weights=1 / sigmas ** 2)
 
     @staticmethod
     def arcsec2dec(values: pd.Series | float) -> pd.Series | float:
+        """Converts values from arc-seconds to degrees.
+
+        Args:
+            values: Value in arcsec
+
+        Returns:
+            pd.Series | float: Value in degrees
+        """
         return values / 3600.0
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
+        """Calculate weighted mean value for the given coordinates for each AID.
+
+        Args:
+            label: Label for the coordinate to calculate
+
+        Returns:
+            dict: Mapping from `mean<label>` to weighted means of the coordinates
+        """
         def _average(series):
             return self.weighted_mean(series, sigmas.loc[series.index])
 
@@ -113,9 +146,11 @@ class Corrector:
         return {f"mean{label}": self._detections.groupby("aid")[label].agg(_average)}
 
     def mean_coordinates(self) -> pd.DataFrame:
+        """Dataframe with weighted mean coordinates for each AID"""
         coords = self._calculate_coordinates("ra")
         coords.update(self._calculate_coordinates("dec"))
         return pd.DataFrame(coords)
 
     def coordinates_as_records(self) -> dict:
+        """Weighted mean coordinates as records (mapping from AID to a mapping of mean coordinates)"""
         return self.mean_coordinates().to_dict("index")
