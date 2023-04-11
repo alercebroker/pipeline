@@ -1,5 +1,7 @@
 import os
 from schema_old import SCHEMA
+from credentials import get_psql_credentials
+from fastavro import schema
 
 ##################################################
 #       xmatch_step   Settings File
@@ -81,14 +83,7 @@ XMATCH_CONFIG = {
 # Database configuration
 # Depending on the database backend the parameters can change
 DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.environ["DB_ENGINE"],
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": os.environ["DB_PORT"],
-        "DB_NAME": os.environ["DB_NAME"],
-    }
+    "SQL": get_psql_credentials()
 }
 
 STEP_METADATA = {
@@ -96,6 +91,15 @@ STEP_METADATA = {
     "STEP_ID": os.getenv("STEP_ID", "dev"),
     "STEP_NAME": os.getenv("STEP_NAME", "xmatch_step"),
     "STEP_COMMENTS": "",
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_SERVER"],
+    },
+    "TOPIC": os.environ["SCRIBE_TOPIC"],
+    "SCHEMA": schema.load_schema("scribe_schema.avsc")
 }
 
 METRICS_CONFIG = {
@@ -177,6 +181,7 @@ STEP_CONFIG = {
     "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
     "RETRIES": int(os.getenv("RETRIES", 3)),
-    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", 1))
+    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", 1)),
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     # "COMMIT": False,           #Disables commit, useful to debug KafkaConsumer
 }
