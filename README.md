@@ -29,10 +29,10 @@ script.
 *apf* is based on *steps* conected through [Apache
 Kafka](https://kafka.apache.org/) topics.
 
-Each *step* is composed by a **consumer** and is isolated from other
+Each *step* is composed by a `consumer` and is isolated from other
 steps inside a docker container.
 
-When running, the step calls the **execute()** method for each *message*
+When running, the step calls the **execute()** method for each *message* or *message batch*
 consumed. A step can have multiple producers and databases back-ends
 plugins that can be accessed inside the *execute* method to have a more
 complex logic.

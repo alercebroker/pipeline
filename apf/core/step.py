@@ -176,16 +176,16 @@ class GenericStep(abc.ABC):
         self.message = message
         if isinstance(self.message, dict):
             self.prometheus_metrics.consumed_messages.observe(1)
-            tid = self.message.get("tid")
-            if tid:
-                tid = str(tid).upper()
-                self.prometheus_metrics.telescope_id.state(tid)
+            # tid = self.message.get("tid")
+            # if tid:
+            #     tid = str(tid).upper()
+            #     self.prometheus_metrics.telescope_id.state(tid)
         if isinstance(self.message, list):
             self.prometheus_metrics.consumed_messages.observe(len(self.message))
-            tid = self.message[0].get("tid")
-            if tid:
-                tid = str(tid).upper()
-                self.prometheus_metrics.telescope_id.state(tid)
+            # tid = self.message[0].get("tid")
+            # if tid:
+            #     tid = str(tid).upper()
+            #     self.prometheus_metrics.telescope_id.state(tid)
         preprocessed = self.pre_execute(self.message)
         return preprocessed
 
