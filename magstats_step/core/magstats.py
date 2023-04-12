@@ -56,9 +56,6 @@ class MagnitudeStatistics(BaseStatistics):
     def calculate_stellar(self) -> pd.DataFrame:
         return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first")})
 
-    def calculate_ndet(self) -> pd.DataFrame:
-        return super().calculate_ndet()
-
     def calculate_ndubious(self) -> pd.DataFrame:
         return pd.DataFrame({"ndubious": self._grouped_detections()["dubious"].sum()})
 

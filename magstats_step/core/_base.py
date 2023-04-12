@@ -72,7 +72,7 @@ class BaseStatistics(abc.ABC):
         exclude = {name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}" for name in exclude}
 
         # Select all methods that start with prefix unless excluded
-        methods = {name for name in self.__class__.__dict__ if name.startswith(self._PREFIX) and name not in exclude}
+        methods = {name for name in dir(self) if name.startswith(self._PREFIX) and name not in exclude}
 
         # Compute all statistics and join into single dataframe
         stats = [getattr(self, method)() for method in methods]

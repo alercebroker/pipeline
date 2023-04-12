@@ -54,9 +54,6 @@ class ObjectStatistics(BaseStatistics):
     def calculate_dec(self) -> pd.DataFrame:
         return self._calculate_coordinates("dec")
 
-    def calculate_ndet(self) -> pd.DataFrame:
-        return super().calculate_ndet()
-
     def calculate_firstmjd(self) -> pd.DataFrame:
         return pd.DataFrame({"firstmjd": self._grouped_value("mjd", which="first")})
 
