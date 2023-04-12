@@ -225,5 +225,6 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: List[dict]) -> pd.DataFrame:
-    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
-
+    return pd.DataFrame(
+        columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"]
+    )

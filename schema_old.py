@@ -119,7 +119,10 @@ SCHEMA = {
         {"name": "aid", "type": "string"},
         {
             "name": "candid",
-            "type": ["long", {"type": "array", "items": "long", "default": []}],
+            "type": [
+                "long",
+                {"type": "array", "items": "long", "default": []},
+            ],
         },
         {"name": "detections", "type": DETECTIONS},
         {
@@ -131,7 +134,15 @@ SCHEMA = {
             "name": "metadata",
             "type": METADATA,
         },
-        {"name": "preprocess_step_id", "type": "string", "default": "transitional_pipeline"},
-        {"name": "preprocess_step_version", "type": "string", "default": "1.0.0"},
+        {
+            "name": "preprocess_step_id",
+            "type": "string",
+            "default": "transitional_pipeline",
+        },
+        {
+            "name": "preprocess_step_version",
+            "type": "string",
+            "default": "1.0.0",
+        },
     ],
 }

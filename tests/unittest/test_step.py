@@ -104,7 +104,9 @@ class StepXmatchTest(unittest.TestCase):
 
     def test_bad_xmatch(self):
         catalog = pd.DataFrame(self.batch)
-        catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
+        catalog.rename(
+            columns={"meanra": "ra", "meandec": "dec"}, inplace=True
+        )
         self.step.xmatch_client.execute.side_effect = Exception
         with self.assertRaises(Exception) as e:
             self.step.request_xmatch(catalog, retries_count=1)
@@ -117,7 +119,9 @@ class StepXmatchTest(unittest.TestCase):
     @mock.patch("xmatch_step.XmatchStep.save_xmatch")
     def test_execute(self, mock_save_xmatch: mock.Mock):
         old_produce_calls = len(self.step.producer.produce.mock_calls)
-        self.step.xmatch_client.execute.return_value = get_fake_xmatch(self.batch)
+        self.step.xmatch_client.execute.return_value = get_fake_xmatch(
+            self.batch
+        )
         self.step.xmatch_client.execute.side_effect = None
         self.step.execute(self.batch)
         self.step.producer.produce.assert_called()

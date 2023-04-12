@@ -8,18 +8,18 @@ import json
 
 from .data.catalog_alias import CATALOG_MAP
 
+
 class XmatchClient:
     @staticmethod
     def execute(
-            catalog,
-            catalog_type: str,
-            ext_catalog: str,
-            ext_columns: list,
-            selection: str,
-            result_type: str,
-            distmaxarcsec: int = 1,
+        catalog,
+        catalog_type: str,
+        ext_catalog: str,
+        ext_columns: list,
+        selection: str,
+        result_type: str,
+        distmaxarcsec: int = 1,
     ):
-
         try:
             # catalog alias
             if ext_catalog in CATALOG_MAP:
@@ -27,7 +27,6 @@ class XmatchClient:
 
             # Encode input
             if catalog_type == "pandas":
-
                 string_io = io.StringIO()
                 new_columns = {}
                 for c in catalog.columns:
@@ -38,7 +37,6 @@ class XmatchClient:
                 catalog_content = string_io.getvalue()
 
             elif catalog_type == "astropy":
-
                 columns = list(catalog.columns)
                 for c in columns:
                     catalog.rename_column(c, "%s_in" % c)
@@ -96,7 +94,6 @@ class XmatchClient:
                 result = Table.read(response_bytes)
 
         except Exception as exception:
-
             sys.stderr.write("Request to CDS xmatch failed: %s \n" % exception)
             raise exception
 

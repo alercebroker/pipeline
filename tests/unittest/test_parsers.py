@@ -10,10 +10,11 @@ def test_unparse():
     unparsed = unparse(lc, "detections")
     unparsed = unparsed["detections"].to_dict()
     detections = unparsed["oid"]
-    assert len(detections) == 1 #ATLAS detection was ignored
+    assert len(detections) == 1  # ATLAS detection was ignored
     keys = detections[0].keys()
     assert "extra_fields" not in keys
     assert all([elem in keys for elem in ["magpsf", "sigmapsf"]])
+
 
 def parse_output():
     pass

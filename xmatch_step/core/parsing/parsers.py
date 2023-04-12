@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 # Is this even temporal?
 def unparse(data: pd.DataFrame, key: str):
     data = data.copy(deep=True)
@@ -38,6 +39,7 @@ def unparse(data: pd.DataFrame, key: str):
         raise NotImplementedError(f"Not implemented unparse for {key} key")
     return response
 
+
 def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
     """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
     a list of dict as output.
@@ -63,9 +65,9 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
         }
     )
     # Join metadata with xmatches
-    metadata = lightcurves[
-        ["oid", "metadata", "aid", "candid"]
-    ].set_index("oid")
+    metadata = lightcurves[["oid", "metadata", "aid", "candid"]].set_index(
+        "oid"
+    )
     metadata_xmatches = metadata.join(xmatches.set_index("oid_in"))
 
     # Unparse dets and non dets: means separate detections and non detections by oid. For example if exists a list

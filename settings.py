@@ -92,7 +92,7 @@ SCRIBE_PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
     "TOPIC": os.environ["SCRIBE_TOPIC"],
-    "SCHEMA": schema.load_schema("scribe_schema.avsc")
+    "SCHEMA": schema.load_schema("scribe_schema.avsc"),
 }
 
 METRICS_CONFIG = {
