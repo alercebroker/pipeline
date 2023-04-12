@@ -2,24 +2,13 @@ import unittest
 import pandas as pd
 
 from apf.producers import GenericProducer
-from xmatch_step import XmatchStep, XmatchClient, SQLConnection
+from xmatch_step import XmatchStep, XmatchClient
 from tests.data.messages import generate_input_batch, get_fake_xmatch
 from schema import SCHEMA
 from unittest import mock
 
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": "postgresql",
-        "HOST": "localhost",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "PORT": 5432,
-        "DB_NAME": "postgres",
-    }
-}
-
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": "unittest.mock.MagicMock",
     "PARAMS": {
         "bootstrap.servers": "server",
         "group.id": "group_id",
@@ -32,6 +21,7 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
+    "CLASS": "unittest.mock.MagicMock",
     "TOPIC": "test",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
@@ -69,7 +59,6 @@ class StepXmatchTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         step_config = {
-            "DB_CONFIG": DB_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "STEP_METADATA": {
@@ -82,21 +71,12 @@ class StepXmatchTest(unittest.TestCase):
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
         }
-        mock_db_connection = mock.create_autospec(SQLConnection)
         mock_xmatch_client = mock.create_autospec(XmatchClient)
         mock_producer = mock.create_autospec(GenericProducer)
         cls.step = XmatchStep(
             config=step_config,
-            producer=mock_producer,
-            xmatch_client=mock_xmatch_client,
-            db_connection=mock_db_connection,
         )
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
-
-    def test_insert_step_metadata(self) -> None:
-        self.step.insert_step_metadata()
-        calls = len(self.step.driver.query().get_or_create.mock_calls)
-        self.assertEqual(calls, 2)
 
     def test_save_empty_xmatch(self):
         data = pd.DataFrame()

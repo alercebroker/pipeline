@@ -5,15 +5,8 @@ from astropy.table import Table
 import astropy.io.votable as votable
 import requests
 import json
-import pkg_resources
 
-# catalog alias
-input_path = pkg_resources.resource_filename(
-    "cds_xmatch_client", "data/catalog_alias.json"
-)
-with open(input_path) as catalogs_file:
-    CATALOG_MAP = json.load(catalogs_file)
-
+from .data.catalog_alias import CATALOG_MAP
 
 class XmatchClient:
     @staticmethod

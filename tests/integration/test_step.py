@@ -13,18 +13,6 @@ from tests.data.messages import (
     get_fake_empty_xmatch,
 )
 
-
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": "postgresql",
-        "HOST": "localhost",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "PORT": 5432,
-        "DB_NAME": "postgres",
-    }
-}
-
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
@@ -78,7 +66,6 @@ class StepXmatchTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         # this step only for setup db
         cls.step_config = {
-            "DB_CONFIG": DB_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "STEP_METADATA": {
@@ -95,7 +82,7 @@ class StepXmatchTest(unittest.TestCase):
         cls.step = XmatchStep(
             config=cls.step_config, producer=producer, insert_metadata=False
         )
-        cls.batch = generate_input_batch(20)  # I want 20 light  curves
+        cls.batch = generate_input_batch(20)
 
     @classmethod
     def tearDownClass(cls):

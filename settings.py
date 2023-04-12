@@ -1,6 +1,5 @@
 import os
 from schema_old import SCHEMA
-from credentials import get_psql_credentials
 from fastavro import schema
 
 ##################################################
@@ -78,12 +77,6 @@ XMATCH_CONFIG = {
             "e_Kmag",
         ],
     }
-}
-
-# Database configuration
-# Depending on the database backend the parameters can change
-DB_CONFIG = {
-    "SQL": get_psql_credentials()
 }
 
 STEP_METADATA = {
@@ -174,7 +167,6 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
 
 # Step Configuration
 STEP_CONFIG = {
-    "DB_CONFIG": DB_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
