@@ -1,14 +1,13 @@
 import pytest
 import unittest
+from fastavro.schema import load_schema
 
 from xmatch_step import XmatchStep
-from db_plugins.db.sql.models import Object, Step
-from cds_xmatch_client import XmatchClient
+from xmatch_step.core.xmatch_client import XmatchClient
 from schema_old import SCHEMA
 from unittest import mock
 from tests.data.messages import (
     generate_input_batch,
-    get_default_object_values,
     get_fake_xmatch,
     get_fake_empty_xmatch,
 )
@@ -16,22 +15,30 @@ from tests.data.messages import (
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
     "PARAMS": {
-        "bootstrap.servers": "server",
+        "bootstrap.servers": "localhost:9092",
         "group.id": "group_id",
         "auto.offset.reset": "beginning",
         "enable.partition.eof": False,
     },
-    "TOPICS": ["topic"],
+    "TOPICS": ["correction"],
     "consume.messages": "1",
     "consume.timeout": "10",
 }
 
 PRODUCER_CONFIG = {
-    "TOPIC": "test",
+    "CLASS": "apf.producers.KafkaProducer",
+    "TOPIC": "xmatch",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
     "SCHEMA": SCHEMA,
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "TOPIC": "w_object",
+    "PARAMS": {"bootstrap.servers": "localhost:9092"},
+    "SCHEMA": load_schema("scribe_schema.avsc"),
 }
 
 XMATCH_CONFIG = {
@@ -60,14 +67,14 @@ XMATCH_CONFIG = {
 }
 
 
-@pytest.mark.usefixtures("psql_service")
+@pytest.mark.usefixtures("kafka_service")
 class StepXmatchTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        # this step only for setup db
         cls.step_config = {
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
             "STEP_METADATA": {
                 "STEP_VERSION": "xmatch",
                 "STEP_ID": "xmatch",
@@ -78,31 +85,8 @@ class StepXmatchTest(unittest.TestCase):
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
         }
-        producer = mock.MagicMock()
-        cls.step = XmatchStep(
-            config=cls.step_config, producer=producer, insert_metadata=False
-        )
+        cls.step = XmatchStep(config=cls.step_config)
         cls.batch = generate_input_batch(20)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.step.driver.drop_db()
-        cls.step.driver.session.close()
-
-    def setUp(self):
-        self.step.driver.create_db()
-        array = [
-            get_default_object_values(i) for i, x in enumerate(self.batch)
-        ]
-        self.step.driver.query(Object).bulk_insert(array)
-
-    def tearDown(self):
-        self.step.driver.session.close()
-        self.step.driver.drop_db()
-
-    def test_insert_step_metadata(self):
-        self.step.insert_step_metadata()
-        self.assertEqual(len(self.step.driver.query(Step).all()), 1)
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, mock_xmatch: mock.Mock):
@@ -113,6 +97,3 @@ class StepXmatchTest(unittest.TestCase):
     def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
         mock_xmatch.return_value = get_fake_empty_xmatch(self.batch)
         self.step.execute(self.batch)
-
-    def test_insert_metadata(self):
-        self.step.insert_step_metadata()
