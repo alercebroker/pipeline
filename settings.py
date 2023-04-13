@@ -19,9 +19,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": True
-            if os.getenv("ENABLE_PARTITION_EOF")
-            else False,
+            "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", False)),
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", "1")),
