@@ -117,9 +117,9 @@ def settings_creator():
 
     # Step Configuration
     step_config = {
-        "consumer_config": consumer_config,
-        "producer_config": producer_config,
-        "metrics_config": metrics_config,
+        "CONSUMER_CONFIG": consumer_config,
+        "PRODUCER_CONFIG": producer_config,
+        "METRICS_CONFIG": metrics_config,
         "PROMETHEUS": prometheus,
         "DB_CONFIG": db_config,
         "LOGGING_DEBUG": logging_debug,
