@@ -6,6 +6,10 @@ import pandas as pd
 def unparse(data: pd.DataFrame, key: str):
     data = data.copy(deep=True)
     response = []
+
+    if key not in ["detections", "non_detections"]:
+        raise NotImplementedError(f"Not implemented unparse for {key} key")
+
     data = data[key].values
     for dets in data:
         d = pd.DataFrame(dets)
@@ -23,21 +27,14 @@ def unparse(data: pd.DataFrame, key: str):
             d.drop(columns=["extra_fields"], inplace=True)
         response.append(d)
 
-    if len(response):
+    if len(response) > 0:
         response = pd.concat(response, ignore_index=True)
-    else:
-        return pd.DataFrame(columns=[key])
-    if key == "detections":
         response = response.groupby("oid", sort=False).apply(
             lambda x: pd.Series({key: x.to_dict("records")})
         )
-    elif key == "non_detections":
-        response = response.groupby("oid", sort=False).apply(
-            lambda x: pd.Series({key: x.to_dict("records")})
-        )
-    else:
-        raise NotImplementedError(f"Not implemented unparse for {key} key")
-    return response
+        return response
+
+    return pd.DataFrame(columns=[key])
 
 
 def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):

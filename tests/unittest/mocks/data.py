@@ -15,5 +15,6 @@ mock_lightcurve = [
             },
             {"candid": "aaa", "tid": "ATLAS-01a"},
         ],
+        "magstats": []
     }
 ]
