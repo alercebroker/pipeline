@@ -72,11 +72,11 @@ class LightcurveStep(GenericStep):
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
         for message in messages:
             detections_in_db = self.db_client.query(Detection).find_all(
-                {"aid": message["aid"]}
+                {"aid": message["aid"]}, paginate=False
             )
             self.clean_detections_from_db(detections_in_db)
             non_detections_in_db = self.db_client.query(NonDetection).find_all(
-                {"aid": message["aid"]}
+                {"aid": message["aid"]}, paginate=False
             )
             self.clean_non_detections_from_db(non_detections_in_db)
 
