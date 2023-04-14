@@ -90,4 +90,6 @@ class StepXmatchTest(unittest.TestCase):
     def test_execute(self):
         result = self.step.execute(self.batch)
         assert isinstance(result, tuple)
-        self.step.post_execute(result)
+        output = self.step.post_execute(result)
+        messages_with_nd = self.step.pre_produce(output)
+        assert isinstance(messages_with_nd, list)
