@@ -151,8 +151,12 @@ if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD")
 if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+        "METRICS_KAFKA_USERNAME"
+    )
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+        "METRICS_KAFKA_PASSWORD"
+    )
 
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
