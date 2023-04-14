@@ -57,6 +57,7 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
     for i in range(num_messages):
         alert = {
             "oid": f"ZTFoid{identifier}",
+            "aid": f"ZTFaid{identifier}",
             "tid": "ZTF",
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
@@ -86,6 +87,7 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
         nd = {
             "tid": "ZTF",
             "oid": f"ZTFoid{identifier}",
+            "aid": f"ZTFaid{identifier}",
             "mjd": random.uniform(59000, 60000),
             "diffmaglim": random.uniform(15, 20),
             "fid": random.randint(1, 2),
