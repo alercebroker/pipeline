@@ -80,6 +80,11 @@ def settings_creator():
         producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
         producer_config["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
         producer_config["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
+    if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+        scribe_producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        scribe_producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        scribe_producer_config["PARAMS"]["sasl.username"] = os.getenv("SCRIBE_KAFKA_USERNAME")
+        scribe_producer_config["PARAMS"]["sasl.password"] = os.getenv("SCRIBE_KAFKA_PASSWORD")
     if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         metrics_config["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
         metrics_config["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
