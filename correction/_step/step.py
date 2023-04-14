@@ -91,7 +91,7 @@ class CorrectionStep(GenericStep):
         for detection in detections:
             detection = detection.copy()  # Prevent modification for next step
             candid = detection.pop("candid")
-            set_on_insert = not detection["has_stamp"]
+            set_on_insert = not detection.get("has_stamp", False)
             scribe_data = {
                 "collection": "detection",
                 "type": "update",
