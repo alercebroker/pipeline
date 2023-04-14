@@ -90,3 +90,4 @@ class StepXmatchTest(unittest.TestCase):
     def test_execute(self):
         result = self.step.execute(self.batch)
         assert isinstance(result, tuple)
+        self.step.post_execute(result)
