@@ -31,6 +31,7 @@ def test_unparse_not_implemented():
         unparsed = unparse(lc, "oid")
     assert str(ex.value) == "Not implemented unparse for oid key"
 
+
 def test_parse_output():
     lightcurve_dataframe = pd.DataFrame.from_records(mock_lightcurves_list)
     xmatch_dataframe = pd.DataFrame.from_records(mock_xmatch_list)
