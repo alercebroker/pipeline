@@ -60,13 +60,21 @@ class XmatchClientTest(unittest.TestCase):
             os.path.join(FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "input.csv")
         )
         self.test_astropy_data = Table.read(
-            os.path.join(FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "astropy_response.votable"), format="votable"
+            os.path.join(
+                FILE_PATH,
+                DATA_FOLDER_RELATIVE_PATH,
+                "astropy_response.votable",
+            ),
+            format="votable",
         )
 
     @mock.patch(
         "xmatch_step.core.xmatch_client.requests.post",
         return_value=MockResponse(
-            content_path=os.path.join(FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "response.csv"), format="pandas"
+            content_path=os.path.join(
+                FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "response.csv"
+            ),
+            format="pandas",
         ),
     )
     def test_execute_pandas(self, requests_mock):
@@ -86,7 +94,10 @@ class XmatchClientTest(unittest.TestCase):
     @mock.patch(
         "xmatch_step.core.xmatch_client.requests.post",
         return_value=MockResponse(
-            content_path=os.path.join(FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "response.csv"), format="votable"
+            content_path=os.path.join(
+                FILE_PATH, DATA_FOLDER_RELATIVE_PATH, "response.csv"
+            ),
+            format="votable",
         ),
     )
     def test_execute_astropy(self, requests_mock):

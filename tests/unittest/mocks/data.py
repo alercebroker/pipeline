@@ -37,7 +37,7 @@ mock_lightcurves_list = [
             },
             {"candid": "aaa", "tid": "ATLAS-01a"},
         ],
-        "non_detections": []
+        "non_detections": [],
     },
     {
         "aid": "aid2",
@@ -56,8 +56,8 @@ mock_lightcurves_list = [
             },
             {"candid": "aaa2", "tid": "ATLAS-01a"},
         ],
-        "non_detections": []
-    }
+        "non_detections": [],
+    },
 ]
 
 mock_xmatch_list = [
@@ -69,7 +69,7 @@ mock_xmatch_list = [
         "aid_in": "aid1",
         "AllWISE": 999.888,
         "W1mag": 777.555,
-        "W2mag": "J124131"
+        "W2mag": "J124131",
     },
     {
         "ra_in": 321,
@@ -77,6 +77,5 @@ mock_xmatch_list = [
         "col1": "col2",
         "oid_in": "oid2",
         "aid_in": "aid2",
-    }
+    },
 ]
-

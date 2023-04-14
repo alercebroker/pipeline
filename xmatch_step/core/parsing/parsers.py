@@ -78,7 +78,9 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
     # Join dets and non dets
     dets_nondets = dets.join(non_dets)
     # Join all
-    data = metadata_xmatches.join(dets_nondets, on="oid") #pendiente pretgunta aid
+    data = metadata_xmatches.join(
+        dets_nondets, on="oid"
+    )  # pendiente pretgunta aid
 
     data.replace({np.nan: None}, inplace=True)
     data.index.names = ["aid"]

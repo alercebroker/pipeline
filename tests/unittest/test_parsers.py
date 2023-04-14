@@ -17,14 +17,10 @@ def test_unparse():
 
 
 def test_parse_output():
-    lightcurve_dataframe = pd.DataFrame.from_records(
-        mock_lightcurves_list
-    )
-    xmatch_dataframe = pd.DataFrame.from_records(
-        mock_xmatch_list
-    )
+    lightcurve_dataframe = pd.DataFrame.from_records(mock_lightcurves_list)
+    xmatch_dataframe = pd.DataFrame.from_records(mock_xmatch_list)
     result_dataframe = parse_output(lightcurve_dataframe, xmatch_dataframe)
-    
+
     assert len(result_dataframe) == 2
     assert "xmatches" in result_dataframe[0].keys()
     assert "xmatches" in result_dataframe[1].keys()
