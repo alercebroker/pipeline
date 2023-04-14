@@ -95,12 +95,8 @@ def settings_creator():
             "CONSUMER_KAFKA_PASSWORD"
         )
     if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
-        producer_config["PARAMS"]["security.protocol"] = os.getenv(
-            "PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"
-        )
-        producer_config["PARAMS"]["sasl.mechanism"] = os.getenv(
-            "PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"
-        )
+        producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
         producer_config["PARAMS"]["sasl.username"] = os.getenv(
             "PRODUCER_KAFKA_USERNAME"
         )
