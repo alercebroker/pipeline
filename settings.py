@@ -42,10 +42,6 @@ PRODUCER_CONFIG = {
     },
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "security.protocol": os.getenv("PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"),
-        "sasl.mechanism": os.getenv("PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"),
-        "sasl.username": os.environ["PRODUCER_SASL_USERNAME"],
-        "sasl.password": os.environ["PRODUCER_SASL_PASSWORD"],
     },
     "SCHEMA": {
         "doc": "Late Classification",
@@ -138,15 +134,21 @@ METRICS_CONFIG = {
     },
 }
 
-if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
+if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
-    PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
-    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
+if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
+    PRODUCER_CONFIG["PARAMS"]["security.protocol"] = os.getenv(
+        "PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"
+    )
+    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = os.getenv(
+        "PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"
+    )
+    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
+    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
+if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
