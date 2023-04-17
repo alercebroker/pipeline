@@ -3,7 +3,11 @@ import pandas as pd
 
 from apf.producers import GenericProducer
 from xmatch_step import XmatchStep, XmatchClient
-from tests.data.messages import generate_input_batch, get_fake_xmatch
+from tests.data.messages import (
+    generate_input_batch,
+    get_fake_xmatch,
+    generate_non_ztf_batch,
+)
 from schema import SCHEMA
 from unittest import mock
 
@@ -98,5 +102,11 @@ class StepXmatchTest(unittest.TestCase):
         assert isinstance(messages_with_nd, list)
 
     # Just for coverage
-    def test_empty_produce_scribe(self):
-        self.step.post_execute(([], pd.DataFrame()))
+    @mock.patch.object(XmatchClient, "execute")
+    def test_non_ztf_only_messages(self, xmatch_client):
+        non_ztf_batch = generate_non_ztf_batch(10)
+        xmatch_client.return_value = get_fake_xmatch(non_ztf_batch)
+        result = self.step.execute(non_ztf_batch)
+        assert isinstance(result, tuple)
+        assert len(result[0]) == 0
+        self.step.post_execute(result)

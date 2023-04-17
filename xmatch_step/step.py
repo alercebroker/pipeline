@@ -151,12 +151,13 @@ class XmatchStep(GenericStep):
         # Get only ZTF objects
         mask_ztf = input_catalog["oid"].str.contains("ZTF")
         input_catalog = input_catalog[mask_ztf]
+
+        if len(input_catalog) == 0:
+            return [], pd.DataFrame.from_records([])
         # rename columns of meanra and meandec to (ra, dec)
         input_catalog.rename(
             columns={"meanra": "ra", "meandec": "dec"}, inplace=True
         )
-        if len(input_catalog) == 0:
-            return [], pd.DataFrame.from_records([])
 
         self.logger.info("Getting xmatches")
         xmatches = self.request_xmatch(input_catalog, self.retries)
