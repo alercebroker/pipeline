@@ -49,7 +49,9 @@ class XmatchStep(GenericStep):
 
         result = xmatches.rename(ALLWISE_MAP, axis="columns")
         result["catid"] = "allwise"
-        result.rename(columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True)
+        result.rename(
+            columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True
+        )
 
         data = result[["aid", "catoid", "dist", "catid"]]
         object_list = data.to_dict(orient="records")
