@@ -109,4 +109,9 @@ class StepXmatchTest(unittest.TestCase):
         result = self.step.execute(non_ztf_batch)
         assert isinstance(result, tuple)
         assert len(result[0]) == 0
+
+        self.step.scribe_producer = mock.create_autospec(GenericProducer)
+        self.step.scribe_producer.execute = mock.MagicMock()
+
         self.step.post_execute(result)
+        self.step.scribe_producer.execute.assert_not_called()
