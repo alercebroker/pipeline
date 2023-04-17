@@ -55,8 +55,10 @@ class LightcurveStep(GenericStep):
             {"aid": {"$in": list(messages["aids"])}}, {"_id": False}
         )
 
-        detections = pd.DataFrame(messages["detections"] + db_detections)
-        non_detections = pd.DataFrame(messages["non_detections"] + db_non_detections)
+        detections = pd.DataFrame(messages["detections"] + list(db_detections))
+        non_detections = pd.DataFrame(
+            messages["non_detections"] + list(db_non_detections)
+        )
 
         detections = detections.sort_values(
             "has_stamp", ascending=False
