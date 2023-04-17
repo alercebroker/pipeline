@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+import numpy as np
 import pandas as pd
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
@@ -66,8 +67,8 @@ class LightcurveStep(GenericStep):
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
 
         return {
-            "detections": detections.to_dict("records"),
-            "non_detections": non_detections.to_dict("records"),
+            "detections": detections.replace(np.nan, None).to_dict("records"),
+            "non_detections": non_detections.replace(np.nan, None).to_dict("records"),
         }
 
     @classmethod
