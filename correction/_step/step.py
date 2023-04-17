@@ -49,7 +49,10 @@ class CorrectionStep(GenericStep):
     @classmethod
     def pre_produce(cls, result: dict):
         detections = pd.DataFrame(result["detections"]).groupby("aid")
-        non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+        try:  # At least one non-detection
+            non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+        except KeyError:  # to reproduce expected error for missing non-detections in loop
+            non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
         output = []
         for aid, dets in detections:
             try:
