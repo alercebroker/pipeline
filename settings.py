@@ -1,5 +1,4 @@
 import os
-
 from fastavro import schema
 
 
@@ -11,7 +10,7 @@ def settings_factory():
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaConsumer",
+        "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -23,12 +22,12 @@ def settings_factory():
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     }
 
-    scribe_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+    scribe_producer_config = {
+        "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
-            "bootstrap.servers": os.environ["SCRIBE_SERVER"],
+            "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
-        "TOPIC": os.environ["SCRIBE_TOPIC"],
+        "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
         "SCHEMA": schema.load_schema("scribe_schema.avsc"),
     }
 
@@ -77,13 +76,40 @@ def settings_factory():
         },
     }
 
+    if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+        consumer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        consumer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        consumer_config["PARAMS"]["sasl.username"] = os.getenv(
+            "CONSUMER_KAFKA_USERNAME"
+        )
+        consumer_config["PARAMS"]["sasl.password"] = os.getenv(
+            "CONSUMER_KAFKA_PASSWORD"
+        )
+    if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
+        metrics_config["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
+        metrics_config["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        metrics_config["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+            "METRICS_KAFKA_USERNAME"
+        )
+        metrics_config["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+            "METRICS_KAFKA_PASSWORD"
+        )
+    if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+        scribe_producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
+        scribe_producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+        scribe_producer_config["PARAMS"]["sasl.username"] = os.getenv(
+            "SCRIBE_KAFKA_USERNAME"
+        )
+        scribe_producer_config["PARAMS"]["sasl.password"] = os.getenv(
+            "SCRIBE_KAFKA_PASSWORD"
+        )
     # Step Configuration
     step_config = {
         "CONSUMER_CONFIG": consumer_config,
-        "SCRIBE_CONFIG": scribe_config,
         "METRICS_CONFIG": metrics_config,
         "LOGGING_DEBUG": logging_debug,
-        "EXCLUDED_CALCULATORS": set(excluded_calculators),
+        "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
+        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators),
     }
 
     return step_config

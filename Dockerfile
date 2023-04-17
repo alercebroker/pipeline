@@ -5,6 +5,4 @@ WORKDIR /app
 COPY pyproject.toml pyproject.toml
 RUN pip install .
 
-WORKDIR /app/scripts
-
-CMD ["python", "run_step.py"]
+CMD ["python", "scripts/run_step.py"]

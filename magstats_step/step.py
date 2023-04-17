@@ -1,9 +1,10 @@
+import json
 import logging
 from typing import List
 
-from apf.core.step import GenericStep
+from apf.core.step import GenericStep, get_class
 
-from magstats_step.core import ObjectStatistics, MagnitudeStatistics
+from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
 
 class MagstatsStep(GenericStep):
@@ -15,6 +16,8 @@ class MagstatsStep(GenericStep):
     ):
         super().__init__(config=config, level=level, **step_args)
         self.excluded = set(config["EXCLUDED_CALCULATORS"])
+        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -26,10 +29,32 @@ class MagstatsStep(GenericStep):
 
     def execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded).to_dict("index")
+        stats = obj_calculator.generate_statistics(self.excluded)
+
+        stats = stats.to_dict("index")
 
         magstats_calculator = MagnitudeStatistics(**messages)
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
-        magstats = magstats.set_index(magstats["aid"] + magstats["fid"].astype(str)).to_dict("index")
+        magstats = magstats.set_index("aid")
+        for aid in stats:
+            stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
 
-        return {"objects": stats, "magstats": magstats}
+        return stats
+
+    def produce_scribe(self, result: dict):
+        for aid, magstats in result.items():
+            magstats["oid"] = list(magstats["oid"])
+            magstats["tid"] = list(magstats["tid"])
+
+            command = {
+                "collection": "object",
+                "type": "update",
+                "criteria": {"_id": aid},
+                "data": magstats,
+                "options": {"upsert": True},
+            }
+            self.scribe_producer.produce({"payload": json.dumps(command)})
+
+    def post_execute(self, result: dict):
+        self.produce_scribe(result)
+        return result

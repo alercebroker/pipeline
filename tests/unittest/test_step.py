@@ -4,16 +4,19 @@ from scripts.run_step import step_factory
 
 def test_execute():
     step = step_factory()
-    result = step.execute(data)
-    for i, d in enumerate(data):
-        assert "aid" in result[i] and d["aid"] == result[i]["aid"]
-        assert "meanra" in result[i]
-        assert "meandec" in result[i]
-        assert "magstats" in result[i]
-        assert "oid" in result[i]
-        assert "tid" in result[i]
-        assert "firstmjd" in result[i]
-        assert "lastmjd" in result[i]
-        assert "ndet" in result[i]
-        assert "sigmara" in result[i]
-        assert "sigmadec" in result[i]
+    print(data)
+    formatted_data = step.pre_execute(data)
+    result = step.execute(formatted_data)
+    print(result)
+    for d in data:
+        assert d["aid"] in result
+        assert "meanra" in result[d["aid"]]
+        assert "meandec" in result[d["aid"]]
+        assert "magstats" in result[d["aid"]]
+        assert "oid" in result[d["aid"]]
+        assert "tid" in result[d["aid"]]
+        assert "firstmjd" in result[d["aid"]]
+        assert "lastmjd" in result[d["aid"]]
+        assert "ndet" in result[d["aid"]]
+        assert "sigmara" in result[d["aid"]]
+        assert "sigmadec" in result[d["aid"]]
