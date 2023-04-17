@@ -118,7 +118,7 @@
             },
             {
               "name": "diffmaglim",
-              "type": "int"
+              "type": "float"
             }
           ]
         }
