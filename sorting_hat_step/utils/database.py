@@ -15,7 +15,9 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
     :return: existing aid if exists else is None
     """
     mongo_query = db.query(Object)
-    found = mongo_query.collection.find_one({"oid": {"$in": oid}}, {"_id": "aid"})
+    found = mongo_query.collection.find_one(
+        {"oid": {"$in": oid}}, {"_id": 0, "aid": "$_id"}
+    )
     if found:
         return found["aid"]
     return None
@@ -43,7 +45,7 @@ def conesearch_query(
                 "$maxDistance": math.radians(radius / 3600),
             },
         },
-        {"_id": "aid"},  # rename _id to aid
+        {"_id": 0, "aid": "$_id"},  # rename _id to aid
     )
     if found:
         return found["aid"]

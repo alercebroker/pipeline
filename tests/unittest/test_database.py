@@ -18,7 +18,7 @@ class DatabaseTestCase(unittest.TestCase):
         aid = database.oid_query(self.mock_db, ["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_db.query(Object).collection.find_one.assert_called_with(
-            {"oid": {"$in": ["x", "y", "z"]}}, {"_id": "aid"}
+            {"oid": {"$in": ["x", "y", "z"]}}, {"_id": 0, "aid": "$_id"}
         )
 
     def test_oid_query_with_no_elements(self):
@@ -45,7 +45,7 @@ class DatabaseTestCase(unittest.TestCase):
                     "$maxDistance": 1,
                 },
             },
-            {"_id": "aid"},  # only return alerce_id
+            {"_id": 0, "aid": "$_id"},  # only return alerce_id
         )
 
     def test_conesearch_query_without_results(self):
