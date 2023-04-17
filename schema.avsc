@@ -76,7 +76,7 @@
                   "type": {
                   "default": {},
                   "type": "map",
-                  "values": ["null", "int", "float", "string", "bytes"]
+                  "values": ["null", "int", "float", "string", "bytes", "boolean"]
                   }
               }
             ]
