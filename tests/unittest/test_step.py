@@ -96,3 +96,7 @@ class StepXmatchTest(unittest.TestCase):
         output = self.step.post_execute(result)
         messages_with_nd = self.step.pre_produce(output)
         assert isinstance(messages_with_nd, list)
+
+    # Just for coverage
+    def test_empty_produce_scribe(self):
+        self.step.post_execute(([], pd.DataFrame()))
