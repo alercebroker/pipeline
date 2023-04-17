@@ -47,9 +47,8 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
     # Create a new dataframe that contains just two columns `aid` and `xmatches`.
     aid_in = xmatches["aid_in"]  # change to aid for multi stream purposes
     # Temporal code: the oid_in will be removed
-    xmatches.drop(
+    xmatches = xmatches.drop(
         columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"],
-        inplace=True,
     )
     xmatches.replace({np.nan: None}, inplace=True)
     xmatches = pd.DataFrame(

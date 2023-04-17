@@ -87,7 +87,10 @@ class StepXmatchTest(unittest.TestCase):
         )
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
-    def test_execute(self):
+    @mock.patch.object(XmatchClient, "execute")
+    def test_execute(self, xmatch_client):
+        xmatch_client.return_value = get_fake_xmatch(self.batch)
+        self.step.scribe_producer = mock.MagicMock()
         result = self.step.execute(self.batch)
         assert isinstance(result, tuple)
         output = self.step.post_execute(result)
