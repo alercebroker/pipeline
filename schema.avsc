@@ -24,8 +24,12 @@
                   "type": "string"
               },
               {
-                  "name": "tid",
-                  "type": "string"
+                "name": "tid",
+                "type": "string"
+              },
+              {
+                  "name": "pid",
+                  "type": "long"
               },
               {
                   "name": "candid",
@@ -72,7 +76,7 @@
                   "type": {
                   "default": {},
                   "type": "map",
-                  "values": ["null", "int", "float", "string", "bytes"]
+                  "values": ["null", "int", "float", "string", "bytes", "boolean"]
                   }
               }
             ]

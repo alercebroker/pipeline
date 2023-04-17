@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+import pandas as pd
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Detection, NonDetection
@@ -14,105 +15,78 @@ class LightcurveStep(GenericStep):
         self.db_client = db_client
         self.db_client.connect(config["DB_CONFIG"])
 
-    @staticmethod
-    def unique_detections(old_detections, new_detections):
-        """Return only non-duplicate detections (based on candid).
+    @classmethod
+    def pre_execute(cls, messages: List[dict]) -> dict:
+        aids, detections, non_detections = set(), [], []
+        for msg in messages:
+            aids.add(msg["aid"])
+            detections.extend(msg["detections"])
+            non_detections.extend(msg["non_detections"])
+        return {
+            "aids": aids,
+            "detections": detections,
+            "non_detections": non_detections,
+        }
 
-        Will always keep detections with stamps over ones without. Otherwise, it will keep the
-        ones in `old_detections` over those in `new_detections`.
-        """
-        new_candids_with_stamp = [
-            det["candid"] for det in new_detections if det["has_stamp"]
-        ]
+    def execute(self, messages: dict) -> dict:
+        """Queries the database for all detections and non-detections for each AID and removes duplicates"""
+        query_detections = self.db_client.query(Detection)
+        query_non_detections = self.db_client.query(NonDetection)
 
-        old_detections = [
-            det for det in old_detections if det["candid"] not in new_candids_with_stamp
-        ]
-        candids = [det["candid"] for det in old_detections]
+        db_detections = query_detections.collection.aggregate(
+            [
+                {"$match": {"aid": {"$in": list(messages["aids"])}}},
+                {
+                    "$addFields": {
+                        "candid": {
+                            "$cond": {
+                                "if": {"candid": {"$exists": True}},
+                                "then": "$candid",
+                                "else": "$_id",
+                            }
+                        }
+                    }
+                },
+                {"$project": {"_id": False}},
+            ]
+        )
+        db_non_detections = query_non_detections.collection.find(
+            {"aid": {"$in": list(messages["aids"])}}, {"_id": False}
+        )
 
-        new_detections = [det for det in new_detections if det["candid"] not in candids]
-        return old_detections + new_detections
+        detections = pd.DataFrame(messages["detections"] + db_detections)
+        non_detections = pd.DataFrame(messages["non_detections"] + db_non_detections)
 
-    @staticmethod
-    def unique_non_detections(old_non_detections, new_non_detections):
-        """Return only non-duplicate non-detections (based on `oid`, `fid` and `mjd`).
+        detections = detections.sort_values(
+            "has_stamp", ascending=False
+        ).drop_duplicates("candid", keep="first")
+        non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
 
-        Keeps the ones in `old_non_detections` over those in `new_non_detections`.
-        """
-
-        def create_id(detection):
-            return {k: v for k, v in detection.items() if k in ["oid", "fid", "mjd"]}
-
-        ids = [create_id(det) for det in old_non_detections]
-
-        new_non_detections = [
-            det for det in new_non_detections if create_id(det) not in ids
-        ]
-        return old_non_detections + new_non_detections
+        return {
+            "detections": detections.to_dict("records"),
+            "non_detections": non_detections.to_dict("records"),
+        }
 
     @classmethod
-    def pre_execute(cls, messages: List[dict]) -> List[dict]:
-        """If multiple AIDs are in the same batch create a single message with all of them"""
-        aids, output = {}, []
-        for message in messages:
-            if message["aid"] in aids:
-                idx = aids[message["aid"]]
-                output[idx]["detections"] = cls.unique_detections(
-                    output[idx]["detections"], message["detections"]
-                )
-                output[idx]["non_detections"] = cls.unique_non_detections(
-                    output[idx]["non_detections"], message["non_detections"]
-                )
-            else:
-                output.append(message)
-                aids[message["aid"]] = len(output) - 1
+    def pre_produce(cls, result: dict) -> List[dict]:
+        detections = pd.DataFrame(result["detections"]).groupby("aid")
+        try:  # At least one non-detection
+            non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+        except (
+            KeyError
+        ):  # to reproduce expected error for missing non-detections in loop
+            non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
+        output = []
+        for aid, dets in detections:
+            try:
+                nd = non_detections.get_group(aid).to_dict("records")
+            except KeyError:
+                nd = []
+            output.append(
+                {
+                    "aid": aid,
+                    "detections": dets.to_dict("records"),
+                    "non_detections": nd,
+                }
+            )
         return output
-
-    def execute(self, messages: List[dict]) -> List[dict]:
-        """Queries the database for all detections and non-detections for each AID and removes duplicates"""
-        for message in messages:
-            detections_in_db = list(
-                self.db_client.query(Detection).find_all(
-                    {"aid": message["aid"]}, paginate=False
-                )
-            )
-            self.clean_detections_from_db(detections_in_db)
-            non_detections_in_db = list(
-                self.db_client.query(NonDetection).find_all(
-                    {"aid": message["aid"]}, paginate=False
-                )
-            )
-            self.clean_non_detections_from_db(non_detections_in_db)
-
-            message["detections"] = self.unique_detections(
-                detections_in_db, message["detections"]
-            )
-            message["non_detections"] = self.unique_non_detections(
-                non_detections_in_db, message["non_detections"]
-            )
-
-        return messages
-
-    @staticmethod
-    def clean_detections_from_db(detections):
-        """Removes field `_id` from detections coming from the database.
-
-        For compatibility with old database, if the field `candid` is present in the detections, this
-        will simply remove the `_id` field. If `candid` is not present, assumes that `_id` is the candid.
-        In that case, it will remove `_id` and set it as the `candid` field.
-
-        **Modifies detections inplace**
-        """
-        for detection in detections:
-            if "candid" not in detection:  # Compatibility with old DB definitions
-                detection["candid"] = detection["_id"]
-            detection.pop("_id")
-
-    @staticmethod
-    def clean_non_detections_from_db(non_detections):
-        """Removes field `_id` from non detections coming from the database.
-
-        **Modifies inplace**
-        """
-        for non_detection in non_detections:
-            non_detection.pop("_id")
