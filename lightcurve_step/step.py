@@ -59,7 +59,7 @@ class LightcurveStep(GenericStep):
 
         detections = detections.sort_values(
             "has_stamp", ascending=False
-        ).drop_duplicates("candid")
+        ).drop_duplicates("candid", keep="first")
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
 
         return {

@@ -1,35 +1,9 @@
+from unittest import mock
+
 from lightcurve_step.step import LightcurveStep
 
 
-def test_unique_detections_joins_non_repeated_detections_based_on_candid_keeping_with_stamp():
-    old = [{"candid": "a", "has_stamp": False}, {"candid": "b", "has_stamp": True}]
-    new = [{"candid": "a", "has_stamp": True}, {"candid": "c", "has_stamp": False}]
-
-    result = LightcurveStep.unique_detections(old, new)
-    assert result == [{"candid": "b", "has_stamp": True}, {"candid": "a", "has_stamp": True}, {"candid": "c", "has_stamp": False}]
-
-
-def test_unique_non_detections_joins_non_repeated_detections_based_on_mjd_oid_and_fid_keeping_first_member():
-    old = [{"mjd": 1, "oid": "a", "fid": 1}, {"mjd": 1, "oid": "a", "fid": 2}]
-    new = [{"mjd": 1, "oid": "a", "fid": 1, "source": "new"}, {"mjd": 1, "oid": "b", "fid": 2}]
-
-    result = LightcurveStep.unique_non_detections(old, new)
-    assert result == [{"mjd": 1, "oid": "a", "fid": 1}, {"mjd": 1, "oid": "a", "fid": 2}, {"mjd": 1, "oid": "b", "fid": 2}]
-
-
-def test_clean_detections_from_db_adds_removes_id_field_and_adds_candid_based_on_its_value_if_not_present():
-    from_db = [{"_id": "a"}, {"_id": "c", "candid": "b"}]
-    LightcurveStep.clean_detections_from_db(from_db)
-    assert from_db == [{"candid": "a"}, {"candid": "b"}]
-
-
-def test_clean_non_detections_from_db_removes_id_field():
-    from_db = [{"_id": "a"}, {"_id": "c", "candid": "b"}]
-    LightcurveStep.clean_non_detections_from_db(from_db)
-    assert from_db == [{}, {"candid": "b"}]
-
-
-def test_pre_execute_joins_same_aids_into_single_message():
+def test_pre_execute_joins_detections_and_non_detections():
     messages = [
         {
             "aid": "aid1",
@@ -50,17 +24,102 @@ def test_pre_execute_joins_same_aids_into_single_message():
 
     output = LightcurveStep.pre_execute(messages)
 
+    expected = {
+        "aids": {"aid1", "aid2"},
+        "detections": [
+            {"candid": "b", "has_stamp": True},
+            {"candid": "a", "has_stamp": False},
+            {"candid": "c", "has_stamp": True},
+            {"candid": "b", "has_stamp": False},
+            {"candid": "c", "has_stamp": True},
+            {"candid": "b", "has_stamp": False},
+        ],
+        "non_detections": [
+            {"mjd": 1, "oid": "i", "fid": 1},
+            {"mjd": 1, "oid": "i", "fid": 1},
+            {"mjd": 1, "oid": "i", "fid": 1},
+        ]
+    }
+
+    assert output == expected
+
+
+def test_execute_removes_duplicates():
+    mock_client = mock.MagicMock()
+    LightcurveStep.__init__ = lambda self: None
+    step = LightcurveStep()
+    step.db_client = mock_client
+    mock_client.query.return_value.collection.aggregate.return_value = []
+    mock_client.query.return_value.collection.find.return_value = []
+
+    message = {
+        "aids": {"aid1", "aid2"},
+        "detections": [
+            {"candid": "a", "has_stamp": True},
+            {"candid": "b", "has_stamp": False},
+            {"candid": "c", "has_stamp": True},
+            {"candid": "d", "has_stamp": False},
+            {"candid": "d", "has_stamp": True},
+            {"candid": "a", "has_stamp": False},
+        ],
+        "non_detections": [
+            {"mjd": 1, "oid": "a", "fid": 1},
+            {"mjd": 1, "oid": "b", "fid": 1},
+            {"mjd": 1, "oid": "a", "fid": 1},
+        ]
+    }
+
+    output = step.execute(message)
+
+    expected = {
+        "detections": [
+            {"candid": "a", "has_stamp": True},
+            {"candid": "c", "has_stamp": True},
+            {"candid": "d", "has_stamp": True},
+            {"candid": "b", "has_stamp": False},
+        ],
+        "non_detections": [
+            {"mjd": 1, "oid": "a", "fid": 1},
+            {"mjd": 1, "oid": "b", "fid": 1},
+        ]
+    }
+
+    assert output == expected
+
+
+def test_pre_produce_restores_messages():
+    message = {
+        "detections": [
+            {"candid": "a", "has_stamp": True, "aid": "AID1"},
+            {"candid": "c", "has_stamp": True, "aid": "AID2"},
+            {"candid": "d", "has_stamp": True, "aid": "AID1"},
+            {"candid": "b", "has_stamp": False, "aid": "AID2"},
+        ],
+        "non_detections": [
+            {"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"},
+            {"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"},
+        ]
+    }
+
+    output = LightcurveStep.pre_produce(message)
+
     expected = [
         {
-            "aid": "aid1",
-            "detections": [{"candid": "b", "has_stamp": True}, {"candid": "a", "has_stamp": False}, {"candid": "c", "has_stamp": True}],
-            "non_detections": [{"mjd": 1, "oid": "i", "fid": 1}]
+            "aid": "AID1",
+            "detections": [
+                {"candid": "a", "has_stamp": True, "aid": "AID1"},
+                {"candid": "d", "has_stamp": True, "aid": "AID1"},
+            ],
+            "non_detections": [{"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"}],
         },
         {
-            "aid": "aid2",
-            "detections": [{"candid": "c", "has_stamp": True}, {"candid": "b", "has_stamp": False}],
-            "non_detections": [{"mjd": 1, "oid": "i", "fid": 1}]
-        },
+            "aid": "AID2",
+            "detections": [
+                {"candid": "c", "has_stamp": True, "aid": "AID2"},
+                {"candid": "b", "has_stamp": False, "aid": "AID2"},
+            ],
+            "non_detections": [{"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"}],
+        }
     ]
 
     assert output == expected
