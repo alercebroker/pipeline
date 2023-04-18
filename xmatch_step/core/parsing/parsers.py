@@ -1,42 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
-# Is this even temporal?
-def unparse(data: pd.DataFrame, key: str):
-    data = data.copy(deep=True)
-    response = []
-
-    if key not in ["detections", "non_detections"]:
-        raise NotImplementedError(f"Not implemented unparse for {key} key")
-
-    data = data[key].values
-    for dets in data:
-        d = pd.DataFrame(dets)
-        if d.empty:
-            continue
-        d = d[d["tid"] == "ZTF"]
-        if "extra_fields" in d.columns:
-            extra_fields = list(d["extra_fields"].values)
-            extra_fields = pd.DataFrame(extra_fields, index=d.index)
-            d = d.join(extra_fields)
-            d.rename(
-                columns={"mag": "magpsf", "e_mag": "sigmapsf"},
-                inplace=True,
-            )
-            d.drop(columns=["extra_fields"], inplace=True)
-        response.append(d)
-
-    if len(response) > 0:
-        response = pd.concat(response, ignore_index=True)
-        response = response.groupby("aid", sort=False).apply(
-            lambda x: pd.Series({key: x.to_dict("records")})
-        )
-        return response
-
-    return pd.DataFrame(columns=[key])
-
-
 def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
     """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
     a list of dict as output.
@@ -61,27 +25,11 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
         }
     )
     # Join metadata with xmatches
-    metadata = lightcurves[["aid", "metadata", "oid", "candid"]].set_index(
-        "aid"
-    )
-    metadata_xmatches = metadata.join(xmatches.set_index("aid_in"))
-
-    # Unparse dets and non dets: means separate detections and non detections by oid. For example if exists a list
-    # of oids = [ZTF1, ZTF2] for an aid, te unparse creates a new dataframe of detections and non detections for
-    # each oid
-    dets = unparse(lightcurves, "detections")
-    non_dets = unparse(lightcurves, "non_detections")
-    # Join dets and non dets
-    dets_nondets = dets.join(non_dets)
-    # Join all
-    data = metadata_xmatches.join(
-        dets_nondets, on="aid"
-    )  # pendiente pretgunta aid
+    xmatches.rename(columns={"aid_in": "aid"}, inplace=True)
+    data = lightcurves.set_index("aid").join(xmatches.set_index("aid"))
 
     data.replace({np.nan: None}, inplace=True)
-    data.index.names = ["aid"]
     data.reset_index(inplace=True)
-    data["candid"] = data["candid"].astype("int64")
     # Transform to a list of dicts
     data = data.to_dict("records")
     return data

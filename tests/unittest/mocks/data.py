@@ -1,9 +1,6 @@
 mock_lightcurve = [
     {
         "aid": "aid",
-        "oid": "oid",
-        "metadata": {},
-        "candid": "bbb",
         "detections": [
             {
                 "candid": "aaa",
@@ -23,9 +20,6 @@ mock_lightcurve = [
 mock_lightcurves_list = [
     {
         "aid": "aid1",
-        "oid": "oid1",
-        "metadata": {},
-        "candid": 859632,
         "detections": [
             {
                 "candid": "aaa",
@@ -42,9 +36,6 @@ mock_lightcurves_list = [
     },
     {
         "aid": "aid2",
-        "oid": "oid2",
-        "metadata": {},
-        "candid": 236958,
         "detections": [
             {
                 "candid": "eee",
