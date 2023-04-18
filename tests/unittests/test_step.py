@@ -1,8 +1,8 @@
-from data.messages import data
+from .data.messages import data
 from scripts.run_step import step_factory
 
 
-def test_execute():
+def test_execute(env_variables):
     step = step_factory()
     print(data)
     formatted_data = step.pre_execute(data)

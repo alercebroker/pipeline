@@ -5,7 +5,7 @@ import os
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
-from ..unittests.data.messages import SCHEMA, data as messages
+from tests.unittests import SCHEMA, data as messages
 
 
 @pytest.fixture(scope="session")
@@ -54,7 +54,7 @@ def env_variables():
         "CONSUMER_TOPICS": "correction",
         "CONSUMER_GROUP_ID": random_string,
         "CONSUME_MESSAGES": "10",
-        "METRICS_HOST": "localhost:9092",
+        "METRICS_SERVER": "localhost:9092",
         "METRICS_TOPIC": "metrics",
         "ENABLE_PARTITION_EOF": "True",
         "SCRIBE_PRODUCER_SERVER": "localhost:9092",
