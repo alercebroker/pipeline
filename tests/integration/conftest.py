@@ -5,7 +5,7 @@ import os
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
-from tests.unittest.data.messages import SCHEMA, data as messages
+from ..unittest.data.messages import SCHEMA, data as messages
 
 
 @pytest.fixture(scope="session")
