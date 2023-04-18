@@ -351,7 +351,8 @@ class GenericStep(abc.ABC):
         for prod_message in to_produce:
             self.producer.produce(prod_message)
             n_messages += 1
-        self.logger.info(f"Produced {n_messages} messages")
+        if not isinstance(self.producer, DefaultProducer):
+            self.logger.info(f"Produced {n_messages} messages")
 
     def set_producer_key_field(self, key_field: str):
         """
