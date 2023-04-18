@@ -35,10 +35,14 @@ def test_unparse_not_implemented():
 def test_parse_output():
     lightcurve_dataframe = pd.DataFrame.from_records(mock_lightcurves_list)
     xmatch_dataframe = pd.DataFrame.from_records(mock_xmatch_list)
-    result_dataframe = parse_output(lightcurve_dataframe, xmatch_dataframe)
+    result_json = parse_output(lightcurve_dataframe, xmatch_dataframe)
 
-    assert len(result_dataframe) == 2
-    assert "xmatches" in result_dataframe[0].keys()
-    assert "xmatches" in result_dataframe[1].keys()
-    assert "allwise" in result_dataframe[0]["xmatches"].keys()
-    assert "allwise" in result_dataframe[0]["xmatches"].keys()
+    assert len(result_json) == 2
+    assert result_json[0]["detections"] is not None
+    assert result_json[0]["non_detections"] is None
+    assert result_json[1]["detections"] is not None
+    assert result_json[1]["non_detections"] is not None
+    assert "xmatches" in result_json[0].keys()
+    assert "xmatches" in result_json[1].keys()
+    assert "allwise" in result_json[0]["xmatches"].keys()
+    assert "allwise" in result_json[0]["xmatches"].keys()
