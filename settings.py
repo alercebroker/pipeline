@@ -1,5 +1,5 @@
 import os
-from schema_old import SCHEMA
+from schema import SCHEMA
 from fastavro import schema
 
 ##################################################

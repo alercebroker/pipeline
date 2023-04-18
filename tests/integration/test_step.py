@@ -4,7 +4,7 @@ from fastavro.schema import load_schema
 
 from xmatch_step import XmatchStep
 from xmatch_step.core.xmatch_client import XmatchClient
-from schema_old import SCHEMA
+from schema import SCHEMA
 from unittest import mock
 from tests.data.messages import (
     generate_input_batch,
