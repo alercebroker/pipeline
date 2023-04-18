@@ -72,6 +72,10 @@
               "type": "float"
             },
             {
+              "name": "has_stamp",
+              "type": "boolean"
+            },
+            {
               "name": "extra_fields",
               "type": {
                 "default": {},

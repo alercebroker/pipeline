@@ -54,6 +54,13 @@ class LightcurveStep(GenericStep):
                                 "else": 1,
                             }
                         },
+                        "has_stamp": {
+                            "$cond": {
+                                "if": "$has_stamp",
+                                "then": "$has_stamp",
+                                "else": True,
+                            }
+                        },
                     }
                 },
                 {"$project": {"_id": False}},
