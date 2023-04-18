@@ -34,7 +34,7 @@ class LightcurveStep(GenericStep):
         query_detections = self.db_client.query(Detection)
         query_non_detections = self.db_client.query(NonDetection)
 
-        # TODO: Remove conditional expression when using clean DB
+        # TODO: when using new DB addFields step should be: {$addFields: {"candid": "$_id"}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -42,11 +42,18 @@ class LightcurveStep(GenericStep):
                     "$addFields": {
                         "candid": {
                             "$cond": {
-                                "if": {"$ne": ["$candid", None]},
+                                "if": "$candid",
                                 "then": "$candid",
                                 "else": "$_id",
                             }
-                        }
+                        },
+                        "pid": {
+                            "$cond": {
+                                "if": "$pid",
+                                "then": "$pid",
+                                "else": 1,
+                            }
+                        },
                     }
                 },
                 {"$project": {"_id": False}},
