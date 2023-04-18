@@ -57,7 +57,16 @@ mock_lightcurves_list = [
             },
             {"candid": "aaa2", "tid": "ATLAS-01a"},
         ],
-        "non_detections": [],
+        "non_detections": [
+            {
+                "tid": "ZTF",
+                "oid": "oid2",
+                "aid": "aid2",
+                "mjd": 599000,
+                "diffmaglim": 18,
+                "fid": 1,
+            }
+        ],
     },
 ]
 
