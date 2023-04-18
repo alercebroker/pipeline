@@ -56,6 +56,14 @@
             "type": "float"
           },
           {
+            "name": "mag_corr",
+            "type": "float"
+          },
+          {
+            "name": "e_mag_corr",
+            "type": "float"
+          },
+          {
             "name": "isdiffpos",
             "type": "int"
           },
@@ -88,20 +96,8 @@
             "type": "boolean"
           },
           {
-            "name": "has_stamp",
+            "name": "stellar",
             "type": "boolean"
-          },
-          {
-            "name": "mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr_ext",
-            "type": ["float", "null"]
           }
         ]
       },

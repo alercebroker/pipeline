@@ -1,81 +1,60 @@
 import json
 import logging
-import pandas as pd
+from typing import List
 
-from apf.core import get_class
-from apf.core.step import GenericStep
-from .core.factories.object import AlerceObject, alerce_object_factory
-from .core.utils.magstats_intersection import create_magstats_calculator
-from .core.utils.create_dataframe import *
+from apf.core.step import GenericStep, get_class
+
+from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
 
 class MagstatsStep(GenericStep):
-    """MagstatsStep Description
-    Parameters
-    ----------
-    consumer : GenericConsumer
-        Description of parameter `consumer`.
-    **step_args : type
-        Other args passed to step (DB connections, API requests, etc.)
-    """
-
     def __init__(
         self,
-        config={},
+        config,
         level=logging.INFO,
         **step_args,
     ):
         super().__init__(config=config, level=level, **step_args)
-        self.magstats_calculator = create_magstats_calculator(
-            config["EXCLUDED_CALCULATORS"]
-        )
-        ProducerClass = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.scribe_producer = ProducerClass(self.config["SCRIBE_PRODUCER_CONFIG"])
+        self.excluded = set(config["EXCLUDED_CALCULATORS"])
+        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
 
-    def object_creator(self, alert):
-        return alerce_object_factory(alert)
+    @classmethod
+    def pre_execute(cls, messages: List[dict]) -> dict:
+        detections, non_detections = [], []
+        for msg in messages:
+            detections.extend(msg["detections"])
+            non_detections.extend(msg["non_detections"])
+        return {"detections": detections, "non_detections": non_detections}
 
-    def compute_magstats(self, alerts):
-        objects = []
-        for object_dict in alerts:
-            detections = generate_detections_dataframe(object_dict["detections"])
-            non_detections = generate_non_detections_dataframe(object_dict["non_detections"])
+    def execute(self, messages: dict):
+        obj_calculator = ObjectStatistics(messages["detections"])
+        stats = obj_calculator.generate_statistics(self.excluded)
 
-            alerce_object = AlerceObject(object_dict["aid"])
+        stats = stats.to_dict("index")
 
-            alerce_object = self.magstats_calculator(alerce_object, detections, non_detections)[0]
-            objects.append(alerce_object.as_dict())
+        magstats_calculator = MagnitudeStatistics(**messages)
+        magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
+        magstats = magstats.set_index("aid")
+        for aid in stats:
+            stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
 
-        return objects
+        return stats
 
-    def execute(self, messages: list):
-        """TODO: Docstring for execute.
-        TODO:
+    def produce_scribe(self, result: dict):
+        for aid, magstats in result.items():
+            magstats["oid"] = list(magstats["oid"])
+            magstats["tid"] = list(magstats["tid"])
 
-        :messages: TODO
-        :returns: TODO
-
-        """
-        self.logger.info(f"Processing {len(messages)} alerts")
-
-        magstats = self.compute_magstats(messages)
-
-        # self.magstats_calculator.insert(new_stats, self.driver)
-        self.logger.info(f"Clean batch of data\n")
-        print(magstats)
-        return magstats
-    
-    def post_execute(self, result: List[dict]):
-        self.produce_scribe(result)
-        return result
-
-    def produce_scribe(self, alerce_objects: List[dict]):
-        for obj in alerce_objects:
-            #TODO: What should be published and where?
             command = {
                 "collection": "object",
-                "type": "insert",
-                "data": obj
+                "type": "update",
+                "criteria": {"_id": aid},
+                "data": magstats,
+                "options": {"upsert": True},
             }
-            payload = { "payload": json.dumps(command) }
-            self.scribe_producer.produce(payload)
+            self.scribe_producer.produce({"payload": json.dumps(command)})
+
+    def post_execute(self, result: dict):
+        self.produce_scribe(result)
+        return result
