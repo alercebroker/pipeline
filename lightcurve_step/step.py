@@ -46,7 +46,14 @@ class LightcurveStep(GenericStep):
                                 "then": "$candid",
                                 "else": "$_id",
                             }
-                        }
+                        },
+                        "pid": {  # Old DB
+                            "$cond": {
+                                "if": "$pid",
+                                "then": "$pid",
+                                "else": 1,
+                            }
+                        },
                     }
                 },
                 {"$project": {"_id": False}},
