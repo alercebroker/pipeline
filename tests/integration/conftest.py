@@ -10,9 +10,7 @@ from tests.unittest.data.messages import SCHEMA, data as messages
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return os.path.join(
-        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml"
-    )
+    return os.path.join(str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml")
 
 
 @pytest.fixture(scope="session")
@@ -44,9 +42,7 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = f"{docker_ip}:{port}"
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
-    )
+    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
     return server
 
 

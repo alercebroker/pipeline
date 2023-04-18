@@ -79,9 +79,7 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
 
     calculator._weighted_mean = mock.Mock()
     calculator._weighted_mean.return_value = 1  # Dummy value for check
-    calculator._weighted_mean_error = (
-        mock.Mock()
-    )  # DO NOT USE MagicMock!! Messes with some checks in pandas
+    calculator._weighted_mean_error = mock.Mock()  # DO NOT USE MagicMock!! Messes with some checks in pandas
     calculator._weighted_mean_error.return_value = 2  # Dummy value for check
 
     result = calculator._calculate_coordinates("ra")
@@ -95,9 +93,7 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
         if len(val) == 2:  # This is AID1, the order cannot be assured
             assert_series_equal(
                 val,
-                pd.Series(
-                    [10, 20], index=pd.Index(["a", "b"], name="candid"), name="ra"
-                ),
+                pd.Series([10, 20], index=pd.Index(["a", "b"], name="candid"), name="ra"),
             )
             assert_series_equal(
                 err,
@@ -108,14 +104,10 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
                 ),
             )
         else:  # Should be AID2
-            assert_series_equal(
-                val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="ra")
-            )
+            assert_series_equal(val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="ra"))
             assert_series_equal(
                 err,
-                pd.Series(
-                    [4 / 3600], index=pd.Index(["c"], name="candid"), name="e_ra"
-                ),
+                pd.Series([4 / 3600], index=pd.Index(["c"], name="candid"), name="e_ra"),
             )
 
 
@@ -129,9 +121,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
 
     calculator._weighted_mean = mock.Mock()
     calculator._weighted_mean.return_value = 1  # Dummy value for check
-    calculator._weighted_mean_error = (
-        mock.Mock()
-    )  # DO NOT USE MagicMock!! Messes with some checks in pandas
+    calculator._weighted_mean_error = mock.Mock()  # DO NOT USE MagicMock!! Messes with some checks in pandas
     calculator._weighted_mean_error.return_value = 2  # Dummy value for check
 
     result = calculator._calculate_coordinates("dec")
@@ -145,9 +135,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
         if len(val) == 2:  # This is AID1, the order cannot be assured
             assert_series_equal(
                 val,
-                pd.Series(
-                    [10, 20], index=pd.Index(["a", "b"], name="candid"), name="dec"
-                ),
+                pd.Series([10, 20], index=pd.Index(["a", "b"], name="candid"), name="dec"),
             )
             assert_series_equal(
                 err,
@@ -158,14 +146,10 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
                 ),
             )
         else:  # Should be AID2
-            assert_series_equal(
-                val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="dec")
-            )
+            assert_series_equal(val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="dec"))
             assert_series_equal(
                 err,
-                pd.Series(
-                    [4 / 3600], index=pd.Index(["c"], name="candid"), name="e_dec"
-                ),
+                pd.Series([4 / 3600], index=pd.Index(["c"], name="candid"), name="e_dec"),
             )
 
 
@@ -240,9 +224,7 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
     assert "firstmjd" in result
     assert_series_equal(
         result["firstmjd"],
-        pd.Series(
-            [1, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="firstmjd"
-        ),
+        pd.Series([1, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="firstmjd"),
     )
 
 
@@ -371,7 +353,5 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
     assert "stellar" in result
     assert_series_equal(
         result["stellar"],
-        pd.Series(
-            [True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"
-        ),
+        pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"),
     )

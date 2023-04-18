@@ -190,9 +190,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_firstmjd()
 
-    expected = pd.DataFrame(
-        {"firstmjd": [0, 0.5, 1], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]}
-    )
+    expected = pd.DataFrame({"firstmjd": [0, 0.5, 1], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]})
     assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
 
 
@@ -208,9 +206,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_lastmjd()
 
-    expected = pd.DataFrame(
-        {"lastmjd": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]}
-    )
+    expected = pd.DataFrame({"lastmjd": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]})
     assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
 
 
@@ -270,9 +266,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_ndet()
 
-    expected = pd.DataFrame(
-        {"ndet": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]}
-    )
+    expected = pd.DataFrame({"ndet": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]})
     assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
 
 
@@ -288,9 +282,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_ndubious()
 
-    expected = pd.DataFrame(
-        {"ndubious": [2, 0, 1], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]}
-    )
+    expected = pd.DataFrame({"ndubious": [2, 0, 1], "aid": ["AID1", "AID2", "AID1"], "fid": [1, 1, 2]})
     assert_frame_equal(result, expected.set_index(["aid", "fid"]), check_like=True)
 
 

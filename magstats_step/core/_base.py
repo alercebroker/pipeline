@@ -15,19 +15,13 @@ class BaseStatistics(abc.ABC):
 
     def __init__(self, detections: List[dict]):
         try:
-            self._detections = pd.DataFrame.from_records(
-                detections, exclude=["extra_fields"]
-            )
+            self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
             self._detections = pd.DataFrame.from_records(detections)
-        self._detections = self._detections.drop_duplicates("candid").set_index(
-            "candid"
-        )
+        self._detections = self._detections.drop_duplicates("candid").set_index("candid")
 
     @classmethod
-    def _group(
-        cls, df: Union[pd.DataFrame, pd.Series]
-    ) -> Union[DataFrameGroupBy, SeriesGroupBy]:
+    def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
         return df.groupby(cls._JOIN)
 
     @lru_cache(10)
@@ -44,14 +38,8 @@ class BaseStatistics(abc.ABC):
         return pd.Series(True, index=self._detections.index)
 
     @lru_cache(6)
-    def _select_detections(
-        self, *, surveys: Tuple[str] = None, corrected: bool = False
-    ) -> pd.Series:
-        mask = (
-            self._detections["corrected"]
-            if corrected
-            else pd.Series(True, index=self._detections.index)
-        )
+    def _select_detections(self, *, surveys: Tuple[str] = None, corrected: bool = False) -> pd.Series:
+        mask = self._detections["corrected"] if corrected else pd.Series(True, index=self._detections.index)
         return self._detections[self._surveys_mask(surveys) & mask]
 
     @lru_cache(12)
@@ -68,9 +56,7 @@ class BaseStatistics(abc.ABC):
             function = "idxmax"
         else:
             raise ValueError(f"Unrecognized value for 'which': {which}")
-        return self._grouped_detections(surveys=surveys, corrected=corrected)[
-            "mjd"
-        ].agg(function)
+        return self._grouped_detections(surveys=surveys, corrected=corrected)["mjd"].agg(function)
 
     @lru_cache(36)
     def _grouped_value(
@@ -86,32 +72,19 @@ class BaseStatistics(abc.ABC):
         return df[column][idx].set_axis(idx.index)
 
     @lru_cache(6)
-    def _grouped_detections(
-        self, *, surveys: Tuple[str] = None, corrected: bool = False
-    ) -> DataFrameGroupBy:
-        return self._group(
-            self._select_detections(surveys=surveys, corrected=corrected)
-        )
+    def _grouped_detections(self, *, surveys: Tuple[str] = None, corrected: bool = False) -> DataFrameGroupBy:
+        return self._group(self._select_detections(surveys=surveys, corrected=corrected))
 
     def calculate_ndet(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {"ndet": self._detections.value_counts(subset=self._JOIN, sort=False)}
-        )
+        return pd.DataFrame({"ndet": self._detections.value_counts(subset=self._JOIN, sort=False)})
 
     def generate_statistics(self, exclude: Set[str] = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default
         # Add prefix to exclude, unless already provided
-        exclude = {
-            name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}"
-            for name in exclude
-        }
+        exclude = {name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}" for name in exclude}
 
         # Select all methods that start with prefix unless excluded
-        methods = {
-            name
-            for name in dir(self)
-            if name.startswith(self._PREFIX) and name not in exclude
-        }
+        methods = {name for name in dir(self) if name.startswith(self._PREFIX) and name not in exclude}
 
         # Compute all statistics and join into single dataframe
         stats = [getattr(self, method)() for method in methods]
