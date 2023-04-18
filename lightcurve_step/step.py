@@ -42,7 +42,7 @@ class LightcurveStep(GenericStep):
                     "$addFields": {
                         "candid": {
                             "$cond": {
-                                "if": {"$ne": ["$candid", None]},
+                                "if": "$candid",
                                 "then": "$candid",
                                 "else": "$_id",
                             }
