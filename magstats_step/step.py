@@ -37,7 +37,10 @@ class MagstatsStep(GenericStep):
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
         magstats = magstats.set_index("aid")
         for aid in stats:
-            stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
+            try:
+                stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
+            except TypeError:
+                stats[aid]["magstats"] = [magstats.loc[aid].to_dict()]
 
         return stats
 
