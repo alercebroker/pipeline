@@ -25,46 +25,46 @@ def test_composition_of_arcsec2dec_and_dec2arcsec_results_in_same_input():
 
 
 def test_calculate_weights_gives_inverse_square_of_errors():
-    sigs = pd.Series([2., 3.])
+    sigs = pd.Series([2.0, 3.0])
     result = ObjectStatistics._compute_weights(sigs)
-    assert (result == 1 / sigs ** 2).all()
+    assert (result == 1 / sigs**2).all()
 
 
 def test_calculate_weighted_mean_with_equal_errors_is_standard_mean():
     vals = pd.Series([100, 200])
-    sigs = pd.Series([4., 4.])
+    sigs = pd.Series([4.0, 4.0])
     result = ObjectStatistics._weighted_mean(vals, sigs)
     assert result == 150
 
 
 def test_calculate_weighted_mean_with_one_very_small_error_has_that_value_as_result():
     vals = pd.Series([100, 200])
-    sigs = pd.Series([1e-6, 4.])
+    sigs = pd.Series([1e-6, 4.0])
     result = ObjectStatistics._weighted_mean(vals, sigs)
     assert np.isclose(result, 100)
 
 
 def test_calculate_weighted_mean_with_one_very_large_error_has_that_value_disregarded():
     vals = pd.Series([100, 200])
-    sigs = pd.Series([1e6, 4.])
+    sigs = pd.Series([1e6, 4.0])
     result = ObjectStatistics._weighted_mean(vals, sigs)
     assert np.isclose(result, 200)
 
 
 def test_calculate_weighted_mean_error_with_equal_weights_is_sigma_divided_by_sqrt_number_of_samples():
-    sigs = pd.Series([4., 4.])
+    sigs = pd.Series([4.0, 4.0])
     result = ObjectStatistics._weighted_mean_error(sigs)
     assert np.isclose(result, 4 / np.sqrt(2))
 
 
 def test_calculate_weighted_mean_error_with_one_very_small_error_has_that_error_as_result():
-    sigs = pd.Series([1e-6, 4.])
+    sigs = pd.Series([1e-6, 4.0])
     result = ObjectStatistics._weighted_mean_error(sigs)
     assert np.isclose(result, 1e-6)
 
 
 def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_disregarded():
-    sigs = pd.Series([1e6, 4.])
+    sigs = pd.Series([1e6, 4.0])
     result = ObjectStatistics._weighted_mean_error(sigs)
     assert np.isclose(result, 4)
 
@@ -79,7 +79,9 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
 
     calculator._weighted_mean = mock.Mock()
     calculator._weighted_mean.return_value = 1  # Dummy value for check
-    calculator._weighted_mean_error = mock.Mock()  # DO NOT USE MagicMock!! Messes with some checks in pandas
+    calculator._weighted_mean_error = (
+        mock.Mock()
+    )  # DO NOT USE MagicMock!! Messes with some checks in pandas
     calculator._weighted_mean_error.return_value = 2  # Dummy value for check
 
     result = calculator._calculate_coordinates("ra")
@@ -91,11 +93,30 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
         val, err = call.args
         assert call.kwargs == {}
         if len(val) == 2:  # This is AID1, the order cannot be assured
-            assert_series_equal(val, pd.Series([10, 20], index=pd.Index(["a", "b"], name="candid"), name="ra"))
-            assert_series_equal(err, pd.Series([2 / 3600, 4 / 3600], index=pd.Index(["a", "b"], name="candid"), name="e_ra"))
+            assert_series_equal(
+                val,
+                pd.Series(
+                    [10, 20], index=pd.Index(["a", "b"], name="candid"), name="ra"
+                ),
+            )
+            assert_series_equal(
+                err,
+                pd.Series(
+                    [2 / 3600, 4 / 3600],
+                    index=pd.Index(["a", "b"], name="candid"),
+                    name="e_ra",
+                ),
+            )
         else:  # Should be AID2
-            assert_series_equal(val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="ra"))
-            assert_series_equal(err, pd.Series([4 / 3600], index=pd.Index(["c"], name="candid"), name="e_ra"))
+            assert_series_equal(
+                val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="ra")
+            )
+            assert_series_equal(
+                err,
+                pd.Series(
+                    [4 / 3600], index=pd.Index(["c"], name="candid"), name="e_ra"
+                ),
+            )
 
 
 def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_aid():
@@ -108,7 +129,9 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
 
     calculator._weighted_mean = mock.Mock()
     calculator._weighted_mean.return_value = 1  # Dummy value for check
-    calculator._weighted_mean_error = mock.Mock()  # DO NOT USE MagicMock!! Messes with some checks in pandas
+    calculator._weighted_mean_error = (
+        mock.Mock()
+    )  # DO NOT USE MagicMock!! Messes with some checks in pandas
     calculator._weighted_mean_error.return_value = 2  # Dummy value for check
 
     result = calculator._calculate_coordinates("dec")
@@ -120,11 +143,30 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
         val, err = call.args
         assert call.kwargs == {}
         if len(val) == 2:  # This is AID1, the order cannot be assured
-            assert_series_equal(val, pd.Series([10, 20], index=pd.Index(["a", "b"], name="candid"), name="dec"))
-            assert_series_equal(err, pd.Series([2 / 3600, 4 / 3600], index=pd.Index(["a", "b"], name="candid"), name="e_dec"))
+            assert_series_equal(
+                val,
+                pd.Series(
+                    [10, 20], index=pd.Index(["a", "b"], name="candid"), name="dec"
+                ),
+            )
+            assert_series_equal(
+                err,
+                pd.Series(
+                    [2 / 3600, 4 / 3600],
+                    index=pd.Index(["a", "b"], name="candid"),
+                    name="e_dec",
+                ),
+            )
         else:  # Should be AID2
-            assert_series_equal(val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="dec"))
-            assert_series_equal(err, pd.Series([4 / 3600], index=pd.Index(["c"], name="candid"), name="e_dec"))
+            assert_series_equal(
+                val, pd.Series([20], index=pd.Index(["c"], name="candid"), name="dec")
+            )
+            assert_series_equal(
+                err,
+                pd.Series(
+                    [4 / 3600], index=pd.Index(["c"], name="candid"), name="e_dec"
+                ),
+            )
 
 
 def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
@@ -138,7 +180,14 @@ def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
     result = calculator._calculate_unique("extra")
 
     assert "extra" in result
-    assert_series_equal(result["extra"], pd.Series([["A", "B"], ["A"]], index=pd.Index(["AID1", "AID2"], name="aid"), name="extra"))
+    assert_series_equal(
+        result["extra"],
+        pd.Series(
+            [["A", "B"], ["A"]],
+            index=pd.Index(["AID1", "AID2"], name="aid"),
+            name="extra",
+        ),
+    )
 
 
 def test_calculate_ra_uses_calculate_coordinates():
@@ -172,7 +221,10 @@ def test_calculate_ndet_gives_number_of_detections_per_aid():
     result = calculator.calculate_ndet()
 
     assert "ndet" in result
-    assert_series_equal(result["ndet"], pd.Series([3, 1], index=pd.Index(["AID1", "AID2"], name="aid"), name="ndet"))
+    assert_series_equal(
+        result["ndet"],
+        pd.Series([3, 1], index=pd.Index(["AID1", "AID2"], name="aid"), name="ndet"),
+    )
 
 
 def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
@@ -186,7 +238,12 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
     result = calculator.calculate_firstmjd()
 
     assert "firstmjd" in result
-    assert_series_equal(result["firstmjd"], pd.Series([1, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="firstmjd"))
+    assert_series_equal(
+        result["firstmjd"],
+        pd.Series(
+            [1, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="firstmjd"
+        ),
+    )
 
 
 def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
@@ -200,7 +257,10 @@ def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
     result = calculator.calculate_lastmjd()
 
     assert "lastmjd" in result
-    assert_series_equal(result["lastmjd"], pd.Series([3, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="lastmjd"))
+    assert_series_equal(
+        result["lastmjd"],
+        pd.Series([3, 2], index=pd.Index(["AID1", "AID2"], name="aid"), name="lastmjd"),
+    )
 
 
 def test_calculate_oid_uses_calculate_unique_with_oid():
@@ -225,11 +285,35 @@ def test_calculate_tid_uses_calculate_unique_with_tid():
 
 def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
     detections = [
-        {"aid": "AID1", "tid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a"},  # Should ignore
-        {"aid": "AID1", "tid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b"},  # True for AID1
+        {
+            "aid": "AID1",
+            "tid": "MOCK_SURVEY",
+            "mjd": 1,
+            "corrected": False,
+            "candid": "a",
+        },  # Should ignore
+        {
+            "aid": "AID1",
+            "tid": "SURVEY",
+            "mjd": 2,
+            "corrected": True,
+            "candid": "b",
+        },  # True for AID1
         {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c"},
-        {"aid": "AID2", "tid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d"},  # Should ignore
-        {"aid": "AID3", "tid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e"},  # False for AID3
+        {
+            "aid": "AID2",
+            "tid": "MOCK_SURVEY",
+            "mjd": 1,
+            "corrected": True,
+            "candid": "d",
+        },  # Should ignore
+        {
+            "aid": "AID3",
+            "tid": "SURVEY",
+            "mjd": 2,
+            "corrected": False,
+            "candid": "e",
+        },  # False for AID3
         {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f"},
     ]
     calculator = ObjectStatistics(detections)
@@ -237,16 +321,47 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
     result = calculator.calculate_corrected()
 
     assert "corrected" in result
-    assert_series_equal(result["corrected"], pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="corrected"))
+    assert_series_equal(
+        result["corrected"],
+        pd.Series(
+            [True, False],
+            index=pd.Index(["AID1", "AID3"], name="aid"),
+            name="corrected",
+        ),
+    )
 
 
 def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
     detections = [
-        {"aid": "AID1", "tid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a"},  # Should ignore
-        {"aid": "AID1", "tid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b"},  # True for AID1
+        {
+            "aid": "AID1",
+            "tid": "MOCK_SURVEY",
+            "mjd": 1,
+            "stellar": False,
+            "candid": "a",
+        },  # Should ignore
+        {
+            "aid": "AID1",
+            "tid": "SURVEY",
+            "mjd": 2,
+            "stellar": True,
+            "candid": "b",
+        },  # True for AID1
         {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c"},
-        {"aid": "AID2", "tid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d"},  # Should ignore
-        {"aid": "AID3", "tid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e"},  # False for AID3
+        {
+            "aid": "AID2",
+            "tid": "MOCK_SURVEY",
+            "mjd": 1,
+            "stellar": True,
+            "candid": "d",
+        },  # Should ignore
+        {
+            "aid": "AID3",
+            "tid": "SURVEY",
+            "mjd": 2,
+            "stellar": False,
+            "candid": "e",
+        },  # False for AID3
         {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f"},
     ]
     calculator = ObjectStatistics(detections)
@@ -254,4 +369,9 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
     result = calculator.calculate_stellar()
 
     assert "stellar" in result
-    assert_series_equal(result["stellar"], pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"))
+    assert_series_equal(
+        result["stellar"],
+        pd.Series(
+            [True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"
+        ),
+    )

@@ -85,6 +85,7 @@ def kafka_consumer():
     )
     yield consumer
 
+
 def produce_messages(topic):
     producer = KafkaProducer(
         {

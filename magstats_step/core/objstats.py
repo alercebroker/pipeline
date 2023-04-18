@@ -22,7 +22,9 @@ class ObjectStatistics(BaseStatistics):
 
     @staticmethod
     def _compute_weights(sigmas: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return sigmas.astype(float) ** -2  # Integers cannot be raised to negative powers
+        return (
+            sigmas.astype(float) ** -2
+        )  # Integers cannot be raised to negative powers
 
     @classmethod
     def _weighted_mean(cls, values: pd.Series, sigmas: pd.Series) -> float:
@@ -41,7 +43,9 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(
             {
                 f"mean{label}": self._grouped_detections()[label].agg(average),
-                f"sigma{label}": self._deg2arcsec(grouped_sigmas.agg(self._weighted_mean_error)),
+                f"sigma{label}": self._deg2arcsec(
+                    grouped_sigmas.agg(self._weighted_mean_error)
+                ),
             }
         )
 
@@ -67,7 +71,19 @@ class ObjectStatistics(BaseStatistics):
         return self._calculate_unique("tid")
 
     def calculate_corrected(self) -> pd.DataFrame:
-        return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first", surveys=self._CORRECTED)})
+        return pd.DataFrame(
+            {
+                "corrected": self._grouped_value(
+                    "corrected", which="first", surveys=self._CORRECTED
+                )
+            }
+        )
 
     def calculate_stellar(self) -> pd.DataFrame:
-        return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first", surveys=self._STELLAR)})
+        return pd.DataFrame(
+            {
+                "stellar": self._grouped_value(
+                    "stellar", which="first", surveys=self._STELLAR
+                )
+            }
+        )
