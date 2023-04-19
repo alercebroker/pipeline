@@ -94,10 +94,16 @@ class LightcurveStep(GenericStep):
             detections["sid"][detections["tid"] == "ZTF"] = "ZTF"
             detections["sid"][detections["tid"].str.startswith("ATLAS")] = "ATLAS"
             non_detections["sid"][non_detections["tid"] == "ZTF"] = "ZTF"
-            non_detections["sid"][non_detections["tid"].str.startswith("ATLAS")] = "ATLAS"
+            non_detections["sid"][
+                non_detections["tid"].str.startswith("ATLAS")
+            ] = "ATLAS"
 
-        detections["fid"].replace(FID_MAPPING, inplace=True)  # TODO: Remove when using clean DB
-        non_detections["fid"].replace(FID_MAPPING, inplace=True)  # TODO: Remove when using clean DB
+        detections["fid"].replace(
+            FID_MAPPING, inplace=True
+        )  # TODO: Remove when using clean DB
+        non_detections["fid"].replace(
+            FID_MAPPING, inplace=True
+        )  # TODO: Remove when using clean DB
 
         return {
             "detections": detections.replace(np.nan, None).to_dict("records"),
