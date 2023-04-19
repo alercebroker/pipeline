@@ -32,7 +32,7 @@ class Corrector:
         self._detections = self._detections.join(extras)
 
     def _survey_mask(self, survey: str):
-        """Creates boolean mask of detections whose `tid` starts with given survey name (case-insensitive)
+        """Creates boolean mask of detections whose `sid` matches the given survey name (case-insensitive)
 
         Args:
             survey: Name of the survey of interest
@@ -40,7 +40,7 @@ class Corrector:
         Returns:
             pd.Series: Mask of detections corresponding to the survey
         """
-        return self._detections["tid"].str.lower().str.startswith(survey.lower())
+        return self._detections["sid"].str.lower() == survey.lower()
 
     def _apply_all_surveys(self, function: str, *, default=None, columns=None, dtype=object):
         """Applies given function for all surveys defined in `strategy` module.
