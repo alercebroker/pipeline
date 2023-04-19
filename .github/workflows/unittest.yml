@@ -17,13 +17,13 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest Cython==0.29.33 numpy coverage
-        if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+        pip install --upgrade pip
+        pip install pytest Cython==0.29.33 numpy coverage
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        python -m coverage run --source features -m pytest -x -s tests/unittest/
-        python -m coverage xml
+        coverage run --source features -m pytest -x -s tests/unittest/
+        coverage xml
     - name: Codecov
       uses: codecov/codecov-action@v1
       with:
