@@ -16,6 +16,7 @@ def ztf_extra_fields(**kwargs):
 def ztf_alert(**kwargs):
     alert = {
         "candid": "candid",
+        "sid": "ZTF",
         "tid": "ZTF",
         "mag": 10.0,
         "e_mag": 10.0,
@@ -25,7 +26,7 @@ def ztf_alert(**kwargs):
         "e_dec": 1,
         "isdiffpos": 1,
         "aid": "AID1",
-        "fid": 1,
+        "fid": "g",
         "mjd": 1.0,
         "has_stamp": True,
         "extra_fields": ztf_extra_fields(),
@@ -37,6 +38,7 @@ def ztf_alert(**kwargs):
 def atlas_alert(**kwargs):
     alert = {
         "candid": "candid",
+        "sid": "ATLAS",
         "tid": "ATLAS-0",
         "mag": 10.0,
         "e_mag": 10.0,
@@ -46,7 +48,7 @@ def atlas_alert(**kwargs):
         "e_dec": 1,
         "isdiffpos": 1,
         "aid": "AID1",
-        "fid": 1,
+        "fid": "c",
         "mjd": 1.0,
         "has_stamp": True,
         "extra_fields": {"dummy": None},
