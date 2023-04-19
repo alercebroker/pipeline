@@ -40,6 +40,7 @@ class Object(BaseModel):
     )  # ALeRCE object ID (unique ID in database)
     oid = Field()  # List with all OIDs
     tid = Field()  # List with all telescopes the object has been observed with
+    sid = Field()  # List with all surveys which their telescopes observed this object
     corrected = Field()
     stellar = Field()
     firstmjd = Field()
@@ -88,6 +89,7 @@ class Detection(BaseModelWithExtraFields):
 
     _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     tid = Field()  # Telescope ID
+    sid = Field()  # Survey ID
     aid = Field()
     oid = Field()
     mjd = Field()
@@ -124,6 +126,7 @@ class NonDetection(BaseModelWithExtraFields):
     _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     aid = Field()
     tid = Field()
+    sid = Field()
     oid = Field()
     mjd = Field()
     fid = Field()

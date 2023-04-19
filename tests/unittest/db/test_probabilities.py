@@ -20,6 +20,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
             aid="aid1",
             oid="oid1",
             tid="tid1",
+            sid="sid",
             corrected=True,
             stellar=True,
             sigmara=.1,
@@ -49,6 +50,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_2 = Object(
             aid="aid2",
             oid="oid2",
+            sid="sid",
             tid="tid2",
             corrected=True,
             stellar=True,
@@ -82,6 +84,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         model_2 = Object(
             aid="aid3",
             oid="oid3",
+            sid="sid",
             tid="tid3",
             corrected=True,
             stellar=True,
