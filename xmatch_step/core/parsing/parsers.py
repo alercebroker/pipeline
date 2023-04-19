@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
     """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
     a list of dict as output.

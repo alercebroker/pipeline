@@ -3,6 +3,7 @@ from mocks.data import mock_lightcurves_list, mock_xmatch_list
 
 from xmatch_step.core.parsing import parse_output
 
+
 def test_parse_output():
     lightcurve_dataframe = pd.DataFrame.from_records(mock_lightcurves_list)
     xmatch_dataframe = pd.DataFrame.from_records(mock_xmatch_list)
