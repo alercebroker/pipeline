@@ -1,2 +1,2 @@
 apf_base==2.1.5
-git+https://github.com/alercebroker/survey-parser-plugins@2.3.0
+git+https://github.com/alercebroker/survey-parser-plugins@2.3.1
