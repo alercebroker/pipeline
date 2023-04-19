@@ -7,7 +7,10 @@ ERROR = 0.14
 
 
 def _e_ra(dec):
-    return ERROR / abs(math.cos(dec))
+    try:
+        return ERROR / abs(math.cos(dec))
+    except ZeroDivisionError:
+        return float("nan")
 
 
 class ATLASParser(SurveyParser):
