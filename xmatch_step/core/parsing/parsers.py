@@ -3,8 +3,8 @@ import pandas as pd
 
 
 def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame):
-    """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None. Also generate
-    a list of dict as output.
+    """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None.
+    Also generate a list of dict as output.
     :param light_curves: Generic messages that contain the light curves (in dataframe)
     :param xmatches: Values of cross-matches (in dataframe)
     :return:
