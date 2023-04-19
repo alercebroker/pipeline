@@ -3,7 +3,7 @@ import math
 from ..core import GenericAlert, SurveyParser
 from ..core.mapper import Mapper
 
-ERROR = 0.1  # Dummy value for elasticc tests
+ERROR = 0.1  # UPDATE ME: Dummy value for elasticc tests
 
 
 def _e_ra(dec):
@@ -21,13 +21,13 @@ class LSSTParser(SurveyParser):
         Mapper("oid", origin="diaObjectId"),
         Mapper("tid", lambda: LSSTParser._source),
         Mapper("sid", lambda: LSSTParser._source),
-        Mapper("pid", lambda: -999),  # Using dummy value for elasticc tests
+        Mapper("pid", lambda: -999),  # UPDATE ME
         Mapper("fid", origin="filterName"),
         Mapper("mjd", origin="midPointTai"),
         Mapper("ra", lambda x: x, origin="ra"),
-        Mapper("e_ra", lambda y: _e_ra(y), extras=["decl"]),
+        Mapper("e_ra", lambda y: _e_ra(y), extras=["decl"]),  # UPDATE ME
         Mapper("dec", origin="decl"),
-        Mapper("e_dec", lambda: ERROR),
+        Mapper("e_dec", lambda: ERROR),  # UPDATE ME
         Mapper("mag", origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
         Mapper("e_mag", origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
         Mapper("isdiffpos", lambda x: int(x / abs(x)), extras=["psFlux"]),
