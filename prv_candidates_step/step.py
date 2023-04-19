@@ -71,7 +71,7 @@ class PrvCandidatesStep(GenericStep):
                     stampless_alert["extra_fields"], ["prv_candidates"]
                 )
 
-            if stampless_alert["tid"].lower().startswith("ztf"):
+            if stampless_alert["sid"].lower() == "ztf":
                 stampless_alert["extra_fields"]["parent_candid"] = None
 
             output.append(
