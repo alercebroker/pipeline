@@ -3,7 +3,7 @@
 
 EXTRA_FIELDS = {
     "type": "map",
-    "values": ["null", "int", "float", "string"],
+    "values": ["null", "int", "float", "string", "boolean"],
     "default": {},
 }
 
@@ -13,19 +13,20 @@ DETECTION = {
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "oid", "type": "string"},
-        {"name": "tid", "type": "string"},
+        {"name": "sid", "type": "string"},
         {"name": "pid", "type": "long"},
+        {"name": "tid", "type": "string"},
+        {"name": "fid", "type": "string"},
         {"name": "candid", "type": ["long", "string"]},
         {"name": "mjd", "type": "double"},
-        {"name": "fid", "type": "int"},
         {"name": "ra", "type": "double"},
         {"name": "e_ra", "type": "float"},
         {"name": "dec", "type": "double"},
         {"name": "e_dec", "type": "float"},
         {"name": "mag", "type": "float"},
         {"name": "e_mag", "type": "float"},
-        {"name": "has_stamp", "type": "boolean"},
         {"name": "isdiffpos", "type": "int"},
+        {"name": "has_stamp", "type": "boolean"},
         {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
@@ -38,11 +39,12 @@ NON_DETECTION = {
     "name": "non_detection",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "tid", "type": "string"},
         {"name": "oid", "type": "string"},
+        {"name": "sid", "type": "string"},
+        {"name": "tid", "type": "string"},
+        {"name": "fid", "type": "string"},
         {"name": "mjd", "type": "double"},
-        {"name": "fid", "type": "int"},
-        {"name": "diffmaglim", "type": "double"},
+        {"name": "diffmaglim", "type": "float"},
     ],
 }
 
