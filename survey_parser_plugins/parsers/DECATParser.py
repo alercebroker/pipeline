@@ -18,6 +18,7 @@ class DECATParser(SurveyParser):
         Mapper("candid", origin="sourceid"),
         Mapper("oid", origin="objectid"),
         Mapper("tid", lambda: DECATParser._source),
+        Mapper("sid", lambda: DECATParser._source),
         Mapper("pid", lambda: ""),
         Mapper("fid", lambda x: FID[x[0]], origin="filter"),
         Mapper("mjd", origin="mjd"),

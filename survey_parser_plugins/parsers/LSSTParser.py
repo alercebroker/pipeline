@@ -18,6 +18,7 @@ class LSSTParser(SurveyParser):
         Mapper("candid", origin="diaSourceId"),
         Mapper("oid", origin="diaObjectId"),
         Mapper("tid", lambda: LSSTParser._source),
+        Mapper("sid", lambda: LSSTParser._source),
         Mapper("pid", lambda: None),
         Mapper("fid", lambda x: FID[x], origin="filterName"),
         Mapper("mjd", origin="midPointTai"),
