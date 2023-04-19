@@ -3,8 +3,8 @@ numpy
 matplotlib
 GPy
 apf-base==2.1.5
--e git+https://github.com/alercebroker/mhps.git#egg=mhps
--e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
--e git+https://github.com/alercebroker/db-plugins.git@4.0.0#egg=db_plugins
--e git+https://github.com/alercebroker/lc_classifier.git@1.2.1-P#egg=lc_classifier
--e git+https://github.com/alercebroker/P4J.git#egg=P4J
+git+https://github.com/alercebroker/mhps.git#egg=mhps
+git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
+git+https://github.com/alercebroker/db-plugins.git@4.0.0#egg=db_plugins
+git+https://github.com/alercebroker/lc_classifier.git@1.2.1-P#egg=lc_classifier
+git+https://github.com/alercebroker/P4J.git#egg=P4J
