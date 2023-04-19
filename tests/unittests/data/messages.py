@@ -12,9 +12,12 @@ data = list(utils.generate_many(SCHEMA, 10))
 for d in data:
     aid = random.choice(aids_pool)
     d["aid"] = aid
+    sid = "ZTF" if random.random() < 0.5 else "ATLAS"
     for detection in d["detections"]:
         detection["aid"] = aid
-        detection["fid"] = 1 if random.random() < 0.5 else 2
+        detection["sid"] = sid
+        detection["fid"] = "g" if random.random() < 0.5 else "r"
     for non_detection in d["non_detections"]:
         non_detection["aid"] = aid
-        non_detection["fid"] = 1 if random.random() < 0.5 else 2
+        non_detection["sid"] = sid
+        non_detection["fid"] = "g" if random.random() < 0.5 else "r"

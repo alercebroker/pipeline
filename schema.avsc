@@ -129,7 +129,7 @@
               "type": "string"
             },
             {
-              "name": "survey_id",
+              "name": "sid",
               "type": "string"
             },
             {
