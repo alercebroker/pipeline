@@ -7,7 +7,7 @@ from ._base import BaseStatistics
 
 
 class MagnitudeStatistics(BaseStatistics):
-    _JOIN = ["aid", "survey_id", "fid"]
+    _JOIN = ["aid", "sid", "fid"]
     # Saturation threshold for each survey (only applies to corrected magnitudes)
     _THRESHOLD = {"ZTF": 13.2}
 

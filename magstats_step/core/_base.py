@@ -26,7 +26,7 @@ class BaseStatistics(abc.ABC):
 
     @lru_cache(10)
     def _survey_mask(self, survey: str) -> pd.Series:
-        return self._detections["survey_id"].str.lower() == survey.lower()
+        return self._detections["sid"].str.lower() == survey.lower()
 
     @lru_cache(10)
     def _surveys_mask(self, surveys: Tuple[str] = None) -> pd.Series:
