@@ -15,6 +15,7 @@ class ZTFParser(SurveyParser):
         Mapper("candid", origin="candid"),
         Mapper("oid", origin="objectId"),
         Mapper("tid", lambda: ZTFParser._source),
+        Mapper("sid", lambda: ZTFParser._source),
         Mapper("pid", origin="pid"),
         Mapper("fid", origin="fid"),
         Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),

@@ -27,6 +27,7 @@ class ATLASParser(SurveyParser):
         Mapper("candid", origin="candid"),
         Mapper("oid", origin="objectId"),
         Mapper("tid", origin="publisher"),
+        Mapper("sid", lambda: ATLASParser._source),
         Mapper("pid", origin="pid"),
         Mapper("fid", lambda x: FID[x], origin="filter"),
         Mapper("mjd", origin="mjd"),
