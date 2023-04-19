@@ -125,6 +125,7 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
+                "sid": "test",
                 "oid": ["test"],
                 "tid": ["test"],
                 "corrected": False,
@@ -145,6 +146,7 @@ class MongoQueryTest(unittest.TestCase):
         result, created = self.query.get_or_create(
             {
                 "aid": "test",
+                "sid": "test",
                 "oid": ["test"],
                 "tid": ["test"],
                 "corrected": False,
@@ -167,6 +169,7 @@ class MongoQueryTest(unittest.TestCase):
             aid="aid",
             oid="oid",
             tid="tid",
+            sid="sid",
             corrected=False,
             stellar=False,
             sigmara=.1,
@@ -186,6 +189,7 @@ class MongoQueryTest(unittest.TestCase):
     def test_bulk_update(self):
         model1 = Object(
             aid="aid1",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -200,6 +204,7 @@ class MongoQueryTest(unittest.TestCase):
         )
         model2 = Object(
             aid="aid2",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -225,6 +230,7 @@ class MongoQueryTest(unittest.TestCase):
     def test_bulk_update_using_filter(self):
         model1 = Object(
             aid="aid1",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -239,6 +245,7 @@ class MongoQueryTest(unittest.TestCase):
         )
         model2 = Object(
             aid="aid2",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -264,6 +271,7 @@ class MongoQueryTest(unittest.TestCase):
     def test_bulk_update_fails_if_not_all_instances_have_same_model(self):
         model1 = Object(
             aid="aid1",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -279,6 +287,7 @@ class MongoQueryTest(unittest.TestCase):
         model2 = NonDetection(
             candid="candid",
             aid="aid",
+            sid="sid",
             tid="tid",
             oid="oid",
             mjd=100,
@@ -293,6 +302,7 @@ class MongoQueryTest(unittest.TestCase):
     def test_bulk_update_fails_if_instances_and_attributes_do_not_match_size(self):
         model1 = Object(
             aid="aid1",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -307,6 +317,7 @@ class MongoQueryTest(unittest.TestCase):
         )
         model2 = Object(
             aid="aid2",
+            sid="sid",
             oid=["oid"],
             tid=["tid"],
             corrected=False,
@@ -330,6 +341,7 @@ class MongoQueryTest(unittest.TestCase):
             [
                 {
                     "aid": f"test{i}",
+                    "sid": "sid",
                     "oid": ["test"],
                     "tid": ["test"],
                     "corrected": False,
@@ -359,6 +371,7 @@ class MongoQueryTest(unittest.TestCase):
                 {
                     "aid": f"test{i}",
                     "oid": "test",
+                    "sid": "sid",
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,
@@ -392,6 +405,7 @@ class MongoQueryTest(unittest.TestCase):
                 {
                     "aid": f"test{i}",
                     "oid": "test",
+                    "sid": "sid",
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,
@@ -425,6 +439,7 @@ class MongoQueryTest(unittest.TestCase):
                 {
                     "aid": f"test{i}",
                     "oid": "test",
+                    "sid": "sid",
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,

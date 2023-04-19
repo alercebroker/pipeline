@@ -36,6 +36,7 @@ class TestMongoProbabilities(unittest.TestCase):
         model_1 = Object(
             _id="aid1",
             oid="oid1",
+            sid="sid",
             tid="tid1",
             corrected=False,
             stellar=False,
@@ -80,6 +81,7 @@ class TestMongoProbabilities(unittest.TestCase):
         model_2 = Object(
             _id="aid2",
             oid="oid2",
+            sid="sid",
             tid="tid2",
             corrected=False,
             stellar=False,
