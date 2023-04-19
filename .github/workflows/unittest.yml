@@ -14,11 +14,11 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: 3.9
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install pytest Cython==0.29.33 numpy coverage
+        pip install pytest coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
