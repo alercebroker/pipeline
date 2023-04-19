@@ -16,16 +16,28 @@
         "name": "alert",
         "fields": [
           {
+            "name": "aid",
+            "type": "string"
+          },
+          {
             "name": "oid",
             "type": "string"
+          },
+          {
+            "name": "survey_id",
+            "type": "string"
+          },
+          {
+            "name": "pid",
+            "type": "long"
           },
           {
             "name": "tid",
             "type": "string"
           },
           {
-            "name": "pid",
-            "type": "long"
+            "name": "fid",
+            "type": "string"
           },
           {
             "name": "candid",
@@ -36,16 +48,20 @@
             "type": "double"
           },
           {
-            "name": "fid",
-            "type": "int"
-          },
-          {
             "name": "ra",
             "type": "double"
           },
           {
+            "name": "e_ra",
+            "type": "float"
+          },
+          {
             "name": "dec",
             "type": "double"
+          },
+          {
+            "name": "e_dec",
+            "type": "float"
           },
           {
             "name": "mag",
@@ -64,28 +80,12 @@
             "type": "float"
           },
           {
+            "name": "e_mag_corr_ext",
+            "type": "float"
+          },
+          {
             "name": "isdiffpos",
             "type": "int"
-          },
-          {
-            "name": "e_ra",
-            "type": "float"
-          },
-          {
-            "name": "e_dec",
-            "type": "float"
-          },
-          {
-            "name": "extra_fields",
-            "type": {
-              "default": {},
-              "type": "map",
-              "values": ["null", "int", "float", "string", "bytes", "boolean"]
-            }
-          },
-          {
-            "name": "aid",
-            "type": "string"
           },
           {
             "name": "corrected",
@@ -98,6 +98,14 @@
           {
             "name": "stellar",
             "type": "boolean"
+          },
+          {
+            "name": "extra_fields",
+            "type": {
+              "default": {},
+              "type": "map",
+              "values": ["null", "int", "float", "string", "bytes", "boolean"]
+            }
           }
         ]
       },
@@ -117,11 +125,19 @@
               "type": "string"
             },
             {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "survey_id",
+              "type": "string"
+            },
+            {
               "name": "tid",
               "type": "string"
             },
             {
-              "name": "oid",
+              "name": "fid",
               "type": "string"
             },
             {
@@ -129,12 +145,8 @@
               "type": "double"
             },
             {
-              "name": "fid",
-              "type": "int"
-            },
-            {
               "name": "diffmaglim",
-              "type": "int"
+              "type": "float"
             }
           ]
         }
