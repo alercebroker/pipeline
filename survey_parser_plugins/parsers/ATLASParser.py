@@ -3,21 +3,14 @@ import math
 from ..core import GenericAlert, SurveyParser
 from ..core.mapper import Mapper
 
-
-FID = {
-    "g": 1,
-    "r": 2,
-    "i": 3,
-    "c": 4,
-    "o": 5,
-    "H": 6,
-}
-
 ERROR = 0.14
 
 
 def _e_ra(dec):
-    return ERROR / abs(math.cos(dec))
+    try:
+        return ERROR / abs(math.cos(dec))
+    except ZeroDivisionError:
+        return float("nan")
 
 
 class ATLASParser(SurveyParser):
@@ -29,7 +22,7 @@ class ATLASParser(SurveyParser):
         Mapper("tid", origin="publisher"),
         Mapper("sid", lambda: ATLASParser._source),
         Mapper("pid", origin="pid"),
-        Mapper("fid", lambda x: FID[x], origin="filter"),
+        Mapper("fid", origin="filter"),
         Mapper("mjd", origin="mjd"),
         Mapper("ra", origin="RA"),
         Mapper("e_ra", lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
