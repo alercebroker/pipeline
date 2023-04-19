@@ -7,6 +7,12 @@ ERRORS = {
     3: 0.01,
 }
 
+FILTER = {
+    1: "g",
+    2: "r",
+    3: "i",
+}
+
 
 class ZTFParser(SurveyParser):
     _source = "ZTF"
@@ -17,7 +23,7 @@ class ZTFParser(SurveyParser):
         Mapper("tid", lambda: ZTFParser._source),
         Mapper("sid", lambda: ZTFParser._source),
         Mapper("pid", origin="pid"),
-        Mapper("fid", origin="fid"),
+        Mapper("fid", lambda x: FILTER[x], origin="fid"),
         Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
         Mapper("ra", origin="ra"),
         Mapper("e_ra", lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
