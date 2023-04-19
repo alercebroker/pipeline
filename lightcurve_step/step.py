@@ -7,6 +7,16 @@ from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Detection, NonDetection
 
+# TODO: Unnecessary when using a clean DB
+FID_MAPPING = {
+    1: "g",
+    2: "r",
+    3: "i",
+    4: "c",
+    5: "o",
+    6: "H",
+}
+
 
 class LightcurveStep(GenericStep):
     def __init__(
@@ -34,7 +44,7 @@ class LightcurveStep(GenericStep):
         query_detections = self.db_client.query(Detection)
         query_non_detections = self.db_client.query(NonDetection)
 
-        # TODO: when using new DB addFields step should be: {$addFields: {"candid": "$_id"}}
+        # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id"}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -79,6 +89,15 @@ class LightcurveStep(GenericStep):
             "has_stamp", ascending=False
         ).drop_duplicates("candid", keep="first")
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
+
+        if detections["sid"].isna().any():  # TODO: Remove when using clean DB
+            detections["sid"][detections["tid"] == "ZTF"] = "ZTF"
+            detections["sid"][detections["tid"].str.startswith("ATLAS")] = "ATLAS"
+            non_detections["sid"][non_detections["tid"] == "ZTF"] = "ZTF"
+            non_detections["sid"][non_detections["tid"].str.startswith("ATLAS")] = "ATLAS"
+
+        detections["fid"].replace(FID_MAPPING, inplace=True)  # TODO: Remove when using clean DB
+        non_detections["fid"].replace(FID_MAPPING, inplace=True)  # TODO: Remove when using clean DB
 
         return {
             "detections": detections.replace(np.nan, None).to_dict("records"),
