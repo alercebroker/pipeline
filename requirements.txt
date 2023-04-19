@@ -1,4 +1,4 @@
-Cython
+Cython==0.29.33
 numpy
 matplotlib
 GPy
