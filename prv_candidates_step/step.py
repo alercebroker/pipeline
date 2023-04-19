@@ -34,7 +34,7 @@ class PrvCandidatesStep(GenericStep):
         return result
 
     def _get_parsers(self, survey: str):
-        if survey.lower().startswith("ztf"):
+        if survey.lower() == "ztf":
             return ZTFPreviousDetectionsParser(), ZTFNonDetectionsParser()
 
         return None, None
@@ -45,7 +45,7 @@ class PrvCandidatesStep(GenericStep):
         output = []
         for index, alert in enumerate(messages):
             prv_detections_parser, non_detections_parser = self._get_parsers(
-                alert["tid"]
+                alert["sid"]
             )
 
             stampless_alert = remove_keys_from_dictionary(alert, ["stamps"])
