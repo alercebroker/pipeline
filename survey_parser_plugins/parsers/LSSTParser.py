@@ -1,14 +1,16 @@
+import math
+
 from ..core import GenericAlert, SurveyParser
 from ..core.mapper import Mapper
 
-FID = {
-    "u": 0,
-    "g": 1,
-    "r": 2,
-    "i": 3,
-    "z": 4,
-    "Y": 5,
-}
+ERROR = 0.1  # Dummy value for elasticc tests
+
+
+def _e_ra(dec):
+    try:
+        return ERROR / abs(math.cos(dec))
+    except ZeroDivisionError:
+        return float("nan")
 
 
 class LSSTParser(SurveyParser):
@@ -19,15 +21,16 @@ class LSSTParser(SurveyParser):
         Mapper("oid", origin="diaObjectId"),
         Mapper("tid", lambda: LSSTParser._source),
         Mapper("sid", lambda: LSSTParser._source),
-        Mapper("pid", lambda: None),
-        Mapper("fid", lambda x: FID[x], origin="filterName"),
+        Mapper("pid", lambda: -999),  # Using dummy value for elasticc tests
+        Mapper("fid", origin="filterName"),
         Mapper("mjd", origin="midPointTai"),
-        Mapper("ra", lambda x: abs(x), origin="ra"),  # TODO: Is it really possible for it to be negative??
+        Mapper("ra", lambda x: x, origin="ra"),
+        Mapper("e_ra", lambda y: _e_ra(y), extras=["decl"]),
         Mapper("dec", origin="decl"),
-        # TODO: We're missing e_ra and e_dec. Object meanra, meandec calculations won't work
+        Mapper("e_dec", lambda: ERROR),
         Mapper("mag", origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
         Mapper("e_mag", origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
-        Mapper("isdiffpos", lambda: None),  # TODO: Check if this field can be extracted
+        Mapper("isdiffpos", lambda x: int(x / abs(x)), extras=["psFlux"]),
     ]
 
     @classmethod
