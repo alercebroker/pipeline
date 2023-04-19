@@ -16,14 +16,6 @@
         "name": "alert",
         "fields": [
           {
-            "name": "candid",
-            "type": ["long", "string"]
-          },
-          {
-            "name": "tid",
-            "type": "string"
-          },
-          {
             "name": "aid",
             "type": "string"
           },
@@ -32,16 +24,28 @@
             "type": "string"
           },
           {
-            "name": "mjd",
-            "type": "double"
-          },
-          {
-            "name": "fid",
-            "type": "int"
+            "name": "sid",
+            "type": "string"
           },
           {
             "name": "pid",
             "type": "long"
+          },
+          {
+            "name": "tid",
+            "type": "string"
+          },
+          {
+            "name": "fid",
+            "type": "string"
+          },
+          {
+            "name": "candid",
+            "type": ["long", "string"]
+          },
+          {
+            "name": "mjd",
+            "type": "double"
           },
           {
             "name": "ra",
@@ -68,28 +72,8 @@
             "type": "float"
           },
           {
-            "name": "mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr_ext",
-            "type": ["float", "null"]
-          },
-          {
             "name": "isdiffpos",
             "type": "int"
-          },
-          {
-            "name": "corrected",
-            "type": "boolean"
-          },
-          {
-            "name": "dubious",
-            "type": "boolean"
           },
           {
             "name": "has_stamp",
@@ -121,11 +105,19 @@
               "type": "string"
             },
             {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "sid",
+              "type": "string"
+            },
+            {
               "name": "tid",
               "type": "string"
             },
             {
-              "name": "oid",
+              "name": "fid",
               "type": "string"
             },
             {
@@ -133,12 +125,8 @@
               "type": "double"
             },
             {
-              "name": "fid",
-              "type": "int"
-            },
-            {
               "name": "diffmaglim",
-              "type": "int"
+              "type": "float"
             }
           ]
         }
