@@ -1,4 +1,4 @@
-import strategy
+from . import strategy
 
 
 class PreviousCandidatesExtractor:
@@ -8,11 +8,11 @@ class PreviousCandidatesExtractor:
     def extract_all(self):
         messages = []
         for alert in self._alerts:
-            survey = alert["sid"]
+            survey = alert["sid"].lower()
 
             alert["has_stamp"] = bool(alert.pop("stamps", False))
             try:
-                module = getattr(strategy, survey.lower())
+                module = getattr(strategy, survey)
             except AttributeError:
                 messages.append({"aid": alert["aid"], "detections": [alert], "non_detections": []})
             else:

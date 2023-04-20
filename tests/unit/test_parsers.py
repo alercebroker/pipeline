@@ -24,7 +24,7 @@ def test_non_detections_parser():
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     parser = ZTFNonDetectionsParser()
-    result = parser.parse(data, "aid", "tid", "oid")
+    result = parser.parse(data, "aid", "oid")
     assert result[0]["aid"] == "aid"
     assert result[0]["tid"] == "tid"
     assert result[0]["oid"] == "oid"
