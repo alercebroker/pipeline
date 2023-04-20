@@ -23,7 +23,7 @@ def test_mask_survey_returns_only_alerts_from_requested_survey():
     corrector = Corrector(detections)
     expected_ztf = pd.Series([True, False], index=["c1", "c2"])
     assert (corrector._survey_mask("ZtF") == expected_ztf).all()
-    assert (corrector._survey_mask("ATla") == ~expected_ztf).all()
+    assert (corrector._survey_mask("ATlas") == ~expected_ztf).all()
 
 
 @mock.patch("correction.core.corrector.strategy")

@@ -24,14 +24,6 @@
         "name": "alert",
         "fields": [
           {
-            "name": "candid",
-            "type": ["long", "string"]
-          },
-          {
-            "name": "tid",
-            "type": "string"
-          },
-          {
             "name": "aid",
             "type": "string"
           },
@@ -40,16 +32,28 @@
             "type": "string"
           },
           {
-            "name": "mjd",
-            "type": "double"
-          },
-          {
-            "name": "fid",
-            "type": "int"
+            "name": "sid",
+            "type": "string"
           },
           {
             "name": "pid",
             "type": "long"
+          },
+          {
+            "name": "tid",
+            "type": "string"
+          },
+          {
+            "name": "fid",
+            "type": "string"
+          },
+          {
+            "name": "candid",
+            "type": ["long", "string"]
+          },
+          {
+            "name": "mjd",
+            "type": "double"
           },
           {
             "name": "ra",
@@ -100,11 +104,11 @@
             "type": "boolean"
           },
           {
-            "name": "has_stamp",
+            "name": "stellar",
             "type": "boolean"
           },
           {
-            "name": "stellar",
+            "name": "has_stamp",
             "type": "boolean"
           },
           {
@@ -133,20 +137,24 @@
               "type": "string"
             },
             {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "sid",
+              "type": "string"
+            },
+            {
               "name": "tid",
               "type": "string"
             },
             {
-              "name": "oid",
+              "name": "fid",
               "type": "string"
             },
             {
               "name": "mjd",
               "type": "double"
-            },
-            {
-              "name": "fid",
-              "type": "int"
             },
             {
               "name": "diffmaglim",
