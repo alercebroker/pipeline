@@ -16,7 +16,7 @@ class GenericAlert:
     pid: int  # processing identifier for image
     candid: str  # candidate identifier (from survey)
     mjd: float  # modified Julian date
-    fid: int  # filter identifier
+    fid: str  # filter identifier
     ra: float  # right ascension
     dec: float  # declination
     mag: float  # difference magnitude
