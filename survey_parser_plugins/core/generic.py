@@ -41,6 +41,8 @@ class GenericNonDetection:
     mjd: float  # modified Julian date
     fid: str  # filter identifier
     diffmaglim: float  # sign of the flux difference
+    extra_fields: dict = field(default_factory=dict)
+    stamps: dict = field(default_factory=dict)
 
     def __getitem__(self, item):
         return self.__getattribute__(item)
