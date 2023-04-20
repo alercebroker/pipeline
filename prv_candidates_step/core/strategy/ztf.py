@@ -1,46 +1,32 @@
+import copy
 import pickle
 from dataclasses import asdict
 
 from survey_parser_plugins.core import SurveyParser
+from survey_parser_plugins.core.generic import GenericNonDetection
 from survey_parser_plugins.core.mapper import Mapper
-from survey_parser_plugins.parsers.ZTFParser import FILTER, ERRORS
+from survey_parser_plugins.parsers.ZTFParser import ZTFParser
+
+
+def prv_detections_mapper() -> dict:
+    mapping = copy.deepcopy(ZTFParser._mapping)
+    mapping["oid"] = Mapper(lambda: ZTFPreviousDetectionsParser._oid)
+    return mapping
+
+
+def prv_non_detections_mapper() -> dict:
+    mapping = copy.deepcopy(ZTFParser._mapping)
+    mapping["oid"] = Mapper(lambda: ZTFNonDetectionsParser._oid)
+    mapping["diffmaglim"] = Mapper(origin="diffmaglim")
+    remove = ["candid", "pid", "ra", "e_ra", "dec", "e_dec", "mag", "e_mag", "isdiffpos"]
+    for field in remove:
+        mapping.pop(field)
+    return mapping
 
 
 class ZTFPreviousDetectionsParser(SurveyParser):
     _oid = ""
-    _source = "ZTF"
-    _mapping = [
-        Mapper("oid", lambda: ZTFPreviousDetectionsParser._oid),
-        Mapper("sid", lambda: ZTFPreviousDetectionsParser._source),
-        Mapper("tid", lambda: ZTFPreviousDetectionsParser._source),
-        Mapper("candid", origin="candid"),
-        Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
-        Mapper("fid", lambda x: FILTER[x], origin="fid"),
-        Mapper("pid", origin="pid"),
-        Mapper("ra", origin="ra"),
-        Mapper(
-            "e_ra",
-            lambda x, y: x if x else ERRORS[y],
-            origin="sigmara",
-            extras=["fid"],
-            required=False,
-        ),
-        Mapper("dec", origin="dec"),
-        Mapper(
-            "e_dec",
-            lambda x, y: x if x else ERRORS[y],
-            origin="sigmadec",
-            extras=["fid"],
-            required=False,
-        ),
-        Mapper("mag", origin="magpsf"),
-        Mapper("e_mag", origin="sigmapsf"),
-        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
-    ]
-
-    @classmethod
-    def set_oid(cls, oid: str):
-        cls._oid = oid
+    _mapping = prv_detections_mapper()
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
@@ -51,8 +37,8 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         return True
 
     @classmethod
-    def parse_to_dict(cls, message: dict, aid, oid, parent) -> dict:
-        cls.set_oid(oid)
+    def parse(cls, message: dict, aid: str, oid: str, parent: str | int) -> dict:
+        cls._oid = oid
         alert = asdict(cls.parse_message(message))
         alert["aid"] = aid
         alert["extra_fields"]["parent_candid"] = parent
@@ -61,25 +47,30 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         return alert
 
 
-class ZTFNonDetectionsParser:
+class ZTFNonDetectionsParser(SurveyParser):
+    _oid = ""
+    _mapping = prv_non_detections_mapper()
+    _Model = GenericNonDetection
+
     @classmethod
-    def parse_non_detection(cls, non_detection: dict, aid: str, oid: str):
-        return {
-            "aid": aid,
-            "tid": "ZTF",
-            "oid": oid,
-            "sid": "ZTF",
-            "mjd": cls.convert_mjd(non_detection["jd"]),
-            "fid": FILTER[non_detection["fid"]],
-            "diffmaglim": non_detection["diffmaglim"],
-        }
+    def _extract_stamps(cls, message: dict) -> dict:
+        return super(ZTFNonDetectionsParser, cls)._extract_stamps(message)
 
-    @staticmethod
-    def convert_mjd(jd: float):
-        return jd - 2400000.5
+    @classmethod
+    def can_parse(cls, message: dict) -> bool:
+        return True
+
+    @classmethod
+    def parse(cls, message: dict, aid: str, oid: str) -> dict:
+        cls._oid = oid
+        alert = asdict(cls.parse_message(message))
+        alert["aid"] = aid
+        alert.pop("stamps")
+        alert.pop("extra_fields")
+        return alert
 
 
-def extract_detections_and_non_detections(alert):
+def extract_detections_and_non_detections(alert: dict) -> dict:
     detections = [alert]
     non_detections = []
 
@@ -89,10 +80,10 @@ def extract_detections_and_non_detections(alert):
     aid, oid, parent = alert["aid"], alert["oid"], alert["candid"]
     for candidate in prv_candidates:
         if candidate["candid"]:
-            candidate = ZTFPreviousDetectionsParser.parse_to_dict(candidate, aid, oid, parent)
+            candidate = ZTFPreviousDetectionsParser.parse(candidate, aid, oid, parent)
             detections.append(candidate)
         else:
-            candidate = ZTFNonDetectionsParser.parse_non_detection(candidate, aid, oid)
+            candidate = ZTFNonDetectionsParser.parse(candidate, aid, oid)
             non_detections.append(candidate)
 
     alert["extra_fields"].pop("prv_candidates")
