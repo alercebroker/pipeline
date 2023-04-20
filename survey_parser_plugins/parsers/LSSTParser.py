@@ -16,22 +16,22 @@ def _e_ra(dec):
 class LSSTParser(SurveyParser):
     _source = "LSST"
 
-    _mapping = [
-        Mapper("candid", origin="diaSourceId"),
-        Mapper("oid", origin="diaObjectId"),
-        Mapper("tid", lambda: LSSTParser._source),
-        Mapper("sid", lambda: LSSTParser._source),
-        Mapper("pid", lambda: -999),  # UPDATE ME
-        Mapper("fid", origin="filterName"),
-        Mapper("mjd", origin="midPointTai"),
-        Mapper("ra", lambda x: x, origin="ra"),
-        Mapper("e_ra", lambda y: _e_ra(y), extras=["decl"]),  # UPDATE ME
-        Mapper("dec", origin="decl"),
-        Mapper("e_dec", lambda: ERROR),  # UPDATE ME
-        Mapper("mag", origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
-        Mapper("e_mag", origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
-        Mapper("isdiffpos", lambda x: int(x / abs(x)), extras=["psFlux"]),
-    ]
+    _mapping = {
+        "candid": Mapper(origin="diaSourceId"),
+        "oid": Mapper(origin="diaObjectId"),
+        "tid": Mapper(lambda: LSSTParser._source),
+        "sid": Mapper(lambda: LSSTParser._source),
+        "pid": Mapper(lambda: -999),  # UPDATE ME
+        "fid": Mapper(origin="filterName"),
+        "mjd": Mapper(origin="midPointTai"),
+        "ra": Mapper(lambda x: x, origin="ra"),
+        "e_ra": Mapper(lambda y: _e_ra(y), extras=["decl"]),  # UPDATE ME
+        "dec": Mapper(origin="decl"),
+        "e_dec": Mapper(lambda: ERROR),  # UPDATE ME
+        "mag": Mapper(origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
+        "e_mag": Mapper(origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
+        "isdiffpos": Mapper(lambda x: int(x / abs(x)), extras=["psFlux"]),
+    }
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:

@@ -16,22 +16,22 @@ def _e_ra(dec):
 class ATLASParser(SurveyParser):
     _source = "ATLAS"
 
-    _mapping = [
-        Mapper("candid", origin="candid"),
-        Mapper("oid", origin="objectId"),
-        Mapper("tid", origin="publisher"),
-        Mapper("sid", lambda: ATLASParser._source),
-        Mapper("pid", origin="pid"),
-        Mapper("fid", origin="filter"),
-        Mapper("mjd", origin="mjd"),
-        Mapper("ra", origin="RA"),
-        Mapper("e_ra", lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
-        Mapper("dec", origin="Dec"),
-        Mapper("e_dec", lambda x: x if x else ERROR, origin="sigmadec", required=False),
-        Mapper("mag", origin="Mag"),
-        Mapper("e_mag", origin="Dmag"),
-        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
-    ]
+    _mapping = {
+        "candid": Mapper(origin="candid"),
+        "oid": Mapper(origin="objectId"),
+        "tid": Mapper(origin="publisher"),
+        "sid": Mapper(lambda: ATLASParser._source),
+        "pid": Mapper(origin="pid"),
+        "fid": Mapper(origin="filter"),
+        "mjd": Mapper(origin="mjd"),
+        "ra": Mapper(origin="RA"),
+        "e_ra": Mapper(lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
+        "dec": Mapper(origin="Dec"),
+        "e_dec": Mapper(lambda x: x if x else ERROR, origin="sigmadec", required=False),
+        "mag": Mapper(origin="Mag"),
+        "e_mag": Mapper(origin="Dmag"),
+        "isdiffpos": Mapper(lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
+    }
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:

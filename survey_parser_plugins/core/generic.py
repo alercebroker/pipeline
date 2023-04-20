@@ -1,7 +1,7 @@
 import abc
 import functools
 from dataclasses import dataclass, field
-from typing import Sequence, Set
+from typing import Dict, Sequence, Set
 
 from .mapper import Mapper
 
@@ -44,7 +44,7 @@ class SurveyParser(abc.ABC):
     `Mapper` objects described in `_mapping`.
     """
     _source: str
-    _mapping: Sequence[Mapper]
+    _mapping: Dict[Mapper]
     _ignore_in_extra_fields: Sequence[str] = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
 
     @classmethod
@@ -68,7 +68,7 @@ class SurveyParser(abc.ABC):
     @classmethod
     def parse_message(cls, message: dict) -> GenericAlert:
         """Create a `GenericAlert` from the message"""
-        generic = {mapper.field: mapper(message) for mapper in cls._mapping}
+        generic = {name: mapper(message) for name, mapper in cls._mapping.items()}
 
         stamps = cls._extract_stamps(message)
         extra_fields = {k: v for k, v in message.items() if k not in cls._exclude_from_extra_fields()}
