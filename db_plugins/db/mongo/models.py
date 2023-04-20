@@ -63,7 +63,7 @@ class Object(BaseModel):
 
     __table_args__ = [
         IndexModel([("oid", ASCENDING)]),
-        IndexModel([("tid", ASCENDING)]),
+        IndexModel([("sid", ASCENDING)]),
         IndexModel([("lastmjd", DESCENDING)]),
         IndexModel([("firstmjd", DESCENDING)]),
         IndexModel([("loc", GEOSPHERE)]),
@@ -111,7 +111,7 @@ class Detection(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("tid", ASCENDING)]),
+        IndexModel([("sid", ASCENDING)]),
     ]
     __tablename__ = "detection"
 
@@ -134,7 +134,7 @@ class NonDetection(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("tid", ASCENDING)]),
+        IndexModel([("sid", ASCENDING)]),
     ]
     __tablename__ = "non_detection"
 
