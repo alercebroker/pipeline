@@ -7,9 +7,9 @@ from ._base import BaseStatistics
 
 
 class MagnitudeStatistics(BaseStatistics):
-    _JOIN = ["aid", "fid"]
-    # Saturation threshold for each filter
-    _THRESHOLD = pd.Series([13.2, 13.2, 13.2], index=pd.Index([1, 2, 3], name="fid"))
+    _JOIN = ["aid", "sid", "fid"]
+    # Saturation threshold for each survey (only applies to corrected magnitudes)
+    _THRESHOLD = {"ZTF": 13.2}
 
     def __init__(self, detections: List[dict], non_detections: List[dict] = None):
         super().__init__(detections)
@@ -63,9 +63,11 @@ class MagnitudeStatistics(BaseStatistics):
         return pd.DataFrame({"ndubious": self._grouped_detections()["dubious"].sum()})
 
     def calculate_saturation_rate(self) -> pd.DataFrame:
-        total = self._grouped_detections()["mag_corr"].count()  # Count will exclude NaNs
-        saturated = self._detections.set_index("fid").query("mag_corr < @self._THRESHOLD.reindex(fid)").reset_index()
-        saturated = self._group(saturated)["mag_corr"].count().reindex(total.index, fill_value=0)
+        total = self._grouped_detections()["corrected"].sum()
+        saturated = pd.Series(index=total.index, dtype=float)
+        for survey, threshold in self._THRESHOLD.items():
+            sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(lambda x: (x < threshold).sum())
+            saturated.loc[sat.index] = sat
         with warnings.catch_warnings():
             # possible 0 divided by 0; this is expected and returned NaN is correct value
             warnings.filterwarnings("ignore", category=RuntimeWarning)

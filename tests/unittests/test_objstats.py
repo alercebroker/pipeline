@@ -267,36 +267,12 @@ def test_calculate_tid_uses_calculate_unique_with_tid():
 
 def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
     detections = [
-        {
-            "aid": "AID1",
-            "tid": "MOCK_SURVEY",
-            "mjd": 1,
-            "corrected": False,
-            "candid": "a",
-        },  # Should ignore
-        {
-            "aid": "AID1",
-            "tid": "SURVEY",
-            "mjd": 2,
-            "corrected": True,
-            "candid": "b",
-        },  # True for AID1
-        {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c"},
-        {
-            "aid": "AID2",
-            "tid": "MOCK_SURVEY",
-            "mjd": 1,
-            "corrected": True,
-            "candid": "d",
-        },  # Should ignore
-        {
-            "aid": "AID3",
-            "tid": "SURVEY",
-            "mjd": 2,
-            "corrected": False,
-            "candid": "e",
-        },  # False for AID3
-        {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f"},
+        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a"},  # Should ignore
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b"},  # True for AID1
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c"},
+        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d"},  # Should ignore
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e"},  # False for AID3
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f"},
     ]
     calculator = ObjectStatistics(detections)
     calculator._CORRECTED = ("SURVEY",)
@@ -315,36 +291,12 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
 
 def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
     detections = [
-        {
-            "aid": "AID1",
-            "tid": "MOCK_SURVEY",
-            "mjd": 1,
-            "stellar": False,
-            "candid": "a",
-        },  # Should ignore
-        {
-            "aid": "AID1",
-            "tid": "SURVEY",
-            "mjd": 2,
-            "stellar": True,
-            "candid": "b",
-        },  # True for AID1
-        {"aid": "AID1", "tid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c"},
-        {
-            "aid": "AID2",
-            "tid": "MOCK_SURVEY",
-            "mjd": 1,
-            "stellar": True,
-            "candid": "d",
-        },  # Should ignore
-        {
-            "aid": "AID3",
-            "tid": "SURVEY",
-            "mjd": 2,
-            "stellar": False,
-            "candid": "e",
-        },  # False for AID3
-        {"aid": "AID3", "tid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f"},
+        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a"},  # Should ignore
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b"},  # True for AID1
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c"},
+        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d"},  # Should ignore
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e"},  # False for AID3
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f"},
     ]
     calculator = ObjectStatistics(detections)
     calculator._STELLAR = ("SURVEY",)

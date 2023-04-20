@@ -4,10 +4,8 @@ from scripts.run_step import step_factory
 
 def test_execute(env_variables):
     step = step_factory()
-    print(data)
     formatted_data = step.pre_execute(data)
     result = step.execute(formatted_data)
-    print(result)
     for d in data:
         assert d["aid"] in result
         assert "meanra" in result[d["aid"]]
