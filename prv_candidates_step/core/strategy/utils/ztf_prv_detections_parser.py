@@ -7,6 +7,7 @@ from survey_parser_plugins.core.mapper import Mapper
 
 # Implementation a new parser for PreviousCandidates with SurveyParser signs.
 class ZTFPreviousDetectionsParser(SurveyParser):
+    _oid = ""
     _source = "ZTF"
     _mapping = [
         Mapper("oid", lambda: ZTFPreviousDetectionsParser._oid),
@@ -43,7 +44,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
-        return {"science": None, "template": None, "difference": None}
+        return super(ZTFPreviousDetectionsParser, cls)._extract_stamps(message)
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
@@ -51,14 +52,16 @@ class ZTFPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def parse(
-        cls, messages: List[dict], oid: str, aid: str, parent_candid: Union[str, int]
+        cls, messages: List[dict], oid: str, aid: str, parent: Union[str, int]
     ) -> List[dict]:
-        def parse_to_dict(message: dict) -> dict:
-            alert = asdict(cls.parse_message(message))
-            alert["aid"] = aid
-            alert["extra_fields"]["parent_candid"] = parent_candid
-            alert["has_stamp"] = False
-            return alert
+        return [cls.parse_to_dict(message, aid, oid, parent) for message in messages]
 
+    @classmethod
+    def parse_to_dict(cls, message: dict, aid, oid, parent) -> dict:
         cls.set_oid(oid)
-        return list(map(parse_to_dict, messages))
+        alert = asdict(cls.parse_message(message))
+        alert["aid"] = aid
+        alert["extra_fields"]["parent_candid"] = parent
+        alert["has_stamp"] = False
+        alert.pop("stamps")
+        return alert
