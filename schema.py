@@ -19,12 +19,14 @@ SCHEMA = {
     "doc": "Multi stream alert of any telescope/survey",
     "name": "alerce.alert",
     "fields": [
+        {"name": "aid", "type": "string"},
         {"name": "oid", "type": "string"},
+        {"name": "sid", "type": "string"},
         {"name": "tid", "type": "string"},
         {"name": "pid", "type": "long"},
         {"name": "candid", "type": ["long", "string"]},
         {"name": "mjd", "type": "double"},
-        {"name": "fid", "type": "int"},
+        {"name": "fid", "type": "string"},
         {"name": "ra", "type": "double"},
         {"name": "dec", "type": "double"},
         {"name": "mag", "type": "float"},
@@ -36,7 +38,6 @@ SCHEMA = {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
         },
-        {"name": "aid", "type": "string"},
         {"name": "stamps", "type": STAMPS},
     ],
 }
