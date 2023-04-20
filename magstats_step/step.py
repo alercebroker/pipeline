@@ -46,9 +46,6 @@ class MagstatsStep(GenericStep):
 
     def produce_scribe(self, result: dict):
         for aid, magstats in result.items():
-            magstats["oid"] = list(magstats["oid"])
-            magstats["tid"] = list(magstats["tid"])
-
             command = {
                 "collection": "object",
                 "type": "update",
