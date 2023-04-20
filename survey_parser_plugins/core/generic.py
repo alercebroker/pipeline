@@ -31,6 +31,21 @@ class GenericAlert:
         return self.__getattribute__(item)
 
 
+@dataclass
+class GenericNonDetection:
+    """Non detection of astronomical surveys."""
+
+    oid: str  # name of object (from survey)
+    tid: str  # telescope identifier
+    sid: str  # survey identifier
+    mjd: float  # modified Julian date
+    fid: str  # filter identifier
+    diffmaglim: float  # sign of the flux difference
+
+    def __getitem__(self, item):
+        return self.__getattribute__(item)
+
+
 class SurveyParser(abc.ABC):
     """Base class for survey parsing. Subclasses are intended to be static.
 
