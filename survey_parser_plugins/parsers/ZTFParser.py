@@ -17,22 +17,22 @@ FILTER = {
 class ZTFParser(SurveyParser):
     _source = "ZTF"
 
-    _mapping = [
-        Mapper("candid", origin="candid"),
-        Mapper("oid", origin="objectId"),
-        Mapper("tid", lambda: ZTFParser._source),
-        Mapper("sid", lambda: ZTFParser._source),
-        Mapper("pid", origin="pid"),
-        Mapper("fid", lambda x: FILTER[x], origin="fid"),
-        Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
-        Mapper("ra", origin="ra"),
-        Mapper("e_ra", lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
-        Mapper("dec", origin="dec"),
-        Mapper("e_dec", lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
-        Mapper("mag", origin="magpsf"),
-        Mapper("e_mag", origin="sigmapsf"),
-        Mapper("isdiffpos", lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
-    ]
+    _mapping = {
+        "candid": Mapper(origin="candid"),
+        "oid": Mapper(origin="objectId"),
+        "tid": Mapper(lambda: ZTFParser._source),
+        "sid": Mapper(lambda: ZTFParser._source),
+        "pid": Mapper(origin="pid"),
+        "fid": Mapper(lambda x: FILTER[x], origin="fid"),
+        "mjd": Mapper(lambda x: x - 2400000.5, origin="jd"),
+        "ra": Mapper(origin="ra"),
+        "e_ra": Mapper(lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
+        "dec": Mapper(origin="dec"),
+        "e_dec": Mapper(lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
+        "mag": Mapper(origin="magpsf"),
+        "e_mag": Mapper(origin="sigmapsf"),
+        "isdiffpos": Mapper(lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
+    }
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:

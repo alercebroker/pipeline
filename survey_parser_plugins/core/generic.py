@@ -1,7 +1,7 @@
 import abc
 import functools
 from dataclasses import dataclass, field
-from typing import Sequence, Set
+from typing import Dict, Sequence, Set
 
 from .mapper import Mapper
 
@@ -22,8 +22,25 @@ class GenericAlert:
     mag: float  # difference magnitude
     e_mag: float  # difference magnitude uncertainty
     isdiffpos: int  # sign of the flux difference
-    e_ra: float = None  # right ascension uncertainty
-    e_dec: float = None  # declination uncertainty
+    e_ra: float  # right ascension uncertainty
+    e_dec: float  # declination uncertainty
+    extra_fields: dict = field(default_factory=dict)
+    stamps: dict = field(default_factory=dict)
+
+    def __getitem__(self, item):
+        return self.__getattribute__(item)
+
+
+@dataclass
+class GenericNonDetection:
+    """Non detection of astronomical surveys."""
+
+    oid: str  # name of object (from survey)
+    tid: str  # telescope identifier
+    sid: str  # survey identifier
+    mjd: float  # modified Julian date
+    fid: str  # filter identifier
+    diffmaglim: float  # sign of the flux difference
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 
@@ -44,14 +61,15 @@ class SurveyParser(abc.ABC):
     `Mapper` objects described in `_mapping`.
     """
     _source: str
-    _mapping: Sequence[Mapper]
+    _mapping: Dict[str, Mapper]
     _ignore_in_extra_fields: Sequence[str] = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
+    _Model = GenericAlert
 
     @classmethod
     @functools.lru_cache(1)
     def _exclude_from_extra_fields(cls) -> Set[str]:
         """Returns a set of fields that should not be present in `extra_fields` for `GenericAlert`"""
-        ignore = {mapper.origin for mapper in cls._mapping if mapper.origin is not None}
+        ignore = {mapper.origin for mapper in cls._mapping.values() if mapper.origin is not None}
         ignore.update(cls._ignore_in_extra_fields)
         return ignore
 
@@ -68,11 +86,11 @@ class SurveyParser(abc.ABC):
     @classmethod
     def parse_message(cls, message: dict) -> GenericAlert:
         """Create a `GenericAlert` from the message"""
-        generic = {mapper.field: mapper(message) for mapper in cls._mapping}
+        generic = {name: mapper(message) for name, mapper in cls._mapping.items()}
 
         stamps = cls._extract_stamps(message)
         extra_fields = {k: v for k, v in message.items() if k not in cls._exclude_from_extra_fields()}
-        return GenericAlert(**generic, stamps=stamps, extra_fields=extra_fields)
+        return cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
 
     @classmethod
     @abc.abstractmethod
