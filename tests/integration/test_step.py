@@ -24,7 +24,7 @@ def test_result_has_everything(
 
 def assert_result_has_prv_detections(message):
     assert message["detections"] is not None
-    if message["detections"][0]["tid"].lower() == "atlas":
+    if message["detections"][0]["sid"].lower() == "atlas":
         assert len(message["detections"]) == 1
     else:
         assert len(message["detections"]) == 3
@@ -32,7 +32,7 @@ def assert_result_has_prv_detections(message):
 
 def assert_result_has_non_detections(message):
     assert message["non_detections"] is not None
-    if message["detections"][0]["tid"].lower() == "atlas":
+    if message["detections"][0]["sid"].lower() == "atlas":
         assert len(message["non_detections"]) == 0
     else:
         assert len(message["non_detections"]) == 2

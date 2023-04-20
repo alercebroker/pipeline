@@ -1,7 +1,7 @@
 from typing import List, Union
 from dataclasses import asdict
 from survey_parser_plugins.core import SurveyParser
-from survey_parser_plugins.parsers.ZTFParser import ERRORS
+from survey_parser_plugins.parsers.ZTFParser import ERRORS, FILTER
 from survey_parser_plugins.core.mapper import Mapper
 
 
@@ -10,10 +10,11 @@ class ZTFPreviousDetectionsParser(SurveyParser):
     _source = "ZTF"
     _mapping = [
         Mapper("oid", lambda: ZTFPreviousDetectionsParser._oid),
+        Mapper("sid", lambda: ZTFPreviousDetectionsParser._source),
         Mapper("tid", lambda: ZTFPreviousDetectionsParser._source),
         Mapper("candid", origin="candid"),
         Mapper("mjd", lambda x: x - 2400000.5, origin="jd"),
-        Mapper("fid", origin="fid"),
+        Mapper("fid", lambda x: FILTER[x], origin="fid"),
         Mapper("pid", origin="pid"),
         Mapper("ra", origin="ra"),
         Mapper(

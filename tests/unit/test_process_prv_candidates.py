@@ -18,7 +18,7 @@ from prv_candidates_step.core.candidates.process_prv_candidates import (
 def test_process_prv_candidates(atlas_strat, ztf_strat):
     def flip_coin():
         if random() > 0.5:
-            return "ATLAS-01a"
+            return "ATLAS"
 
         return "ZTF"
 
@@ -27,7 +27,7 @@ def test_process_prv_candidates(atlas_strat, ztf_strat):
     atlas_strat.return_value = ("prv_detections", "non_detections")
     # generate valid tids
     for alert in alerts:
-        alert["tid"] = flip_coin()
+        alert["sid"] = flip_coin()
 
     result = process_prv_candidates(alerts)
     assert result == (["prv_detections"] * 10, ["non_detections"] * 10)

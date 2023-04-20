@@ -15,15 +15,13 @@ def process_prv_candidates(
     nalerts: list
         a list of alerts as they come from kafka. Same as messages argument for step.execute
     """
-    strategy = None
-
     prv_detections = []
     non_detections = []
     for alert in alerts:
-        survey = alert["tid"]
-        if survey.lower().startswith("ztf"):
+        survey = alert["sid"]
+        if survey.lower() == "ztf":
             strategy = ZTFPrvCandidatesStrategy()
-        elif survey.lower().startswith("atlas"):
+        elif survey.lower() == "atlas":
             strategy = ATLASPrvCandidatesStrategy()
         else:
             raise ValueError(f"Not recognized survey: {survey}")

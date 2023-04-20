@@ -64,6 +64,7 @@ def env_variables():
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "prv-candidates",
         "ENABLE_PARTITION_EOF": "True",
+        "SCRIBE_PRODUCER_SERVER": "localhost:9092",
         "SCRIBE_PRODUCER_TOPIC": "w_non_detections",
     }
     for key in env_variables_dict:
@@ -85,8 +86,8 @@ def produce_messages(topic):
     random.seed(42)
 
     for message in messages:
-        message["tid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
-        if str(message["tid"]).lower() == "ztf":
+        message["sid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
+        if message["sid"] == "ZTF":
             message["extra_fields"] = extra_fields_generator()
         producer.produce(message)
 

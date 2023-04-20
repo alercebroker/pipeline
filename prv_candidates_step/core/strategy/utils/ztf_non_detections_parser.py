@@ -1,5 +1,7 @@
 from typing import List
 
+from survey_parser_plugins.parsers.ZTFParser import FILTER
+
 
 class ZTFNonDetectionsParser:
     def parse(self, non_detections: List[dict], aid: str, tid: str, oid: str):
@@ -13,8 +15,9 @@ class ZTFNonDetectionsParser:
             "aid": aid,
             "tid": tid,
             "oid": oid,
+            "sid": "ZTF",
             "mjd": self.convert_mjd(non_detection["jd"]),
-            "fid": non_detection["fid"],
+            "fid": FILTER[non_detection["fid"]],
             "diffmaglim": non_detection["diffmaglim"],
         }
 
