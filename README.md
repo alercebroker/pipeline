@@ -13,23 +13,13 @@
 
 ## Database interactions
 
-### Insert/Update
+### Insert/Update (via Scribe)
 
 - Table `Probability`
 - Table `Taxonomy`
 - Table `Step`: Save step metadata. The following config is needed
 
 ```python
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.environ["DB_ENGINE"],
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.environ["DB_PORT"]),
-        "DB_NAME": os.environ["DB_NAME"],
-    }
-}
 
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),

@@ -7,13 +7,6 @@ import logging
 import pandas as pd
 import numpy as np
 import datetime
-from sqlalchemy.sql.expression import bindparam
-
-from db_plugins.db.sql import SQLConnection
-from db_plugins.db.sql.models import (
-    Probability,
-    Step,
-)
 
 import numexpr
 
@@ -34,14 +27,11 @@ class LateClassifier(GenericStep):
     base_name = "lc_classifier"
 
     def __init__(self,
-                 consumer=None,
                  config=None,
                  level=logging.INFO,
-                 db_connection=None,
-                 producer=None,
                  model=None,
                  **step_args):
-        super().__init__(consumer, config=config, level=level)
+        super().__init__(config=config, level=level)
 
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
@@ -50,25 +40,7 @@ class LateClassifier(GenericStep):
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
         self.features_required = set(self.model.feature_list)
 
-        if "CLASS" in config["PRODUCER_CONFIG"]:
-            Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-        else:
-            Producer = producer or KafkaProducer
-
-        self.producer = Producer(config["PRODUCER_CONFIG"])
-        self.driver = db_connection or SQLConnection()
-        self.driver.connect(config["DB_CONFIG"]["SQL"])
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
-
-    def insert_step_metadata(self):
-        self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
+        self.scribe_producer = None
 
     def get_ranking(self, df):
         ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
@@ -112,67 +84,21 @@ class LateClassifier(GenericStep):
         results["classifier_version"] = self.model.MODEL_VERSION_NAME
         return results
 
-    def get_on_db(self, oids):
-        query = (
-            self.driver.query(Probability.oid)
-            .filter(Probability.oid.in_(oids))
-            .filter(Probability.classifier_version == self.model.MODEL_VERSION_NAME)
-            .distinct()
-        )
-        return pd.read_sql(query.statement, self.driver.engine).oid.values
-
-    def insert_db(self, results, oids):
-        on_db = self.get_on_db(oids)
-        results.set_index("oid", inplace=True)
-        already_on_db = results.index.isin(on_db)
-        to_insert = results[~already_on_db]
-        to_update = results[already_on_db]
-
-        if len(to_insert) > 0:
-            self.logger.info(f"Inserting {len(to_insert)} new probabilities")
-            to_insert.replace({np.nan: None}, inplace=True)
-            to_insert.reset_index(inplace=True)
-            dict_to_insert = to_insert.to_dict('records')
-            self.driver.query().bulk_insert(dict_to_insert, Probability)
-
-        if len(to_update) > 0:
-            self.logger.info(f"Updating {len(to_update)} probabilities")
-            to_update.replace({np.nan: None}, inplace=True)
-            to_update.reset_index(inplace=True)
-            to_update.rename(columns={
-                                "oid": "_oid",
-                                "classifier_name": "_classifier_name",
-                                "classifier_version": "_classifier_version",
-                                "class_name": "_class_name",
-                                "probability": "_probability",
-                                "ranking": "_ranking"},inplace=True)
-            dict_to_update = to_update.to_dict('records')
-            stmt = (
-                Probability.__table__.update()
-                .where(Probability.oid == bindparam("_oid"))
-                .where(Probability.classifier_name == bindparam("_classifier_name"))
-                .where(Probability.classifier_version == bindparam("_classifier_version"))
-                .where(Probability.class_name == bindparam("_class_name"))
-                .values(
-                    probability=bindparam("_probability"),
-                    ranking=bindparam("_ranking")
-                )
-            )
-            self.driver.engine.execute(stmt, dict_to_update)
-
     def get_oid_tree(self, tree, oid):
         tree_oid = {}
         for key in tree:
             data = tree[key]
-            if type(data) is pd.DataFrame:
+            if isinstance(data, pd.DataFrame):
                 tree_oid[key] = data.loc[oid].to_dict()
-            elif type(data) is pd.Series:
+            elif isinstance(data, pd.Series):
                 tree_oid[key] = data.loc[oid]
-            elif type(data) is dict:
+            elif isinstance(data, dict):
                 tree_oid[key] = self.get_oid_tree(data, oid)
         return tree_oid
 
-    def produce(self, alert_data, features, tree_probabilities: pd.DataFrame):
+    def pre_produce(self, result: tuple):
+        alert_data, features, tree_probabilities = result
+        messages = []
         self.metrics["class"] = tree_probabilities["class"].tolist()
         features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
@@ -190,7 +116,10 @@ class LateClassifier(GenericStep):
                 "features": features_oid,
                 "lc_classification": tree_oid
             }
-            self.producer.produce(write, key=oid)
+            messages.append(write)
+
+        return messages
+
 
     def message_to_df(self, messages):
         return pd.DataFrame([
@@ -204,6 +133,9 @@ class LateClassifier(GenericStep):
         features.sort_values("candid", ascending=False, inplace=True)
         features.drop_duplicates("oid", inplace=True)
         return features
+    
+    def produce_scribe(self, result: tuple):
+        pass
 
     def execute(self, messages):
         """Run the classification.
@@ -237,7 +169,10 @@ class LateClassifier(GenericStep):
         tree_probabilities = self.model.predict_in_pipeline(features)
         self.logger.info("Processing results")
         db_results = self.process_results(tree_probabilities)
-        self.logger.info("Inserting/Updating results on database")
-        self.insert_db(db_results, features.index.values)
-        self.logger.info("Producing messages")
-        self.produce(alert_data, features, tree_probabilities)
+
+        return alert_data, features, tree_probabilities
+        #self.produce(alert_data, features, tree_probabilities)
+
+    def post_execute(self, result: tuple):
+        self.produce_scribe(*result)
+        return result

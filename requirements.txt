@@ -1,7 +1,6 @@
-apf-base==1.0.7
+apf-base==2.1.5
 numexpr
 numpy
 scipy~=1.5.2
 pandas==1.3.3
--e git+https://git@github.com/alercebroker/db-plugins@2.1.4#egg=db_plugins
 -e git+https://github.com/alercebroker/lc_classifier.git@1.2.3-P#egg=lc_classifier
