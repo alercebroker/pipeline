@@ -46,7 +46,7 @@ class ObjectStatistics(BaseStatistics):
         )
 
     def _calculate_unique(self, label: str) -> pd.DataFrame:
-        return pd.DataFrame({label: self._grouped_detections()[label].unique()})
+        return pd.DataFrame({label: self._grouped_detections()[label].unique().apply(list)})
 
     def calculate_ra(self) -> pd.DataFrame:
         return self._calculate_coordinates("ra")
