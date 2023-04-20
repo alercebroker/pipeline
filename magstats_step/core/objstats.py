@@ -66,6 +66,9 @@ class ObjectStatistics(BaseStatistics):
     def calculate_tid(self) -> pd.DataFrame:
         return self._calculate_unique("tid")
 
+    def calculate_sid(self) -> pd.DataFrame:
+        return self._calculate_unique("sid")
+
     def calculate_corrected(self) -> pd.DataFrame:
         return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first", surveys=self._CORRECTED)})
 
