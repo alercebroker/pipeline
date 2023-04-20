@@ -22,8 +22,8 @@ class GenericAlert:
     mag: float  # difference magnitude
     e_mag: float  # difference magnitude uncertainty
     isdiffpos: int  # sign of the flux difference
-    e_ra: float = None  # right ascension uncertainty
-    e_dec: float = None  # declination uncertainty
+    e_ra: float  # right ascension uncertainty
+    e_dec: float  # declination uncertainty
     extra_fields: dict = field(default_factory=dict)
     stamps: dict = field(default_factory=dict)
 
@@ -46,6 +46,7 @@ class SurveyParser(abc.ABC):
     _source: str
     _mapping: Dict[Mapper]
     _ignore_in_extra_fields: Sequence[str] = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
+    _Model = GenericAlert
 
     @classmethod
     @functools.lru_cache(1)
@@ -72,7 +73,7 @@ class SurveyParser(abc.ABC):
 
         stamps = cls._extract_stamps(message)
         extra_fields = {k: v for k, v in message.items() if k not in cls._exclude_from_extra_fields()}
-        return GenericAlert(**generic, stamps=stamps, extra_fields=extra_fields)
+        return cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
 
     @classmethod
     @abc.abstractmethod
