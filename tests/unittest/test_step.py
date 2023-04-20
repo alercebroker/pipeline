@@ -8,17 +8,17 @@ def test_pre_execute_joins_detections_and_non_detections():
         {
             "aid": "aid1",
             "detections": [{"candid": "b", "has_stamp": True}, {"candid": "a", "has_stamp": False}],
-            "non_detections": [{"mjd": 1, "oid": "i", "fid": 1}]
+            "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}]
         },
         {
             "aid": "aid1",
             "detections": [{"candid": "c", "has_stamp": True}, {"candid": "b", "has_stamp": False}],
-            "non_detections": [{"mjd": 1, "oid": "i", "fid": 1}]
+            "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}]
         },
         {
             "aid": "aid2",
             "detections": [{"candid": "c", "has_stamp": True}, {"candid": "b", "has_stamp": False}],
-            "non_detections": [{"mjd": 1, "oid": "i", "fid": 1}]
+            "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}]
         },
     ]
 
@@ -35,9 +35,9 @@ def test_pre_execute_joins_detections_and_non_detections():
             {"candid": "b", "has_stamp": False},
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "i", "fid": 1},
-            {"mjd": 1, "oid": "i", "fid": 1},
-            {"mjd": 1, "oid": "i", "fid": 1},
+            {"mjd": 1, "oid": "i", "fid": "g"},
+            {"mjd": 1, "oid": "i", "fid": "g"},
+            {"mjd": 1, "oid": "i", "fid": "g"},
         ]
     }
 
@@ -55,17 +55,17 @@ def test_execute_removes_duplicates():
     message = {
         "aids": {"aid1", "aid2"},
         "detections": [
-            {"candid": "a", "has_stamp": True},
-            {"candid": "b", "has_stamp": False},
-            {"candid": "c", "has_stamp": True},
-            {"candid": "d", "has_stamp": False},
-            {"candid": "d", "has_stamp": True},
-            {"candid": "a", "has_stamp": False},
+            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
+            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "d", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
+            {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "a", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "a", "fid": 1},
-            {"mjd": 1, "oid": "b", "fid": 1},
-            {"mjd": 1, "oid": "a", "fid": 1},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
+            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY"},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
         ]
     }
 
@@ -73,14 +73,14 @@ def test_execute_removes_duplicates():
 
     expected = {
         "detections": [
-            {"candid": "a", "has_stamp": True},
-            {"candid": "c", "has_stamp": True},
-            {"candid": "d", "has_stamp": True},
-            {"candid": "b", "has_stamp": False},
+            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
+            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "a", "fid": 1},
-            {"mjd": 1, "oid": "b", "fid": 1},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
+            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY"},
         ]
     }
 
