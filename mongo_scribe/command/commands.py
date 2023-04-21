@@ -194,9 +194,11 @@ class UpdateFeaturesCommand(UpdateCommand):
     .. code-block::
        {
            "features_version": "v1",
-           "feature1": 1.1,
-           "feature2": null, # algunos features pueden ser null deacuerdo al esquema, los ignoramos?
-           ...
+           "features": [
+                {"name": "feature1", "value": 1.1, "fid": 0},
+                {"name": "feature2", "value": null, "fid": 2},
+                ...
+           ]
        }
 
     When using the option `set_on_insert`, the features will be added to the object featurs only
@@ -209,7 +211,7 @@ class UpdateFeaturesCommand(UpdateCommand):
 
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
-        if "features_version" not in data:
+        if "features_version" not in data or "features" not in data:
             raise NoFearuteVersionProvidedException()
         self.features_version = data.pop("features_version")
 
@@ -221,10 +223,11 @@ class UpdateFeaturesCommand(UpdateCommand):
         features = [
             {
                 "features_version": self.features_version,
-                "feature_name": feature_name,
-                "feature_value": feature_value,
+                "feature_name": feature["name"],
+                "feature_value": feature["value"],
+                "fid": feature["fid"],
             }
-            for (feature_name, feature_value) in self.data.items()
+            for feature in self.data["features"]
         ]
         insert = {"$push": {"features": {"$each": features}}}
 
@@ -240,14 +243,15 @@ class UpdateFeaturesCommand(UpdateCommand):
         if self.options.set_on_insert:
             return ops
 
-        for (feature_name, feature_value) in self.data.items():
+        for feature in self.data["features"]:
             filters = {
                 "el.features_version": self.features_version,
-                "el.feature_name": feature_name,
+                "el.feature_name": feature["name"],
+                "el.fid": feature["fid"]
             }
             update = {
                 "$set": {
-                    "features.$[el].feature_value": feature_value,
+                    "features.$[el].feature_value": feature["value"],
                 }
             }
             ops.append(
