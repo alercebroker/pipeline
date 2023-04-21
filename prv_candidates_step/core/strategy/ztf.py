@@ -5,28 +5,20 @@ from dataclasses import asdict
 from survey_parser_plugins.core import SurveyParser
 from survey_parser_plugins.core.generic import GenericNonDetection
 from survey_parser_plugins.core.mapper import Mapper
-from survey_parser_plugins.parsers.ZTFParser import ZTFParser
-
-
-def prv_detections_mapper() -> dict:
-    mapping = copy.deepcopy(ZTFParser._mapping)
-    mapping["oid"] = Mapper(lambda: ZTFPreviousDetectionsParser._oid)
-    return mapping
+from survey_parser_plugins.parsers import ZTFParser
 
 
 def prv_non_detections_mapper() -> dict:
     mapping = copy.deepcopy(ZTFParser._mapping)
-    mapping["oid"] = Mapper(lambda: ZTFNonDetectionsParser._oid)
-    mapping["diffmaglim"] = Mapper(origin="diffmaglim")
-    remove = ["candid", "pid", "ra", "e_ra", "dec", "e_dec", "mag", "e_mag", "isdiffpos"]
-    for field in remove:
-        mapping.pop(field)
+    preserve = ["oid", "sid", "tid", "fid", "mjd"]
+
+    mapping = {k: v for k, v in mapping.items() if k in preserve}
+    mapping.update({"diffmaglim": Mapper(origin="diffmaglim")})
     return mapping
 
 
 class ZTFPreviousDetectionsParser(SurveyParser):
-    _oid = ""
-    _mapping = prv_detections_mapper()
+    _mapping = ZTFParser._mapping
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
@@ -37,18 +29,13 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         return True
 
     @classmethod
-    def parse(cls, message: dict, aid: str, oid: str, parent: str | int) -> dict:
-        cls._oid = oid
-        alert = asdict(cls.parse_message(message))
-        alert["aid"] = aid
-        alert["extra_fields"]["parent_candid"] = parent
-        alert["has_stamp"] = False
-        alert.pop("stamps")
-        return alert
+    def parse(cls, message: dict, oid: str) -> dict:
+        message = message.copy()
+        message["objectId"] = oid
+        return asdict(cls.parse_message(message))
 
 
 class ZTFNonDetectionsParser(SurveyParser):
-    _oid = ""
     _mapping = prv_non_detections_mapper()
     _Model = GenericNonDetection
 
@@ -61,13 +48,10 @@ class ZTFNonDetectionsParser(SurveyParser):
         return True
 
     @classmethod
-    def parse(cls, message: dict, aid: str, oid: str) -> dict:
-        cls._oid = oid
-        alert = asdict(cls.parse_message(message))
-        alert["aid"] = aid
-        alert.pop("stamps")
-        alert.pop("extra_fields")
-        return alert
+    def parse(cls, message: dict, oid: str) -> dict:
+        message = message.copy()
+        message["objectId"] = oid
+        return asdict(cls.parse_message(message))
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
@@ -80,10 +64,16 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     aid, oid, parent = alert["aid"], alert["oid"], alert["candid"]
     for candidate in prv_candidates:
         if candidate["candid"]:
-            candidate = ZTFPreviousDetectionsParser.parse(candidate, aid, oid, parent)
+            candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
+            candidate.update({"aid": aid, "has_stamp": False})
+            candidate["extra_fields"].update({"parent_candid": parent})
+            alert.pop("stamps", None)
             detections.append(candidate)
         else:
-            candidate = ZTFNonDetectionsParser.parse(candidate, aid, oid)
+            candidate = ZTFNonDetectionsParser.parse(candidate, oid)
+            candidate.update({"aid": aid})
+            candidate.pop("stamps", None)
+            candidate.pop("extra_fields", None)
             non_detections.append(candidate)
 
     alert["extra_fields"].pop("prv_candidates")

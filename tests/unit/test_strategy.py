@@ -11,6 +11,14 @@ def test_compute_ztf():
     result = PreviousCandidatesExtractor([alert]).extract_all()
     assert len(result[0]["detections"]) == 3
     assert len(result[0]["non_detections"]) == 2
+    assert result[0]["detections"][1]["aid"] == alert["aid"]
+    assert result[0]["detections"][2]["aid"] == alert["aid"]
+    assert result[0]["detections"][0]["extra_fields"]["parent_candid"] is None
+    assert result[0]["detections"][1]["extra_fields"]["parent_candid"] == alert["candid"]
+    assert result[0]["detections"][2]["extra_fields"]["parent_candid"] == alert["candid"]
+    assert result[0]["detections"][0]["has_stamp"]
+    assert not result[0]["detections"][1]["has_stamp"]
+    assert not result[0]["detections"][2]["has_stamp"]
 
 
 def test_compute_atlas():
@@ -20,3 +28,4 @@ def test_compute_atlas():
     result = PreviousCandidatesExtractor([alert]).extract_all()
     assert len(result[0]["detections"]) == 1
     assert len(result[0]["non_detections"]) == 0
+    assert result[0]["detections"][0]["has_stamp"]
