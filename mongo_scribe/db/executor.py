@@ -40,7 +40,7 @@ class ScribeCommandExecutor:
             self.connection.database[collection_name].bulk_write(operations)
         else:
             return
-        
+
     def bulk_execute(self, commands: List[Command]):
         """
         Receives all commands and separates them according to their collection
@@ -54,4 +54,3 @@ class ScribeCommandExecutor:
 
         for collection_name, command_list in commands_per_collection.items():
             self._bulk_execute(collection_name, command_list)
-            

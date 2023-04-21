@@ -61,3 +61,13 @@ class NoAlerceIdentificationProvidedException(ValueError):
 
     def __init__(self):
         super().__init__("No AID provided in the command")
+
+
+class NoFearuteVersionProvidedException(ValueError):
+    """
+    Exception to raise when a command doesn't provide the feature_version
+    when updating features
+    """
+
+    def __init__(self):
+        super().__init__("No features_version provided in the command")

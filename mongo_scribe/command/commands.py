@@ -180,3 +180,81 @@ class UpdateProbabilitiesCommand(UpdateCommand):
                 )
             )
         return ops
+
+
+class UpdateFeaturesCommand(UpdateCommand):
+    """Update Features for a given object.
+
+    The `data` must contain the features version, and an amount of keys that correspond
+    to the names of the features, the values for this keys correspond to the value of the
+    feature.
+
+    Example `data`:
+
+    .. code-block::
+       {
+           "features_version": "v1",
+           "feature1": 1.1,
+           "feature2": null, # algunos features pueden ser null deacuerdo al esquema, los ignoramos?
+           ...
+       }
+
+    When using the option `set_on_insert`, the features will be added to the object featurs only
+    if there wasnt any feature with the same version and name found.
+
+    Using the `upsert` option will create the object if it doesn't already exist.
+    """
+
+    type = ValidCommands.update_features
+
+    def _check_inputs(self, collection, data, criteria):
+        super()._check_inputs(collection, data, criteria)
+        if "features_version" not in data:
+            raise NoFearuteVersionProvidedException()
+        self.features_version = data.pop("features_version")
+
+    def get_operations(self) -> list:
+        find_existing_criteria = {
+            "features.features_version": {"$ne": self.features_version},
+            **self.criteria,
+        }
+        features = [
+            {
+                "features_version": self.features_version,
+                "feature_name": feature_name,
+                "feature_value": feature_value,
+            }
+            for (feature_name, feature_value) in self.data.items()
+        ]
+        insert = {"$push": {"features": {"$each": features}}}
+
+        # Insert empty features list if AID doesn't exist
+        upsert_operation = {"$setOnInsert": {"features": []}}
+        ops = [
+            UpdateOne(
+                self.criteria, upsert_operation, upsert=self.options.upsert
+            ),
+            UpdateOne(find_existing_criteria, insert),
+        ]
+
+        if self.options.set_on_insert:
+            return ops
+
+        for (feature_name, feature_value) in self.data.items():
+            filters = {
+                "el.features_version": self.features_version,
+            }
+            update = {
+                "$set": {
+                    "features.$[el].feature_name": feature_name,
+                    "features.$[el].feature_value": feature_value,
+                }
+            }
+            ops.append(
+                UpdateOne(
+                    self.criteria,
+                    update,
+                    array_filters=[filters],
+                )
+            )
+        return ops

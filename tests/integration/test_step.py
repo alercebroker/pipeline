@@ -119,7 +119,7 @@ class StepTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {"_id": "upserted_id"},
                 "data": {"field": "some_value"},
-                "options": {"upsert": True}
+                "options": {"upsert": True},
             }
         )
         self.producer.produce({"payload": command}, key="insertion_3")
@@ -138,7 +138,7 @@ class StepTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {"_id": "upserted_only_id"},
                 "data": {"field": "some_value"},
-                "options": {"upsert": True, "set_on_insert": True}
+                "options": {"upsert": True, "set_on_insert": True},
             }
         )
         self.producer.produce({"payload": command}, key="upsert_only")
@@ -148,7 +148,7 @@ class StepTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {"_id": "upserted_only_id"},
                 "data": {"field": "other_value"},
-                "options": {"upsert": True, "set_on_insert": True}
+                "options": {"upsert": True, "set_on_insert": True},
             }
         )
         self.producer.produce({"payload": command}, key="upsert_only_1")
@@ -166,8 +166,13 @@ class StepTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update_probabilities",
                 "criteria": {"_id": "insert_probabilities_id"},
-                "data": {"class1": 0.1, "class2": 0.9, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True, "set_on_insert": True}
+                "data": {
+                    "class1": 0.1,
+                    "class2": 0.9,
+                    "classifier_name": "classifier",
+                    "classifier_version": "1",
+                },
+                "options": {"upsert": True, "set_on_insert": True},
             }
         )
         self.producer.produce({"payload": command}, key="insertion_5")
@@ -176,8 +181,13 @@ class StepTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update_probabilities",
                 "criteria": {"_id": "insert_probabilities_id"},
-                "data": {"class1": 0.5, "class2": 0.3, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True, "set_on_insert": True}
+                "data": {
+                    "class1": 0.5,
+                    "class2": 0.3,
+                    "classifier_name": "classifier",
+                    "classifier_version": "1",
+                },
+                "options": {"upsert": True, "set_on_insert": True},
             }
         )
         self.producer.produce({"payload": command}, key="insertion_6")
@@ -193,16 +203,20 @@ class StepTest(unittest.TestCase):
                 "classifier_version": "1",
                 "probability": 0.1,
                 "class_name": "class1",
-                "ranking": 2
-             }, result["probabilities"])
+                "ranking": 2,
+            },
+            result["probabilities"],
+        )
         self.assertIn(
             {
                 "classifier_name": "classifier",
                 "classifier_version": "1",
                 "probability": 0.9,
                 "class_name": "class2",
-                "ranking": 1
-            }, result["probabilities"])
+                "ranking": 1,
+            },
+            result["probabilities"],
+        )
 
     def test_update_probabilities_into_database(self):
         command = json.dumps(
@@ -210,8 +224,13 @@ class StepTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update_probabilities",
                 "criteria": {"_id": "update_probabilities_id"},
-                "data": {"class1": 0.1, "class2": 0.9, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True}
+                "data": {
+                    "class1": 0.1,
+                    "class2": 0.9,
+                    "classifier_name": "classifier",
+                    "classifier_version": "1",
+                },
+                "options": {"upsert": True},
             }
         )
         self.producer.produce({"payload": command}, key="insertion_8")
@@ -220,8 +239,13 @@ class StepTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update_probabilities",
                 "criteria": {"_id": "update_probabilities_id"},
-                "data": {"class1": 0.5, "class2": 0.3, "classifier_name": "classifier", "classifier_version": "1"},
-                "options": {"upsert": True}
+                "data": {
+                    "class1": 0.5,
+                    "class2": 0.3,
+                    "classifier_name": "classifier",
+                    "classifier_version": "1",
+                },
+                "options": {"upsert": True},
             }
         )
         self.producer.produce({"payload": command}, key="insertion_9")
@@ -237,31 +261,39 @@ class StepTest(unittest.TestCase):
                 "classifier_version": "1",
                 "probability": 0.5,
                 "class_name": "class1",
-                "ranking": 1
-            }, result["probabilities"])
+                "ranking": 1,
+            },
+            result["probabilities"],
+        )
         self.assertIn(
             {
                 "classifier_name": "classifier",
                 "classifier_version": "1",
                 "probability": 0.3,
                 "class_name": "class2",
-                "ranking": 2
-            }, result["probabilities"])
+                "ranking": 2,
+            },
+            result["probabilities"],
+        )
 
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
         commands = [
-            json.dumps({
-                "collection": "object",
-                "type": "insert",
-                "data": {"field": "some printed value"}
-            }),
-            json.dumps({
-                "collection": "object",
-                "type": "update",
-                "criteria": {"field": "some printed value"},
-                "data": {"field2": "hehe"}
-            })
+            json.dumps(
+                {
+                    "collection": "object",
+                    "type": "insert",
+                    "data": {"field": "some printed value"},
+                }
+            ),
+            json.dumps(
+                {
+                    "collection": "object",
+                    "type": "update",
+                    "criteria": {"field": "some printed value"},
+                    "data": {"field2": "hehe"},
+                }
+            ),
         ]
         self.producer.produce({"payload": commands[0]}, key="insertion")
         self.producer.produce({"payload": commands[1]}, key="update")
