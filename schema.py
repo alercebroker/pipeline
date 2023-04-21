@@ -58,7 +58,7 @@ NON_DETECTIONS = {
             {"name": "sid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "mjd", "type": "double"},
-            {"name": "fid", "type": "int"},
+            {"name": "fid", "type": "string"},
             {"name": "diffmaglim", "type": "float"},
         ],
     },
