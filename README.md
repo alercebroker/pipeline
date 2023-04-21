@@ -31,6 +31,25 @@ The command must be formatted as follows:
         ...
     }
     ```
+  * `"update_features"`: Updates an existing feature, otherwise adds it. Data structure, e.g.,
+    ```json
+    {
+        "features_version": "lc_classifier_1.2.1-P",
+        "features": [
+            {
+                "name": "Amplitude",
+                "value": 0.6939550000000008,
+                "fid": 0
+            },
+            {
+                "name": "positive_fraction",
+                "value": 1,
+                "fid": 2
+            }, 
+            ...
+        ]
+    }
+    ```
 - The command *must* include a collection to work with. Currently, the supported collections are:
   * `"object"`
   * `"detections"`
