@@ -57,6 +57,7 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
     for i in range(num_messages):
         alert = {
             "oid": f"ZTFoid{identifier}",
+            "aid": f"ZTFaid{identifier}",
             "tid": "ZTF",
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
@@ -86,6 +87,7 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
         nd = {
             "tid": "ZTF",
             "oid": f"ZTFoid{identifier}",
+            "aid": f"ZTFaid{identifier}",
             "mjd": random.uniform(59000, 60000),
             "diffmaglim": random.uniform(15, 20),
             "fid": random.randint(1, 2),
@@ -156,8 +158,32 @@ def generate_input_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
-            "tid": f"ZTF",
+            "tid": "ZTF",
             "oid": f"ZTF2X{str(m).zfill(5)}",
+            "candid": candid,
+            "meanra": random.uniform(0, 360),
+            "meandec": random.uniform(-90, 90),
+            "detections": detections,
+            "non_detections": non_det,
+            "ndet": len(detections),
+            "metadata": generate_metadata(candid),
+        }
+        batch.append(msg)
+    random.shuffle(batch, lambda: 0.1)
+    return batch
+
+
+def generate_non_ztf_batch(n: int) -> List[dict]:
+    batch = []
+    for m in range(1, n + 1):
+        detections = generate_alert_atlas(random.randint(1, 100), m)
+        non_det = generate_non_det(random.randint(1, 20), m)
+        candid = int(str(m + 1).ljust(8, "0"))
+        detections[-1]["candid"] = candid
+        msg = {
+            "aid": f"AL2X{str(m).zfill(5)}",
+            "tid": "ATLAS-01a",
+            "oid": f"ATLAS{str(m).zfill(5)}",
             "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
@@ -225,5 +251,6 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: List[dict]) -> pd.DataFrame:
-    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
-
+    return pd.DataFrame(
+        columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"]
+    )
