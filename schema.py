@@ -10,7 +10,8 @@ DETECTIONS = {
             {"name": "aid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "mjd", "type": "double"},
-            {"name": "fid", "type": "int"},
+            {"name": "sid", "type": "string"},
+            {"name": "fid", "type": "string"},
             {"name": "pid", "type": "long"},
             {"name": "ra", "type": "double"},
             {"name": "e_ra", "type": "float"},
@@ -54,6 +55,7 @@ NON_DETECTIONS = {
         "fields": [
             {"name": "aid", "type": "string"},
             {"name": "tid", "type": "string"},
+            {"name": "sid", "type": "string"},
             {"name": "oid", "type": "string"},
             {"name": "mjd", "type": "double"},
             {"name": "fid", "type": "int"},
