@@ -67,8 +67,8 @@ poetry run pytest
 ## Adding new strategies
 
 New strategies (assumed to be survey based) can be added directly inside the module `core.strategy` as a new 
-Python file. The name of the file must coincide with a unique prefix for the survey (case insensitive), 
-i.e., a file `atlas` will work on detections with `tid`s such as `ATLAS-01`, `AtLAsS`, etc.
+Python file. The name of the file must coincide with the survey name (lowercase), 
+i.e., a file `atlas` will work on detections with `sid`s such as `ATLAS`, `AtLAs`, etc., but not `ATLAS-01`
 
 Strategy modules are required to have 4 functions: 
 * `is_corrected`: Returns boolean pandas data series showing if the detection can be corrected
@@ -78,6 +78,8 @@ Strategy modules are required to have 4 functions:
 
 If detections with no survey strategy defined are part of the messages, these will be quietly filled with default 
 values (`False` for the boolean fields and `NaN` for the corrected magnitudes).
+
+**Important:** Remember to import the new module in `__init__.py` inside `core.strategy` or it won't be available.
 
 ## Step information
 
