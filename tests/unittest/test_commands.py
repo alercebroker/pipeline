@@ -366,7 +366,6 @@ class CommandTests(unittest.TestCase):
             operations[2]._doc,
             {
                 "$set": {
-                    "features.$[el].feature_name": "feature1",
                     "features.$[el].feature_value": 12.34,
                 }
             },
@@ -375,6 +374,7 @@ class CommandTests(unittest.TestCase):
             operations[2]._array_filters,
             [
                 {
+                    "el.feature_name": "feature1",
                     "el.features_version": "v1",
                 }
             ],
@@ -384,7 +384,6 @@ class CommandTests(unittest.TestCase):
             operations[3]._doc,
             {
                 "$set": {
-                    "features.$[el].feature_name": "feature2",
                     "features.$[el].feature_value": None,
                 }
             },
@@ -393,6 +392,7 @@ class CommandTests(unittest.TestCase):
             operations[3]._array_filters,
             [
                 {
+                    "el.feature_name": "feature2",
                     "el.features_version": "v1",
                 }
             ],

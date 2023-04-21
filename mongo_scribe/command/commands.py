@@ -243,10 +243,10 @@ class UpdateFeaturesCommand(UpdateCommand):
         for (feature_name, feature_value) in self.data.items():
             filters = {
                 "el.features_version": self.features_version,
+                "el.feature_name": feature_name,
             }
             update = {
                 "$set": {
-                    "features.$[el].feature_name": feature_name,
                     "features.$[el].feature_value": feature_value,
                 }
             }

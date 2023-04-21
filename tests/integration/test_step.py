@@ -276,6 +276,59 @@ class StepTest(unittest.TestCase):
             result["probabilities"],
         )
 
+
+    def test_update_features_into_database(self):
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "update_features",
+                "criteria": {"_id": "update_features_id"},
+                "data": {
+                    "features_version": "v1",
+                    "feat1": 123,
+                    "feat2": 456
+                },
+                "options": {"upsert": True},
+            }
+        )
+        self.producer.produce({"payload": command}, key="insertion_11")
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "update_features",
+                "criteria": {"_id": "update_features_id"},
+                "data": {
+                    "features_version": "v1",
+                    "feat1": 741,
+                    "feat2": 369
+                },
+                "options": {"upsert": True},
+            }
+        )
+        self.producer.produce({"payload": command}, key="insertion_12")
+        self.producer.produce({"payload": command}, key="insertion_13")
+
+        self.step.start()
+        collection = self.step.db_client.connection.database["object"]
+        result = collection.find_one({"_id": "update_features_id"})
+        self.assertIsNotNone(result)
+        self.assertIn(
+            {
+                "features_version": "v1",
+                "feature_name": "feat1",
+                "feature_value": 741,
+            },
+            result["features"],
+        )
+        self.assertIn(
+            {
+                "features_version": "v1",
+                "feature_name": "feat2",
+                "feature_value": 369,
+            },
+            result["features"],
+        )
+
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
         commands = [
