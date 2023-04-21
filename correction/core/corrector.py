@@ -60,7 +60,7 @@ class Corrector:
             basic = pd.DataFrame(default, index=self._detections.index, columns=columns, dtype=dtype)
         else:
             basic = pd.Series(default, index=self._detections.index, dtype=dtype)
-        for name in strategy.__dict__:  # Will loop through the modules inside strategy
+        for name in dir(strategy):  # Will loop through the modules/variables imported in strategy
             if name.startswith("_"):  # Skip protected/private modules/variables
                 continue
             mask = self._survey_mask(name)  # Module must match survey prefix uniquely
