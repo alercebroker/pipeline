@@ -33,57 +33,6 @@ elif os.getenv("CONSUMER_TOPICS"):
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
-METRICS_CONFIG = {
-    "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
-        {"key": "oid", "alias": "oid"},
-        {"key": "aid", "alias": "aid"},
-        {"key": "tid", "format": lambda x: str(x)},
-    ],
-    "PARAMS": {
-        "PARAMS": {
-            "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest",
-        },
-        "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {
-                    "timestamp_sent": "2020-09-01",
-                    "timestamp_received": "2020-09-01",
-                }
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
-    },
-}
-
 STEP_METADATA = {
     "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
     "STEP_ID": os.getenv("STEP_ID", "archiving"),
@@ -96,17 +45,12 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
     CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
 ## Step Configuration
 STEP_CONFIG = {
     "N_PROCESS": os.getenv("N_PROCESS"),  # Number of process for multiprocess script
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": STEP_METADATA,
-    "METRICS_CONFIG": METRICS_CONFIG,
     "FORMAT": os.getenv("ARCHIVE_FORMAT", "avro"),
     "ZTF_BUCKET_NAME": os.getenv("S3_ZTF_BUCKET_NAME", "ztf-avro"),
     "ATLAS_BUCKET_NAME": os.getenv("S3_ATLAS_BUCKET_NAME", "astro-alerts-archive"),
