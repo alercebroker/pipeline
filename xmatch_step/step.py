@@ -27,7 +27,6 @@ class XmatchStep(GenericStep):
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
 
-        self.version = config["STEP_METADATA"]["STEP_VERSION"]
         # Xmatch client config
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
