@@ -79,13 +79,6 @@ XMATCH_CONFIG = {
     }
 }
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "dev"),
-    "STEP_NAME": os.getenv("STEP_NAME", "xmatch_step"),
-    "STEP_COMMENTS": "",
-}
-
 SCRIBE_PRODUCER_CONFIG = {
     "CLASS": "apf.producers.KafkaProducer",
     "PARAMS": {
@@ -185,7 +178,6 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
     "RETRIES": int(os.getenv("RETRIES", 3)),
     "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", 1)),
