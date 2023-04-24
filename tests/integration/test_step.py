@@ -75,12 +75,6 @@ class StepXmatchTest(unittest.TestCase):
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-            "STEP_METADATA": {
-                "STEP_VERSION": "xmatch",
-                "STEP_ID": "xmatch",
-                "STEP_NAME": "xmatch",
-                "STEP_COMMENTS": "xmatch",
-            },
             "XMATCH_CONFIG": XMATCH_CONFIG,
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
