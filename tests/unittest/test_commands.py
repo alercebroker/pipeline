@@ -274,9 +274,24 @@ class CommandTests(unittest.TestCase):
 # test for update features
 
     def test_update_features_check_input_wrong_input(self):
+        # no features_version
         invalid_features_data = {
-            "feat1": 123,
-            "feat2": 321,
+            "features": [
+                {"name": "feature1", "value": 12.34, "fid": 0},
+                {"name": "feature2", "value": None, "fid": 2},
+            ],
+        }
+        with self.assertRaises(NoFearuteVersionProvidedException):
+            update_features_command = UpdateFeaturesCommand(
+                collection=valid_features_dict["collection"],
+                data=invalid_features_data,
+                criteria=valid_features_dict["criteria"],
+                options=valid_features_dict["options"],
+            )
+
+        # no features
+        invalid_features_data = {
+            "features_version": "v1",
         }
         with self.assertRaises(NoFearuteVersionProvidedException):
             update_features_command = UpdateFeaturesCommand(
@@ -313,11 +328,13 @@ class CommandTests(unittest.TestCase):
                                 "features_version": "v1",
                                 "feature_name": "feature1",
                                 "feature_value": 12.34,
+                                "fid": 0,
                             },
                             {
                                 "features_version": "v1",
                                 "feature_name": "feature2",
                                 "feature_value": None,
+                                "fid": 2,
                             },
                         ]
                     }
@@ -376,6 +393,7 @@ class CommandTests(unittest.TestCase):
                 {
                     "el.feature_name": "feature1",
                     "el.features_version": "v1",
+                    "el.fid": 0,
                 }
             ],
         )
@@ -394,6 +412,7 @@ class CommandTests(unittest.TestCase):
                 {
                     "el.feature_name": "feature2",
                     "el.features_version": "v1",
+                    "el.fid": 2,
                 }
             ],
         )

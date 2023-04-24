@@ -37,8 +37,10 @@ valid_features_dict = {
     "criteria": {"_id": "AID51423"},
     "data": {
         "features_version": "v1",
-        "feature1": 12.34,
-        "feature2": None,
+        "features": [
+            {"name": "feature1", "value": 12.34, "fid": 0},
+            {"name": "feature2", "value": None, "fid": 2},
+        ],
     },
     "options": {},
 }

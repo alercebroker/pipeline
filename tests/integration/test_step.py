@@ -285,8 +285,10 @@ class StepTest(unittest.TestCase):
                 "criteria": {"_id": "update_features_id"},
                 "data": {
                     "features_version": "v1",
-                    "feat1": 123,
-                    "feat2": 456
+                    "features": [
+                        {"name": "feat1", "value": 123, "fid": 0},
+                        {"name": "feat2", "value": 456, "fid": 2},
+                    ],
                 },
                 "options": {"upsert": True},
             }
@@ -299,8 +301,10 @@ class StepTest(unittest.TestCase):
                 "criteria": {"_id": "update_features_id"},
                 "data": {
                     "features_version": "v1",
-                    "feat1": 741,
-                    "feat2": 369
+                    "features": [
+                        {"name": "feat1", "value": 741, "fid": 0},
+                        {"name": "feat2", "value": 369, "fid": 2},
+                    ],
                 },
                 "options": {"upsert": True},
             }
@@ -317,6 +321,7 @@ class StepTest(unittest.TestCase):
                 "features_version": "v1",
                 "feature_name": "feat1",
                 "feature_value": 741,
+                "fid": 0,
             },
             result["features"],
         )
@@ -325,6 +330,7 @@ class StepTest(unittest.TestCase):
                 "features_version": "v1",
                 "feature_name": "feat2",
                 "feature_value": 369,
+                "fid": 2,
             },
             result["features"],
         )
