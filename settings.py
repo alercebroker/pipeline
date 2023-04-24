@@ -2,7 +2,7 @@
 #       Late Classifier Settings File
 ##################################################
 import os
-from features_schema import FEATURES_SCHEMA
+from schemas import SCHEMA, SCRIBE_SCHEMA
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -14,17 +14,6 @@ CONSUMER_CONFIG = {
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
-}
-
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.getenv("DB_ENGINE", "postgresql"),
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.getenv("DB_PORT", 5432)),
-        "DB_NAME": os.environ["DB_NAME"],
-    }
 }
 
 PRODUCER_CONFIG = {
@@ -43,47 +32,16 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": {
-        "doc": "Late Classification",
-        "name": "probabilities_and_features",
-        "type": "record",
-        "fields": [
-            {"name": "oid", "type": "string"},
-            {"name": "candid", "type": "long"},
-            FEATURES_SCHEMA,
-            {
-                "name": "lc_classification",
-                "type": {
-                    "type": "record",
-                    "name": "late_record",
-                    "fields": [
-                        {
-                            "name": "probabilities",
-                            "type": {
-                                "type": "map",
-                                "values": ["float"],
-                            },
-                        },
-                        {"name": "class", "type": "string"},
-                        {
-                            "name": "hierarchical",
-                            "type": {
-                                "name": "root",
-                                "type": "map",
-                                "values": [
-                                    {"type": "map", "values": "float"},
-                                    {
-                                        "type": "map",
-                                        "values": {"type": "map", "values": "float"},
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                },
-            },
-        ],
+    "SCHEMA": SCHEMA
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
+    "TOPIC": os.environ["SCRIBE_TOPIC"],
+    "SCHEMA": SCRIBE_SCHEMA,
 }
 
 METRICS_CONFIG = {
@@ -158,16 +116,10 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "lc_classification"),
-    "STEP_NAME": os.getenv("STEP_NAME", "late classification"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-}
 
 STEP_CONFIG = {
-    "DB_CONFIG": DB_CONFIG,
+    "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
     "METRICS_CONFIG": METRICS_CONFIG,
 }

@@ -38,9 +38,11 @@ class LateClassifier(GenericStep):
         self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
+
         self.features_required = set(self.model.feature_list)
 
-        self.scribe_producer = None
+        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
 
     def get_ranking(self, df):
         ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
@@ -104,7 +106,7 @@ class LateClassifier(GenericStep):
         features.replace({np.nan: None}, inplace=True)
         alert_data.sort_values("candid", ascending=False, inplace=True)
         alert_data.drop_duplicates("oid", inplace=True)
-        for idx, row in alert_data.iterrows():
+        for _, row in alert_data.iterrows():
             oid = row.oid
             candid = row.candid
             features_oid = features.loc[oid].to_dict()
@@ -134,8 +136,11 @@ class LateClassifier(GenericStep):
         features.drop_duplicates("oid", inplace=True)
         return features
     
-    def produce_scribe(self, result: tuple):
-        pass
+    def produce_scribe(self, db_results: pd.DataFrame):
+        db_results.set_index("aid")
+        # TODO: get schema of the operation
+
+        self.scribe_producer.produce(db_results)
 
     def execute(self, messages):
         """Run the classification.
@@ -170,9 +175,13 @@ class LateClassifier(GenericStep):
         self.logger.info("Processing results")
         db_results = self.process_results(tree_probabilities)
 
-        return alert_data, features, tree_probabilities
+        return {
+            "public_info": (alert_data, features, tree_probabilities),
+            "db_results": db_results,
+        }
         #self.produce(alert_data, features, tree_probabilities)
 
-    def post_execute(self, result: tuple):
-        self.produce_scribe(*result)
-        return result
+    def post_execute(self, result: dict):
+        db_results = result.pop("db_results")
+        self.produce_scribe(db_results)
+        return result["public_info"]

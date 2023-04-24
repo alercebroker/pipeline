@@ -1,15 +1,11 @@
 import unittest
 import pickle
-from db_plugins.db.sql import SQLQuery
+import os
 from unittest import mock
-from db_plugins.db.sql.models import Taxonomy
 from lc_classification.step import (
     LateClassifier,
-    SQLConnection,
     KafkaProducer,
-    pd,
     np,
-    Probability,
     HierarchicalRandomForest,
 )
 
@@ -215,41 +211,21 @@ PREDICTION = {
 }
 
 
-class MockSession:
-    def commit(self):
-        pass
-
-    def add(self, model):
-        pass
-
-    def query(self):
-        return mock.create_autospec(SQLQuery)()
-
-
 class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
-            "DB_CONFIG": {"SQL": {}},
             "PRODUCER_CONFIG": {"fake": "fake"},
-            "STEP_METADATA": {
-                "STEP_ID": "",
-                "STEP_NAME": "",
-                "STEP_VERSION": "",
-                "STEP_COMMENTS": "",
-                "CLASSIFIER_VERSION": "test",
-                "CLASSIFIER_NAME": "hrf_test",
-            },
+            "SCRIBE_PRODUCER_CONFIG": {
+                "CLASS": "unittest.mock.MagicMock",
+                "TOPIC": "test",
+            }
         }
-        self.mock_database_connection = mock.create_autospec(SQLConnection)
-        self.mock_database_connection.session = mock.create_autospec(MockSession)
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_model = mock.create_autospec(HierarchicalRandomForest)
         self.mock_model.feature_list = CORRECT_MESSAGE["features"].keys()
         self.mock_model.MODEL_VERSION_NAME = "test"
         self.step = LateClassifier(
             config=self.step_config,
-            db_connection=self.mock_database_connection,
-            producer=self.mock_producer,
             model=self.mock_model,
             test_mode=True,
         )
@@ -265,34 +241,8 @@ class StepTestCase(unittest.TestCase):
     def tearDown(self):
         del self.step
 
-    def test_insert_step_metadata(self):
-        self.step.insert_step_metadata()
-        self.step.driver.query().get_or_create.assert_called_once()
-
     def test_get_ranking(self):
         ranking = self.step.get_ranking(self.prediction["hierarchical"]["top"])
         self.assertEqual(list(ranking["Periodic"]), [1] * 10)
         self.assertEqual(list(ranking["Transient"]), [3] * 10)
         self.assertEqual(list(ranking["Stochastic"]), [2] * 10)
-
-    @mock.patch.object(LateClassifier, "insert_db")
-    def test_insert_db(self, mock_insert_dict):
-        mock_insert_dict.return_value = ["ok"]
-        result = PREDICTION
-        oid = CORRECT_MESSAGE["oid"]
-        probabilities = self.step.insert_db(result, oid)
-        self.assertEqual(len(probabilities), 1)
-
-    @mock.patch.object(LateClassifier, "insert_db")
-    def execute_missing_features(self, mock_insert):
-        self.step.features_required = set("not_empty")
-        self.step.execute([CORRECT_MESSAGE])
-        self.step.model.predict_in_pipeline.assert_not_called()
-        mock_insert.assert_not_called()
-        self.step.producer.produce.assert_not_called()
-
-    @mock.patch.object(LateClassifier, "insert_db")
-    def test_execute_no_missing_features(self, mock_insert):
-        self.step.model.predict_in_pipeline.return_value = self.prediction
-        self.step.execute(self.batch)
-        self.step.model.predict_in_pipeline.assert_called()
