@@ -65,13 +65,6 @@ No special conditions, only connection to kafka.
 - `METRICS_HOST`: Kafka host for storing metrics
 - `METRICS_TOPIC`: Name of the topic to store metrics
 
-### Step metadata
-- `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
-- `STEP_ID`: Unique identifier for the step. e.g: `S3`
-- `STEP_NAME`: Name of the step. e.g: `S3`
-- `STEP_COMMENTS`: Comments of the specific version.
-- `FEATURE_VERSION`: Version of the features used in the step
-
 ### Xmatch setup
 
 - `CATALOG`: An array of catalog settings to perform crossmatch with. Each catalog contains:
