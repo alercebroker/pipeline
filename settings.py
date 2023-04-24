@@ -172,6 +172,16 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
+if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "SCRIBE_KAFKA_USERNAME"
+    )
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "SCRIBE_KAFKA_PASSWORD"
+    )
+
 # Step Configuration
 STEP_CONFIG = {
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
