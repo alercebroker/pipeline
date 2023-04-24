@@ -38,12 +38,12 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "candid", "format": lambda x: str(x)},
-        {"key": "objectId", "alias": "oid"}
+        {"key": "objectId", "alias": "oid"},
     ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset":"smallest"},
+        },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
             "$schema": "http://json-schema.org/draft-07/schema",
@@ -79,6 +79,21 @@ METRICS_CONFIG = {
     },
 }
 
+if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+    CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
+if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+        "METRICS_KAFKA_USERNAME"
+    )
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+        "METRICS_KAFKA_PASSWORD"
+    )
+
 ## Step Configuratiom
 STEP_CONFIG = {
     "alert_db_config": {
@@ -101,5 +116,5 @@ STEP_CONFIG = {
             "DB_NAME": os.environ["USERS_DB_NAME"],
         }
     },
-    "METRICS_CONFIG": METRICS_CONFIG
+    "METRICS_CONFIG": METRICS_CONFIG,
 }
