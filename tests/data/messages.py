@@ -96,50 +96,6 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
     return non_det
 
 
-def generate_metadata(candid):
-    ss = {
-        "ssdistnr": random.choice([-999.0, random.uniform(0, 10)]),
-        "ssmagnr": random.choice([-999.0, random.uniform(0, 10)]),
-        "ssnamenr": f"randomname{random.randint(0, 1000)}",
-    }
-    gaia = {
-        "neargaia": random.uniform(0, 10),
-        "neargaiabright": random.uniform(0, 10),
-        "maggaia": random.uniform(0, 10),
-        "maggaiabright": random.uniform(0, 10),
-        "unique1": random.choice([True, False]),
-    }
-    ps1 = {
-        "objectidps1": random.randint(1, 999999),
-        "sgmag1": random.uniform(10, 20),
-        "srmag1": random.uniform(10, 20),
-        "simag1": random.uniform(10, 20),
-        "szmag1": random.uniform(10, 20),
-        "sgscore1": random.uniform(0, 10),
-        "distpsnr1": random.uniform(0, 10),
-        "objectidps2": random.randint(1, 999999),
-        "sgmag2": random.uniform(10, 20),
-        "srmag2": random.uniform(10, 20),
-        "simag2": random.uniform(10, 20),
-        "szmag2": random.uniform(10, 20),
-        "sgscore2": random.uniform(0, 10),
-        "distpsnr2": random.uniform(0, 10),
-        "objectidps3": random.randint(10, 20),
-        "sgmag3": random.uniform(10, 20),
-        "srmag3": random.uniform(10, 20),
-        "simag3": random.uniform(10, 20),
-        "szmag3": random.uniform(10, 20),
-        "sgscore3": random.uniform(0, 10),
-        "distpsnr3": random.uniform(0, 10),
-        "nmtchps": random.randint(1, 100),
-        "candid": candid,
-        "unique1": random.choice([True, False]),
-        "unique2": random.choice([True, False]),
-        "unique3": random.choice([True, False]),
-    }
-    return {"ss": ss, "gaia": gaia, "ps1": ps1}
-
-
 def generate_input_batch(n: int) -> List[dict]:
     """
     Parameters
@@ -158,15 +114,10 @@ def generate_input_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
-            "tid": "ZTF",
-            "oid": f"ZTF2X{str(m).zfill(5)}",
-            "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
             "non_detections": non_det,
-            "ndet": len(detections),
-            "metadata": generate_metadata(candid),
         }
         batch.append(msg)
     random.shuffle(batch, lambda: 0.1)
@@ -182,15 +133,10 @@ def generate_non_ztf_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
-            "tid": "ATLAS-01a",
-            "oid": f"ATLAS{str(m).zfill(5)}",
-            "candid": candid,
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
             "non_detections": non_det,
-            "ndet": len(detections),
-            "metadata": generate_metadata(candid),
         }
         batch.append(msg)
     random.shuffle(batch, lambda: 0.1)
