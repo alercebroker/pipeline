@@ -217,14 +217,14 @@ class UpdateFeaturesCommand(UpdateCommand):
 
     def get_operations(self) -> list:
         find_existing_criteria = {
-            "features.features_version": {"$ne": self.features_version},
+            "features.version": {"$ne": self.features_version},
             **self.criteria,
         }
         features = [
             {
-                "features_version": self.features_version,
-                "feature_name": feature["name"],
-                "feature_value": feature["value"],
+                "version": self.features_version,
+                "name": feature["name"],
+                "value": feature["value"],
                 "fid": feature["fid"],
             }
             for feature in self.data["features"]
@@ -245,13 +245,13 @@ class UpdateFeaturesCommand(UpdateCommand):
 
         for feature in self.data["features"]:
             filters = {
-                "el.features_version": self.features_version,
-                "el.feature_name": feature["name"],
+                "el.version": self.features_version,
+                "el.name": feature["name"],
                 "el.fid": feature["fid"]
             }
             update = {
                 "$set": {
-                    "features.$[el].feature_value": feature["value"],
+                    "features.$[el].value": feature["value"],
                 }
             }
             ops.append(

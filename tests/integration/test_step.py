@@ -318,18 +318,18 @@ class StepTest(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn(
             {
-                "features_version": "v1",
-                "feature_name": "feat1",
-                "feature_value": 741,
+                "version": "v1",
+                "name": "feat1",
+                "value": 741,
                 "fid": 0,
             },
             result["features"],
         )
         self.assertIn(
             {
-                "features_version": "v1",
-                "feature_name": "feat2",
-                "feature_value": 369,
+                "version": "v1",
+                "name": "feat2",
+                "value": 369,
                 "fid": 2,
             },
             result["features"],

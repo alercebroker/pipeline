@@ -325,15 +325,15 @@ class CommandTests(unittest.TestCase):
                     "features": {
                         "$each": [
                             {
-                                "features_version": "v1",
-                                "feature_name": "feature1",
-                                "feature_value": 12.34,
+                                "version": "v1",
+                                "name": "feature1",
+                                "value": 12.34,
                                 "fid": 0,
                             },
                             {
-                                "features_version": "v1",
-                                "feature_name": "feature2",
-                                "feature_value": None,
+                                "version": "v1",
+                                "name": "feature2",
+                                "value": None,
                                 "fid": 2,
                             },
                         ]
@@ -343,7 +343,7 @@ class CommandTests(unittest.TestCase):
         )
         self.assertEqual(
             operations[1]._filter,
-            {"features.features_version": {"$ne": "v1"}, "_id": "AID51423"},
+            {"features.version": {"$ne": "v1"}, "_id": "AID51423"},
         )
 
     def test_update_features_with_set_on_insert_with_upsert(self):
@@ -383,7 +383,7 @@ class CommandTests(unittest.TestCase):
             operations[2]._doc,
             {
                 "$set": {
-                    "features.$[el].feature_value": 12.34,
+                    "features.$[el].value": 12.34,
                 }
             },
         )
@@ -391,8 +391,8 @@ class CommandTests(unittest.TestCase):
             operations[2]._array_filters,
             [
                 {
-                    "el.feature_name": "feature1",
-                    "el.features_version": "v1",
+                    "el.name": "feature1",
+                    "el.version": "v1",
                     "el.fid": 0,
                 }
             ],
@@ -402,7 +402,7 @@ class CommandTests(unittest.TestCase):
             operations[3]._doc,
             {
                 "$set": {
-                    "features.$[el].feature_value": None,
+                    "features.$[el].value": None,
                 }
             },
         )
@@ -410,8 +410,8 @@ class CommandTests(unittest.TestCase):
             operations[3]._array_filters,
             [
                 {
-                    "el.feature_name": "feature2",
-                    "el.features_version": "v1",
+                    "el.name": "feature2",
+                    "el.version": "v1",
                     "el.fid": 2,
                 }
             ],
