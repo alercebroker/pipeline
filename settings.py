@@ -19,6 +19,7 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],

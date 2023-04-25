@@ -13,6 +13,29 @@ from features.step import (
 )
 from db_plugins.db.sql import SQLQuery
 import os
+from schema import SCHEMA
+
+CONSUMER_CONFIG = {
+    "CLASS": "unittest.mock.MagicMock",
+    "PARAMS": {
+        "bootstrap.servers": "server",
+        "group.id": "group_id",
+        "auto.offset.reset": "beginning",
+        "enable.partition.eof": False,
+    },
+    "TOPICS": ["topic"],
+    "consume.messages": "1",
+    "consume.timeout": "10",
+}
+
+PRODUCER_CONFIG = {
+    "CLASS": "unittest.mock.MagicMock",
+    "TOPIC": "test",
+    "PARAMS": {
+        "bootstrap.servers": "localhost:9092",
+    },
+    "SCHEMA": SCHEMA,
+}
 
 FILE_PATH = os.path.dirname(__file__)
 
@@ -29,7 +52,8 @@ class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "DB_CONFIG": {"SQL": {}},
-            "PRODUCER_CONFIG": {"fake": "fake"},
+            "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "FEATURE_VERSION": "v1",
             "STEP_METADATA": {
                 "STEP_VERSION": "feature",

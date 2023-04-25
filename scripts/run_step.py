@@ -23,8 +23,5 @@ logging.basicConfig(
 )
 
 from features import FeaturesComputer
-from apf.consumers import KafkaConsumer as Consumer
-
-consumer = Consumer(config=CONSUMER_CONFIG)
-step = FeaturesComputer(consumer, config=STEP_CONFIG, level=level)
+step = FeaturesComputer(config=STEP_CONFIG, level=level)
 step.start()
