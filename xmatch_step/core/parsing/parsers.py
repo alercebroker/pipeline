@@ -13,7 +13,7 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame, lc: dict):
     aid_in = xmatches["aid_in"]  # change to aid for multi stream purposes
     # Temporal code: the oid_in will be removed
     xmatches = xmatches.drop(
-        columns=["ra_in", "dec_in", "col1", "oid_in", "aid_in"],
+        columns=["ra_in", "dec_in", "col1", "aid_in"],
     )
     xmatches.replace({np.nan: None}, inplace=True)
     xmatches = pd.DataFrame(
