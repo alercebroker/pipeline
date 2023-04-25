@@ -1,6 +1,8 @@
 mock_lightcurve = [
     {
         "aid": "aid",
+        "meanra": 10.0,
+        "meandec": 50.0,
         "detections": [
             {
                 "candid": "aaa",
@@ -13,6 +15,7 @@ mock_lightcurve = [
             },
             {"candid": "aaa", "tid": "ATLAS-01a"},
         ],
+        "non_detections": [],
         "magstats": [],
     }
 ]
@@ -20,6 +23,8 @@ mock_lightcurve = [
 mock_lightcurves_list = [
     {
         "aid": "aid1",
+        "meanra": 10.0,
+        "meandec": 50.0,
         "detections": [
             {
                 "candid": "aaa",
@@ -36,6 +41,8 @@ mock_lightcurves_list = [
     },
     {
         "aid": "aid2",
+        "meanra": 50.0,
+        "meandec": 68.9,
         "detections": [
             {
                 "candid": "eee",

@@ -95,17 +95,17 @@ class StepXmatchTest(unittest.TestCase):
         messages_with_nd = self.step.pre_produce(output)
         assert isinstance(messages_with_nd, list)
 
-    # Just for coverage
+    # Just for coverage (btw, now accepts non ztf objects)
     @mock.patch.object(XmatchClient, "execute")
     def test_non_ztf_only_messages(self, xmatch_client):
         non_ztf_batch = generate_non_ztf_batch(10)
         xmatch_client.return_value = get_fake_xmatch(non_ztf_batch)
         result = self.step.execute(non_ztf_batch)
         assert isinstance(result, tuple)
-        assert len(result[0]) == 0
+        assert len(result[0]) == 10
 
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
-        self.step.scribe_producer.execute = mock.MagicMock()
+        self.step.scribe_producer.produce = mock.MagicMock()
 
         self.step.post_execute(result)
-        self.step.scribe_producer.execute.assert_not_called()
+        self.step.scribe_producer.produce.assert_called()

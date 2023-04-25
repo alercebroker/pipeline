@@ -8,6 +8,7 @@ from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
+from xmatch_step.core.utils.extract_info import extract_detections_from_messages
 from xmatch_step.core.parsing import parse_output
 
 
@@ -135,21 +136,15 @@ class XmatchStep(GenericStep):
         :return: None
         """
         self.logger.info(f"Processing {len(messages)} light curves")
-        light_curves = pd.DataFrame(messages)
+
+        lc_hash = extract_detections_from_messages(messages)
+
+        light_curves = pd.DataFrame.from_records(messages, exclude=["detections", "non_detections"])
         light_curves.drop_duplicates(
-            ["aid", "candid"], keep="last", inplace=True
+            ["aid"], keep="last", inplace=True
         )
-        light_curves = light_curves[
-            ~light_curves["metadata"].isna()
-        ]  # Leave lightcurves with metadata (means ZTF lc)
-        # Temporal code: to manage oids of ZTF and store xmatch
-        if light_curves.empty:
-            return
-        light_curves["oid"] = self.get_last_oid(light_curves)
-        input_catalog = light_curves[["aid", "meanra", "meandec", "oid"]]
-        # Get only ZTF objects
-        mask_ztf = input_catalog["oid"].str.contains("ZTF")
-        input_catalog = input_catalog[mask_ztf]
+
+        input_catalog = light_curves[["aid", "meanra", "meandec"]]
 
         if len(input_catalog) == 0:
             return [], pd.DataFrame.from_records([])
@@ -161,7 +156,7 @@ class XmatchStep(GenericStep):
         self.logger.info("Getting xmatches")
         xmatches = self.request_xmatch(input_catalog, self.retries)
         # Get output format
-        output_messages = parse_output(light_curves, xmatches)
+        output_messages = parse_output(light_curves, xmatches, lc_hash)
         del messages
         del light_curves
         del input_catalog
