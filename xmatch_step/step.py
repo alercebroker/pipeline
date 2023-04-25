@@ -8,7 +8,9 @@ from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
-from xmatch_step.core.utils.extract_info import extract_detections_from_messages
+from xmatch_step.core.utils.extract_info import (
+    extract_detections_from_messages,
+)
 from xmatch_step.core.parsing import parse_output
 
 
@@ -139,10 +141,10 @@ class XmatchStep(GenericStep):
 
         lc_hash = extract_detections_from_messages(messages)
 
-        light_curves = pd.DataFrame.from_records(messages, exclude=["detections", "non_detections"])
-        light_curves.drop_duplicates(
-            ["aid"], keep="last", inplace=True
+        light_curves = pd.DataFrame.from_records(
+            messages, exclude=["detections", "non_detections"]
         )
+        light_curves.drop_duplicates(["aid"], keep="last", inplace=True)
 
         input_catalog = light_curves[["aid", "meanra", "meandec"]]
 
