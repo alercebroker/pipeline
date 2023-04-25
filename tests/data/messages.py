@@ -170,7 +170,6 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "oid_in": f"ZTFoid{i}",  # f"ZTF{f['aid']}",  # Temp. code
             "aid_in": f["aid"],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),

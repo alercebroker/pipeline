@@ -88,7 +88,7 @@ class StepXmatchTest(unittest.TestCase):
         output_messages, xmatches = self.step.execute(self.batch)
 
         assert len(output_messages) == 20
-        assert xmatches.shape == (20, 23)
+        assert xmatches.shape == (20, 22)
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
