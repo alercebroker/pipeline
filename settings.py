@@ -44,6 +44,7 @@ else:
 # Producer Configuration
 
 PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
