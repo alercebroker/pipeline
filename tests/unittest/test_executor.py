@@ -4,6 +4,7 @@ from unittest import mock
 from mongo_scribe.db.executor import ScribeCommandExecutor
 from mongo_scribe.command.commands import InsertCommand
 
+
 class TestExecutor(unittest.TestCase):
     def setUp(self):
         db_config = {
