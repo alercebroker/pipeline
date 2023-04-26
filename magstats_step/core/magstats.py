@@ -70,13 +70,7 @@ class MagnitudeStatistics(BaseStatistics):
             sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(lambda x: (x < threshold).sum())
             saturated.loc[sat.index] = sat
 
-        print(self._detections)
-        print()
-        print(total)
-        print()
-        print(saturated)
-
-        rate = np.where(total.ne(0), saturated / total, np.nan)
+        rate = np.where(total.ne(0), saturated.astype(float) / total, np.nan)
         return pd.DataFrame({"saturation_rate": rate}, index=total.index)
 
     def calculate_dmdt(self) -> pd.DataFrame:
