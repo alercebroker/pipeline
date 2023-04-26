@@ -69,6 +69,13 @@ class MagnitudeStatistics(BaseStatistics):
         for survey, threshold in self._THRESHOLD.items():
             sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(lambda x: (x < threshold).sum())
             saturated.loc[sat.index] = sat
+
+        print(self._detections)
+        print()
+        print(total)
+        print()
+        print(saturated)
+
         rate = np.where(total.ne(0), saturated / total, np.nan)
         return pd.DataFrame({"saturation_rate": rate}, index=total.index)
 
