@@ -2,7 +2,7 @@ import unittest
 
 from pymongo.operations import InsertOne, UpdateOne
 
-from mongo_scribe.command.exceptions import NoFearuteVersionProvidedException
+from mongo_scribe.command.exceptions import NoFeatureVersionProvidedException
 
 from mongo_scribe.command.commands import (
     InsertCommand,
@@ -281,7 +281,7 @@ class CommandTests(unittest.TestCase):
                 {"name": "feature2", "value": None, "fid": 2},
             ],
         }
-        with self.assertRaises(NoFearuteVersionProvidedException):
+        with self.assertRaises(NoFeatureVersionProvidedException):
             update_features_command = UpdateFeaturesCommand(
                 collection=valid_features_dict["collection"],
                 data=invalid_features_data,
@@ -293,7 +293,7 @@ class CommandTests(unittest.TestCase):
         invalid_features_data = {
             "features_version": "v1",
         }
-        with self.assertRaises(NoFearuteVersionProvidedException):
+        with self.assertRaises(NoFeatureVersionProvidedException):
             update_features_command = UpdateFeaturesCommand(
                 collection=valid_features_dict["collection"],
                 data=invalid_features_data,

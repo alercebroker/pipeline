@@ -212,7 +212,7 @@ class UpdateFeaturesCommand(UpdateCommand):
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
         if "features_version" not in data or "features" not in data:
-            raise NoFearuteVersionProvidedException()
+            raise NoFeatureVersionProvidedException()
         self.features_version = data.pop("features_version")
 
     def get_operations(self) -> list:
