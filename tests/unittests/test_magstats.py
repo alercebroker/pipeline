@@ -275,16 +275,17 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         {"aid": "AID2", "sid": "ZTF", "fid": 3, "corrected": True, "mag_corr": 100, "candid": "d2"},
         {"aid": "AID1", "sid": "SURVEY", "fid": 10, "corrected": True, "mag_corr": 0, "candid": "e"},  # No threshold
         {"aid": "AID1", "sid": "SURVEY", "fid": 10, "corrected": True, "mag_corr": 100, "candid": "f"},  # No threshold
+        {"aid": "AID3", "sid": "SURVEY", "fid": 1, "corrected": False, "mag_corr": 0, "candid": "g"},  # No threshold
     ]
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_saturation_rate()
 
     expected = pd.DataFrame(
         {
-            "saturation_rate": [0.5, np.nan, 0, np.nan],
-            "aid": ["AID1", "AID2", "AID2", "AID1"],
-            "sid": ["ZTF", "ZTF", "ZTF", "SURVEY"],
-            "fid": [1, 2, 3, 10],
+            "saturation_rate": [0.5, np.nan, 0, np.nan, np.nan],
+            "aid": ["AID1", "AID2", "AID2", "AID1", "AID3"],
+            "sid": ["ZTF", "ZTF", "ZTF", "SURVEY", "SURVEY"],
+            "fid": [1, 2, 3, 10, 1],
         }
     )
     assert_frame_equal(result, expected.set_index(["aid", "sid", "fid"]), check_like=True)
