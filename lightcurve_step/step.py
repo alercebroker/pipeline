@@ -95,12 +95,10 @@ class LightcurveStep(GenericStep):
             detections["sid"][detections["tid"].str.startswith("ATLAS")] = "ATLAS"
 
             if "sid" not in non_detections:
-                non_detections["sid"] = pd.NA
+                non_detections["sid"] = "ZTF"
 
-            non_detections["sid"][non_detections["tid"] == "ZTF"] = "ZTF"
-            non_detections["sid"][
-                non_detections["tid"].str.startswith("ATLAS")
-            ] = "ATLAS"
+            if "tid" not in non_detections:
+                non_detections["tid"] = "ZTF"
 
         detections["fid"].replace(
             FID_MAPPING, inplace=True
