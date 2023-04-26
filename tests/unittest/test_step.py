@@ -63,9 +63,9 @@ def test_execute_removes_duplicates():
             {"candid": "a", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
-            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY"},
-            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
+            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
         ]
     }
 
@@ -79,8 +79,8 @@ def test_execute_removes_duplicates():
             {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY"},
-            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY"},
+            {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
+            {"mjd": 1, "oid": "b", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
         ]
     }
 
