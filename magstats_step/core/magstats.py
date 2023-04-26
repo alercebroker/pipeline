@@ -1,6 +1,7 @@
 import warnings
 from typing import List
 
+import numpy as np
 import pandas as pd
 
 from ._base import BaseStatistics
@@ -68,10 +69,8 @@ class MagnitudeStatistics(BaseStatistics):
         for survey, threshold in self._THRESHOLD.items():
             sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(lambda x: (x < threshold).sum())
             saturated.loc[sat.index] = sat
-        with warnings.catch_warnings():
-            # possible 0 divided by 0; this is expected and returned NaN is correct value
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            return pd.DataFrame({"saturation_rate": saturated / total})
+        rate = np.where(total.ne(0), saturated / total, np.nan)
+        return pd.DataFrame({"saturation_rate": rate}, index=total.index)
 
     def calculate_dmdt(self) -> pd.DataFrame:
         dt_min = 0.5
