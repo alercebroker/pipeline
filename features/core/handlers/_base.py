@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import Literal
+from typing import Callable, Literal
 
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
@@ -128,11 +128,36 @@ class BaseAlertHandler(abc.ABC):
         df = self._get_alerts(surveys=surveys, bands=bands)
         return df[column][idx].set_axis(idx.index)
 
-    def get_aggregate(self, column: str, func: str, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (),
-                      bands: str | tuple[str, ...] = ()) -> pd.Series:
+    def get_aggregate(
+        self,
+        column: str,
+        func: str | Callable,
+        *,
+        by_fid: bool = False,
+        surveys: str | tuple[str, ...] = (),
+        bands: str | tuple[str, ...] = (),
+    ) -> pd.Series:
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
 
-    def get_delta(self, column: str, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.Series:
+    def get_delta(
+        self,
+        column: str,
+        *,
+        by_fid: bool = False,
+        surveys: str | tuple[str, ...] = (),
+        bands: str | tuple[str, ...] = (),
+    ) -> pd.Series:
         vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands)
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
         return vmax - vmin
+
+    def apply_grouped(
+        self,
+        func: Callable[[pd.DataFrame, ...], pd.Series],
+        *,
+        by_fid: bool = False,
+        surveys: str | tuple[str, ...] = (),
+        bands: str | tuple[str, ...] = (),
+        **kwargs,
+    ) -> pd.DataFrame:
+        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)

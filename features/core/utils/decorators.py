@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Sequence
+from typing import Any
 
 import pandas as pd
 
@@ -17,21 +17,18 @@ def fill_index(df: pd.DataFrame | pd.Series, *, fill_value: Any = pd.NA, **kwarg
     return df.reindex(pd.MultiIndex.from_product(values, names=df.index.names), fill_value=fill_value)
 
 
-def columns_per_fid(mapping: dict = None):
+def columns_per_fid(method):
     """Decorated method must produce a multi-indexed data frame with `fid` as a named level"""
 
-    def decorator(method):
-        @functools.wraps(method)
-        def wrapper(self, *args, **kwargs):
-            df = method(self, *args, **kwargs).unstack("fid")
-            if mapping:
-                df.rename(columns=mapping, level="fid", inplace=True)
-            df.columns = df.columns.map(lambda lvls: f"{'_'.join(str(lvl) for lvl in lvls)}")
-            return df
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        df = method(self, *args, **kwargs).unstack("fid")
+        if self.BANDS_MAPPING:
+            df.rename(columns=self.BANDS_MAPPING, level="fid", inplace=True)
+        df.columns = df.columns.map(lambda lvls: f"{'_'.join(str(lvl) for lvl in lvls)}")
+        return df
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def add_fid(fid: Any):
@@ -48,14 +45,16 @@ def add_fid(fid: Any):
     return decorator
 
 
-def fill_in_every_fid(bands: Sequence[str], *, fill_value: Any = pd.NA):
+def fill_in_every_fid(*, fill_value: Any = pd.NA):
     """Decorated method must produce a multi-indexed data frame with two levels, `aid` and `fid` (in that order)"""
 
     def decorator(method):
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             df = method(self, *args, **kwargs)
-            return fill_index(df, fill_value=fill_value, fid=bands)
+            if self.BANDS:
+                return fill_index(df, fill_value=fill_value, fid=self.BANDS)
+            return df
 
         return wrapper
 

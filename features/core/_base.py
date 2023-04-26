@@ -1,5 +1,6 @@
 import abc
 from functools import reduce
+from typing import Any
 
 import pandas as pd
 
@@ -10,6 +11,7 @@ class BaseFeatureExtractor(abc.ABC):
     _PREFIX: str = "calculate_"
     SURVEYS: str | tuple[str, ...] = ()
     BANDS: str | tuple[str, ...] = ()
+    BANDS_MAPPING: dict[str, Any] = {}
     EXTRAS: list[str] = []
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 0
@@ -21,11 +23,11 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections.remove_objects(self.MIN_DETECTIONS)
         self.detections.remove_objects(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
-        self._remove_additional_detections()
+        self._discard_detections()
 
         self.non_detections.match_objects(self.detections)
 
-    def _remove_additional_detections(self):
+    def _discard_detections(self):
         pass
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:

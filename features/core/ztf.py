@@ -1,22 +1,51 @@
 import pandas as pd
+from scipy import stats
 from astropy.coordinates import SkyCoord
 
-from .utils import decorators
+from .utils import decorators, specials
 from ._base import BaseFeatureExtractor
-
-BANDS_MAPPING = {"g": 1, "r": 2}
 
 
 class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
+    BANDS_MAPPING = {"g": 1, "r": 2}
     EXTRAS = ["rb", "sgscore1"]
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 5
     MIN_REAL_BOGUS = 0.55
     MAX_SIGMA_MAGNITUDE = 1.0
+    FATS_FEATURES = (
+        "Amplitude",
+        "AndersonDarling",
+        "Autocor_length",
+        "Beyond1Std",
+        "Con",
+        "Eta_e",
+        "Gskew",
+        "MaxSlope",
+        "Mean",
+        "Meanvariance",
+        "MedianAbsDev",
+        "MedianBRP",
+        "PairSlopeTrend",
+        "PercentAmplitude",
+        "Q31",
+        "Rcs",
+        "Skew",
+        "SmallKurtosis",
+        "Std",
+        "StetsonK",
+        "Pvar",
+        "ExcessVar",
+        "SF_ML_amplitude",
+        "SF_ML_gamma",
+        "IAR_phi",
+        "LinearTrend",
+    )
 
-    def _remove_additional_detections(self):
+    def _discard_detections(self):
+        super()._discard_detections()
         self.detections.remove_alerts_out_of_range("rb", gt=self.MIN_REAL_BOGUS, ge=True)
         self.detections.remove_alerts_out_of_range("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
 
@@ -47,57 +76,72 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         # By construction, ra and dec indices should be the same
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
+    def calculate_fats(self) -> pd.DataFrame:
+        return self.detections.apply_grouped(specials.fats4apply, by_fid=True, features=self.FATS_FEATURES)
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
+    def calculate_mhps(self) -> pd.DataFrame:
+        return self.detections.apply_grouped(specials.mhps4apply, by_fid=True, t1=100, t2=10)
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
+    def calculate_iqr(self) -> pd.DataFrame:
+        return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
+
     @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_pos(self) -> pd.DataFrame:
         return pd.DataFrame({"n_pos": self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_neg(self) -> pd.DataFrame:
         return pd.DataFrame({"n_neg": self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_det(self) -> pd.DataFrame:
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
         return pd.DataFrame({"n_det": n_pos + n_neg})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_positive_fraction(self) -> pd.DataFrame:
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
         return pd.DataFrame({"positive_fraction": n_pos / (n_pos + n_neg)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_delta_mjd(self) -> pd.DataFrame:
         return pd.DataFrame({"delta_mjd_fid": self.detections.get_delta("mjd", by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_delta_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"delta_mag_fid": self.detections.get_delta("mag_ml", by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_min_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"min_mag": self.detections.get_aggregate("mag_ml", "min", by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_mean_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"mean_mag": self.detections.get_aggregate("mag_ml", "mean", by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_first_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"first_mag": self.detections.get_which_value("mag_ml", which="first", by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_non_det_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -108,8 +152,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS, fill_value=0)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_non_det_after(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -120,8 +164,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_max_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -132,8 +176,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_max_diffmaglim_after(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -144,8 +188,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_median_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -156,8 +200,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_median_diffmaglim_after(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -168,8 +212,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_last_mjd_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -180,8 +224,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_last_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -192,16 +236,16 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_dmag_non_det(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         diff = self.non_detections.get_aggregate_when(mjd, "diffmaglim", "median", when="before", by_fid=True)
         mag = self.detections.get_aggregate("mag_ml", "min", by_fid=True)
         return pd.DataFrame({"dmag_non_det_fid": diff - mag})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
-    @decorators.fill_in_every_fid(BANDS)
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid
     def calculate_dmag_first_det(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         diff = self.non_detections.get_which_value_when(mjd, "diffmaglim", which="last", when="before", by_fid=True)
