@@ -91,11 +91,10 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
-    def calculate_detections_and_non_detections(self):
+    def calculate_sn_stats(self):
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
-        n_det = n_pos + n_neg
-        positive_fraction = n_pos / n_det
+        positive_fraction = n_pos / n_pos + n_neg
 
         delta_mjd = self.detections.get_delta("mjd", by_fid=True)
         delta_mag = self.detections.get_delta("mag_ml", by_fid=True)
@@ -103,8 +102,6 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         mean_mag = self.detections.get_aggregate("mag_ml", "mean", by_fid=True)
         first_mag = self.detections.get_which_value("mag_ml", which="first", by_fid=True)
 
-        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
-        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
         max_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "max", when="before", by_fid=True)
         max_diff_af = self.non_detections.get_aggregate_when("diffmaglim", "max", when="after", by_fid=True)
         med_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "median", when="before", by_fid=True)
@@ -121,19 +118,34 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
                 "first_mag": first_mag,
                 "mean_mag": mean_mag,
                 "min_mag": min_mag,
-                "n_det": n_det,
-                "n_neg": n_neg,
-                "n_pos": n_pos,
                 "positive_fraction": positive_fraction,
-                "n_non_det_before_fid": n_ndet_bef,
                 "max_diffmaglim_before_fid": max_diff_bef,
                 "median_diffmaglim_before_fid": med_diff_bef,
                 "last_diffmaglim_before_fid": last_diff_bef,
                 "last_mjd_before_fid": last_mjd_bef,
                 "dmag_non_det_fid": dmag_non_det,
                 "dmag_first_det_fid": dmag_first_det,
-                "n_non_det_after_fid": n_ndet_af,
                 "max_diffmaglim_after_fid": max_diff_af,
                 "median_diffmaglim_after_fid": med_diff_af,
             }
         )
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid(fill_value=0)
+    def calculate_counters(self):
+        n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
+        n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
+        n_det = n_pos + n_neg
+
+        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
+        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
+
+        return pd.DataFrame(
+            {
+                "n_det": n_det,
+                "n_neg": n_neg,
+                "n_pos": n_pos,
+                "n_non_det_before_fid": n_ndet_bef,
+                "n_non_det_after_fid": n_ndet_af,
+            }
+        ).fillna(0, downcast="infer")
