@@ -26,7 +26,7 @@ command = {
         "classifier_name": name,
         "classifier_version": version,
         "class_name": class,
-        "probability: probability,
+        "probability": probability,
         "ranking": ranking
     },
     "options": {"upsert": True, "set_on_insert": False},
