@@ -18,5 +18,6 @@ jobs:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
       python-version: '3.8'
+      test-dependencies: pytest pytest-docker
       test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
