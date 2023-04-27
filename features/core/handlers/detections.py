@@ -1,3 +1,4 @@
+import methodtools
 import numpy as np
 import pandas as pd
 
@@ -35,6 +36,7 @@ class DetectionsHandler(BaseHandler):
         df = pd.DataFrame.from_dict(df, orient="index", columns=extras)
         return df.reset_index(names=[cls.INDEX]).drop_duplicates(cls.INDEX).set_index(cls.INDEX)
 
+    @methodtools.lru_cache()
     def get_colors(
         self, func: str, bands: tuple[str, str], *, surveys: str | tuple[str, ...] = (), ml: bool = False
     ) -> pd.Series:
@@ -44,6 +46,7 @@ class DetectionsHandler(BaseHandler):
         mags = fill_index(mags, fid=bands)
         return mags.xs(first, level="fid") - mags.xs(second, level="fid")
 
+    @methodtools.lru_cache()
     def get_count_by_sign(self, sign: int, *, by_fid: bool = False, bands: str | tuple[str, ...] = ()) -> pd.Series:
         counts = self.get_grouped(by_fid=by_fid, bands=bands)["isdiffpos"].value_counts()
         if by_fid and bands:

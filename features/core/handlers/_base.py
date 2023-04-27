@@ -4,6 +4,7 @@ import abc
 import functools
 from typing import Callable, Literal
 
+import methodtools
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
 
@@ -91,14 +92,17 @@ class BaseHandler(abc.ABC):
         bands = (bands,) if isinstance(bands, str) else bands
         return self.__mask("fid", bands)
 
+    @methodtools.lru_cache()
     def _get_alerts(self, *, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.DataFrame:
         return self._alerts[self.__surveys_mask(surveys) & self.__bands_mask(bands)]
 
+    @methodtools.lru_cache()
     def get_grouped(
         self, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()
     ) -> DataFrameGroupBy:
         return self._get_alerts(surveys=surveys, bands=bands).groupby(["aid", "fid"] if by_fid else "aid")
 
+    @methodtools.lru_cache()
     def get_which_index(
         self,
         *,
@@ -116,6 +120,7 @@ class BaseHandler(abc.ABC):
                 raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].agg(function)
 
+    @methodtools.lru_cache()
     def get_which_value(
         self,
         column: str,
@@ -129,6 +134,7 @@ class BaseHandler(abc.ABC):
         df = self._get_alerts(surveys=surveys, bands=bands)
         return df[column][idx].set_axis(idx.index)
 
+    @methodtools.lru_cache()
     def get_aggregate(
         self,
         column: str,
@@ -140,6 +146,7 @@ class BaseHandler(abc.ABC):
     ) -> pd.Series:
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
 
+    @methodtools.lru_cache()
     def get_delta(
         self,
         column: str,
@@ -152,6 +159,7 @@ class BaseHandler(abc.ABC):
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
         return vmax - vmin
 
+    @methodtools.lru_cache()
     def apply_grouped(
         self,
         func: Callable[[pd.DataFrame, ...], pd.Series],

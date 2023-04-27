@@ -9,7 +9,7 @@ from ._base import BaseHandler
 
 class NonDetectionsHandler(BaseHandler):
     UNIQUE = ["oid", "fid", "mjd"]
-    _COLUMNS = BaseHandler._NON_NULL_COLUMNS + ["diffmaglim"]
+    _NON_NULL_COLUMNS = BaseHandler._NON_NULL_COLUMNS + ["diffmaglim"]
 
     def _post_process_alerts(self, **kwargs):
         super()._post_process_alerts(**kwargs)
@@ -23,20 +23,19 @@ class NonDetectionsHandler(BaseHandler):
         bands: str | tuple[str, ...] = (),
     ):
         """`mjd` must be a series with indexes shared (by name) with non-detections (typically `aid`/`fid`)"""
-        if when not in ("before", "after"):
+        if when == "before":
+            func = lambda x: x.lt(mjd.loc[x.name])
+        elif when == "after":
+            func = lambda x: x.gt(mjd.loc[x.name])
+        else:
             raise ValueError(f"Unrecognized value for 'when': {when}")
 
-        non_detections = self._get_alerts(surveys=surveys, bands=bands)
-        if self.INDEX:
-            non_detections = non_detections.reset_index()
-        non_detections = non_detections.set_index(mjd.index.names)
-
-        mask = non_detections["mjd"] - mjd < 0 if when == "before" else non_detections["mjd"] - mjd > 0
-        if mask.any():  # There's at least one non-detection in the range
-            if self.INDEX:
-                return non_detections[mask].reset_index().set_index(self.INDEX)
-            return non_detections[mask].reset_index()
-        return pd.DataFrame(np.nan, columns=non_detections.columns, index=mjd.index).reset_index()
+        by_fid = "fid" in mjd.index.names
+        mask = self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].transform(func)
+        if mask.any():
+            return self._alerts[mask]
+        columns = [c for c in self._alerts.columns if c not in mjd.index.names]
+        return pd.DataFrame(np.nan, columns=columns, index=mjd.index).reset_index()
 
     def get_grouped_when(
         self,
@@ -82,6 +81,8 @@ class NonDetectionsHandler(BaseHandler):
     ) -> pd.Series:
         idx = self.get_which_index_when(mjd, which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self._get_alerts_when(mjd, when=when, surveys=surveys, bands=bands)
+        if idx.isna().all():  # Happens for empty non-detections
+            return idx
         return df[column][idx].set_axis(idx.index)
 
     def get_aggregate_when(
