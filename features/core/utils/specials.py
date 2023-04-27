@@ -12,11 +12,9 @@ def _get_feature_space(features: tuple[str, ...]) -> FeatureSpace:
 
 def mhps4apply(df: pd.DataFrame, t1: float, t2: float) -> pd.Series:
     mag, e_mag, mjd = df[["mag_ml", "e_mag_ml", "mjd"]].T.values
-    ratio, low, high, nonzero, flag = mhps.statistics(mag, e_mag, mjd, t1, t2)
 
-    return pd.Series(
-        {"MHPS_ratio": ratio, "MHPS_low": low, "MHPS_high": high, "MHPS_non_zero": nonzero, "MHPS_PN_flag": flag}
-    )
+    r, l, h, nz, f = mhps.statistics(mag, e_mag, mjd, t1, t2)
+    return pd.Series({"MHPS_ratio": r, "MHPS_low": l, "MHPS_high": h, "MHPS_non_zero": nz, "MHPS_PN_flag": f})
 
 
 def fats4apply(df: pd.DataFrame, features: tuple[str, ...]) -> pd.Series:

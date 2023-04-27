@@ -1,7 +1,7 @@
 import functools
 from typing import Any
 
-import pandas as pd
+import numpy as np
 
 from . import functions
 
@@ -34,7 +34,7 @@ def add_fid(fid: Any):
     return decorator
 
 
-def fill_in_every_fid(*, fill_value: Any = pd.NA):
+def fill_in_every_fid(fill_value: Any = np.nan):
     """Decorated method must produce a multi-indexed data frame with two levels, `aid` and `fid` (in that order)"""
 
     def decorator(method):

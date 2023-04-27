@@ -92,7 +92,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_iqr(self) -> pd.DataFrame:
         return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
 
-    @decorators.columns_per_fid(BANDS_MAPPING)
+    @decorators.columns_per_fid
     @decorators.fill_in_every_fid(fill_value=0)
     def calculate_n_pos(self) -> pd.DataFrame:
         return pd.DataFrame({"n_pos": self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)})
