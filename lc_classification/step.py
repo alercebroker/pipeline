@@ -115,7 +115,7 @@ class LateClassifier(GenericStep):
                 "lc_classification": tree_aid,
             }
             messages.append(write)
-            
+
         return messages
 
     def message_to_df(self, messages):
@@ -143,11 +143,11 @@ class LateClassifier(GenericStep):
             command = {
                 "collection": "object",
                 "type": "update_probabilities",
-                "criteria": { "_id": aid },
+                "criteria": {"_id": aid},
                 "data": classification,
-                "options": { "upsert": True, "set_on_insert": False }
+                "options": {"upsert": True, "set_on_insert": False},
             }
-            self.scribe_producer.produce({ "payload": json.dumps(command) })
+            self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def execute(self, messages):
         """Run the classification.

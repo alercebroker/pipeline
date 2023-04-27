@@ -10,15 +10,13 @@ jobs:
     with:
       sources-folder: 'lc_classification'
   unittest:
-    uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
       python-version: '3.8'
-      sources-folder: 'lc_classification'
-      test-folder: 'tests/unit'
+      test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
   integration:
-    uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
       python-version: '3.8'
-      sources-folder: 'lc_classification'
-      test-folder: 'tests/integration'
+      test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
