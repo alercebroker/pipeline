@@ -6,14 +6,7 @@ from lc_classifier.classifier.models import HierarchicalRandomForest
 import logging
 import pandas as pd
 import numpy as np
-import datetime
-from sqlalchemy.sql.expression import bindparam
-
-from db_plugins.db.sql import SQLConnection
-from db_plugins.db.sql.models import (
-    Probability,
-    Step,
-)
+import json
 
 import numexpr
 
@@ -33,42 +26,19 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(self,
-                 consumer=None,
-                 config=None,
-                 level=logging.INFO,
-                 db_connection=None,
-                 producer=None,
-                 model=None,
-                 **step_args):
-        super().__init__(consumer, config=config, level=level)
+    def __init__(self, config=None, level=logging.INFO, model=None, **step_args):
+        super().__init__(config=config, level=level)
 
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
+
         self.features_required = set(self.model.feature_list)
 
-        if "CLASS" in config["PRODUCER_CONFIG"]:
-            Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
-        else:
-            Producer = producer or KafkaProducer
-
-        self.producer = Producer(config["PRODUCER_CONFIG"])
-        self.driver = db_connection or SQLConnection()
-        self.driver.connect(config["DB_CONFIG"]["SQL"])
-        if not step_args.get("test_mode", False):
-            self.insert_step_metadata()
-
-    def insert_step_metadata(self):
-        self.driver.query(Step).get_or_create(
-            filter_by={"step_id": self.config["STEP_METADATA"]["STEP_ID"]},
-            name=self.config["STEP_METADATA"]["STEP_NAME"],
-            version=self.config["STEP_METADATA"]["STEP_VERSION"],
-            comments=self.config["STEP_METADATA"]["STEP_COMMENTS"],
-            date=datetime.datetime.now(),
-        )
+        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
 
     def get_ranking(self, df):
         ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
@@ -80,7 +50,7 @@ class LateClassifier(GenericStep):
         df.rename("probability", inplace=True)
         ranking.rename("ranking", inplace=True)
         result = pd.concat([df, ranking], axis=1)
-        result.index.names = ["oid", "class_name"]
+        result.index.names = ["aid", "class_name"]
         result.reset_index(inplace=True)
         return result
 
@@ -112,98 +82,72 @@ class LateClassifier(GenericStep):
         results["classifier_version"] = self.model.MODEL_VERSION_NAME
         return results
 
-    def get_on_db(self, oids):
-        query = (
-            self.driver.query(Probability.oid)
-            .filter(Probability.oid.in_(oids))
-            .filter(Probability.classifier_version == self.model.MODEL_VERSION_NAME)
-            .distinct()
-        )
-        return pd.read_sql(query.statement, self.driver.engine).oid.values
-
-    def insert_db(self, results, oids):
-        on_db = self.get_on_db(oids)
-        results.set_index("oid", inplace=True)
-        already_on_db = results.index.isin(on_db)
-        to_insert = results[~already_on_db]
-        to_update = results[already_on_db]
-
-        if len(to_insert) > 0:
-            self.logger.info(f"Inserting {len(to_insert)} new probabilities")
-            to_insert.replace({np.nan: None}, inplace=True)
-            to_insert.reset_index(inplace=True)
-            dict_to_insert = to_insert.to_dict('records')
-            self.driver.query().bulk_insert(dict_to_insert, Probability)
-
-        if len(to_update) > 0:
-            self.logger.info(f"Updating {len(to_update)} probabilities")
-            to_update.replace({np.nan: None}, inplace=True)
-            to_update.reset_index(inplace=True)
-            to_update.rename(columns={
-                                "oid": "_oid",
-                                "classifier_name": "_classifier_name",
-                                "classifier_version": "_classifier_version",
-                                "class_name": "_class_name",
-                                "probability": "_probability",
-                                "ranking": "_ranking"},inplace=True)
-            dict_to_update = to_update.to_dict('records')
-            stmt = (
-                Probability.__table__.update()
-                .where(Probability.oid == bindparam("_oid"))
-                .where(Probability.classifier_name == bindparam("_classifier_name"))
-                .where(Probability.classifier_version == bindparam("_classifier_version"))
-                .where(Probability.class_name == bindparam("_class_name"))
-                .values(
-                    probability=bindparam("_probability"),
-                    ranking=bindparam("_ranking")
-                )
-            )
-            self.driver.engine.execute(stmt, dict_to_update)
-
-    def get_oid_tree(self, tree, oid):
-        tree_oid = {}
+    def get_aid_tree(self, tree, aid):
+        tree_aid = {}
         for key in tree:
             data = tree[key]
-            if type(data) is pd.DataFrame:
-                tree_oid[key] = data.loc[oid].to_dict()
-            elif type(data) is pd.Series:
-                tree_oid[key] = data.loc[oid]
-            elif type(data) is dict:
-                tree_oid[key] = self.get_oid_tree(data, oid)
-        return tree_oid
+            if isinstance(data, pd.DataFrame):
+                tree_aid[key] = data.loc[aid].to_dict()
+            elif isinstance(data, pd.Series):
+                tree_aid[key] = data.loc[aid]
+            elif isinstance(data, dict):
+                tree_aid[key] = self.get_aid_tree(data, aid)
+        return tree_aid
 
-    def produce(self, alert_data, features, tree_probabilities: pd.DataFrame):
+    def pre_produce(self, result: tuple):
+        alert_data, features, tree_probabilities = result
+        messages = []
         self.metrics["class"] = tree_probabilities["class"].tolist()
         features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
         alert_data.sort_values("candid", ascending=False, inplace=True)
-        alert_data.drop_duplicates("oid", inplace=True)
-        for idx, row in alert_data.iterrows():
-            oid = row.oid
+        alert_data.drop_duplicates("aid", inplace=True)
+        for _, row in alert_data.iterrows():
+            aid = row.aid
             candid = row.candid
-            features_oid = features.loc[oid].to_dict()
+            features_aid = features.loc[aid].to_dict()
 
-            tree_oid = self.get_oid_tree(tree_probabilities, oid)
+            tree_aid = self.get_aid_tree(tree_probabilities, aid)
             write = {
-                "oid": oid,
+                "aid": aid,
                 "candid": candid,
-                "features": features_oid,
-                "lc_classification": tree_oid
+                "features": features_aid,
+                "lc_classification": tree_aid,
             }
-            self.producer.produce(write, key=oid)
+            messages.append(write)
+            
+        return messages
 
     def message_to_df(self, messages):
-        return pd.DataFrame([
-                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
-                for message in messages])
+        return pd.DataFrame(
+            [
+                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
+                for message in messages
+            ]
+        )
 
     def features_to_df(self, alert_data, messages):
         features = pd.DataFrame([message["features"] for message in messages])
-        features["oid"] = alert_data.oid
+        features["aid"] = alert_data.aid
         features["candid"] = alert_data.candid
         features.sort_values("candid", ascending=False, inplace=True)
-        features.drop_duplicates("oid", inplace=True)
+        features.drop_duplicates("aid", inplace=True)
         return features
+
+    def produce_scribe(self, db_results: pd.DataFrame):
+        db_results.set_index("aid")
+        # TODO: get schema of the operation
+        classifications = db_results.to_dict("records")
+        for classification in classifications:
+            aid = classification.pop("aid")
+            command = {
+                "collection": "object",
+                "type": "update_probabilities",
+                "criteria": { "_id": aid },
+                "data": classification,
+                "options": { "upsert": True, "set_on_insert": False }
+            }
+            self.scribe_producer.produce({ "payload": json.dumps(command) })
 
     def execute(self, messages):
         """Run the classification.
@@ -223,21 +167,29 @@ class LateClassifier(GenericStep):
             Current object data, it must have the features and object id.
 
         """
-        self.logger.info(f"Processing {len(messages)} messages.")
+        self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
         alert_data = self.message_to_df(messages)
         features = self.features_to_df(alert_data, messages)
-        self.logger.info(f"Found {len(features)} Features.")
+        self.logger.info("Found %i Features.", len(features))
         missing_features = self.features_required.difference(set(features.columns))
 
         if len(missing_features) > 0:
-            raise KeyError(f"Corrupted Batch: missing some features ({missing_features})")
+            raise KeyError(
+                f"Corrupted Batch: missing some features ({missing_features})"
+            )
         self.logger.info("Doing inference")
-        features.set_index("oid", inplace=True)
+        features.set_index("aid", inplace=True)
         tree_probabilities = self.model.predict_in_pipeline(features)
         self.logger.info("Processing results")
         db_results = self.process_results(tree_probabilities)
-        self.logger.info("Inserting/Updating results on database")
-        self.insert_db(db_results, features.index.values)
-        self.logger.info("Producing messages")
-        self.produce(alert_data, features, tree_probabilities)
+
+        return {
+            "public_info": (alert_data, features, tree_probabilities),
+            "db_results": db_results,
+        }
+
+    def post_execute(self, result: dict):
+        db_results = result.pop("db_results")
+        self.produce_scribe(db_results)
+        return result["public_info"]
