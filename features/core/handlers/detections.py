@@ -8,7 +8,7 @@ from ._base import BaseHandler
 
 class DetectionsHandler(BaseHandler):
     INDEX = "candid"
-    UNIQUE = "candid"
+    UNIQUE = ("aid", "mjd")
     _NON_NULL_COLUMNS = BaseHandler._NON_NULL_COLUMNS + ["mag_ml", "e_mag_ml", "isdiffpos", "ra", "dec", "corrected"]
 
     def _post_process_alerts(self, **kwargs):
@@ -22,8 +22,8 @@ class DetectionsHandler(BaseHandler):
         if not corrected:
             self._alerts = self._alerts.assign(mag_ml=self._alerts["mag"], e_mag_ml=self._alerts["e_mag"])
 
-        corrected = self.get_which_value("corrected", which="first", surveys=surveys)
-        corrected = corrected.reindex(self._alerts["aid"])
+        idx = self._alerts[self._surveys_mask(surveys)].groupby("aid")["mjd"].idxmin()
+        corrected = self._alerts["corrected"][idx].set_axis(idx.index).reindex(self._alerts["aid"])
 
         mag = np.where(corrected, self._alerts["mag_corr"], self._alerts["mag"])
         e_mag = np.where(corrected, self._alerts["e_mag_corr_ext"], self._alerts["e_mag"])

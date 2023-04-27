@@ -50,6 +50,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         self.detections.remove_alerts_out_of_range("rb", gt=self.MIN_REAL_BOGUS, ge=True)
         self.detections.remove_alerts_out_of_range("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
 
+    @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:
         gr_max = self.detections.get_colors("min", ("g", "r"), ml=False)
         gr_max_corr = self.detections.get_colors("min", ("g", "r"), ml=True)
@@ -57,12 +58,15 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         gr_mean_corr = self.detections.get_colors("mean", ("g", "r"), ml=True)
         return pd.DataFrame({"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr})
 
+    @decorators.add_fid(0)
     def calculate_real_bogus(self) -> pd.DataFrame:
         return pd.DataFrame({"rb": self.detections.get_aggregate("rb", "median")})
 
+    @decorators.add_fid(0)
     def calculate_sg_score(self) -> pd.DataFrame:
-        return pd.DataFrame({"sgscore1": self.detections.get_aggregate("rb", "median")})
+        return pd.DataFrame({"sgscore1": self.detections.get_aggregate("sgscore1", "median")})
 
+    @decorators.add_fid(0)
     def calculate_galactic_coordinates(self) -> pd.DataFrame:
         ra = self.detections.get_aggregate("ra", "mean")
         dec = self.detections.get_aggregate("dec", "mean")
@@ -89,7 +93,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.fill_in_every_fid()
     def calculate_detections_and_non_detections(self):
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
-        n_neg = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
+        n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
         n_det = n_pos + n_neg
         positive_fraction = n_pos / n_det
 

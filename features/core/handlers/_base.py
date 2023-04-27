@@ -76,10 +76,10 @@ class BaseHandler(abc.ABC):
             self._alerts = self._alerts[self._alerts[self._NON_NULL_COLUMNS].notna().all(axis="columns")]
 
     def __discard_not_in_surveys(self, surveys: str | tuple[str]):
-        self._alerts = self._alerts[self.__surveys_mask(surveys)]
+        self._alerts = self._alerts[self._surveys_mask(surveys)]
 
     def __discard_not_in_bands(self, bands: str | tuple[str]):
-        self._alerts = self._alerts[self.__bands_mask(bands)]
+        self._alerts = self._alerts[self._bands_mask(bands)]
 
     def __mask(self, column: str, values: tuple[str]):
         if not values:
@@ -87,17 +87,17 @@ class BaseHandler(abc.ABC):
         masks = (self._alerts[column].str.lower() == value.lower() for value in values)
         return functools.reduce(lambda l, r: l.__or__(r), masks)
 
-    def __surveys_mask(self, surveys: str | tuple[str, ...] = ()) -> pd.Series:
+    def _surveys_mask(self, surveys: str | tuple[str, ...] = ()) -> pd.Series:
         surveys = (surveys,) if isinstance(surveys, str) else surveys
         return self.__mask("sid", surveys)
 
-    def __bands_mask(self, bands: str | tuple[str, ...] = ()) -> pd.Series:
+    def _bands_mask(self, bands: str | tuple[str, ...] = ()) -> pd.Series:
         bands = (bands,) if isinstance(bands, str) else bands
         return self.__mask("fid", bands)
 
     @methodtools.lru_cache()
     def _get_alerts(self, *, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.DataFrame:
-        return self._alerts[self.__surveys_mask(surveys) & self.__bands_mask(bands)]
+        return self._alerts[self._surveys_mask(surveys) & self._bands_mask(bands)]
 
     @methodtools.lru_cache()
     def get_grouped(

@@ -21,12 +21,12 @@ class BaseFeatureExtractor(abc.ABC):
         kwargs = dict(extras=self.EXTRAS, corrected=self.USE_CORRECTED)
         self.detections = DetectionsHandler(detections, surveys=self.SURVEYS, bands=self.BANDS, **kwargs)
 
+        self._discard_detections()
+
         if self.MIN_DETECTIONS:
             self.detections.remove_objects(self.MIN_DETECTIONS)
         if self.MIN_DETECTIONS_IN_FID:
             self.detections.remove_objects(self.MIN_DETECTIONS_IN_FID, by_fid=True)
-
-        self._discard_detections()
 
         first_mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         non_detections = non_detections or []

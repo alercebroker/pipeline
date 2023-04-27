@@ -3,7 +3,7 @@ from typing import Any
 
 import numpy as np
 
-from . import functions
+from . import fill_index
 
 
 def columns_per_fid(method):
@@ -14,7 +14,6 @@ def columns_per_fid(method):
         df = method(self, *args, **kwargs).unstack("fid")
         if self.BANDS_MAPPING:
             df.rename(columns=self.BANDS_MAPPING, level="fid", inplace=True)
-        df.columns = df.columns.map(lambda lvls: f"{'_'.join(str(lvl) for lvl in lvls)}")
         return df
 
     return wrapper
@@ -42,7 +41,7 @@ def fill_in_every_fid(fill_value: Any = np.nan):
         def wrapper(self, *args, **kwargs):
             df = method(self, *args, **kwargs)
             if self.BANDS:
-                return functions.fill_index(df, fill_value=fill_value, fid=self.BANDS)
+                return fill_index(df, fill_value=fill_value, fid=self.BANDS)
             return df
 
         return wrapper
