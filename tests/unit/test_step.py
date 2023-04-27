@@ -23,6 +23,13 @@ def assert_object_is_correct(obj):
     assert "features" in obj
     assert "lc_classification" in obj
 
+def assert_command_is_correct(command):
+    assert command["collection"] == "object"
+    assert command["type"] == "update_probabilities"
+    assert command["criteria"]["_id"] is not None
+    assert "aid" not in command["data"]
+    assert not command["options"]["set_on_insert"]
+
 def test_step():
     step = LateClassifier(config=step_mock_config)
     step.consumer = mock.MagicMock(KafkaConsumer)
@@ -36,11 +43,7 @@ def test_step():
     # Tests scribe produces correct commands
     for call in scribe_calls:
         message = loads(call.args[0]["payload"])
-        assert message["collection"] == "object"
-        assert message["type"] == "update_probabilities"
-        assert message["criteria"]["_id"] is not None
-        assert "aid" not in message["data"]
-        assert not message["options"]["set_on_insert"]
+        assert_command_is_correct(message)
 
     # Test producer produces correct data
     calls = step.producer.mock_calls

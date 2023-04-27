@@ -10,7 +10,8 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "smallest",
+        "auto.offset.reset": "beginning",
+        "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", None))
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
@@ -32,6 +33,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
+    "CLASS": "apf.producers.KafkaProducer",
     "SCHEMA": SCHEMA
 }
 
@@ -55,7 +57,6 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
@@ -120,7 +121,7 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
 STEP_CONFIG = {
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-    "CONSIMER_CONFIG": CONSUMER_CONFIG,
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
 }

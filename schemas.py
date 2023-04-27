@@ -217,49 +217,48 @@ FEATURES_SCHEMA = {
 }
 
 
-SCHEMA = (
-    {
-        "doc": "Late Classification",
-        "name": "probabilities_and_features",
-        "type": "record",
-        "fields": [
-            {"name": "oid", "type": "string"},
-            {"name": "candid", "type": "long"},
-            FEATURES_SCHEMA,
-            {
-                "name": "lc_classification",
-                "type": {
-                    "type": "record",
-                    "name": "late_record",
-                    "fields": [
-                        {
-                            "name": "probabilities",
-                            "type": {
-                                "type": "map",
-                                "values": ["float"],
-                            },
+SCHEMA = {
+    "doc": "Late Classification",
+    "name": "probabilities_and_features",
+    "type": "record",
+    "fields": [
+        {"name": "aid", "type": "string"},
+        {"name": "candid", "type": "long"},
+        FEATURES_SCHEMA,
+        {
+            "name": "lc_classification",
+            "type": {
+                "type": "record",
+                "name": "late_record",
+                "fields": [
+                    {
+                        "name": "probabilities",
+                        "type": {
+                            "type": "map",
+                            "values": ["float"],
                         },
-                        {"name": "class", "type": "string"},
-                        {
-                            "name": "hierarchical",
-                            "type": {
-                                "name": "root",
-                                "type": "map",
-                                "values": [
-                                    {"type": "map", "values": "float"},
-                                    {
-                                        "type": "map",
-                                        "values": {"type": "map", "values": "float"},
-                                    },
-                                ],
-                            },
+                    },
+                    {"name": "class", "type": "string"},
+                    {
+                        "name": "hierarchical",
+                        "type": {
+                            "name": "root",
+                            "type": "map",
+                            "values": [
+                                {"type": "map", "values": "float"},
+                                {
+                                    "type": "map",
+                                    "values": {"type": "map", "values": "float"},
+                                },
+                            ],
                         },
-                    ],
-                },
+                    },
+                ],
             },
-        ],
-    },
-)
+        },
+    ],
+}
+
 
 SCRIBE_SCHEMA = {
     "type": "record",

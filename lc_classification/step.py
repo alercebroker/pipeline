@@ -115,7 +115,7 @@ class LateClassifier(GenericStep):
                 "lc_classification": tree_aid,
             }
             messages.append(write)
-
+            
         return messages
 
     def message_to_df(self, messages):
