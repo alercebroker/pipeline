@@ -38,7 +38,10 @@ class BaseHandler(abc.ABC):
 
     def remove_objects(self, minimum: int, *, by_fid: bool = False):
         """If using `by_fid` at least one band must exceed the minimum"""
-        mask = self.get_grouped(by_fid=by_fid)["mjd"].count().groupby("aid").max() > minimum
+        if by_fid:
+            mask = self._alerts.groupby("aid")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
+        else:
+            mask = self._alerts.groupby("aid")["fid"].count() > minimum
         self._alerts = self._alerts[self._alerts["aid"].isin(mask.index[mask])]
 
     def match_objects(self, other: BaseHandler):

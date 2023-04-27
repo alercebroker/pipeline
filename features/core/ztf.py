@@ -99,15 +99,14 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         mean_mag = self.detections.get_aggregate("mag_ml", "mean", by_fid=True)
         first_mag = self.detections.get_which_value("mag_ml", which="first", by_fid=True)
 
-        start = self.detections.get_aggregate("mjd", "min", by_fid=True)
-        n_ndet_bef = self.non_detections.get_aggregate_when(start, "mjd", "count", when="before", by_fid=True)
-        n_ndet_af = self.non_detections.get_aggregate_when(start, "mjd", "count", when="after", by_fid=True)
-        max_diff_bef = self.non_detections.get_aggregate_when(start, "diffmaglim", "max", when="before", by_fid=True)
-        max_diff_af = self.non_detections.get_aggregate_when(start, "diffmaglim", "max", when="after", by_fid=True)
-        med_diff_bef = self.non_detections.get_aggregate_when(start, "diffmaglim", "median", when="before", by_fid=True)
-        med_diff_af = self.non_detections.get_aggregate_when(start, "diffmaglim", "median", when="after", by_fid=True)
-        last_mjd_bef = self.non_detections.get_aggregate_when(start, "mjd", "max", when="after", by_fid=True)
-        last_diff_bef = self.non_detections.get_which_value_when(start, "diffmaglim", which="last", when="after", by_fid=True)
+        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
+        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
+        max_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "max", when="before", by_fid=True)
+        max_diff_af = self.non_detections.get_aggregate_when("diffmaglim", "max", when="after", by_fid=True)
+        med_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "median", when="before", by_fid=True)
+        med_diff_af = self.non_detections.get_aggregate_when("diffmaglim", "median", when="after", by_fid=True)
+        last_mjd_bef = self.non_detections.get_aggregate_when("mjd", "max", when="after", by_fid=True)
+        last_diff_bef = self.non_detections.get_which_value_when("diffmaglim", which="last", when="after", by_fid=True)
         dmag_non_det = med_diff_bef - min_mag
         dmag_first_det = last_diff_bef - first_mag
 
