@@ -13,7 +13,7 @@ class DetectionsHandler(BaseHandler):
     def _post_process_alerts(self, **kwargs):
         if "extras" in kwargs:
             extras = self.__extract_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
-            self._alerts.join(extras)
+            self._alerts = self._alerts.join(extras)
         self._machine_learning_magnitudes(kwargs.pop("surveys"), kwargs.pop("corrected", False))
         super()._post_process_alerts(**kwargs)
 

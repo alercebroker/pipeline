@@ -42,5 +42,5 @@ class BaseFeatureExtractor(abc.ABC):
         methods = {name for name in dir(self) if name.startswith(self._PREFIX) and name not in exclude}
 
         # Compute all features and join into single dataframe
-        feats = [getattr(self, method)() for method in methods]
+        feats = (getattr(self, method)() for method in methods)
         return reduce(lambda left, right: left.join(right, how="outer"), feats)

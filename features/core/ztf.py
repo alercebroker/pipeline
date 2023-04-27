@@ -78,17 +78,17 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
         return self.detections.apply_grouped(specials.fats4apply, by_fid=True, features=self.FATS_FEATURES)
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
         return self.detections.apply_grouped(specials.mhps4apply, by_fid=True, t1=100, t2=10)
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_iqr(self) -> pd.DataFrame:
         return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
 
@@ -117,27 +117,27 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         return pd.DataFrame({"positive_fraction": n_pos / (n_pos + n_neg)})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_delta_mjd(self) -> pd.DataFrame:
         return pd.DataFrame({"delta_mjd_fid": self.detections.get_delta("mjd", by_fid=True)})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_delta_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"delta_mag_fid": self.detections.get_delta("mag_ml", by_fid=True)})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_min_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"min_mag": self.detections.get_aggregate("mag_ml", "min", by_fid=True)})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_mean_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"mean_mag": self.detections.get_aggregate("mag_ml", "mean", by_fid=True)})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_first_mag(self) -> pd.DataFrame:
         return pd.DataFrame({"first_mag": self.detections.get_which_value("mag_ml", which="first", by_fid=True)})
 
@@ -166,7 +166,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_max_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -178,7 +178,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_max_diffmaglim_after(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -190,7 +190,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_median_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -202,7 +202,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_median_diffmaglim_after(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -214,7 +214,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_last_mjd_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -226,7 +226,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_last_diffmaglim_before(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         return pd.DataFrame(
@@ -238,7 +238,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_dmag_non_det(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         diff = self.non_detections.get_aggregate_when(mjd, "diffmaglim", "median", when="before", by_fid=True)
@@ -246,7 +246,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         return pd.DataFrame({"dmag_non_det_fid": diff - mag})
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid
+    @decorators.fill_in_every_fid()
     def calculate_dmag_first_det(self) -> pd.DataFrame:
         mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         diff = self.non_detections.get_which_value_when(mjd, "diffmaglim", which="last", when="before", by_fid=True)
