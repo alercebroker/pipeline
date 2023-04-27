@@ -6,7 +6,7 @@ from lc_classifier.classifier.models import HierarchicalRandomForest
 import logging
 import pandas as pd
 import numpy as np
-import datetime
+import json
 
 import numexpr
 
@@ -26,11 +26,7 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(self,
-                 config=None,
-                 level=logging.INFO,
-                 model=None,
-                 **step_args):
+    def __init__(self, config=None, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level)
 
         numexpr.utils.set_num_threads(1)
@@ -54,7 +50,7 @@ class LateClassifier(GenericStep):
         df.rename("probability", inplace=True)
         ranking.rename("ranking", inplace=True)
         result = pd.concat([df, ranking], axis=1)
-        result.index.names = ["oid", "class_name"]
+        result.index.names = ["aid", "class_name"]
         result.reset_index(inplace=True)
         return result
 
@@ -86,17 +82,17 @@ class LateClassifier(GenericStep):
         results["classifier_version"] = self.model.MODEL_VERSION_NAME
         return results
 
-    def get_oid_tree(self, tree, oid):
-        tree_oid = {}
+    def get_aid_tree(self, tree, aid):
+        tree_aid = {}
         for key in tree:
             data = tree[key]
             if isinstance(data, pd.DataFrame):
-                tree_oid[key] = data.loc[oid].to_dict()
+                tree_aid[key] = data.loc[aid].to_dict()
             elif isinstance(data, pd.Series):
-                tree_oid[key] = data.loc[oid]
+                tree_aid[key] = data.loc[aid]
             elif isinstance(data, dict):
-                tree_oid[key] = self.get_oid_tree(data, oid)
-        return tree_oid
+                tree_aid[key] = self.get_aid_tree(data, aid)
+        return tree_aid
 
     def pre_produce(self, result: tuple):
         alert_data, features, tree_probabilities = result
@@ -105,42 +101,53 @@ class LateClassifier(GenericStep):
         features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
         alert_data.sort_values("candid", ascending=False, inplace=True)
-        alert_data.drop_duplicates("oid", inplace=True)
+        alert_data.drop_duplicates("aid", inplace=True)
         for _, row in alert_data.iterrows():
-            oid = row.oid
+            aid = row.aid
             candid = row.candid
-            features_oid = features.loc[oid].to_dict()
+            features_aid = features.loc[aid].to_dict()
 
-            tree_oid = self.get_oid_tree(tree_probabilities, oid)
+            tree_aid = self.get_aid_tree(tree_probabilities, aid)
             write = {
-                "oid": oid,
+                "aid": aid,
                 "candid": candid,
-                "features": features_oid,
-                "lc_classification": tree_oid
+                "features": features_aid,
+                "lc_classification": tree_aid,
             }
             messages.append(write)
 
         return messages
 
-
     def message_to_df(self, messages):
-        return pd.DataFrame([
-                {"oid": message.get("oid"), "candid": message.get("candid", np.nan)}
-                for message in messages])
+        return pd.DataFrame(
+            [
+                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
+                for message in messages
+            ]
+        )
 
     def features_to_df(self, alert_data, messages):
         features = pd.DataFrame([message["features"] for message in messages])
-        features["oid"] = alert_data.oid
+        features["aid"] = alert_data.aid
         features["candid"] = alert_data.candid
         features.sort_values("candid", ascending=False, inplace=True)
-        features.drop_duplicates("oid", inplace=True)
+        features.drop_duplicates("aid", inplace=True)
         return features
-    
+
     def produce_scribe(self, db_results: pd.DataFrame):
         db_results.set_index("aid")
         # TODO: get schema of the operation
-
-        self.scribe_producer.produce(db_results)
+        classifications = db_results.to_dict("records")
+        for classification in classifications:
+            aid = classification.pop("aid")
+            command = {
+                "collection": "object",
+                "type": "update_probabilities",
+                "criteria": { "_id": aid },
+                "data": classification,
+                "options": { "upsert": True, "set_on_insert": False }
+            }
+            self.scribe_producer.produce({ "payload": json.dumps(command) })
 
     def execute(self, messages):
         """Run the classification.
@@ -160,17 +167,19 @@ class LateClassifier(GenericStep):
             Current object data, it must have the features and object id.
 
         """
-        self.logger.info(f"Processing {len(messages)} messages.")
+        self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
         alert_data = self.message_to_df(messages)
         features = self.features_to_df(alert_data, messages)
-        self.logger.info(f"Found {len(features)} Features.")
+        self.logger.info("Found %i Features.", len(features))
         missing_features = self.features_required.difference(set(features.columns))
 
         if len(missing_features) > 0:
-            raise KeyError(f"Corrupted Batch: missing some features ({missing_features})")
+            raise KeyError(
+                f"Corrupted Batch: missing some features ({missing_features})"
+            )
         self.logger.info("Doing inference")
-        features.set_index("oid", inplace=True)
+        features.set_index("aid", inplace=True)
         tree_probabilities = self.model.predict_in_pipeline(features)
         self.logger.info("Processing results")
         db_results = self.process_results(tree_probabilities)
@@ -179,7 +188,6 @@ class LateClassifier(GenericStep):
             "public_info": (alert_data, features, tree_probabilities),
             "db_results": db_results,
         }
-        #self.produce(alert_data, features, tree_probabilities)
 
     def post_execute(self, result: dict):
         db_results = result.pop("db_results")
