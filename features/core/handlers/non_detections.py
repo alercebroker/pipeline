@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
 
-from ._base import BaseAlertHandler
+from ._base import BaseHandler
 
 
-class NonDetectionsHandler(BaseAlertHandler):
+class NonDetectionsHandler(BaseHandler):
     UNIQUE = ["oid", "fid", "mjd"]
-    NON_NULL_COLUMNS = BaseAlertHandler.NON_NULL_COLUMNS + ["diffmaglim"]
+    _COLUMNS = BaseHandler._NON_NULL_COLUMNS + ["diffmaglim"]
 
     def _get_alerts_when(
         self,
@@ -22,7 +22,12 @@ class NonDetectionsHandler(BaseAlertHandler):
         """`mjd` must be a series with indexes shared (by name) with non-detections (typically `aid`/`fid`)"""
         if when not in ("before", "after"):
             raise ValueError(f"Unrecognized value for 'when': {when}")
-        non_detections = self._get_alerts(surveys=surveys, bands=bands).reset_index().set_index(mjd.index.names)
+
+        non_detections = self._get_alerts(surveys=surveys, bands=bands)
+        if self.INDEX:
+            non_detections = non_detections.reset_index()
+        non_detections = non_detections.set_index(mjd.index.names)
+
         mask = non_detections["mjd"] - mjd < 0 if when == "before" else non_detections["mjd"] - mjd > 0
         if mask.any():  # There's at least one non-detection in the range
             if self.INDEX:

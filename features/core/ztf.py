@@ -11,6 +11,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2}
     EXTRAS = ["rb", "sgscore1"]
+    USE_CORRECTED = True
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 5
     MIN_REAL_BOGUS = 0.55

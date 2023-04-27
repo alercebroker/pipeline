@@ -13,11 +13,13 @@ class BaseFeatureExtractor(abc.ABC):
     BANDS: str | tuple[str, ...] = ()
     BANDS_MAPPING: dict[str, Any] = {}
     EXTRAS: list[str] = []
+    USE_CORRECTED: bool = False
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 0
 
     def __init__(self, detections: list[dict], non_detections: list[dict] | None = None):  # Should include xmatch info
-        self.detections = DetectionsHandler(detections, surveys=self.SURVEYS, bands=self.BANDS, extras=self.EXTRAS)
+        kwargs = dict(extras=self.EXTRAS, corrected=self.USE_CORRECTED)
+        self.detections = DetectionsHandler(detections, surveys=self.SURVEYS, bands=self.BANDS, **kwargs)
         self.non_detections = NonDetectionsHandler(non_detections or [], surveys=self.SURVEYS, bands=self.BANDS)
 
         self.detections.remove_objects(self.MIN_DETECTIONS)

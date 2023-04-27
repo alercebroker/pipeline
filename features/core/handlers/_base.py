@@ -8,15 +8,31 @@ import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
 
 
-class BaseAlertHandler(abc.ABC):
+class BaseHandler(abc.ABC):
     """Alerts require at the very least fields `sid`, `aid` and `mjd`"""
 
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
-    NON_NULL_COLUMNS = ["aid", "sid", "fid", "mjd"]
+    _NON_NULL_COLUMNS = ["aid", "sid", "fid", "mjd"]
 
     def __init__(self, alerts: list[dict], *, surveys: str | tuple[str] = (), bands: str | tuple[str] = (), **kwargs):
-        self._alerts = self._create_df(alerts, **kwargs)
+        try:
+            self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
+        except KeyError:  # extra_fields is not present
+            self._alerts = pd.DataFrame.from_records(alerts)
+        if self._alerts.size == 0:
+            index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
+            unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
+
+            columns = set(self._NON_NULL_COLUMNS) | index | unique
+            self._alerts = pd.DataFrame(columns=list(columns))
+
+        if self.UNIQUE:
+            self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
+        if self.INDEX:
+            self._alerts.set_index(self.INDEX, inplace=True)
+
+        self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands)
 
     def remove_objects(self, minimum: int, *, by_fid: bool = False):
@@ -24,7 +40,7 @@ class BaseAlertHandler(abc.ABC):
         mask = self.get_grouped(by_fid=by_fid)["mjd"].count().groupby("aid").max() > minimum
         self._alerts = self._alerts[self._alerts["aid"].isin(mask.index[mask])]
 
-    def match_objects(self, other: BaseAlertHandler):
+    def match_objects(self, other: BaseHandler):
         self._alerts = self._alerts[self._alerts["aid"].isin(other._alerts["aid"].unique())]
 
     def remove_alerts_out_of_range(
@@ -38,28 +54,13 @@ class BaseAlertHandler(abc.ABC):
             mask &= (series >= gt) if ge else (series > gt)
         self._alerts = self._alerts[mask]
 
-    @classmethod
-    def _create_df(cls, alerts: list[dict], **kwargs) -> pd.DataFrame:
+    @abc.abstractmethod
+    def _post_process_alerts(self, **kwargs):
+        kwargs.pop("alerts", None)
+        kwargs.pop("surveys", None)
         if kwargs:
             # Only used in subclasses, when using super it should be empty
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
-        try:
-            df = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
-        except KeyError:  # extra_fields is not present
-            df = pd.DataFrame.from_records(alerts)
-        if df.size == 0:
-            index = {cls.INDEX} if isinstance(cls.INDEX, str) else set(cls.INDEX)
-            unique = {cls.UNIQUE} if isinstance(cls.UNIQUE, str) else set(cls.UNIQUE)
-
-            columns = set(cls.NON_NULL_COLUMNS) | index | unique
-            df = pd.DataFrame(columns=list(columns))
-
-        if cls.UNIQUE:
-            df.drop_duplicates(cls.UNIQUE, inplace=True)
-        if cls.INDEX:
-            df.set_index(cls.INDEX, inplace=True)
-
-        return df
 
     def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...]):
         self.__discard_invalid_alerts()
@@ -68,7 +69,7 @@ class BaseAlertHandler(abc.ABC):
 
     def __discard_invalid_alerts(self):
         with pd.option_context("mode.use_inf_as_na", True):
-            self._alerts = self._alerts[self._alerts[self.NON_NULL_COLUMNS].notna().all(axis="columns")]
+            self._alerts = self._alerts[self._alerts[self._NON_NULL_COLUMNS].notna().all(axis="columns")]
 
     def __discard_not_in_surveys(self, surveys: str | tuple[str]):
         self._alerts = self._alerts[self.__surveys_mask(surveys)]
