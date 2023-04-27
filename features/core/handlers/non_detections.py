@@ -11,6 +11,9 @@ class NonDetectionsHandler(BaseHandler):
     UNIQUE = ["oid", "fid", "mjd"]
     _COLUMNS = BaseHandler._NON_NULL_COLUMNS + ["diffmaglim"]
 
+    def _post_process_alerts(self, **kwargs):
+        super()._post_process_alerts(**kwargs)
+
     def _get_alerts_when(
         self,
         mjd: pd.Series,

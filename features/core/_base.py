@@ -29,6 +29,7 @@ class BaseFeatureExtractor(abc.ABC):
 
         self.non_detections.match_objects(self.detections)
 
+    @abc.abstractmethod
     def _discard_detections(self):
         pass
 
