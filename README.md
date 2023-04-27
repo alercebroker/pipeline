@@ -21,20 +21,15 @@
 
 ```python
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "features"),
-    "STEP_NAME": os.getenv("STEP_NAME", "features"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
-}
-
 STEP_CONFIG = {
-    "DB_CONFIG": DB_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
+    "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
+    "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "METRICS_CONFIG": METRICS_CONFIG,
 }
-```
 
+```
 
 ## Previous conditions
 
@@ -54,39 +49,31 @@ STEP_CONFIG = {
 - Pandas
 - Scipy
 - Late Classifier Library
-- DB-Plugins
 
 ## Environment variables
-
-### DB setup
-- `DB_ENGINE`: Database engine used is `postgresql`
-- `DB_HOST`: Database host name or ip. e.g: `localhost`
-- `DB_USER`: Database user name. e.g: `postgres`
-- `DB_PASSWORD`: Database password. e.g: `postgres`
-- `DB_PORT`: Database port. e.g: `5432`
-- `DB_NAME`: Database name: e.g: `postgres`
 
 ### Consumer setup
 
 - `CONSUMER_TOPICS`: Some topics. String separated by commas. e.g: `topic_one` or `topic_two,topic_three`
 - `CONSUMER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 - `CONSUMER_GROUP_ID`: Name for consumer group. e.g: `correction`
+- `CONSUMER_CLASS`: Class of the consumer object. e.g: `apf.consumers.KafkaConsumer`
 
 ### Producer setup
 
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
-
-### Step metadata
-- `STEP_VERSION`: Current version of the step. e.g: `1.0.0`
-- `STEP_ID`: Unique identifier for the step. e.g: `S3`
-- `STEP_NAME`: Name of the step. e.g: `S3`
-- `STEP_COMMENTS`: Comments of the specific version.
+- `PRODUCER_CLASS`: Class of the producer object. e.g: `apf.producers.KafkaProducer`
 
 ### Metrics setup
 
 - `METRICS_HOST`: Kafka host for storing metrics
 - `METRICS_TOPIC`: Name of the topic to store metrics
+
+### Scribe setup
+
+- `SCRIBE_TOPIC`: Name of output topic. Now just uses `w_object`.
+- `SCRIBE_SERVER`: Kafka host with port. e.g: `localhost:9092`
 
 ## Stream
 
