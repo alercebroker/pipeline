@@ -15,40 +15,27 @@
 
 ### Insert/Update (via Scribe)
 
-- Table `Probability`
-- Table `Taxonomy`
-- Table `Step`: Save step metadata. The following config is needed
+Schema of the scribe command:
 
 ```python
-
-STEP_CONFIG = {
-    "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
-    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-    "CONSUMER_CONFIG": CONSUMER_CONFIG,
-    "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "METRICS_CONFIG": METRICS_CONFIG,
+command = {
+    "collection": "object",
+    "type": "update_probabilities",
+    "criteria": {"_id": aid},
+    "data": {
+        "classifier_name": name,
+        "classifier_version": version,
+        "class_name": class,
+        "probability: probability,
+        "ranking": ranking
+    },
+    "options": {"upsert": True, "set_on_insert": False},
 }
-
 ```
 
 ## Previous conditions
 
 - Fields of required features.
-
-## Version
-
-- **0.0.1:** Use of APF. - Use of [Late Classifier Library](https://github.com/alercebroker/late_classifier).
-- **0.0.2:** Added `db-plugins` instead of `apf.db`, using new `Probability` and `Taxonomy` tables.
-- **1.0.0:** Update documentation and test step.
- 
-## Libraries used
-
-- APF
-- numexpr
-- Numpy
-- Pandas
-- Scipy
-- Late Classifier Library
 
 ## Environment variables
 
@@ -83,7 +70,7 @@ STEP_CONFIG = {
 
 ### Output schema
 
-```json
+```python
 {
     'doc': 'Late Classification',
     'name': 'probabilities_and_features',
