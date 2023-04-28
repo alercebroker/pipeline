@@ -12,7 +12,6 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str):
     :return: 
     """
 
-
     features.replace({np.nan: None}, inplace=True)
     features = features.stack(dropna=False)
     features = features.to_frame()
