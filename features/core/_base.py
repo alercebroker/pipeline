@@ -11,17 +11,25 @@ class BaseFeatureExtractor(abc.ABC):
     SURVEYS: str | tuple[str, ...] = ()
     BANDS: str | tuple[str, ...] = ()
     BANDS_MAPPING: dict[str, Any] = {}
-    EXTRAS: list[str] = []
+    EXTRA_COLUMNS: list[str] = []
+    XMATCH_COLUMNS: list[str] = []
     USE_CORRECTED: bool = False
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 0
 
-    def __init__(self, detections: list[dict], non_detections: list[dict]):  # Should include xmatch info
-        common = dict(surveys=self.SURVEYS, bands=self.BANDS)
+    def __init__(
+        self,
+        detections: list[dict] | pd.DataFrame,
+        non_detections: list[dict] | pd.DataFrame,
+        xmatches: list[dict] | pd.DataFrame = None,
+        *,
+        id_column: str = "aid"
+    ):
+        common = dict(surveys=self.SURVEYS, bands=self.BANDS, id_column=id_column)
+
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
-        self.detections = DetectionsHandler(detections, extras=self.EXTRAS, use_corrected=self.USE_CORRECTED, **common)
-
+        self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.USE_CORRECTED, **common)
         self._discard_detections()
 
         if isinstance(non_detections, pd.DataFrame):
@@ -30,10 +38,20 @@ class BaseFeatureExtractor(abc.ABC):
         self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
         self.non_detections.match_objects(self.detections)
 
+        if isinstance(xmatches, pd.DataFrame):
+            xmatches = xmatches.reset_index().to_dict("records")
+        self.xmatches = self._create_xmatches(xmatches, id_column)
+
     @abc.abstractmethod
     def _discard_detections(self):
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
+
+    def _create_xmatches(self, xmatches: list[dict], object_id: str) -> pd.DataFrame:
+        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=[object_id] + self.XMATCH_COLUMNS)
+        xmatches = xmatches.rename({object_id: "id"})
+        xmatches = xmatches[xmatches["id"].isin(self.detections.get_objects())]
+        return xmatches.set_index("id")[[self.XMATCH_COLUMNS]]
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default

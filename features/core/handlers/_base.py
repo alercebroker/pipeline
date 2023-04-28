@@ -21,7 +21,7 @@ class BaseHandler(abc.ABC):
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
-        self._alerts = self._alerts.rename(columns={kwargs.pop("id", "aid"): "id"})
+        self._alerts = self._alerts.rename(columns={kwargs.pop("id_column", "aid"): "id"})
         if self._alerts.size == 0:
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
@@ -47,7 +47,7 @@ class BaseHandler(abc.ABC):
         self._alerts = self._alerts[self._alerts["id"].isin(mask.index[mask])]
 
     def match_objects(self, other: BaseHandler):
-        self._alerts = self._alerts[self._alerts["id"].isin(other._alerts["id"].unique())]
+        self._alerts = self._alerts[self._alerts["id"].isin(other.get_objects())]
 
     def remove_alerts_out_of_range(
         self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False
@@ -100,14 +100,18 @@ class BaseHandler(abc.ABC):
         return self.__mask("fid", bands)
 
     @methodtools.lru_cache()
-    def _get_alerts(self, *, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.DataFrame:
+    def get_objects(self):
+        return self._alerts["id"].unique()
+
+    @methodtools.lru_cache()
+    def get_alerts(self, *, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.DataFrame:
         return self._alerts[self._surveys_mask(surveys) & self._bands_mask(bands)]
 
     @methodtools.lru_cache()
     def get_grouped(
         self, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()
     ) -> DataFrameGroupBy:
-        return self._get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
+        return self.get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
 
     @methodtools.lru_cache()
     def get_which_index(
@@ -134,7 +138,7 @@ class BaseHandler(abc.ABC):
         bands: str | tuple[str, ...] = (),
     ) -> pd.Series:
         idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands)
-        df = self._get_alerts(surveys=surveys, bands=bands)
+        df = self.get_alerts(surveys=surveys, bands=bands)
         return df[column][idx].set_axis(idx.index)
 
     @methodtools.lru_cache()

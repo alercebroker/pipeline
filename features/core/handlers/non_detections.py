@@ -17,7 +17,7 @@ class NonDetectionsHandler(BaseHandler):
         super()._post_process_alerts(**kwargs)
 
     @methodtools.lru_cache()
-    def _get_alerts_when(
+    def get_alerts_when(
         self,
         *,
         when: Literal["before", "after"],
@@ -49,7 +49,7 @@ class NonDetectionsHandler(BaseHandler):
         bands: str | tuple[str, ...] = (),
     ) -> DataFrameGroupBy:
         group = ["id", "fid"] if by_fid else "id"
-        return self._get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
+        return self.get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
 
     @methodtools.lru_cache()
     def get_which_index_when(
@@ -78,7 +78,7 @@ class NonDetectionsHandler(BaseHandler):
         bands: str | tuple[str, ...] = (),
     ) -> pd.Series:
         idx = self.get_which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
-        df = self._get_alerts_when(when=when, surveys=surveys, bands=bands)
+        df = self.get_alerts_when(when=when, surveys=surveys, bands=bands)
         if idx.isna().all():  # Happens for empty non-detections
             return idx
         return df[column][idx].set_axis(idx.index)
