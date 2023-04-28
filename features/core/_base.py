@@ -54,6 +54,10 @@ class BaseFeatureExtractor(abc.ABC):
         xmatches = xmatches[xmatches["id"].isin(self.detections.get_objects())]
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 
+    def clear_caches(self):
+        self.detections.clear_caches()
+        self.non_detections.clear_caches()
+
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default
         # Add prefix to exclude, unless already provided
