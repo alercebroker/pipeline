@@ -92,9 +92,18 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         # By construction, ra and dec indices should be the same
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
+    def _calculate_periods(self, full: bool) -> pd.DataFrame:
+        if self._periods is not None:
+            df = self._periods
+        else:
+            df = self.detections.apply_grouped(specials.periods4apply, filters=self.BANDS)
+            self._periods = df
+        if full:
+            return df
+        return df.droplevel("fid", axis="columns")["Multiband_period"]
+
     def calculate_periods(self) -> pd.DataFrame:
-        df = self.detections.apply_grouped(specials.periods4apply, filters=self.BANDS)
-        return df.rename(columns=self.BANDS_MAPPING, level="fid")
+        return self._calculate_periods(full=True).rename(columns=self.BANDS_MAPPING, level="fid")
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()

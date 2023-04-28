@@ -41,6 +41,7 @@ class BaseFeatureExtractor(abc.ABC):
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
         self.xmatches = self._create_xmatches(xmatches, legacy)
+        self._periods = None
 
     @abc.abstractmethod
     def _discard_detections(self):

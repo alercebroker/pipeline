@@ -150,7 +150,6 @@ class BaseHandler(abc.ABC):
         function = "idxmin" if which == "first" else "idxmax"
         return self.get_aggregate("mjd", function, by_fid=by_fid, surveys=surveys, bands=bands)
 
-    @methodtools.lru_cache()
     def get_which_value(
         self,
         column: str,
@@ -189,7 +188,6 @@ class BaseHandler(abc.ABC):
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
         return vmax - vmin
 
-    @methodtools.lru_cache()
     def apply_grouped(
         self,
         func: Callable[[pd.DataFrame, ...], pd.Series],
