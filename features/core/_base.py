@@ -1,5 +1,4 @@
 import abc
-from functools import reduce
 from typing import Any
 
 import pandas as pd
@@ -18,26 +17,23 @@ class BaseFeatureExtractor(abc.ABC):
     MIN_DETECTIONS_IN_FID: int = 0
 
     def __init__(self, detections: list[dict], non_detections: list[dict]):  # Should include xmatch info
-        self.detections = DetectionsHandler(
-            detections, surveys=self.SURVEYS, bands=self.BANDS, extras=self.EXTRAS, corrected=self.USE_CORRECTED
-        )
+        common = dict(surveys=self.SURVEYS, bands=self.BANDS)
+        if isinstance(detections, pd.DataFrame):
+            detections = detections.reset_index().to_dict("records")
+        self.detections = DetectionsHandler(detections, extras=self.EXTRAS, corrected=self.USE_CORRECTED, **common)
 
         self._discard_detections()
 
-        if self.MIN_DETECTIONS:
-            self.detections.remove_objects(self.MIN_DETECTIONS)
-        if self.MIN_DETECTIONS_IN_FID:
-            self.detections.remove_objects(self.MIN_DETECTIONS_IN_FID, by_fid=True)
-
+        if isinstance(non_detections, pd.DataFrame):
+            non_detections = non_detections.reset_index().to_dict("records")
         first_mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
-        self.non_detections = NonDetectionsHandler(
-            non_detections, surveys=self.SURVEYS, bands=self.BANDS, first_mjd=first_mjd
-        )
+        self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
         self.non_detections.match_objects(self.detections)
 
     @abc.abstractmethod
     def _discard_detections(self):
-        pass
+        self.detections.remove_objects(self.MIN_DETECTIONS)
+        self.detections.remove_objects(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default
@@ -48,4 +44,4 @@ class BaseFeatureExtractor(abc.ABC):
         methods = {name for name in dir(self) if name.startswith(self._PREFIX) and name not in exclude}
 
         # Compute all features and join into single dataframe
-        return pd.concat([getattr(self, method)() for method in methods], axis=1)
+        return pd.concat((getattr(self, method)() for method in methods), axis=1)

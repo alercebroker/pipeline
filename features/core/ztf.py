@@ -46,9 +46,9 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     )
 
     def _discard_detections(self):
-        super()._discard_detections()
         self.detections.remove_alerts_out_of_range("rb", gt=self.MIN_REAL_BOGUS, ge=True)
         self.detections.remove_alerts_out_of_range("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
+        super()._discard_detections()
 
     @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:
