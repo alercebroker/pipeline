@@ -33,9 +33,9 @@ def fats4apply(df: pd.DataFrame, features: tuple[str, ...]) -> pd.Series:
 
 
 def sn4apply_ztf(df: pd.DataFrame) -> pd.Series:
-    mag, e_mag, mjd = df[["mag_ml", "e_mag_ml", "mjd"]].T.values.astype(np.float32)
+    mag, e_mag, mjd = df[["mag", "e_mag", "mjd"]].T.values
     flux = _mag2flux_ztf(mag)
     e_flux = _mag2flux_ztf(mag - e_mag) - flux
 
-    result = fit_sn_model(mjd, flux, e_flux)
+    result = fit_sn_model(mjd.astype(np.float32), flux.astype(np.float32), e_flux)
     return result.rename({c: f"SPM_{c}" for c in result.index})
