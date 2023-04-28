@@ -23,9 +23,9 @@ class BaseFeatureExtractor(abc.ABC):
         non_detections: list[dict] | pd.DataFrame,
         xmatches: list[dict] | pd.DataFrame = None,
         *,
-        id_column: str = "aid"
+        legacy: bool = False
     ):
-        common = dict(surveys=self.SURVEYS, bands=self.BANDS, id_column=id_column)
+        common = dict(surveys=self.SURVEYS, bands=self.BANDS, legacy=legacy)
 
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
@@ -40,18 +40,19 @@ class BaseFeatureExtractor(abc.ABC):
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
-        self.xmatches = self._create_xmatches(xmatches, id_column)
+        self.xmatches = self._create_xmatches(xmatches, legacy)
 
     @abc.abstractmethod
     def _discard_detections(self):
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
-    def _create_xmatches(self, xmatches: list[dict], object_id: str) -> pd.DataFrame:
-        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=[object_id] + self.XMATCH_COLUMNS)
-        xmatches = xmatches.rename({object_id: "id"})
+    def _create_xmatches(self, xmatches: list[dict], legacy: bool) -> pd.DataFrame:
+        id_col = "oid" if legacy else "aid"
+        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=[id_col] + self.XMATCH_COLUMNS)
+        xmatches = xmatches.rename(columns={id_col: "id"})
         xmatches = xmatches[xmatches["id"].isin(self.detections.get_objects())]
-        return xmatches.set_index("id")[[self.XMATCH_COLUMNS]]
+        return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default

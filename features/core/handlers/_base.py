@@ -17,11 +17,12 @@ class BaseHandler(abc.ABC):
     _COLUMNS = ["id", "sid", "fid", "mjd"]
 
     def __init__(self, alerts: list[dict], *, surveys: str | tuple[str] = (), bands: str | tuple[str] = (), **kwargs):
+        legacy = kwargs.pop("legacy", False)
         try:
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
-        self._alerts = self._alerts.rename(columns={kwargs.pop("id_column", "aid"): "id"})
+        self._alerts = self._alerts.rename(columns={"oid" if legacy else "aid": "id"})
         if self._alerts.size == 0:
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
@@ -29,13 +30,17 @@ class BaseHandler(abc.ABC):
             columns = set(self._COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
 
+        if legacy:
+            self._alerts["sid"] = "ZTF"
+            self._alerts["fid"].replace({1: "g", 2: "r"}, inplace=True)
+
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
         if self.INDEX:
             self._alerts.set_index(self.INDEX, inplace=True)
 
         extras = kwargs.get("extras", [])
-        self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
+        self._post_process_alerts(alerts=alerts, surveys=surveys, legacy=legacy, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
 
     def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
@@ -62,11 +67,11 @@ class BaseHandler(abc.ABC):
 
     @abc.abstractmethod
     def _post_process_alerts(self, **kwargs):
-        kwargs.pop("alerts", None)
-        kwargs.pop("surveys", None)
-        if kwargs:
+        if "extras" in kwargs:
+            self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
+        if set(kwargs) - {"alerts", "surveys", "legacy"}:
             # Only used in subclasses, when using super it should be empty
-            raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
+            raise ValueError(f"Unrecognized kwargs: {', '.join(set(kwargs) - {'alerts', 'surveys', 'legacy'})}")
 
     def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...], extras: list[str]):
         self.__discard_invalid_alerts(extras)
@@ -84,6 +89,16 @@ class BaseHandler(abc.ABC):
 
     def __discard_not_in_bands(self, bands: str | tuple[str]):
         self._alerts = self._alerts[self._bands_mask(bands)]
+
+    def __add_extra_fields(self, alerts: list[dict], extras: list[str]):
+        extras = [_ for _ in extras if _ not in self._alerts.columns]
+        if extras and self._alerts.size:
+            records = {alert[self.INDEX]: alert["extra_fields"] for alert in alerts}
+            df = pd.DataFrame.from_dict(records, orient="index", columns=extras)
+            df = df.reset_index(names=[self.INDEX]).drop_duplicates(self.INDEX).set_index(self.INDEX)
+            self._alerts = self._alerts.join(df)
+        elif extras:  # Add extra (empty) columns to empty dataframe
+            self._alerts[[extras]] = None
 
     def __mask(self, column: str, values: tuple[str]):
         if not values:

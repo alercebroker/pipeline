@@ -67,12 +67,12 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         g, r = mags.xs("g", level="fid"), mags.xs("r", level="fid")
         return pd.DataFrame(
             {
-                "W1-W2": self.xmatches["W1"] - self.xmatches["W2"],
-                "W2-W3": self.xmatches["W2"] - self.xmatches["W3"],
-                "g-W2": g - self.xmatches["W2"],
-                "g-W3": g - self.xmatches["W3"],
-                "r-W2": r - self.xmatches["W2"],
-                "r-W3": r - self.xmatches["W3"],
+                "W1-W2": self.xmatches["W1mag"] - self.xmatches["W2mag"],
+                "W2-W3": self.xmatches["W2mag"] - self.xmatches["W3mag"],
+                "g-W2": g - self.xmatches["W2mag"],
+                "g-W3": g - self.xmatches["W3mag"],
+                "r-W2": r - self.xmatches["W2mag"],
+                "r-W3": r - self.xmatches["W3mag"],
             }
         )
 
