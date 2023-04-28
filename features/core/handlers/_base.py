@@ -45,18 +45,19 @@ class BaseHandler(abc.ABC):
 
     def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
         """If using `by_fid` at least one band must exceed the minimum"""
+        self._clear_cache()
         if by_fid:
             mask = self._alerts.groupby("id")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
         else:
             mask = self._alerts.groupby("id")["fid"].count() > minimum
         self._alerts = self._alerts[self._alerts["id"].isin(mask.index[mask])]
 
-    def match_objects(self, other: BaseHandler):
+    def match(self, other: BaseHandler):
+        self._clear_cache()
         self._alerts = self._alerts[self._alerts["id"].isin(other.get_objects())]
 
-    def remove_alerts_out_of_range(
-        self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False
-    ):
+    def select(self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False):
+        self._clear_cache()
         mask = pd.Series(True, index=self._alerts.index, dtype=bool)
         series = self._alerts[column]
         if lt is not None:
@@ -64,6 +65,13 @@ class BaseHandler(abc.ABC):
         if gt is not None:
             mask &= (series >= gt) if ge else (series > gt)
         self._alerts = self._alerts[mask]
+
+    def _clear_cache(self):
+        for method in dir(self):
+            try:
+                getattr(getattr(self, method), "cache_clear")()
+            except AttributeError:
+                pass
 
     @abc.abstractmethod
     def _post_process_alerts(self, **kwargs):

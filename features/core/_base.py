@@ -36,7 +36,7 @@ class BaseFeatureExtractor(abc.ABC):
             non_detections = non_detections.reset_index().to_dict("records")
         first_mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
-        self.non_detections.match_objects(self.detections)
+        self.non_detections.match(self.detections)
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
