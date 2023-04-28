@@ -9,7 +9,7 @@ from ._base import BaseHandler
 
 
 class NonDetectionsHandler(BaseHandler):
-    UNIQUE = ["oid", "fid", "mjd"]
+    UNIQUE = ["id", "fid", "mjd"]
     _COLUMNS = BaseHandler._COLUMNS + ["diffmaglim"]
 
     def _post_process_alerts(self, **kwargs):
@@ -48,7 +48,7 @@ class NonDetectionsHandler(BaseHandler):
         surveys: str | tuple[str, ...] = (),
         bands: str | tuple[str, ...] = (),
     ) -> DataFrameGroupBy:
-        group = ["aid", "fid"] if by_fid else "aid"
+        group = ["id", "fid"] if by_fid else "id"
         return self._get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
 
     @methodtools.lru_cache()

@@ -10,17 +10,18 @@ from pandas.core.groupby import DataFrameGroupBy
 
 
 class BaseHandler(abc.ABC):
-    """Alerts require at the very least fields `sid`, `aid` and `mjd`"""
+    """Alerts require at the very least fields `sid`, `fid`, `mjd` and an id columns (`aid` by default)"""
 
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
-    _COLUMNS = ["aid", "sid", "fid", "mjd"]
+    _COLUMNS = ["id", "sid", "fid", "mjd"]
 
     def __init__(self, alerts: list[dict], *, surveys: str | tuple[str] = (), bands: str | tuple[str] = (), **kwargs):
         try:
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
+        self._alerts = self._alerts.rename(columns={kwargs.pop("id", "aid"): "id"})
         if self._alerts.size == 0:
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
@@ -40,13 +41,13 @@ class BaseHandler(abc.ABC):
     def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
         """If using `by_fid` at least one band must exceed the minimum"""
         if by_fid:
-            mask = self._alerts.groupby("aid")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
+            mask = self._alerts.groupby("id")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
         else:
-            mask = self._alerts.groupby("aid")["fid"].count() > minimum
-        self._alerts = self._alerts[self._alerts["aid"].isin(mask.index[mask])]
+            mask = self._alerts.groupby("id")["fid"].count() > minimum
+        self._alerts = self._alerts[self._alerts["id"].isin(mask.index[mask])]
 
     def match_objects(self, other: BaseHandler):
-        self._alerts = self._alerts[self._alerts["aid"].isin(other._alerts["aid"].unique())]
+        self._alerts = self._alerts[self._alerts["id"].isin(other._alerts["id"].unique())]
 
     def remove_alerts_out_of_range(
         self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False
@@ -106,7 +107,7 @@ class BaseHandler(abc.ABC):
     def get_grouped(
         self, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()
     ) -> DataFrameGroupBy:
-        return self._get_alerts(surveys=surveys, bands=bands).groupby(["aid", "fid"] if by_fid else "aid")
+        return self._get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
 
     @methodtools.lru_cache()
     def get_which_index(
