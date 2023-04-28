@@ -2,7 +2,7 @@ import pandas as pd
 from scipy import stats
 from astropy.coordinates import SkyCoord
 
-from .utils import decorators, specials
+from .utils import decorators, specials, fill_index
 from ._base import BaseFeatureExtractor
 
 
@@ -11,6 +11,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2}
     EXTRA_COLUMNS = ["rb", "sgscore1"]
+    XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     USE_CORRECTED = True
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 5
@@ -58,6 +59,21 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         gr_mean_corr = self.detections.get_colors("mean", ("g", "r"), ml=True)
         return pd.DataFrame(
             {"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr}
+        )
+
+    @decorators.add_fid(0)
+    def calculate_wise_colors(self) -> pd.DataFrame:
+        mags = fill_index(self.detections.get_aggregate("mag_ml", "mean", by_fid=True), fid=("g", "r"))
+        g, r = mags.xs("g", level="fid"), mags.xs("r", level="fid")
+        return pd.DataFrame(
+            {
+                "W1-W2": self.xmatches["W1"] - self.xmatches["W2"],
+                "W2-W3": self.xmatches["W2"] - self.xmatches["W3"],
+                "g-W2": g - self.xmatches["W2"],
+                "g-W3": g - self.xmatches["W3"],
+                "r-W2": r - self.xmatches["W2"],
+                "r-W3": r - self.xmatches["W3"],
+            }
         )
 
     @decorators.add_fid(0)
