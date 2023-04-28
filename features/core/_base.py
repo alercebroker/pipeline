@@ -20,7 +20,7 @@ class BaseFeatureExtractor(abc.ABC):
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
-        self.detections = DetectionsHandler(detections, extras=self.EXTRAS, corrected=self.USE_CORRECTED, **common)
+        self.detections = DetectionsHandler(detections, extras=self.EXTRAS, use_corrected=self.USE_CORRECTED, **common)
 
         self._discard_detections()
 
@@ -32,8 +32,8 @@ class BaseFeatureExtractor(abc.ABC):
 
     @abc.abstractmethod
     def _discard_detections(self):
-        self.detections.remove_objects(self.MIN_DETECTIONS)
-        self.detections.remove_objects(self.MIN_DETECTIONS_IN_FID, by_fid=True)
+        self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
+        self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default

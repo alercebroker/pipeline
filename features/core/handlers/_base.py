@@ -14,7 +14,7 @@ class BaseHandler(abc.ABC):
 
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
-    _NON_NULL_COLUMNS = ["aid", "sid", "fid", "mjd"]
+    _COLUMNS = ["aid", "sid", "fid", "mjd"]
 
     def __init__(self, alerts: list[dict], *, surveys: str | tuple[str] = (), bands: str | tuple[str] = (), **kwargs):
         try:
@@ -25,7 +25,7 @@ class BaseHandler(abc.ABC):
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
 
-            columns = set(self._NON_NULL_COLUMNS) | index | unique
+            columns = set(self._COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
 
         if self.UNIQUE:
@@ -33,10 +33,11 @@ class BaseHandler(abc.ABC):
         if self.INDEX:
             self._alerts.set_index(self.INDEX, inplace=True)
 
+        extras = kwargs.get("extras", [])
         self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
-        self._clear(surveys=surveys, bands=bands)
+        self._clear(surveys=surveys, bands=bands, extras=extras)
 
-    def remove_objects(self, minimum: int, *, by_fid: bool = False):
+    def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
         """If using `by_fid` at least one band must exceed the minimum"""
         if by_fid:
             mask = self._alerts.groupby("aid")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
@@ -66,14 +67,16 @@ class BaseHandler(abc.ABC):
             # Only used in subclasses, when using super it should be empty
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
 
-    def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...]):
-        self.__discard_invalid_alerts()
+    def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...], extras: list[str]):
+        self.__discard_invalid_alerts(extras)
         self.__discard_not_in_bands(bands)
         self.__discard_not_in_surveys(surveys)
 
-    def __discard_invalid_alerts(self):
+    def __discard_invalid_alerts(self, extras: list[str]):
         with pd.option_context("mode.use_inf_as_na", True):
-            self._alerts = self._alerts[self._alerts[self._NON_NULL_COLUMNS].notna().all(axis="columns")]
+            self._alerts = self._alerts[self._alerts[self._COLUMNS].notna().all(axis="columns")]
+        index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
+        self._alerts = self._alerts[[c for c in self._COLUMNS + extras if c not in index]]
 
     def __discard_not_in_surveys(self, surveys: str | tuple[str]):
         self._alerts = self._alerts[self._surveys_mask(surveys)]
