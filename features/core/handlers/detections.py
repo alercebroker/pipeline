@@ -8,13 +8,13 @@ from ._base import BaseHandler
 
 class DetectionsHandler(BaseHandler):
     INDEX = "candid"
-    UNIQUE = ("aid", "mjd")
+    UNIQUE = ["aid", "mjd"]
     _COLUMNS = BaseHandler._COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos", "ra", "dec"]
 
     def _post_process_alerts(self, **kwargs):
         if "extras" in kwargs:
             self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
-        if kwargs.pop("use_corrected", False):
+        if kwargs.pop("corr", False):
             self._use_corrected_magnitudes(kwargs.pop("surveys"))
         else:
             self._alerts = self._alerts.assign(mag_ml=self._alerts["mag"], e_mag_ml=self._alerts["e_mag"])

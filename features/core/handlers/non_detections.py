@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Callable, Literal
 
 import methodtools
 import numpy as np
@@ -61,14 +61,10 @@ class NonDetectionsHandler(BaseHandler):
         surveys: str | tuple[str, ...] = (),
         bands: str | tuple[str, ...] = (),
     ) -> pd.Series:
-        match which:
-            case "first":
-                function = "idxmin"
-            case "last":
-                function = "idxmax"
-            case _:
-                raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
-        return self.get_grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].agg(function)
+        if which not in ("first", "last"):
+            raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
+        function = "idxmin" if which == "first" else "idxmax"
+        return self.get_aggregate_when("mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
 
     @methodtools.lru_cache()
     def get_which_value_when(
@@ -89,6 +85,13 @@ class NonDetectionsHandler(BaseHandler):
 
     @methodtools.lru_cache()
     def get_aggregate_when(
-        self, column: str, func: str, *, when: Literal["before", "after"], by_fid: bool = False
+        self,
+        column: str,
+        func: str | Callable,
+        *,
+        when: Literal["before", "after"],
+        by_fid: bool = False,
+        surveys: str | tuple[str, ...] = (),
+        bands: str | tuple[str, ...] = (),
     ) -> pd.Series:
-        return self.get_grouped_when(when=when, by_fid=by_fid)[column].agg(func)
+        return self.get_grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
