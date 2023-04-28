@@ -56,7 +56,9 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         gr_max_corr = self.detections.get_colors("min", ("g", "r"), ml=True)
         gr_mean = self.detections.get_colors("mean", ("g", "r"), ml=False)
         gr_mean_corr = self.detections.get_colors("mean", ("g", "r"), ml=True)
-        return pd.DataFrame({"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr})
+        return pd.DataFrame(
+            {"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr}
+        )
 
     @decorators.add_fid(0)
     def calculate_real_bogus(self) -> pd.DataFrame:
