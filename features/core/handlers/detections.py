@@ -32,8 +32,8 @@ class DetectionsHandler(BaseHandler):
 
     @classmethod
     def __extract_extra_fields(cls, alerts: list[dict], extras: list[str]) -> pd.DataFrame:
-        df = {alert[cls.INDEX]: alert["extra_fields"] for alert in alerts}
-        df = pd.DataFrame.from_dict(df, orient="index", columns=extras)
+        records = {alert[cls.INDEX]: alert["extra_fields"] for alert in alerts}
+        df = pd.DataFrame.from_dict(records, orient="index", columns=extras)
         return df.reset_index(names=[cls.INDEX]).drop_duplicates(cls.INDEX).set_index(cls.INDEX)
 
     @methodtools.lru_cache()
