@@ -94,6 +94,11 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
+    def calculate_snm(self) -> pd.DataFrame:
+        return self.detections.apply_grouped(specials.sn4apply_ztf, by_fid=True)
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
         return self.detections.apply_grouped(specials.fats4apply, by_fid=True, features=self.FATS_FEATURES)
 
