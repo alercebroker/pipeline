@@ -99,10 +99,10 @@ class LightcurveStep(GenericStep):
         )  # TODO: Remove when using clean DB
 
         if non_detections.size:
-            if "sid" not in non_detections:
+            if "sid" not in non_detections or non_detections["sid"].isna().any():
                 non_detections["sid"] = "ZTF"
 
-            if "tid" not in non_detections:
+            if "tid" not in non_detections or non_detections["tid"].isna().any():
                 non_detections["tid"] = "ZTF"
 
             non_detections["fid"].replace(
