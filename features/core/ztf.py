@@ -103,7 +103,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         return df.droplevel("fid", axis="columns")["Multiband_period"]
 
     def calculate_periods(self) -> pd.DataFrame:
-        return self._calculate_periods(full=True).rename(columns=self.BANDS_MAPPING, level="fid")
+        df = self.detections.apply_grouped(specials.periods4apply, fids=self.BANDS, kim=True, power=True, harmonics=7)
+        return df.rename(columns=self.BANDS_MAPPING, level="fid")
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
