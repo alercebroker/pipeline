@@ -1,6 +1,4 @@
 import pandas as pd
-from scipy import stats
-from astropy.coordinates import SkyCoord
 
 from .utils import decorators, specials, fill_index
 from ._base import BaseFeatureExtractor
@@ -9,42 +7,13 @@ from ._base import BaseFeatureExtractor
 class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
-    BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12, "rg": 12}
+    BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
     EXTRA_COLUMNS = ["rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     USE_CORRECTED = True
-    MIN_DETECTIONS: int = 0
-    MIN_DETECTIONS_IN_FID: int = 5
+    MIN_DETECTIONS_IN_FID = 5
     MIN_REAL_BOGUS = 0.55
     MAX_SIGMA_MAGNITUDE = 1.0
-    FATS_FEATURES = (
-        "Amplitude",
-        "AndersonDarling",
-        "Autocor_length",
-        "Beyond1Std",
-        "Con",
-        "Eta_e",
-        "Gskew",
-        "MaxSlope",
-        "Mean",
-        "Meanvariance",
-        "MedianAbsDev",
-        "MedianBRP",
-        "PairSlopeTrend",
-        "PercentAmplitude",
-        "Q31",
-        "Rcs",
-        "Skew",
-        "SmallKurtosis",
-        "Std",
-        "StetsonK",
-        "Pvar",
-        "ExcessVar",
-        "SF_ML_amplitude",
-        "SF_ML_gamma",
-        "IAR_phi",
-        "LinearTrend",
-    )
 
     def _discard_detections(self):
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS, ge=True)
@@ -84,47 +53,10 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_sg_score(self) -> pd.DataFrame:
         return pd.DataFrame({"sgscore1": self.detections.get_aggregate("sgscore1", "median")})
 
-    @decorators.add_fid(0)
-    def calculate_galactic_coordinates(self) -> pd.DataFrame:
-        ra = self.detections.get_aggregate("ra", "mean")
-        dec = self.detections.get_aggregate("dec", "mean")
-        galactic = SkyCoord(ra, dec, frame="icrs", unit="deg").galactic
-        # By construction, ra and dec indices should be the same
-        return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
-
-    def _calculate_periods(self, full: bool) -> pd.DataFrame:
-        if self._periods is not None:
-            df = self._periods
-        else:
-            df = self.detections.apply_grouped(specials.periods4apply, filters=self.BANDS)
-            self._periods = df
-        if full:
-            return df
-        return df.droplevel("fid", axis="columns")["Multiband_period"]
-
-    def calculate_periods(self) -> pd.DataFrame:
-        df = self.detections.apply_grouped(specials.periods4apply, fids=self.BANDS, kim=True, power=True, harmonics=7)
-        return df.rename(columns=self.BANDS_MAPPING, level="fid")
-
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_snm(self) -> pd.DataFrame:
         return self.detections.apply_grouped(specials.sn4apply_ztf, by_fid=True)
-
-    @decorators.columns_per_fid
-    @decorators.fill_in_every_fid()
-    def calculate_fats(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(specials.fats4apply, by_fid=True, features=self.FATS_FEATURES)
-
-    @decorators.columns_per_fid
-    @decorators.fill_in_every_fid()
-    def calculate_mhps(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(specials.mhps4apply, by_fid=True, t1=100, t2=10)
-
-    @decorators.columns_per_fid
-    @decorators.fill_in_every_fid()
-    def calculate_iqr(self) -> pd.DataFrame:
-        return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
