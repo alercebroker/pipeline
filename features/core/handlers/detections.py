@@ -45,7 +45,7 @@ class DetectionsHandler(BaseHandler):
 
     @methodtools.lru_cache()
     def get_count_by_sign(self, sign: int, *, by_fid: bool = False, bands: str | tuple[str, ...] = ()) -> pd.Series:
-        counts = self.get_grouped(by_fid=by_fid, bands=bands)["isdiffpos"].value_counts()
+        counts = self.get_aggregate("isdiffpos", "value_count", by_fid=by_fid, bands=bands)
         if by_fid and bands:
             return fill_index(counts, fill_value=0, fid=bands, isdiffpos=(-1, 1)).xs(sign, level="isdiffpos")
         return fill_index(counts, fill_value=0, isdiffpos=(-1, 1)).xs(sign, level="isdiffpos")
