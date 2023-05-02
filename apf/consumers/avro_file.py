@@ -50,11 +50,7 @@ class AVROFileConsumer(GenericConsumer):
                 yield data
             else:
                 msgs.append(data)
-                if len(msgs) == num_messages:
-                    return_msgs = msgs.copy()
-                    msgs = []
-                    yield return_msgs
-                elif left + len(msgs) < num_messages:
+                if len(msgs) == num_messages or left + len(msgs) < num_messages:
                     return_msgs = msgs.copy()
                     msgs = []
                     yield return_msgs
