@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classifier.features.custom import CustomStreamHierarchicalExtractor
 from features.utils.parsers import parse_scribe_payload, parse_output
@@ -37,7 +38,7 @@ class FeaturesComputer(GenericStep):
             features_computer or CustomStreamHierarchicalExtractor()
         )
         
-        scribe_class = self.get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def compute_features(self, detections, non_detections, metadata, xmatches, objects):
@@ -70,41 +71,38 @@ class FeaturesComputer(GenericStep):
         return features
 
     def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(features, self.feature_version.version) # version form metadata check
+        commands = parse_scribe_payload(features, self.config["FEATURE_VERSION"]) # version form metadata check
         for command in commands:
-            self.scribe_producer.produce(command, key="algo")
-
-    def produce_temp(self, features: pd.DataFrame, alert_data: pd.DataFrame):
-        output = parse_output(features, alert_data)
-        for output_message in output:
-            self.producer.produce(output_message, key="algo")
+            command_aid = command["criteria"]["_id"]
+            self.scribe_producer.produce(command, key=command_aid)
 
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} messages.")
 
-        preprocess_id = messages[0]["preprocess_step_id"]
-        self.insert_feature_version(preprocess_id)
-
-        self.logger.info("Getting batch alert data")
-        
-        detections, non_detections = [], []
+        self.logger.info("Getting batch alert data detections, non_detections and xmatches")
+        detections, non_detections, xmatch = [], [], []
 
         for message in messages:
+            #cambiar los detections y no detections
             msg_detections = message.get("detections")
             msg_non_detections = message.get("non_detections")
-            
-            if msg_detections:
-                detections.append(msg_detections)
-            
-            if msg_non_detections:
-                non_detections.append(msg_non_detections)
+            detections.extend(msg_detections)
+            non_detections.extend(msg_non_detections)
+            xmatch.append(
+                {
+                    "aid": message["aid"],
+                    **message["xmatches"]
+                }
+            )
 
         self.logger.info(f"Calculating features")
-        features = self.compute_features(
-            detections, non_detections, [], [], []
+        features = self.features_computer.compute_features(
+            detections, non_detections, xmatch, [], []
         )
         self.logger.info(f"Features calculated: {features.shape}")
+        
         if len(features) > 0:
             self.produce_to_scribe(features)
-        if self.producer:
-            self.produce(features, messages)
+   
+        output = parse_output(features, messages)
+        return output

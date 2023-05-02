@@ -12,42 +12,45 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str):
     :return: 
     """
 
-    features.replace({np.nan: None}, inplace=True)
-    features = features.stack(dropna=False)
-    features = features.to_frame()
-    features.reset_index(inplace=True)
-    features.columns = ["aid", "name", "value"]
-    features["fid"] = features.name.apply(get_fid) # quizas tiene que ser lambda
-    features["name"] = features.name.apply(check_feature_name)
-    features_grouped = features.groupby("aid")
-    
-    commands_list = [
-        {
+    features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+    commands_list = []
+    for aid, features_df in features.iterrows():
+        features_list = [
+            {"name": name, "fid": None if fid in [0, -99] else fid, "value": value}
+            for ((name, fid), value) in features_df.items()
+        ]
+        command = {
             "collection": "name",
             "type": "update_features",
             "criteria": {"_id": aid},
             "data": {
                 "features_version": features_version,
-                "features": features_df.to_dict("records")
+                "features": features_list
             },
             "options": {"upsert": True}        
-        } for aid, features_df in features_grouped
-    ]
+        }
+        commands_list.append(command)
+
     return commands_list
  
-def parse_output(features: pd.DataFrame, alert_data: pd.DataFrame):
+def parse_output(features: pd.DataFrame, alert_data: list[dict]):
     """
     Parse output va a cambiar con la nueva version de compute features
     descripcion pendiente.
     
     """
     output_messages = []
-    alert_data.set_index("aid", inplace=True)
-    alert_data.drop_duplicates(inplace=True, keep="last")
-    for aid, features_oid in features.iterrows():
-        features_oid.replace({np.nan: None}, inplace=True)
-        message = alert_data.loc[aid]
-        features_dict = features_oid.to_dict()
+
+    features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+    features.columns = features.columns.map(
+        lambda lvls: f"{'_'.join(str(l) for l in lvls if l not in [-99, 0, 12])}"
+    )
+
+    for message in alert_data:
+        aid = message["aid"]
+        features_row = features.loc[aid]
+        features_dict = features_row.to_dict()
         out_message = {
             "aid": aid,
             "meanra": message["meanra"],
@@ -57,6 +60,6 @@ def parse_output(features: pd.DataFrame, alert_data: pd.DataFrame):
             "xmatches": message["xmatches"],
             "features": features_dict,
         }
-        output_messages.extend(out_message)
+        output_messages.append(out_message)
     
     return output_messages
