@@ -41,7 +41,7 @@ class ParsersTestCase(unittest.TestCase):
                 "features": {
                     "feat1_1": 321,
                     "feat1_2": 654,
-                    "feat2_": 147,
+                    "feat2": 147,
                     "feat3": 369,
                     "feat4": 888
                 }
