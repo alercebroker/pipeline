@@ -65,7 +65,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     for candidate in prv_candidates:
         if candidate["candid"]:
             candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
-            candidate.update({"aid": aid, "has_stamp": False})
+            candidate.update({"aid": aid, "has_stamp": False, "is_forced": False})
             candidate["extra_fields"].update({"parent_candid": parent})
             alert.pop("stamps", None)
             detections.append(candidate)
