@@ -80,6 +80,10 @@
               "type": "boolean"
             },
             {
+              "name": "is_forced",
+              "type": "boolean"
+            },
+            {
               "name": "extra_fields",
               "type": {
                 "default": {},
