@@ -73,4 +73,9 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         forced_photometries.append(candidate)
 
     alert["extra_fields"]["parent_candid"] = None
-    return {"aid": alert["aid"], "detections": detections, "non_detections": [], "forced_photometries": forced_photometries}
+    return {
+        "aid": alert["aid"],
+        "detections": detections,
+        "non_detections": [],
+        "forced_photometries": forced_photometries,
+    }
