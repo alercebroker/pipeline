@@ -65,7 +65,7 @@ class FeatureSpace(object):
                 results.append(result)
             else:
                 results += result
-        results = np.array(results).reshape(1, -1).astype(np.float)
+        results = np.array(results).reshape(1, -1).astype(float)
         df = pd.DataFrame(results, columns=self.feature_names, index=[oid])
         df.index.name = 'oid'
         return df

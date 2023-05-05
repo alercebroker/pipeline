@@ -8,23 +8,23 @@ from scipy.optimize import minimize, minimize_scalar
 @jit(nopython=True)
 def iar_phi_kalman_numba(x, t, y, yerr, standarized):
     n = len(y)
-    Sighat = np.float(1.0)
+    Sighat = 1.0
     if not standarized:
         Sighat = np.var(y) * Sighat
     xhat = np.zeros(shape=(1, n))
     delta = np.diff(t)
     Q = Sighat
     phi = x
-    G = np.float(1.0)
-    sum_Lambda = np.float(0.0)
-    sum_error = np.float(0.0)
+    G = 1.0
+    sum_Lambda = 0.0
+    sum_error = 0.0
     if np.isnan(phi):
         phi = 1.1
     if abs(phi) < 1:
         for i in range(n - 1):
             Lambda = G * Sighat * G + yerr[i + 1] ** 2
             if (Lambda <= 0) or np.isnan(Lambda):
-                sum_Lambda = np.float(n * 1e10)
+                sum_Lambda = float(n * 1e10)
                 break
             phi2 = phi ** delta[i]
             F = phi2
