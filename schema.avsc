@@ -80,6 +80,10 @@
               "type": "boolean"
             },
             {
+              "name": "forced",
+              "type": "boolean"
+            },
+            {
               "name": "extra_fields",
               "type": {
                 "default": {},
@@ -132,59 +136,6 @@
         }
       },
       "default": []
-    },
-    {
-      "name": "forced_photometries",
-      "type": {
-        "type": "array",
-        "items": {
-          "type": "record",
-          "name": "forced_photometry",
-          "fields": [
-            {
-              "name": "aid",
-              "type": "string"
-            },
-            {
-              "name": "oid",
-              "type": "string"
-            },
-            {
-              "name": "sid",
-              "type": "string"
-            },
-            {
-              "name": "tid",
-              "type": "string"
-            },
-            {
-              "name": "fid",
-              "type": "string"
-            },
-            {
-              "name": "candid",
-              "type": ["long", "string"]
-            },
-            {
-              "name": "mjd",
-              "type": "double"
-            },
-            {
-              "name": "mag",
-              "type": "float"
-            },
-            {
-              "name": "e_mag",
-              "type": "float"
-            },
-            {
-              "name": "isdiffpos",
-              "type": "int"
-            }
-          ]
-        },
-        "default": []
-      }
     }
   ]
 }
