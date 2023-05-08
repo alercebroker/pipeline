@@ -1,1 +1,1 @@
-apf_base==1.0.3
+apf_base==1.0.11

@@ -10,8 +10,9 @@ import json
 
 # Consumer configuration
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.AVROFileConsumer",
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.AVROFileConsumer"),
     "DIRECTORY_PATH": "data/",
+    "consume.messages": int(os.getenv("MESSAGES", "1000")),
 }
 
 # Producer configuration
@@ -24,20 +25,20 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        # 'security.protocol': 'SASL_PLAINTEXT',
-        # 'sasl.mechanism': 'PLAIN',
-        # "sasl.username": "alerce",
-        # "sasl.password": "***REMOVED***"
     },
     "SCHEMA": SCHEMA,
 }
 
+if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWARD"):
+    PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+
 # Step Configuration
 STEP_CONFIG = {
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
-    "MESSAGES": os.getenv("MESSAGES", 100),
-    "EXPOSURE_TIME": os.getenv("EXPOSURE_TIME", 1),
-    "PROCESS_TIME": os.getenv("PROCESS_TIME", 1),
-    "KEY": os.getenv("KEY", "objectId"),
-    "N_THREADS": os.getenv("N_THREADS", 1),
+    "MESSAGES": int(os.getenv("MESSAGES", "100")),
+    "EXPOSURE_TIME": int(os.getenv("EXPOSURE_TIME", "1")),
+    "PROCESS_TIME": int(os.getenv("PROCESS_TIME", "1")),
 }

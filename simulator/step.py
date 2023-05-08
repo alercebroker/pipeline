@@ -4,7 +4,7 @@ from apf.producers import KafkaProducer
 
 import logging
 import time
-import threading
+
 
 class Simulator(GenericStep):
     """Simulator Description
@@ -17,54 +17,52 @@ class Simulator(GenericStep):
         Other args passed to step (DB connections, API requests, etc.)
 
     """
-    consumed = 0
-    messages = []
-    elapsed_time = 0
-    start_time = 0
-    n_messages = 10000
-    process_time=60
 
-    def __init__(self,consumer = None, config = None,level = logging.INFO,**step_args):
-        super().__init__(consumer,config=config, level=level)
+    def __init__(self, consumer=None, config: dict = {}, level=logging.INFO):
+        super().__init__(consumer, config=config, level=level)
         if "CLASS" in config["PRODUCER_CONFIG"]:
             Producer = get_class(config["PRODUCER_CONFIG"]["CLASS"])
         else:
             Producer = KafkaProducer
         self.producer = Producer(config["PRODUCER_CONFIG"])
-        self.n_messages = int(config.get("MESSAGES", 10000))
-        self.exposure_time = 1 #float(config.get("EXPOSURE_TIME", 3))
-        self.process_time = 1 #float(config.get("PROCESS_TIME", 1))
-        self.key = config.get("KEY", "objectId")
+        self.n_messages = config["MESSAGES"]
+        self.exposure_time = config["EXPOSURE_TIME"]
+        self.process_time = config["PROCESS_TIME"]
         self.start_time = time.time()
+        self.messages = []
 
     def produce(self):
-        self.logger.info(f"Consumed {self.consumed}, producing")
-
         for message in self.messages:
-            self.producer.produce(message, key=str(message[self.key]))
+            self.producer.produce(message)
 
         self.logger.info(f"Message produced, waiting flush.")
         if type(self.producer) is KafkaProducer:
             self.producer.producer.flush()
-        self.consumed = 0
         self.messages = []
 
+    def sleep_for_exposure(self):
         t1 = time.time()
-        real_time = max([0,(self.exposure_time+self.process_time)-(t1-self.start_time)])
-        self.logger.info(f"Sleeping for Exposure ({self.exposure_time}s), Process ({self.process_time}s) | Real Time {real_time:.3f}s")
+        real_time = max(
+            [0, (self.exposure_time + self.process_time) - (t1 - self.start_time)]
+        )
+        self.logger.info(
+            f"Sleeping for Exposure ({self.exposure_time}s), Process ({self.process_time}s) | Real Time {real_time:.3f}s"
+        )
         time.sleep(real_time)
-        self.start_time = time.time()
 
-    def check_timeout(self):
+    def check_consumer_timeout(self):
         now = time.time()
         elapsed = now - self.start_time
-        if elapsed >= self.process_time:
-            self.logger.info("Consume timeout, producing")
-            self.produce()
+        return elapsed >= self.config["CONSUME_TIMEOUT"]
 
-    def execute(self, message):
-        self.check_timeout()
-        self.messages.append(message)
-        self.consumed += 1
-        if self.consumed == self.n_messages:
-            self.produce()
+    def execute(self, message: dict | list):
+        self.start_time = time.time()
+        self.sleep_for_exposure()
+        if isinstance(message, list):
+            self.messages = message
+        else:
+            self.messages.append(message)
+        consumed = len(self.messages)
+        self.logger.info(f"{consumed} messages consumed. Producing")
+        print(f"{consumed} messages consumed. Producing")
+        self.produce()
