@@ -139,12 +139,13 @@ class Corrector:
         Returns:
             dict: Mapping from `mean<label>` to weighted means of the coordinates
         """
+        non_forced = self._detections[~self._detections["forced"]]
 
         def _average(series):
             return self.weighted_mean(series, sigmas.loc[series.index])
 
-        sigmas = self.arcsec2dec(self._detections[f"e_{label}"])
-        return {f"mean{label}": self._detections.groupby("aid")[label].agg(_average)}
+        sigmas = self.arcsec2dec(non_forced[f"e_{label}"])
+        return {f"mean{label}": non_forced.groupby("aid")[label].agg(_average)}
 
     def mean_coordinates(self) -> pd.DataFrame:
         """Dataframe with weighted mean coordinates for each AID"""
