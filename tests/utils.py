@@ -29,6 +29,7 @@ def ztf_alert(**kwargs):
         "fid": "g",
         "mjd": 1.0,
         "has_stamp": True,
+        "forced": False,
         "extra_fields": ztf_extra_fields(),
     }
     alert.update(kwargs)
@@ -51,6 +52,7 @@ def atlas_alert(**kwargs):
         "fid": "c",
         "mjd": 1.0,
         "has_stamp": True,
+        "forced": False,
         "extra_fields": {"dummy": None},
     }
     alert.update(kwargs)
