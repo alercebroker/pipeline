@@ -112,6 +112,10 @@
             "type": "boolean"
           },
           {
+            "name": "forced",
+            "type": "boolean"
+          },
+          {
             "name": "extra_fields",
             "type": {
               "default": {},
