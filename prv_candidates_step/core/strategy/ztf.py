@@ -65,7 +65,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     for candidate in prv_candidates:
         if candidate["candid"]:
             candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
-            candidate.update({"aid": aid, "has_stamp": False})
+            candidate.update({"aid": aid, "has_stamp": False, "forced": False})
             candidate["extra_fields"].update({"parent_candid": parent})
             candidate.pop("stamps", None)
             detections.append(candidate)
@@ -79,4 +79,4 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     alert["extra_fields"].pop("prv_candidates")
     alert["extra_fields"]["parent_candid"] = None
 
-    return {"aid": alert["aid"], "detections": detections, "non_detections": non_detections, "forced_photometries": []}
+    return {"aid": alert["aid"], "detections": detections, "non_detections": non_detections}
