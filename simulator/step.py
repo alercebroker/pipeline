@@ -37,7 +37,7 @@ class Simulator(GenericStep):
 
         self.logger.info(f"Message produced, waiting flush.")
         if type(self.producer) is KafkaProducer:
-            self.producer.producer.flush()
+            self.producer.producer.flush(30)
         self.messages = []
 
     def sleep_for_exposure(self):
