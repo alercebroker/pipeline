@@ -1,5 +1,4 @@
-from abc import ABC
-from alerce_base_model import ClassifierModel
+from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
 from lc_classifier.classifier.models import ElasticcRandomForest
 
@@ -7,9 +6,9 @@ import pandas as pd
 import validators
 
 
-class RandomForestFeaturesClassifier(ClassifierModel, ABC):
+class RandomForestFeaturesClassifier(AlerceModel):
     def __init__(self, path_to_model: str):
-        self.taxonomy_dictionary = {
+        self._taxonomy_dictionary = {
             "Transient": [
                 "CART",
                 "Iax",
@@ -27,12 +26,12 @@ class RandomForestFeaturesClassifier(ClassifierModel, ABC):
             "Stochastic": ["M-dwarf Flare", "Dwarf Novae", "AGN", "uLens"],
             "Periodic": ["Delta Scuti", "RR Lyrae", "Cepheid", "EB"],
         }
-        self.non_used_features = [f"iqr_{band}" for band in "ugrizY"]
+        self._non_used_features = [f"iqr_{band}" for band in "ugrizY"]
         super().__init__(path_to_model)
 
     def _load_model(self, path_to_model: str) -> None:
         self.model = ElasticcRandomForest(
-            self.taxonomy_dictionary, self.non_used_features, n_trees=500, n_jobs=1
+            self._taxonomy_dictionary, self._non_used_features, n_trees=500, n_jobs=1
         )
         if validators.url(path_to_model):
             self.model.url_model = path_to_model
@@ -44,7 +43,7 @@ class RandomForestFeaturesClassifier(ClassifierModel, ABC):
         features = ELAsTiCCMapper.get_features(data_input)
         return features
 
-    def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
         features = self.preprocess(data_input)
         probs = self.model.predict_proba(features)
         return probs

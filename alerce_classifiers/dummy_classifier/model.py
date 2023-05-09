@@ -1,11 +1,11 @@
 from abc import ABC
-from alerce_base_model import ClassifierModel
+from alerce_classifiers.base.model import AlerceModel
 
 import numpy as np
 import pandas as pd
 
 
-class DummyClassifier(ClassifierModel, ABC):
+class DummyClassifier(AlerceModel):
     def __init__(self, path_to_model: str):
         super().__init__(path_to_model)
         self.taxonomy = ["A", "B", "C"]

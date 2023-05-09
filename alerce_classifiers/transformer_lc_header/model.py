@@ -1,6 +1,8 @@
 from abc import ABC
 from alerce_base_model import ClassifierModel
+from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
+from alerce_classifiers.utils.dataframe import DataframeUtils
 from joblib import load
 
 import numpy as np
@@ -12,33 +14,14 @@ import validators
 
 
 class TransformerLCHeaderClassifier(ClassifierModel, ABC):
+    model = None
+
     def __init__(self, path_to_model: str, path_to_quantiles: str):
         self.local_files = f"/tmp/{type(self).__name__}"
         _file = os.path.dirname(__file__)
         sys.path.append(_file)
         super().__init__(path_to_model)
-        self.taxonomy = [
-            "AGN",
-            "CART",
-            "Cepheid",
-            "Delta Scuti",
-            "Dwarf Novae",
-            "EB",
-            "ILOT",
-            "KN",
-            "M-dwarf Flare",
-            "PISN",
-            "RR Lyrae",
-            "SLSN",
-            "91bg",
-            "Ia",
-            "Iax",
-            "Ib/c",
-            "II",
-            "SN-like/Other",
-            "TDE",
-            "uLens",
-        ]
+
         self._load_quantiles(path_to_quantiles)
 
     def _load_model(self, path_to_model: str) -> None:
