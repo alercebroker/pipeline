@@ -29,7 +29,7 @@ PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
-if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWARD"):
+if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
