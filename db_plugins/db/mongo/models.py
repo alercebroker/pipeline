@@ -147,6 +147,7 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     ]
     __tablename__ = "forced_photometry"
 
+
 class NonDetection(BaseModelWithExtraFields):
     @classmethod
     def create_extra_fields(cls, **kwargs):
