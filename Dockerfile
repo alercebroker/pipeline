@@ -8,6 +8,4 @@ COPY ./schemas /app/schemas
 COPY ./simulator /app/simulator
 COPY ./settings.py /app/settings.py
 
-WORKDIR /app/scripts
-
-CMD ["bash", "entrypoint.sh"]
+CMD ["python", "scripts/run_step.py"]
