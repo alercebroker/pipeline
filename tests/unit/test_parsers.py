@@ -5,7 +5,7 @@ from fastavro.schema import load_schema
 
 
 def test_prv_detections_parser():
-    schema = load_schema("tests/shared/prv_candidate_schema.avsc")
+    schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     result = ZTFPreviousDetectionsParser.parse(data[0], "oid")
@@ -13,7 +13,7 @@ def test_prv_detections_parser():
 
 
 def test_non_detections_parser():
-    schema = load_schema("tests/shared/prv_candidate_schema.avsc")
+    schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     result = ZTFNonDetectionsParser.parse(data[0], "oid")

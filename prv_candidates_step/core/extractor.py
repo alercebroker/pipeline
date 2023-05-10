@@ -10,7 +10,7 @@ class PreviousCandidatesExtractor:
         for alert in self._alerts:
             survey = alert["sid"].lower()
 
-            alert["has_stamp"] = bool(alert.pop("stamps", False))
+            alert.update({"has_stamp": bool(alert.pop("stamps", False)), "forced": False, "parent_candid": None})
             try:
                 module = getattr(strategy, survey)
             except AttributeError:

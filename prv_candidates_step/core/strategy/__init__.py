@@ -1,1 +1,1 @@
-from . import ztf
+from . import ztf, lsst

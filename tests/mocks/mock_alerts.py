@@ -1,7 +1,34 @@
 import pickle
 
 
-def extra_fields_generator():
+def lsst_extra_fields_generator():
+    prv_forced = [
+        {
+            "diaForcedSourceId": 999,
+            "diaObjectId": 998,
+            "midPointTai": 1.0,
+            "filterName": "i",
+            "psFlux": 1.0,
+            "psFluxErr": 1.0,
+        }
+    ]
+    prv_detection = [
+        {
+            "diaSourceId": 999,
+            "diaObjectId": 998,
+            "midPointTai": 1.0,
+            "filterName": "i",
+            "psFlux": 1.0,
+            "psFluxErr": 1.0,
+            "ra": 1.0,
+            "decl": 1.0,
+        }
+    ]
+    extra_fields = {"prvDiaSources": pickle.dumps(prv_detection), "prvDiaForcedSources": pickle.dumps(prv_forced)}
+    return extra_fields
+
+
+def ztf_extra_fields_generator():
     prv_candidates = [
         {
             "jd": 2459951.7121181,

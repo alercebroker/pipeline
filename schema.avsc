@@ -13,7 +13,7 @@
         "type": "array",
         "items": {
           "type": "record",
-          "name": "alert",
+          "name": "detection",
           "fields": [
             {
               "name": "aid",
@@ -78,6 +78,14 @@
             {
               "name": "has_stamp",
               "type": "boolean"
+            },
+            {
+              "name": "forced",
+              "type": "boolean"
+            },
+            {
+              "name": "parent_candid",
+              "type": ["long", "string", "null"]
             },
             {
               "name": "extra_fields",
