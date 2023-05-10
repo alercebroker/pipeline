@@ -33,42 +33,12 @@ class FeaturesComputer(GenericStep):
         **step_args,
     ):
         super().__init__(config=config, level=level, **step_args)
-        self.preprocessor = preprocessor  # Not used
         self.features_computer = (
             features_computer or CustomStreamHierarchicalExtractor()
         )
         
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
-
-    def compute_features(self, detections, non_detections, metadata, xmatches, objects):
-        """Compute Hierarchical-Features in detections and non detections to `dict`.
-
-        **Example:**
-
-        Parameters
-        ----------
-        detections : pandas.DataFrame
-            Detections of an object
-        non_detections : pandas.DataFrame
-            Non detections of an object
-        metadata : pandas.DataFrame
-            Metadata from the alert with other catalogs info
-        xmatches : pandas.DataFrame
-            Xmatches data from xmatch step
-        objects : pandas.DataFrame
-            Data information of each object
-        """
-        features = self.features_computer.compute_features(
-            detections,
-            non_detections=non_detections,
-            metadata=metadata,
-            xmatches=xmatches,
-            objects=objects,
-        )
-        features = features.astype(float)
-        features.replace([np.inf, -np.inf], np.nan, inplace=True)
-        return features
 
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(features, self.config["FEATURE_VERSION"]) # version form metadata check

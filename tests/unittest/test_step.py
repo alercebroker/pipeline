@@ -1,12 +1,11 @@
 import unittest
-import datetime
 from unittest import mock
 from apf.producers import GenericProducer
 from features.step import (
     FeaturesComputer,
 )
 from schema import SCHEMA
-from tests.unittest.data import features_df_for_execute, messages_for_execute
+from tests.data.data_for_unittest import features_df_for_execute, messages_for_execute
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -60,6 +59,8 @@ class StepTestCase(unittest.TestCase):
             config=self.step_config,
             features_computer=self.mock_custom_hierarchical_extractor
         )
+        self.step.scribe_producer = mock.create_autospec(GenericProducer)
+        self.step.scribe_producer.produce = mock.MagicMock()
 
     def test_execute(self):
         expected_output = [
@@ -330,9 +331,6 @@ class StepTestCase(unittest.TestCase):
                 "W3mag": 789,
             }            
         ]
-
-        self.step.scribe_producer = mock.create_autospec(GenericProducer)
-        self.step.scribe_producer.produce = mock.MagicMock()
         
         result = self.step.execute(messages_for_execute)
 
@@ -344,3 +342,7 @@ class StepTestCase(unittest.TestCase):
             []
         )
         self.assertEqual(result, expected_output)
+
+        self.step.scribe_producer.produce.assert_called()
+        scribe_producer_call_count = self.step.scribe_producer.produce.call_count
+        self.assertEqual(scribe_producer_call_count, 2)

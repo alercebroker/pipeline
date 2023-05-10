@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from tests.unittest.data import messages_for_parsing, features_df_for_parse
+from tests.data.data_for_unittest import messages_for_parsing, features_df_for_parse
 from features.utils.parsers import parse_output, parse_scribe_payload
 
 class ParsersTestCase(unittest.TestCase):
