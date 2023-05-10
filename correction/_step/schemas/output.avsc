@@ -116,6 +116,10 @@
             "type": "boolean"
           },
           {
+            "name": "parent_candidate",
+            "type": ["long", "string"]
+          },
+          {
             "name": "extra_fields",
             "type": {
               "default": {},
