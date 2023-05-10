@@ -13,7 +13,7 @@ def test_lsst_strategy_corrected_always_true():
 def test_lsst_strategy_dubious_is_always_false():
     detections = pd.DataFrame({"dummy": np.zeros(10)})
     dubious = lsst.is_dubious(detections)
-    assert dubious.all()
+    assert not dubious.any()
 
 
 def test_lsst_strategy_correction_applies_expected_factor():
