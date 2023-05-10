@@ -19,6 +19,8 @@ class BaseStatistics(abc.ABC):
         except KeyError:  # extra_fields is not present
             self._detections = pd.DataFrame.from_records(detections)
         self._detections = self._detections.drop_duplicates("candid").set_index("candid")
+        # Select only non-forced detections
+        self._detections = self._detections[~self._detections["forced"]]
 
     @classmethod
     def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:
