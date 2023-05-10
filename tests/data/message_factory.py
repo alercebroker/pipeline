@@ -123,7 +123,7 @@ def generate_input_batch(n: int) -> list[dict]:
             "xmatches": xmatch,
         }
         batch.append(msg)
-    random.shuffle(batch, lambda: 0.1)
+    random.sample(batch, len(batch))
     return batch
 
 
@@ -147,7 +147,7 @@ def generate_non_ztf_batch(n: int) -> list[dict]:
             "xmatches": xmatch,
         }
         batch.append(msg)
-    random.shuffle(batch, lambda: 0.1)
+    random.samble(batch, len(batch))
     return batch
 
 
