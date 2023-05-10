@@ -116,8 +116,8 @@
             "type": "boolean"
           },
           {
-            "name": "parent_candidate",
-            "type": ["long", "string"]
+            "name": "parent_candid",
+            "type": ["long", "string", "null"]
           },
           {
             "name": "extra_fields",

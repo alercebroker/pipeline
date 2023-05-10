@@ -28,7 +28,7 @@ DETECTION = {
         {"name": "isdiffpos", "type": "int"},
         {"name": "has_stamp", "type": "boolean"},
         {"name": "forced", "type": "boolean"},
-        {"name": "parent_candidate", "type": ["long", "string"]},
+        {"name": "parent_candid", "type": ["long", "string", "null"]},
         {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
