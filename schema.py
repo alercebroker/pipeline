@@ -27,6 +27,8 @@ DETECTIONS = {
             {"name": "dubious", "type": "boolean"},
             {"name": "has_stamp", "type": "boolean"},
             {"name": "stellar", "type": "boolean"},
+            {"name": "forced", "type": "boolean"},
+            {"name": "parent_candid", "type": ["long", "string", "null"]},
             {
                 "name": "extra_fields",
                 "type": {
