@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict
 from db_plugins.db.mongo import MongoConnection
-from db_plugins.db.mongo.models import Object, Detection, NonDetection
+from db_plugins.db.mongo.models import Object, Detection, NonDetection, ForcedPhotometry
 from ..command.commands import Command
 from ..command.exceptions import NonExistentCollectionException
 
@@ -15,6 +15,7 @@ class ScribeCommandExecutor:
         Object.__tablename__,
         Detection.__tablename__,
         NonDetection.__tablename__,
+        ForcedPhotometry.__tablename__,
     )
 
     def __init__(self, config):
