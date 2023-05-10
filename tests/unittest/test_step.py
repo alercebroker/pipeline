@@ -26,7 +26,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    #"SCHEMA": SCHEMA, necesario?
+    # "SCHEMA": SCHEMA, necesario?
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -37,6 +37,7 @@ SCRIBE_PRODUCER_CONFIG = {
     },
     "SCHEMA": SCHEMA,
 }
+
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
@@ -54,10 +55,12 @@ class StepTestCase(unittest.TestCase):
             },
         }
         self.mock_custom_hierarchical_extractor = mock.MagicMock()
-        self.mock_custom_hierarchical_extractor.compute_features.return_value = features_df_for_execute
+        self.mock_custom_hierarchical_extractor.compute_features.return_value = (
+            features_df_for_execute
+        )
         self.step = FeaturesComputer(
             config=self.step_config,
-            features_computer=self.mock_custom_hierarchical_extractor
+            features_computer=self.mock_custom_hierarchical_extractor,
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
@@ -118,7 +121,7 @@ class StepTestCase(unittest.TestCase):
                         "has_stamp": True,
                         "stellar": False,
                         "extra_fields": None,
-                    }
+                    },
                 ],
                 "non_detections": [
                     {
@@ -138,7 +141,7 @@ class StepTestCase(unittest.TestCase):
                         "mjd": 888,
                         "fid": "1",
                         "diffmaglim": 999,
-                    }
+                    },
                 ],
                 "xmatches": {
                     "W1mag": 123,
@@ -150,8 +153,8 @@ class StepTestCase(unittest.TestCase):
                     "Amplitude_2": 456,
                     "Multiband_period": 741,
                     "feat3": 963,
-                    "rb": None
-                }
+                    "rb": None,
+                },
             },
             {
                 "aid": "aid2",
@@ -205,9 +208,9 @@ class StepTestCase(unittest.TestCase):
                     "Amplitude_2": 654,
                     "Multiband_period": 147,
                     "feat3": 369,
-                    "rb": 888
-                }
-            }
+                    "rb": 888,
+                },
+            },
         ]
         expected_detections_for_extractor = [
             {
@@ -284,8 +287,7 @@ class StepTestCase(unittest.TestCase):
                 "has_stamp": True,
                 "stellar": False,
                 "extra_fields": None,
-            }
-
+            },
         ]
         expected_non_detections_for_extractor = [
             {
@@ -314,8 +316,7 @@ class StepTestCase(unittest.TestCase):
                 "mjd": 888,
                 "fid": "1",
                 "diffmaglim": 999,
-            }
-
+            },
         ]
         expected_xmatches_for_extractor = [
             {
@@ -324,14 +325,14 @@ class StepTestCase(unittest.TestCase):
                 "W2mag": 456,
                 "W3mag": 789,
             },
-            {   
+            {
                 "aid": "aid2",
                 "W1mag": 123,
                 "W2mag": 456,
                 "W3mag": 789,
-            }            
+            },
         ]
-        
+
         result = self.step.execute(messages_for_execute)
 
         self.mock_custom_hierarchical_extractor.compute_features.assert_called_once_with(
@@ -339,7 +340,7 @@ class StepTestCase(unittest.TestCase):
             expected_non_detections_for_extractor,
             expected_xmatches_for_extractor,
             [],
-            []
+            [],
         )
         self.assertEqual(result, expected_output)
 

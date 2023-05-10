@@ -8,10 +8,7 @@ from features.step import (
 )
 import pytest
 from schema import SCHEMA
-from tests.data.message_factory import (
-    generate_input_batch,
-    generate_non_ztf_batch
-)
+from tests.data.message_factory import generate_input_batch, generate_non_ztf_batch
 from tests.data.features_factory import generate_features_df
 
 CONSUMER_CONFIG = {
@@ -45,6 +42,7 @@ SCRIBE_PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
+
 class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
@@ -63,7 +61,7 @@ class StepTestCase(unittest.TestCase):
         self.mock_custom_hierarchical_extractor = mock.MagicMock()
         self.step = FeaturesComputer(
             config=self.step_config,
-            features_computer=self.mock_custom_hierarchical_extractor
+            features_computer=self.mock_custom_hierarchical_extractor,
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
@@ -72,7 +70,9 @@ class StepTestCase(unittest.TestCase):
         input_messages = generate_input_batch(5)
         input_messages_dataframe = pd.DataFrame(input_messages)
 
-        self.step.features_computer.compute_features.return_value = generate_features_df(input_messages_dataframe)
+        self.step.features_computer.compute_features.return_value = (
+            generate_features_df(input_messages_dataframe)
+        )
 
         result = self.step.execute(input_messages)
 

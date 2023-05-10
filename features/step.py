@@ -36,12 +36,14 @@ class FeaturesComputer(GenericStep):
         self.features_computer = (
             features_computer or CustomStreamHierarchicalExtractor()
         )
-        
+
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(features, self.config["FEATURE_VERSION"]) # version form metadata check
+        commands = parse_scribe_payload(
+            features, self.config["FEATURE_VERSION"]
+        )  # version form metadata check
         for command in commands:
             command_aid = command["criteria"]["_id"]
             self.scribe_producer.produce(command, key=command_aid)
@@ -49,30 +51,27 @@ class FeaturesComputer(GenericStep):
     def execute(self, messages):
         self.logger.info(f"Processing {len(messages)} messages.")
 
-        self.logger.info("Getting batch alert data detections, non_detections and xmatches")
+        self.logger.info(
+            "Getting batch alert data detections, non_detections and xmatches"
+        )
         detections, non_detections, xmatch = [], [], []
 
         for message in messages:
-            #cambiar los detections y no detections
+            # cambiar los detections y no detections
             msg_detections = message.get("detections")
             msg_non_detections = message.get("non_detections")
             detections.extend(msg_detections)
             non_detections.extend(msg_non_detections)
-            xmatch.append(
-                {
-                    "aid": message["aid"],
-                    **message["xmatches"]
-                }
-            )
+            xmatch.append({"aid": message["aid"], **message["xmatches"]})
 
         self.logger.info(f"Calculating features")
         features = self.features_computer.compute_features(
             detections, non_detections, xmatch, [], []
         )
         self.logger.info(f"Features calculated: {features.shape}")
-        
+
         if len(features) > 0:
             self.produce_to_scribe(features)
-   
+
         output = parse_output(features, messages)
         return output

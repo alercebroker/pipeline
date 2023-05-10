@@ -5,17 +5,14 @@ feature_columns_for_parse = [
     ("feat1", 2),
     ("feat2", 12),
     ("feat3", -99),
-    ("feat4", 0)
+    ("feat4", 0),
 ]
 feature_multi_index_for_parse = pd.MultiIndex.from_tuples(feature_columns_for_parse)
 
 features_df_for_parse = pd.DataFrame(
-    [
-        [123, 456, 741, 963, None],
-        [321, 654, 147, 369, 888]
-    ],
+    [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
     index=["aid1", "aid2"],
-    columns=feature_multi_index_for_parse
+    columns=feature_multi_index_for_parse,
 )
 features_df_for_parse.index.name = "aid"
 
@@ -24,10 +21,9 @@ messages_for_parsing = [
         "aid": "aid1",
         "meanra": 888,
         "meandec": 999,
-        "detections": [
-        ],
+        "detections": [],
         "non_detections": [],
-        "xmatches": {}
+        "xmatches": {},
     },
     {
         "aid": "aid2",
@@ -35,8 +31,8 @@ messages_for_parsing = [
         "meandec": 555,
         "detections": [],
         "non_detections": [],
-        "xmatches": {}
-    }
+        "xmatches": {},
+    },
 ]
 
 feature_columns_for_execute = [
@@ -44,17 +40,14 @@ feature_columns_for_execute = [
     ("Amplitude", 2),
     ("Multiband_period", 12),
     ("feat3", -99),
-    ("rb", 0)
+    ("rb", 0),
 ]
 feature_multi_index_for_execute = pd.MultiIndex.from_tuples(feature_columns_for_execute)
 
 features_df_for_execute = pd.DataFrame(
-    [
-        [123, 456, 741, 963, None],
-        [321, 654, 147, 369, 888]
-    ],
+    [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
     index=["aid1", "aid2"],
-    columns=feature_multi_index_for_execute
+    columns=feature_multi_index_for_execute,
 )
 features_df_for_execute.index.name = "aid"
 
@@ -113,7 +106,7 @@ messages_for_execute = [
                 "has_stamp": True,
                 "stellar": False,
                 "extra_fields": None,
-            }
+            },
         ],
         "non_detections": [
             {
@@ -133,13 +126,13 @@ messages_for_execute = [
                 "mjd": 888,
                 "fid": "1",
                 "diffmaglim": 999,
-            }
+            },
         ],
         "xmatches": {
             "W1mag": 123,
             "W2mag": 456,
             "W3mag": 789,
-        }
+        },
     },
     {
         "aid": "aid2",
@@ -187,6 +180,6 @@ messages_for_execute = [
             "W1mag": 123,
             "W2mag": 456,
             "W3mag": 789,
-        }
-    }
+        },
+    },
 ]

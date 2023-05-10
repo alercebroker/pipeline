@@ -116,7 +116,7 @@ def generate_input_batch(n: int) -> list[dict]:
         xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,
-            "meanra":meanra,
+            "meanra": meanra,
             "meandec": meandec,
             "detections": detections,
             "non_detections": non_det,
@@ -137,7 +137,7 @@ def generate_non_ztf_batch(n: int) -> list[dict]:
         non_det = generate_non_det(random.randint(1, 20), m)
         candid = int(str(m + 1).ljust(8, "0"))
         detections[-1]["candid"] = candid
-        xmatch = get_fake_xmatch(aid, meanra, meandec)        
+        xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,
             "meanra": meanra,
@@ -200,6 +200,4 @@ def get_fake_xmatch(aid, meanra, meandec) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: list[dict]) -> pd.DataFrame:
-    return pd.DataFrame(
-        columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"]
-    )
+    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
