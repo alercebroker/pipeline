@@ -7,7 +7,7 @@ import os
 from fastavro.utils import generate_many
 import random
 from tests.shared.sorting_hat_schema import SCHEMA
-from tests.mocks.mock_alerts import extra_fields_generator
+from tests.mocks.mock_alerts import ztf_extra_fields_generator
 import uuid
 
 
@@ -88,7 +88,7 @@ def produce_messages(topic):
     for message in messages:
         message["sid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
         if message["sid"] == "ZTF":
-            message["extra_fields"] = extra_fields_generator()
+            message["extra_fields"] = ztf_extra_fields_generator()
         producer.produce(message)
 
 
