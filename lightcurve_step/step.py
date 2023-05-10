@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
-from db_plugins.db.mongo.models import Detection, NonDetection
+from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
 
 # TODO: Unnecessary when using a clean DB
 FID_MAPPING = {
@@ -43,6 +43,7 @@ class LightcurveStep(GenericStep):
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
         query_detections = self.db_client.query(Detection)
         query_non_detections = self.db_client.query(NonDetection)
+        query_forced_photometries = self.db_client.query(ForcedPhotometry)
 
         # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id"}}
         db_detections = query_detections.collection.aggregate(
@@ -71,6 +72,20 @@ class LightcurveStep(GenericStep):
                                 "else": True,
                             }
                         },
+                        "forced": {
+                            "$cond": {
+                                "if": "$forced",
+                                "then": "$forced",
+                                "else": False,
+                            }
+                        },
+                        "parent_candid": {
+                            "$cond": {
+                                "if": "$parent_candid",
+                                "then": "$parent_candid",
+                                "else": None,
+                            }
+                        },
                     }
                 },
                 {"$project": {"_id": False}},
@@ -79,8 +94,16 @@ class LightcurveStep(GenericStep):
         db_non_detections = query_non_detections.collection.find(
             {"aid": {"$in": list(messages["aids"])}}, {"_id": False}
         )
+        # TODO: Add ra, dec, e_ra, e_dec
+        db_forced_photometries = query_forced_photometries.collection.aggregate(
+            [
+                {"$match": {"aid": {"$in": list(messages["aids"])}}},
+                {"$addFields": {"candid": "$_id"}},
+                {"$project": {"_id": False}},
+            ]
+        )
 
-        detections = pd.DataFrame(messages["detections"] + list(db_detections))
+        detections = pd.DataFrame(messages["detections"] + list(db_detections) + list(db_forced_photometries))
         non_detections = pd.DataFrame(
             messages["non_detections"] + list(db_non_detections)
         )
