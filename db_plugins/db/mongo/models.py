@@ -106,7 +106,7 @@ class Detection(BaseModelWithExtraFields):
     isdiffpos = Field()
     corrected = Field()
     dubious = Field()
-    parent_candidate = Field()
+    parent_candid = Field()
     has_stamp = Field()
 
     __table_args__ = [
@@ -138,7 +138,7 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     isdiffpos = Field()
     corrected = Field()
     dubious = Field()
-    parent_candidate = Field()
+    parent_candid = Field()
     has_stamp = Field()
 
     __table_args__ = [
