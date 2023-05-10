@@ -102,18 +102,50 @@ class Detection(BaseModelWithExtraFields):
     e_mag = Field()  # sigmapsf in ZTF alerts
     mag_corr = Field()  # magpsf_corr in ZTF alerts
     e_mag_corr = Field()  # sigmapsf_corr in ZTF alerts
+    e_mag_corr_ext = Field()  # sigmapsf_corr_ext in ZTF alerts
     isdiffpos = Field()
     corrected = Field()
     dubious = Field()
     parent_candidate = Field()
     has_stamp = Field()
-    step_id_corr = Field()
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
         IndexModel([("sid", ASCENDING)]),
     ]
     __tablename__ = "detection"
+
+
+class ForcedPhotometry(BaseModelWithExtraFields):
+    @classmethod
+    def create_extra_fields(cls, **kwargs):
+        kwargs = super().create_extra_fields(**kwargs)
+        kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
+        return kwargs
+
+    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
+    tid = Field()  # Telescope ID
+    sid = Field()  # Survey ID
+    aid = Field()
+    oid = Field()
+    mjd = Field()
+    fid = Field()
+    mag = Field()  # magpsf in ZTF alerts
+    e_mag = Field()  # sigmapsf in ZTF alerts
+    mag_corr = Field()  # magpsf_corr in ZTF alerts
+    e_mag_corr = Field()  # sigmapsf_corr in ZTF alerts
+    e_mag_corr_ext = Field()  # sigmapsf_corr_ext in ZTF alerts
+    isdiffpos = Field()
+    corrected = Field()
+    dubious = Field()
+    parent_candidate = Field()
+    has_stamp = Field()
+
+    __table_args__ = [
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
+        IndexModel([("sid", ASCENDING)]),
+    ]
+    __tablename__ = "forced_photometry"
 
 
 class NonDetection(BaseModelWithExtraFields):

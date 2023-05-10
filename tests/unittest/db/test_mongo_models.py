@@ -60,7 +60,6 @@ class MongoModelsTest(unittest.TestCase):
             dubious="dubious",
             parent_candid="parent_candid",
             has_stamp="has_stamp",
-            step_id_corr="step_id_corr",
             rbversion="rbversion",
         )
         self.assertIsInstance(d, models.Detection)
@@ -86,6 +85,7 @@ class MongoModelsTest(unittest.TestCase):
             e_mag="e_mag",
             mag_corr="mag_corr",
             e_mag_corr="e_mag_corr",
+            e_mag_corr_ext="e_mag_corr_ext",
             parent_candidate="parent_candidate",
             dubious="dubious",
             e_ra="e_ra",
@@ -93,7 +93,6 @@ class MongoModelsTest(unittest.TestCase):
             isdiffpos="isdiffpos",
             corrected="corrected",
             has_stamp="has_stamp",
-            step_id_corr="step_id_corr",
             extra="extra",
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
@@ -121,11 +120,38 @@ class MongoModelsTest(unittest.TestCase):
             corrected="corrected",
             parent_candid="parent_candid",
             has_stamp="has_stamp",
-            step_id_corr="step_id_corr",
             rbversion="rbversion",
             extra_fields={"extra": "extra"},
         )
         self.assertEqual(o["extra_fields"], {"extra": "extra"})
+
+    def test_forced_photometry_creates(self):
+        fp = models.ForcedPhotometry(
+            tid="tid",
+            aid="aid",
+            oid="oid",
+            sid="sid",
+            candid="candid",
+            mjd="mjd",
+            fid="fid",
+            rb="rb",
+            mag="mag",
+            e_mag="e_mag",
+            mag_corr="mag_corr",
+            e_mag_corr="e_mag_corr",
+            e_mag_corr_ext="e_mag_corr_ext",
+            parent_candidate="parent_candidate",
+            dubious="dubious",
+            isdiffpos="isdiffpos",
+            corrected="corrected",
+            parent_candid="parent_candid",
+            has_stamp="has_stamp",
+            rbversion="rbversion",
+            extra_fields={},            
+        )
+        self.assertIsInstance(fp, models.ForcedPhotometry)
+        self.assertIsInstance(fp, dict)
+        self.assertEqual(fp["aid"], "aid")
 
     def test_non_detection_creates(self):
         o = models.NonDetection(

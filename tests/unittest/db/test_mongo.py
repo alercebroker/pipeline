@@ -2,7 +2,7 @@ from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import (
     MongoConnection,
     MongoDatabaseCreator,
-    _MongoConfig
+    _MongoConfig,
 )
 from db_plugins.db.mongo.query import MongoQuery, CollectionNotFound
 from db_plugins.db.mongo.models import Object, NonDetection
@@ -27,7 +27,9 @@ class MongoConnectionTest(unittest.TestCase):
         conf["SOME_OTHER_ATTRIBUTE"] = "test"
         new_conf = _MongoConfig(conf)
         # Replacement for deprecated assertDictContainsSubset
-        self.assertEqual(new_conf, {**new_conf, **{"someOtherAttribute": "test", "host": "host"}})
+        self.assertEqual(
+            new_conf, {**new_conf, **{"someOtherAttribute": "test", "host": "host"}}
+        )
 
     def test_factory_method(self):
         conn = new_DBConnection(MongoDatabaseCreator)
@@ -41,17 +43,26 @@ class MongoConnectionTest(unittest.TestCase):
         )
         self.assertEqual(self.conn.database.name, self.config["DATABASE"])
 
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo.connection.MongoClient")
     def test_create_db(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.conn.connect()
 
         self.conn.create_db()
         collections = self.conn.client[self.config["DATABASE"]].list_collection_names()
-        expected = ["object", "detection", "non_detection", "taxonomy", "step", "feature_version", "pipeline"]
+        expected = [
+            "object",
+            "detection",
+            "forced_photometry",
+            "non_detection",
+            "taxonomy",
+            "step",
+            "feature_version",
+            "pipeline",
+        ]
         self.assertEqual(collections, expected)
 
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo.connection.MongoClient")
     def test_drop_db(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.conn.connect()
@@ -66,7 +77,7 @@ class MongoConnectionTest(unittest.TestCase):
         expected = []
         self.assertEqual(databases, expected)
 
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo.connection.MongoClient")
     def test_query_orm_api_without_model(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.conn.connect()
@@ -75,7 +86,7 @@ class MongoConnectionTest(unittest.TestCase):
         self.assertIsNone(query.collection)
         self.assertIsNone(query.model)
 
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo.connection.MongoClient")
     def test_query_pymongo_api(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.conn.connect()
@@ -84,7 +95,7 @@ class MongoConnectionTest(unittest.TestCase):
         self.assertIsInstance(query.collection, mongomock.Collection)
         self.assertIsNone(query.model)
 
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo.connection.MongoClient")
     def test_query_orm_api_with_model(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.conn.connect()
@@ -107,11 +118,13 @@ class MongoQueryTest(unittest.TestCase):
         )
 
     def test_query_initialization_with_collection_name_and_model_fails(self):
-        with self.assertRaisesRegex(ValueError, 'Only one of .+ can be defined'):
-            MongoQuery(model=Object, name='objects', database=self.database)
+        with self.assertRaisesRegex(ValueError, "Only one of .+ can be defined"):
+            MongoQuery(model=Object, name="objects", database=self.database)
 
     def test_query_initialization_without_collection_name_and_model_fails(self):
-        with self.assertRaisesRegex(CollectionNotFound, 'A valid model must be provided'):
+        with self.assertRaisesRegex(
+            CollectionNotFound, "A valid model must be provided"
+        ):
             q = MongoQuery(database=self.database)
             q.init_collection()
 
@@ -130,8 +143,8 @@ class MongoQueryTest(unittest.TestCase):
                 "tid": ["test"],
                 "corrected": False,
                 "stellar": False,
-                "sigmara": .1,
-                "sigmadec": .2,
+                "sigmara": 0.1,
+                "sigmadec": 0.2,
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -151,8 +164,8 @@ class MongoQueryTest(unittest.TestCase):
                 "tid": ["test"],
                 "corrected": False,
                 "stellar": False,
-                "sigmara": .1,
-                "sigmadec": .2,
+                "sigmara": 0.1,
+                "sigmadec": 0.2,
                 "firstmjd": "test",
                 "lastmjd": "test",
                 "meanra": 100.0,
@@ -172,8 +185,8 @@ class MongoQueryTest(unittest.TestCase):
             sid="sid",
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -194,8 +207,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -209,8 +222,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -219,7 +232,9 @@ class MongoQueryTest(unittest.TestCase):
         )
         self.obj_collection.insert_one(model1)
         self.obj_collection.insert_one(model2)
-        self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+        self.query.bulk_update(
+            [model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}]
+        )
         f = self.obj_collection.find_one({"oid": ["edited1"]})
         self.assertIsNotNone(f)
         self.assertEqual(f["_id"], "aid1")
@@ -235,8 +250,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -250,8 +265,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -276,8 +291,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -297,7 +312,9 @@ class MongoQueryTest(unittest.TestCase):
         self.obj_collection.insert_one(model1)
         self.obj_collection.insert_one(model2)
         with self.assertRaisesRegex(TypeError, "All instances"):
-            self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}])
+            self.query.bulk_update(
+                [model1, model2], [{"oid": ["edited1"]}, {"oid": ["edited2"]}]
+            )
 
     def test_bulk_update_fails_if_instances_and_attributes_do_not_match_size(self):
         model1 = Object(
@@ -307,8 +324,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -322,8 +339,8 @@ class MongoQueryTest(unittest.TestCase):
             tid=["tid"],
             corrected=False,
             stellar=False,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -332,7 +349,9 @@ class MongoQueryTest(unittest.TestCase):
         )
         self.obj_collection.insert_one(model1)
         self.obj_collection.insert_one(model2)
-        with self.assertRaisesRegex(ValueError, "Length of instances and attributes must match"):
+        with self.assertRaisesRegex(
+            ValueError, "Length of instances and attributes must match"
+        ):
             self.query.bulk_update([model1, model2], [{"oid": ["edited1"]}])
 
     def test_bulk_insert(self):
@@ -346,8 +365,8 @@ class MongoQueryTest(unittest.TestCase):
                     "tid": ["test"],
                     "corrected": False,
                     "stellar": False,
-                    "sigmara": .1,
-                    "sigmadec": .2,
+                    "sigmara": 0.1,
+                    "sigmadec": 0.2,
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -375,8 +394,8 @@ class MongoQueryTest(unittest.TestCase):
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,
-                    "sigmara": .1,
-                    "sigmadec": .2,
+                    "sigmara": 0.1,
+                    "sigmadec": 0.2,
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -409,8 +428,8 @@ class MongoQueryTest(unittest.TestCase):
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,
-                    "sigmara": .1,
-                    "sigmadec": .2,
+                    "sigmara": 0.1,
+                    "sigmadec": 0.2,
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
@@ -443,8 +462,8 @@ class MongoQueryTest(unittest.TestCase):
                     "tid": "test",
                     "corrected": False,
                     "stellar": False,
-                    "sigmara": .1,
-                    "sigmadec": .2,
+                    "sigmara": 0.1,
+                    "sigmadec": 0.2,
                     "firstmjd": "test",
                     "lastmjd": "test",
                     "meanra": 100.0,
