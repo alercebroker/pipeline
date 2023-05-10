@@ -113,7 +113,7 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         "collection": "detection",
         "type": "update",
         "criteria": {"_id": "a"},
-        "data": {k: v for k, v in ztf_alert().items() if k != "candid"},
+        "data": {k: v for k, v in ztf_alert().items() if k not in ["candid", "forced"]},
         "options": {"upsert": True, "set_on_insert": False},
     }
     step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data1)})
@@ -121,7 +121,7 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         "collection": "detection",
         "type": "update",
         "criteria": {"_id": "b"},
-        "data": {k: v for k, v in ztf_alert(has_stamp=False).items() if k != "candid"},
+        "data": {k: v for k, v in ztf_alert(has_stamp=False).items() if k not in ["candid", "forced"]},
         "options": {"upsert": True, "set_on_insert": True},
     }
     step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data2)})

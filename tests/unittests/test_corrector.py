@@ -171,6 +171,12 @@ def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value
     assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 200)
 
 
+def test_calculate_coordinates_ignores_forced_photometry():
+    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=1), atlas_alert(candid="c2", ra=200, forced=True, e_ra=1)]
+    corrector = Corrector(wdetections)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 100)
+
+
 def test_coordinates_dataframe_calculates_mean_for_each_aid():
     corrector = Corrector(detections)
     assert corrector.mean_coordinates().index == ["AID1"]
