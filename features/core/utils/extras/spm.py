@@ -5,7 +5,7 @@ from numba import njit
 
 
 @njit()
-def spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
+def _spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
     sigmoid_factor = 1.0 / 3.0
     t1 = t0 + gamma
 
@@ -26,14 +26,14 @@ def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Seri
     guess = np.clip([3 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds)
 
     try:
-        params, *_ = optimize.curve_fit(spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 20)
+        params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 20)
     except (ValueError, RuntimeError, optimize.OptimizeWarning):
         try:
-            params, *_ = optimize.curve_fit(spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 3)
+            params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 3)
         except (ValueError, RuntimeError, optimize.OptimizeWarning):
             params = np.full_like(guess, np.nan)
 
-    prediction = spm_v1(time, *params)
+    prediction = _spm_v1(time, *params)
     n_dof = prediction.size - params.size
     chi_dof = np.nan if n_dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / n_dof
     return pd.Series([*params, chi_dof], index=["A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi"])
@@ -50,14 +50,14 @@ def fit_spm_v1_alt(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.
     guess = np.clip([1.2 * fmax, time[imax] * 2 / 3, time[imax], 0.5, time[imax] / 2, 50], *bounds)
 
     try:
-        params, *_ = optimize.curve_fit(spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=1e-8)
+        params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=1e-8)
     except (ValueError, RuntimeError, optimize.OptimizeWarning):
         try:
-            params, *_ = optimize.curve_fit(spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=0.1)
+            params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=0.1)
         except (ValueError, RuntimeError, optimize.OptimizeWarning):
             params = np.full_like(guess, np.nan)
 
-    prediction = spm_v1(time, *params)
+    prediction = _spm_v1(time, *params)
     n_dof = prediction.size - params.size
     chi_dof = np.nan if n_dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / n_dof
     return pd.Series([*params, chi_dof], index=["A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi"])
