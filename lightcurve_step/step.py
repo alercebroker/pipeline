@@ -45,7 +45,7 @@ class LightcurveStep(GenericStep):
         query_non_detections = self.db_client.query(NonDetection)
         query_forced_photometries = self.db_client.query(ForcedPhotometry)
 
-        # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id"}}
+        # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id", "forced": False}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -94,11 +94,11 @@ class LightcurveStep(GenericStep):
         db_non_detections = query_non_detections.collection.find(
             {"aid": {"$in": list(messages["aids"])}}, {"_id": False}
         )
-        # TODO: Add ra, dec, e_ra, e_dec
+
         db_forced_photometries = query_forced_photometries.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
-                {"$addFields": {"candid": "$_id"}},
+                {"$addFields": {"candid": "$_id", "forced": False}},
                 {"$project": {"_id": False}},
             ]
         )
