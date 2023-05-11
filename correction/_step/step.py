@@ -92,11 +92,14 @@ class CorrectionStep(GenericStep):
 
     def produce_scribe(self, detections: list[dict]):
         for detection in detections:
-            detection = detection.copy()  # Prevent modification for next step
+            if not detection.pop("new"):
+                continue
+            detection = detection.copy()  # Prevent further modification for next step
+            is_forced = detection.pop("forced")
             candid = detection.pop("candid")
             set_on_insert = not detection.get("has_stamp", False)
             scribe_data = {
-                "collection": "detection",
+                "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
                 "criteria": {"_id": candid},
                 "data": detection,
