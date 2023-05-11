@@ -45,12 +45,12 @@ class MagstatsStep(GenericStep):
         return stats
 
     def produce_scribe(self, result: dict):
-        for aid, magstats in result.items():
+        for aid, stats in result.items():
             command = {
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": aid},
-                "data": magstats,
+                "data": stats | {"loc": {"type": "Point", "coordinates": [stats["meanra"] - 180, stats["meandec"]]}},
                 "options": {"upsert": True},
             }
             self.scribe_producer.produce({"payload": json.dumps(command)})
