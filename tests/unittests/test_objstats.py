@@ -71,9 +71,9 @@ def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_
 
 def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_aid():
     detections = [
-        {"aid": "AID1", "ra": 10, "e_ra": 2, "candid": "a"},
-        {"aid": "AID2", "ra": 20, "e_ra": 4, "candid": "c"},
-        {"aid": "AID1", "ra": 20, "e_ra": 4, "candid": "b"},
+        {"aid": "AID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
+        {"aid": "AID2", "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
+        {"aid": "AID1", "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -113,9 +113,9 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
 
 def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_aid():
     detections = [
-        {"aid": "AID1", "dec": 10, "e_dec": 2, "candid": "a"},
-        {"aid": "AID2", "dec": 20, "e_dec": 4, "candid": "c"},
-        {"aid": "AID1", "dec": 20, "e_dec": 4, "candid": "b"},
+        {"aid": "AID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
+        {"aid": "AID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
+        {"aid": "AID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -155,10 +155,10 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
 
 def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
     detections = [
-        {"aid": "AID1", "candid": "a", "extra": "A"},
-        {"aid": "AID2", "candid": "c", "extra": "A"},
-        {"aid": "AID1", "candid": "b", "extra": "A"},
-        {"aid": "AID1", "candid": "d", "extra": "B"},
+        {"aid": "AID1", "candid": "a", "extra": "A", "forced": False},
+        {"aid": "AID2", "candid": "c", "extra": "A", "forced": False},
+        {"aid": "AID1", "candid": "b", "extra": "A", "forced": False},
+        {"aid": "AID1", "candid": "d", "extra": "B", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator._calculate_unique("extra")
@@ -175,7 +175,7 @@ def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
 
 
 def test_calculate_ra_uses_calculate_coordinates():
-    detections = [{"candid": "a"}]
+    detections = [{"candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_coordinates = mock.Mock()
@@ -185,7 +185,7 @@ def test_calculate_ra_uses_calculate_coordinates():
 
 
 def test_calculate_dec_uses_calculate_coordinates():
-    detections = [{"candid": "a"}]
+    detections = [{"candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_coordinates = mock.Mock()
@@ -196,10 +196,10 @@ def test_calculate_dec_uses_calculate_coordinates():
 
 def test_calculate_ndet_gives_number_of_detections_per_aid():
     detections = [
-        {"aid": "AID1", "candid": "a"},
-        {"aid": "AID2", "candid": "c"},
-        {"aid": "AID1", "candid": "b"},
-        {"aid": "AID1", "candid": "d"},
+        {"aid": "AID1", "candid": "a", "forced": False},
+        {"aid": "AID2", "candid": "c", "forced": False},
+        {"aid": "AID1", "candid": "b", "forced": False},
+        {"aid": "AID1", "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_ndet()
@@ -213,10 +213,10 @@ def test_calculate_ndet_gives_number_of_detections_per_aid():
 
 def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
     detections = [
-        {"aid": "AID1", "mjd": 1, "candid": "a"},
-        {"aid": "AID2", "mjd": 2, "candid": "c"},
-        {"aid": "AID1", "mjd": 3, "candid": "b"},
-        {"aid": "AID1", "mjd": 2, "candid": "d"},
+        {"aid": "AID1", "mjd": 1, "candid": "a", "forced": False},
+        {"aid": "AID2", "mjd": 2, "candid": "c", "forced": False},
+        {"aid": "AID1", "mjd": 3, "candid": "b", "forced": False},
+        {"aid": "AID1", "mjd": 2, "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_firstmjd()
@@ -230,10 +230,10 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
 
 def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
     detections = [
-        {"aid": "AID1", "mjd": 1, "candid": "a"},
-        {"aid": "AID2", "mjd": 2, "candid": "c"},
-        {"aid": "AID1", "mjd": 3, "candid": "b"},
-        {"aid": "AID1", "mjd": 2, "candid": "d"},
+        {"aid": "AID1", "mjd": 1, "candid": "a", "forced": False},
+        {"aid": "AID2", "mjd": 2, "candid": "c", "forced": False},
+        {"aid": "AID1", "mjd": 3, "candid": "b", "forced": False},
+        {"aid": "AID1", "mjd": 2, "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_lastmjd()
@@ -246,7 +246,7 @@ def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
 
 
 def test_calculate_oid_uses_calculate_unique_with_oid():
-    detections = [{"candid": "a"}]
+    detections = [{"candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_unique = mock.Mock()
@@ -256,7 +256,7 @@ def test_calculate_oid_uses_calculate_unique_with_oid():
 
 
 def test_calculate_tid_uses_calculate_unique_with_tid():
-    detections = [{"candid": "a"}]
+    detections = [{"candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_unique = mock.Mock()
@@ -267,12 +267,12 @@ def test_calculate_tid_uses_calculate_unique_with_tid():
 
 def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
     detections = [
-        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a"},  # Should ignore
-        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b"},  # True for AID1
-        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c"},
-        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d"},  # Should ignore
-        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e"},  # False for AID3
-        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f"},
+        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a", "forced": False},  # Should ignore
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b", "forced": False},  # True for AID1
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c", "forced": False},
+        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d", "forced": False},  # Should ignore
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e", "forced": False},  # False for AID3
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     calculator._CORRECTED = ("SURVEY",)
@@ -291,12 +291,12 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
 
 def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
     detections = [
-        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a"},  # Should ignore
-        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b"},  # True for AID1
-        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c"},
-        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d"},  # Should ignore
-        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e"},  # False for AID3
-        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f"},
+        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a", "forced": False},  # Should ignore
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b", "forced": False},  # True for AID1
+        {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c", "forced": False},
+        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d", "forced": False},  # Should ignore
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e", "forced": False},  # False for AID3
+        {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     calculator._STELLAR = ("SURVEY",)
@@ -307,3 +307,10 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         result["stellar"],
         pd.Series([True, False], index=pd.Index(["AID1", "AID3"], name="aid"), name="stellar"),
     )
+
+
+def test_object_statistics_ignores_forced_photometry():
+    detections = [{"candid": "a", "check": "this", "forced": False}, {"candid": "b", "check": "that", "forced": True}]
+    calculator = ObjectStatistics(detections)
+
+    assert_series_equal(calculator._detections["check"], pd.Series(["this"], index=pd.Index(["a"], name="candid"), name="check"))

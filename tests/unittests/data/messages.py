@@ -17,6 +17,7 @@ for d in data:
         detection["aid"] = aid
         detection["sid"] = sid
         detection["fid"] = "g" if random.random() < 0.5 else "r"
+        detection["forced"] = False
     for non_detection in d["non_detections"]:
         non_detection["aid"] = aid
         non_detection["sid"] = sid
