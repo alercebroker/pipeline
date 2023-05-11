@@ -1,4 +1,8 @@
-numpy>=1.16.0
+pandas~=2.0.0
+numpy~=1.23.5
+methodtools~=0.4.7
+scipy~=1.10.1
+numba~=0.56.4
 matplotlib
 GPy
 apf-base==1.0.7
