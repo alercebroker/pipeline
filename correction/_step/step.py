@@ -96,11 +96,6 @@ class CorrectionStep(GenericStep):
             is_forced = detection.pop("forced")
             candid = detection.pop("candid")
             set_on_insert = not detection.get("has_stamp", False)
-            if is_forced:
-                detection.pop("ra")
-                detection.pop("dec")
-                detection.pop("e_ra")
-                detection.pop("e_dec")
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
