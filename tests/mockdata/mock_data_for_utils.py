@@ -4,13 +4,24 @@ import numpy
 
 messages_df = pd.DataFrame(
     [
-        {"aid": "aid1"},
-        {"aid": "aid2"},
-        {"aid": "aid3"},
-        {"aid": "aid4"},
-        {"aid": "aid5"},
+        "oid1",
+        "oid2",
+        "oid3",
+        "oid4",
+        "oid5",
+    ],
+    index=[
+        "aid1",
+        "aid2",
+        "aid3",
+        "aid4",
+        "aid5",
+    ],
+    columns=[
+        "oid"
     ]
 )
+messages_df.index.name = "aid"
 
 complete_classifications_df = pd.DataFrame(
     [
@@ -29,9 +40,9 @@ complete_classifications_df = pd.DataFrame(
         "aid5",
     ],
     columns=[
-       "class1",
-       "class2",
-       "class3",
+        "class1",
+        "class2",
+        "class3",
     ]
 )
 complete_classifications_df.index.name = "aid"
@@ -49,9 +60,9 @@ incomplete_classifications_df = pd.DataFrame(
         "aid5",
     ],
     columns=[
-       "class1",
-       "class2",
-       "class3",
+        "class1",
+        "class2",
+        "class3",
     ]
 )
 incomplete_classifications_df.index.name = "aid"
