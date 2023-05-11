@@ -104,7 +104,9 @@ class LightcurveStep(GenericStep):
             ]
         )
 
-        detections = pd.DataFrame(messages["detections"] + list(db_detections) + list(db_forced_photometries))
+        detections = pd.DataFrame(
+            messages["detections"] + list(db_detections) + list(db_forced_photometries)
+        )
         non_detections = pd.DataFrame(
             messages["non_detections"] + list(db_non_detections)
         )
