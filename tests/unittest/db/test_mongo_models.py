@@ -138,7 +138,6 @@ class MongoModelsTest(unittest.TestCase):
             mag_corr="mag_corr",
             e_mag_corr="e_mag_corr",
             e_mag_corr_ext="e_mag_corr_ext",
-            parent_candid="parent_candidate",
             dubious="dubious",
             isdiffpos="isdiffpos",
             corrected="corrected",
