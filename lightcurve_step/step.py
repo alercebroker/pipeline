@@ -79,7 +79,7 @@ class LightcurveStep(GenericStep):
                                 "else": None,
                             }
                         },
-                        "forced":  False,
+                        "forced": False,
                         "new": False,
                     }
                 },
