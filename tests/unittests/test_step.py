@@ -1,3 +1,4 @@
+import copy
 import json
 from copy import deepcopy
 from unittest import mock
@@ -9,15 +10,15 @@ from tests.utils import ztf_alert, atlas_alert, non_detection
 messages = [
     {
         "aid": "AID1",
-        "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False)],
+        "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, new=True, forced=True)],
         "non_detections": [],
     },
     {
         "aid": "AID2",
-        "detections": [ztf_alert(aid="AID2", candid="c"), ztf_alert(aid="AID2", candid="d", has_stamp=False)],
+        "detections": [ztf_alert(aid="AID2", candid="c", new=True), ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True)],
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
-    {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e")], "non_detections": []},
+    {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
 ]
 
 message4produce = [
@@ -25,7 +26,7 @@ message4produce = [
         "aid": "AID1",
         "meanra": 1,
         "meandec": 1,
-        "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False)],
+        "detections": [ztf_alert(candid="a"), ztf_alert(candid="b", has_stamp=False, forced=True)],
         "non_detections": [],
     },
     {
@@ -46,11 +47,11 @@ message4produce = [
 
 message4execute = {
     "detections": [
-        ztf_alert(aid="AID1", candid="a"),
-        ztf_alert(aid="AID1", candid="b", has_stamp=False),
-        ztf_alert(aid="AID2", candid="c"),
-        ztf_alert(aid="AID2", candid="d", has_stamp=False),
-        atlas_alert(aid="AID3", candid="e"),
+        ztf_alert(aid="AID1", candid="a", new=True),
+        ztf_alert(aid="AID1", candid="b", has_stamp=False, new=True, forced=True),
+        ztf_alert(aid="AID2", candid="c", new=True),
+        ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
+        atlas_alert(aid="AID3", candid="e", new=True),
     ],
     "non_detections": [
         non_detection(aid="AID2", mjd=1, oid="oid1", fid=1),
@@ -102,31 +103,32 @@ def test_execute_works_with_empty_non_detections(_):
 
 
 def test_post_execute_calls_scribe_producer_for_each_detection():
+    # To check the "new" flag is removed
+    message4execute_copy = copy.deepcopy(message4execute)
+    message4execute_copy["detections"] = [{k: v for k, v in det.items() if k != "new"} for det in message4execute_copy["detections"]]
+
     class MockCorrectionStep(CorrectionStep):
         def __init__(self):
             self.scribe_producer = mock.MagicMock()
 
     step = MockCorrectionStep()
-    output = step.post_execute(message4execute)
-    assert output == message4execute
-    data1 = {
-        "collection": "detection",
-        "type": "update",
-        "criteria": {"_id": "a"},
-        "data": {k: v for k, v in ztf_alert().items() if k not in ["candid", "forced"]},
-        "options": {"upsert": True, "set_on_insert": False},
-    }
-    step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data1)})
-    data2 = {
-        "collection": "detection",
-        "type": "update",
-        "criteria": {"_id": "b"},
-        "data": {k: v for k, v in ztf_alert(has_stamp=False).items() if k not in ["candid", "forced"]},
-        "options": {"upsert": True, "set_on_insert": True},
-    }
-    step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data2)})
+    output = step.post_execute(copy.deepcopy(message4execute))
+    assert output == message4execute_copy
+    for det in message4execute_copy["detections"]:
+        data = {
+            "collection": "detection" if not det["forced"] else "forced_photometry",
+            "type": "update",
+            "criteria": {"_id": det["candid"]},
+            "data": {k: v for k, v in det.items() if k not in ["candid", "forced"]},
+            "options": {"upsert": True, "set_on_insert": not det["has_stamp"]},
+        }
+        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)})
 
 
 def test_pre_produce_unpacks_detections_and_non_detections_by_aid():
-    formatted = CorrectionStep.pre_produce(message4execute)
+    # Input with the "new" flag is removed
+    message4execute_copy = copy.deepcopy(message4execute)
+    message4execute_copy["detections"] = [{k: v for k, v in det.items() if k != "new"} for det in message4execute_copy["detections"]]
+
+    formatted = CorrectionStep.pre_produce(message4execute_copy)
     assert formatted == message4produce
