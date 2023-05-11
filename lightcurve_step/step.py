@@ -31,7 +31,7 @@ class LightcurveStep(GenericStep):
         aids, detections, non_detections = set(), [], []
         for msg in messages:
             aids.add(msg["aid"])
-            detections.extend(msg["detections"])
+            detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
         return {
             "aids": aids,
@@ -45,7 +45,7 @@ class LightcurveStep(GenericStep):
         query_non_detections = self.db_client.query(NonDetection)
         query_forced_photometries = self.db_client.query(ForcedPhotometry)
 
-        # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id", "forced": False}}
+        # TODO: when using clean DB addFields step: {$addFields: {"candid": "$_id", "forced": False, "new": False}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -86,6 +86,7 @@ class LightcurveStep(GenericStep):
                                 "else": None,
                             }
                         },
+                        "new": False,
                     }
                 },
                 {"$project": {"_id": False}},
@@ -98,7 +99,7 @@ class LightcurveStep(GenericStep):
         db_forced_photometries = query_forced_photometries.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
-                {"$addFields": {"candid": "$_id", "forced": False}},
+                {"$addFields": {"candid": "$_id", "forced": True, "new": False}},
                 {"$project": {"_id": False}},
             ]
         )
@@ -108,8 +109,9 @@ class LightcurveStep(GenericStep):
             messages["non_detections"] + list(db_non_detections)
         )
 
+        # Try to keep those with stamp coming from the DB if there are clashes
         detections = detections.sort_values(
-            "has_stamp", ascending=False
+            ["has_stamp", "new"], ascending=[False, True]
         ).drop_duplicates("candid", keep="first")
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
 
