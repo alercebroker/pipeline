@@ -30,7 +30,7 @@ class DummyClassifier(AlerceModel):
         """
         return data_input
 
-    def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
         data_input = self.preprocess(data_input)
         probs = np.zeros((len(data_input), len(self.taxonomy)))
         response = pd.DataFrame(probs, columns=self.taxonomy)
