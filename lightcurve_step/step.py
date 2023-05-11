@@ -72,13 +72,6 @@ class LightcurveStep(GenericStep):
                                 "else": True,
                             }
                         },
-                        "forced": {
-                            "$cond": {
-                                "if": "$forced",
-                                "then": "$forced",
-                                "else": False,
-                            }
-                        },
                         "parent_candid": {
                             "$cond": {
                                 "if": "$parent_candid",
@@ -86,6 +79,7 @@ class LightcurveStep(GenericStep):
                                 "else": None,
                             }
                         },
+                        "forced":  False,
                         "new": False,
                     }
                 },
