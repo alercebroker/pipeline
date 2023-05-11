@@ -3,7 +3,7 @@ from unittest import mock
 from lightcurve_step.step import LightcurveStep
 
 
-def test_pre_execute_joins_detections_and_non_detections():
+def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_detections():
     messages = [
         {
             "aid": "aid1",
@@ -27,12 +27,12 @@ def test_pre_execute_joins_detections_and_non_detections():
     expected = {
         "aids": {"aid1", "aid2"},
         "detections": [
-            {"candid": "b", "has_stamp": True},
-            {"candid": "a", "has_stamp": False},
-            {"candid": "c", "has_stamp": True},
-            {"candid": "b", "has_stamp": False},
-            {"candid": "c", "has_stamp": True},
-            {"candid": "b", "has_stamp": False},
+            {"candid": "b", "has_stamp": True, "new": True},
+            {"candid": "a", "has_stamp": False, "new": True},
+            {"candid": "c", "has_stamp": True, "new": True},
+            {"candid": "b", "has_stamp": False, "new": True},
+            {"candid": "c", "has_stamp": True, "new": True},
+            {"candid": "b", "has_stamp": False, "new": True},
         ],
         "non_detections": [
             {"mjd": 1, "oid": "i", "fid": "g"},
@@ -44,23 +44,24 @@ def test_pre_execute_joins_detections_and_non_detections():
     assert output == expected
 
 
-def test_execute_removes_duplicates():
+def test_execute_removes_duplicates_keeping_ones_with_stamps():
     mock_client = mock.MagicMock()
     LightcurveStep.__init__ = lambda self: None
     step = LightcurveStep()
     step.db_client = mock_client
-    mock_client.query.return_value.collection.aggregate.return_value = []
+    mock_client.query.return_value.collection.aggregate.return_value = [
+        {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False},
+        {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False},
+    ]
     mock_client.query.return_value.collection.find.return_value = []
 
     message = {
         "aids": {"aid1", "aid2"},
         "detections": [
-            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
-            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "d", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
-            {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "a", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
+            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": True},
+            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g", "new": True},
+            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": True},
+            {"candid": "d", "has_stamp": False, "sid": "SURVEY", "fid": "g", "new": True},
         ],
         "non_detections": [
             {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
@@ -73,10 +74,10 @@ def test_execute_removes_duplicates():
 
     expected = {
         "detections": [
-            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g"},
-            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g"},
+            {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False},
+            {"candid": "c", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": True},
+            {"candid": "b", "has_stamp": False, "sid": "SURVEY", "fid": "g", "new": True},
+            {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False},
         ],
         "non_detections": [
             {"mjd": 1, "oid": "a", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
@@ -84,7 +85,8 @@ def test_execute_removes_duplicates():
         ]
     }
 
-    assert output == expected
+    assert sorted(output["detections"], key=lambda x: x["candid"]) == sorted(expected["detections"], key=lambda x: x["candid"])
+    assert sorted(output["non_detections"], key=lambda x: x["oid"]) == sorted(expected["non_detections"], key=lambda x: x["oid"])
 
 
 def test_pre_produce_restores_messages():

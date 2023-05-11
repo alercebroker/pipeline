@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
-from db_plugins.db.mongo.models import Detection, NonDetection
+from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
 
 # TODO: Unnecessary when using a clean DB
 FID_MAPPING = {
@@ -31,7 +31,7 @@ class LightcurveStep(GenericStep):
         aids, detections, non_detections = set(), [], []
         for msg in messages:
             aids.add(msg["aid"])
-            detections.extend(msg["detections"])
+            detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
         return {
             "aids": aids,
@@ -43,8 +43,9 @@ class LightcurveStep(GenericStep):
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
         query_detections = self.db_client.query(Detection)
         query_non_detections = self.db_client.query(NonDetection)
+        query_forced_photometries = self.db_client.query(ForcedPhotometry)
 
-        # TODO: when using clean DB addFields step should be: {$addFields: {"candid": "$_id"}}
+        # TODO: when using clean DB addFields step: {$addFields: {"candid": "$_id", "forced": False, "new": False}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -71,6 +72,15 @@ class LightcurveStep(GenericStep):
                                 "else": True,
                             }
                         },
+                        "parent_candid": {
+                            "$cond": {
+                                "if": "$parent_candid",
+                                "then": "$parent_candid",
+                                "else": None,
+                            }
+                        },
+                        "forced": False,
+                        "new": False,
                     }
                 },
                 {"$project": {"_id": False}},
@@ -80,13 +90,24 @@ class LightcurveStep(GenericStep):
             {"aid": {"$in": list(messages["aids"])}}, {"_id": False}
         )
 
-        detections = pd.DataFrame(messages["detections"] + list(db_detections))
+        db_forced_photometries = query_forced_photometries.collection.aggregate(
+            [
+                {"$match": {"aid": {"$in": list(messages["aids"])}}},
+                {"$addFields": {"candid": "$_id", "forced": True, "new": False}},
+                {"$project": {"_id": False}},
+            ]
+        )
+
+        detections = pd.DataFrame(
+            messages["detections"] + list(db_detections) + list(db_forced_photometries)
+        )
         non_detections = pd.DataFrame(
             messages["non_detections"] + list(db_non_detections)
         )
 
+        # Try to keep those with stamp coming from the DB if there are clashes
         detections = detections.sort_values(
-            "has_stamp", ascending=False
+            ["has_stamp", "new"], ascending=[False, True]
         ).drop_duplicates("candid", keep="first")
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
 
