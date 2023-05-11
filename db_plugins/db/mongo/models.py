@@ -130,6 +130,10 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     oid = Field()
     mjd = Field()
     fid = Field()
+    ra = Field()
+    e_ra = Field()
+    dec = Field()
+    e_dec = Field()
     mag = Field()  # magpsf in ZTF alerts
     e_mag = Field()  # sigmapsf in ZTF alerts
     mag_corr = Field()  # magpsf_corr in ZTF alerts
