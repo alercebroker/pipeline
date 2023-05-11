@@ -1,5 +1,3 @@
-from abc import ABC
-from alerce_base_model import ClassifierModel
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
 from alerce_classifiers.utils.dataframe import DataframeUtils
@@ -13,68 +11,93 @@ import torch
 import validators
 
 
-class TransformerLCHeaderClassifier(ClassifierModel, ABC):
-    model = None
+class TranformerLCHeaderClassifier(AlerceModel):
+    _taxonomy = [
+        "AGN",
+        "CART",
+        "Cepheid",
+        "Delta Scuti",
+        "Dwarf Novae",
+        "EB",
+        "ILOT",
+        "KN",
+        "M-dwarf Flare",
+        "PISN",
+        "RR Lyrae",
+        "SLSN",
+        "91bg",
+        "Ia",
+        "Iax",
+        "Ib/c",
+        "II",
+        "SN-like/Other",
+        "TDE",
+        "uLens",
+    ]
 
-    def __init__(self, path_to_model: str, path_to_quantiles: str):
-        self.local_files = f"/tmp/{type(self).__name__}"
+    def __init__(self, model_path: str, header_quantiles_path: str):
+        super().__init__(model_path)
+        self._local_files = f"/tmp/{type(self).__name__}"
         _file = os.path.dirname(__file__)
         sys.path.append(_file)
-        super().__init__(path_to_model)
+        self._load_quantiles(header_quantiles_path)
 
-        self._load_quantiles(path_to_quantiles)
-
-    def _load_model(self, path_to_model: str) -> None:
-        if validators.url(path_to_model):
-            path_to_model = self.download(path_to_model, self.local_files)
-        self.model = torch.load(path_to_model, map_location=torch.device("cpu")).eval()
-
-    def _load_quantiles(self, path_to_quantiles: str) -> None:
+    def _load_quantiles(self, path: str):
         self.quantiles = {}
-        existing_quantiles = ELAsTiCCMapper.feat_dict.items()
-        if validators.url(path_to_quantiles):
-            for key, val in existing_quantiles:
-                quantile_url = os.path.join(path_to_quantiles, f"norm_{val}.joblib")
-                self.download(quantile_url, self.local_files)
-            path_to_quantiles = self.local_files
+        existing_quantiles = ELAsTiCCMapper.feat_dict.values()
+        if validators.url(path):
+            for quantile in existing_quantiles:
+                quantile_url = os.path.join(path, f"norm_{quantile}.joblib")
+                self.download(quantile_url, self._local_files)
+            path = self._local_files
 
-        for key, val in ELAsTiCCMapper.feat_dict.items():
-            self.quantiles[val] = load(f"{path_to_quantiles}/norm_{val}.joblib")
+        self.quantiles = {
+            quantile: load(f"{path}/norm_{quantile}.joblib")
+            for quantile in existing_quantiles
+        }
 
-    @classmethod
-    def get_max_epochs(cls, pd_output: pd.DataFrame) -> int:
-        return pd_output.groupby(["aid", "BAND"]).count()["FLUXCAL"].max()
+    def _load_model(self, model_path: str) -> None:
+        if validators.url(model_path):
+            model_path = self.download(model_path, self._local_files)
+        self.model = torch.load(model_path, map_location=torch.device("cpu")).eval()
 
-    @classmethod
-    def pad_list(cls, lc: pd.DataFrame, nepochs: int, max_epochs: int) -> np.ndarray:
-        pad_num = max_epochs - nepochs
-        if pad_num >= 0:
-            return np.pad(lc, (0, pad_num), "constant", constant_values=(0, 0))
-        else:
-            return np.array(lc)[np.linspace(0, nepochs - 1, num=max_epochs).astype(int)]
+    def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
+        # Compute max epochs, maximum length per index and band
+        max_epochs = DataframeUtils.get_max_epochs(data_input)
+        # Group by aid and creating lightcurve
+        data_input = data_input.groupby(["aid"]).agg(lambda x: list(x))
+        # Declare features that are time series
+        list_time_feat = ["MJD", "FLUXCAL", "FLUXCALERR"]
+        band_key = "BAND"
+        # Transform features that are time series to matrices
+        for key_used in list_time_feat:
+            data_input[key_used] = data_input.apply(
+                lambda x: DataframeUtils.separate_by_filter(
+                    x[key_used], x[band_key], max_epochs
+                ),
+                axis=1,
+            )
+        # Normalizing time (subtract the first detection)
+        data_input["MJD"] = data_input.apply(
+            lambda x: DataframeUtils.normalizing_time(x["MJD"]), axis=1
+        )
 
-    @classmethod
-    def create_mask(cls, lc: pd.DataFrame) -> np.ndarray:
-        return (lc != 0).astype(float)
+        data_input["mask"] = data_input.apply(
+            lambda x: DataframeUtils.create_mask(x["FLUXCAL"]), axis=1
+        )
+        return data_input
+    
+    def preprocess_headers(self, headers: pd.DataFrame) -> np.ndarray:
+        all_feat = []
+        for col in headers.columns:
+            all_feat += [
+                self.quantiles[col].transform(headers[col].to_numpy().reshape(-1, 1))
+            ]
 
-    @classmethod
-    def normalizing_time(cls, time_fid: pd.Series) -> pd.Series:
-        mask_min = 9999999999 * (time_fid == 0).astype(float)
-        t_min = np.min(time_fid + mask_min)
-        return (time_fid - t_min) * (~(time_fid == 0)).astype(float)
-
-    def separate_by_filter(
-        self, feat_time_series: np.ndarray, bands: np.ndarray, max_epochs: int
-    ) -> np.ndarray:
-        timef_array = np.array(feat_time_series)
-        band_array = np.array(bands)
-        colors = {"u": "b", "g": "g", "r": "r", "i": "orange", "z": "brown", "Y": "k"}
-        final_array = []
-        for i, color in enumerate(colors.keys()):
-            aux = timef_array[band_array == color]
-            nepochs = len(aux)
-            final_array += [self.pad_list(aux, nepochs, max_epochs)]
-        return np.stack(final_array, 1)
+        response = np.concatenate(all_feat, 1)
+        batch, num_features = response.shape
+        response = response.reshape([batch, num_features, 1])
+        return response   
 
     @classmethod
     def to_tensor_dict(cls, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
@@ -91,44 +114,7 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
         }
         return these_kwargs
 
-    def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        # Compute max epochs, maximum length per index and band
-        max_epochs = self.get_max_epochs(data_input)
-        # Group by aid and creating lightcurve
-        data_input = data_input.groupby(["aid"]).agg(lambda x: list(x))
-        # Declare features that are time series
-        list_time_feat = ["MJD", "FLUXCAL", "FLUXCALERR"]
-        # Declare band name
-        band_key = "BAND"
-        # Transform features that are time series to matrixes
-        for key_used in list_time_feat:
-            data_input[key_used] = data_input.apply(
-                lambda x: self.separate_by_filter(x[key_used], x[band_key], max_epochs),
-                axis=1,
-            )
-        # Normalizing time (subtract the first detection)
-        data_input["MJD"] = data_input.apply(
-            lambda x: self.normalizing_time(x["MJD"]), axis=1
-        )
-        # Create mask
-        data_input["mask"] = data_input.apply(
-            lambda x: self.create_mask(x["FLUXCAL"]), axis=1
-        )
-        return data_input
-
-    def preprocess_headers(self, headers: pd.DataFrame) -> np.ndarray:
-        all_feat = []
-        for col in headers.columns:
-            all_feat += [
-                self.quantiles[col].transform(headers[col].to_numpy().reshape(-1, 1))
-            ]
-
-        response = np.concatenate(all_feat, 1)
-        batch, num_features = response.shape
-        response = response.reshape([batch, num_features, 1])
-        return response
-
-    def predict_proba(self, data_input: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
         light_curve = ELAsTiCCMapper.get_detections(data_input)
         headers = ELAsTiCCMapper.get_header(data_input, keep="first")
         headers.replace({np.nan: -9999}, inplace=True)
@@ -145,8 +131,9 @@ class TransformerLCHeaderClassifier(ClassifierModel, ABC):
             pred = self.model.predict_mix(**input_nn)
             pred = pred["MLPMix"].exp().detach().numpy()
             preds = pd.DataFrame(
-                pred, columns=self.taxonomy, index=preprocessed_light_curve.index
+                pred, columns=self._taxonomy, index=preprocessed_light_curve.index
             )
         del input_nn
         del preprocessed_light_curve
         return preds
+
