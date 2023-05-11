@@ -6,17 +6,21 @@ from astropy.coordinates import SkyCoord
 from scipy import stats
 
 from .handlers import DetectionsHandler, NonDetectionsHandler
-from .utils import decorators, specials
+from .utils import decorators, extras
 
 
 class BaseFeatureExtractor(abc.ABC):
     _PREFIX: str = "calculate_"
-    SURVEYS: str | tuple[str, ...] = ()
-    BANDS: str | tuple[str, ...] = ()
+    SURVEYS: tuple[str, ...] = ()
+    BANDS: tuple[str, ...] = ()
     BANDS_MAPPING: dict[str, Any] = {}
     EXTRA_COLUMNS: list[str] = []
     XMATCH_COLUMNS: list[str] = []
     USE_CORRECTED: bool = False
+    FLUX: bool = False
+    COMPUTE_KIM: bool = True
+    N_HARMONICS: int = 7
+    POWER_RATE_FACTORS: tuple[str, ...] = ("1/4", "1/3", "1/2", "2", "3", "4")
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 5
     FATS_FEATURES: tuple[str, ...] = (
@@ -99,18 +103,24 @@ class BaseFeatureExtractor(abc.ABC):
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
     def calculate_periods(self) -> pd.DataFrame:
-        df = self.detections.apply_grouped(specials.periods4apply, fids=self.BANDS, kim=True, power=True, harmonics=7)
+        df = self.detections.apply_grouped(
+            extras.periods,
+            fids=self.BANDS,
+            kim=self.COMPUTE_KIM,
+            n_harmonics=self.N_HARMONICS,
+            factors=self.POWER_RATE_FACTORS,
+        )
         return df.rename(columns=self.BANDS_MAPPING, level="fid")
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(specials.fats4apply, by_fid=True, features=self.FATS_FEATURES)
+        return self.detections.apply_grouped(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(specials.mhps4apply, by_fid=True, t1=100, t2=10)
+        return self.detections.apply_grouped(extras.mhps, by_fid=True, t1=100, t2=10, flux=self.FLUX)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()

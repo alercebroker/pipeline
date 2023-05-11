@@ -127,12 +127,12 @@ class BaseHandler(abc.ABC):
         return self._alerts["id"].unique()
 
     @methodtools.lru_cache()
-    def get_alerts(self, *, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()) -> pd.DataFrame:
+    def get_alerts(self, *, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()) -> pd.DataFrame:
         return self._alerts[self._surveys_mask(surveys) & self._bands_mask(bands)]
 
     @methodtools.lru_cache()
     def get_grouped(
-        self, *, by_fid: bool = False, surveys: str | tuple[str, ...] = (), bands: str | tuple[str, ...] = ()
+        self, *, by_fid: bool = False, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()
     ) -> DataFrameGroupBy:
         return self.get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
 
@@ -142,8 +142,8 @@ class BaseHandler(abc.ABC):
         *,
         which: Literal["first", "last"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
@@ -156,8 +156,8 @@ class BaseHandler(abc.ABC):
         *,
         which: Literal["first", "last"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self.get_alerts(surveys=surveys, bands=bands)
@@ -170,8 +170,8 @@ class BaseHandler(abc.ABC):
         func: str | Callable,
         *,
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
 
@@ -181,8 +181,8 @@ class BaseHandler(abc.ABC):
         column: str,
         *,
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands)
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
@@ -193,8 +193,8 @@ class BaseHandler(abc.ABC):
         func: Callable[[pd.DataFrame, ...], pd.Series],
         *,
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
         **kwargs,
     ) -> pd.DataFrame:
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)

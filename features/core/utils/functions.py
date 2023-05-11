@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def fill_index(df: pd.DataFrame | pd.Series, *, fill_value: Any = np.nan, **kwargs) -> pd.Series:
+def fill_index(df: pd.DataFrame | pd.Series, *, fill_value: Any = np.nan, dtype: type = float, **kwargs) -> pd.Series:
     if not kwargs:
         raise ValueError("At least one additional index must be included to fill in")
     if "id" in kwargs:
@@ -14,7 +14,7 @@ def fill_index(df: pd.DataFrame | pd.Series, *, fill_value: Any = np.nan, **kwar
         raise ValueError(f"DataFrame has MultiIndex with {df.index.names}. Requested filling: {check}")
     aids = df.index.get_level_values("id").unique()
     values = [aids] + [kwargs[k] for k in df.index.names if k != "id"]
-    return df.reindex(pd.MultiIndex.from_product(values, names=df.index.names), fill_value=fill_value)
+    return df.reindex(pd.MultiIndex.from_product(values, names=df.index.names), fill_value=fill_value).astype(dtype)
 
 
 def collapse_fid_columns(df: pd.DataFrame, exclude: set = None) -> pd.DataFrame:

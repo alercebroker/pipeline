@@ -2,7 +2,7 @@ import methodtools
 import numpy as np
 import pandas as pd
 
-from ..utils import fill_index
+from ..utils import functions
 from ._base import BaseHandler
 
 
@@ -35,17 +35,18 @@ class DetectionsHandler(BaseHandler):
 
     @methodtools.lru_cache()
     def get_colors(
-        self, func: str, bands: tuple[str, str], *, surveys: str | tuple[str, ...] = (), ml: bool = True
+        self, func: str, bands: tuple[str, str], *, surveys: tuple[str, ...] = (), ml: bool = True
     ) -> pd.Series:
         first, second = bands
 
         mags = self.get_aggregate(f"mag{'_ml' if ml else ''}", func, by_fid=True, surveys=surveys, bands=bands)
-        mags = fill_index(mags, fid=bands)
+        mags = functions.fill_index(mags, fid=bands)
         return mags.xs(first, level="fid") - mags.xs(second, level="fid")
 
     @methodtools.lru_cache()
-    def get_count_by_sign(self, sign: int, *, by_fid: bool = False, bands: str | tuple[str, ...] = ()) -> pd.Series:
-        counts = self.get_aggregate("isdiffpos", "value_count", by_fid=by_fid, bands=bands)
+    def get_count_by_sign(self, sign: int, *, by_fid: bool = False, bands: tuple[str, ...] = ()) -> pd.Series:
+        counts = self.get_aggregate("isdiffpos", "value_counts", by_fid=by_fid, bands=bands)
+        kwargs = dict(isdiffpos=(-1, 1))
         if by_fid and bands:
-            return fill_index(counts, fill_value=0, fid=bands, isdiffpos=(-1, 1)).xs(sign, level="isdiffpos")
-        return fill_index(counts, fill_value=0, isdiffpos=(-1, 1)).xs(sign, level="isdiffpos")
+            kwargs.update(fid=bands)
+        return functions.fill_index(counts, fill_value=0, dtype=int, **kwargs).xs(sign, level="isdiffpos")

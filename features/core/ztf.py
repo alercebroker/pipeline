@@ -1,7 +1,8 @@
 import pandas as pd
 
-from .utils import decorators, specials, fill_index
 from ._base import BaseFeatureExtractor
+from .utils import decorators, functions, extras
+from .utils.extras.spm import fit_spm_v1
 
 
 class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
@@ -32,7 +33,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.add_fid(0)
     def calculate_wise_colors(self) -> pd.DataFrame:
-        mags = fill_index(self.detections.get_aggregate("mag_ml", "mean", by_fid=True), fid=("g", "r"))
+        mags = functions.fill_index(self.detections.get_aggregate("mag_ml", "mean", by_fid=True), fid=("g", "r"))
         g, r = mags.xs("g", level="fid"), mags.xs("r", level="fid")
         return pd.DataFrame(
             {
@@ -56,7 +57,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_snm(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(specials.sn4apply_ztf, by_fid=True)
+        return self.detections.apply_grouped(extras.spm_ztf, by_fid=True, spm=fit_spm_v1)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
@@ -100,7 +101,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid(fill_value=0)
+    @decorators.fill_in_every_fid(fill_value=0, dtype=int)
     def calculate_counters(self):
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
@@ -117,4 +118,4 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
                 "n_non_det_before_fid": n_ndet_bef,
                 "n_non_det_after_fid": n_ndet_af,
             }
-        ).fillna(0, downcast="infer")
+        ).fillna(0)  # Number of non-detections get filled by nan if there are none

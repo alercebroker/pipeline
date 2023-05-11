@@ -45,8 +45,8 @@ class NonDetectionsHandler(BaseHandler):
         *,
         when: Literal["before", "after"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> DataFrameGroupBy:
         group = ["id", "fid"] if by_fid else "id"
         return self.get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
@@ -58,8 +58,8 @@ class NonDetectionsHandler(BaseHandler):
         which: Literal["first", "last"],
         when: Literal["before", "after"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
@@ -74,8 +74,8 @@ class NonDetectionsHandler(BaseHandler):
         which: Literal["first", "last"],
         when: Literal["before", "after"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         idx = self.get_which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self.get_alerts_when(when=when, surveys=surveys, bands=bands)
@@ -91,7 +91,7 @@ class NonDetectionsHandler(BaseHandler):
         *,
         when: Literal["before", "after"],
         by_fid: bool = False,
-        surveys: str | tuple[str, ...] = (),
-        bands: str | tuple[str, ...] = (),
+        surveys: tuple[str, ...] = (),
+        bands: tuple[str, ...] = (),
     ) -> pd.Series:
         return self.get_grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
