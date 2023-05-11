@@ -10,7 +10,39 @@ from pandas.core.groupby import DataFrameGroupBy
 
 
 class BaseHandler(abc.ABC):
-    """Alerts require at the very least fields `sid`, `fid`, `mjd` and an id columns (`aid` by default)"""
+    """Class for handling alerts, typically detections (including forced photometry) and non-detections.
+
+    Here we will use "alert" to refer to any type that is further implemented by subclasses.
+
+    This handler can receive a list of alerts from multiple objects simultaneously and will produce results for each
+    object (and band, depending on the options provided when calling the specific method).
+
+    This provides the general base methods for extracting statistics and applying functions to the alert
+    set considered. It requires a list of dictionaries as input, with the alert fields used by the ALeRCE pipeline.
+    These fields can be found in the input schema for the feature step. Alternatively, old ALeRCE pipeline alerts can
+    be used by initializing with the option `legacy` set to `True`.
+
+    Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the last can be `oid` if using `legacy`).
+    Usually, a subclass will define additional fields that are required, but missing one of the mentioned above
+    will result in an initialization error, unless the initialization methods are adapted as well. These always
+    required fields are defined the class attribute `_COLUMNS`.
+
+    It is possible to define one or more fields that define a unique alert with the class attribute `UNIQUE`.
+    Alert duplicates (based on these columns) will be eliminated, keeping only one of these alerts. It is also
+    possible to define one or more fields for indexing the alerts using the class attribute `INDEX`. Both unique
+    and index fields are optional and should be defined in subclasses.
+
+    At initialization, it is possible to select only alerts from certain surveys or bands. These can be passed as
+    strings or tuples of strings if more than one survey/band is selected.
+
+    To keep fields besides those defined in `_COLUMNS`, at initialization the option `extras` can be passed as a
+    list of strings. These are additional fields to be kept, if present directly in the alert, or taken from inside
+    the `extra_fields` field of the alert if present. If not found, these extra columns will be filled with NaNs.
+
+    Note that there is heavy use of caching, so externally modifying the alerts within the class can cause wrong
+    results to come up. For development, it is suggested that methods that can modify the internal data frame
+    make use of the method `clear_caches` to ensure that subsequent calls on the main methods give consistent results.
+    """
 
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
@@ -44,7 +76,13 @@ class BaseHandler(abc.ABC):
         self._clear(surveys=surveys, bands=bands, extras=extras)
 
     def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
-        """If using `by_fid` at least one band must exceed the minimum"""
+        """Remove all alerts from objects without a minimum number of detections.
+
+        Args:
+            minimum: Minimum number of detections
+            by_fid: If `True`, checks that at least one band has the specified minimum
+
+        """
         self.clear_caches()
         if by_fid:
             mask = self._alerts.groupby("id")["fid"].value_counts().unstack("fid").max(axis="columns") > minimum
@@ -53,10 +91,26 @@ class BaseHandler(abc.ABC):
         self._alerts = self._alerts[self._alerts["id"].isin(mask.index[mask])]
 
     def match(self, other: BaseHandler):
+        """Removes alerts from objects contained in the current handler that are not present in the other.
+
+        Only modifies the current handler, the other one will not be modified.
+
+        Args:
+            other: Handler used to check for objects
+        """
         self.clear_caches()
         self._alerts = self._alerts[self._alerts["id"].isin(other.get_objects())]
 
     def select(self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False):
+        """Removes all alerts outside the specified parameters for a given field.
+
+        Args:
+            column: Field to perform the check in
+            lt: Keep only alerts with values less than this
+            gt: Keep only alerts with values greater than this
+            le: Compare the value for `lt` using less than equal rather than strictly less
+            ge: Compare the value for `gt` using greater than equal rather than strictly greater
+        """
         self.clear_caches()
         mask = pd.Series(True, index=self._alerts.index, dtype=bool)
         series = self._alerts[column]
@@ -67,6 +121,7 @@ class BaseHandler(abc.ABC):
         self._alerts = self._alerts[mask]
 
     def clear_caches(self):
+        """Clears the cache of all methods that use caching"""
         for method in dir(self):
             try:
                 getattr(getattr(self, method), "cache_clear")()
@@ -75,6 +130,7 @@ class BaseHandler(abc.ABC):
 
     @abc.abstractmethod
     def _post_process_alerts(self, **kwargs):
+        """Adds extra fields to the alert and checks that no unknown kwargs are passed."""
         if "extras" in kwargs:
             self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
         if set(kwargs) - {"alerts", "surveys", "legacy"}:
@@ -82,11 +138,25 @@ class BaseHandler(abc.ABC):
             raise ValueError(f"Unrecognized kwargs: {', '.join(set(kwargs) - {'alerts', 'surveys', 'legacy'})}")
 
     def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...], extras: list[str]):
+        """Remove alerts with NA values in required fields and not in the required surveys and bands.
+
+        Args:
+            surveys: Surveys to keep
+            bands: Bands to keep
+            extras: Extra fields to keeps (not the same defined in `_COLUMNS`)
+        """
         self.__discard_invalid_alerts(extras)
         self.__discard_not_in_bands(bands)
         self.__discard_not_in_surveys(surveys)
 
     def __discard_invalid_alerts(self, extras: list[str]):
+        """Removes alerts with NA values in the required `_COLUMNS` and keep only those and `extras`.
+
+        Note that `extras` columns can have NA values.
+
+        Args:
+            extras: List of additional fields to keep for the alerts
+        """
         with pd.option_context("mode.use_inf_as_na", True):
             self._alerts = self._alerts[self._alerts[self._COLUMNS].notna().all(axis="columns")]
         index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
