@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import pandas as pd
 
+# make value a list of typed dictionaries
 @dataclass
 class Detections:
     _value: pd.DataFrame

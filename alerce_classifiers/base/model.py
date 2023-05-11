@@ -5,10 +5,14 @@ import pandas as pd
 import wget
 import validators
 
+from .mapper import Mapper
 
 class AlerceModel(ABC):
-    def __init__(self, model_path: str):
+    mapper: Mapper
+
+    def __init__(self, model_path: str, mapper: Mapper):
         self.model = None
+        self.mapper = mapper
         self._load_model(model_path)
 
     @abstractmethod

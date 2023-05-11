@@ -71,6 +71,7 @@ class TransformerLCFeaturesClassifier(AlerceModel):
         return response
 
     def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
+        # input -> mapper -> preprocess -> model
         light_curve = ELAsTiCCMapper.get_detections(data_input)
         headers = ELAsTiCCMapper.get_header(data_input, keep="first")
         headers.replace({np.nan: -9999}, inplace=True)
