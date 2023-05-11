@@ -29,6 +29,7 @@ DETECTION = {
         {"name": "has_stamp", "type": "boolean"},
         {"name": "forced", "type": "boolean"},
         {"name": "parent_candid", "type": ["long", "string", "null"]},
+        {"name": "new", "type": "boolean"},
         {
             "name": "extra_fields",
             "type": EXTRA_FIELDS,
