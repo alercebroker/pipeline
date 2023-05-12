@@ -39,6 +39,8 @@ class BaseFeatureExtractor(abc.ABC):
     Attributes:
         _PREFIX: Prefix of methods considered as feature extractors. It is recommended to keep it for all subclasses
         _AUTO_EXCLUDE: Feature extraction methods always excluded from calculations. Default empty
+        NAME: Name of feature extractor. Must be defined in subclass
+        VERSION: Version of feature extractor. Must be defined in subclass
         SURVEYS: Surveys to include in feature calculation. Empty tuple (default) means use all
         BANDS: Bands to include in feature calculation. Empty tuple (default) means use all
         BANDS_MAPPING: Conversion of bands to values used in features. Mostly for compatibility with old classifiers
@@ -56,6 +58,8 @@ class BaseFeatureExtractor(abc.ABC):
         FATS_FEATURES: FATS features to be computed. Check defaults in code
     """
 
+    NAME: str
+    VERSION: str
     _PREFIX: str = "calculate_"
     _AUTO_EXCLUDE: set[str] = set()
     SURVEYS: tuple[str, ...] = ()

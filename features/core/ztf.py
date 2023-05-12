@@ -32,6 +32,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         depend on values computed in the main period calculations.
     """
 
+    NAME = "ztf_lc_features"
+    VERSION = "1.0"
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
