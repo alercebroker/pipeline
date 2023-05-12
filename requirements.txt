@@ -3,11 +3,11 @@ numpy~=1.23.5
 methodtools~=0.4.7
 scipy~=1.10.1
 numba~=0.56.4
-matplotlib
-GPy
-apf-base==1.0.7
+matplotlib==3.7.1
+GPy==1.10.0
+apf-base==2.1.5
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
--e git+https://github.com/alercebroker/db-plugins.git@2.1.4#egg=db_plugins
+-e git+https://github.com/alercebroker/db-plugins.git@4.0.0#egg=db_plugins
 -e git+https://github.com/alercebroker/lc_classifier.git@1.2.1-P#egg=lc_classifier
 -e git+https://github.com/alercebroker/P4J.git#egg=P4J

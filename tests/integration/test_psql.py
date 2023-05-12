@@ -14,7 +14,29 @@ from features.step import (
 )
 from db_plugins.db.sql.models import Object
 import pytest
+from schema import SCHEMA
 
+CONSUMER_CONFIG = {
+    "CLASS": "unittest.mock.MagicMock",
+    "PARAMS": {
+        "bootstrap.servers": "server",
+        "group.id": "group_id",
+        "auto.offset.reset": "beginning",
+        "enable.partition.eof": False,
+    },
+    "TOPICS": ["topic"],
+    "consume.messages": "1",
+    "consume.timeout": "10",
+}
+
+PRODUCER_CONFIG = {
+    "CLASS": "unittest.mock.MagicMock",
+    "TOPIC": "test",
+    "PARAMS": {
+        "bootstrap.servers": "localhost:9092",
+    },
+    "SCHEMA": SCHEMA,
+}
 
 @pytest.mark.usefixtures("psql_service")
 class PSQLIntegrationTest(unittest.TestCase):
@@ -32,6 +54,8 @@ class PSQLIntegrationTest(unittest.TestCase):
         }
         self.step_config = {
             "DB_CONFIG": db_config,
+            "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "STEP_METADATA": {
                 "STEP_ID": "features",
                 "STEP_NAME": "features",
@@ -40,12 +64,10 @@ class PSQLIntegrationTest(unittest.TestCase):
                 "FEATURE_VERSION": "feature",
             },
         }
-        self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_custom_hierarchical_extractor = mock.create_autospec(FeaturesComputer)
         self.step = FeaturesComputer(
             config=self.step_config,
             features_computer=self.mock_custom_hierarchical_extractor,
-            producer=self.mock_producer,
             test_mode=True,
         )
 
