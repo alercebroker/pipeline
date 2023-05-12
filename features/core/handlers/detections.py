@@ -9,7 +9,7 @@ from ._base import BaseHandler
 class DetectionsHandler(BaseHandler):
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
-    _COLUMNS = BaseHandler._COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
+    COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
 
     def _post_process_alerts(self, **kwargs):
         if kwargs.pop("legacy", False):

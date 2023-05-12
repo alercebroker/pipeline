@@ -11,61 +11,53 @@ from pandas.core.groupby import DataFrameGroupBy
 
 
 class BaseHandler(abc.ABC):
-    """Class for handling alerts, typically detections (including forced photometry) and non-detections.
+    """Base class for handling alerts, typically detections (including forced photometry) and non-detections.
 
-    Here we will use "alert" to refer to any type that is further implemented by subclasses.
-
-    This handler can receive a list of alerts from multiple objects simultaneously and will produce results for each
-    object (and band, depending on the options provided when calling the specific method).
-
-    This provides the general base methods for extracting statistics and applying functions to the alert
-    set considered. It requires a list of dictionaries as input, with the alert fields used by the ALeRCE pipeline.
-    These fields can be found in the input schema for the feature step. Alternatively, old ALeRCE pipeline alerts can
-    be used by initializing with the option `legacy` set to `True`.
+    This provides the general base methods for extracting statistics and applying functions to the alerts
+    considered.
 
     Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the last can be `oid` if using `legacy`).
-    Usually, a subclass will define additional fields that are required, but missing one of the mentioned above
+    Usually, a subclass will define additional fields that are required, but missing one of the aforementioned fields
     will result in an initialization error, unless the initialization methods are adapted as well. These always
-    required fields are defined the class attribute `_COLUMNS`.
+    required fields are defined the class attribute `COLUMNS`. The field `aid` (or `oid`) will be renamed to `id`.
 
     It is possible to define one or more fields that define a unique alert with the class attribute `UNIQUE`.
     Alert duplicates (based on these columns) will be eliminated, keeping only one of these alerts. It is also
     possible to define one or more fields for indexing the alerts using the class attribute `INDEX`. Both unique
     and index fields are optional and should be defined in subclasses.
 
-    At initialization, it is possible to select only alerts from certain surveys or bands. These can be passed as
-    strings or tuples of strings if more than one survey/band is selected.
-
-    To keep fields besides those defined in `_COLUMNS`, at initialization the option `extras` can be passed as a
-    list of strings. These are additional fields to be kept, if present directly in the alert, or taken from inside
-    the `extra_fields` field of the alert if present. If not found, these extra columns will be filled with NaNs.
-
     Note that there is heavy use of caching, so externally modifying the alerts within the class can cause wrong
     results to come up. For development, it is suggested that methods that can modify the internal data frame
     make use of the method `clear_caches` to ensure that subsequent calls on the main methods give consistent results.
-
-    TLDR:
-
-    Class attributes:
-        INDEX: Name of field(s) used to index the alerts (empty list to use an integer range index)
-        UNIQUE: Name of field(s) used to remove duplicate alerts (empty list to keep all)
-        _COLUMNS: Fields that must be present in the alert and be defined (i.e., not NaN or NA)
-
-    Args:
-        alerts: list of alerts, with each alert as a dictionary containing fields expected for ALeRCE alerts
-
-    Keyword Args:
-        surveys: Survey(s) to keep in the alert list. Defined by field `sid`. An empty tuple will keep all
-        bands: Band(s) to keep in alert list. Defined by `fid`. An empty tuple will keep all
-        legacy: Whether to use legacy format for alerts following old PSQL style database from ALeRCE
-        extras: Additional fields to keep (these fields can have undefined values). Can be inside `extra_fields`
     """
 
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
-    _COLUMNS = ["id", "sid", "fid", "mjd"]
+    COLUMNS = ["id", "sid", "fid", "mjd"]
 
     def __init__(self, alerts: list[dict], *, surveys: str | tuple[str] = (), bands: str | tuple[str] = (), **kwargs):
+        """Initialize alerts.
+
+        Here we will use "alert" to refer to either detections or non-detections, depending on specific implementation.
+
+        This handler can receive a list of alerts from multiple objects simultaneously and will produce results for
+        each object (and band, depending on the options provided when calling the specific method). Fields defined in
+        `COLUMNS` must be present and have to contain defined values (i.e., no NaN, NA or `None`).
+
+        To keep fields besides those defined in `COLUMNS`, at initialization the option `extras` can be passed as a
+        list of strings. These are additional fields to be kept, if present directly in the alert, or taken from inside
+        the `extra_fields` field of the alert if present. If not found, these extra columns will be filled with NaNs.
+
+        Args:
+            alerts: list of alerts, with each alert as a dictionary containing fields expected for ALeRCE alerts
+
+        Keyword Args:
+            surveys: Survey(s) to keep in the alert list. Defined by field `sid`. An empty tuple will keep all
+            bands: Band(s) to keep in alert list. Defined by `fid`. An empty tuple will keep all
+            legacy: Whether to use legacy format for alerts following old PSQL style database from ALeRCE
+            extras: Additional fields to keep (these fields can have undefined values). Can be inside `extra_fields`
+        """
+
         legacy = kwargs.pop("legacy", False)
         try:
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
@@ -76,7 +68,7 @@ class BaseHandler(abc.ABC):
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
 
-            columns = set(self._COLUMNS) | index | unique
+            columns = set(self.COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
 
         if legacy:
@@ -166,16 +158,16 @@ class BaseHandler(abc.ABC):
         Args:
             surveys: Surveys to keep. Empty tuple to keep all
             bands: Bands to keep. Empty tuple to keep all
-            extras: Extra fields to keeps (not the same defined in `_COLUMNS`)
+            extras: Extra fields to keep
         """
         self.__discard_invalid_alerts(extras)
         self.__discard_not_in_bands(bands)
         self.__discard_not_in_surveys(surveys)
 
     def __discard_invalid_alerts(self, extras: list[str]):
-        """Removes alerts with undefined values in the required `_COLUMNS`.
+        """Removes alerts with undefined values in the required fields.
 
-        Will remove all fields not defined in `_COLUMNS` unless they are listed in `extras`.
+        Will remove all fields not defined in the required fields unless they are listed in `extras`.
 
         Note that fields in `extras` can have undefined values.
 
@@ -183,9 +175,9 @@ class BaseHandler(abc.ABC):
             extras: List of additional fields to keep for the alerts
         """
         with pd.option_context("mode.use_inf_as_na", True):
-            self._alerts = self._alerts[self._alerts[self._COLUMNS].notna().all(axis="columns")]
+            self._alerts = self._alerts[self._alerts[self.COLUMNS].notna().all(axis="columns")]
         index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
-        self._alerts = self._alerts[[c for c in self._COLUMNS + extras if c not in index]]
+        self._alerts = self._alerts[[c for c in set(self.COLUMNS + extras) if c not in index]]
 
     def __discard_not_in_surveys(self, surveys: str | tuple[str]):
         """Keep only alerts in given survey(s). Based on field `sid`.
@@ -215,7 +207,7 @@ class BaseHandler(abc.ABC):
             alerts: Original alerts
             extras: List with additional fields
         """
-        extras = [_ for _ in extras if _ not in self._alerts.columns]
+        extras = [extra for extra in extras if extra not in self.COLUMNS and extra not in self._alerts.columns]
         if extras and self._alerts.size:
             records = {alert[self.INDEX]: alert["extra_fields"] for alert in alerts}
             df = pd.DataFrame.from_dict(records, orient="index", columns=extras)

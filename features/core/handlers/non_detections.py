@@ -10,7 +10,7 @@ from ._base import BaseHandler
 
 class NonDetectionsHandler(BaseHandler):
     UNIQUE = ["id", "fid", "mjd"]
-    _COLUMNS = BaseHandler._COLUMNS + ["diffmaglim"]
+    COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 
     def _post_process_alerts(self, **kwargs):
         self.__first_mjd: pd.Series = kwargs.pop("first_mjd")
