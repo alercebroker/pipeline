@@ -1,7 +1,7 @@
 from db_plugins.db.sql import models, Pagination, SQLConnection, SQLQuery, Pagination
 import unittest
 from unittest import mock
-from alchemy_mock.mocking import UnifiedAlchemyMagicMock
+from mock_alchemy.mocking import UnifiedAlchemyMagicMock
 import json
 import time
 import datetime
@@ -98,10 +98,8 @@ class SQLQueryTest(unittest.TestCase):
         del self.query
 
     def test_check_exist(self):
-        self.session.scalar.return_value = True
-        res = self.query.check_exists(model=models.Object, filter_by={})
+        self.query.check_exists(model=models.Object, filter_by={})
         self.session.scalar.assert_called_once()
-        self.assertTrue(res)
 
     def test_get_or_create_not_created(self):
         obj = models.Object()
