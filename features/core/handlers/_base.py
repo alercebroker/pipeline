@@ -139,10 +139,8 @@ class BaseHandler(abc.ABC):
 
     @abc.abstractmethod
     def _post_process_alerts(self, **kwargs):
-        """Adds extra fields to the alert and checks that no unknown kwargs are passed.
-
-        Subclass implementations should call this with `super` at the end of their own implementation.
-        """
+        """Adds extra fields to the alert and checks that no unknown kwargs are passed. Should be called with
+        `super` in subclass implementations."""
         if "extras" in kwargs:
             self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
         if set(kwargs) - {"alerts", "surveys", "legacy"}:

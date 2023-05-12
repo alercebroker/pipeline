@@ -10,7 +10,54 @@ from .utils import decorators, extras
 
 
 class BaseFeatureExtractor(abc.ABC):
+    r"""Base class for feature extractors.
+
+    There are special reserved methods that start with `_PREFIX`. Do not add methods that begin with `_PREFIX`
+    unless they are intended to compute features. Instances normally use the method `generate_features` to compute
+    all features. Note that it is possible to exclude specific features by passing them as the `exclude` argument.
+    The elements passed to exclude are the name of the feature producer (i.e., the name of the method, with or
+    without `_PREFIX`).
+
+    The extractors included (and computed) here by default are:
+
+    * `galactic_coordinates`: Galactic latitude and longitude of each object.
+    * `periods`: Period related features (multi-band period, per band period, etc.). Check the notes.
+    * `fats`: Computes all FATS features defined in `FATS_FEATURES`.
+    * `mhps`: Mexican hat power spectrum for each object, per band.
+    * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
+
+    Most settings are defined as class attributes. Additional notes:
+
+    * `EXTRA_COLUMNS` should only include columns not included by default in the class `DetectionsHandler`.
+    * If `N_HARMONICS` is 0, it will skip calculation of harmonic magnitudes and phases altogether.
+    * If `POWER_RATE_FACTORS` is empty, it will skip the power rate calculations.
+
+    Notes:
+        If `periods` is excluded, `COMPUTE_KIM`, `N_HARMONICS` and `POWER_RATE_FACTORS` will all be ignored, as they
+        depend on values computed in the main period calculations.
+
+    Attributes:
+        _PREFIX: Prefix of methods considered as feature extractors. It is recommended to keep it for all subclasses
+        _AUTO_EXCLUDE: Feature extraction methods always excluded from calculations. Default empty
+        SURVEYS: Surveys to include in feature calculation. Empty tuple (default) means use all
+        BANDS: Bands to include in feature calculation. Empty tuple (default) means use all
+        BANDS_MAPPING: Conversion of bands to values used in features. Mostly for compatibility with old classifiers
+        EXTRA_COLUMNS: Additional fields used for detections. Default empty
+        XMATCH_COLUMNS: Fields needed from cross-match (if included). Default empty
+        USE_CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
+        FLUX: Flag to indicate that "magnitude" fields are actually flux (field names do not change). Default `False`
+        COMPUTE_KIM: Compute cum-sum and eta from phase folded light-curve (Kim et al., 2011, 2014). Default `True`
+        N_HARMONICS: Number of harmonics to compute for period. Default 7
+        POWER_RATE_FACTORS: Power-rate at multiples of the period. Default 1/4, 1/3, 1/2, 2, 3 and 4
+        MIN_DETECTIONS: Minimum number of overall detections per object to compute features. Default 0
+        MIN_DETECTIONS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
+        T1: Parameter `t1` for MHPS calculations. Default 100
+        T2: Parameter `t2` for MHPS calculations. Default 10
+        FATS_FEATURES: FATS features to be computed. Check defaults in code
+    """
+
     _PREFIX: str = "calculate_"
+    _AUTO_EXCLUDE: set[str] = set()
     SURVEYS: tuple[str, ...] = ()
     BANDS: tuple[str, ...] = ()
     BANDS_MAPPING: dict[str, Any] = {}
@@ -20,9 +67,12 @@ class BaseFeatureExtractor(abc.ABC):
     FLUX: bool = False
     COMPUTE_KIM: bool = True
     N_HARMONICS: int = 7
+    # Elements can only be composed of numbers and "/"
     POWER_RATE_FACTORS: tuple[str, ...] = ("1/4", "1/3", "1/2", "2", "3", "4")
     MIN_DETECTIONS: int = 0
     MIN_DETECTIONS_IN_FID: int = 5
+    T1: float = 100
+    T2: float = 10
     FATS_FEATURES: tuple[str, ...] = (
         "Amplitude",
         "AndersonDarling",
@@ -60,6 +110,17 @@ class BaseFeatureExtractor(abc.ABC):
         *,
         legacy: bool = False
     ):
+        """Initialize feature extractor.
+
+        Detections, non-detections and cross-matches can come from multiple objects. Features are computed per object.
+
+        Args:
+            detections: All detections used for feature computing
+            non_detections: All non-detections. Non-detections from objects not present in detections will be removed
+            xmatches: Object cross-matches. It will be matched to detections based on `aid` or `oid` (see `legacy`)
+            legacy: Use legacy alert format. This refers to the PSQL style alert models of ALeRCE
+        """
+
         common = dict(surveys=self.SURVEYS, bands=self.BANDS, legacy=legacy)
 
         if isinstance(detections, pd.DataFrame):
@@ -80,10 +141,13 @@ class BaseFeatureExtractor(abc.ABC):
 
     @abc.abstractmethod
     def _discard_detections(self):
+        """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
+        implementations."""
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
     def _create_xmatches(self, xmatches: list[dict], legacy: bool) -> pd.DataFrame:
+        """Ensures cross-matches contain `aid` in detections and selects required columns."""
         id_col = "oid" if legacy else "aid"
         xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=[id_col] + self.XMATCH_COLUMNS)
         xmatches = xmatches.rename(columns={id_col: "id"})
@@ -91,6 +155,7 @@ class BaseFeatureExtractor(abc.ABC):
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 
     def clear_caches(self):
+        """Clears the cache from detections and non-detections."""
         self.detections.clear_caches()
         self.non_detections.clear_caches()
 
@@ -120,7 +185,7 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.mhps, by_fid=True, t1=100, t2=10, flux=self.FLUX)
+        return self.detections.apply_grouped(extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
@@ -129,6 +194,7 @@ class BaseFeatureExtractor(abc.ABC):
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default
+        exclude |= self._AUTO_EXCLUDE  # Add all permanently excluded
         # Add prefix to exclude, unless already provided
         exclude = {name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}" for name in exclude}
 
