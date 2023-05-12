@@ -193,6 +193,14 @@ class BaseFeatureExtractor(abc.ABC):
         return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
+        """Create a data frame with all required features.
+
+        Args:
+            exclude: Extractor(s) to exclude
+
+        Returns:
+            pd.DataFrame: Feature indexed by object with two-level columns (feature name and band)
+        """
         exclude = exclude or set()  # Empty default
         exclude |= self._AUTO_EXCLUDE  # Add all permanently excluded
         # Add prefix to exclude, unless already provided

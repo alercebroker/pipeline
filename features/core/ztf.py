@@ -6,17 +6,44 @@ from .utils.extras.spm import fit_spm_v1
 
 
 class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
+    """Extractor for ZTF light-curve classifier.
+
+    Uses only alerts from ZTF in the bands g and r. For historical reasons, bands are mapped (g to 1 and r to 2).
+
+    Uses corrected magnitudes when possible. Otherwise, defaults are the same as the base extractor.
+
+    The extractors included (and computed) here by default are:
+
+    * `galactic_coordinates`: Galactic latitude and longitude of each object.
+    * `periods`: Period related features (multi-band period, per band period, etc.). Check notes.
+    * `fats`: Computes all FATS features defined in `FATS_FEATURES`.
+    * `mhps`: Mexican hat power spectrum for each object, per band.
+    * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
+    * `colors`: Compute maximum and mean g-r colors for each object (both corrected, if available, and uncorrected)
+    * `wise_colors`: W1-W2, W2-W3, g-W2, g-W3, r-W2, r-W3 mean colors for each object (if cross-match is available)
+    * `real_bogus`: Median real-bogus value for each object
+    * `sg_score`: Median start-galaxy score for each object
+    * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v1.
+    * `sn_stats`: Magnitude and date statistics for detections and non-detections
+    * `counters`: Number of detections (positive and negative) and non-detections (before and after first detection)
+
+    Notes:
+        If `periods` is excluded, `COMPUTE_KIM`, `N_HARMONICS` and `POWER_RATE_FACTORS` will all be ignored, as they
+        depend on values computed in the main period calculations.
+    """
+
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
     EXTRA_COLUMNS = ["rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     USE_CORRECTED = True
-    MIN_DETECTIONS_IN_FID = 5
     MIN_REAL_BOGUS = 0.55
     MAX_SIGMA_MAGNITUDE = 1.0
 
     def _discard_detections(self):
+        """In addition to base checks, keeps only alerts with a minimum real-bogus value and a maximum
+        error in magnitude"""
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS, ge=True)
         self.detections.select("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
         super()._discard_detections()
@@ -56,7 +83,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
-    def calculate_snm(self) -> pd.DataFrame:
+    def calculate_spm(self) -> pd.DataFrame:
         return self.detections.apply_grouped(extras.spm_ztf, by_fid=True, spm=fit_spm_v1)
 
     @decorators.columns_per_fid
