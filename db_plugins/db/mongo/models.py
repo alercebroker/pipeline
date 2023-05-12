@@ -40,7 +40,7 @@ class Object(BaseModel):
     )  # ALeRCE object ID (unique ID in database)
     oid = Field()  # List with all OIDs
     tid = Field()  # List with all telescopes the object has been observed with
-    sid = Field()  # List with all surveys which their telescopes observed this object
+    sid = Field()  # List with all surveys which their telescopes observed this obj
     corrected = Field()
     stellar = Field()
     firstmjd = Field()
