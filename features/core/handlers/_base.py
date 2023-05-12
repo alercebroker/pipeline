@@ -5,6 +5,7 @@ import functools
 from typing import Callable, Literal
 
 import methodtools
+import numpy as np
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
 
@@ -42,6 +43,22 @@ class BaseHandler(abc.ABC):
     Note that there is heavy use of caching, so externally modifying the alerts within the class can cause wrong
     results to come up. For development, it is suggested that methods that can modify the internal data frame
     make use of the method `clear_caches` to ensure that subsequent calls on the main methods give consistent results.
+
+    TLDR:
+
+    Class attributes:
+        INDEX: Name of field(s) used to index the alerts (empty list to use an integer range index)
+        UNIQUE: Name of field(s) used to remove duplicate alerts (empty list to keep all)
+        _COLUMNS: Fields that must be present in the alert and be defined (i.e., not NaN or NA)
+
+    Args:
+        alerts: list of alerts, with each alert as a dictionary containing fields expected for ALeRCE alerts
+
+    Keyword Args:
+        surveys: Survey(s) to keep in the alert list. Defined by field `sid`. An empty tuple will keep all
+        bands: Band(s) to keep in alert list. Defined by `fid`. An empty tuple will keep all
+        legacy: Whether to use legacy format for alerts following old PSQL style database from ALeRCE
+        extras: Additional fields to keep (these fields can have undefined values). Can be inside `extra_fields`
     """
 
     INDEX: str | list[str] = []
@@ -130,7 +147,10 @@ class BaseHandler(abc.ABC):
 
     @abc.abstractmethod
     def _post_process_alerts(self, **kwargs):
-        """Adds extra fields to the alert and checks that no unknown kwargs are passed."""
+        """Adds extra fields to the alert and checks that no unknown kwargs are passed.
+
+        Subclass implementations should call this with `super` at the end of their own implementation.
+        """
         if "extras" in kwargs:
             self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
         if set(kwargs) - {"alerts", "surveys", "legacy"}:
@@ -138,11 +158,14 @@ class BaseHandler(abc.ABC):
             raise ValueError(f"Unrecognized kwargs: {', '.join(set(kwargs) - {'alerts', 'surveys', 'legacy'})}")
 
     def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...], extras: list[str]):
-        """Remove alerts with NA values in required fields and not in the required surveys and bands.
+        """Keep only alerts in the required surveys and bands and with defined values in required columns.
+
+        The extra fields can have undefined values. These are searched for at the main alert level and inside
+        the field `extra_fields`.
 
         Args:
-            surveys: Surveys to keep
-            bands: Bands to keep
+            surveys: Surveys to keep. Empty tuple to keep all
+            bands: Bands to keep. Empty tuple to keep all
             extras: Extra fields to keeps (not the same defined in `_COLUMNS`)
         """
         self.__discard_invalid_alerts(extras)
@@ -150,9 +173,11 @@ class BaseHandler(abc.ABC):
         self.__discard_not_in_surveys(surveys)
 
     def __discard_invalid_alerts(self, extras: list[str]):
-        """Removes alerts with NA values in the required `_COLUMNS` and keep only those and `extras`.
+        """Removes alerts with undefined values in the required `_COLUMNS`.
 
-        Note that `extras` columns can have NA values.
+        Will remove all fields not defined in `_COLUMNS` unless they are listed in `extras`.
+
+        Note that fields in `extras` can have undefined values.
 
         Args:
             extras: List of additional fields to keep for the alerts
@@ -163,12 +188,33 @@ class BaseHandler(abc.ABC):
         self._alerts = self._alerts[[c for c in self._COLUMNS + extras if c not in index]]
 
     def __discard_not_in_surveys(self, surveys: str | tuple[str]):
+        """Keep only alerts in given survey(s). Based on field `sid`.
+
+        Args:
+            surveys: Surveys to select. Empty tuple will select all
+        """
         self._alerts = self._alerts[self._surveys_mask(surveys)]
 
     def __discard_not_in_bands(self, bands: str | tuple[str]):
+        """Keep only alerts in given band(s). Based on field `fid`.
+
+        Args:
+            bands: Bands to select. Empty tuple will select all
+        """
         self._alerts = self._alerts[self._bands_mask(bands)]
 
     def __add_extra_fields(self, alerts: list[dict], extras: list[str]):
+        """Include additional fields in the data kept from the alerts.
+
+        These fields can be either at the main alert level or inside the field `extra_fields`. Not all of them
+        have to be at the same level, though. For instance, if `extras` is `["field1", "field2"]` then both can be
+        directly within the alerts, inside `extra_fields` or one can be in the former, while the other is in
+        the latter.
+
+        Args:
+            alerts: Original alerts
+            extras: List with additional fields
+        """
         extras = [_ for _ in extras if _ not in self._alerts.columns]
         if extras and self._alerts.size:
             records = {alert[self.INDEX]: alert["extra_fields"] for alert in alerts}
@@ -179,31 +225,80 @@ class BaseHandler(abc.ABC):
             self._alerts[[extras]] = None
 
     def __mask(self, column: str, values: tuple[str]):
+        """Creates a mask for alerts over a string field, based on case-insensitive matching with the given values.
+
+        Args:
+            column: Field to make the match(es) against
+            values: Values to compare when creating the mask. An empty tuple creates a mask including all alerts
+
+        Returns:
+            pd.Series: Boolean mask based on the alerts and the matching of the required columns
+        """
         if not values:
             return pd.Series(True, index=self._alerts.index)
         masks = (self._alerts[column].str.lower() == value.lower() for value in values)
         return functools.reduce(lambda l, r: l.__or__(r), masks)
 
     def _surveys_mask(self, surveys: str | tuple[str, ...] = ()) -> pd.Series:
+        """Generate a mask for alerts matching the required surveys (based on field `sid`).
+
+        Args:
+            surveys: Surveys to include in the mask. An empty tuple will keep all alerts
+
+        Returns:
+            pd.Series: Boolean mask with all required surveys
+        """
         surveys = (surveys,) if isinstance(surveys, str) else surveys
         return self.__mask("sid", surveys)
 
     def _bands_mask(self, bands: str | tuple[str, ...] = ()) -> pd.Series:
+        """Generate a mask for alerts matching the required bands (based on field `fid`).
+
+        Args:
+            bands: Bands to include in the mask. An empty tuple will keep all alerts
+
+        Returns:
+            pd.Series: Boolean mask with all required bands
+        """
         bands = (bands,) if isinstance(bands, str) else bands
         return self.__mask("fid", bands)
 
     @methodtools.lru_cache()
-    def get_objects(self):
+    def get_objects(self) -> np.ndarray:
+        """Get array with objects represented among the alerts.
+
+        Returns:
+            np.ndarray: Unique objects within alerts
+        """
         return self._alerts["id"].unique()
 
     @methodtools.lru_cache()
     def get_alerts(self, *, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()) -> pd.DataFrame:
+        """Get a selection of the alerts.
+
+        Args:
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.DataFrame: Selected alerts (only columns defined by the class/at initialization are included)
+        """
         return self._alerts[self._surveys_mask(surveys) & self._bands_mask(bands)]
 
     @methodtools.lru_cache()
     def get_grouped(
         self, *, by_fid: bool = False, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()
     ) -> DataFrameGroupBy:
+        """Get selected detections grouped by object (and, optionally, band).
+
+        Args:
+            by_fid: Whether to also group by band
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            DataFrameGroupBy: Grouped detections
+        """
         return self.get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
 
     @methodtools.lru_cache()
@@ -215,6 +310,17 @@ class BaseHandler(abc.ABC):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get first or last alert index for every object.
+
+        Args:
+            which: Either `first` or `last`
+            by_fid: Whether to get the first or last index by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: First or last alert index for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+        """
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         function = "idxmin" if which == "first" else "idxmax"
@@ -229,6 +335,18 @@ class BaseHandler(abc.ABC):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get first or last value of a given field for each object
+
+        Args:
+            column: Field for which to select values
+            which: Either `first` or `last`
+            by_fid: Whether to get the first or last value by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: First or last field value for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+        """
         idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self.get_alerts(surveys=surveys, bands=bands)
         return df[column][idx].set_axis(idx.index)
@@ -243,6 +361,18 @@ class BaseHandler(abc.ABC):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get aggregate value over a given field for each object.
+
+        Args:
+            column: Field over which the aggregation is performed
+            func: Method name or callable that performs the aggregation per object
+            by_fid: Whether to perform the aggregation by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: Aggregate value for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+        """
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
 
     @methodtools.lru_cache()
@@ -254,6 +384,17 @@ class BaseHandler(abc.ABC):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get difference between maximum and minimum values od a given field for each object.
+
+        Args:
+            column: Field to calculate the difference over
+            by_fid: Whether to calculate the difference by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: Value difference for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+        """
         vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands)
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
         return vmax - vmin
@@ -267,4 +408,17 @@ class BaseHandler(abc.ABC):
         bands: tuple[str, ...] = (),
         **kwargs,
     ) -> pd.DataFrame:
+        """Apply given function over the alerts for each object.
+
+        Args:
+            func: Function to apply to alerts
+            by_fid: Whether to apply the function by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+            **kwargs: Keyword arguments passed to `func`
+
+        Returns:
+            pd.DataFrame: Results of `func` for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+
+        """
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)
