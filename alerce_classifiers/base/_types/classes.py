@@ -15,10 +15,6 @@ class Xmatch:
     _value: pd.DataFrame
 
 @dataclass
-class ForcedPhotometry:
-    _value: pd.DataFrame
-
-@dataclass
 class Features:
     _value: pd.DataFrame
 

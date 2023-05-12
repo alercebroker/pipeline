@@ -4,9 +4,8 @@ from _types import *
 
 @dataclass
 class InputDTO:
-    detections: Detections
+    detections: Detections #includes forced photometry
     non_detections: NonDetections
-    forced_photometry: ForcedPhotometry
     features: Features
     xmatch: Xmatch
     stamps: Stamps
