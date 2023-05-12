@@ -56,7 +56,6 @@ class BaseHandler(abc.ABC):
             bands (str | tuple[str]): Band(s) to keep. Defined by `fid`. An empty tuple will keep all
             legacy (bool): Whether to use legacy format for alerts following old PSQL style database from ALeRCE
             extras (list[str]): Additional fields to keep (these fields can have undefined values)
-            corr (bool): ONLY APPLIES TO DETECTIONS. Use corrected magnitudes if first object detection is corrected
         """
 
         legacy = kwargs.pop("legacy", False)
@@ -412,6 +411,5 @@ class BaseHandler(abc.ABC):
 
         Returns:
             pd.DataFrame: Results of `func`. Indexed by `id` (and `fid` if `by_fid`).
-
         """
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)

@@ -15,20 +15,26 @@ class DetectionsHandler(BaseHandler):
 
     Required fields are `id`, `sid`, `fid`, `mjd`, `mag`, `e_mag` and `isdiffpos`.
 
-    Additional fields required are `mag_ml` and `e_mag_ml`, but these are generated at initialization. These fields
-    depend on whether the argument `corr` is set. If it is `False` (default) they will be filled with the same values
-    as `mag` and `e_mag`, respectively. Otherwise, it will check whether the first detection of an object is corrected.
-    If so, it will fill in the values of `mag_corr` and `e_mag_corr_ext`, respectively. If the first detection is not
-    corrected, it will fall back to using `mag` and `e_mag`. Note that different objects can use different values,
-    depending on the corrected status of their first detection.
+    Additional fields required are `mag_ml` and `e_mag_ml`, but are generated at initialization.
+
+    Additional keyword argument:
+        corr (bool): Whether to use corrected magnitudes if available. Defaults to `False`
+
+    The value for fields `mag_ml` and `e_mag_ml` depend on the argument `corr`. If `False` they will take the values
+    of `mag` and `e_mag`, respectively, for all objects. Otherwise, it will check whether the first object detection
+    is corrected. If so, it will fill in the values of `mag_corr` and `e_mag_corr_ext`, respectively. If the first
+    detection is not corrected, it will fall back to using `mag` and `e_mag`. Note that different objects can use
+    different values, depending on the corrected status of their first detection if `corr` is `True`.
     """
+
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
 
     def _post_process_alerts(self, **kwargs):
-        """Include handling legacy alerts (renames old field names to the new conventions) and sets the
-        `mag_ml` and `e_mag_ml` fields based on the `corr` argument."""
+        """Handles legacy alerts (renames old field names to the new conventions) and sets the
+        `mag_ml` and `e_mag_ml` fields based on the `corr` argument. This is in addition to base
+        post-processing"""
 
         if kwargs.pop("legacy", False):
             self._alerts["mag"] = self._alerts["magpsf"]

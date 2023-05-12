@@ -9,10 +9,21 @@ from ._base import BaseHandler
 
 
 class NonDetectionsHandler(BaseHandler):
+    """Class for handling non-detections.
+
+    Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
+
+    Required fields are `id`, `sid`, `fid`, `mjd` and `diffmaglim`.
+
+    Additional keyword argument:
+        `first_mjd` (pd.Series):  MJD of first detection. Should be indexed by `id` (and, optionally, `fid`)
+    """
+
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 
     def _post_process_alerts(self, **kwargs):
+        """Extracts MJD of first detection from `kwargs` in addition to base post-processing"""
         self.__first_mjd: pd.Series = kwargs.pop("first_mjd")
         super()._post_process_alerts(**kwargs)
 
@@ -23,8 +34,17 @@ class NonDetectionsHandler(BaseHandler):
         when: Literal["before", "after"],
         surveys: str | tuple[str, ...] = (),
         bands: str | tuple[str, ...] = (),
-    ):
-        """`mjd` must be a series with indexes shared (by name) with non-detections (typically `aid`/`fid`)"""
+    ) -> pd.DataFrame:
+        """Get all alerts before or after the first detection
+
+        Args:
+            when: Either `before` or `after`
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.DataFrame: Alerts before or after the date of first detection
+        """
         if when == "before":
             func = lambda x: x.lt(self.__first_mjd.loc[x.name])
         elif when == "after":
@@ -48,6 +68,17 @@ class NonDetectionsHandler(BaseHandler):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> DataFrameGroupBy:
+        """Get alerts before or after first detection grouped by object (adn, optionally, band).
+
+        Args:
+            when: Either `before` or `after`
+            by_fid: Whether to also group by band
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            DataFrameGroupBy: Grouped alerts
+        """
         group = ["id", "fid"] if by_fid else "id"
         return self.get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
 
@@ -61,6 +92,18 @@ class NonDetectionsHandler(BaseHandler):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get first or last index of alerts before or after first detection for each object.
+
+        Args:
+            which: Either `first` or `last`
+            when: Either `before` or `after`
+            by_fid: Whether to get first or last index by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: First or last alert index. Indexed by `id` (and `fid` if `by_fid`).
+        """
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         function = "idxmin" if which == "first" else "idxmax"
@@ -77,6 +120,19 @@ class NonDetectionsHandler(BaseHandler):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get first or last field value of alerts before or after first detection for each object.
+
+        Args:
+            column: Field for which to select values
+            which: Either `first` or `last`
+            when: Either `before` or `after`
+            by_fid: Whether to get first or last value by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
+        """
         idx = self.get_which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self.get_alerts_when(when=when, surveys=surveys, bands=bands)
         if idx.isna().all():  # Happens for empty non-detections
@@ -94,4 +150,17 @@ class NonDetectionsHandler(BaseHandler):
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
     ) -> pd.Series:
+        """Get aggregate alert field values before or after first detection.
+
+        Args:
+            column: Field over which the aggregation is performed
+            func: Method name or callable that performs the aggregation per object
+            when: Either `before` or `after`
+            by_fid: Whether to aggregate by band as well
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+
+        """
         return self.get_grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
