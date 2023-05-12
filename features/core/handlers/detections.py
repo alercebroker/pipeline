@@ -7,11 +7,29 @@ from ._base import BaseHandler
 
 
 class DetectionsHandler(BaseHandler):
+    """Class for handling detections.
+
+    Indexed by `candid`.
+
+    Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
+
+    Required fields are `id`, `sid`, `fid`, `mjd`, `mag`, `e_mag` and `isdiffpos`.
+
+    Additional fields required are `mag_ml` and `e_mag_ml`, but these are generated at initialization. These fields
+    depend on whether the argument `corr` is set. If it is `False` (default) they will be filled with the same values
+    as `mag` and `e_mag`, respectively. Otherwise, it will check whether the first detection of an object is corrected.
+    If so, it will fill in the values of `mag_corr` and `e_mag_corr_ext`, respectively. If the first detection is not
+    corrected, it will fall back to using `mag` and `e_mag`. Note that different objects can use different values,
+    depending on the corrected status of their first detection.
+    """
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
 
     def _post_process_alerts(self, **kwargs):
+        """Include handling legacy alerts (renames old field names to the new conventions) and sets the
+        `mag_ml` and `e_mag_ml` fields based on the `corr` argument."""
+
         if kwargs.pop("legacy", False):
             self._alerts["mag"] = self._alerts["magpsf"]
             self._alerts["e_mag"] = self._alerts["sigmapsf"]
@@ -25,6 +43,11 @@ class DetectionsHandler(BaseHandler):
         super()._post_process_alerts(**kwargs)
 
     def _use_corrected_magnitudes(self, surveys: tuple[str, ...]):
+        """Sets corrected magnitudes, based on whether the first alert for an object is corrected.
+
+        Args:
+            surveys: Surveys that need correction checking
+        """
         idx = self._alerts[self._surveys_mask(surveys)].groupby("id")["mjd"].idxmin()
         corrected = self._alerts["corrected"][idx].set_axis(idx.index).reindex(self._alerts["id"])
 
@@ -37,6 +60,17 @@ class DetectionsHandler(BaseHandler):
     def get_colors(
         self, func: str, bands: tuple[str, str], *, surveys: tuple[str, ...] = (), ml: bool = True
     ) -> pd.Series:
+        """Calculate colors (magnitude difference between bands) for all objects.
+
+        Args:
+            func: Aggregation function used to compute the colors (e.g., mean, max, etc.)
+            bands: Two element tuple with the band names involved in color calculation. Color is first minus second
+            surveys: Surveys to select (based on `sid`). Empty tuple selects all
+            ml: Whether to use corrected magnitudes (if available)
+
+        Returns:
+            pd.Series: Aggregated color for each object. Indexed by `id`
+        """
         first, second = bands
 
         mags = self.get_aggregate(f"mag{'_ml' if ml else ''}", func, by_fid=True, surveys=surveys, bands=bands)
@@ -45,6 +79,16 @@ class DetectionsHandler(BaseHandler):
 
     @methodtools.lru_cache()
     def get_count_by_sign(self, sign: int, *, by_fid: bool = False, bands: tuple[str, ...] = ()) -> pd.Series:
+        """Number of detections with a given sign
+
+        Args:
+            sign: Either 1 (counts positive difference detections) or -1 (counts negative difference detections)
+            by_fid: Whether to count detections by band as well
+            bands: Bands to select (based on `fid`). Empty tuple selects all
+
+        Returns:
+            pd.Series: Number detections with given sign. Indexed by `id` (and `fid` if `by_fid`
+        """
         counts = self.get_aggregate("isdiffpos", "value_counts", by_fid=by_fid, bands=bands)
         kwargs = dict(isdiffpos=(-1, 1))
         if by_fid and bands:

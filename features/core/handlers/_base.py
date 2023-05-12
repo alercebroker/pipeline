@@ -52,10 +52,11 @@ class BaseHandler(abc.ABC):
             alerts: list of alerts, with each alert as a dictionary containing fields expected for ALeRCE alerts
 
         Keyword Args:
-            surveys: Survey(s) to keep in the alert list. Defined by field `sid`. An empty tuple will keep all
-            bands: Band(s) to keep in alert list. Defined by `fid`. An empty tuple will keep all
-            legacy: Whether to use legacy format for alerts following old PSQL style database from ALeRCE
-            extras: Additional fields to keep (these fields can have undefined values). Can be inside `extra_fields`
+            surveys (str | tuple[str]): Survey(s) to keep. Defined by field `sid`. An empty tuple will keep all
+            bands (str | tuple[str]): Band(s) to keep. Defined by `fid`. An empty tuple will keep all
+            legacy (bool): Whether to use legacy format for alerts following old PSQL style database from ALeRCE
+            extras (list[str]): Additional fields to keep (these fields can have undefined values)
+            corr (bool): ONLY APPLIES TO DETECTIONS. Use corrected magnitudes if first object detection is corrected
         """
 
         legacy = kwargs.pop("legacy", False)
@@ -311,7 +312,7 @@ class BaseHandler(abc.ABC):
             bands: Bands to select (based on `fid`). Empty tuple selects all
 
         Returns:
-            pd.Series: First or last alert index for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+            pd.Series: First or last alert index. Indexed by `id` (and `fid` if `by_fid`).
         """
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
@@ -337,7 +338,7 @@ class BaseHandler(abc.ABC):
             bands: Bands to select (based on `fid`). Empty tuple selects all
 
         Returns:
-            pd.Series: First or last field value for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+            pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
         """
         idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands)
         df = self.get_alerts(surveys=surveys, bands=bands)
@@ -363,7 +364,7 @@ class BaseHandler(abc.ABC):
             bands: Bands to select (based on `fid`). Empty tuple selects all
 
         Returns:
-            pd.Series: Aggregate value for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+            pd.Series: Aggregate field value. Indexed by `id` (and `fid` if `by_fid`).
         """
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
 
@@ -385,7 +386,7 @@ class BaseHandler(abc.ABC):
             bands: Bands to select (based on `fid`). Empty tuple selects all
 
         Returns:
-            pd.Series: Value difference for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+            pd.Series: Field value difference. Indexed by `id` (and `fid` if `by_fid`).
         """
         vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands)
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
@@ -410,7 +411,7 @@ class BaseHandler(abc.ABC):
             **kwargs: Keyword arguments passed to `func`
 
         Returns:
-            pd.DataFrame: Results of `func` for each object (and band, if `by_fid`). Indexed by `id` (and `fid`).
+            pd.DataFrame: Results of `func`. Indexed by `id` (and `fid` if `by_fid`).
 
         """
         return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)
