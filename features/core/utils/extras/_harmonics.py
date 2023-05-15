@@ -8,6 +8,16 @@ from ._utils import reformat, empty
 
 @functools.lru_cache()
 def _indices(n: int) -> list[str]:
+    """Generates main indices for harmonic features.
+
+    There will be `n` norms, `n-1` phases and one `mse` (mean standard error).
+
+    Args:
+        n: Number of harmonics calculated
+
+    Returns:
+        list[str]: List of main indices
+    """
     fmt = "Harmonics_{}"
 
     def with_i(which, i):
@@ -18,6 +28,18 @@ def _indices(n: int) -> list[str]:
 
 
 def harmonics(df: pd.DataFrame, n: int, period: float) -> pd.Series:
+    """Computes the harmonic features for a given object and band.
+
+    There will be `n` norms, `n-1` phases and one `mse` (mean standard error).
+
+    Args:
+        df: Frame with magnitudes, errors and times. Expects a single object and band at a time
+        n: Number of harmonics calculated
+        period: Multi-band period
+
+    Returns:
+        pd.Series: `n` harmonic magnitudes, `n-1` phases and mean square error
+    """
     mag, e_mag, mjd = df[["mag_ml", "e_mag_ml", "mjd"]].T.values
 
     time_freq = 2 * np.pi * (np.arange(n) + 1) / period * mjd[:, None]
@@ -41,8 +63,30 @@ def harmonics(df: pd.DataFrame, n: int, period: float) -> pd.Series:
 
 
 def apply_harmonics(df: pd.DataFrame, n: int, period: float, fids: tuple[str, ...]) -> pd.Series:
+    """Computes the harmonic features for a given object.
+
+    There will be `n` norms, `n-1` phases and one `mse` (mean standard error) per band.
+
+    Args:
+        df: Frame with magnitudes, errors and times. Expects a single object
+        n: Number of harmonics calculated
+        period: Multi-band period
+        fids: Bands required. If not present, it will fill features with NaN
+
+    Returns:
+        pd.Series: `n` harmonic magnitudes, `n-1` phases and mean square error per band
+    """
     return reformat(df.groupby("fid").apply(harmonics, n=n, period=period), fids)
 
 
 def empty_harmonics(n: int, fids: tuple[str, ...]) -> pd.Series:
+    """Generates a series of harmonic features filled with NaN. This is a convenience method.
+
+    Args:
+        n: Number of harmonics to consider
+        fids: Bands required
+
+    Returns:
+        pd.Series: `n` harmonic magnitudes, `n-1` phases and mean square error per band, all filled with NaN
+    """
     return empty(_indices(n), fids)
