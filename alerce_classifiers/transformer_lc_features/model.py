@@ -12,7 +12,7 @@ from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
 from alerce_classifiers.transformer_lc_header.model import (
     TranformerLCHeaderClassifier,
 )
-from alerce_classifiers.utils.input_mapper.elasticc._mapper import LCFeatureMapper
+from .mapper import LCFeatureMapper
 
 
 class TransformerLCFeaturesClassifier(AlerceModel):

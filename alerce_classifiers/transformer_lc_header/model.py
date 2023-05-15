@@ -1,14 +1,15 @@
-from alerce_classifiers.base.model import AlerceModel
-from alerce_classifiers.utils.input_mapper.elasticc._mapper import LCHeaderMapper
-from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
-from joblib import load
-
 import numpy as np
 import os
 import pandas as pd
 import sys
 import torch
 import validators
+
+from joblib import load
+from alerce_classifiers.base.model import AlerceModel
+from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
+
+from .mapper import LCHeaderMapper
 
 
 class TranformerLCHeaderClassifier(AlerceModel):
