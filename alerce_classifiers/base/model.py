@@ -10,7 +10,7 @@ from .mapper import Mapper
 class AlerceModel(ABC):
     mapper: Mapper
 
-    def __init__(self, model_path: str, mapper: Mapper):
+    def __init__(self, model_path: str, mapper: Mapper = None):
         self.model = None
         self.mapper = mapper
         self._load_model(model_path)
@@ -23,16 +23,6 @@ class AlerceModel(ABC):
 
         :param model_path: string of the path
         :return: None
-        """
-
-    @abstractmethod
-    def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        """
-        Method for preprocess input data. You need to implement transformation, filters or custom processes to
-        preprocess the data.
-
-        :param data_input: DataFrame with input data
-        :return: DataFrame of preprocessed input data
         """
 
     # TODO: change input and output type to their DTOs

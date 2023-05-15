@@ -12,14 +12,14 @@ from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
 from alerce_classifiers.transformer_lc_header.model import (
     TranformerLCHeaderClassifier,
 )
-from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
+from alerce_classifiers.utils.input_mapper.elasticc._mapper import LCFeatureMapper
 
 
 class TransformerLCFeaturesClassifier(AlerceModel):
     def __init__(
-        self, model_path: str, header_quantiles_path: str, feature_quantiles_path: str
+        self, model_path: str, header_quantiles_path: str, feature_quantiles_path: str, mapper: LCFeatureMapper
     ):
-        super().__init__(model_path)
+        super().__init__(model_path, mapper)
         self.local_files = f"/tmp/{type(self).__name__}/features"
         # some ugly hack
         sys.path.append(
@@ -54,35 +54,16 @@ class TransformerLCFeaturesClassifier(AlerceModel):
         )
         return these_kwargs
 
-    def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        return self._header_classifier.preprocess(data_input)
-
-    def preprocess_features(self, features: pd.DataFrame) -> np.ndarray:
-        all_feat = []
-        for col in FEATURES_ORDER:
-            all_feat += [
-                self.feature_quantiles[col].transform(
-                    features[col].to_numpy().reshape(-1, 1)
-                )
-            ]
-        response = np.concatenate(all_feat, 1)
-        batch, num_features = response.shape
-        response = response.reshape([batch, num_features, 1])
-        return response
-
     def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        # input -> mapper -> preprocess -> model
-        light_curve = ELAsTiCCMapper.get_detections(data_input)
-        headers = ELAsTiCCMapper.get_header(data_input, keep="first")
-        headers.replace({np.nan: -9999}, inplace=True)
-        features = ELAsTiCCMapper.get_features(data_input)
-        features.replace({np.nan: -9999, np.inf: -9999, -np.inf: -9999}, inplace=True)
-        preprocessed_light_curve = self.preprocess(light_curve)
-        preprocessed_headers = self._header_classifier.preprocess_headers(headers)
-        preprocessed_features = self.preprocess_features(features)
-
-        del light_curve
-        del headers
+        (
+            preprocessed_light_curve,
+            preprocessed_headers,
+            preprocessed_features,
+        ) = self.mapper.preprocess(
+            data_input,
+            header_quantiles=self._header_classifier.quantiles,
+            feature_quantiles=self.feature_quantiles,
+        )
 
         input_nn = self.to_tensor_dict(
             preprocessed_light_curve, preprocessed_headers, preprocessed_features
