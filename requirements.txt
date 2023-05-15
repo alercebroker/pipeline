@@ -3,6 +3,7 @@ numpy~=1.23.5
 methodtools~=0.4.7
 scipy~=1.10.1
 numba~=0.56.4
+celerite2~=0.2.1
 matplotlib==3.7.1
 GPy==1.10.0
 apf-base==2.1.5
