@@ -62,11 +62,11 @@ class Object(BaseModel):
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
-        IndexModel([("oid", ASCENDING)]),
-        IndexModel([("sid", ASCENDING)]),
-        IndexModel([("lastmjd", DESCENDING)]),
-        IndexModel([("firstmjd", DESCENDING)]),
-        IndexModel([("loc", GEOSPHERE)]),
+        IndexModel([("oid", ASCENDING)], name="oid"),
+        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("lastmjd", DESCENDING)], name="lastmjd"),
+        IndexModel([("firstmjd", DESCENDING)], name="firstmjd"),
+        IndexModel([("loc", GEOSPHERE)], name="radec"),
         IndexModel(
             [
                 ("probabilities.ranking", DESCENDING),
@@ -75,6 +75,7 @@ class Object(BaseModel):
                 ("probabilities.class_name", DESCENDING),
                 ("probabilities.probability", DESCENDING),
             ],
+            name="probabilities",
         ),
     ]
     __tablename__ = "object"
@@ -110,8 +111,8 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("sid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "detection"
 
@@ -146,8 +147,8 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("sid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "forced_photometry"
 
@@ -169,8 +170,8 @@ class NonDetection(BaseModelWithExtraFields):
     diffmaglim = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("sid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "non_detection"
 
@@ -182,7 +183,8 @@ class Taxonomy(BaseModel):
 
     __table_args__ = [
         IndexModel(
-            [("classifier_name", ASCENDING), ("classifier_version", DESCENDING)]
+            [("classifier_name", ASCENDING), ("classifier_version", DESCENDING)],
+            name="name_version",
         ),
     ]
     __tablename__ = "taxonomy"
@@ -196,7 +198,7 @@ class Step(BaseModel):
     date = Field()
 
     __table_args__ = [
-        IndexModel([("step_id", ASCENDING)]),
+        IndexModel([("step_id", ASCENDING)], name="step_id"),
     ]
     __tablename__ = "step"
 
@@ -207,7 +209,7 @@ class FeatureVersion(BaseModel):
     step_id_preprocess = Field()
 
     __table_args__ = [
-        IndexModel([("version", ASCENDING)]),
+        IndexModel([("version", ASCENDING)], name="version"),
     ]
     __tablename__ = "feature_version"
 
@@ -222,6 +224,6 @@ class Pipeline(BaseModel):
     date = Field()
 
     __table_args__ = [
-        IndexModel([("pipeline_id", ASCENDING)]),
+        IndexModel([("pipeline_id", ASCENDING)], name="id"),
     ]
     __tablename__ = "pipeline"
