@@ -1,18 +1,42 @@
 import numpy as np
 import pandas as pd
-from scipy import optimize
+from jax import jit as jjit
+from jax import numpy as jnp
 from numba import njit
+from scipy import optimize
 
 
-@njit()
+@njit
 def _spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
-    sigmoid_factor = 1.0 / 3.0
+    """Direct usage of the model"""
+    sigmoid_factor = 1 / 3
     t1 = t0 + gamma
 
-    sigmoid = 1.0 / (1.0 + np.exp(-sigmoid_factor * (times - t1)))
+    sigmoid = 1 / (1 + np.exp(-sigmoid_factor * (times - t1)))
     den = 1 + np.exp(-(times - t0) / t_rise)
-    flux = ((1 - beta) * np.exp(-(times - t1) / t_fall) * sigmoid + (1. - beta * (times - t0) / gamma) * (1 - sigmoid))
-    return flux * ampl / den
+    temp = (1 - beta) * np.exp(-(times - t1) / t_fall) * sigmoid + (1. - beta * (times - t0) / gamma) * (1 - sigmoid)
+    return temp * ampl / den
+
+
+@jjit
+def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
+    """Uses constrains to provide higher stability with respect to v1"""
+    sigmoid_factor = 1 / 2
+    t1 = t0 + gamma
+
+    sigmoid_arg = -sigmoid_factor * (times - t1)
+    sigmoid = 1 / (1 + jnp.exp(jnp.clip(sigmoid_arg, -10, 10)))
+    sigmoid *= sigmoid_arg < 10  # Apply mask
+
+    stable = t_fall >= t_rise  # Early times diverge in unstable case
+    sigmoid *= stable + (1 - stable) * (times > t1)
+
+    raise_arg = -(times - t0) / t_rise
+    den = 1 / (1 + jnp.exp(jnp.clip(raise_arg, -20, 20)))
+
+    fall_arg = jnp.clip(-(times - t1) / t_fall, -20, 20)
+    temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
+    return jnp.where(raise_arg < 20, temp * ampl / den, 0)
 
 
 def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Series:
