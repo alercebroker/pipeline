@@ -361,6 +361,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        **kwargs,
     ) -> pd.Series:
         """Get aggregate value over a given field for each object.
 
@@ -370,11 +371,12 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to perform the aggregation by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            kwargs: Keyword arguments passed to function
 
         Returns:
             pd.Series: Aggregate field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
+        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func, **kwargs)
 
     @methodtools.lru_cache()
     def get_delta(

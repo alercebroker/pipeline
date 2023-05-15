@@ -64,7 +64,14 @@ class DetectionsHandler(BaseHandler):
 
     @methodtools.lru_cache()
     def get_colors(
-        self, func: str, bands: tuple[str, str], *, surveys: tuple[str, ...] = (), ml: bool = True
+        self,
+        func: str,
+        bands: tuple[str, str],
+        *,
+        surveys: tuple[str, ...] = (),
+        ml: bool = True,
+        flux: bool = False,
+        **kwargs,
     ) -> pd.Series:
         """Calculate colors (magnitude difference between bands) for all objects.
 
@@ -73,14 +80,19 @@ class DetectionsHandler(BaseHandler):
             bands: Two element tuple with the band names involved in color calculation. Color is first minus second
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             ml: Whether to use corrected magnitudes (if available)
+            flux: Consider magnitudes as flux (computes ratio rather than difference)
+            kwargs: Keyword arguments passed to function
 
         Returns:
             pd.Series: Aggregated color for each object. Indexed by `id`
         """
         first, second = bands
 
-        mags = self.get_aggregate(f"mag{'_ml' if ml else ''}", func, by_fid=True, surveys=surveys, bands=bands)
+        column = f"mag{'_ml' if ml else ''}"
+        mags = self.get_aggregate(column, func, by_fid=True, surveys=surveys, bands=bands, **kwargs)
         mags = functions.fill_index(mags, fid=bands)
+        if flux:  # + 1 in denominator to avoid division errors
+            return mags.xs(first, level="fid") / (mags.xs(second, level="fid") + 1)
         return mags.xs(first, level="fid") - mags.xs(second, level="fid")
 
     @methodtools.lru_cache()
