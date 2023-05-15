@@ -45,9 +45,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     MAX_SIGMA_MAGNITUDE = 1.0
 
     def _discard_detections(self):
-        """In addition to base checks, keeps only alerts with a minimum real-bogus value and a maximum
-        error in magnitude"""
-        self.detections.select("rb", gt=self.MIN_REAL_BOGUS, ge=True)
+        """Include only alerts with a minimum real-bogus value and a maximum error in magnitude"""
+        self.detections.select("rb", gt=self.MIN_REAL_BOGUS)
         self.detections.select("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
         super()._discard_detections()
 

@@ -110,23 +110,34 @@ class BaseHandler(abc.ABC):
         self.clear_caches()
         self._alerts = self._alerts[self._alerts["id"].isin(other.get_objects())]
 
-    def select(self, column: str, *, lt: float = None, gt: float = None, le: bool = False, ge: bool = False):
+    def select(
+        self, column: str | list[str], *, lt: float | list[float, None] = None, gt: float | list[float, None] = None
+    ):
         """Removes all alerts outside the specified parameters for a given field.
+
+        If more than one field is added, the conditions will be joined with a logical and. If that is the case,
+        the provided values for `lt` and/or `gt` must match the length of the columns. Otherwise it will raise
+        an error.
 
         Args:
             column: Field to perform the check in
             lt: Keep only alerts with values less than this
             gt: Keep only alerts with values greater than this
-            le: Compare the value for `lt` using less than equal rather than strictly less
-            ge: Compare the value for `gt` using greater than equal rather than strictly greater
         """
         self.clear_caches()
         mask = pd.Series(True, index=self._alerts.index, dtype=bool)
-        series = self._alerts[column]
-        if lt is not None:
-            mask &= (series <= lt) if le else (series < lt)
-        if gt is not None:
-            mask &= (series >= gt) if ge else (series > gt)
+        if isinstance(column, str):
+            column = [column]
+        if isinstance(lt, (float, int)):
+            lt = [lt]
+        if isinstance(gt, (float, int)):
+            gt = [gt]
+        for i, col in enumerate(column):
+            series = self._alerts[col]
+            if lt is not None and lt[i] is not None:
+                mask &= (series < lt[i])
+            if gt is not None and gt[i] is not None:
+                mask &= (series > gt[i])
         self._alerts = self._alerts[mask]
 
     def clear_caches(self):
