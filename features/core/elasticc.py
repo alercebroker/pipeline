@@ -41,15 +41,15 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         self.detections.select(["mag_ml", "e_mag_ml"], lt=[50e3, 300])
         super()._discard_detections()
 
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_mwebv(self) -> pd.DataFrame:
         return pd.DataFrame({"mwebv": self.detections.get_aggregate("mwebv", "median")})
 
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_redshift_helio(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
 
-    @decorators.add_fid("".join(BANDS))
+    @decorators.add_fid(["".join([b1, b2]) for b1, b2 in zip(BANDS[:-1], BANDS[1:])])
     def calculate_colors(self) -> pd.DataFrame:
         colors = {}
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
