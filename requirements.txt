@@ -1,1 +1,4 @@
-git+https://github.com/alercebroker/alerce_base_model.git@1.0.0#egg=alerce_base_model
+pandas==2.0.1
+wget==3.2
+validators==0.20.0
+-e git+https://github.com/alercebroker/lc_classifier.git@1.2.3-P#egg=lc_classifier
