@@ -24,6 +24,7 @@ class BaseFeatureExtractor(abc.ABC):
     * `periods`: Period related features (multi-band period, per band period, etc.). Check the notes.
     * `fats`: Computes all FATS features defined in `FATS_FEATURES`.
     * `mhps`: Mexican hat power spectrum for each object, per band.
+    * `gp_drw`: Gaussian process damp random walk parameters for each object and band.
     * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
 
     Most settings are defined as class attributes. Additional notes:
@@ -48,13 +49,13 @@ class BaseFeatureExtractor(abc.ABC):
         XMATCH_COLUMNS: Fields needed from cross-match (if included). Default empty
         USE_CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
         FLUX: Flag to indicate that "magnitude" fields are actually flux (field names do not change). Default `False`
-        COMPUTE_KIM: Compute cum-sum and eta from phase folded light-curve (Kim et al., 2011, 2014). Default `True`
-        N_HARMONICS: Number of harmonics to compute for period. Default 7
-        POWER_RATE_FACTORS: Power-rate at multiples of the period. Default 1/4, 1/3, 1/2, 2, 3 and 4
+        COMPUTE_KIM: Compute parameters from phase-folded light-curve. Default `True`
+        N_HARMONICS: Number of harmonic series parameters to compute. Default 7
+        POWER_RATE_FACTORS: Ratio of power of the periodogram to the best period. Default 1/4, 1/3, 1/2, 2, 3 and 4
         MIN_DETECTIONS: Minimum number of overall detections per object to compute features. Default 0
         MIN_DETECTIONS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
-        T1: Parameter `t1` for MHPS calculations. Default 100
-        T2: Parameter `t2` for MHPS calculations. Default 10
+        T1: Low frequency timescale for MHPS calculations. Default 100
+        T2: High frequency timescale for MHPS calculations. Default 10
         FATS_FEATURES: FATS features to be computed. Check defaults in code
     """
 
