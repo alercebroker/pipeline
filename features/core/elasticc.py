@@ -36,7 +36,8 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     USE_CORRECTED = True
 
     def _discard_detections(self):
-        """Include noisy detections"""
+        """Exclude noisy detections"""
+        self.detections.select(["mag_ml", "e_mag_ml"], lt=[50e3, 300])
         super()._discard_detections()
 
     @decorators.add_fid(0)
