@@ -21,6 +21,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
     * `mwebv`: Median Milky Way extinction for each object
     * `redshift_helio`: Median heliocentric redshift for each object
+    * `colors`: Compute P90 colors for each object
 
     Notes:
         If `periods` is excluded, `COMPUTE_KIM`, `N_HARMONICS` and `POWER_RATE_FACTORS` will all be ignored, as they
@@ -47,3 +48,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.add_fid(0)
     def calculate_redshift_helio(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
+
+    @decorators.add_fid("".join(BANDS))
+    def calculate_colors(self) -> pd.DataFrame:
+        colors = {}
+        for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
+            colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=True, q=0.9)
+        return pd.DataFrame(colors)
