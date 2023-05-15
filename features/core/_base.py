@@ -193,6 +193,11 @@ class BaseFeatureExtractor(abc.ABC):
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
+    def calculate_gp_drw(self) -> pd.DataFrame:
+        return self.detections.apply_grouped(extras.gp_drw, by_fid=True)
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid()
     def calculate_iqr(self) -> pd.DataFrame:
         return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
 
