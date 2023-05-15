@@ -8,16 +8,7 @@ from ._utils import reformat, empty
 
 @functools.lru_cache()
 def _indices(n: int) -> list[str]:
-    """Generates main indices for harmonic features.
-
-    There will be `n` norms, `n-1` phases and one `mse` (mean standard error).
-
-    Args:
-        n: Number of harmonics calculated
-
-    Returns:
-        list[str]: List of main indices
-    """
+    """Generates indices for first `n` harmonic series pandas series"""
     fmt = "Harmonics_{}"
 
     def with_i(which, i):
@@ -80,7 +71,7 @@ def apply_harmonics(df: pd.DataFrame, n: int, period: float, fids: tuple[str, ..
 
 
 def empty_harmonics(n: int, fids: tuple[str, ...]) -> pd.Series:
-    """Generates a series of harmonic features filled with NaN. This is a convenience method.
+    """Generates a series of harmonic features filled with NaN. This is a convenience function.
 
     Args:
         n: Number of harmonics to consider

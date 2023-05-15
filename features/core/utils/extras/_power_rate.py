@@ -8,11 +8,13 @@ from ._utils import empty, multiindex
 
 @functools.lru_cache()
 def _indices(factors: tuple[str, ...]) -> list[str]:
+    """Power rate indices used in output pandas series"""
     return [f"Power_rate_{factor}" for factor in factors]
 
 
 @functools.lru_cache()
 def _as_float(factors: tuple[str, ...]) -> list[float]:
+    """Transforms factors to floats"""
     return [functools.reduce(lambda x, y: x.__truediv__(y), (float(d) for d in f.split("/"))) for f in factors]
 
 

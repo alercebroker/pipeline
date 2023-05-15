@@ -54,8 +54,8 @@ class BaseFeatureExtractor(abc.ABC):
         POWER_RATE_FACTORS: Ratio of power of the periodogram to the best period. Default 1/4, 1/3, 1/2, 2, 3 and 4
         MIN_DETECTIONS: Minimum number of overall detections per object to compute features. Default 0
         MIN_DETECTIONS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
-        T1: Low frequency timescale for MHPS calculations. Default 100
-        T2: High frequency timescale for MHPS calculations. Default 10
+        T1: Low frequency timescale (in days) for MHPS calculations. Default 100
+        T2: High frequency timescale (in days) for MHPS calculations. Default 10
         FATS_FEATURES: FATS features to be computed. Check defaults in code
     """
 

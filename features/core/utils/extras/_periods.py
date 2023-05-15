@@ -11,11 +11,13 @@ from ._power_rate import apply_power_rates, empty_power_rates
 
 @functools.lru_cache
 def _get_multiband_periodogram() -> MultiBandPeriodogram:
+    """Creates the multi-band periodogram for computations."""
     return MultiBandPeriodogram(method="MHAOV")
 
 
 @functools.lru_cache()
 def _indices(fids: tuple[str, ...]) -> pd.MultiIndex:
+    """Creates indices for basic period pandas series."""
     n_fids = len(fids)
     level1 = ("".join(fids),) * 2 + fids + fids
     level0 = ("Multiband_period", "PPE") + ("Period_band",) * n_fids + ("delta_period",) * n_fids
@@ -25,6 +27,18 @@ def _indices(fids: tuple[str, ...]) -> pd.MultiIndex:
 def periods(
     df: pd.DataFrame, fids: tuple[str, ...], kim: bool = False, n_harmonics: int = 0, factors: tuple[str, ...] = ()
 ) -> pd.Series:
+    """Compute period features for an object.
+
+    Args:
+        df: Frame with magnitudes, errors and times. Expects a single object
+        fids: Bands required. If not present, it will fill features with NaN
+        kim: Whether to compute phase-folded features
+        n_harmonics: Number of harmonic series features to compute. Set to 0 to skip
+        factors: Power rate factors to compute (as strings). Leave empty to skip
+
+    Returns:
+        pd.Series: Period related features
+    """
     periodogram = _get_multiband_periodogram()
 
     df = df.groupby("fid").filter(lambda x: len(x) > 5).sort_values("mjd")

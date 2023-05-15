@@ -18,6 +18,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     * `periods`: Period related features (multi-band period, per band period, etc.). Check notes.
     * `fats`: Computes all FATS features defined in `FATS_FEATURES`.
     * `mhps`: Mexican hat power spectrum for each object, per band.
+    * `gp_drw`: Gaussian process damp random walk parameters for each object and band.
     * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
     * `colors`: Compute maximum and mean g-r colors for each object (both corrected, if available, and uncorrected)
     * `wise_colors`: W1-W2, W2-W3, g-W2, g-W3, r-W2, r-W3 mean colors for each object (if cross-match is available)
