@@ -1,9 +1,20 @@
+import functools
+
 import numpy as np
 import pandas as pd
+from jax import grad as jgrad
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax.nn import sigmoid as jsigmoid
 from numba import njit
 from scipy import optimize
+
+_INDICES = ("A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi")
+
+
+@functools.lru_cache
+def _indices_with_fid(fid: str) -> pd.MultiIndex:
+    return pd.MultiIndex.from_product([_INDICES, [fid]])
 
 
 @njit
@@ -24,19 +35,86 @@ def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     sigmoid_factor = 1 / 2
     t1 = t0 + gamma
 
-    sigmoid_arg = -sigmoid_factor * (times - t1)
-    sigmoid = 1 / (1 + jnp.exp(jnp.clip(sigmoid_arg, -10, 10)))
-    sigmoid *= sigmoid_arg < 10  # Apply mask
+    sigmoid_arg = sigmoid_factor * (times - t1)
+    sigmoid = jsigmoid(jnp.clip(sigmoid_arg, -10, 10))
+    sigmoid *= sigmoid_arg > -10  # set to zero  below -10
+    sigmoid = jnp.where(sigmoid_arg < 10, sigmoid, 1)  # set to one above 10
 
     stable = t_fall >= t_rise  # Early times diverge in unstable case
     sigmoid *= stable + (1 - stable) * (times > t1)
 
     raise_arg = -(times - t0) / t_rise
-    den = 1 / (1 + jnp.exp(jnp.clip(raise_arg, -20, 20)))
+    den = 1 + jnp.exp(jnp.clip(raise_arg, -20, 20))
 
     fall_arg = jnp.clip(-(times - t1) / t_fall, -20, 20)
     temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
-    return jnp.where(raise_arg < 20, temp * ampl / den, 0)
+    return jnp.where(raise_arg > 20, temp * ampl / den, 0)
+
+
+@jjit
+def _spm_v2_loss(params, time, flux, error, band, fids, smooth):
+    negative = (flux + error) < 0
+    # Give lower weights in square error to negative detections, based on how negative it is
+    weight = jnp.exp(-((flux + error) * negative / (error + 1)) ** 2)
+
+    params = params.reshape((-1, 6))
+    sq_err = 0.0
+
+    for i in fids:
+        ampl, t0, gamma, beta, t_rise, t_fall = params[i]
+
+        sim = _spm_v2(time, ampl, t0, gamma, beta, t_rise, t_fall)
+        sq_err_i = ((sim - flux) / (error + smooth)) ** 2
+
+        sq_err += jnp.dot(sq_err_i * (band == i), weight)
+
+    var = jnp.var(params, axis=0) + jnp.array([1, 5e-2, 5e-2, 5e-3, 5e-2, 5e-2])
+    lambdas = jnp.array([0, 1, 0.1, 20, 0.7, 0.01])
+
+    regularization = jnp.dot(lambdas, jnp.sqrt(var))
+    return regularization + sq_err
+
+
+_grad_spm_v2_loss = jjit(jgrad(_spm_v2_loss))
+
+
+# TODO: This is for testing only, initial guess and bounds should be implemented properly
+def fit_spm_v2(time, flux, error, band):
+    fids, band = np.unique(band, return_inverse=True)
+    ifids = np.arange(fids.size)
+
+    time = time - np.min(time)
+    imax = np.argmax(flux)
+
+    fmax = flux[imax]
+    # order: amplitude, t0, gamma, beta, t_rise, t_fall (lower first, upper second)
+    bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 50, 100, 1, 100, 100]]
+    guess = np.clip([1.2 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds).astype(np.float32)
+
+    smooth = np.percentile(error, 10) * 0.5
+
+    # Padding is needed to minimize recompilations of jax jit functions
+    multiple = 25
+    pad = multiple - time.size % multiple  # All padded arrays are assumed to have the same length
+    time = np.pad(time, (0, pad), "constant", constant_values=(0, 0))
+    flux = np.pad(flux, (0, pad), "constant", constant_values=(0, 0))
+    band = np.pad(band, (0, pad), "constant", constant_values=(0, -1))
+    error = np.pad(error, (0, pad), "constant", constant_values=(0, 1))
+
+    args = (time, flux, error, band, ifids, smooth)
+    result = optimize.minimize(_spm_v2_loss, guess, jac=_grad_spm_v2_loss, args=args, method="TNC", bounds=np.array(bounds).T, options={"maxfun": 1000})
+    params = result.x.reshape((-1, 6))
+
+    final = []
+    for i, fid in enumerate(fids):
+        mask = band == i
+
+        prediction = _spm_v2(time[mask], *params[i])
+        dof = prediction.size - params[i].size
+        chi = np.nan if dof < 1 else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2) / dof
+        final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
+
+    return pd.concat(final)
 
 
 def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Series:
@@ -58,9 +136,9 @@ def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Seri
             params = np.full_like(guess, np.nan)
 
     prediction = _spm_v1(time, *params)
-    n_dof = prediction.size - params.size
-    chi_dof = np.nan if n_dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / n_dof
-    return pd.Series([*params, chi_dof], index=["A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi"])
+    dof = prediction.size - params.size
+    chi = np.nan if dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / dof
+    return pd.Series([*params, chi], index=_INDICES)
 
 
 def fit_spm_v1_alt(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Series:
@@ -82,6 +160,6 @@ def fit_spm_v1_alt(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.
             params = np.full_like(guess, np.nan)
 
     prediction = _spm_v1(time, *params)
-    n_dof = prediction.size - params.size
-    chi_dof = np.nan if n_dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / n_dof
-    return pd.Series([*params, chi_dof], index=["A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi"])
+    dof = prediction.size - params.size
+    chi = np.nan if dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / dof
+    return pd.Series([*params, chi], index=_INDICES)
