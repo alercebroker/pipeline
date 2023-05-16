@@ -9,7 +9,7 @@ from jax.nn import sigmoid as jsigmoid
 from numba import njit
 from scipy import optimize
 
-_INDICES = ("A", "t0", "gamma", "beta", "tau_raise", "tau_fall", "chi")
+_INDICES = ("SPM_A", "SPM_t0", "SPM_gamma", "SPM_beta", "SPM_tau_raise", "SPM_tau_fall", "SPM_chi")
 
 
 @functools.lru_cache
@@ -117,45 +117,32 @@ def fit_spm_v2(time, flux, error, band):
     return pd.concat(final)
 
 
-def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Series:
+def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray, alt: bool = False) -> pd.Series:
+    time, flux, error = time.astype(np.float32), flux.astype(np.float32), error.astype(np.float32)
     time = time - np.min(time)
     imax = np.argmax(flux)
 
     fmax = flux[imax]
-    # order: amplitude, t0, gamma, beta, t_rise, t_fall (lower first, upper second)
-    bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 50, 100, 1, 100, 100]]
-    # TODO: 3 * fmax should be 1.2 * fmax, but model is trained with the bug. DO NOT FIX UNTIL RETRAINED!!
-    guess = np.clip([3 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds)
+    # order for bounds/guess: amplitude, t0, gamma, beta, t_rise, t_fall (lower first, upper second)
+    if alt:
+        bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 70, 100, 1, 100, 100]]
+        guess = np.clip([1.2 * fmax, time[imax] * 2 / 3, time[imax], 0.5, time[imax] / 2, 50], *bounds)
+        kwargs = dict(ftol=1e-8, sigma=error + 5)
+    else:
+        bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 50, 100, 1, 100, 100]]
+        # TODO: 3 * fmax should be 1.2 * fmax, but model is trained with the bug. DO NOT FIX UNTIL RETRAINED!!
+        guess = np.clip([3 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds)
+        kwargs = dict(ftol=guess[0] / 20)
+
+    guess = guess.astype(np.float32)
+    bounds = np.array(bounds, dtype=np.float32)
 
     try:
-        params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 20)
+        params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, **kwargs)
     except (ValueError, RuntimeError, optimize.OptimizeWarning):
         try:
-            params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, ftol=guess[0] / 3)
-        except (ValueError, RuntimeError, optimize.OptimizeWarning):
-            params = np.full_like(guess, np.nan)
-
-    prediction = _spm_v1(time, *params)
-    dof = prediction.size - params.size
-    chi = np.nan if dof < 1 else np.sum((prediction - flux) ** 2 / (error + 0.01) ** 2) / dof
-    return pd.Series([*params, chi], index=_INDICES)
-
-
-def fit_spm_v1_alt(time: np.ndarray, flux: np.ndarray, error: np.ndarray) -> pd.Series:
-    """Same as `fit_spm_v1`, but with different bounds, initial guess and tolerance"""
-    time = time - np.min(time)
-    imax = np.argmax(flux)
-
-    fmax = flux[imax]
-    # order: amplitude, t0, gamma, beta, t_rise, t_fall (lower first, upper second)
-    bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 70, 100, 1, 100, 100]]
-    guess = np.clip([1.2 * fmax, time[imax] * 2 / 3, time[imax], 0.5, time[imax] / 2, 50], *bounds)
-
-    try:
-        params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=1e-8)
-    except (ValueError, RuntimeError, optimize.OptimizeWarning):
-        try:
-            params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, sigma=5 + error, ftol=0.1)
+            kwargs.update(ftol=0.1 if alt else guess[0] / 3)
+            params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, **kwargs)
         except (ValueError, RuntimeError, optimize.OptimizeWarning):
             params = np.full_like(guess, np.nan)
 

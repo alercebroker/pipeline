@@ -52,16 +52,18 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:
-        gr_max = self.detections.get_colors("min", ("g", "r"), ml=False)
-        gr_max_corr = self.detections.get_colors("min", ("g", "r"), ml=True)
-        gr_mean = self.detections.get_colors("mean", ("g", "r"), ml=False)
-        gr_mean_corr = self.detections.get_colors("mean", ("g", "r"), ml=True)
+        gr_max = self.detections.get_colors("min", ("g", "r"), ml=False, flux=self.FLUX)
+        gr_max_corr = self.detections.get_colors("min", ("g", "r"), ml=True, flux=self.FLUX)
+        gr_mean = self.detections.get_colors("mean", ("g", "r"), ml=False, flux=self.FLUX)
+        gr_mean_corr = self.detections.get_colors("mean", ("g", "r"), ml=True, flux=self.FLUX)
         return pd.DataFrame(
             {"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr}
         )
 
     @decorators.add_fid(0)
     def calculate_wise_colors(self) -> pd.DataFrame:
+        if self.FLUX:
+            raise ValueError("Cannot calculate WISE colors with flux.")
         mags = functions.fill_index(self.detections.get_aggregate("mag_ml", "mean", by_fid=True), fid=("g", "r"))
         g, r = mags.xs("g", level="fid"), mags.xs("r", level="fid")
         return pd.DataFrame(
@@ -86,7 +88,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.spm_ztf, by_fid=True, spm=fit_spm_v1)
+        return self.detections.apply_grouped(extras.spm, by_fid=True, func=fit_spm_v1, ml=False, flux=self.FLUX)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
