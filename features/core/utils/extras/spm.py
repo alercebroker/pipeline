@@ -29,7 +29,7 @@ def _spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
     return temp * ampl / den
 
 
-@jjit
+@njit
 def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     """Uses constrains to provide higher stability with respect to v1"""
     sigmoid_factor = 1 / 2
@@ -78,31 +78,62 @@ def _spm_v2_loss(params, time, flux, error, band, fids, smooth):
 _grad_spm_v2_loss = jjit(jgrad(_spm_v2_loss))
 
 
-# TODO: This is for testing only, initial guess and bounds should be implemented properly
-def fit_spm_v2(time, flux, error, band):
+def _guess_and_bounds_v2(time, flux, band, preferred):
+    for fid in preferred:
+        if fid in band:
+            ref = fid
+            break
+    else:
+        raise ValueError(f"None of bands {preferred} found in the provided bands")
+
+    tol = 1e-2
+    mask = band == ref
+    t0_bounds = [-50, np.max(time)]
+    t0_guess = time[mask][np.argmax(flux[mask])] - 10
+    # Order: t0, gamma, beta, t_rise, t_fall
+    static_bounds = [t0_bounds, [1, 120], [0, 1], [1, 100], [1, 180]]
+    static_guess = [np.clip(t0_guess, t0_bounds[0] + tol, t0_bounds[1] - tol), 14, 0.5, 7, 28]
+
+    guess, bounds = [], []
+    for fid in np.unique(band):
+        mask = band == fid
+
+        fmax = np.max(flux[mask])
+        ampl_bounds = [np.abs(fmax) / 10., np.abs(fmax) * 10.]
+        ampl_guess = np.clip(1.2 * fmax, ampl_bounds[0] * 1.1, ampl_bounds[1] * 0.9)
+
+        bounds += [ampl_bounds] + static_bounds
+        guess += [ampl_guess] + static_guess
+
+    return np.array(guess, dtype=np.float32), np.array(bounds, dtype=np.float32)
+
+
+def _pad(time, flux, error, band=None, multiple=25):
+    pad = multiple - time.size % multiple  # All padded arrays are assumed to have the same length
+    time = np.pad(time, (0, pad), "constant", constant_values=(0, 0))
+    flux = np.pad(flux, (0, pad), "constant", constant_values=(0, 0))
+    band = np.pad(band, (0, pad), "constant", constant_values=(0, -1)) if band else band
+    error = np.pad(error, (0, pad), "constant", constant_values=(0, 1))
+    return time, flux, error, band
+
+
+def fit_spm_v2(time, flux, error, band, preferred="irzYgu", multiple=25):
+    time, flux, error = time.astype(np.float32), flux.astype(np.float32), error.astype(np.float32)
     fids, band = np.unique(band, return_inverse=True)
     ifids = np.arange(fids.size)
 
     time = time - np.min(time)
-    imax = np.argmax(flux)
 
-    fmax = flux[imax]
-    # order: amplitude, t0, gamma, beta, t_rise, t_fall (lower first, upper second)
-    bounds = [[fmax / 3, -50, 1, 0, 1, 1], [fmax * 3, 50, 100, 1, 100, 100]]
-    guess = np.clip([1.2 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds).astype(np.float32)
+    guess, bounds = _guess_and_bounds_v2(time, flux, band, preferred)
 
     smooth = np.percentile(error, 10) * 0.5
 
     # Padding is needed to minimize recompilations of jax jit functions
-    multiple = 25
-    pad = multiple - time.size % multiple  # All padded arrays are assumed to have the same length
-    time = np.pad(time, (0, pad), "constant", constant_values=(0, 0))
-    flux = np.pad(flux, (0, pad), "constant", constant_values=(0, 0))
-    band = np.pad(band, (0, pad), "constant", constant_values=(0, -1))
-    error = np.pad(error, (0, pad), "constant", constant_values=(0, 1))
+    time, flux, error, band = _pad(time, flux, error, band, multiple)
 
     args = (time, flux, error, band, ifids, smooth)
-    result = optimize.minimize(_spm_v2_loss, guess, jac=_grad_spm_v2_loss, args=args, method="TNC", bounds=np.array(bounds).T, options={"maxfun": 1000})
+    kwargs = dict(method="TNC", options={"maxfun": 1000})
+    result = optimize.minimize(_spm_v2_loss, guess, jac=_grad_spm_v2_loss, args=args, bounds=bounds, **kwargs)
     params = result.x.reshape((-1, 6))
 
     final = []
