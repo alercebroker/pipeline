@@ -85,10 +85,7 @@ For this example we will just log the message changing the execution code to
 
 Here :attr:`self.logger` is the default logger (`logging.Logger`) from :class:`apf.core.GenericStep`.
 
-Then we can go to `scripts/run_step.py`.
-This scripts runs the step, here we can override the consumers, producers and other plugins used in the *step*.
-
-The basic `run_step.py` comes with the following
+Then we can go to `scripts/run_step.py`. The basic `run_step.py` comes with the following
 
 .. code-block:: python
 
@@ -96,9 +93,9 @@ The basic `run_step.py` comes with the following
     step = ExampleTest(config=STEP_CONFIG,level=level)
     step.start()
 
-But you can pass callables to override the consumer, producer and metrics_sender that are otherwise defined by settings file.
+But you can pass any argument you need to define in the Step's constructor.
 
-An alternative step initialization could look like this:
+An alternate step initialization could look like this:
 
 .. code-block:: python
 
@@ -113,6 +110,8 @@ An alternative step initialization could look like this:
     step.start()
 
 This can be useful for tests as well, since you can pass a mock class and do not need to rely on settings, that have more boilerplate.
+
+Starting at APF 2.0.0 the consumers, producers and metrics manager are configured only through the :attr:`config` dictionary passed to the Step class.
 
 4. Configuring the step
 ------------------------
@@ -133,11 +132,21 @@ There are 2 files needed to configure a step.
 
   .. code-block:: python
 
-    #settings.py
-    CONSUMER_CONFIG = {}  #Consumer configuration
+    # settings.py
+    # LOGGING_DEBUG = True
+
+    CONSUMER_CONFIG = {}
+    PRODUCER_CONFIG = {}
+    METRICS_CONFIG = {}
+    PROMETHEUS = False
+
+    ## Step Configuration
     STEP_CONFIG = {
-      "N_PROCESS" # Number of prcesses on multi-process script.
-    }                     #Step Configuration
+        "CONSUMER_CONFIG": CONSUMER_CONFIG,
+        "PRODUCER_CONFIG": PRODUCER_CONFIG,
+        "METRICS_CONFIG": METRICS_CONFIG,
+        "PROMETHEUS": PROMETHEUS,
+    }
 
   We will test our step with a CSVConsumer
 
@@ -154,10 +163,7 @@ There are 2 files needed to configure a step.
 
 2- `requirements.txt`
 
-  The default requirements file for any python package, for *good practice* having the package with and specific version
-  is better than using the latest one.
-
-  In this example we are using only the :class:`GenericConsumer()`, there is no need to specify parameters for this consumer.
+  The default requirements file for any python package, for *good practice* having the package with a specific version is better than using the latest one.
 
   The basic `requirements.txt` comes with the current `apf` version as a required package
 
@@ -173,7 +179,7 @@ There are 2 files needed to configure a step.
 5. Running the step locally
 ----------------------------
 
-The step can me executed as a single process with
+The step can be executed with
 
 .. code-block :: bash
 

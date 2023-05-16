@@ -28,7 +28,7 @@ class KafkaConsumer(GenericConsumer):
 
 
     Parameters
-    -----------
+    ----------
 
     TOPICS: list
 
@@ -114,8 +114,9 @@ class KafkaConsumer(GenericConsumer):
                     'ssl.keystore.password': '<keystore password>'
                 }
             }
+
         all supported `confluent_kafka` parameters can be found
-        `here <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
+        `on the official library documentation <https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md>`_
     """
 
     consumer: Consumer
@@ -204,7 +205,7 @@ class KafkaConsumer(GenericConsumer):
         If num_messages = 1 then it returns dict.
 
         Parameters
-        --------------
+        ----------
         num_messages: int
             Number of messages to be consumed
         timeout: int

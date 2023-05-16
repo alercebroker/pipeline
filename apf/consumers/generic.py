@@ -19,7 +19,7 @@ class GenericConsumer(ABC):
         """Get a message from a data source
 
         Yields
-        -------
+        ------
         dict
             Dictionary like message of an alert.
         """

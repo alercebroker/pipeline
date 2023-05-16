@@ -46,6 +46,7 @@ Documentation
 
 .. toctree::
   new_step
+  step
   basic_metrics
   profiling
   core

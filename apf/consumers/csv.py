@@ -28,7 +28,7 @@ class CSVConsumer(GenericConsumer):
 
     OTHER_ARGS: dict
         Parameters passed to :func:`pandas.read_csv`
-        (reference `here <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html>`_)
+        (reference `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html>`_)
 
     """
 
@@ -39,6 +39,13 @@ class CSVConsumer(GenericConsumer):
             raise Exception("FILE_PATH variable not set")
 
     def consume(self):
+        """Get a message from a csv file
+
+        Yields
+        ------
+        dict
+            Dictionary like message of an alert.
+        """
         df = pd.read_csv(self.config["FILE_PATH"], **self.config.get("OTHER_ARGS", {}))
         self.len = len(df)
         for index, row in df.iterrows():
