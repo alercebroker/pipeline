@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import torch
 from alerce_classifiers.base.dto import InputDTO
 from alerce_classifiers.base.mapper import Mapper
 from alerce_classifiers.utils.dataframe import DataframeUtils
@@ -80,15 +81,29 @@ class LCHeaderMapper(Mapper):
         batch, num_features = response.shape
         response = response.reshape([batch, num_features, 1])
         return response
+    
+    def _to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
+        torch_input = {
+            "data": torch.from_numpy(
+                np.stack(pd_output["FLUXCAL"].to_list(), 0)
+            ).float(),
+            "data_var": torch.from_numpy(
+                np.stack(pd_output["FLUXCALERR"].to_list(), 0)
+            ).float(),
+            "time": torch.from_numpy(np.stack(pd_output["MJD"].to_list(), 0)).float(),
+            "mask": torch.from_numpy(np.stack(pd_output["mask"].to_list(), 0)).float(),
+            "tabular_feat": torch.from_numpy(np_headers).float(),
+        }
+        return torch_input
 
     def preprocess(self, input: InputDTO, **kwargs):
         # TODO: obtain the forced photometry field name
         detections = self._get_detections(input)
-        headers = self._get_headers(input, kwargs["quantiles"])
+        headers = self._get_headers(input)
 
         preprocessed_light_curve = self._preprocess_detections(detections)
-        preprocessed_headers = self._preprocess_headers(headers)
-        return preprocessed_light_curve, preprocessed_headers
+        preprocessed_headers = self._preprocess_headers(headers, kwargs["quantiles"])
+        return self._to_tensor_dict(preprocessed_light_curve, preprocessed_headers)
     
     def postprocess(self):
         pass
