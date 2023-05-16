@@ -164,6 +164,9 @@ class GenericStep(abc.ABC):
         self.pre_consume()
 
     def pre_consume(self):
+        """
+        Override this method to perform operations before the first message arrives.
+        """
         pass
 
     def _pre_execute(self, message: Union[dict, List[dict]]):
@@ -190,6 +193,13 @@ class GenericStep(abc.ABC):
         return preprocessed
 
     def pre_execute(self, messages: List[dict]):
+        """
+        Override this method to perform operations on each batch of messages consumed.
+
+        Typically this method is used for pre processing operations such as parsing,
+        formatting and overall preparation for the execute method that handles
+        all the complex logic applied to the messages.
+        """
         return messages
 
     @abstractmethod
@@ -228,6 +238,13 @@ class GenericStep(abc.ABC):
         return final_result
 
     def post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        """
+        Override this method to perform additional operations on
+        the processed data coming from :py:func:`apf.core.step.GenericStep.execute`
+        method.
+
+        Typically used to do post processing, parsing, output formatting, etc.
+        """
         return result
 
     def _pre_produce(
@@ -238,6 +255,13 @@ class GenericStep(abc.ABC):
         return message_to_produce
 
     def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        """
+        Override this method to perform additional operations on
+        the processed data coming from :py:func:`apf.core.step.GenericStep.post_execute`
+        method.
+
+        Typically used to format data output as described in the step producer's Schema
+        """
         return result
 
     def _post_produce(self):
@@ -245,6 +269,13 @@ class GenericStep(abc.ABC):
         self.post_produce()
 
     def post_produce(self):
+        """
+        Override this method to perform operations after data has been
+        produced by the producer.
+
+        You can use this lifecycle method to perform cleanup, send additional metrics,
+        notifications, etc.
+        """
         pass
 
     def get_value(self, message, params):
@@ -387,4 +418,14 @@ class GenericStep(abc.ABC):
         f.close()
 
     def tear_down(self):
+        """
+        Override this method to perform operations after the consumer
+        has stopped consuming data.
+
+        This method is called only once after processing messages and right before
+        the start method ends.
+
+        You can use this lifecycle method to perform cleanup, send additional metrics,
+        notifications, etc.
+        """
         pass
