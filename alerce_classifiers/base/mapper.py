@@ -3,7 +3,7 @@ from .dto import InputDTO
 
 class Mapper(ABC):
     @abstractmethod
-    def preprocess(input: InputDTO):
+    def preprocess(input: InputDTO, **kwargs):
         pass
 
     @abstractmethod
