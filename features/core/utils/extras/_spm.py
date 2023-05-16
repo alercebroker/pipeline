@@ -46,9 +46,9 @@ def _deattenuate_lsst(flux: np.ndarray, error: np.ndarray, band: np.ndarray, mwe
         error[mask] *= z_deatt * dust_deatt
 
 
-def spm(
+def fit_spm(
     df: pd.DataFrame,
-    func: _CALLABLE_WITH_BANDS | _CALLABLE_WITHOUT_BANDS,
+    spm: _CALLABLE_WITH_BANDS | _CALLABLE_WITHOUT_BANDS,
     ml: bool = True,
     multiband: bool = False,
     flux: bool = False,
@@ -59,7 +59,7 @@ def spm(
 
     Args:
         df: Frame with magnitudes, errors and times. Expects a single object and band at a time
-        func: Function for fitting SPM. Check functions in module `spm` for typical values
+        spm: Function for fitting SPM. Check functions in module `spm` for typical values
         ml: Whether to use corrected magnitudes instead of uncorrected
         multiband: Whether the `spm` function also uses the bands as parameters
         flux: Whether the "magnitudes" are actually in flux units
@@ -93,4 +93,4 @@ def spm(
 
             func(target[mask], error[mask], band[mask], mwebv, zhost)
 
-    return func(mjd, target, error, band, **kwargs) if multiband else func(mjd, target, error, **kwargs)
+    return spm(mjd, target, error, band, **kwargs) if multiband else spm(mjd, target, error, **kwargs)

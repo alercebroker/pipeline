@@ -9,12 +9,14 @@ from jax.nn import sigmoid as jsigmoid
 from numba import njit
 from scipy import optimize
 
+from ._utils import multiindex
+
 _INDICES = ("SPM_A", "SPM_t0", "SPM_gamma", "SPM_beta", "SPM_tau_raise", "SPM_tau_fall", "SPM_chi")
 
 
 @functools.lru_cache
 def _indices_with_fid(fid: str) -> pd.MultiIndex:
-    return pd.MultiIndex.from_product([_INDICES, [fid]])
+    return multiindex(_INDICES, (fid,))
 
 
 @njit
@@ -29,7 +31,7 @@ def _spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
     return temp * ampl / den
 
 
-@njit
+@jjit
 def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     """Uses constrains to provide higher stability with respect to v1"""
     sigmoid_factor = 1 / 2
@@ -112,21 +114,20 @@ def _pad(time, flux, error, band=None, multiple=25):
     pad = multiple - time.size % multiple  # All padded arrays are assumed to have the same length
     time = np.pad(time, (0, pad), "constant", constant_values=(0, 0))
     flux = np.pad(flux, (0, pad), "constant", constant_values=(0, 0))
-    band = np.pad(band, (0, pad), "constant", constant_values=(0, -1)) if band else band
+    band = np.pad(band, (0, pad), "constant", constant_values=(0, -1)) if band is not None else band
     error = np.pad(error, (0, pad), "constant", constant_values=(0, 1))
     return time, flux, error, band
 
 
 def fit_spm_v2(time, flux, error, band, preferred="irzYgu", multiple=25):
     time, flux, error = time.astype(np.float32), flux.astype(np.float32), error.astype(np.float32)
-    fids, band = np.unique(band, return_inverse=True)
-    ifids = np.arange(fids.size)
 
     time = time - np.min(time)
-
     guess, bounds = _guess_and_bounds_v2(time, flux, band, preferred)
-
     smooth = np.percentile(error, 10) * 0.5
+
+    fids, band = np.unique(band, return_inverse=True)
+    ifids = np.arange(fids.size)
 
     # Padding is needed to minimize recompilations of jax jit functions
     time, flux, error, band = _pad(time, flux, error, band, multiple)
@@ -164,9 +165,6 @@ def fit_spm_v1(time: np.ndarray, flux: np.ndarray, error: np.ndarray, alt: bool 
         # TODO: 3 * fmax should be 1.2 * fmax, but model is trained with the bug. DO NOT FIX UNTIL RETRAINED!!
         guess = np.clip([3 * fmax, -5, np.max(time), 0.5, time[imax] / 2, 40], *bounds)
         kwargs = dict(ftol=guess[0] / 20)
-
-    guess = guess.astype(np.float32)
-    bounds = np.array(bounds, dtype=np.float32)
 
     try:
         params, *_ = optimize.curve_fit(_spm_v1, time, flux, p0=guess, bounds=bounds, **kwargs)
