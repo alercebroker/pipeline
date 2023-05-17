@@ -110,6 +110,8 @@ class BaseFeatureExtractor(abc.ABC):
         detections: list[dict] | pd.DataFrame,
         non_detections: list[dict] | pd.DataFrame,
         xmatches: list[dict] | pd.DataFrame = None,
+        *,
+        legacy: bool = False,
     ):
         """Initialize feature extractor.
 
@@ -119,6 +121,7 @@ class BaseFeatureExtractor(abc.ABC):
             detections: All detections used for feature computing
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
             xmatches: Object cross-matches. It will be matched to detections based on its ID
+            legacy: Use old alert definition. Depends on specific extractor
         """
 
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
@@ -170,7 +173,7 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
-        return self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
+        return self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES).reset_index("oid", drop=True)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
