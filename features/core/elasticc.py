@@ -60,4 +60,5 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
-        return self.detections.apply(extras.fit_spm, version="v2", flux=self.FLUX, correct=True).stack("fid")
+        features = self.detections.apply(extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True)
+        return features.stack("fid")  # Needed for decorators to work
