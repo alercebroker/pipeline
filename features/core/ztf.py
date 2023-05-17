@@ -87,6 +87,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
+        # TODO: Bug option is included because model is trained with the bug. Should be removed if retrained
         return self.detections.apply(extras.fit_spm, by_fid=True, version="v1", bug=True, ml=False, flux=self.FLUX)
 
     @decorators.columns_per_fid

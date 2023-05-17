@@ -1,7 +1,7 @@
 import pandas as pd
 
 from ._base import BaseFeatureExtractor
-from .utils import decorators, functions, extras
+from .utils import decorators, extras
 
 
 class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
@@ -60,4 +60,4 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
-        return self.detections.apply(extras.fit_spm, version="v2", flux=self.FLUX).stack("fid")
+        return self.detections.apply(extras.fit_spm, version="v2", flux=self.FLUX, correct=True).stack("fid")
