@@ -17,7 +17,7 @@ def _indices_with_fid(fid: str) -> pd.MultiIndex:
 
 @functools.lru_cache
 def _get_model(version: str):
-    return getattr(models, f"{version}_numba")
+    return getattr(models, version)
 
 
 @functools.lru_cache
