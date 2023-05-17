@@ -34,7 +34,7 @@ def _spm_v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
 @jjit
 def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     """Uses constrains to provide higher stability with respect to v1"""
-    sigmoid_factor = 1 / 2
+    sigmoid_factor = 0.5
     t1 = t0 + gamma
 
     sigmoid_arg = sigmoid_factor * (times - t1)
@@ -50,7 +50,7 @@ def _spm_v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
 
     fall_arg = jnp.clip(-(times - t1) / t_fall, -20, 20)
     temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
-    return jnp.where(raise_arg > 20, temp * ampl / den, 0)
+    return jnp.where(raise_arg < 20, temp * ampl / den, 0)
 
 
 @jjit
