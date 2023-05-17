@@ -34,9 +34,47 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     BANDS = ("u", "g", "r", "i", "z", "Y")
     EXTRA_COLUMNS = ["mwebv", "z_final"]
     USE_CORRECTED = True
+    FLUX = True
     MIN_DETECTIONS = 5
     MIN_DETECTIONS_IN_FID = 0
     _AUTO_EXCLUDE = {"galactic_coordinates"}
+
+    def __init__(
+        self,
+        detections: list[dict] | pd.DataFrame,
+        non_detections: list[dict] | pd.DataFrame,
+        xmatches: list[dict] | pd.DataFrame = None,
+        *,
+        legacy: bool = False,
+        **kwargs,
+    ):
+        if legacy:
+            metadata = kwargs.pop("metadata", None)
+            if metadata is not None:
+                detections = detections.assign(mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"])
+            detections = detections.reset_index()
+            detections["sid"] = "LSST"
+            detections["corrected"] = True
+            detections = detections.rename(
+                columns={
+                    "SNID": "aid",
+                    "FLUXCAL": "mag",
+                    "FLUXCALERR": "e_mag",
+                    "MJD": "mjd",
+                    "BAND": "fid",
+                }
+            )
+            detections = detections.assign(mag_corr=detections["mag"], e_mag_corr_ext=detections["e_mag"])
+            detections = detections.assign(isdiffpos=(detections["mag"] / detections["mag"].abs()).astype(int))
+            detections = detections.reset_index(names="candid")  # Fake candid
+
+            if isinstance(non_detections, pd.DataFrame):
+                raise NotImplemented("Legacy ELAsTiCC does not implement non-detections")
+
+            if isinstance(xmatches, pd.DataFrame):
+                raise NotImplemented("Legacy ELAsTiCC does not implement cross-match")
+
+        super().__init__(detections, non_detections, xmatches)
 
     def _discard_detections(self):
         """Exclude noisy detections"""
@@ -51,12 +89,12 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_redshift_helio(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
 
-    @decorators.add_fid(["".join([b1, b2]) for b1, b2 in zip(BANDS[:-1], BANDS[1:])])
     def calculate_colors(self) -> pd.DataFrame:
         colors = {}
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
-            colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=True, q=0.9)
-        return pd.DataFrame(colors)
+            ind = (f"{b1}-{b2}", f"{b1}{b2}")
+            colors[ind] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=True, q=0.9)
+        return pd.DataFrame(colors).rename_axis(columns=(None, "fid"))
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
