@@ -402,7 +402,7 @@ class BaseHandler(abc.ABC):
         vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
         return vmax - vmin
 
-    def apply_grouped(
+    def apply(
         self,
         func: Callable[[pd.DataFrame, ...], pd.Series],
         *,

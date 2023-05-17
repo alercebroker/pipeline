@@ -173,7 +173,7 @@ class BaseFeatureExtractor(abc.ABC):
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
     def calculate_periods(self) -> pd.DataFrame:
-        df = self.detections.apply_grouped(
+        df = self.detections.apply(
             extras.periods,
             fids=self.BANDS,
             kim=self.COMPUTE_KIM,
@@ -185,17 +185,17 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
+        return self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX)
+        return self.detections.apply(extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_gp_drw(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.gp_drw, by_fid=True)
+        return self.detections.apply(extras.gp_drw, by_fid=True)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()

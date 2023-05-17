@@ -2,7 +2,6 @@ import pandas as pd
 
 from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
-from .utils.extras.spm import fit_spm_v1
 
 
 class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
@@ -41,11 +40,11 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         self.detections.select(["mag_ml", "e_mag_ml"], lt=[50e3, 300])
         super()._discard_detections()
 
-    @decorators.add_fid("")
+    @decorators.add_fid(0)
     def calculate_mwebv(self) -> pd.DataFrame:
         return pd.DataFrame({"mwebv": self.detections.get_aggregate("mwebv", "median")})
 
-    @decorators.add_fid("")
+    @decorators.add_fid(0)
     def calculate_redshift_helio(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
 
@@ -55,3 +54,8 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
             colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=True, q=0.9)
         return pd.DataFrame(colors)
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid()
+    def calculate_spm(self) -> pd.DataFrame:
+        return self.detections.apply(extras.fit_spm, version="v2", flux=self.FLUX).stack("fid")
