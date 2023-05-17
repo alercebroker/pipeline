@@ -53,33 +53,26 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         legacy: bool = False,
     ):
         if legacy:
-            if not isinstance(detections, pd.DataFrame):
-                detections = pd.DataFrame.from_records(detections)
             detections = detections.reset_index()
             detections["sid"] = "ZTF"
             detections["fid"].replace({v: k for k, v in self.BANDS_MAPPING.items()}, inplace=True)  # reverse mapping
-            print(detections["oid"])
             detections = detections.rename(
                 columns={
                     "oid": "aid",
                     "magpsf": "mag",
                     "sigmapsf": "e_mag",
                     "magpsf_corr": "mag_corr",
-                    "sigmapsf_corr": "e_mag_corr",
                     "sigmapsf_corr_ext": "e_mag_corr_ext"
                 }
             )
 
-            if not isinstance(non_detections, pd.DataFrame):
-                non_detections = pd.DataFrame.from_records(non_detections)
-            non_detections = non_detections.reset_index()
-            non_detections["sid"] = "ZTF"
-            non_detections["fid"].replace({v: k for k, v in self.BANDS_MAPPING.items()}, inplace=True)
-            non_detections = non_detections.rename(columns={"oid": "aid"})
+            if isinstance(non_detections, pd.DataFrame):
+                non_detections = non_detections.reset_index()
+                non_detections["sid"] = "ZTF"
+                non_detections["fid"].replace({v: k for k, v in self.BANDS_MAPPING.items()}, inplace=True)
+                non_detections = non_detections.rename(columns={"oid": "aid"})
 
-            if xmatches is not None:
-                if not isinstance(xmatches, pd.DataFrame):
-                    xmatches = pd.DataFrame.from_records(xmatches)
+            if isinstance(xmatches, pd.DataFrame):
                 xmatches = xmatches.reset_index()
                 xmatches = xmatches.rename(columns={"oid": "aid"})
 
