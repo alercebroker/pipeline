@@ -2,7 +2,6 @@ import pandas as pd
 
 from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
-from .utils.extras.spm import fit_spm_v1
 
 
 class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
@@ -88,7 +87,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
-        return self.detections.apply_grouped(extras.fit_spm, by_fid=True, spm=fit_spm_v1, ml=False, flux=self.FLUX)
+        return self.detections.apply_grouped(extras.fit_spm, by_fid=True, version="v1", bug=True, ml=False, flux=self.FLUX)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
