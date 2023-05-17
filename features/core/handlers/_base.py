@@ -116,7 +116,7 @@ class BaseHandler(abc.ABC):
         """Removes all alerts outside the specified parameters for a given field.
 
         If more than one field is added, the conditions will be joined with a logical and. If that is the case,
-        the provided values for `lt` and/or `gt` must match the length of the columns. Otherwise it will raise
+        the provided values for `lt` and/or `gt` must match the length of the columns. Otherwise, it will raise
         an error.
 
         Args:

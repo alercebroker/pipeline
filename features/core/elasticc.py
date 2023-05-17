@@ -27,13 +27,15 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         depend on values computed in the main period calculations.
     """
 
-    _AUTO_EXCLUDE = {"galactic_coordinates"}
     NAME = "elasticc_lc_features"
     VERSION = "1.0"
     SURVEYS = ("LSST",)
     BANDS = ("u", "g", "r", "i", "z", "Y")
     EXTRA_COLUMNS = ["mwebv", "z_final"]
     USE_CORRECTED = True
+    MIN_DETECTIONS = 5
+    MIN_DETECTIONS_IN_FID = 0
+    _AUTO_EXCLUDE = {"galactic_coordinates"}
 
     def _discard_detections(self):
         """Exclude noisy detections"""
