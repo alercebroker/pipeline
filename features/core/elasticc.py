@@ -93,7 +93,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         colors = {}
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
             ind = (f"{b1}-{b2}", f"{b1}{b2}")
-            colors[ind] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=True, q=0.9)
+            colors[ind] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9)
         return pd.DataFrame(colors).rename_axis(columns=(None, "fid"))
 
     @decorators.columns_per_fid
