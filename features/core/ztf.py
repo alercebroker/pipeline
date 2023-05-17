@@ -1,4 +1,5 @@
 import pandas as pd
+from astropy.coordinates import SkyCoord
 
 from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
@@ -23,7 +24,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     * `wise_colors`: W1-W2, W2-W3, g-W2, g-W3, r-W2, r-W3 mean colors for each object (if cross-match is available)
     * `real_bogus`: Median real-bogus value for each object
     * `sg_score`: Median start-galaxy score for each object
-    * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v1.
+    * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v1 (per band fit).
     * `sn_stats`: Magnitude and date statistics for detections and non-detections
     * `counters`: Number of detections (positive and negative) and non-detections (before and after first detection)
 
@@ -37,7 +38,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
-    EXTRA_COLUMNS = ["rb", "sgscore1"]
+    EXTRA_COLUMNS = ["ra", "dec", "rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     USE_CORRECTED = True
     MIN_REAL_BOGUS = 0.55
@@ -48,6 +49,14 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS)
         self.detections.select("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
         super()._discard_detections()
+
+    @decorators.add_fid(0)
+    def calculate_galactic_coordinates(self) -> pd.DataFrame:
+        ra = self.detections.get_aggregate("ra", "mean")
+        dec = self.detections.get_aggregate("dec", "mean")
+        galactic = SkyCoord(ra, dec, frame="icrs", unit="deg").galactic
+        # By construction, ra and dec indices should be the same
+        return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
     @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:

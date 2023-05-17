@@ -2,7 +2,6 @@ import abc
 from typing import Any
 
 import pandas as pd
-from astropy.coordinates import SkyCoord
 from scipy import stats
 
 from .handlers import DetectionsHandler, NonDetectionsHandler
@@ -20,7 +19,6 @@ class BaseFeatureExtractor(abc.ABC):
 
     The extractors included (and computed) here by default are:
 
-    * `galactic_coordinates`: Galactic latitude and longitude of each object.
     * `periods`: Period related features (multi-band period, per band period, etc.). Check the notes.
     * `fats`: Computes all FATS features defined in `FATS_FEATURES`.
     * `mhps`: Mexican hat power spectrum for each object, per band.
@@ -163,14 +161,6 @@ class BaseFeatureExtractor(abc.ABC):
         """Clears the cache from detections and non-detections."""
         self.detections.clear_caches()
         self.non_detections.clear_caches()
-
-    @decorators.add_fid(0)
-    def calculate_galactic_coordinates(self) -> pd.DataFrame:
-        ra = self.detections.get_aggregate("ra", "mean")
-        dec = self.detections.get_aggregate("dec", "mean")
-        galactic = SkyCoord(ra, dec, frame="icrs", unit="deg").galactic
-        # By construction, ra and dec indices should be the same
-        return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
 
     def calculate_periods(self) -> pd.DataFrame:
         df = self.detections.apply(

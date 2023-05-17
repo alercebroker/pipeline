@@ -21,6 +21,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     * `mwebv`: Median Milky Way extinction for each object
     * `redshift_helio`: Median heliocentric redshift for each object
     * `colors`: Compute P90 colors for each object
+    * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v2 (multi-band fit).
 
     Notes:
         If `periods` is excluded, `COMPUTE_KIM`, `N_HARMONICS` and `POWER_RATE_FACTORS` will all be ignored, as they
