@@ -145,8 +145,8 @@ class BaseFeatureExtractor(abc.ABC):
     def _discard_detections(self):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
-        self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
-        self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
+        self.detections.not_enough(self.MIN_DETECTIONS)
+        self.detections.not_enough(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""

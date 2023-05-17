@@ -78,7 +78,7 @@ class BaseHandler(abc.ABC):
         self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
 
-    def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
+    def not_enough(self, minimum: int, *, by_fid: bool = False):
         """Remove all alerts from objects without a minimum number of detections.
 
         Args:
