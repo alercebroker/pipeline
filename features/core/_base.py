@@ -110,8 +110,6 @@ class BaseFeatureExtractor(abc.ABC):
         detections: list[dict] | pd.DataFrame,
         non_detections: list[dict] | pd.DataFrame,
         xmatches: list[dict] | pd.DataFrame = None,
-        *,
-        legacy: bool = False
     ):
         """Initialize feature extractor.
 
@@ -120,11 +118,10 @@ class BaseFeatureExtractor(abc.ABC):
         Args:
             detections: All detections used for feature computing
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
-            xmatches: Object cross-matches. It will be matched to detections based on `aid` or `oid` (see `legacy`)
-            legacy: Use legacy alert format. This refers to the PSQL style alert models of ALeRCE
+            xmatches: Object cross-matches. It will be matched to detections based on its ID
         """
 
-        common = dict(surveys=self.SURVEYS, bands=self.BANDS, legacy=legacy)
+        common = dict(surveys=self.SURVEYS, bands=self.BANDS)
 
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
@@ -139,8 +136,7 @@ class BaseFeatureExtractor(abc.ABC):
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
-        self.xmatches = self._create_xmatches(xmatches, legacy)
-        self._periods = None
+        self.xmatches = self._create_xmatches(xmatches)
 
     @abc.abstractmethod
     def _discard_detections(self):
@@ -149,11 +145,10 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS)
         self.detections.remove_objects_without_enough_detections(self.MIN_DETECTIONS_IN_FID, by_fid=True)
 
-    def _create_xmatches(self, xmatches: list[dict], legacy: bool) -> pd.DataFrame:
+    def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
-        id_col = "oid" if legacy else "aid"
-        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=[id_col] + self.XMATCH_COLUMNS)
-        xmatches = xmatches.rename(columns={id_col: "id"})
+        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
+        xmatches = xmatches.rename(columns={"aid": "id"})
         xmatches = xmatches[xmatches["id"].isin(self.detections.get_objects())]
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 

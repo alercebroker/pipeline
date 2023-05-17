@@ -13,7 +13,7 @@ class DetectionsHandler(BaseHandler):
 
     Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
 
-    Required fields are: `id`, `sid`, `fid`, `mjd`, `ra`, `dec`, `mag`, `e_mag` and `isdiffpos`.
+    Required fields are: `id`, `sid`, `fid`, `mjd`, `mag`, `e_mag` and `isdiffpos`.
 
     Additional fields required are `mag_ml` and `e_mag_ml`, but are generated at initialization. The value for these
     fields depend on the argument `corr`. If `False` they will take the values of `mag` and `e_mag`, respectively, for
@@ -29,19 +29,12 @@ class DetectionsHandler(BaseHandler):
 
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
-    COLUMNS = BaseHandler.COLUMNS + ["ra", "dec", "mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
+    COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
 
     def _post_process_alerts(self, **kwargs):
         """Handles legacy alerts (renames old field names to the new conventions) and sets the
         `mag_ml` and `e_mag_ml` fields based on the `corr` argument. This is in addition to base
         post-processing"""
-
-        if kwargs.pop("legacy", False):
-            self._alerts["mag"] = self._alerts["magpsf"]
-            self._alerts["e_mag"] = self._alerts["sigmapsf"]
-            self._alerts["mag_corr"] = self._alerts["magpsf_corr"]
-            self._alerts["e_mag_corr"] = self._alerts["sigmapsf_corr"]
-            self._alerts["e_mag_corr_ext"] = self._alerts["sigmapsf_corr_ext"]
         if kwargs.pop("corr", False):
             self._use_corrected_magnitudes(kwargs.pop("surveys"))
         else:

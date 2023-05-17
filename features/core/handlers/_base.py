@@ -16,10 +16,10 @@ class BaseHandler(abc.ABC):
     This provides the general base methods for extracting statistics and applying functions to the alerts
     considered.
 
-    Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the last can be `oid` if using `legacy`).
+    Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the latter will be renamed to `id`).
     Usually, a subclass will define additional fields that are required, but missing one of the aforementioned fields
     will result in an initialization error, unless the initialization methods are adapted as well. These always
-    required fields are defined the class attribute `COLUMNS`. The field `aid` (or `oid`) will be renamed to `id`.
+    required fields are defined the class attribute `COLUMNS`.
 
     It is possible to define one or more fields that define a unique alert with the class attribute `UNIQUE`.
     Alert duplicates (based on these columns) will be eliminated, keeping only one of these alerts. It is also
@@ -54,16 +54,14 @@ class BaseHandler(abc.ABC):
         Keyword Args:
             surveys (str | tuple[str]): Survey(s) to keep. Defined by field `sid`. An empty tuple will keep all
             bands (str | tuple[str]): Band(s) to keep. Defined by `fid`. An empty tuple will keep all
-            legacy (bool): Whether to use legacy format for alerts following old PSQL style database from ALeRCE
             extras (list[str]): Additional fields to keep (these fields can have undefined values)
         """
 
-        legacy = kwargs.pop("legacy", False)
         try:
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
-        self._alerts = self._alerts.rename(columns={"oid" if legacy else "aid": "id"})
+        self._alerts = self._alerts.rename(columns={"aid": "id"})
         if self._alerts.size == 0:
             index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
             unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
@@ -71,17 +69,13 @@ class BaseHandler(abc.ABC):
             columns = set(self.COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
 
-        if legacy:
-            self._alerts["sid"] = "ZTF"
-            self._alerts["fid"].replace({1: "g", 2: "r"}, inplace=True)
-
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
         if self.INDEX:
             self._alerts.set_index(self.INDEX, inplace=True)
 
         extras = kwargs.get("extras", [])
-        self._post_process_alerts(alerts=alerts, surveys=surveys, legacy=legacy, **kwargs)
+        self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
 
     def remove_objects_without_enough_detections(self, minimum: int, *, by_fid: bool = False):
@@ -154,9 +148,9 @@ class BaseHandler(abc.ABC):
         `super` in subclass implementations."""
         if "extras" in kwargs:
             self.__add_extra_fields(kwargs.pop("alerts"), kwargs.pop("extras"))
-        if set(kwargs) - {"alerts", "surveys", "legacy"}:
+        if set(kwargs) - {"alerts", "surveys"}:
             # Only used in subclasses, when using super it should be empty
-            raise ValueError(f"Unrecognized kwargs: {', '.join(set(kwargs) - {'alerts', 'surveys', 'legacy'})}")
+            raise ValueError(f"Unrecognized kwargs: {', '.join(set(kwargs) - {'alerts', 'surveys'})}")
 
     def _clear(self, surveys: str | tuple[str, ...], bands: str | tuple[str, ...], extras: list[str]):
         """Keep only alerts in the required surveys and bands and with defined values in required columns.
