@@ -20,7 +20,7 @@ CONSUMER_CONFIG = {
     "TOPICS": ["test_topic"],
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
-        "group.id": "command_consumer_1",
+        "group.id": "command_consumer_2",
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },

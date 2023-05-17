@@ -1,5 +1,5 @@
-import json
-import os
+from pprint import pprint
+from random import choice
 import pytest
 import unittest
 from mongo_scribe.step import MongoScribe
@@ -18,18 +18,18 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
-    "TOPICS": ["test_topic"],
+    "TOPICS": ["test_topic_2"],
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
         "group.id": "command_consumer_1",
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },
-    "NUM_MESSAGES": 2,
+    "NUM_MESSAGES": 100,
 }
 
 PRODUCER_CONFIG = {
-    "TOPIC": "test_topic",
+    "TOPIC": "test_topic_2",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
     "SCHEMA": {
         "namespace": "db_operation",
@@ -60,10 +60,36 @@ class StepTest(unittest.TestCase):
         konsumer = KafkaConsumer(config=CONSUMER_CONFIG)
         cls.step = MongoScribe(consumer=konsumer, config=cls.step_config)
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
+        cls.generator = CommandGenerator()
 
-        generator = CommandGenerator()
-        cls.commands = [ generator.generate_random_command() for i in range(50) ]
-        cls.generator = generator
+        # better generate the full batch then check
+        # 0 - X (no options)
+        commands = [cls.generator.generate_insert()]
+        commands.extend(
+            [cls.generator.generate_random_command() for _ in range(500)]
+        )
+        # 500 - 500 + X (with upsert)
+        cls.generator.set_offset(500)
+        commands.append(cls.generator.generate_insert())
+        commands.extend(
+            [
+                cls.generator.generate_random_command({"upsert": True}, 500)
+                for _ in range(500)
+            ]
+        )
+        # 1000 - 1000 + X (upsert and set_on_insert)
+        cls.generator.set_offset(1000)
+        commands.append(cls.generator.generate_insert())
+        commands.extend(
+            [
+                cls.generator.generate_random_command(
+                    {"upsert": True, "set_on_insert": True}, 1000
+                )
+                for _ in range(500)
+            ]
+        )
+        cls.commands = commands
+        # ask for possible edge cases
 
     def test_bulk(self):
         for i, command in enumerate(self.commands):
@@ -71,8 +97,38 @@ class StepTest(unittest.TestCase):
 
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
-        result = collection.find()
-        self.assertIsNotNone(result)
-        print(list(result))
 
+        # get any element that have features (obtained from the tracker)
+        updated_feats = {
+            key: val
+            for key, val in self.generator.get_updated_features().items()
+            if val != []
+        }
+        sample_id = choice(list(updated_feats.keys()))
+        result = collection.find_one({"_id": f"ID{sample_id}"})
+        tracked = updated_feats[sample_id]
+        diff = [
+            prob
+            for prob in result["features"] + tracked
+            if prob not in result["features"] or prob not in tracked
+        ]
+        self.assertEqual(len(diff), 0)
 
+        # # the same as above but with probabilities
+        updated_probs = {
+            key: val
+            for key, val in self.generator.get_updated_probabilities().items()
+            if val != []
+        }
+        sample_id_2 = choice(list(updated_probs.keys()))
+        result = collection.find_one({"_id": f"ID{sample_id_2}"})
+        tracked = updated_probs[sample_id_2]
+        diff = [
+            prob
+            for prob in result["probabilities"] + tracked
+            if prob not in result["probabilities"] or prob not in tracked
+        ]
+        self.assertEqual(len(diff), 0)
+        # self.assertIsNotNone(result)
+
+        # check edge cases
