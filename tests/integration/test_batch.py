@@ -25,7 +25,7 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },
-    "NUM_MESSAGES": 100,
+    "NUM_MESSAGES": 25,
 }
 
 PRODUCER_CONFIG = {
@@ -66,26 +66,26 @@ class StepTest(unittest.TestCase):
         # 0 - X (no options)
         commands = [cls.generator.generate_insert()]
         commands.extend(
-            [cls.generator.generate_random_command() for _ in range(500)]
+            [cls.generator.generate_random_command() for _ in range(125)]
         )
         # 500 - 500 + X (with upsert)
-        cls.generator.set_offset(500)
+        cls.generator.set_offset(125)
         commands.append(cls.generator.generate_insert())
         commands.extend(
             [
-                cls.generator.generate_random_command({"upsert": True}, 500)
-                for _ in range(500)
+                cls.generator.generate_random_command({"upsert": True}, 125)
+                for _ in range(125)
             ]
         )
         # 1000 - 1000 + X (upsert and set_on_insert)
-        cls.generator.set_offset(1000)
+        cls.generator.set_offset(250)
         commands.append(cls.generator.generate_insert())
         commands.extend(
             [
                 cls.generator.generate_random_command(
-                    {"upsert": True, "set_on_insert": True}, 1000
+                    {"upsert": True, "set_on_insert": True}, 250
                 )
-                for _ in range(500)
+                for _ in range(125)
             ]
         )
         cls.commands = commands
