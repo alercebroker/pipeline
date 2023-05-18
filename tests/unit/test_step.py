@@ -17,11 +17,13 @@ step_mock_config = {
 
 messages = utils.generate_many(INPUT_SCHEMA, 10)
 
+
 def assert_object_is_correct(obj):
     assert "aid" in obj
     assert "candid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
+
 
 def assert_command_is_correct(command):
     assert command["collection"] == "object"
@@ -29,6 +31,7 @@ def assert_command_is_correct(command):
     assert command["criteria"]["_id"] is not None
     assert "aid" not in command["data"]
     assert not command["options"]["set_on_insert"]
+
 
 def test_step():
     step = LateClassifier(config=step_mock_config)

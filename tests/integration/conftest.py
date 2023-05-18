@@ -19,8 +19,10 @@ def docker_compose_file(pytestconfig):
         pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"
     ).absolute()
 
+
 def get_lc_classifier_topic():
     return "lc_classifier%s" % datetime.utcnow().strftime("%Y%m%d")
+
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
