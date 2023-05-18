@@ -40,6 +40,7 @@ def fill_in_every_fid(fill_value: Any = np.nan, dtype: type = float):
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             df = method(self, *args, **kwargs)
+            print(df)
             if self.BANDS:
                 return fill_index(df, fill_value=fill_value, dtype=dtype, fid=self.BANDS)
             return df

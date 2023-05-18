@@ -42,7 +42,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         detections: list[dict] | pd.DataFrame,
-        non_detections: list[dict] | pd.DataFrame,
+        non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
         *,
         legacy: bool = False,
@@ -111,6 +111,6 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.fill_in_every_fid()
     def calculate_sn_features(self) -> pd.DataFrame:
         alerts = self.detections.get_alerts()
-        first_mjd, first_flux = alerts[["mjd", "mag_ml"]].loc[alerts["mjd"].argmin()]
+        mjd, flux = alerts[["mjd", "mag_ml"]][alerts["detected"]].loc[alerts["mjd"].argmin()]
 
-        return self.detections.apply(extras.sn_feature_elasticc, first_mjd=first_mjd, first_flux=first_flux)
+        return self.detections.apply(extras.sn_feature_elasticc, first_mjd=mjd, first_flux=flux, by_fid=True)

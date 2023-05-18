@@ -47,7 +47,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         detections: list[dict] | pd.DataFrame,
-        non_detections: list[dict] | pd.DataFrame,
+        non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
         *,
         legacy: bool = False,

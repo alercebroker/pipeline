@@ -108,7 +108,7 @@ class BaseFeatureExtractor(abc.ABC):
     def __init__(
         self,
         detections: list[dict] | pd.DataFrame,
-        non_detections: list[dict] | pd.DataFrame,
+        non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
         *,
         legacy: bool = False,
@@ -131,6 +131,7 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.USE_CORRECTED, **common)
         self._discard_detections()
 
+        non_detections = non_detections or []
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index().to_dict("records")
         first_mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)

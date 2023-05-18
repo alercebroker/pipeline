@@ -1,7 +1,6 @@
 """Only for ELAsTiCC"""
+import numpy as np
 import pandas as pd
-
-_INDICES = ("positive_fraction", "dflux_first_det_band", "dflux_non_det_band", )
 
 
 def sn_feature_elasticc(df: pd.DataFrame, first_mjd: float, first_flux: float) -> pd.Series:
@@ -13,7 +12,10 @@ def sn_feature_elasticc(df: pd.DataFrame, first_mjd: float, first_flux: float) -
     n_non_det_before = non_det_before.count()
     n_non_det_after = non_det_after.count()
 
-    last_flux_before = non_det_before["mag_ml"][non_det_before["mjd"].argmax()]
+    try:
+        last_flux_before = non_det_before["mag_ml"][non_det_before["mjd"].argmax()]
+    except ValueError:  # Occurs for empty non_det_before
+        last_flux_before = np.nan
     max_flux_before = non_det_before["mag_ml"].max()
     median_flux_before = non_det_before["mag_ml"].median()
 

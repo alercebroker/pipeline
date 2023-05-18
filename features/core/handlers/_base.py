@@ -265,6 +265,7 @@ class BaseHandler(abc.ABC):
             name: Field name. It will override any existing field with the same name
             values: Values for the new field. It is responsibility of the user to make sure it matches with alerts
         """
+        self.clear_caches()
         self._alerts = self._alerts.assign(**{name: values})
 
     @methodtools.lru_cache()
