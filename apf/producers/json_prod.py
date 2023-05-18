@@ -26,11 +26,11 @@ class JSONProducer(GenericProducer):
             )
             self.buffer = concat([self.buffer, serialized_message])
             file_name_list = self.config["FILE_PATH"].split(".")
-            file_name = file_name_list[0] + "0"
+            file_name = file_name_list[0] + str(self.file_counter)
             if len(self.buffer) == self.buffer_size:
                 serialized_message.to_json(
                     file_name + ".json",
                     orient="records",
                     lines=True,
-                    mode="a",
                 )
+            self.file_counter += 1
