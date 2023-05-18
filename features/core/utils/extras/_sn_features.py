@@ -9,8 +9,8 @@ def sn_feature_elasticc(df: pd.DataFrame, first_mjd: float, first_flux: float) -
     non_det_before = df[(df["mjd"] < first_mjd) & ~df["detected"]]
     non_det_after = df[(df["mjd"] >= first_mjd) & ~df["detected"]]
 
-    n_non_det_before = non_det_before.count()
-    n_non_det_after = non_det_after.count()
+    n_non_det_before = non_det_before["mjd"].count()
+    n_non_det_after = non_det_after["mjd"].count()
 
     try:
         last_flux_before = non_det_before["mag_ml"][non_det_before["mjd"].argmax()]
