@@ -17,6 +17,18 @@ def v1(times, ampl, t0, gamma, beta, t_rise, t_fall):
     return temp * ampl / den
 
 
+@jjit
+def v1_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
+    """Direct usage of the model"""
+    sigmoid_factor = 1 / 3
+    t1 = t0 + gamma
+
+    sigmoid = 1 / (1 + jnp.exp(-sigmoid_factor * (times - t1)))
+    den = 1 + jnp.exp(-(times - t0) / t_rise)
+    temp = (1 - beta) * jnp.exp(-(times - t1) / t_fall) * sigmoid + (1. - beta * (times - t0) / gamma) * (1 - sigmoid)
+    return temp * ampl / den
+
+
 @njit
 def v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     """Uses constrains to provide higher stability with respect to v1"""
