@@ -258,6 +258,15 @@ class BaseHandler(abc.ABC):
         bands = (bands,) if isinstance(bands, str) else bands
         return self.__mask("fid", bands)
 
+    def add_field(self, name: str, values: pd.Series | np.ndarray | float):
+        """Add a new, arbitrary field to the alerts.
+
+        Args:
+            name: Field name. It will override any existing field with the same name
+            values: Values for the new field. It is responsibility of the user to make sure it matches with alerts
+        """
+        self._alerts = self._alerts.assign(**{name: values})
+
     @methodtools.lru_cache()
     def get_objects(self) -> np.ndarray:
         """Get array with objects represented among the alerts.
