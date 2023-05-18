@@ -31,13 +31,12 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     NAME = "elasticc_lc_features"
     VERSION = "1.0"
     SURVEYS = ("LSST",)
-    BANDS = ("u", "g", "r", "i", "z", "Y")
+    BANDS = ("u", "g", "r", "i", "z", "Y")  # Order matters for colors!
     EXTRA_COLUMNS = ["mwebv", "z_final"]
     USE_CORRECTED = True
     FLUX = True
     MIN_DETECTIONS = 5
     MIN_DETECTIONS_IN_FID = 0
-    _AUTO_EXCLUDE = {"galactic_coordinates"}
 
     def __init__(
         self,
@@ -89,12 +88,12 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_redshift_helio(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
 
+    @decorators.add_fid("".join(BANDS))
     def calculate_colors(self) -> pd.DataFrame:
         colors = {}
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
-            ind = (f"{b1}-{b2}", f"{b1}{b2}")
-            colors[ind] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9)
-        return pd.DataFrame(colors).rename_axis(columns=(None, "fid"))
+            colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9)
+        return pd.DataFrame(colors)
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()

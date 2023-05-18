@@ -69,6 +69,6 @@ def fit_spm(
             func(target[mask], error[mask], band[mask], mwebv, zhost)
 
     func = _get_fitter(multiband)
-    commons = (version, mjd, target, error)
 
-    return func(*commons, band, **kwargs) if multiband else func(*commons, **kwargs)
+    args = (version, mjd, target, error) + ((band,) if multiband else ())
+    return func(*args, **kwargs)
