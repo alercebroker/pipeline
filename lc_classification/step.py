@@ -2,6 +2,7 @@ from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from lc_classifier.classifier.models import HierarchicalRandomForest
+from lc_classification.utils import NoClassifiedPostProcessor
 
 import logging
 import pandas as pd
