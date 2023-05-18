@@ -100,9 +100,9 @@ def test_bulk(kafka_service, mongo_service):
     result = collection.find_one({"_id": f"ID{sample_id}"})
     tracked = updated_feats[sample_id]
     diff = [
-        prob
-        for prob in result["features"] + tracked
-        if prob not in result["features"] or prob not in tracked
+        feat
+        for feat in result["features"] + tracked
+        if feat not in result["features"] or feat not in tracked
     ]
     assert len(diff) == 0
 
