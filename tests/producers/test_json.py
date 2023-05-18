@@ -16,5 +16,6 @@ class JSONProducerTest(GenericProducerTest):
         super().test_produce(self.component)
 
     def tearDown(self):
-        self.assertTrue(os.path.exists(self.file_path))
-        os.remove(self.file_path)
+        path = self.file_path.split(".")[0] + "0.json"
+        self.assertTrue(os.path.exists(path))
+        os.remove(path)

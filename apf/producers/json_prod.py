@@ -1,6 +1,6 @@
 from apf.producers.generic import GenericProducer
 import json
-from pandas import read_json
+from pandas import DataFrame, read_json, concat
 
 
 class JSONProducer(GenericProducer):
@@ -14,6 +14,9 @@ class JSONProducer(GenericProducer):
 
     def __init__(self, config):
         super().__init__(config=config)
+        self.buffer = DataFrame()
+        self.buffer_size = config.get("buffer_size", 1)
+        self.file_counter = 0
 
     def produce(self, message=None, **kwargs):
         """Produce Message to a JSON File."""
@@ -21,6 +24,13 @@ class JSONProducer(GenericProducer):
             serialized_message = read_json(
                 json.dumps([message]), orient="records", typ="frame"
             )
-            serialized_message.to_json(
-                self.config["FILE_PATH"], orient="records", lines=True, mode="a"
-            )
+            self.buffer = concat([self.buffer, serialized_message])
+            file_name_list = self.config["FILE_PATH"].split(".")
+            file_name = file_name_list[0] + "0"
+            if len(self.buffer) == self.buffer_size:
+                serialized_message.to_json(
+                    file_name + ".json",
+                    orient="records",
+                    lines=True,
+                    mode="a",
+                )
