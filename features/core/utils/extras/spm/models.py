@@ -1,6 +1,7 @@
 import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax.nn import sigmoid as jsigmoid
 from numba import njit
 
 
@@ -27,6 +28,7 @@ def v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     sigmoid *= sigmoid_arg > -10  # set to zero  below -10
     sigmoid = np.where(sigmoid_arg < 10, sigmoid, 1)  # set to one above 10
 
+    # TODO: Different from v2_jax, but comes from original code. Check before changing
     stable = t_fall >= t_rise  # Early times diverge in unstable case
     sigmoid *= stable + (1 - stable) * (times > t1)
 
@@ -45,11 +47,12 @@ def v2_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
     t1 = t0 + gamma
 
     sigmoid_arg = sigmoid_factor * (times - t1)
-    sigmoid = 1 / (1 + jnp.exp(-jnp.clip(sigmoid_arg, -10, 10)))
+    sigmoid = jsigmoid(sigmoid_arg)
     sigmoid *= sigmoid_arg > -10  # set to zero  below -10
     sigmoid = jnp.where(sigmoid_arg < 10, sigmoid, 1)  # set to one above 10
 
-    stable = t_fall >= t_rise  # Early times diverge in unstable case
+    # TODO: This is apparently a bug carried over (stable should be >=). Check before fixing
+    stable = t_fall < t_rise  # Early times diverge in unstable case
     sigmoid *= stable + (1 - stable) * (times > t1)
 
     raise_arg = -(times - t0) / t_rise
