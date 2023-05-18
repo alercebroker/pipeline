@@ -21,10 +21,21 @@ class LCFeatureMapper(LCHeaderMapper):
         response = np.concatenate(all_feat, 1)
         batch, num_features = response.shape
         response = response.reshape([batch, num_features, 1])
-        return response        
+        return response
 
-    def preprocess(self, input: InputDTO, **kwargs):
+    def _feat_to_tensor_dict(
+        self, torch_input, np_features: np.ndarray
+    ) -> dict:
+        torch_features = torch.from_numpy(np_features).float()
+        torch_input["tabular_feat"] = torch.cat(
+            [torch_input["tabular_feat"], torch_features], dim=1
+        )
+        return torch_input
+
+    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
         features = self._get_features(input)
-        preprocessed_features = self._preprocess_features(features, kwargs["feature_quantiles"])
-        lc, headers = super().preprocess(input, quantiles=kwargs["header_quantiles"])
-        return lc, headers, preprocessed_features
+        preprocessed_features = self._preprocess_features(
+            features, kwargs["feature_quantiles"]
+        )
+        torch_input, aid_index = super().preprocess(input, quantiles=kwargs["header_quantiles"])
+        return self._feat_to_tensor_dict(torch_input, preprocessed_features), aid_index

@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 
 from joblib import load
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
 from alerce_classifiers.transformer_lc_header.model import (
@@ -44,39 +45,14 @@ class TransformerLCFeaturesClassifier(AlerceModel):
             parsed_feat = feat.replace("/", "&&&")
             self.feature_quantiles[feat] = load(f"{path}/norm_{parsed_feat}.joblib")
 
-    def to_tensor_dict(
-        self, pd_output: pd.DataFrame, np_headers: np.ndarray, np_features: np.ndarray
-    ):
-        these_kwargs = self._header_classifier.to_tensor_dict(pd_output, np_headers)
-        torch_features = torch.from_numpy(np_features).float()
-        these_kwargs["tabular_feat"] = torch.cat(
-            [these_kwargs["tabular_feat"], torch_features], dim=1
-        )
-        return these_kwargs
-
-    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        (
-            preprocessed_light_curve,
-            preprocessed_headers,
-            preprocessed_features,
-        ) = self.mapper.preprocess(
+    def predict(self, data_input: InputDTO) -> OutputDTO:
+        input_nn, aid_index = self.mapper.preprocess(
             data_input,
             header_quantiles=self._header_classifier.quantiles,
             feature_quantiles=self.feature_quantiles,
         )
 
-        input_nn = self.to_tensor_dict(
-            preprocessed_light_curve, preprocessed_headers, preprocessed_features
-        )
-        del preprocessed_headers
-        del preprocessed_features
-
         with torch.no_grad():
             pred = self.model.predict_mix(**input_nn)
-            pred = pred["MLPMix"].exp().detach().numpy()
-            preds = pd.DataFrame(
-                pred, columns=self._taxonomy, index=preprocessed_light_curve.index
-            )
-        del input_nn
-        del preprocessed_light_curve
-        return preds
+
+        return self.mapper.postprocess(pred, index=aid_index)

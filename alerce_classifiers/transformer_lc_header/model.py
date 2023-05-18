@@ -6,6 +6,7 @@ import torch
 import validators
 
 from joblib import load
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
 
@@ -36,7 +37,9 @@ class TranformerLCHeaderClassifier(AlerceModel):
         "uLens",
     ]
 
-    def __init__(self, model_path: str, header_quantiles_path: str, mapper: LCHeaderMapper):
+    def __init__(
+        self, model_path: str, header_quantiles_path: str, mapper: LCHeaderMapper = None
+    ):
         super().__init__(model_path, mapper)
         self._local_files = f"/tmp/{type(self).__name__}"
         _file = os.path.dirname(__file__)
@@ -62,33 +65,12 @@ class TranformerLCHeaderClassifier(AlerceModel):
             model_path = self.download(model_path, self._local_files)
         self.model = torch.load(model_path, map_location=torch.device("cpu")).eval()
 
-    @classmethod
-    def to_tensor_dict(cls, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
-        these_kwargs = {
-            "data": torch.from_numpy(
-                np.stack(pd_output["FLUXCAL"].to_list(), 0)
-            ).float(),
-            "data_var": torch.from_numpy(
-                np.stack(pd_output["FLUXCALERR"].to_list(), 0)
-            ).float(),
-            "time": torch.from_numpy(np.stack(pd_output["MJD"].to_list(), 0)).float(),
-            "mask": torch.from_numpy(np.stack(pd_output["mask"].to_list(), 0)).float(),
-            "tabular_feat": torch.from_numpy(np_headers).float(),
-        }
-        return these_kwargs
-
-    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        light_curve, headers = self.mapper.preprocess(data_input, quantiles=self.quantiles)
-        input_nn = self.to_tensor_dict(light_curve, headers)
-        del headers
+    def predict(self, data_input: InputDTO) -> OutputDTO:
+        input_nn, aid_index = self.mapper.preprocess(data_input, quantiles=self.quantiles)
 
         with torch.no_grad():
             pred = self.model.predict_mix(**input_nn)
-            pred = pred["MLPMix"].exp().detach().numpy()
-            preds = pd.DataFrame(
-                pred, columns=self._taxonomy, index=light_curve.index
-            )
-        del input_nn
-        del light_curve
-        return preds
 
+        return self.mapper.postprocess(
+            pred, taxonomy=self._taxonomy, index=aid_index
+        )

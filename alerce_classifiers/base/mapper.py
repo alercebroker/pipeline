@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from .dto import InputDTO
+from .dto import InputDTO, OutputDTO
 
 class Mapper(ABC):
     @abstractmethod
-    def preprocess(input: InputDTO, **kwargs):
+    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
         pass
 
     @abstractmethod
-    def postprocess():
+    def postprocess(self, model_output, **kwargs) -> OutputDTO:
         pass
