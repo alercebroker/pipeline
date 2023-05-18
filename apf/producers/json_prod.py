@@ -1,5 +1,6 @@
 from apf.producers.generic import GenericProducer
 import json
+from pandas import read_json
 
 
 class JSONProducer(GenericProducer):
@@ -17,5 +18,9 @@ class JSONProducer(GenericProducer):
     def produce(self, message=None, **kwargs):
         """Produce Message to a JSON File."""
         if "FILE_PATH" in self.config and self.config["FILE_PATH"]:
-            with open(self.config["FILE_PATH"], "a") as outfile:
-                json.dump(message, outfile)
+            serialized_message = read_json(
+                json.dumps([message]), orient="records", typ="frame"
+            )
+            serialized_message.to_json(
+                self.config["FILE_PATH"], orient="records", lines=True, mode="a"
+            )
