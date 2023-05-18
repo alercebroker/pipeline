@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from ._base import BaseFeatureExtractor
@@ -75,6 +76,11 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
 
         super().__init__(detections, non_detections, xmatches)
 
+        # Additional field required to compute SN features
+        value, error = self.detections.get_alerts()[["mag_ml", "e_mag_ml"]].T.values
+        # TODO: "3" is an arbitrary, should be replaced with a new one
+        self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
+
     def _discard_detections(self):
         """Exclude noisy detections"""
         self.detections.select(["mag_ml", "e_mag_ml"], lt=[50e3, 300], gt=[-50e3, None])
@@ -100,3 +106,11 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_spm(self) -> pd.DataFrame:
         features = self.detections.apply(extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True)
         return features.stack("fid")  # Needed for decorators to work
+
+    @decorators.columns_per_fid
+    @decorators.fill_in_every_fid()
+    def calculate_sn_features(self) -> pd.DataFrame:
+        alerts = self.detections.get_alerts()
+        first_mjd, first_flux = alerts[["mjd", "mag_ml"]].loc[alerts["mjd"].argmin()]
+
+        return self.detections.apply(extras.sn_feature_elasticc, first_mjd=first_mjd, first_flux=first_flux)

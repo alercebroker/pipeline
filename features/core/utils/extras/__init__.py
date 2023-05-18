@@ -4,5 +4,6 @@ from ._kim import kim
 from ._mhps import mhps
 from ._periods import periods
 from ._power_rate import power_rates
+from ._sn_features import sn_feature_elasticc
 from ._spm import fit_spm
 from ._turbofats import turbofats
