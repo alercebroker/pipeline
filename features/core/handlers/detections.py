@@ -13,7 +13,7 @@ class DetectionsHandler(BaseHandler):
 
     Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
 
-    Required fields are: `id`, `sid`, `fid`, `mjd`, `mag`, `e_mag` and `isdiffpos`.
+    Required fields are: `id`, `sid`, `fid`, `mjd`, `mag` and `e_mag`.
 
     Additional fields required are `mag_ml` and `e_mag_ml`, but are generated at initialization. The value for these
     fields depend on the argument `corr`. If `False` they will take the values of `mag` and `e_mag`, respectively, for
@@ -28,7 +28,7 @@ class DetectionsHandler(BaseHandler):
 
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
-    COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml", "isdiffpos"]
+    COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml"]
 
     def _post_process_alerts(self, **kwargs):
         """Handles legacy alerts (renames old field names to the new conventions) and sets the

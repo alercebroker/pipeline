@@ -38,7 +38,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
-    EXTRA_COLUMNS = ["ra", "dec", "rb", "sgscore1"]
+    EXTRA_COLUMNS = ["ra", "dec", "isdiffpos", "rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     USE_CORRECTED = True
     MIN_REAL_BOGUS = 0.55
@@ -134,7 +134,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         return self.detections.apply(extras.fit_spm, by_fid=True, version="v1", bug=True, ml=False, flux=self.FLUX)
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid()
+    @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self):
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
