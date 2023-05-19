@@ -1,9 +1,8 @@
-"""Only for ELAsTiCC"""
 import numpy as np
 import pandas as pd
 
 
-def sn_feature_elasticc(df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series) -> pd.Series:
+def compute(df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series) -> pd.Series:
     aid, = df["id"].unique()  # Should never be called with more than one id at the time
     positive_fraction = (df["mag_ml"] > 0).mean()
 

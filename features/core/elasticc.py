@@ -4,6 +4,7 @@ import pandas as pd
 
 from ._base import BaseFeatureExtractor
 from .utils import decorators, extras
+from .utils.extras.sn_features import elasticc
 
 
 class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
@@ -114,4 +115,4 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         # Get mjd and flux of first detection of each object (any band)
         mjd = self.detections.get_aggregate("mjd", "min", flag="detected")
         flux = self.detections.get_which_value("mag_ml", which="first", flag="detected")
-        return self.detections.apply(extras.sn_feature_elasticc, first_mjd=mjd, first_flux=flux, by_fid=True)
+        return self.detections.apply(elasticc.compute, first_mjd=mjd, first_flux=flux, by_fid=True)
