@@ -1,8 +1,6 @@
 import functools
 from typing import Any
 
-import numpy as np
-
 from .functions import fill_index
 
 

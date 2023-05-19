@@ -1,4 +1,3 @@
-import methodtools
 import numpy as np
 import pandas as pd
 
@@ -110,7 +109,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         return features.stack("fid")  # Needed for decorators to work
 
     @decorators.columns_per_fid
-    @decorators.fill_in_every_fid()
+    @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self) -> pd.DataFrame:
         # Get mjd and flux of first detection of each object (any band)
         mjd = self.detections.get_aggregate("mjd", "min", flag="detected")
