@@ -24,7 +24,6 @@ class DetectionsHandler(BaseHandler):
 
     Keyword argument:
         corr (bool): Whether to use corrected magnitudes if available. Defaults to `False`
-
     """
 
     INDEX = "candid"
@@ -104,4 +103,4 @@ class DetectionsHandler(BaseHandler):
         kwargs = dict(isdiffpos=(-1, 1))
         if by_fid and bands:
             kwargs.update(fid=bands)
-        return functions.fill_index(counts, fill_value=0, dtype=int, **kwargs).xs(sign, level="isdiffpos")
+        return functions.fill_index(counts, **kwargs).xs(sign, level="isdiffpos")

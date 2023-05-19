@@ -135,10 +135,14 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
-    def calculate_sn_stats(self):
+    def calculate_sn_features(self):
         n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
         n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
         positive_fraction = n_pos / n_pos + n_neg
+        n_det = n_pos + n_neg
+
+        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
+        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
 
         delta_mjd = self.detections.get_delta("mjd", by_fid=True)
         delta_mag = self.detections.get_delta("mag_ml", by_fid=True)
@@ -157,6 +161,11 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
         return pd.DataFrame(
             {
+                "n_det": n_det,
+                "n_neg": n_neg,
+                "n_pos": n_pos,
+                "n_non_det_before_fid": n_ndet_bef,
+                "n_non_det_after_fid": n_ndet_af,
                 "delta_mag_fid": delta_mag,
                 "delta_mjd_fid": delta_mjd,
                 "first_mag": first_mag,
@@ -173,23 +182,3 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
                 "median_diffmaglim_after_fid": med_diff_af,
             }
         )
-
-    @decorators.columns_per_fid
-    @decorators.fill_in_every_fid(fill_value=0, dtype=int)
-    def calculate_counters(self):
-        n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
-        n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
-        n_det = n_pos + n_neg
-
-        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
-        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
-
-        return pd.DataFrame(
-            {
-                "n_det": n_det,
-                "n_neg": n_neg,
-                "n_pos": n_pos,
-                "n_non_det_before_fid": n_ndet_bef,
-                "n_non_det_after_fid": n_ndet_af,
-            }
-        ).fillna(0)  # Number of non-detections get filled by nan if there are none

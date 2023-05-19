@@ -278,21 +278,27 @@ class BaseHandler(abc.ABC):
         return self._alerts["id"].unique()
 
     @methodtools.lru_cache()
-    def get_alerts(self, *, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()) -> pd.DataFrame:
+    def get_alerts(
+        self, *, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = (), flag: str = None
+    ) -> pd.DataFrame:
         """Get a selection of the alerts.
 
         Args:
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
 
         Returns:
             pd.DataFrame: Selected alerts (only columns defined by the class/at initialization are included)
         """
-        return self._alerts[self._surveys_mask(surveys) & self._bands_mask(bands)]
+        mask = self._surveys_mask(surveys) & self._bands_mask(bands)
+        if flag is not None:
+            mask &= self._alerts[flag]
+        return self._alerts[mask]
 
     @methodtools.lru_cache()
     def get_grouped(
-        self, *, by_fid: bool = False, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = ()
+        self, *, by_fid: bool = False, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = (), flag: str = None
     ) -> DataFrameGroupBy:
         """Get selected detections grouped by object (and, optionally, band).
 
@@ -300,11 +306,12 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to also group by band
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
 
         Returns:
             DataFrameGroupBy: Grouped detections
         """
-        return self.get_alerts(surveys=surveys, bands=bands).groupby(["id", "fid"] if by_fid else "id")
+        return self.get_alerts(surveys=surveys, bands=bands, flag=flag).groupby(["id", "fid"] if by_fid else "id")
 
     @methodtools.lru_cache()
     def get_which_index(
@@ -314,6 +321,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        flag: str = None,
     ) -> pd.Series:
         """Get first or last alert index for every object.
 
@@ -322,6 +330,7 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to get the first or last index by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
 
         Returns:
             pd.Series: First or last alert index. Indexed by `id` (and `fid` if `by_fid`).
@@ -329,7 +338,7 @@ class BaseHandler(abc.ABC):
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         function = "idxmin" if which == "first" else "idxmax"
-        return self.get_aggregate("mjd", function, by_fid=by_fid, surveys=surveys, bands=bands)
+        return self.get_aggregate("mjd", function, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
 
     def get_which_value(
         self,
@@ -339,6 +348,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        flag: str = None,
     ) -> pd.Series:
         """Get first or last value of a given field for each object
 
@@ -348,12 +358,13 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to get the first or last value by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
 
         Returns:
             pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands)
-        df = self.get_alerts(surveys=surveys, bands=bands)
+        idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        df = self.get_alerts(surveys=surveys, bands=bands, flag=flag)
         return df[column][idx].set_axis(idx.index)
 
     @methodtools.lru_cache()
@@ -365,6 +376,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        flag: str = None,
         **kwargs,
     ) -> pd.Series:
         """Get aggregate value over a given field for each object.
@@ -375,12 +387,13 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to perform the aggregation by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
             kwargs: Keyword arguments passed to function
 
         Returns:
             pd.Series: Aggregate field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func, **kwargs)
+        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)[column].agg(func, **kwargs)
 
     @methodtools.lru_cache()
     def get_delta(
@@ -390,6 +403,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        flag: str = None,
     ) -> pd.Series:
         """Get difference between maximum and minimum values od a given field for each object.
 
@@ -398,12 +412,13 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to calculate the difference by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
 
         Returns:
             pd.Series: Field value difference. Indexed by `id` (and `fid` if `by_fid`).
         """
-        vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands)
-        vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands)
+        vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
         return vmax - vmin
 
     def apply(
@@ -413,6 +428,7 @@ class BaseHandler(abc.ABC):
         by_fid: bool = False,
         surveys: tuple[str, ...] = (),
         bands: tuple[str, ...] = (),
+        flag: str = None,
         **kwargs,
     ) -> pd.DataFrame:
         """Apply given function over the alerts for each object.
@@ -422,9 +438,10 @@ class BaseHandler(abc.ABC):
             by_fid: Whether to apply the function by band as well
             surveys: Surveys to select (based on `sid`). Empty tuple selects all
             bands: Bands to select (based on `fid`). Empty tuple selects all
+            flag: Field used as flag to select specific alerts (assumes it is boolean)
             **kwargs: Keyword arguments passed to `func`
 
         Returns:
             pd.DataFrame: Results of `func`. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands).apply(func, **kwargs)
+        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag).apply(func, **kwargs)

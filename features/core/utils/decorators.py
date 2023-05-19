@@ -33,7 +33,7 @@ def add_fid(fid: Any):
     return decorator
 
 
-def fill_in_every_fid(fill_value: Any = np.nan, dtype: type = float):
+def fill_in_every_fid(counters: str = None):
     """Decorated method must produce a multi-indexed data frame with two levels, `aid` and `fid` (in that order)"""
 
     def decorator(method):
@@ -41,7 +41,7 @@ def fill_in_every_fid(fill_value: Any = np.nan, dtype: type = float):
         def wrapper(self, *args, **kwargs):
             df = method(self, *args, **kwargs)
             if self.BANDS:
-                return fill_index(df, fill_value=fill_value, dtype=dtype, fid=self.BANDS)
+                return fill_index(df, counters=counters, fid=self.BANDS)
             return df
 
         return wrapper
