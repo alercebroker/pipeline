@@ -35,7 +35,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     SURVEYS = ("LSST",)
     BANDS = ("u", "g", "r", "i", "z", "Y")  # Order matters for colors!
     EXTRA_COLUMNS = ["mwebv", "z_final"]
-    USE_CORRECTED = True
+    CORRECTED = True
     FLUX = True
     MIN_DETECTIONS = 5
     MIN_DETECTIONS_IN_FID = 0
@@ -78,7 +78,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         super().__init__(detections, non_detections, xmatches)
 
         # Additional field required to compute SN features
-        value, error = self.detections.get_alerts()[["mag_ml", "e_mag_ml"]].T.values
+        value, error = self.detections.alerts()[["mag_ml", "e_mag_ml"]].T.values
         # TODO: "3" is an arbitrary, should be replaced with a new one
         self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
 
@@ -89,11 +89,11 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.add_fid(0)
     def calculate_mwebv(self) -> pd.DataFrame:
-        return pd.DataFrame({"mwebv": self.detections.get_aggregate("mwebv", "median")})
+        return pd.DataFrame({"mwebv": self.detections.agg("mwebv", "median")})
 
     @decorators.add_fid(0)
     def calculate_redshift_helio(self) -> pd.DataFrame:
-        return pd.DataFrame({"redshift_helio": self.detections.get_aggregate("z_final", "median")})
+        return pd.DataFrame({"redshift_helio": self.detections.agg("z_final", "median")})
 
     @decorators.add_fid("".join(BANDS))
     def calculate_colors(self) -> pd.DataFrame:
@@ -112,6 +112,6 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self) -> pd.DataFrame:
         # Get mjd and flux of first detection of each object (any band)
-        mjd = self.detections.get_aggregate("mjd", "min", flag="detected")
-        flux = self.detections.get_which_value("mag_ml", which="first", flag="detected")
+        mjd = self.detections.agg("mjd", "min", flag="detected")
+        flux = self.detections.which_value("mag_ml", which="first", flag="detected")
         return self.detections.apply(elasticc.compute, first_mjd=mjd, first_flux=flux, by_fid=True)

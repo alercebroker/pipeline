@@ -22,13 +22,13 @@ class NonDetectionsHandler(BaseHandler):
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 
-    def _post_process_alerts(self, **kwargs):
+    def _post_process(self, **kwargs):
         """Extracts MJD of first detection from `kwargs` in addition to base post-processing"""
         self.__first_mjd: pd.Series = kwargs.pop("first_mjd")
-        super()._post_process_alerts(**kwargs)
+        super()._post_process(**kwargs)
 
     @methodtools.lru_cache()
-    def get_alerts_when(
+    def alerts_when(
         self,
         *,
         when: Literal["before", "after"],
@@ -53,14 +53,14 @@ class NonDetectionsHandler(BaseHandler):
             raise ValueError(f"Unrecognized value for 'when': {when}")
 
         by_fid = "fid" in self.__first_mjd.index.names
-        mask = self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].transform(func)
+        mask = self.grouped(by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].transform(func)
         if mask.any():
             return self._alerts[mask]
         columns = [c for c in self._alerts.columns if c not in self.__first_mjd.index.names]
         return pd.DataFrame(np.nan, columns=columns, index=self.__first_mjd.index).reset_index()
 
     @methodtools.lru_cache()
-    def get_grouped_when(
+    def grouped_when(
         self,
         *,
         when: Literal["before", "after"],
@@ -80,10 +80,10 @@ class NonDetectionsHandler(BaseHandler):
             DataFrameGroupBy: Grouped alerts
         """
         group = ["id", "fid"] if by_fid else "id"
-        return self.get_alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
+        return self.alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
 
     @methodtools.lru_cache()
-    def get_which_index_when(
+    def which_index_when(
         self,
         *,
         which: Literal["first", "last"],
@@ -107,10 +107,10 @@ class NonDetectionsHandler(BaseHandler):
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         function = "idxmin" if which == "first" else "idxmax"
-        return self.get_aggregate_when("mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
+        return self.agg_when("mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
 
     @methodtools.lru_cache()
-    def get_which_value_when(
+    def which_value_when(
         self,
         column: str,
         *,
@@ -133,14 +133,14 @@ class NonDetectionsHandler(BaseHandler):
         Returns:
             pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        idx = self.get_which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
-        df = self.get_alerts_when(when=when, surveys=surveys, bands=bands)
+        idx = self.which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
+        df = self.alerts_when(when=when, surveys=surveys, bands=bands)
         if idx.isna().all():  # Happens for empty non-detections
             return idx
         return df[column][idx].set_axis(idx.index)
 
     @methodtools.lru_cache()
-    def get_aggregate_when(
+    def agg_when(
         self,
         column: str,
         func: str | Callable,
@@ -163,4 +163,4 @@ class NonDetectionsHandler(BaseHandler):
         Returns:
 
         """
-        return self.get_grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
+        return self.grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)

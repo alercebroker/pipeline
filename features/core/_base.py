@@ -45,7 +45,7 @@ class BaseFeatureExtractor(abc.ABC):
         BANDS_MAPPING: Conversion of bands to values used in features. Mostly for compatibility with old classifiers
         EXTRA_COLUMNS: Additional fields used for detections. Default empty
         XMATCH_COLUMNS: Fields needed from cross-match (if included). Default empty
-        USE_CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
+        CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
         FLUX: Flag to indicate that "magnitude" fields are actually flux (field names do not change). Default `False`
         COMPUTE_KIM: Compute parameters from phase-folded light-curve. Default `True`
         N_HARMONICS: Number of harmonic series parameters to compute. Default 7
@@ -66,7 +66,7 @@ class BaseFeatureExtractor(abc.ABC):
     BANDS_MAPPING: dict[str, Any] = {}
     EXTRA_COLUMNS: list[str] = []
     XMATCH_COLUMNS: list[str] = []
-    USE_CORRECTED: bool = False
+    CORRECTED: bool = False
     FLUX: bool = False
     COMPUTE_KIM: bool = True
     N_HARMONICS: int = 7
@@ -110,8 +110,7 @@ class BaseFeatureExtractor(abc.ABC):
         detections: list[dict] | pd.DataFrame,
         non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
-        *,
-        legacy: bool = False,
+        **kwargs,
     ):
         """Initialize feature extractor.
 
@@ -121,20 +120,20 @@ class BaseFeatureExtractor(abc.ABC):
             detections: All detections used for feature computing
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
             xmatches: Object cross-matches. It will be matched to detections based on its ID
-            legacy: Use old alert definition. Depends on specific extractor
         """
 
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
 
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
-        self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.USE_CORRECTED, **common)
+        self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common)
         self._discard_detections()
+
+        first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
         non_detections = non_detections or []
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index().to_dict("records")
-        first_mjd = self.detections.get_aggregate("mjd", "min", by_fid=True)
         self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
         self.non_detections.match(self.detections)
 
@@ -153,7 +152,7 @@ class BaseFeatureExtractor(abc.ABC):
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
         xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
         xmatches = xmatches.rename(columns={"aid": "id"})
-        xmatches = xmatches[xmatches["id"].isin(self.detections.get_objects())]
+        xmatches = xmatches[xmatches["id"].isin(self.detections.ids())]
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 
     def clear_caches(self):
@@ -189,7 +188,7 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_iqr(self) -> pd.DataFrame:
-        return pd.DataFrame({"iqr": self.detections.get_aggregate("mag_ml", stats.iqr, by_fid=True)})
+        return pd.DataFrame({"iqr": self.detections.agg("mag_ml", stats.iqr, by_fid=True)})
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         """Create a data frame with all required features.

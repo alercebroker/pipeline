@@ -40,7 +40,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
     EXTRA_COLUMNS = ["ra", "dec", "isdiffpos", "rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
-    USE_CORRECTED = True
+    CORRECTED = True
     MIN_REAL_BOGUS = 0.55
     MAX_SIGMA_MAGNITUDE = 1.0
 
@@ -53,30 +53,38 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         legacy: bool = False,
     ):
         if legacy:
-            detections = detections.reset_index()
-            detections["sid"] = "ZTF"
-            detections["fid"].replace({v: k for k, v in self.BANDS_MAPPING.items()}, inplace=True)  # reverse mapping
-            detections = detections.rename(
-                columns={
-                    "oid": "aid",
-                    "magpsf": "mag",
-                    "sigmapsf": "e_mag",
-                    "magpsf_corr": "mag_corr",
-                    "sigmapsf_corr_ext": "e_mag_corr_ext"
-                }
-            )
-
-            if isinstance(non_detections, pd.DataFrame):
-                non_detections = non_detections.reset_index()
-                non_detections["sid"] = "ZTF"
-                non_detections["fid"].replace({v: k for k, v in self.BANDS_MAPPING.items()}, inplace=True)
-                non_detections = non_detections.rename(columns={"oid": "aid"})
-
-            if isinstance(xmatches, pd.DataFrame):
-                xmatches = xmatches.reset_index()
-                xmatches = xmatches.rename(columns={"oid": "aid"})
+            detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches)
 
         super().__init__(detections, non_detections, xmatches)
+        # Change isdiffpos from 1 or -1 to True or False
+        self.detections.add_field("isdiffpos", self.detections.alerts()["isdiffpos"] > 0)
+
+    @classmethod
+    def _handle_legacy(cls, detections, non_detections, xmatches):
+        detections = detections.reset_index()
+        detections["sid"] = "ZTF"
+        detections["fid"].replace({v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True)  # reverse mapping
+        detections = detections.rename(
+            columns={
+                "oid": "aid",
+                "magpsf": "mag",
+                "sigmapsf": "e_mag",
+                "magpsf_corr": "mag_corr",
+                "sigmapsf_corr_ext": "e_mag_corr_ext"
+            }
+        )
+
+        if isinstance(non_detections, pd.DataFrame):
+            non_detections = non_detections.reset_index()
+            non_detections["sid"] = "ZTF"
+            non_detections["fid"].replace({v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True)
+            non_detections = non_detections.rename(columns={"oid": "aid"})
+
+        if isinstance(xmatches, pd.DataFrame):
+            xmatches = xmatches.reset_index()
+            xmatches = xmatches.rename(columns={"oid": "aid"})
+
+        return detections, non_detections, xmatches
 
     def _discard_detections(self):
         """Include only alerts with a minimum real-bogus value and a maximum error in magnitude"""
@@ -86,8 +94,8 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.add_fid(0)
     def calculate_galactic_coordinates(self) -> pd.DataFrame:
-        ra = self.detections.get_aggregate("ra", "mean")
-        dec = self.detections.get_aggregate("dec", "mean")
+        ra = self.detections.agg("ra", "mean")
+        dec = self.detections.agg("dec", "mean")
         galactic = SkyCoord(ra, dec, frame="icrs", unit="deg").galactic
         # By construction, ra and dec indices should be the same
         return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
@@ -106,7 +114,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_wise_colors(self) -> pd.DataFrame:
         if self.FLUX:
             raise ValueError("Cannot calculate WISE colors with flux.")
-        mags = functions.fill_index(self.detections.get_aggregate("mag_ml", "mean", by_fid=True), fid=("g", "r"))
+        mags = functions.fill_index(self.detections.agg("mag_ml", "mean", by_fid=True), fid=("g", "r"))
         g, r = mags.xs("g", level="fid"), mags.xs("r", level="fid")
         return pd.DataFrame(
             {
@@ -121,11 +129,11 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
 
     @decorators.add_fid(0)
     def calculate_real_bogus(self) -> pd.DataFrame:
-        return pd.DataFrame({"rb": self.detections.get_aggregate("rb", "median")})
+        return pd.DataFrame({"rb": self.detections.agg("rb", "median")})
 
     @decorators.add_fid(0)
     def calculate_sg_score(self) -> pd.DataFrame:
-        return pd.DataFrame({"sgscore1": self.detections.get_aggregate("sgscore1", "median")})
+        return pd.DataFrame({"sgscore1": self.detections.agg("sgscore1", "median")})
 
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
@@ -136,49 +144,49 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self):
-        n_pos = self.detections.get_count_by_sign(1, bands=self.BANDS, by_fid=True)
-        n_neg = self.detections.get_count_by_sign(-1, bands=self.BANDS, by_fid=True)
-        positive_fraction = n_pos / n_pos + n_neg
-        n_det = n_pos + n_neg
+        n_pos = self.detections.agg("isdiffpos", "sum", by_fid=True)
+        n_det = self.detections.agg("isdiffpos", "count", by_fid=True)
+        n_neg = n_det - n_pos
+        positive_fraction = n_pos / n_det
 
-        n_ndet_bef = self.non_detections.get_aggregate_when("mjd", "count", when="before", by_fid=True)
-        n_ndet_af = self.non_detections.get_aggregate_when("mjd", "count", when="after", by_fid=True)
+        n_non_det_before = self.non_detections.agg_when("mjd", "count", when="before", by_fid=True)
+        n_non_det_after = self.non_detections.agg_when("mjd", "count", when="after", by_fid=True)
 
         delta_mjd = self.detections.get_delta("mjd", by_fid=True)
         delta_mag = self.detections.get_delta("mag_ml", by_fid=True)
-        min_mag = self.detections.get_aggregate("mag_ml", "min", by_fid=True)
-        mean_mag = self.detections.get_aggregate("mag_ml", "mean", by_fid=True)
-        first_mag = self.detections.get_which_value("mag_ml", which="first", by_fid=True)
+        min_mag = self.detections.agg("mag_ml", "min", by_fid=True)
+        mean_mag = self.detections.agg("mag_ml", "mean", by_fid=True)
+        first_mag = self.detections.which_value("mag_ml", which="first", by_fid=True)
 
-        max_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "max", when="before", by_fid=True)
-        max_diff_af = self.non_detections.get_aggregate_when("diffmaglim", "max", when="after", by_fid=True)
-        med_diff_bef = self.non_detections.get_aggregate_when("diffmaglim", "median", when="before", by_fid=True)
-        med_diff_af = self.non_detections.get_aggregate_when("diffmaglim", "median", when="after", by_fid=True)
-        last_mjd_bef = self.non_detections.get_aggregate_when("mjd", "max", when="after", by_fid=True)
-        last_diff_bef = self.non_detections.get_which_value_when("diffmaglim", which="last", when="after", by_fid=True)
-        dmag_non_det = med_diff_bef - min_mag
-        dmag_first_det = last_diff_bef - first_mag
+        max_upper_before = self.non_detections.agg_when("diffmaglim", "max", when="before", by_fid=True)
+        max_upper_after = self.non_detections.agg_when("diffmaglim", "max", when="after", by_fid=True)
+        median_upper_before = self.non_detections.agg_when("diffmaglim", "median", when="before", by_fid=True)
+        median_upper_after = self.non_detections.agg_when("diffmaglim", "median", when="after", by_fid=True)
+        last_mjd_before = self.non_detections.agg_when("mjd", "max", when="after", by_fid=True)
+        last_upper_before = self.non_detections.which_value_when("diffmaglim", which="last", when="after", by_fid=True)
+        dmag_non_det = median_upper_before - min_mag
+        dmag_first_det = last_upper_before - first_mag
 
         return pd.DataFrame(
             {
                 "n_det": n_det,
                 "n_neg": n_neg,
                 "n_pos": n_pos,
-                "n_non_det_before_fid": n_ndet_bef,
-                "n_non_det_after_fid": n_ndet_af,
+                "n_non_det_before_fid": n_non_det_before,
+                "n_non_det_after_fid": n_non_det_after,
                 "delta_mag_fid": delta_mag,
                 "delta_mjd_fid": delta_mjd,
                 "first_mag": first_mag,
                 "mean_mag": mean_mag,
                 "min_mag": min_mag,
                 "positive_fraction": positive_fraction,
-                "max_diffmaglim_before_fid": max_diff_bef,
-                "median_diffmaglim_before_fid": med_diff_bef,
-                "last_diffmaglim_before_fid": last_diff_bef,
-                "last_mjd_before_fid": last_mjd_bef,
+                "max_diffmaglim_before_fid": max_upper_before,
+                "median_diffmaglim_before_fid": median_upper_before,
+                "last_diffmaglim_before_fid": last_upper_before,
+                "last_mjd_before_fid": last_mjd_before,
                 "dmag_non_det_fid": dmag_non_det,
                 "dmag_first_det_fid": dmag_first_det,
-                "max_diffmaglim_after_fid": max_diff_af,
-                "median_diffmaglim_after_fid": med_diff_af,
+                "max_diffmaglim_after_fid": max_upper_after,
+                "median_diffmaglim_after_fid": median_upper_after,
             }
         )

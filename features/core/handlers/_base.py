@@ -75,7 +75,7 @@ class BaseHandler(abc.ABC):
             self._alerts.set_index(self.INDEX, inplace=True)
 
         extras = kwargs.get("extras", [])
-        self._post_process_alerts(alerts=alerts, surveys=surveys, **kwargs)
+        self._post_process(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
 
     def not_enough(self, minimum: int, *, by_fid: bool = False):
@@ -102,7 +102,7 @@ class BaseHandler(abc.ABC):
             other: Handler used to check for objects
         """
         self.clear_caches()
-        self._alerts = self._alerts[self._alerts["id"].isin(other.get_objects())]
+        self._alerts = self._alerts[self._alerts["id"].isin(other.ids())]
 
     def select(
         self, column: str | list[str], *, lt: float | list[float, None] = None, gt: float | list[float, None] = None
@@ -143,7 +143,7 @@ class BaseHandler(abc.ABC):
                 pass
 
     @abc.abstractmethod
-    def _post_process_alerts(self, **kwargs):
+    def _post_process(self, **kwargs):
         """Adds extra fields to the alert and checks that no unknown kwargs are passed. Should be called with
         `super` in subclass implementations."""
         if "extras" in kwargs:
@@ -269,16 +269,16 @@ class BaseHandler(abc.ABC):
         self._alerts = self._alerts.assign(**{name: values})
 
     @methodtools.lru_cache()
-    def get_objects(self) -> np.ndarray:
-        """Get array with objects represented among the alerts.
+    def ids(self) -> np.ndarray:
+        """Get array with object IDs represented among the alerts.
 
         Returns:
-            np.ndarray: Unique objects within alerts
+            np.ndarray: Unique object IDs within alerts
         """
         return self._alerts["id"].unique()
 
     @methodtools.lru_cache()
-    def get_alerts(
+    def alerts(
         self, *, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = (), flag: str = None
     ) -> pd.DataFrame:
         """Get a selection of the alerts.
@@ -297,7 +297,7 @@ class BaseHandler(abc.ABC):
         return self._alerts[mask]
 
     @methodtools.lru_cache()
-    def get_grouped(
+    def grouped(
         self, *, by_fid: bool = False, surveys: tuple[str, ...] = (), bands: tuple[str, ...] = (), flag: str = None
     ) -> DataFrameGroupBy:
         """Get selected detections grouped by object (and, optionally, band).
@@ -311,10 +311,10 @@ class BaseHandler(abc.ABC):
         Returns:
             DataFrameGroupBy: Grouped detections
         """
-        return self.get_alerts(surveys=surveys, bands=bands, flag=flag).groupby(["id", "fid"] if by_fid else "id")
+        return self.alerts(surveys=surveys, bands=bands, flag=flag).groupby(["id", "fid"] if by_fid else "id")
 
     @methodtools.lru_cache()
-    def get_which_index(
+    def which_index(
         self,
         *,
         which: Literal["first", "last"],
@@ -338,9 +338,9 @@ class BaseHandler(abc.ABC):
         if which not in ("first", "last"):
             raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
         function = "idxmin" if which == "first" else "idxmax"
-        return self.get_aggregate("mjd", function, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        return self.agg("mjd", function, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
 
-    def get_which_value(
+    def which_value(
         self,
         column: str,
         *,
@@ -363,12 +363,12 @@ class BaseHandler(abc.ABC):
         Returns:
             pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        idx = self.get_which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
-        df = self.get_alerts(surveys=surveys, bands=bands, flag=flag)
+        idx = self.which_index(which=which, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        df = self.alerts(surveys=surveys, bands=bands, flag=flag)
         return df[column][idx].set_axis(idx.index)
 
     @methodtools.lru_cache()
-    def get_aggregate(
+    def agg(
         self,
         column: str,
         func: str | Callable,
@@ -393,7 +393,7 @@ class BaseHandler(abc.ABC):
         Returns:
             pd.Series: Aggregate field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)[column].agg(func, **kwargs)
+        return self.grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)[column].agg(func, **kwargs)
 
     @methodtools.lru_cache()
     def get_delta(
@@ -417,8 +417,8 @@ class BaseHandler(abc.ABC):
         Returns:
             pd.Series: Field value difference. Indexed by `id` (and `fid` if `by_fid`).
         """
-        vmax = self.get_aggregate(column, "max", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
-        vmin = self.get_aggregate(column, "min", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        vmax = self.agg(column, "max", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
+        vmin = self.agg(column, "min", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)
         return vmax - vmin
 
     def apply(
@@ -444,4 +444,4 @@ class BaseHandler(abc.ABC):
         Returns:
             pd.DataFrame: Results of `func`. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.get_grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag).apply(func, **kwargs)
+        return self.grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag).apply(func, **kwargs)
