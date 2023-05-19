@@ -47,33 +47,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         xmatches: list[dict] | pd.DataFrame = None,
         *,
         legacy: bool = False,
-        **kwargs,
+        metadata: pd.DataFrame = None,
     ):
         if legacy:
-            metadata = kwargs.pop("metadata", None)
-            if metadata is not None:
-                detections = detections.assign(mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"])
-            detections = detections.reset_index()
-            detections["sid"] = "LSST"
-            detections["corrected"] = True
-            detections = detections.rename(
-                columns={
-                    "SNID": "aid",
-                    "FLUXCAL": "mag",
-                    "FLUXCALERR": "e_mag",
-                    "MJD": "mjd",
-                    "BAND": "fid",
-                }
-            )
-            detections = detections.assign(mag_corr=detections["mag"], e_mag_corr_ext=detections["e_mag"])
-            detections = detections.assign(isdiffpos=(detections["mag"] / detections["mag"].abs()).astype(int))
-            detections = detections.reset_index(names="candid")  # Fake candid
-
-            if isinstance(non_detections, pd.DataFrame):
-                raise NotImplemented("Legacy ELAsTiCC does not implement non-detections")
-
-            if isinstance(xmatches, pd.DataFrame):
-                raise NotImplemented("Legacy ELAsTiCC does not implement cross-match")
+            detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches, metadata)
 
         super().__init__(detections, non_detections, xmatches)
 
@@ -81,6 +58,32 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         value, error = self.detections.alerts()[["mag_ml", "e_mag_ml"]].T.values
         # TODO: "3" is an arbitrary, should be replaced with a new one
         self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
+
+    @staticmethod
+    def _handle_legacy(detections, non_detections, xmatches, metadata):
+        if metadata is not None:
+            detections = detections.assign(mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"])
+        detections = detections.reset_index()
+        detections["sid"] = "LSST"
+        detections["corrected"] = True
+        detections = detections.rename(
+            columns={
+                "SNID": "aid",
+                "FLUXCAL": "mag",
+                "FLUXCALERR": "e_mag",
+                "MJD": "mjd",
+                "BAND": "fid",
+            }
+        )
+        detections = detections.assign(mag_corr=detections["mag"], e_mag_corr_ext=detections["e_mag"])
+        detections = detections.reset_index(names="candid")  # Fake candid
+
+        if isinstance(non_detections, pd.DataFrame):
+            raise NotImplemented("Legacy ELAsTiCC does not implement non-detections")
+        if isinstance(xmatches, pd.DataFrame):
+            raise NotImplemented("Legacy ELAsTiCC does not implement cross-match")
+
+        return detections, non_detections, xmatches
 
     def _discard_detections(self):
         """Exclude noisy detections"""
