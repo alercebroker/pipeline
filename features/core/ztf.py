@@ -50,14 +50,26 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         **kwargs,
     ):
         if kwargs.pop("legacy", False):
-            detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches)
+            metadata = kwargs.pop("metadata", None)
+            detections, non_detections, xmatches = self._legacy(detections, non_detections, xmatches, metadata)
 
         super().__init__(detections, non_detections, xmatches)
+
         # Change isdiffpos from 1 or -1 to True or False
         self.detections.add_field("isdiffpos", self.detections.alerts()["isdiffpos"] > 0)
 
     @classmethod
-    def _handle_legacy(cls, detections, non_detections, xmatches):
+    def _legacy(cls, detections, non_detections, xmatches, metadata):
+        try:
+            detections = detections.set_index("oid")
+        except KeyError:  # Assumes it is already indexed correctly
+            pass
+        if metadata is not None:
+            try:
+                metadata = metadata.set_index("oid")
+            except KeyError:  # Assumes it is already indexed correctly
+                pass
+            detections = detections.assign(sgscore1=metadata["sgscore1"])
         detections = detections.reset_index()
         detections["sid"] = "ZTF"
         detections["fid"].replace({v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True)  # reverse mapping

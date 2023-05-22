@@ -49,7 +49,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     ):
         if kwargs.pop("legacy", False):
             metadata = kwargs.pop("metadata", None)
-            detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches, metadata)
+            detections, non_detections, xmatches = self._legacy(detections, non_detections, xmatches, metadata)
 
         super().__init__(detections, non_detections, xmatches)
 
@@ -59,8 +59,16 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
 
     @staticmethod
-    def _handle_legacy(detections, non_detections, xmatches, metadata):
+    def _legacy(detections, non_detections, xmatches, metadata):
+        try:
+            detections = detections.set_index("SNID")
+        except KeyError:  # Assumes it is already indexed correctly
+            pass
         if metadata is not None:
+            try:
+                metadata = metadata.set_index("SNID")
+            except KeyError:  # Assumes it is already indexed correctly
+                pass
             detections = detections.assign(mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"])
         detections = detections.reset_index()
         detections["sid"] = "LSST"
