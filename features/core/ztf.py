@@ -24,8 +24,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     * `real_bogus`: Median real-bogus value for each object
     * `sg_score`: Median start-galaxy score for each object
     * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v1 (per band fit).
-    * `sn_stats`: Magnitude and date statistics for detections and non-detections
-    * `counters`: Number of detections (positive and negative) and non-detections (before and after first detection)
+    * `sn_features`: Magnitude and date statistics for detections and non-detections
 
     Notes:
         If `periods` is excluded, `COMPUTE_KIM`, `N_HARMONICS` and `POWER_RATE_FACTORS` will all be ignored, as they
