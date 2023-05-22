@@ -32,7 +32,8 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> List[dict]:
     for i in range(num_messages):
         alert = {
             "oid": f"ATLASoid{identifier}",
-            "tid": "ATLAS",
+            "tid": "ATLAS-01a",
+            "sid": "ATLAS",
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
             "fid": random.randint(1, 2),
@@ -59,6 +60,7 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
             "oid": f"ZTFoid{identifier}",
             "aid": f"ZTFaid{identifier}",
             "tid": "ZTF",
+            "sid": "ZTF",
             "candid": random.randint(1000000, 9000000),
             "mjd": random.uniform(59000, 60000),
             "fid": random.randint(1, 2),
@@ -86,6 +88,7 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
     for i in range(num):
         nd = {
             "tid": "ZTF",
+            "sid": "ZIF",
             "oid": f"ZTFoid{identifier}",
             "aid": f"ZTFaid{identifier}",
             "mjd": random.uniform(59000, 60000),
@@ -114,6 +117,7 @@ def generate_input_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "sid": ["ATLAS", "ZTF"],
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
@@ -133,6 +137,7 @@ def generate_non_ztf_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "sid": ["ATLAS"],
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
