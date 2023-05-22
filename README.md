@@ -10,15 +10,6 @@ This step consumes directly from the ZTF stream, performs a crossmatch with ALLW
 #### Next steps:
 - [Preprocess Step](https://github.com/alercebroker/correction_step)
 
-## Database interactions
-
-### Insert/Update
-- Table `object`: insert object information
-- Table `step`: insert step metadata
-- Table `allwise`: insert allwise crossmatch information
-- Table `xmatch`: insert crossmatch information
-
-
 ## Previous conditions
 
 No special conditions, only connection to kafka.
