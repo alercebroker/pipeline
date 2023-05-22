@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 
@@ -37,8 +39,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     EXTRA_COLUMNS = ["mwebv", "z_final"]
     CORRECTED = True
     FLUX = True
-    MIN_DETECTIONS = 5
-    MIN_DETECTIONS_IN_FID = 0
+    MIN_DETS = 5
+    MIN_DETS_IN_FID = 0
+    MAX_FLUX = 50e3
+    MAX_ERROR = 300
 
     def __init__(
         self,
@@ -94,7 +98,8 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
 
     def _discard_detections(self):
         """Exclude noisy detections"""
-        self.detections.select(["mag_ml", "e_mag_ml"], lt=[50e3, 300], gt=[-50e3, None])
+        self.detections.select(["mag_ml", "e_mag_ml"], lt=[self.MAX_FLUX, self.MAX_ERROR], gt=[-self.MAX_FLUX, None])
+        logging.debug(f"Objects without noisy detections: {self.detections.ids.size}")
         super()._discard_detections()
 
     @decorators.add_fid(0)

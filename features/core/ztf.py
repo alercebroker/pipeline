@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 from ._base import BaseFeatureExtractor
@@ -40,7 +42,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     CORRECTED = True
     MIN_REAL_BOGUS = 0.55
-    MAX_SIGMA_MAGNITUDE = 1.0
+    MAX_ERROR = 1.0
 
     def __init__(
         self,
@@ -98,7 +100,9 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def _discard_detections(self):
         """Include only alerts with a minimum real-bogus value and a maximum error in magnitude"""
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS)
-        self.detections.select("e_mag_ml", gt=0, lt=self.MAX_SIGMA_MAGNITUDE)
+        logging.debug(f"Objects with detections above {self.MIN_REAL_BOGUS} RB score: {self.detections.ids.size}")
+        self.detections.select("e_mag_ml", gt=0, lt=self.MAX_ERROR)
+        logging.debug(f"Objects with detections below {self.MAX_ERROR} magnitude error: {self.detections.ids.size}")
         super()._discard_detections()
 
     @decorators.add_fid(0)

@@ -1,4 +1,5 @@
 import abc
+import logging
 from typing import Any
 
 import pandas as pd
@@ -50,8 +51,8 @@ class BaseFeatureExtractor(abc.ABC):
         COMPUTE_KIM: Compute parameters from phase-folded light-curve. Default `True`
         N_HARMONICS: Number of harmonic series parameters to compute. Default 7
         POWER_RATE_FACTORS: Ratio of power of the periodogram to the best period. Default 1/4, 1/3, 1/2, 2, 3 and 4
-        MIN_DETECTIONS: Minimum number of overall detections per object to compute features. Default 0
-        MIN_DETECTIONS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
+        MIN_DETS: Minimum number of overall detections per object to compute features. Default 0
+        MIN_DETS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
         T1: Low frequency timescale (in days) for MHPS calculations. Default 100
         T2: High frequency timescale (in days) for MHPS calculations. Default 10
         FATS_FEATURES: FATS features to be computed. Check defaults in code
@@ -72,8 +73,8 @@ class BaseFeatureExtractor(abc.ABC):
     N_HARMONICS: int = 7
     # Elements can only be composed of numbers and "/"
     POWER_RATE_FACTORS: tuple[str, ...] = ("1/4", "1/3", "1/2", "2", "3", "4")
-    MIN_DETECTIONS: int = 0
-    MIN_DETECTIONS_IN_FID: int = 5
+    MIN_DETS: int = 0
+    MIN_DETS_IN_FID: int = 5
     T1: float = 100
     T2: float = 10
     FATS_FEATURES: tuple[str, ...] = (
@@ -121,13 +122,15 @@ class BaseFeatureExtractor(abc.ABC):
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
             xmatches: Object cross-matches. It will be matched to detections based on its ID
         """
-
+        logging.info("Initializing feature extractor")
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
 
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
         self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common)
+        logging.info(f"Objects in input: {self.detections.ids.size}")
         self._discard_detections()
+        logging.info(f"Objects after selection: {self.detections.ids.size}")
 
         first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
@@ -142,13 +145,16 @@ class BaseFeatureExtractor(abc.ABC):
         self.xmatches = self._create_xmatches(xmatches)
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
+        logging.info("Initialized feature extractor")
 
     @abc.abstractmethod
     def _discard_detections(self):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
-        self.detections.not_enough(self.MIN_DETECTIONS)
-        self.detections.not_enough(self.MIN_DETECTIONS_IN_FID, by_fid=True)
+        self.detections.not_enough(self.MIN_DETS)
+        logging.debug(f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids.size}")
+        self.detections.not_enough(self.MIN_DETS_IN_FID, by_fid=True)
+        logging.debug(f"Objects with at least {self.MIN_DETS_IN_FID} detections in a band: {self.detections.ids.size}")
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
