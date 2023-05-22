@@ -59,10 +59,14 @@ class XmatchStep(GenericStep):
         object_list = data.to_dict(orient="records")
 
         for obj in object_list:
+            aid = obj.pop("aid")
             scribe_data = {
-                "collection": "xmatch",
-                "type": "insert",
-                "data": obj,
+                "collection": "object",
+                "type": "update",
+                "criteria": {"_id": aid},
+                "data": {
+                    "xmatch": obj
+                },
             }
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
