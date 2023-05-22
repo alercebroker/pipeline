@@ -21,6 +21,12 @@ CONSUMER_CONFIG = {
     "NUM_MESSAGES": int(os.getenv("NUM_MESSAGES", "50")),
 }
 
+if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
+    CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+
 DB_CONFIG = {
     "MONGO": get_mongodb_credentials()
 }
