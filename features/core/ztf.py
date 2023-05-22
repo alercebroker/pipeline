@@ -100,17 +100,19 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def _discard_detections(self):
         """Include only alerts with a minimum real-bogus value and a maximum error in magnitude"""
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS)
-        logging.debug(f"Objects with detections above {self.MIN_REAL_BOGUS} RB score: {self.detections.ids.size}")
+        logging.debug(f"Objects with detections above {self.MIN_REAL_BOGUS} RB score: {self.detections.ids().size}")
         self.detections.select("e_mag_ml", gt=0, lt=self.MAX_ERROR)
-        logging.debug(f"Objects with detections below {self.MAX_ERROR} magnitude error: {self.detections.ids.size}")
+        logging.debug(f"Objects with detections below {self.MAX_ERROR} magnitude error: {self.detections.ids().size}")
         super()._discard_detections()
 
+    @decorators.logger
     @decorators.add_fid(0)
     def calculate_galactic_coordinates(self) -> pd.DataFrame:
         ra = self.detections.agg("ra", "mean")
         dec = self.detections.agg("dec", "mean")
         return extras.galactic_coordinates(ra, dec, frame="icrs")
 
+    @decorators.logger
     @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:
         gr_max = self.detections.get_colors("min", ("g", "r"), ml=False, flux=self.FLUX)
@@ -121,6 +123,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             {"g-r_max": gr_max, "g-r_max_corr": gr_max_corr, "g-r_mean": gr_mean, "g-r_mean_corr": gr_mean_corr}
         )
 
+    @decorators.logger
     @decorators.add_fid(0)
     def calculate_wise_colors(self) -> pd.DataFrame:
         if self.FLUX:
@@ -138,20 +141,24 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
             }
         )
 
+    @decorators.logger
     @decorators.add_fid(0)
     def calculate_real_bogus(self) -> pd.DataFrame:
         return pd.DataFrame({"rb": self.detections.agg("rb", "median")})
 
+    @decorators.logger
     @decorators.add_fid(0)
     def calculate_sg_score(self) -> pd.DataFrame:
         return pd.DataFrame({"sgscore1": self.detections.agg("sgscore1", "median")})
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
         # TODO: Bug option is included because model is trained with the bug. Should be removed if retrained
         return self.detections.apply(extras.fit_spm, by_fid=True, version="v1", bug=True, ml=False, flux=self.FLUX)
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self):

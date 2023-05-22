@@ -52,7 +52,7 @@ class BaseFeatureExtractor(abc.ABC):
         N_HARMONICS: Number of harmonic series parameters to compute. Default 7
         POWER_RATE_FACTORS: Ratio of power of the periodogram to the best period. Default 1/4, 1/3, 1/2, 2, 3 and 4
         MIN_DETS: Minimum number of overall detections per object to compute features. Default 0
-        MIN_DETS_IN_FID: Minimum number of detections in a band per object ro compute features. Default 5
+        MIN_DETS_FID: Minimum number of detections in a band per object ro compute features. Default 5
         T1: Low frequency timescale (in days) for MHPS calculations. Default 100
         T2: High frequency timescale (in days) for MHPS calculations. Default 10
         FATS_FEATURES: FATS features to be computed. Check defaults in code
@@ -74,7 +74,7 @@ class BaseFeatureExtractor(abc.ABC):
     # Elements can only be composed of numbers and "/"
     POWER_RATE_FACTORS: tuple[str, ...] = ("1/4", "1/3", "1/2", "2", "3", "4")
     MIN_DETS: int = 0
-    MIN_DETS_IN_FID: int = 5
+    MIN_DETS_FID: int = 5
     T1: float = 100
     T2: float = 10
     FATS_FEATURES: tuple[str, ...] = (
@@ -128,13 +128,15 @@ class BaseFeatureExtractor(abc.ABC):
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
         self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common)
-        logging.info(f"Objects in input: {self.detections.ids.size}")
+        logging.info(f"Objects in input: {self.detections.ids().size}")
+        logging.info(f"Detections in input: {len(self.detections.alerts())}")
         self._discard_detections()
-        logging.info(f"Objects after selection: {self.detections.ids.size}")
+        logging.info(f"Objects after selection: {self.detections.ids().size}")
+        logging.info(f"Detections after selection: {len(self.detections.alerts())}")
 
         first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
-        non_detections = non_detections or []
+        non_detections = non_detections if non_detections is not None else []
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index().to_dict("records")
         self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
@@ -152,9 +154,9 @@ class BaseFeatureExtractor(abc.ABC):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
         self.detections.not_enough(self.MIN_DETS)
-        logging.debug(f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids.size}")
-        self.detections.not_enough(self.MIN_DETS_IN_FID, by_fid=True)
-        logging.debug(f"Objects with at least {self.MIN_DETS_IN_FID} detections in a band: {self.detections.ids.size}")
+        logging.debug(f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids().size}")
+        self.detections.not_enough(self.MIN_DETS_FID, by_fid=True)
+        logging.debug(f"Objects with at least {self.MIN_DETS_FID} detections in a band: {self.detections.ids().size}")
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
@@ -168,6 +170,7 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections.clear_caches()
         self.non_detections.clear_caches()
 
+    @decorators.logger
     def calculate_periods(self) -> pd.DataFrame:
         df = self.detections.apply(
             extras.periods,
@@ -178,21 +181,25 @@ class BaseFeatureExtractor(abc.ABC):
         )
         return df.rename(columns=self.BANDS_MAPPING, level="fid")
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
         return self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES).reset_index("oid", drop=True)
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
         return self.detections.apply(extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX)
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_gp_drw(self) -> pd.DataFrame:
         return self.detections.apply(extras.gp_drw, by_fid=True)
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_iqr(self) -> pd.DataFrame:

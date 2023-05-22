@@ -22,7 +22,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     * `gp_drw`: Gaussian process damp random walk parameters for each object and band.
     * `iqr`: Inter-quartile range in magnitude distribution of each object, per band.
     * `mwebv`: Median Milky Way extinction for each object
-    * `redshift_helio`: Median heliocentric redshift for each object
+    * `heliocentric_redshift`: Median heliocentric redshift for each object
     * `colors`: Compute P90 colors for each object
     * `spm`: Supernova parametric model parameters for each object, per band. Uses SPM v2 (multi-band fit).
     * `sn_features`: Magnitude and date statistics for detections and non-detections
@@ -40,7 +40,7 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     CORRECTED = True
     FLUX = True
     MIN_DETS = 5
-    MIN_DETS_IN_FID = 0
+    MIN_DETS_FID = 0
     MAX_FLUX = 50e3
     MAX_ERROR = 300
 
@@ -99,17 +99,20 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     def _discard_detections(self):
         """Exclude noisy detections"""
         self.detections.select(["mag_ml", "e_mag_ml"], lt=[self.MAX_FLUX, self.MAX_ERROR], gt=[-self.MAX_FLUX, None])
-        logging.debug(f"Objects without noisy detections: {self.detections.ids.size}")
+        logging.debug(f"Objects without noisy detections: {self.detections.ids().size}")
         super()._discard_detections()
 
+    @decorators.logger
     @decorators.add_fid(0)
     def calculate_mwebv(self) -> pd.DataFrame:
         return pd.DataFrame({"mwebv": self.detections.agg("mwebv", "median")})
 
+    @decorators.logger
     @decorators.add_fid(0)
-    def calculate_redshift_helio(self) -> pd.DataFrame:
+    def calculate_heliocentric_redshift(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.agg("z_final", "median")})
 
+    @decorators.logger
     @decorators.add_fid("".join(BANDS))
     def calculate_colors(self) -> pd.DataFrame:
         colors = {}
@@ -117,12 +120,14 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
             colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9)
         return pd.DataFrame(colors)
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
         features = self.detections.apply(extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True)
         return features.stack("fid")  # Needed for decorators to work
 
+    @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid(counters="n_")
     def calculate_sn_features(self) -> pd.DataFrame:
