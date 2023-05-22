@@ -1,6 +1,7 @@
 from apf.producers.generic import GenericProducer
 import json
 from pandas import DataFrame, read_json, concat
+import pathlib
 
 
 class JSONProducer(GenericProducer):
@@ -25,12 +26,15 @@ class JSONProducer(GenericProducer):
                 json.dumps([message]), orient="records", typ="frame"
             )
             self.buffer = concat([self.buffer, serialized_message])
-            file_name_list = self.config["FILE_PATH"].split(".")
-            file_name = file_name_list[0] + str(self.file_counter)
+            output_file = (
+                pathlib.Path(self.config["FILE_PATH"])
+                / f"producer_output{self.file_counter}.json"
+            )
             if len(self.buffer) == self.buffer_size:
-                serialized_message.to_json(
-                    file_name + ".json",
+                self.logger.info(f"Buffer: {self.buffer}")
+                self.buffer.to_json(
+                    output_file,
                     orient="records",
-                    lines=True,
                 )
-            self.file_counter += 1
+                self.file_counter += 1
+                self.buffer = []
