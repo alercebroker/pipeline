@@ -7,12 +7,6 @@ import pathlib
 class JSONProducer(GenericProducer):
     """JSON Producer
 
-    Parameters
-    ----------
-    FILE_PATH: :py:class:`str`
-        Output JSON File Directory.
-
-
     This producer creates multiple output files (json)
     according to the buffer size, where each file contains
     `buffer_size` elements.
@@ -20,6 +14,11 @@ class JSONProducer(GenericProducer):
     Every file is created in the `FILE_PATH` directory
     and each output file is named producer_output{i} where `i` is
     a counter for the times the buffer has completed.
+
+    Parameters
+    ----------
+    FILE_PATH: :py:class:`str`
+        Output JSON File Directory.
     """
 
     def __init__(self, config):

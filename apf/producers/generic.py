@@ -17,6 +17,7 @@ class GenericProducer(ABC):
         return self._key_field
 
     def set_key_field(self, key):
+        """Set key used when indexing produced messages."""
         self._key_field = key
 
     @abstractmethod
