@@ -2,6 +2,7 @@ import json
 import logging
 from typing import List
 
+import numpy as np
 from apf.core.step import GenericStep, get_class
 
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
@@ -29,13 +30,13 @@ class MagstatsStep(GenericStep):
 
     def execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded)
+        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
 
         stats = stats.to_dict("index")
 
         magstats_calculator = MagnitudeStatistics(**messages)
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
-        magstats = magstats.set_index("aid")
+        magstats = magstats.set_index("aid").replace({np.nan: None})
         for aid in stats:
             try:
                 stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
