@@ -64,9 +64,7 @@ class XmatchStep(GenericStep):
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": aid},
-                "data": {
-                    "xmatch": obj
-                },
+                "data": {"xmatch": obj},
             }
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
