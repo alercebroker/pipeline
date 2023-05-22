@@ -1,5 +1,4 @@
 import pandas as pd
-from astropy.coordinates import SkyCoord
 
 from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
@@ -96,9 +95,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     def calculate_galactic_coordinates(self) -> pd.DataFrame:
         ra = self.detections.agg("ra", "mean")
         dec = self.detections.agg("dec", "mean")
-        galactic = SkyCoord(ra, dec, frame="icrs", unit="deg").galactic
-        # By construction, ra and dec indices should be the same
-        return pd.DataFrame({"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index)
+        return extras.galactic_coordinates(ra, dec, frame="icrs")
 
     @decorators.add_fid(12)
     def calculate_colors(self) -> pd.DataFrame:

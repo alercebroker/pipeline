@@ -1,3 +1,4 @@
+from ._galactic import galactic_coordinates
 from ._gp_drw import gp_drw
 from ._harmonics import harmonics
 from ._kim import kim
