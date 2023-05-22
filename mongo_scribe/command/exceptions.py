@@ -30,8 +30,8 @@ class NonExistentCollectionException(ValueError):
     Exception to raise when trying to obtain a non-existent collection
     """
 
-    def __init__(self):
-        super().__init__("Collection doesn't exist")
+    def __init__(self, collection: str):
+        super().__init__(f"Collection {collection} doesn't exist")
 
 
 class NoCollectionProvidedException(ValueError):
