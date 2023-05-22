@@ -14,7 +14,6 @@ def logger(method):
         logging.info(f"Computing {' '.join(name.upper().split('_'))}...")
         df = method(self, *args, **kwargs)
         logging.info(f"Done: {df.columns.size} feature(s) computed")
-        print(df)
 
         details = df.columns.to_frame().groupby(level=0)["fid"].unique()
         for idx in details.index:

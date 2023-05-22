@@ -37,7 +37,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
     VERSION = "1.0"
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
-    BANDS_MAPPING = {"g": 1, "r": 2, "gr": 12}
+    BANDS_MAPPING = {"g": 1, "r": 2}
     EXTRA_COLUMNS = ["ra", "dec", "isdiffpos", "rb", "sgscore1"]
     XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
     CORRECTED = True
