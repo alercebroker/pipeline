@@ -12,6 +12,7 @@ class JSONProducer(GenericProducer):
     FILE_PATH: :py:class:`str`
         Output JSON File Directory.
 
+
     This producer creates multiple output files (json)
     according to the buffer size, where each file contains
     `buffer_size` elements.
