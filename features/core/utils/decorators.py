@@ -14,11 +14,11 @@ def logger(method):
         logging.info(f"Computing {' '.join(name.upper().split('_'))}...")
         df = method(self, *args, **kwargs)
         logging.info(f"Done: {df.columns.size} feature(s) computed")
+        print(df)
 
         details = df.columns.to_frame().groupby(level=0)["fid"].unique()
         for idx in details.index:
             logging.debug(f"  Feature {idx} for band(s): {details.loc[idx]}")
-
         return df
 
     return wrapper
@@ -29,10 +29,7 @@ def columns_per_fid(method):
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
-        df = method(self, *args, **kwargs).unstack("fid")
-        if self.BANDS_MAPPING:
-            df.rename(columns=self.BANDS_MAPPING, level="fid", inplace=True)
-        return df
+        return method(self, *args, **kwargs).unstack("fid")
 
     return wrapper
 

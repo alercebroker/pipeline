@@ -103,22 +103,22 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         super()._discard_detections()
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_mwebv(self) -> pd.DataFrame:
         return pd.DataFrame({"mwebv": self.detections.agg("mwebv", "median")})
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_heliocentric_redshift(self) -> pd.DataFrame:
         return pd.DataFrame({"redshift_helio": self.detections.agg("z_final", "median")})
 
     @decorators.logger
-    @decorators.add_fid("".join(BANDS))
     def calculate_colors(self) -> pd.DataFrame:
-        colors = {}
+        index, colors = [], []
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
-            colors[f"{b1}-{b2}"] = self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9)
-        return pd.DataFrame(colors)
+            index.append((f"{b1}-{b2}", f"{b1}{b2}"))
+            colors.append(self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9))
+        return pd.DataFrame(colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))).T
 
     @decorators.logger
     @decorators.columns_per_fid

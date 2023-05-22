@@ -172,20 +172,20 @@ class BaseFeatureExtractor(abc.ABC):
 
     @decorators.logger
     def calculate_periods(self) -> pd.DataFrame:
-        df = self.detections.apply(
+        return self.detections.apply(
             extras.periods,
             fids=self.BANDS,
             kim=self.COMPUTE_KIM,
             n_harmonics=self.N_HARMONICS,
             factors=self.POWER_RATE_FACTORS,
         )
-        return df.rename(columns=self.BANDS_MAPPING, level="fid")
 
     @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
-        return self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES).reset_index("oid", drop=True)
+        results = self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
+        return results.reset_index("oid", drop=True)  # Superfluous index added by turbofats
 
     @decorators.logger
     @decorators.columns_per_fid

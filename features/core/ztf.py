@@ -106,14 +106,14 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         super()._discard_detections()
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_galactic_coordinates(self) -> pd.DataFrame:
         ra = self.detections.agg("ra", "mean")
         dec = self.detections.agg("dec", "mean")
         return extras.galactic_coordinates(ra, dec, frame="icrs")
 
     @decorators.logger
-    @decorators.add_fid(12)
+    @decorators.add_fid("gr")
     def calculate_colors(self) -> pd.DataFrame:
         gr_max = self.detections.get_colors("min", ("g", "r"), ml=False, flux=self.FLUX)
         gr_max_corr = self.detections.get_colors("min", ("g", "r"), ml=True, flux=self.FLUX)
@@ -124,7 +124,7 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_wise_colors(self) -> pd.DataFrame:
         if self.FLUX:
             raise ValueError("Cannot calculate WISE colors with flux.")
@@ -142,12 +142,12 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         )
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_real_bogus(self) -> pd.DataFrame:
         return pd.DataFrame({"rb": self.detections.agg("rb", "median")})
 
     @decorators.logger
-    @decorators.add_fid(0)
+    @decorators.add_fid("")
     def calculate_sg_score(self) -> pd.DataFrame:
         return pd.DataFrame({"sgscore1": self.detections.agg("sgscore1", "median")})
 
