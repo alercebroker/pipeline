@@ -15,6 +15,7 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
+        "auto.offset.reset": "beginning"
     },
     # "TOPICS": ["w_Object", "w_Detections", "w_Non_Detections"],
     "TOPICS": os.environ["TOPICS"].strip().split(","),
