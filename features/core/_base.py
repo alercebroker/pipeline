@@ -140,6 +140,8 @@ class BaseFeatureExtractor(abc.ABC):
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
         self.xmatches = self._create_xmatches(xmatches)
+        if kwargs:
+            raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
 
     @abc.abstractmethod
     def _discard_detections(self):

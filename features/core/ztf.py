@@ -47,10 +47,9 @@ class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
         detections: list[dict] | pd.DataFrame,
         non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
-        *,
-        legacy: bool = False,
+        **kwargs,
     ):
-        if legacy:
+        if kwargs.pop("legacy", False):
             detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches)
 
         super().__init__(detections, non_detections, xmatches)

@@ -45,11 +45,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         detections: list[dict] | pd.DataFrame,
         non_detections: list[dict] | pd.DataFrame = None,
         xmatches: list[dict] | pd.DataFrame = None,
-        *,
-        legacy: bool = False,
-        metadata: pd.DataFrame = None,
+        **kwargs,
     ):
-        if legacy:
+        if kwargs.pop("legacy", False):
+            metadata = kwargs.pop("metadata", None)
             detections, non_detections, xmatches = self._handle_legacy(detections, non_detections, xmatches, metadata)
 
         super().__init__(detections, non_detections, xmatches)
