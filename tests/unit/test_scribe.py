@@ -23,7 +23,7 @@ def test_produce_scribe(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"oid": non_detection["oid"], "fid": non_detection["fid"], "mjd": non_detection["mjd"]},
+        "criteria": {"aid": non_detection["aid"], "fid": non_detection["fid"], "mjd": non_detection["mjd"]},
         "data": non_detection,
         "options": {"upsert": True},
     }
