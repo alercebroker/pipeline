@@ -114,7 +114,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 step = SortingHatStep(
                     config=self.step_config,
                     db_connection=self.database,
-                    level=logging.DEBUG,
                 )
                 batch = generate_alerts_batch(
                     100, nearest=10
@@ -179,7 +178,6 @@ class PrometheusIntegrationTest(unittest.TestCase):
                 step = SortingHatStep(
                     config=self.step_config,
                     db_connection=self.database,
-                    level=logging.DEBUG,
                     prometheus_metrics=self.prometheus_metrics,
                 )
                 batch = generate_alerts_batch(

@@ -16,16 +16,18 @@ sys.path.append(PACKAGE_PATH)
 from settings import *
 
 level = logging.INFO
-if "LOGGING_DEBUG" in locals():
-    if LOGGING_DEBUG:
-        level = logging.DEBUG
+if os.getenv('LOGGING_DEBUG'):
+    level = logging.DEBUG
 
-logging.basicConfig(
-    level=level,
-    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+logger = logging.getLogger("alerce")
+logger.setLevel(level)
 
+fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+handler.setLevel(level)
+
+logger.addHandler(handler)
 
 from sorting_hat_step import SortingHatStep
 
@@ -37,7 +39,6 @@ start_http_server(8000)
 step = SortingHatStep(
     db_connection=database,
     config=STEP_CONFIG,
-    level=level,
     prometheus_metrics=prometheus_metrics,
 )
 step.start()

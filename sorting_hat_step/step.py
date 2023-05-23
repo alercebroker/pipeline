@@ -13,10 +13,9 @@ class SortingHatStep(GenericStep):
         self,
         db_connection: DatabaseConnection,
         config: dict,
-        level=logging.INFO,
         **kwargs,
     ):
-        super().__init__(config=config, level=level, **kwargs)
+        super().__init__(config=config, **kwargs)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
         self.parser = ALeRCEParser()

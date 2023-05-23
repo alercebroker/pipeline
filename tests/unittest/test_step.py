@@ -29,7 +29,6 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.step = SortingHatStep(
             config=self.step_config,
             db_connection=self.mock_database_connection,
-            level=logging.DEBUG,
         )
 
     def tearDown(self):
