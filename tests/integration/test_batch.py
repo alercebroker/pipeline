@@ -17,6 +17,7 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "TOPICS": ["test_topic_2"],
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
@@ -43,6 +44,7 @@ PRODUCER_CONFIG = {
 
 step_config = {
     "DB_CONFIG": DB_CONFIG,
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": {
         "STEP_ID": "scribe",
         "STEP_NAME": "scribe",
@@ -51,8 +53,7 @@ step_config = {
     },
 }
 
-konsumer = KafkaConsumer(config=CONSUMER_CONFIG)
-step = MongoScribe(consumer=konsumer, config=step_config)
+step = MongoScribe(config=step_config)
 producer = KafkaProducer(config=PRODUCER_CONFIG)
 generator = CommandGenerator()
 
@@ -85,7 +86,7 @@ commands.extend(
 
 def test_bulk(kafka_service, mongo_service):
     for i, command in enumerate(commands):
-        producer.produce(command, key=f"key_{i}")
+        producer.produce(command)
 
     step.start()
     collection = step.db_client.connection.database["object"]

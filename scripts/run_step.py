@@ -7,12 +7,11 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import *
+from settings import STEP_CONFIG
 
 level = logging.INFO
-if "LOGGING_DEBUG" in locals():
-    if LOGGING_DEBUG:
-        level = logging.DEBUG
+if os.getenv("LOGGING_DEBUG"):
+    level = logging.DEBUG
 
 logging.basicConfig(
     level=level,
@@ -22,14 +21,11 @@ logging.basicConfig(
 
 
 from mongo_scribe import MongoScribe
-from apf.core import get_class
+from apf.metrics.prometheus import PrometheusMetrics
+from prometheus_client import start_http_server
 
-if "CLASS" in CONSUMER_CONFIG:
-    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
-else:
-    from apf.consumers import KafkaConsumer as Consumer
+prometheus_metrics = PrometheusMetrics()
+start_http_server(8000)
 
-consumer = Consumer(config=CONSUMER_CONFIG)
-
-step = MongoScribe(consumer, config=STEP_CONFIG, level=level)
+step = MongoScribe(config=STEP_CONFIG, level=level, prometheus_metrics=prometheus_metrics)
 step.start()

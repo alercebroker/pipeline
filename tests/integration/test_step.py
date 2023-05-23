@@ -3,7 +3,6 @@ import os
 import pytest
 import unittest
 from mongo_scribe.step import MongoScribe
-from apf.consumers.kafka import KafkaConsumer
 from apf.producers.kafka import KafkaProducer
 
 DB_CONFIG = {
@@ -17,6 +16,7 @@ DB_CONFIG = {
 }
 
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaConsumer",
     "TOPICS": ["test_topic"],
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
@@ -42,6 +42,7 @@ PRODUCER_CONFIG = {
 
 step_config = {
     "DB_CONFIG": DB_CONFIG,
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "STEP_METADATA": {
         "STEP_ID": "scribe",
         "STEP_NAME": "scribe",
@@ -50,8 +51,7 @@ step_config = {
     },
 }
 
-konsumer = KafkaConsumer(config=CONSUMER_CONFIG)
-step = MongoScribe(consumer=konsumer, config=step_config)
+step = MongoScribe(config=step_config)
 producer = KafkaProducer(config=PRODUCER_CONFIG)
 
 
@@ -63,7 +63,7 @@ def test_insert_into_database(kafka_service, mongo_service):
             "data": {"_id": "inserted_id1", "field": "some_value"},
         }
     )
-    producer.produce({"payload": command}, key="insertion_1")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "object",
@@ -71,7 +71,7 @@ def test_insert_into_database(kafka_service, mongo_service):
             "data": {"_id": "inserted_id2", "field": "some_value"},
         }
     )
-    producer.produce({"payload": command}, key="insertion_2")
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -88,7 +88,7 @@ def test_insert_into_multiple_collections(kafka_service, mongo_service):
             "data": {"_id": "inserted_id10", "field": "some_value"},
         }
     )
-    producer.produce({"payload": command}, key="insertion_1")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "detection",
@@ -96,7 +96,7 @@ def test_insert_into_multiple_collections(kafka_service, mongo_service):
             "data": {"_id": "inserted_id2", "field": "some_value2"},
         }
     )
-    producer.produce({"payload": command}, key="insertion_2")
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -119,8 +119,8 @@ def test_upsert_into_database(kafka_service, mongo_service):
             "options": {"upsert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_3")
-    producer.produce({"payload": command}, key="insertion_4")
+    producer.produce({"payload": command})
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -139,7 +139,7 @@ def test_upsert_only_into_database(kafka_service, mongo_service):
             "options": {"upsert": True, "set_on_insert": True},
         }
     )
-    producer.produce({"payload": command}, key="upsert_only")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "object",
@@ -149,8 +149,8 @@ def test_upsert_only_into_database(kafka_service, mongo_service):
             "options": {"upsert": True, "set_on_insert": True},
         }
     )
-    producer.produce({"payload": command}, key="upsert_only_1")
-    producer.produce({"payload": command}, key="upsert_only_2")
+    producer.produce({"payload": command})
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -174,7 +174,7 @@ def test_insert_probabilities_into_database(kafka_service, mongo_service):
             "options": {"upsert": True, "set_on_insert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_5")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "object",
@@ -189,8 +189,8 @@ def test_insert_probabilities_into_database(kafka_service, mongo_service):
             "options": {"upsert": True, "set_on_insert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_6")
-    producer.produce({"payload": command}, key="insertion_7")
+    producer.produce({"payload": command})
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -228,7 +228,7 @@ def test_update_probabilities_into_database(kafka_service, mongo_service):
             "options": {"upsert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_8")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "object",
@@ -243,8 +243,8 @@ def test_update_probabilities_into_database(kafka_service, mongo_service):
             "options": {"upsert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_9")
-    producer.produce({"payload": command}, key="insertion_10")
+    producer.produce({"payload": command})
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -283,7 +283,7 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "options": {"upsert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_11")
+    producer.produce({"payload": command})
     command = json.dumps(
         {
             "collection": "object",
@@ -299,8 +299,8 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "options": {"upsert": True},
         }
     )
-    producer.produce({"payload": command}, key="insertion_12")
-    producer.produce({"payload": command}, key="insertion_13")
+    producer.produce({"payload": command})
+    producer.produce({"payload": command})
 
     step.start()
     collection = step.db_client.connection.database["object"]
@@ -340,8 +340,8 @@ def test_print_into_console(kafka_service, mongo_service):
             }
         ),
     ]
-    producer.produce({"payload": commands[0]}, key="insertion")
-    producer.produce({"payload": commands[1]}, key="update")
+    producer.produce({"payload": commands[0]})
+    producer.produce({"payload": commands[1]})
     step.start()
 
     os.environ["MOCK_DB_COLLECTION"] = ""
