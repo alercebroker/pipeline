@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import List
 
 from apf.core import get_class
@@ -20,10 +19,9 @@ class PrvCandidatesStep(GenericStep):
     def __init__(
         self,
         config,
-        level=logging.INFO,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
+        super().__init__(config=config, **step_args)
         producer_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = producer_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
