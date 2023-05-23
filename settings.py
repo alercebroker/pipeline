@@ -80,6 +80,16 @@ METRICS_CONFIG = {
     },
 }
 
+if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+        "METRICS_KAFKA_USERNAME"
+    )
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+        "METRICS_KAFKA_PASSWORD"
+    )    
+
 ## Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
