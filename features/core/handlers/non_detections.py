@@ -19,6 +19,7 @@ class NonDetectionsHandler(BaseHandler):
         `first_mjd` (pd.Series):  MJD of first detection. Should be indexed by `id` (and, optionally, `fid`)
     """
 
+    _NAME = "non-detections"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 

@@ -26,6 +26,7 @@ class DetectionsHandler(BaseHandler):
         corr (bool): Whether to use corrected magnitudes if available. Defaults to `False`
     """
 
+    _NAME = "detections"
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml"]
