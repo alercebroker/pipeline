@@ -40,7 +40,6 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
