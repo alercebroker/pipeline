@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 import numpy as np
@@ -20,9 +19,9 @@ FID_MAPPING = {
 
 class LightcurveStep(GenericStep):
     def __init__(
-        self, config: dict, db_client: MongoConnection, level: int = logging.INFO
+        self, config: dict, db_client: MongoConnection
     ):
-        super().__init__(config=config, level=level)
+        super().__init__(config=config)
         self.db_client = db_client
         self.db_client.connect(config["DB_CONFIG"])
 

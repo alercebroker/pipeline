@@ -33,7 +33,7 @@ def step_creator():
         start_http_server(8000)
 
     db = MongoConnection()
-    return LightcurveStep(config=settings, level=level, db_client=db)
+    return LightcurveStep(config=settings, db_client=db)
 
 
 if __name__ == "__main__":
