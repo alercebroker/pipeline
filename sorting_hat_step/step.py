@@ -4,7 +4,6 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 
 from .utils import wizard, parser
-import logging
 import pandas as pd
 
 
@@ -13,10 +12,9 @@ class SortingHatStep(GenericStep):
         self,
         db_connection: DatabaseConnection,
         config: dict,
-        level=logging.INFO,
         **kwargs,
     ):
-        super().__init__(config=config, level=level, **kwargs)
+        super().__init__(config=config, **kwargs)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
         self.parser = ALeRCEParser()
@@ -46,9 +44,7 @@ class SortingHatStep(GenericStep):
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
         output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
-        n_messages = len(output_result)
         self.set_producer_key_field("aid")
-        self.logger.info(f"{n_messages} messages to be produced")
         return output_result
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -79,6 +75,7 @@ class SortingHatStep(GenericStep):
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
         # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
+        self.logger.info(f"Assigning AID to {len(alerts)} alerts")
         alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         alerts = wizard.find_existing_id(self.driver, alerts)

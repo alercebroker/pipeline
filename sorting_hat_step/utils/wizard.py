@@ -1,5 +1,6 @@
 import time
 import string
+import logging
 
 import numpy as np
 import pandas as pd
@@ -13,6 +14,8 @@ CHARACTERS = string.ascii_lowercase
 
 RADIUS = 1.5  # arcsec
 BASE = len(CHARACTERS)
+
+logger = logging.getLogger("alerce.SortingHatWizard")
 
 
 def encode(long_number: int) -> str:
@@ -143,11 +146,16 @@ def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
         alerts["aid"] = None
     alerts_wo_aid = alerts[alerts["aid"].isna()]
     if not len(alerts_wo_aid.index):
+        logger.debug("0 alerts assigned AID via OID matching")
         return alerts
+
+    count = 0
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
-        alerts_wo_aid.loc[group.index, "aid"] = oid_query(
-            db, group["oid"].unique().tolist()
-        )
+        aid = oid_query(db, group["oid"].unique().tolist())
+        count += group.index.size if aid else 0
+        alerts_wo_aid.loc[group.index, "aid"] = aid
+    logger.debug(f"{count} alerts assigned AID via OID matching")
+
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
@@ -172,11 +180,16 @@ def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
         alerts["aid"] = None
     alerts_wo_aid = alerts[alerts["aid"].isna()]
     if not len(alerts_wo_aid.index):
+        logger.debug(f"0 alerts assigned AID via cone-search")
         return alerts
+
+    count = 0
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
-        alerts_wo_aid.loc[group.index, "aid"] = conesearch_query(
-            db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS
-        )
+        aid = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
+        count += group.index.size if aid else 0
+        alerts_wo_aid.loc[group.index, "aid"] = aid
+    logger.debug(f"{count} alerts assigned AID via cone-search")
+
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
@@ -203,9 +216,15 @@ def generate_new_id(alerts: pd.DataFrame):
         alerts["aid"] = None
     alerts_wo_aid = alerts[alerts["aid"].isna()]
     if not len(alerts_wo_aid.index):
+        logger.debug(f"No new AIDs created")
         return alerts
+
+    count = 0
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
         id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
         alerts_wo_aid.loc[group.index, "aid"] = f"AL{time.strftime('%y')}{encode(id_)}"
+        count += 1
+
+    logger.debug(f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts")
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
