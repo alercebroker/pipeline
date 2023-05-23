@@ -75,6 +75,7 @@ class SortingHatStep(GenericStep):
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
         # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
+        self.logger.info(f"Assigning AID to {len(alerts)} alerts")
         alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         alerts = wizard.find_existing_id(self.driver, alerts)
