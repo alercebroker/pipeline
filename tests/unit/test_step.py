@@ -1,8 +1,8 @@
 from unittest import mock
-from lc_classification.step import (
+from lc_classification.core.step import (
     LateClassifier,
-    KafkaProducer,
 )
+from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from json import loads
 from tests.mockdata.inputschema import INPUT_SCHEMA
@@ -52,5 +52,4 @@ def test_step():
     calls = step.producer.mock_calls
     for call in calls:
         obj = call.args[0]
-        print(obj["lc_classification"])
         assert_object_is_correct(obj)

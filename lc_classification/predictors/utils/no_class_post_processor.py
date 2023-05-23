@@ -2,7 +2,6 @@ import pandas as pd
 
 
 class NoClassifiedPostProcessor(object):
-
     class_name = "no_class"
 
     def __init__(
@@ -12,7 +11,6 @@ class NoClassifiedPostProcessor(object):
         self.classifications = classifications
 
     def get_modified_classifications(self) -> pd.DataFrame:
-
         classifications_columns = self.classifications.columns.values.tolist()
         result_columns_names = classifications_columns + [self.class_name]
         classifications_cloumns_length = len(classifications_columns)

@@ -1,12 +1,13 @@
 import unittest
-from unittest import mock
 import pandas as pd
 from tests.mockdata.mock_data_for_utils import (
     messages_df,
     complete_classifications_df,
     incomplete_classifications_df,
 )
-from lc_classification.utils.utils import NoClassifiedPostProcessor
+from lc_classification.predictors.utils.no_class_post_processor import (
+    NoClassifiedPostProcessor,
+)
 
 
 class NoClassifiedPostProcessorTestCase(unittest.TestCase):

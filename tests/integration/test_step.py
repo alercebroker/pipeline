@@ -1,5 +1,5 @@
 import json
-from lc_classification.step import LateClassifier
+from lc_classification.core.step import LateClassifier
 from apf.consumers import KafkaConsumer
 
 

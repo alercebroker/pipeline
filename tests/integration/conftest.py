@@ -14,6 +14,11 @@ from tests.mockdata.inputschema import INPUT_SCHEMA as SCHEMA
 
 
 @pytest.fixture(scope="session")
+def docker_compose_command():
+    return "docker compose" if not os.getenv("COMPOSE", "v1") else "docker-compose"
+
+
+@pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return (
         pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"

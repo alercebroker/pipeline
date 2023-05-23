@@ -1,8 +1,9 @@
 from apf.core import get_class
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
 from lc_classifier.classifier.models import HierarchicalRandomForest
-from lc_classification.utils import NoClassifiedPostProcessor
+from lc_classification.predictors.utils.no_class_post_processor import (
+    NoClassifiedPostProcessor,
+)
 
 import logging
 import pandas as pd
@@ -174,7 +175,6 @@ class LateClassifier(GenericStep):
         features = self.features_to_df(alert_data, messages)
         self.logger.info("Found %i Features.", len(features))
         missing_features = self.features_required.difference(set(features.columns))
-
         if len(missing_features) > 0:
             raise KeyError(
                 f"Corrupted Batch: missing some features ({missing_features})"
