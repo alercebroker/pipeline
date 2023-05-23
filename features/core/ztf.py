@@ -6,7 +6,7 @@ from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
 
 
-class ZTFClassifierFeatureExtractor(BaseFeatureExtractor):
+class ZTFFeatureExtractor(BaseFeatureExtractor):
     """Extractor for ZTF light-curve classifier.
 
     Uses only alerts from ZTF in the bands g and r. For historical reasons, bands are mapped (g to 1 and r to 2).

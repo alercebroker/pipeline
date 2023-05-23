@@ -1,5 +1,4 @@
 import functools
-import logging
 from typing import Any
 
 from .functions import fill_index
@@ -11,13 +10,13 @@ def logger(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         _, _, name = method.__name__.rpartition(self._PREFIX)
-        logging.info(f"Computing {' '.join(name.upper().split('_'))}...")
+        self.logger.info(f"Computing {' '.join(name.upper().split('_'))}...")
         df = method(self, *args, **kwargs)
-        logging.info(f"Done: {df.columns.size} feature(s) computed")
+        self.logger.info(f"Done: {df.columns.size} feature(s) computed")
 
         details = df.columns.to_frame().groupby(level=0)["fid"].unique()
         for idx in details.index:
-            logging.debug(f"  Feature {idx} for band(s): {details.loc[idx]}")
+            self.logger.debug(f"  Feature {idx} for band(s): {details.loc[idx]}")
         return df
 
     return wrapper
