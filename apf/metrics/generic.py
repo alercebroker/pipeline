@@ -14,7 +14,7 @@ class DateTimeEncoder(json.JSONEncoder):
 class GenericMetricsProducer(abc.ABC):
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self.logger.info(f"Creating {self.__class__.__name__}")
 
     @abc.abstractmethod

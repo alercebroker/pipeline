@@ -88,7 +88,7 @@ class GenericStep(abc.ABC):
         return {}
 
     def _set_logger(self, level):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self.logger.setLevel(level)
         self.logger.info(f"Creating {self.__class__.__name__}")
 
