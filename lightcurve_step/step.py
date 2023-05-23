@@ -6,21 +6,9 @@ from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
 
-# TODO: Unnecessary when using a clean DB
-FID_MAPPING = {
-    1: "g",
-    2: "r",
-    3: "i",
-    4: "c",
-    5: "o",
-    6: "H",
-}
-
 
 class LightcurveStep(GenericStep):
-    def __init__(
-        self, config: dict, db_client: MongoConnection
-    ):
+    def __init__(self, config: dict, db_client: MongoConnection):
         super().__init__(config=config)
         self.db_client = db_client
         self.db_client.connect(config["DB_CONFIG"])
@@ -44,40 +32,12 @@ class LightcurveStep(GenericStep):
         query_non_detections = self.db_client.query(NonDetection)
         query_forced_photometries = self.db_client.query(ForcedPhotometry)
 
-        # TODO: when using clean DB addFields step: {$addFields: {"candid": "$_id", "forced": False, "new": False}}
         db_detections = query_detections.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {
                     "$addFields": {
-                        "candid": {
-                            "$cond": {
-                                "if": "$candid",
-                                "then": "$candid",
-                                "else": "$_id",
-                            }
-                        },
-                        "pid": {
-                            "$cond": {
-                                "if": "$pid",
-                                "then": "$pid",
-                                "else": 1,
-                            }
-                        },
-                        "has_stamp": {
-                            "$cond": {
-                                "if": "$has_stamp",
-                                "then": "$has_stamp",
-                                "else": True,
-                            }
-                        },
-                        "parent_candid": {
-                            "$cond": {
-                                "if": "$parent_candid",
-                                "then": "$parent_candid",
-                                "else": None,
-                            }
-                        },
+                        "candid": "$_id",
                         "forced": False,
                         "new": False,
                     }
@@ -109,25 +69,6 @@ class LightcurveStep(GenericStep):
             ["has_stamp", "new"], ascending=[False, True]
         ).drop_duplicates("candid", keep="first")
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
-
-        if detections["sid"].isna().any():  # TODO: Remove when using clean DB
-            detections["sid"][detections["tid"] == "ZTF"] = "ZTF"
-            detections["sid"][detections["tid"].str.startswith("ATLAS")] = "ATLAS"
-
-        detections["fid"].replace(
-            FID_MAPPING, inplace=True
-        )  # TODO: Remove when using clean DB
-
-        if non_detections.size:
-            if "sid" not in non_detections or non_detections["sid"].isna().any():
-                non_detections["sid"] = "ZTF"
-
-            if "tid" not in non_detections or non_detections["tid"].isna().any():
-                non_detections["tid"] = "ZTF"
-
-            non_detections["fid"].replace(
-                FID_MAPPING, inplace=True
-            )  # TODO: Remove when using clean DB
 
         return {
             "detections": detections.replace(np.nan, None).to_dict("records"),
