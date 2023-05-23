@@ -52,10 +52,9 @@ class GenericStep(abc.ABC):
         producer: Type[GenericProducer] = DefaultProducer,
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
         config: dict = {},
-        level: int = logging.INFO,
         prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
     ):
-        self._set_logger(level)
+        self._set_logger()
         self.config = config
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
@@ -87,9 +86,8 @@ class GenericStep(abc.ABC):
             return self.metrics_config["PARAMS"]
         return {}
 
-    def _set_logger(self, level):
+    def _set_logger(self):
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
-        self.logger.setLevel(level)
         self.logger.info(f"Creating {self.__class__.__name__}")
 
     def _get_consumer(self, default: Type[GenericConsumer]) -> Type[GenericConsumer]:
