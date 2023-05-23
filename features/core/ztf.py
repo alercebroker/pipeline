@@ -1,5 +1,3 @@
-import logging
-
 import pandas as pd
 
 from ._base import BaseFeatureExtractor
@@ -99,10 +97,13 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
 
     def _discard_detections(self):
         """Include only alerts with a minimum real-bogus value and a maximum error in magnitude"""
+        self.logger.debug(f"Selecting detections with real/bogus score greater than {self.MIN_REAL_BOGUS}")
         self.detections.select("rb", gt=self.MIN_REAL_BOGUS)
-        logging.debug(f"Objects with detections above {self.MIN_REAL_BOGUS} RB score: {self.detections.ids().size}")
+        self.logger.debug(f"{len(self.detections.alerts())} detections remain after selection")
+
+        self.logger.debug(f"Selecting detections with magnitude error lower than {self.MAX_ERROR}")
         self.detections.select("e_mag_ml", gt=0, lt=self.MAX_ERROR)
-        logging.debug(f"Objects with detections below {self.MAX_ERROR} magnitude error: {self.detections.ids().size}")
+        self.logger.debug(f"{len(self.detections.alerts())} detections remain after selection")
         super()._discard_detections()
 
     @decorators.logger

@@ -130,11 +130,10 @@ class BaseFeatureExtractor(abc.ABC):
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
         self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common)
-        self.logger.info(f"Objects in input: {self.detections.ids().size}")
-        self.logger.info(f"Detections in input: {len(self.detections.alerts())}")
+
+        self.logger.info(f"Total objects before clearing: {self.detections.ids().size}")
         self._discard_detections()
-        self.logger.info(f"Objects after selection: {self.detections.ids().size}")
-        self.logger.info(f"Detections after selection: {len(self.detections.alerts())}")
+        self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
 
         first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
@@ -149,16 +148,14 @@ class BaseFeatureExtractor(abc.ABC):
         self.xmatches = self._create_xmatches(xmatches)
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
-        self.logger.info("Initialized feature extractor")
+        self.logger.info("Finished initialization")
 
     @abc.abstractmethod
     def _discard_detections(self):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
         self.detections.not_enough(self.MIN_DETS)
-        self.logger.debug(f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids().size}")
         self.detections.not_enough(self.MIN_DETS_FID, by_fid=True)
-        self.logger.debug(f"Objects with at least {self.MIN_DETS_FID} detections in a band: {self.detections.ids().size}")
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""

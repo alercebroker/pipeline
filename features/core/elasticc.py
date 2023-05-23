@@ -96,8 +96,9 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
 
     def _discard_detections(self):
         """Exclude noisy detections"""
+        self.logger.debug(f"Selecting detections with flux less than {self.MAX_FLUX} and error less than {self.MAX_ERROR}")
         self.detections.select(["mag_ml", "e_mag_ml"], lt=[self.MAX_FLUX, self.MAX_ERROR], gt=[-self.MAX_FLUX, None])
-        self.logger.debug(f"Objects without noisy detections: {self.detections.ids().size}")
+        self.logger.debug(f"{len(self.detections.alerts())} alerts remain detections selection")
         super()._discard_detections()
 
     @decorators.logger
