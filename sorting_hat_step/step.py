@@ -4,7 +4,6 @@ from survey_parser_plugins import ALeRCEParser
 from typing import List
 
 from .utils import wizard, parser
-import logging
 import pandas as pd
 
 
@@ -45,9 +44,7 @@ class SortingHatStep(GenericStep):
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
         output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
-        n_messages = len(output_result)
         self.set_producer_key_field("aid")
-        self.logger.info(f"{n_messages} messages to be produced")
         return output_result
 
     def _add_metrics(self, alerts: pd.DataFrame):
