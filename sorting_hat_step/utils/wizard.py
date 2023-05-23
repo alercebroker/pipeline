@@ -185,9 +185,7 @@ def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
 
     count = 0
     for tmp_id, group in alerts_wo_aid.groupby("tmp_id"):
-        aid = conesearch_query(
-            db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS
-        )
+        aid = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
         count += group.index.size if aid else 0
         alerts_wo_aid.loc[group.index, "aid"] = aid
     logger.debug(f"{count} alerts assigned AID via cone-search")
