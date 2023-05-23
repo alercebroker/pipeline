@@ -12,6 +12,10 @@ import json
 
 import numexpr
 
+from lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser import (
+    ZtfRandomForestPredictorParser,
+)
+
 
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used to process
@@ -30,17 +34,15 @@ class LateClassifier(GenericStep):
 
     def __init__(self, config=None, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level)
-
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
-
         self.features_required = set(self.model.feature_list)
-
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
+        self.predictor_parser = ZtfRandomForestPredictorParser()
 
     def get_ranking(self, df):
         ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
@@ -136,17 +138,14 @@ class LateClassifier(GenericStep):
         features.drop_duplicates("aid", inplace=True)
         return features
 
-    def produce_scribe(self, db_results: pd.DataFrame):
-        db_results.set_index("aid")
-        # TODO: get schema of the operation
-        classifications = db_results.to_dict("records")
+    def produce_scribe(self, classifications: list):
         for classification in classifications:
-            aid = classification.pop("aid")
+            aid = classification.aid
             command = {
                 "collection": "object",
                 "type": "update_probabilities",
                 "criteria": {"_id": aid},
-                "data": classification,
+                "data": classification.classification,
                 "options": {"upsert": True, "set_on_insert": False},
             }
             self.scribe_producer.produce({"payload": json.dumps(command)})
@@ -183,14 +182,13 @@ class LateClassifier(GenericStep):
         features.set_index("aid", inplace=True)
         tree_probabilities = self.model.predict_in_pipeline(features)
         self.logger.info("Processing results")
-        db_results = self.process_results(tree_probabilities)
-
+        results = self.predictor_parser.parse_output(tree_probabilities)
         return {
             "public_info": (alert_data, features, tree_probabilities),
-            "db_results": db_results,
+            "db_results": results,
         }
 
     def post_execute(self, result: dict):
         db_results = result.pop("db_results")
-        self.produce_scribe(db_results)
+        self.produce_scribe(db_results.classifications)
         return result["public_info"]

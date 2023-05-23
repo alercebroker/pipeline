@@ -15,7 +15,9 @@ from tests.mockdata.inputschema import INPUT_SCHEMA as SCHEMA
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
-    return "docker compose" if not os.getenv("COMPOSE", "v1") else "docker-compose"
+    return (
+        "docker compose" if not os.getenv("COMPOSE", "v1") == "v1" else "docker-compose"
+    )
 
 
 @pytest.fixture(scope="session")

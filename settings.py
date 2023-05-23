@@ -13,7 +13,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
         "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", None)),
     },
-    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
