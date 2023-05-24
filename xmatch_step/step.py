@@ -1,5 +1,4 @@
 import json
-import logging
 import time
 from typing import List, Tuple
 import pandas as pd
@@ -18,10 +17,9 @@ class XmatchStep(GenericStep):
     def __init__(
         self,
         config=None,
-        level=logging.INFO,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
+        super().__init__(config=config, **step_args)
 
         self.xmatch_config = config["XMATCH_CONFIG"]
         self.xmatch_client = XmatchClient()
