@@ -148,6 +148,7 @@ class ForcedPhotometry(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "forced_photometry"
 
