@@ -3,3 +3,5 @@ __pycache__/
 .idea/
 late_classifier/
 turbo-fats/
+
+.python-version
