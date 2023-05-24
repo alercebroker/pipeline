@@ -79,22 +79,6 @@ class LateClassifier(GenericStep):
 
         return messages
 
-    def message_to_df(self, messages):
-        return pd.DataFrame(
-            [
-                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
-                for message in messages
-            ]
-        )
-
-    def features_to_df(self, alert_data, messages):
-        features = pd.DataFrame([message["features"] for message in messages])
-        features["aid"] = alert_data.aid
-        features["candid"] = alert_data.candid
-        features.sort_values("candid", ascending=False, inplace=True)
-        features.drop_duplicates("aid", inplace=True)
-        return features
-
     def produce_scribe(self, classifications: list):
         for classification in classifications:
             aid = classification.aid
