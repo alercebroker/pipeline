@@ -19,32 +19,40 @@ class CorrectionStep(GenericStep):
     def __init__(
         self,
         config,
-        level=logging.INFO,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
+        super().__init__(config=config, **step_args)
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
         self.set_producer_key_field("aid")
 
     @staticmethod
     def create_step() -> CorrectionStep:
+        import os
         from .settings import settings_creator
         from prometheus_client import start_http_server
         from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
 
         settings = settings_creator()
-        level = logging.DEBUG if settings["LOGGING_DEBUG"] else logging.INFO
-        logging.basicConfig(
-            level=level,
-            format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+        level = logging.INFO
+        if os.getenv("LOGGING_DEBUG"):
+            level = logging.DEBUG
+
+        logger = logging.getLogger("alerce")
+        logger.setLevel(level)
+
+        fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+        handler = logging.StreamHandler()
+        handler.setFormatter(fmt)
+        handler.setLevel(level)
+
+        logger.addHandler(handler)
+
         prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
         if settings["PROMETHEUS"]:
             start_http_server(8000)
 
-        return CorrectionStep(config=settings, level=level, prometheus_metrics=prometheus_metrics)
+        return CorrectionStep(config=settings, prometheus_metrics=prometheus_metrics)
 
     @classmethod
     def pre_produce(cls, result: dict):

@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 from typing import Literal
 
 import numpy as np
@@ -22,6 +24,7 @@ class Corrector:
         Args:
             detections: List of mappings with all values from generic alert (must include `extra_fields`)
         """
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
         self._detections = self._detections.drop_duplicates("candid").set_index("candid")
 
@@ -99,9 +102,11 @@ class Corrector:
 
         The records are a list of mappings with the original input pairs and the new pairs together.
         """
+        self.logger.debug(f"Correcting {len(self._detections)} detections...")
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
         corrected = self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
+        self.logger.debug(f"Corrected {corrected['corrected'].sum()}")
         corrected = corrected.reset_index().to_dict("records")
         return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
 
