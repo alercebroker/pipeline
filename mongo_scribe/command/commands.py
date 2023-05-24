@@ -185,7 +185,7 @@ class UpdateProbabilitiesCommand(UpdateCommand):
 class UpdateFeaturesCommand(UpdateCommand):
     """Update Features for a given object.
 
-    The `data` must contain the features version, and an amount of keys that correspond
+    The `data` must contain the features version, features group name and an amount of keys that correspond
     to the names of the features, the values for this keys correspond to the value of the
     feature.
 
@@ -194,6 +194,7 @@ class UpdateFeaturesCommand(UpdateCommand):
     .. code-block::
        {
            "features_version": "v1",
+           "features_group": "group",
            "features": [
                 {"name": "feature1", "value": 1.1, "fid": 0},
                 {"name": "feature2", "value": null, "fid": 2},
@@ -211,9 +212,14 @@ class UpdateFeaturesCommand(UpdateCommand):
 
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
-        if "features_version" not in data or "features" not in data:
+        if "features" not in data:
+            raise NoFeatureProvidedException()
+        if "features_version" not in data:
             raise NoFeatureVersionProvidedException()
+        if "features_group" not in data:
+            raise NoFeatureGroupProvidedException()
         self.features_version = data.pop("features_version")
+        self.features_group = data.pop("features_group")
 
     def get_operations(self) -> list:
         find_existing_criteria = {
@@ -223,6 +229,7 @@ class UpdateFeaturesCommand(UpdateCommand):
         features = [
             {
                 "version": self.features_version,
+                "group": self.features_group,
                 "name": feature["name"],
                 "value": feature["value"],
                 "fid": feature["fid"],
@@ -246,6 +253,7 @@ class UpdateFeaturesCommand(UpdateCommand):
         for feature in self.data["features"]:
             filters = {
                 "el.version": self.features_version,
+                "el.group": self.features_group,
                 "el.name": feature["name"],
                 "el.fid": feature["fid"]
             }

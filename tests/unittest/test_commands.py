@@ -2,7 +2,11 @@ import unittest
 
 from pymongo.operations import InsertOne, UpdateOne
 
-from mongo_scribe.command.exceptions import NoFeatureVersionProvidedException
+from mongo_scribe.command.exceptions import (
+    NoFeatureProvidedException,
+    NoFeatureVersionProvidedException,
+    NoFeatureGroupProvidedException
+)
 
 from mongo_scribe.command.commands import (
     InsertCommand,
@@ -276,6 +280,7 @@ class CommandTests(unittest.TestCase):
     def test_update_features_check_input_wrong_input(self):
         # no features_version
         invalid_features_data = {
+            "features_group": "group",
             "features": [
                 {"name": "feature1", "value": 12.34, "fid": 0},
                 {"name": "feature2", "value": None, "fid": 2},
@@ -292,8 +297,25 @@ class CommandTests(unittest.TestCase):
         # no features
         invalid_features_data = {
             "features_version": "v1",
+            "features_group": "group",
         }
-        with self.assertRaises(NoFeatureVersionProvidedException):
+        with self.assertRaises(NoFeatureProvidedException):
+            update_features_command = UpdateFeaturesCommand(
+                collection=valid_features_dict["collection"],
+                data=invalid_features_data,
+                criteria=valid_features_dict["criteria"],
+                options=valid_features_dict["options"],
+            )
+
+        # no group
+        invalid_features_data = {
+            "features_version": "v1",
+            "features": [
+                {"name": "feature1", "value": 12.34, "fid": 0},
+                {"name": "feature2", "value": None, "fid": 2},
+            ],
+        }
+        with self.assertRaises(NoFeatureGroupProvidedException):
             update_features_command = UpdateFeaturesCommand(
                 collection=valid_features_dict["collection"],
                 data=invalid_features_data,
@@ -326,12 +348,14 @@ class CommandTests(unittest.TestCase):
                         "$each": [
                             {
                                 "version": "v1",
+                                "group": "group",
                                 "name": "feature1",
                                 "value": 12.34,
                                 "fid": 0,
                             },
                             {
                                 "version": "v1",
+                                "group": "group",
                                 "name": "feature2",
                                 "value": None,
                                 "fid": 2,
@@ -392,6 +416,7 @@ class CommandTests(unittest.TestCase):
             [
                 {
                     "el.name": "feature1",
+                    "el.group": "group",
                     "el.version": "v1",
                     "el.fid": 0,
                 }
@@ -411,6 +436,7 @@ class CommandTests(unittest.TestCase):
             [
                 {
                     "el.name": "feature2",
+                    "el.group": "group",
                     "el.version": "v1",
                     "el.fid": 2,
                 }

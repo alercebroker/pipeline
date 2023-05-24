@@ -285,6 +285,7 @@ class StepTest(unittest.TestCase):
                 "criteria": {"_id": "update_features_id"},
                 "data": {
                     "features_version": "v1",
+                    "features_group": "name",
                     "features": [
                         {"name": "feat1", "value": 123, "fid": 0},
                         {"name": "feat2", "value": 456, "fid": 2},
@@ -301,6 +302,7 @@ class StepTest(unittest.TestCase):
                 "criteria": {"_id": "update_features_id"},
                 "data": {
                     "features_version": "v1",
+                    "features_group": "name",
                     "features": [
                         {"name": "feat1", "value": 741, "fid": 0},
                         {"name": "feat2", "value": 369, "fid": 2},
@@ -319,6 +321,7 @@ class StepTest(unittest.TestCase):
         self.assertIn(
             {
                 "version": "v1",
+                "group": "name",
                 "name": "feat1",
                 "value": 741,
                 "fid": 0,
@@ -328,6 +331,7 @@ class StepTest(unittest.TestCase):
         self.assertIn(
             {
                 "version": "v1",
+                "group": "name",
                 "name": "feat2",
                 "value": 369,
                 "fid": 2,
