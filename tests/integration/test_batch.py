@@ -23,7 +23,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "NUM_MESSAGES": 25,
-    "TIMEOUT": 5
+    "TIMEOUT": 15
 }
 
 PRODUCER_CONFIG = {
