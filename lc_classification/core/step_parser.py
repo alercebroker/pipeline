@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-class StepParser(KafkaParser):
+class AlerceParser(KafkaParser):
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
         messages = kwargs.get("messages", [])
         features = kwargs.get("features", pd.DataFrame())
