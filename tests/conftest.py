@@ -35,7 +35,10 @@ def mongo_service(docker_ip, docker_services):
 
 def is_kafka_responsive(url="localhost:9092"):
     client = AdminClient({"bootstrap.servers": url})
-    new_topics = [NewTopic("test_topic", num_partitions=1)]
+    new_topics = [
+        NewTopic("test_topic", num_partitions=1),
+        NewTopic("test_topic_2", num_partitions=1),
+    ]
     fs = client.create_topics(new_topics)
     for _, f in fs.items():
         try:

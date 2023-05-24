@@ -13,8 +13,8 @@ class MongoScribe(GenericStep):
         Description of parameter `consumer`.
     """
 
-    def __init__(self, consumer=None, config=None, level=logging.INFO):
-        super().__init__(consumer, config=config, level=level)
+    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
+        super().__init__(consumer, config=config, level=level, **step_args)
         self.db_client = ScribeCommandExecutor(config["DB_CONFIG"])
 
     def execute(self, messages):
@@ -41,3 +41,5 @@ class MongoScribe(GenericStep):
             logging.info("Writing commands into database")
             # collection = valid_commands[0].collection
             self.db_client.bulk_execute(valid_commands)
+
+        return []

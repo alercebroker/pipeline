@@ -29,7 +29,7 @@ class ScribeCommandExecutor:
         Does nothing when the command list is empty
         """
         if collection_name not in self.allowed:
-            raise NonExistentCollectionException()
+            raise NonExistentCollectionException(collection_name)
 
         operations = []
         for command in commands:

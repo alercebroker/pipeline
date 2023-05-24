@@ -1,3 +1,3 @@
 pandas==1.5.3
-git+https://github.com/alercebroker/db-plugins@4.2.0
-apf_base==1.0.9
+git+https://github.com/alercebroker/db-plugins@4.2.3
+apf_base==2.1.5
