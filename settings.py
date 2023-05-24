@@ -17,6 +17,7 @@ CONSUMER_CONFIG = {
     # "TOPICS": ["w_Object", "w_Detections", "w_Non_Detections"],
     "TOPICS": os.environ["TOPICS"].strip().split(","),
     "NUM_MESSAGES": int(os.getenv("NUM_MESSAGES", "50")),
+    "TIMEOUT": int(os.getenv("TIMEOUT", "10"))
 }
 
 if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
