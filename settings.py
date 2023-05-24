@@ -19,7 +19,7 @@ def settings_factory():
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
     }
 
     scribe_producer_config = {
