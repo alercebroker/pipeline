@@ -36,10 +36,17 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str, features
     return commands_list
 
 
-def parse_output(features: pd.DataFrame, alert_data: list[dict]):
+def parse_output(features: pd.DataFrame, alert_data: list[dict]) -> list[dict]:
     """
-    Parse output va a cambiar con la nueva version de compute features
-    descripcion pendiente.
+    Parse output of the step. It uses the input data to extend the schema to
+    add the features of each object, identified by its aid.
+
+    :param features: a dataframe with the calculated features, with a column with
+        the aid and a colum for each feature (with 2 levels one for the feature name
+        the next with the band of the feature calculated)
+    :param alert_data: the imput for the step
+    :returnn: a list of dictiories, each input object with its data and the
+        features calculated.
 
     """
     output_messages = []
