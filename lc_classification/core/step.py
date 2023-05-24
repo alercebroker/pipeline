@@ -3,7 +3,7 @@ from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classifier.classifier.models import HierarchicalRandomForest
 from lc_classification.core.kafka_parser import KafkaParser
-from lc_classification.core.step_parser import AlerceParser
+from lc_classification.core.alerce_parser import AlerceParser
 from lc_classification.core.scribe_parser import ScribeParser
 
 import logging
