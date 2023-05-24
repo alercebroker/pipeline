@@ -1,16 +1,15 @@
 import numpy as np
 import pandas as pd
-from features.utils.features_name_analizer import check_feature_name, get_fid
 
 
-def parse_scribe_payload(features: pd.DataFrame, features_version: str):
+def parse_scribe_payload(features: pd.DataFrame, features_version: str, features_group: str):
     """Create the json with the messages for the scribe produccer fron the
-    features dataframe. It adds the fid and correct the name. th
+    features dataframe. It adds the fid and correct the name.
 
     :param features: a dataframe that contains a colum with the aid, and
         a column for each feature.
     :param features_version: a string with the features version used
-    :return:
+    :return: a list of json with Alerce Scribe commands
     """
 
     features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
@@ -25,7 +24,11 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str):
             "collection": "name",
             "type": "update_features",
             "criteria": {"_id": aid},
-            "data": {"features_version": features_version, "features": features_list},
+            "data": {
+                "features_version": features_version,
+                "features_group": features_group,
+                "features": features_list,
+            },
             "options": {"upsert": True},
         }
         commands_list.append(command)

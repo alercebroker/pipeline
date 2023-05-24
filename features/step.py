@@ -5,7 +5,7 @@ import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
-from lc_classifier.features.custom import CustomStreamHierarchicalExtractor
+from features.core.ztf import ZTFClassifierFeatureExtractor
 from features.utils.parsers import parse_scribe_payload, parse_output
 
 warnings.filterwarnings("ignore")
@@ -34,7 +34,7 @@ class FeaturesComputer(GenericStep):
     ):
         super().__init__(config=config, level=level, **step_args)
         self.features_computer = (
-            features_computer or CustomStreamHierarchicalExtractor()
+            features_computer or ZTFClassifierFeatureExtractor
         )
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
@@ -42,8 +42,11 @@ class FeaturesComputer(GenericStep):
 
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(
-            features, self.config["FEATURE_VERSION"]
-        )  # version form metadata check
+            features,
+            self.features_computer.VERSION,
+            self.features_computer.NAME            
+        )
+        
         for command in commands:
             command_aid = command["criteria"]["_id"]
             self.scribe_producer.produce(command, key=command_aid)
@@ -65,9 +68,10 @@ class FeaturesComputer(GenericStep):
             xmatch.append({"aid": message["aid"], **message["xmatches"]})
 
         self.logger.info(f"Calculating features")
-        features = self.features_computer.compute_features(
-            detections, non_detections, xmatch, [], []
+        features_computer = self.features_computer(
+            detections, non_detections, xmatch
         )
+        features = features_computer.generate_features()
         self.logger.info(f"Features calculated: {features.shape}")
 
         if len(features) > 0:
