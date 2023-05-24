@@ -1,8 +1,5 @@
-from pprint import pprint
 from random import choice
-import pytest
 from mongo_scribe.step import MongoScribe
-from apf.consumers.kafka import KafkaConsumer
 from apf.producers.kafka import KafkaProducer
 from _generator import CommandGenerator
 
@@ -26,7 +23,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "NUM_MESSAGES": 25,
-    "TIMEOUT": 5
+    "TIMEOUT": 15
 }
 
 PRODUCER_CONFIG = {
@@ -89,18 +86,7 @@ def test_bulk(kafka_service, mongo_service):
     for i, command in enumerate(commands):
         producer.produce(command)
 
-    import cProfile, pstats, io
-    pr = cProfile.Profile()
-    pr.enable()
     step.start()
-    pr.disable()
-    s = io.StringIO()
-
-    ps = pstats.Stats(pr, stream=s).sort_stats("tottime")
-    ps.print_stats()
-    with open("profiling.txt", "w") as file:
-        file.write(s.getvalue())
-
     collection = step.db_client.connection.database["object"]
 
     # get any element that have features (obtained from the tracker)
