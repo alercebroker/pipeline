@@ -39,52 +39,9 @@ class LateClassifier(GenericStep):
         self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
-        self.features_required = set(self.model.feature_list)
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
-        self.predictor_parser = ZtfRandomForestPredictorParser()
-
-    def get_ranking(self, df):
-        ranking = (-df).rank(axis=1, method="dense", ascending=True).astype(int)
-        return ranking
-
-    def stack_df(self, df, ranking):
-        df = df.stack()
-        ranking = ranking.stack()
-        df.rename("probability", inplace=True)
-        ranking.rename("ranking", inplace=True)
-        result = pd.concat([df, ranking], axis=1)
-        result.index.names = ["aid", "class_name"]
-        result.reset_index(inplace=True)
-        return result
-
-    def get_classifier_name(self, suffix=None):
-        return self.base_name if suffix is None else f"{self.base_name}_{suffix}"
-
-    def process_results(self, tree_probabilities):
-        probabilities = tree_probabilities["probabilities"]
-        top = tree_probabilities["hierarchical"]["top"]
-        children = tree_probabilities["hierarchical"]["children"]
-
-        top_ranking = self.get_ranking(top)
-        probabilities_ranking = self.get_ranking(probabilities)
-
-        top_result = self.stack_df(top, top_ranking)
-        probabilities_result = self.stack_df(probabilities, probabilities_ranking)
-
-        probabilities_result["classifier_name"] = self.get_classifier_name()
-        top_result["classifier_name"] = self.get_classifier_name("top")
-
-        results = [top_result, probabilities_result]
-        for key in children:
-            child_ranking = self.get_ranking(children[key])
-            child_result = self.stack_df(children[key], child_ranking)
-            child_result["classifier_name"] = self.get_classifier_name(key.lower())
-            results.append(child_result)
-
-        results = pd.concat(results)
-        results["classifier_version"] = self.model.MODEL_VERSION_NAME
-        return results
+        self.predictor_parser = ZtfRandomForestPredictorParser(self.model.feature_list)
 
     def get_aid_tree(self, tree, aid):
         tree_aid = {}
@@ -170,21 +127,19 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        alert_data = self.message_to_df(messages)
-        features = self.features_to_df(alert_data, messages)
-        self.logger.info("Found %i Features.", len(features))
-        missing_features = self.features_required.difference(set(features.columns))
-        if len(missing_features) > 0:
-            raise KeyError(
-                f"Corrupted Batch: missing some features ({missing_features})"
-            )
+        predictor_input = self.predictor_parser.parse_input(messages)
         self.logger.info("Doing inference")
-        features.set_index("aid", inplace=True)
-        tree_probabilities = self.model.predict_in_pipeline(features)
+        tree_probabilities = self.model.predict_in_pipeline(predictor_input.value)
         self.logger.info("Processing results")
         results = self.predictor_parser.parse_output(tree_probabilities)
+        alert_data = pd.DataFrame(
+            [
+                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
+                for message in messages
+            ]
+        )
         return {
-            "public_info": (alert_data, features, tree_probabilities),
+            "public_info": (alert_data, predictor_input.value, tree_probabilities),
             "db_results": results,
         }
 
