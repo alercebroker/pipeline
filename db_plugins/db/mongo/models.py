@@ -111,12 +111,8 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel(
-            [("aid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
-            name="unique",
-            unique=True,
-        ),
-        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
+        IndexModel([("sid", ASCENDING)]),
     ]
     __tablename__ = "detection"
 
@@ -151,7 +147,11 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel(
+            [("aid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
+            name="unique",
+            unique=True,
+        ),
         IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "forced_photometry"
