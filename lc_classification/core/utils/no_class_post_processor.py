@@ -11,6 +11,8 @@ class NoClassifiedPostProcessor(object):
         self.classifications = classifications
 
     def get_modified_classifications(self) -> pd.DataFrame:
+        if self.messages.index.name != "aid":
+            self.messages.set_index("aid", inplace=True)
         classifications_columns = self.classifications.columns.values.tolist()
         result_columns_names = classifications_columns + [self.class_name]
         classifications_cloumns_length = len(classifications_columns)

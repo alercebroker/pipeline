@@ -1,6 +1,6 @@
 import abc
 from dataclasses import dataclass
-from typing import Generic, List, TypeVar
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -11,21 +11,18 @@ class PredictorInput(Generic[T]):
 
 
 @dataclass
-class Classification:
-    aid: str
-    classification: dict
-
-
-@dataclass
 class PredictorOutput:
-    classifications: List[Classification]
+    classifications: dict
+
+    def __post_init__(self):
+        assert "probabilities" in self.classifications
 
 
 class PredictorParser(abc.ABC):
     @abc.abstractmethod
-    def parse_input(to_parse) -> PredictorInput:
+    def parse_input(self, to_parse, **kwargs) -> PredictorInput:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def parse_output(to_parse) -> PredictorOutput:
+    def parse_output(self, to_parse, **kwargs) -> PredictorOutput:
         raise NotImplementedError()

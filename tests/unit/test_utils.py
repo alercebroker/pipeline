@@ -5,7 +5,7 @@ from tests.mockdata.mock_data_for_utils import (
     complete_classifications_df,
     incomplete_classifications_df,
 )
-from lc_classification.predictors.utils.no_class_post_processor import (
+from lc_classification.core.utils.no_class_post_processor import (
     NoClassifiedPostProcessor,
 )
 
