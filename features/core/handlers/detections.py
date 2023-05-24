@@ -37,16 +37,24 @@ class DetectionsHandler(BaseHandler):
         if kwargs.pop("corr", False):
             self._use_corrected()
         else:
-            self._alerts = self._alerts.assign(mag_ml=self._alerts["mag"], e_mag_ml=self._alerts["e_mag"])
+            self._alerts = self._alerts.assign(
+                mag_ml=self._alerts["mag"], e_mag_ml=self._alerts["e_mag"]
+            )
         super()._post_process(**kwargs)
 
     def _use_corrected(self):
         """Sets corrected magnitudes, based on whether the first alert for an object is corrected."""
         idx = self._alerts.groupby("id")["mjd"].idxmin()
-        corrected = self._alerts["corrected"][idx].set_axis(idx.index).reindex(self._alerts["id"])
+        corrected = (
+            self._alerts["corrected"][idx]
+            .set_axis(idx.index)
+            .reindex(self._alerts["id"])
+        )
 
         mag = np.where(corrected, self._alerts["mag_corr"], self._alerts["mag"])
-        e_mag = np.where(corrected, self._alerts["e_mag_corr_ext"], self._alerts["e_mag"])
+        e_mag = np.where(
+            corrected, self._alerts["e_mag_corr_ext"], self._alerts["e_mag"]
+        )
 
         self._alerts = self._alerts.assign(mag_ml=mag, e_mag_ml=e_mag)
 
@@ -77,7 +85,9 @@ class DetectionsHandler(BaseHandler):
         first, second = bands
 
         column = f"mag{'_ml' if ml else ''}"
-        mags = self.agg(column, func, by_fid=True, surveys=surveys, bands=bands, **kwargs)
+        mags = self.agg(
+            column, func, by_fid=True, surveys=surveys, bands=bands, **kwargs
+        )
         mags = functions.fill_index(mags, fid=bands)
         if flux:  # + 1 in denominator to avoid division errors
             return mags.xs(first, level="fid") / (mags.xs(second, level="fid") + 1)

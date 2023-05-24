@@ -7,7 +7,6 @@ random.seed(7193, version=2)
 
 
 def generate_features_df(messages: pd.DataFrame):
-
     feature_columns = [
         ("Amplitude", 1),
         ("Amplitude", 2),

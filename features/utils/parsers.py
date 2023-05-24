@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 
 
-def parse_scribe_payload(features: pd.DataFrame, features_version: str, features_group: str):
+def parse_scribe_payload(
+    features: pd.DataFrame, features_version: str, features_group: str
+):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 

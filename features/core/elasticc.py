@@ -53,7 +53,9 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     ):
         if kwargs.pop("legacy", False):
             metadata = kwargs.pop("metadata", None)
-            detections, non_detections, xmatches = self._legacy(detections, non_detections, xmatches, metadata)
+            detections, non_detections, xmatches = self._legacy(
+                detections, non_detections, xmatches, metadata
+            )
 
         super().__init__(detections, non_detections, xmatches)
 
@@ -73,7 +75,9 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
                 metadata = metadata.set_index("SNID")
             except KeyError:  # Assumes it is already indexed correctly
                 pass
-            detections = detections.assign(mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"])
+            detections = detections.assign(
+                mwebv=metadata["MWEBV"], z_final=metadata["REDSHIFT_HELIO"]
+            )
         detections = detections.reset_index()
         detections["sid"] = "LSST"
         detections["corrected"] = True
@@ -86,7 +90,9 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
                 "BAND": "fid",
             }
         )
-        detections = detections.assign(mag_corr=detections["mag"], e_mag_corr_ext=detections["e_mag"])
+        detections = detections.assign(
+            mag_corr=detections["mag"], e_mag_corr_ext=detections["e_mag"]
+        )
         detections = detections.reset_index(names="candid")  # Fake candid
 
         if isinstance(non_detections, pd.DataFrame):
@@ -98,7 +104,11 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
 
     def _discard_detections(self):
         """Exclude noisy detections"""
-        self.detections.select(["mag_ml", "e_mag_ml"], lt=[self.MAX_FLUX, self.MAX_ERROR], gt=[-self.MAX_FLUX, None])
+        self.detections.select(
+            ["mag_ml", "e_mag_ml"],
+            lt=[self.MAX_FLUX, self.MAX_ERROR],
+            gt=[-self.MAX_FLUX, None],
+        )
         logging.debug(f"Objects without noisy detections: {self.detections.ids().size}")
         super()._discard_detections()
 
@@ -110,22 +120,32 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.add_fid("")
     def calculate_heliocentric_redshift(self) -> pd.DataFrame:
-        return pd.DataFrame({"redshift_helio": self.detections.agg("z_final", "median")})
+        return pd.DataFrame(
+            {"redshift_helio": self.detections.agg("z_final", "median")}
+        )
 
     @decorators.logger
     def calculate_colors(self) -> pd.DataFrame:
         index, colors = [], []
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
             index.append((f"{b1}-{b2}", f"{b1}{b2}"))
-            colors.append(self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9))
-        return pd.DataFrame(colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))).T
+            colors.append(
+                self.detections.get_colors(
+                    "quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9
+                )
+            )
+        return pd.DataFrame(
+            colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))
+        ).T
 
     @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_spm(self) -> pd.DataFrame:
         # To use single band version, it requires multiband=False, by_fid=True and return without stacking fid
-        features = self.detections.apply(extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True)
+        features = self.detections.apply(
+            extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True
+        )
         return features.stack("fid")  # Needed for decorators to work
 
     @decorators.logger
@@ -135,11 +155,17 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         # Get mjd and flux of first detection of each object (any band)
         mjd = self.detections.agg("mjd", "min", flag="detected")
         flux = self.detections.which_value("mag_ml", which="first", flag="detected")
-        return self.detections.apply(sn_features, first_mjd=mjd, first_flux=flux, by_fid=True)
+        return self.detections.apply(
+            sn_features, first_mjd=mjd, first_flux=flux, by_fid=True
+        )
 
 
-def sn_features(df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series) -> pd.Series:
-    aid, = df["id"].unique()  # Should never be called with more than one id at the time
+def sn_features(
+    df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series
+) -> pd.Series:
+    (aid,) = df[
+        "id"
+    ].unique()  # Should never be called with more than one id at the time
     positive_fraction = (df["mag_ml"] > 0).mean()
 
     non_det_before = df[(df["mjd"] < first_mjd.loc[aid]) & ~df["detected"]]
