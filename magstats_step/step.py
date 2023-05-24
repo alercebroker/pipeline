@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import List
 
 import numpy as np
@@ -12,10 +11,9 @@ class MagstatsStep(GenericStep):
     def __init__(
         self,
         config,
-        level=logging.INFO,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
+        super().__init__(config=config, **step_args)
         self.excluded = set(config["EXCLUDED_CALCULATORS"])
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
