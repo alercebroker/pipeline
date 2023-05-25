@@ -28,19 +28,19 @@ class FeaturesComputer(GenericStep):
         self,
         config=None,
         preprocessor=None,
-        features_computer=None,
+        features_extractor=None,
         level=logging.INFO,
         **step_args,
     ):
         super().__init__(config=config, level=level, **step_args)
-        self.features_computer = features_computer or ZTFClassifierFeatureExtractor
+        self.features_extractor = features_extractor or ZTFClassifierFeatureExtractor
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(
-            features, self.features_computer.VERSION, self.features_computer.NAME
+            features, self.features_extractor
         )
 
         for command in commands:
@@ -64,12 +64,12 @@ class FeaturesComputer(GenericStep):
             xmatch.append({"aid": message["aid"], **message["xmatches"]})
 
         self.logger.info(f"Calculating features")
-        features_computer = self.features_computer(detections, non_detections, xmatch)
-        features = features_computer.generate_features()
+        features_extractor = self.features_extractor(detections, non_detections, xmatch)
+        features = features_extractor.generate_features()
         self.logger.info(f"Features calculated: {features.shape}")
 
         if len(features) > 0:
             self.produce_to_scribe(features)
 
-        output = parse_output(features, messages)
+        output = parse_output(features, messages, self.features_extractor)
         return output
