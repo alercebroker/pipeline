@@ -17,7 +17,7 @@ DETECTION = {
         {"name": "pid", "type": "long"},
         {"name": "tid", "type": "string"},
         {"name": "fid", "type": "string"},
-        {"name": "candid", "type": ["long", "string"]},
+        {"name": "candid", "type": "string"},
         {"name": "mjd", "type": "double"},
         {"name": "ra", "type": "double"},
         {"name": "e_ra", "type": "float"},
@@ -28,7 +28,7 @@ DETECTION = {
         {"name": "isdiffpos", "type": "int"},
         {"name": "has_stamp", "type": "boolean"},
         {"name": "forced", "type": "boolean"},
-        {"name": "parent_candid", "type": ["long", "string", "null"]},
+        {"name": "parent_candid", "type": ["string", "null"]},
         {"name": "new", "type": "boolean"},
         {
             "name": "extra_fields",
