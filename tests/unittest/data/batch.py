@@ -34,7 +34,7 @@ def generate_parsed_batch(n: int, nearest: int = 0) -> pd.DataFrame:
         alert = {
             "oid": f"{tid}_ALERT{i}",
             "tid": tid,
-            "candid": random.randint(1000000, 9000000),
+            "candid": str(random.randint(1000000, 9000000)),
             "mjd": random.uniform(57000, 60000),
             "fid": random.randint(1, 2),
             "ra": random.uniform(0, 360),
@@ -76,7 +76,7 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
                 "magpsf": random.uniform(15, 20),
                 "sigmapsf": random.random(),
                 "fid": random.randint(1, 2),
-                "candid": random.randint(1000000, 9000000),
+                "candid": str(random.randint(1000000, 9000000)),
                 "pid": random.randint(1000000, 9000000),
                 "rfid": random.randint(1000000, 9000000),
                 "isdiffpos": random.choice(["t", "f", "1", "0"]),
@@ -89,7 +89,7 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
                     [
                         {
                             "candid": random.choice(
-                                [None, random.randint(1000000, 9000000)]
+                                [None, str(random.randint(1000000, 9000000))]
                             ),
                             "jd": random.randrange(2458000, 2459000),
                             "fid": random.randint(1, 2),
