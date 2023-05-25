@@ -276,6 +276,7 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "criteria": {"_id": "update_features_id"},
             "data": {
                 "features_version": "v1",
+                "features_group": "group",
                 "features": [
                     {"name": "feat1", "value": 123, "fid": 0},
                     {"name": "feat2", "value": 456, "fid": 2},
@@ -292,6 +293,7 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "criteria": {"_id": "update_features_id"},
             "data": {
                 "features_version": "v1",
+                "features_group": "group",
                 "features": [
                     {"name": "feat1", "value": 741, "fid": 0},
                     {"name": "feat2", "value": 369, "fid": 2},
@@ -310,6 +312,7 @@ def test_update_features_into_database(kafka_service, mongo_service):
     assert {
         "version": "v1",
         "name": "feat1",
+        "group": "group",
         "value": 741,
         "fid": 0,
     } in result["features"]
@@ -317,6 +320,7 @@ def test_update_features_into_database(kafka_service, mongo_service):
     assert {
         "version": "v1",
         "name": "feat2",
+        "group": "group",
         "value": 369,
         "fid": 2,
     } in result["features"]

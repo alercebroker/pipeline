@@ -223,7 +223,7 @@ class UpdateFeaturesCommand(UpdateCommand):
 
     def get_operations(self) -> list:
         find_existing_criteria = {
-            "features.version": {"$ne": self.features_version},
+            "features.group": {"$ne": self.features_group},
             **self.criteria,
         }
         features = [

@@ -60,7 +60,7 @@ class CommandGenerator:
         parsed_features = []
         for feats in feature["features"]:
             parsed_features.append(
-                {**feats, "version": feature["features_version"]}
+                {**feats, "version": feature["features_version"], "group": feature["features_group"]}
             )
         parsed_no_values = list(map(remove_value_from_dict, parsed_features))
         buffer: list = self._command_hash["update_feature"][aid]
@@ -136,6 +136,7 @@ class CommandGenerator:
             "criteria": {"_id": f"ID{aid}"},
             "data": {
                 "features_version": choice(feature_versions),
+                "features_group": "group",
                 "features": [
                     {"name": "feature1", "value": 12.34, "fid": 0},
                     {"name": "feature2", "value": None, "fid": 2},
