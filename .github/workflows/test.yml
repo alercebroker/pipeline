@@ -9,15 +9,17 @@ jobs:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
     with:
       sources-folder: 'lc_classification'
-  unittest:
+  unittest-ztf:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
       python-version: '3.8'
+      requirements-file: 'requirements_ztf.txt'
       test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
-  integration:
+  integration-ztf:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
       python-version: '3.8'
+      requirements-file: 'requirements_ztf.txt'
       test-dependencies: pytest pytest-docker
       test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
