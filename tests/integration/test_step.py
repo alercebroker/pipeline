@@ -2,10 +2,8 @@ import unittest
 from unittest import mock
 import pandas as pd
 from apf.producers import GenericProducer
-from features.step import (
-    FeaturesComputer,
-    CustomStreamHierarchicalExtractor,
-)
+from features.step import FeaturesComputer
+from features.core.ztf import ZTFClassifierFeatureExtractor
 import pytest
 from schema import SCHEMA
 from tests.data.message_factory import generate_input_batch, generate_non_ztf_batch
@@ -58,10 +56,15 @@ class StepTestCase(unittest.TestCase):
                 "FEATURE_VERSION": "1.0-test",
             },
         }
-        self.mock_custom_hierarchical_extractor = mock.MagicMock()
+        self.mock_extractor = mock.MagicMock()
+        self.mock_extractor_class = mock.MagicMock()
+        self.mock_extractor_class.NAME = "group"
+        self.mock_extractor_class.VERSION = "v1"
+        self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
+        self.mock_extractor_class.return_value = self.mock_extractor
         self.step = FeaturesComputer(
             config=self.step_config,
-            features_computer=self.mock_custom_hierarchical_extractor,
+            features_extractor=self.mock_extractor_class,
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
@@ -70,7 +73,7 @@ class StepTestCase(unittest.TestCase):
         input_messages = generate_input_batch(5)
         input_messages_dataframe = pd.DataFrame(input_messages)
 
-        self.step.features_computer.compute_features.return_value = (
+        self.mock_extractor.generate_features.return_value = (
             generate_features_df(input_messages_dataframe)
         )
 

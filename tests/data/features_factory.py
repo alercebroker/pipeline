@@ -8,11 +8,11 @@ random.seed(7193, version=2)
 
 def generate_features_df(messages: pd.DataFrame):
     feature_columns = [
-        ("Amplitude", 1),
-        ("Amplitude", 2),
-        ("Multiband_period", 12),
-        ("feat3", -99),
-        ("rb", 0),
+        ("Amplitude", "g"),
+        ("Amplitude", "r"),
+        ("Multiband_period", "gr"),
+        ("feat3", ''),
+        ("rb", ''),
     ]
     feature_multi_index = pd.MultiIndex.from_tuples(feature_columns)
 
