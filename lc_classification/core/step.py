@@ -1,7 +1,6 @@
 from typing import List, Union
 from apf.core import get_class
 from apf.core.step import GenericStep
-from lc_classifier.classifier.models import HierarchicalRandomForest
 from lc_classification.core.parsers.kafka_parser import KafkaParser
 from lc_classification.core.parsers.alerce_parser import AlerceParser
 from lc_classification.core.parsers.scribe_parser import ScribeParser
@@ -10,10 +9,14 @@ import logging
 import json
 
 import numexpr
+from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
 
 from lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser import (
     ZtfRandomForestPredictorParser,
+)
+from lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor import (
+    ZtfRandomForestPredictor,
 )
 
 
@@ -36,7 +39,7 @@ class LateClassifier(GenericStep):
         self,
         config={},
         level=logging.INFO,
-        model=None,
+        predictor: Union[Predictor, None] = None,
         scribe_parser: KafkaParser = ScribeParser(),
         step_parser: KafkaParser = AlerceParser(),
         predictor_parser: Union[PredictorParser, None] = None,
@@ -45,13 +48,11 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        self.model = model or HierarchicalRandomForest({})
-        self.model.download_model()
-        self.model.load_model(self.model.MODEL_PICKLE_PATH)
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.predictor = predictor or ZtfRandomForestPredictor()
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
         self.predictor_parser = predictor_parser or ZtfRandomForestPredictorParser(
-            self.model.feature_list
+            self.predictor.get_feature_list()
         )
         self.scribe_parser = scribe_parser
         self.step_parser = step_parser
@@ -78,9 +79,9 @@ class LateClassifier(GenericStep):
         self.logger.info("Getting batch alert data")
         predictor_input = self.predictor_parser.parse_input(messages)
         self.logger.info("Doing inference")
-        tree_probabilities = self.model.predict_in_pipeline(predictor_input.value)
+        probabilities = self.predictor.predict(predictor_input)
         self.logger.info("Processing results")
-        predictor_output = self.predictor_parser.parse_output(tree_probabilities)
+        predictor_output = self.predictor_parser.parse_output(probabilities)
         return {
             "public_info": (predictor_output, messages, predictor_input.value),
             "db_results": self.scribe_parser.parse(predictor_output),
