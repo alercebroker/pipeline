@@ -37,7 +37,8 @@ class LightcurveStep(GenericStep):
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {
                     "$addFields": {
-                        "candid": "$_id",
+                        "candid": {"$toString": "$_id"},
+                        "parent_candid": {"$toString": "$parent_candid"},
                         "forced": False,
                         "new": False,
                     }
@@ -52,7 +53,14 @@ class LightcurveStep(GenericStep):
         db_forced_photometries = query_forced_photometries.collection.aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
-                {"$addFields": {"candid": "$_id", "forced": True, "new": False}},
+                {
+                    "$addFields": {
+                        "candid": {"$toString": "$_id"},
+                        "parent_candid": {"$toString": "$parent_candid"},
+                        "forced": True,
+                        "new": False,
+                    }
+                },
                 {"$project": {"_id": False}},
             ]
         )
