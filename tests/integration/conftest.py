@@ -94,6 +94,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["corrections"],
+            "TIMEOUT": 5
         }
     )
     yield consumer
@@ -111,6 +112,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_detections"],
+            "TIMEOUT": 5
         }
     )
     yield consumer
