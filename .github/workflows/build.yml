@@ -5,6 +5,9 @@ on:
       tags:
         required: true
         type: string
+      dockerfile:
+        required: true
+        type: string
     secrets:
       PUBLISH_IMAGE_TOKEN:
         required: true
@@ -31,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
+          file: ${{ inputs.dockerfile }}
           push: true
           tags: ${{ inputs.tags }}
           build-args: |

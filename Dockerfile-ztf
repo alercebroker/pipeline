@@ -4,7 +4,7 @@ ARG GH_TOKEN={GH_TOKEN}
 
 COPY requirements.txt /app/requirements.txt
 
-RUN pip install --use-deprecated=legacy-resolver -r /app/requirements.txt
+RUN pip install -r /app/requirements_ztf.txt
 
 WORKDIR /app
 COPY . /app
