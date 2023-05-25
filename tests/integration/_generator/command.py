@@ -3,6 +3,7 @@ from random import seed, randint, choice
 from typing import Dict
 
 feature_versions = ["v1", "v2", "v3"]
+feature_groups = ["group1", "group2"]
 classifiers = ["lc_classifier", "dummy_classifier", "random_classifier"]
 
 
@@ -55,7 +56,7 @@ class CommandGenerator:
 
     def _add_feature(self, aid: int, feature: dict):
         def remove_value_from_dict(d: dict):
-            return {k: v for k, v in d.items() if k != "value"}
+            return {k: v for k, v in d.items() if k not in ["value", "version"]}
 
         parsed_features = []
         for feats in feature["features"]:
@@ -136,7 +137,7 @@ class CommandGenerator:
             "criteria": {"_id": f"ID{aid}"},
             "data": {
                 "features_version": choice(feature_versions),
-                "features_group": "group",
+                "features_group": choice(feature_groups),
                 "features": [
                     {"name": "feature1", "value": 12.34, "fid": 0},
                     {"name": "feature2", "value": None, "fid": 2},
