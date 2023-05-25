@@ -115,9 +115,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     def calculate_colors(self) -> pd.DataFrame:
         index, colors = [], []
+
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
             index.append((f"{b1}-{b2}", f"{b1}{b2}"))
-            colors.append(self.detections.get_colors("quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9))
+            colors.append(self.detections.get_colors(abs_p90, (b1, b2), ml=True, flux=self.FLUX))
         return pd.DataFrame(colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))).T
 
     @decorators.logger
@@ -136,6 +137,10 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
         mjd = self.detections.agg("mjd", "min", flag="detected")
         flux = self.detections.which_value("mag_ml", which="first", flag="detected")
         return self.detections.apply(sn_features, first_mjd=mjd, first_flux=flux, by_fid=True)
+
+
+def abs_p90(x):
+    return x.abs().quantile(q=0.9)
 
 
 def sn_features(df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series) -> pd.Series:
