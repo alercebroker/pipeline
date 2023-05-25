@@ -17,8 +17,8 @@ class LSSTParser(SurveyParser):
     _source = "LSST"
 
     _mapping = {
-        "candid": Mapper(origin="diaSourceId"),
-        "oid": Mapper(origin="diaObjectId"),
+        "candid": Mapper(str, origin="diaSourceId"),
+        "oid": Mapper(str, origin="diaObjectId"),
         "tid": Mapper(lambda: LSSTParser._source),
         "sid": Mapper(lambda: LSSTParser._source),
         "pid": Mapper(lambda: -999),  # UPDATE ME
