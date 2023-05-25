@@ -103,6 +103,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["prv-candidates"],
+            "TIMEOUT": 5
         }
     )
     yield consumer
@@ -119,6 +120,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_non_detections"],
+            "TIMEOUT": 10
         }
     )
     yield consumer

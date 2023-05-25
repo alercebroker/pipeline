@@ -24,7 +24,7 @@ SCHEMA = {
         {"name": "tid", "type": "string"},
         {"name": "sid", "type": "string"},
         {"name": "pid", "type": "long"},
-        {"name": "candid", "type": ["long", "string"]},
+        {"name": "candid", "type": "string"},
         {"name": "mjd", "type": "double"},
         {"name": "fid", "type": "string"},
         {"name": "ra", "type": "double"},

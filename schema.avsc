@@ -41,7 +41,7 @@
             },
             {
               "name": "candid",
-              "type": ["string"]
+              "type": "string"
             },
             {
               "name": "mjd",
