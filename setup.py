@@ -25,7 +25,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="alerce_classifiers",
-    version="0.0.6",
+    version="0.0.7",
     packages=packages,
     install_requires=install_requires,
     extras_require=extras_require,
