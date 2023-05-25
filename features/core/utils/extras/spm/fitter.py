@@ -7,7 +7,7 @@ from scipy import optimize
 from . import models, objective, guess
 from .._utils import multiindex
 
-_INDICES = ("SPM_A", "SPM_t0", "SPM_gamma", "SPM_beta", "SPM_tau_raise", "SPM_tau_fall", "SPM_chi")
+_INDICES = ("SPM_A", "SPM_t0", "SPM_gamma", "SPM_beta", "SPM_tau_rise", "SPM_tau_fall", "SPM_chi")
 
 
 @functools.lru_cache
