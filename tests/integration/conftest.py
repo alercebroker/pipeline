@@ -14,13 +14,22 @@ from tests.mockdata.inputschema import INPUT_SCHEMA as SCHEMA
 
 
 @pytest.fixture(scope="session")
+def docker_compose_command():
+    return (
+        "docker compose" if not os.getenv("COMPOSE", "v1") == "v1" else "docker-compose"
+    )
+
+
+@pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return (
         pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"
     ).absolute()
 
+
 def get_lc_classifier_topic():
     return "lc_classifier%s" % datetime.utcnow().strftime("%Y%m%d")
+
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})

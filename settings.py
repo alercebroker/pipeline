@@ -11,9 +11,9 @@ CONSUMER_CONFIG = {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
-        "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", None))
+        "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", None)),
     },
-    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+    "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
@@ -34,7 +34,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "CLASS": "apf.producers.KafkaProducer",
-    "SCHEMA": SCHEMA
+    "SCHEMA": SCHEMA,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -60,29 +60,17 @@ METRICS_CONFIG = {
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
             "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
                 "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
                     "type": "string",
-                    "title": "The timestamp_sent schema",
                     "description": "Timestamp sent refers to the time at which a message is sent.",
                     "default": "",
                     "examples": ["2020-09-01"],
                 },
                 "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
                     "type": "string",
-                    "title": "The timestamp_received schema",
                     "description": "Timestamp received refers to the time at which a message is received.",
                     "default": "",
                     "examples": ["2020-09-01"],
