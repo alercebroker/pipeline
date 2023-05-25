@@ -18,8 +18,8 @@ class ZTFParser(SurveyParser):
     _source = "ZTF"
 
     _mapping = {
-        "candid": Mapper(origin="candid"),
-        "oid": Mapper(origin="objectId"),
+        "candid": Mapper(str, origin="candid"),
+        "oid": Mapper(str, origin="objectId"),
         "tid": Mapper(lambda: ZTFParser._source),
         "sid": Mapper(lambda: ZTFParser._source),
         "pid": Mapper(origin="pid"),

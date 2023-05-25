@@ -17,8 +17,8 @@ class ATLASParser(SurveyParser):
     _source = "ATLAS"
 
     _mapping = {
-        "candid": Mapper(origin="candid"),
-        "oid": Mapper(origin="objectId"),
+        "candid": Mapper(str, origin="candid"),
+        "oid": Mapper(str, origin="objectId"),
         "tid": Mapper(origin="publisher"),
         "sid": Mapper(lambda: ATLASParser._source),
         "pid": Mapper(origin="pid"),
