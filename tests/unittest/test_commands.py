@@ -367,7 +367,7 @@ class CommandTests(unittest.TestCase):
         )
         self.assertEqual(
             operations[1]._filter,
-            {"features.version": {"$ne": "v1"}, "_id": "AID51423"},
+            {"features.group": {"$ne": "group"}, "_id": "AID51423"},
         )
 
     def test_update_features_with_set_on_insert_with_upsert(self):
