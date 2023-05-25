@@ -1,5 +1,5 @@
 from typing import List
-from lc_classification.core.kafka_parser import KafkaOutput, KafkaParser
+from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
 import pandas as pd
 
 from lc_classification.predictors.predictor.predictor_parser import PredictorOutput

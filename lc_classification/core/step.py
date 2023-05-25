@@ -2,9 +2,9 @@ from typing import List, Union
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classifier.classifier.models import HierarchicalRandomForest
-from lc_classification.core.kafka_parser import KafkaParser
-from lc_classification.core.alerce_parser import AlerceParser
-from lc_classification.core.scribe_parser import ScribeParser
+from lc_classification.core.parsers.kafka_parser import KafkaParser
+from lc_classification.core.parsers.alerce_parser import AlerceParser
+from lc_classification.core.parsers.scribe_parser import ScribeParser
 
 import logging
 import json
