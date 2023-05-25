@@ -6,3 +6,4 @@ __pycache__/
 src/
 htmlcov/
 __SUCCESS__
+.env
