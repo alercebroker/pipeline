@@ -58,7 +58,7 @@ class LightcurveStep(GenericStep):
                         "candid": {"$toString": "$_id"},
                         "parent_candid": {"$toString": "$parent_candid"},
                         "forced": True,
-                        "new": False
+                        "new": False,
                     }
                 },
                 {"$project": {"_id": False}},
