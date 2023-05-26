@@ -11,12 +11,16 @@ jobs:
       sources-folder: 'lc_classification'
   unittest-ztf:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     with:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
       test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
   integration-ztf:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     with:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
