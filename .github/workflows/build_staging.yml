@@ -30,7 +30,7 @@ jobs:
     needs: get_tags_elasticc
     uses: ./.github/workflows/build.yml
     with:
-      tags: ${{ needs.get_tags.outputs.tags }}
+      tags: ${{ needs.get_tags_elasticc.outputs.tags }}
       dockerfile: ./Dockerfile-elasticc
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
     needs: get_tags_ztf
     uses: ./.github/workflows/build.yml
     with:
-      tags: ${{ needs.get_tags.outputs.tags }}
+      tags: ${{ needs.get_tags_ztf.outputs.tags }}
       dockerfile: ./Dockerfile-ztf
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
