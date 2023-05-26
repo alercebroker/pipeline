@@ -20,12 +20,20 @@ def _indices(fids: tuple[str, ...]) -> pd.MultiIndex:
     """Creates indices for basic period pandas series."""
     n_fids = len(fids)
     level1 = ("".join(fids),) * 2 + fids + fids
-    level0 = ("Multiband_period", "PPE") + ("Period_band",) * n_fids + ("delta_period",) * n_fids
+    level0 = (
+        ("Multiband_period", "PPE")
+        + ("Period_band",) * n_fids
+        + ("delta_period",) * n_fids
+    )
     return pd.MultiIndex.from_arrays([level0, level1], names=(None, "fid"))
 
 
 def periods(
-    df: pd.DataFrame, fids: tuple[str, ...], kim: bool = False, n_harmonics: int = 0, factors: tuple[str, ...] = ()
+    df: pd.DataFrame,
+    fids: tuple[str, ...],
+    kim: bool = False,
+    n_harmonics: int = 0,
+    factors: tuple[str, ...] = (),
 ) -> pd.Series:
     """Compute period features for an object.
 

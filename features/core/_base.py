@@ -122,24 +122,29 @@ class BaseFeatureExtractor(abc.ABC):
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
             xmatches: Object cross-matches. It will be matched to detections based on its ID
         """
-        logging.info("Initializing feature extractor")
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+
+        self.logger.info("Initializing feature extractor")
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
 
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
-        self.detections = DetectionsHandler(detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common)
-        logging.info(f"Objects in input: {self.detections.ids().size}")
-        logging.info(f"Detections in input: {len(self.detections.alerts())}")
+        self.detections = DetectionsHandler(
+            detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common
+        )
+
+        self.logger.info(f"Total objects before clearing: {self.detections.ids().size}")
         self._discard_detections()
-        logging.info(f"Objects after selection: {self.detections.ids().size}")
-        logging.info(f"Detections after selection: {len(self.detections.alerts())}")
+        self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
 
         first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
         non_detections = non_detections if non_detections is not None else []
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index().to_dict("records")
-        self.non_detections = NonDetectionsHandler(non_detections, first_mjd=first_mjd, **common)
+        self.non_detections = NonDetectionsHandler(
+            non_detections, first_mjd=first_mjd, **common
+        )
         self.non_detections.match(self.detections)
 
         if isinstance(xmatches, pd.DataFrame):
@@ -147,20 +152,22 @@ class BaseFeatureExtractor(abc.ABC):
         self.xmatches = self._create_xmatches(xmatches)
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
-        logging.info("Initialized feature extractor")
+        self.logger.info("Finished initialization")
 
     @abc.abstractmethod
     def _discard_detections(self):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
         self.detections.not_enough(self.MIN_DETS)
-        logging.debug(f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids().size}")
         self.detections.not_enough(self.MIN_DETS_FID, by_fid=True)
-        logging.debug(f"Objects with at least {self.MIN_DETS_FID} detections in a band: {self.detections.ids().size}")
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
-        xmatches = pd.DataFrame(xmatches) if xmatches else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
+        xmatches = (
+            pd.DataFrame(xmatches)
+            if xmatches
+            else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
+        )
         xmatches = xmatches.rename(columns={"aid": "id"})
         xmatches = xmatches[xmatches["id"].isin(self.detections.ids())]
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
@@ -184,14 +191,20 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_fats(self) -> pd.DataFrame:
-        results = self.detections.apply(extras.turbofats, by_fid=True, features=self.FATS_FEATURES)
-        return results.reset_index("oid", drop=True)  # Superfluous index added by turbofats
+        results = self.detections.apply(
+            extras.turbofats, by_fid=True, features=self.FATS_FEATURES
+        )
+        return results.reset_index(
+            "oid", drop=True
+        )  # Superfluous index added by turbofats
 
     @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_mhps(self) -> pd.DataFrame:
-        return self.detections.apply(extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX)
+        return self.detections.apply(
+            extras.mhps, by_fid=True, t1=self.T1, t2=self.T2, flux=self.FLUX
+        )
 
     @decorators.logger
     @decorators.columns_per_fid
@@ -203,7 +216,9 @@ class BaseFeatureExtractor(abc.ABC):
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
     def calculate_iqr(self) -> pd.DataFrame:
-        return pd.DataFrame({"iqr": self.detections.agg("mag_ml", stats.iqr, by_fid=True)})
+        return pd.DataFrame(
+            {"iqr": self.detections.agg("mag_ml", stats.iqr, by_fid=True)}
+        )
 
     def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
         """Create a data frame with all required features.
@@ -217,10 +232,19 @@ class BaseFeatureExtractor(abc.ABC):
         exclude = exclude or set()  # Empty default
         exclude |= self._AUTO_EXCLUDE  # Add all permanently excluded
         # Add prefix to exclude, unless already provided
-        exclude = {name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}" for name in exclude}
+        exclude = {
+            name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}"
+            for name in exclude
+        }
 
         # Select all methods that start with prefix unless excluded
-        methods = {name for name in dir(self) if name.startswith(self._PREFIX) and name not in exclude}
+        methods = {
+            name
+            for name in dir(self)
+            if name.startswith(self._PREFIX) and name not in exclude
+        }
 
         # Compute all features and join into single dataframe
-        return pd.concat((getattr(self, method)() for method in methods), axis="columns", copy=False)
+        return pd.concat(
+            (getattr(self, method)() for method in methods), axis="columns", copy=False
+        )
