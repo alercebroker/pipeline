@@ -1,6 +1,5 @@
 from typing import List
 import pandas as pd
-import numpy as np
 from lc_classification.core.parsers.input_dto import create_input_dto
 from lc_classification.predictors.predictor.predictor_parser import (
     PredictorInput,
@@ -9,7 +8,7 @@ from lc_classification.predictors.predictor.predictor_parser import (
 )
 
 
-class ZtfRandomForestPredictorParser(PredictorParser):
+class ZtfRandomForestParser(PredictorParser):
     def parse_input(
         self, to_parse: List[dict], **kwargs
     ) -> PredictorInput[pd.DataFrame]:
