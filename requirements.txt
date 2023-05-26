@@ -6,9 +6,9 @@ methodtools~=0.4.7
 scipy~=1.10.1
 numba~=0.56.4
 celerite2~=0.2.1
+jax~=0.4.10
 jaxlib~=0.4.10
 matplotlib==3.7.1
-GPy==1.10.0
 apf-base==2.4.0
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
