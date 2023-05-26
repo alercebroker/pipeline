@@ -27,6 +27,7 @@ class RandomForestFeaturesClassifier(AlerceModel):
             "Periodic": ["Delta Scuti", "RR Lyrae", "Cepheid", "EB"],
         }
         self._non_used_features = [f"iqr_{band}" for band in "ugrizY"]
+        self.feature_list = None
         super().__init__(path_to_model)
 
     def _load_model(self, path_to_model: str) -> None:
@@ -37,7 +38,11 @@ class RandomForestFeaturesClassifier(AlerceModel):
             self.model.url_model = path_to_model
             self.model.download_model()
             path_to_model = self.model.MODEL_PICKLE_PATH
-        self.model.load_model(path_to_model)
+        self.model.load_model(path_to_model, n_jobs=1)
+        self.feature_list = []
+        for feat_group in self.model.feature_list_dict.values():
+            self.feature_list.extend(feat_group)
+            self.feature_list = list(set(self.feature_list))
 
     def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
         features = ELAsTiCCMapper.get_features(data_input)
