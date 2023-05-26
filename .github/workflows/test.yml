@@ -15,7 +15,7 @@ jobs:
       requirements-file: 'requirements_ztf.txt'
       test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
     secrets:
-      GH_TOKEN: '${{ secrets.GH_TOKEN }}'
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   integration-ztf:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
@@ -25,4 +25,4 @@ jobs:
       test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.GH_TOKEN }}'
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
