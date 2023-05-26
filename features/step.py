@@ -48,25 +48,17 @@ class FeaturesComputer(GenericStep):
             self.scribe_producer.produce(command, key=command_aid)
 
     def execute(self, messages):
-        self.logger.info(f"Processing {len(messages)} messages.")
-
-        self.logger.info(
-            "Getting batch alert data detections, non_detections and xmatches"
-        )
         detections, non_detections, xmatch = [], [], []
 
         for message in messages:
-            # cambiar los detections y no detections
             msg_detections = message.get("detections")
             msg_non_detections = message.get("non_detections")
             detections.extend(msg_detections)
             non_detections.extend(msg_non_detections)
-            xmatch.append({"aid": message["aid"], **message["xmatches"]})
+            xmatch.append({"aid": message["aid"], **message.get("xmatches", {})})
 
-        self.logger.info(f"Calculating features")
         features_extractor = self.features_extractor(detections, non_detections, xmatch)
         features = features_extractor.generate_features()
-        self.logger.info(f"Features calculated: {features.shape}")
 
         if len(features) > 0:
             self.produce_to_scribe(features)

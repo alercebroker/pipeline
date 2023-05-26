@@ -22,6 +22,8 @@ def get_extra_fields(telescope: str):
             "sigmagap": random.random(),
             "magapbig": random.random(),
             "sigmagapbig": random.random(),
+            "rb": random.uniform(0.55, 1),
+            "sgscore1": random.uniform(0, 1),
         }
 
 
@@ -50,45 +52,49 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> list[dict]:
     return alerts
 
 
-def generate_alert_ztf(num_messages: int, identifier: int) -> list[dict]:
+def generate_alert_ztf(aid: str, band: str, num_messages: int, identifier: int) -> list[dict]:
     alerts = []
     for i in range(num_messages):
         alert = {
-            "oid": f"ZTFoid{identifier}",
-            "aid": f"ZTFaid{identifier}",
-            "tid": "ZTF",
             "candid": random.randint(1000000, 9000000),
+            "oid": f"ZTFoid{identifier}",
+            "aid": aid,
+            "tid": "ZTF",
             "mjd": random.uniform(59000, 60000),
-            "fid": random.randint(1, 2),
-            "ra": random.uniform(0, 360),
+            "sid": "ZTF",
+            "fid": band,
+            "pid": random.randint(1000000, 9000000),
+            "ra": random.uniform(-90, 90),
+            "e_ra": random.uniform(-90, 90),
             "dec": random.uniform(-90, 90),
-            "e_ra": random.uniform(0, 1),
-            "e_dec": random.uniform(0, 1),
+            "e_dec": random.uniform(-90, 90),
             "mag": random.uniform(15, 20),
             "e_mag": random.uniform(0, 1),
+            "mag_corr": random.uniform(15, 20),
+            "e_mag_corr": random.uniform(0, 1),
+            "e_mag_corr_ext": random.uniform(0, 1),
             "isdiffpos": random.choice([-1, 1]),
-            "rb": random.uniform(0, 1),
-            "rbversion": f"v1",
-            "extra_fields": get_extra_fields("ZTF"),
             "corrected": random.choice([True, False]),
             "dubious": random.choice([True, False]),
             "has_stamp": random.choice([True, False]),
-            "step_id_corr": "test_version",
+            "stellar": random.choice([True, False]),
+            "extra_fields": get_extra_fields("ZTF"),
         }
         alerts.append(alert)
     return alerts
 
 
-def generate_non_det(num: int, identifier: int) -> list[dict]:
+def generate_non_det(aid: str, num: int, identifier: int) -> list[dict]:
     non_det = []
     for i in range(num):
         nd = {
-            "tid": "ZTF",
+            "aid": aid,
+            "tid": "ztf",
             "oid": f"ZTFoid{identifier}",
-            "aid": f"ZTFaid{identifier}",
+            "sid": "ZTF",
             "mjd": random.uniform(59000, 60000),
+            "fid": random.choice(["g", "r"]),
             "diffmaglim": random.uniform(15, 20),
-            "fid": random.randint(1, 2),
         }
         non_det.append(nd)
     return non_det
@@ -107,18 +113,17 @@ def generate_input_batch(n: int) -> list[dict]:
         aid = f"AL2X{str(m).zfill(5)}"
         meanra = random.uniform(0, 360)
         meandec = random.uniform(-90, 90)
-        detections = generate_alert_atlas(
-            random.randint(1, 100), m
-        ) + generate_alert_ztf(random.randint(1, 100), m)
-        non_det = generate_non_det(random.randint(1, 20), m)
-        candid = int(str(m + 1).ljust(8, "0"))
-        detections[-1]["candid"] = candid
+        detections_g = generate_alert_ztf(aid, "g", random.randint(5, 10), m)
+        detections_r = generate_alert_ztf(aid, "r", random.randint(5, 10), m)
+        non_det = generate_non_det(aid, random.randint(1, 5), m)
+        #candid = int(str(m + 1).ljust(8, "0"))
+        #detections[-1]["candid"] = candid
         xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,
             "meanra": meanra,
             "meandec": meandec,
-            "detections": detections,
+            "detections": detections_g + detections_r,
             "non_detections": non_det,
             "xmatches": xmatch,
         }
@@ -134,7 +139,7 @@ def generate_non_ztf_batch(n: int) -> list[dict]:
         meanra = random.uniform(0, 360)
         meandec = random.uniform(-90, 90)
         detections = generate_alert_atlas(random.randint(1, 100), m)
-        non_det = generate_non_det(random.randint(1, 20), m)
+        non_det = generate_non_det(aid, random.randint(1, 20), m)
         candid = int(str(m + 1).ljust(8, "0"))
         detections[-1]["candid"] = candid
         xmatch = get_fake_xmatch(aid, meanra, meandec)

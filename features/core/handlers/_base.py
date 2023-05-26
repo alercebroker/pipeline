@@ -84,6 +84,7 @@ class BaseHandler(abc.ABC):
         extras = kwargs.get("extras", [])
         self._post_process(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
+        self._alerts = self._alerts.sort_values(["id", "mjd"])
 
     def not_enough(self, minimum: int, *, by_fid: bool = False):
         """Remove all alerts from objects without a minimum number of detections.

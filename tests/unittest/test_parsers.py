@@ -91,7 +91,4 @@ class ParsersTestCase(unittest.TestCase):
         test_features_df = features_df_for_parse.copy()
         parsed_result = parse_scribe_payload(test_features_df, self.mock_extractor_class)
 
-        print(parsed_result)
-        print("---")
-        print(expected_payload)
         self.assertEqual(parsed_result, expected_payload)
