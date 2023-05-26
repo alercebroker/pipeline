@@ -229,6 +229,9 @@ class BaseFeatureExtractor(abc.ABC):
         Returns:
             pd.DataFrame: Feature indexed by object with two-level columns (feature name and band)
         """
+        if not self.detections.ids().size:
+            self.logger.debug("No objects present after filtering, skipping feature generation")
+            return pd.DataFrame()
         exclude = exclude or set()  # Empty default
         exclude |= self._AUTO_EXCLUDE  # Add all permanently excluded
         # Add prefix to exclude, unless already provided
