@@ -43,10 +43,8 @@ class FeaturesComputer(GenericStep):
         detections, non_detections, xmatch = [], [], []
 
         for message in messages:
-            msg_detections = message.get("detections")
-            msg_non_detections = message.get("non_detections")
-            detections.extend(msg_detections)
-            non_detections.extend(msg_non_detections)
+            detections.extend(message.get("detections", []))
+            non_detections.extend(message.get("non_detections", []))
             xmatch.append({"aid": message["aid"], **message.get("xmatches", {})})
 
         features_extractor = self.features_extractor(detections, non_detections, xmatch)
