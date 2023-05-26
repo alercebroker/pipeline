@@ -12,7 +12,7 @@ _INDICES = (
     "SPM_t0",
     "SPM_gamma",
     "SPM_beta",
-    "SPM_tau_raise",
+    "SPM_tau_rise",
     "SPM_tau_fall",
     "SPM_chi",
 )

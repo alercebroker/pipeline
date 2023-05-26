@@ -9,19 +9,19 @@ sys.path.append(PACKAGE_PATH)
 from settings import *
 
 level = logging.INFO
-
-debug = os.getenv("LOGGING_DEBUG")
-
-if debug in ("True", "true", "1"):
+if os.getenv('LOGGING_DEBUG'):
     level = logging.DEBUG
-    logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
-logging.basicConfig(
-    level=level,
-    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+logger = logging.getLogger("alerce")
+logger.setLevel(level)
+
+fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+handler.setLevel(level)
+
+logger.addHandler(handler)
 
 from features import FeaturesComputer
-step = FeaturesComputer(config=STEP_CONFIG, level=level)
+step = FeaturesComputer(config=STEP_CONFIG)
 step.start()

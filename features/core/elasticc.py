@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 import pandas as pd
 
@@ -7,7 +5,7 @@ from ._base import BaseFeatureExtractor
 from .utils import decorators, extras
 
 
-class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
+class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
     """Extractor for ELAsTiCC light-curve classifier.
 
     Uses only alerts from LSST.
@@ -104,12 +102,17 @@ class ELAsTiCCClassifierFeatureExtractor(BaseFeatureExtractor):
 
     def _discard_detections(self):
         """Exclude noisy detections"""
+        self.logger.debug(
+            f"Selecting detections with flux less than {self.MAX_FLUX} and error less than {self.MAX_ERROR}"
+        )
         self.detections.select(
             ["mag_ml", "e_mag_ml"],
             lt=[self.MAX_FLUX, self.MAX_ERROR],
             gt=[-self.MAX_FLUX, None],
         )
-        logging.debug(f"Objects without noisy detections: {self.detections.ids().size}")
+        self.logger.debug(
+            f"{len(self.detections.alerts())} alerts remain detections selection"
+        )
         super()._discard_detections()
 
     @decorators.logger

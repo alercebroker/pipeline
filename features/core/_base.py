@@ -122,7 +122,9 @@ class BaseFeatureExtractor(abc.ABC):
             non_detections: All non-detections. Non-detections from objects not present in detections will be removed
             xmatches: Object cross-matches. It will be matched to detections based on its ID
         """
-        logging.info("Initializing feature extractor")
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+
+        self.logger.info("Initializing feature extractor")
         common = dict(surveys=self.SURVEYS, bands=self.BANDS)
 
         if isinstance(detections, pd.DataFrame):
@@ -130,11 +132,10 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections = DetectionsHandler(
             detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common
         )
-        logging.info(f"Objects in input: {self.detections.ids().size}")
-        logging.info(f"Detections in input: {len(self.detections.alerts())}")
+
+        self.logger.info(f"Total objects before clearing: {self.detections.ids().size}")
         self._discard_detections()
-        logging.info(f"Objects after selection: {self.detections.ids().size}")
-        logging.info(f"Detections after selection: {len(self.detections.alerts())}")
+        self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
 
         first_mjd = self.detections.agg("mjd", "min", by_fid=True)
 
@@ -151,20 +152,14 @@ class BaseFeatureExtractor(abc.ABC):
         self.xmatches = self._create_xmatches(xmatches)
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
-        logging.info("Initialized feature extractor")
+        self.logger.info("Finished initialization")
 
     @abc.abstractmethod
     def _discard_detections(self):
         """Remove objects based on the minimum number of detections. Should be called with `super` in subclass
         implementations."""
         self.detections.not_enough(self.MIN_DETS)
-        logging.debug(
-            f"Objects with at least {self.MIN_DETS} detections: {self.detections.ids().size}"
-        )
         self.detections.not_enough(self.MIN_DETS_FID, by_fid=True)
-        logging.debug(
-            f"Objects with at least {self.MIN_DETS_FID} detections in a band: {self.detections.ids().size}"
-        )
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""

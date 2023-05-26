@@ -26,6 +26,7 @@ class DetectionsHandler(BaseHandler):
         corr (bool): Whether to use corrected magnitudes if available. Defaults to `False`
     """
 
+    _NAME = "detections"
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml"]
@@ -35,8 +36,12 @@ class DetectionsHandler(BaseHandler):
         `mag_ml` and `e_mag_ml` fields based on the `corr` argument. This is in addition to base
         post-processing"""
         if kwargs.pop("corr", False):
+            self.logger.debug(
+                "Using corrected magnitudes (if object first detection is corrected)"
+            )
             self._use_corrected()
         else:
+            self.logger.debug("Using uncorrected magnitudes for all objects")
             self._alerts = self._alerts.assign(
                 mag_ml=self._alerts["mag"], e_mag_ml=self._alerts["e_mag"]
             )

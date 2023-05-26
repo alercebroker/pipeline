@@ -44,7 +44,7 @@ def harmonics(df: pd.DataFrame, n: int, period: float) -> pd.Series:
     coeffs = np.matmul(np.linalg.pinv(w_a), w_b[:, None]).flatten()
     cos = coeffs[1 : n + 1]
     sin = coeffs[n + 1 :]
-    mod = np.sqrt(cos**2 + sin**2)
+    mod = np.sqrt(cos ** 2 + sin ** 2)
     phi = np.arctan2(sin, cos)
 
     phi -= phi[0] * (np.arange(n) + 1)

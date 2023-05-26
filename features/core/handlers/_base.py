@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import functools
+import logging
 from typing import Callable, Literal
 
 import methodtools
@@ -31,6 +32,7 @@ class BaseHandler(abc.ABC):
     make use of the method `clear_caches` to ensure that subsequent calls on the main methods give consistent results.
     """
 
+    _NAME: str  # Only used in logging
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
     COLUMNS = ["id", "sid", "fid", "mjd"]
@@ -63,7 +65,8 @@ class BaseHandler(abc.ABC):
             bands (str | tuple[str]): Band(s) to keep. Defined by `fid`. An empty tuple will keep all
             extras (list[str]): Additional fields to keep (these fields can have undefined values)
         """
-
+        self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+        self.logger.info(f"Creating {self.__class__.__name__}")
         try:
             self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
@@ -75,15 +78,21 @@ class BaseHandler(abc.ABC):
 
             columns = set(self.COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
+        self.logger.info(f"Total {self._NAME} before clearing: {len(self._alerts)}")
 
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
+            self.logger.debug(
+                f"{len(self._alerts)} {self._NAME} remain after duplicate removal"
+            )
         if self.INDEX:
             self._alerts.set_index(self.INDEX, inplace=True)
+            self.logger.debug(f"Using column(s) {self.INDEX} for indexing")
 
         extras = kwargs.get("extras", [])
         self._post_process(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
+        self.logger.info(f"Total {self._NAME} after clearing: {len(self._alerts)}")
         self._alerts = self._alerts.sort_values(["id", "mjd"])
 
     def not_enough(self, minimum: int, *, by_fid: bool = False):
@@ -94,8 +103,13 @@ class BaseHandler(abc.ABC):
             by_fid: If `True`, checks that at least one band has the specified minimum
 
         """
+        if minimum <= 1:
+            return
         self.clear_caches()
         if by_fid:
+            self.logger.debug(
+                f"Selecting objects with more than {minimum} {self._NAME} in total"
+            )
             mask = (
                 self._alerts.groupby("id")["fid"]
                 .value_counts()
@@ -104,8 +118,12 @@ class BaseHandler(abc.ABC):
                 > minimum
             )
         else:
+            self.logger.debug(
+                f"Selecting objects with more than {minimum} {self._NAME} in at least one band"
+            )
             mask = self._alerts.groupby("id")["fid"].count() > minimum
         self._alerts = self._alerts[self._alerts["id"].isin(mask.index[mask])]
+        self.logger.debug(f"{self.ids().size} objects remain after selection")
 
     def match(self, other: BaseHandler):
         """Removes alerts from objects contained in the current handler that are not present in the other.
@@ -116,7 +134,11 @@ class BaseHandler(abc.ABC):
             other: Handler used to check for objects
         """
         self.clear_caches()
+        self.logger.debug(
+            f"Selecting objects present in {other.__class__.__name__} instance"
+        )
         self._alerts = self._alerts[self._alerts["id"].isin(other.ids())]
+        self.logger.debug(f"{self.ids().size} objects remain after selection")
 
     def select(
         self,
@@ -189,8 +211,8 @@ class BaseHandler(abc.ABC):
             extras: Extra fields to keep
         """
         self.__discard_invalid_alerts(extras)
-        self.__discard_not_in_bands(bands)
         self.__discard_not_in_surveys(surveys)
+        self.__discard_not_in_bands(bands)
 
     def __discard_invalid_alerts(self, extras: list[str]):
         """Removes alerts with undefined values in the required fields.
@@ -202,10 +224,15 @@ class BaseHandler(abc.ABC):
         Args:
             extras: List of additional fields to keep for the alerts
         """
+        self.logger.debug(
+            f"Selecting valid {self._NAME} (i.e., no undefined values in {self.COLUMNS})"
+        )
         with pd.option_context("mode.use_inf_as_na", True):
             self._alerts = self._alerts[
                 self._alerts[self.COLUMNS].notna().all(axis="columns")
             ]
+        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
+
         index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
         self._alerts = self._alerts[
             [c for c in set(self.COLUMNS + extras) if c not in index]
@@ -217,7 +244,11 @@ class BaseHandler(abc.ABC):
         Args:
             surveys: Surveys to select. Empty tuple will select all
         """
+        self.logger.debug(
+            f"Selecting {self._NAME} from survey(s): {surveys if surveys else 'all'}"
+        )
         self._alerts = self._alerts[self._surveys_mask(surveys)]
+        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
 
     def __discard_not_in_bands(self, bands: str | tuple[str]):
         """Keep only alerts in given band(s). Based on field `fid`.
@@ -225,7 +256,11 @@ class BaseHandler(abc.ABC):
         Args:
             bands: Bands to select. Empty tuple will select all
         """
+        self.logger.debug(
+            f"Selecting {self._NAME} from band(s): {bands if bands else 'all'}"
+        )
         self._alerts = self._alerts[self._bands_mask(bands)]
+        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
 
     def __add_extra_fields(self, alerts: list[dict], extras: list[str]):
         """Include additional fields in the data kept from the alerts.
