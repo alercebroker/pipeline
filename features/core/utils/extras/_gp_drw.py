@@ -17,7 +17,7 @@ def gp_drw(df: pd.DataFrame) -> pd.Series:
 
     time -= np.min(time)
     mag -= np.mean(mag)
-    err = err ** 2
+    err = err**2
 
     gp = _get_gp()
     guess = np.zeros(2)

@@ -93,6 +93,7 @@ class BaseHandler(abc.ABC):
         self._post_process(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
         self.logger.info(f"Total {self._NAME} after clearing: {len(self._alerts)}")
+        self._alerts = self._alerts.sort_values(["id", "mjd"])
 
     def not_enough(self, minimum: int, *, by_fid: bool = False):
         """Remove all alerts from objects without a minimum number of detections.
@@ -231,6 +232,7 @@ class BaseHandler(abc.ABC):
                 self._alerts[self.COLUMNS].notna().all(axis="columns")
             ]
         self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
+
         index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
         self._alerts = self._alerts[
             [c for c in set(self.COLUMNS + extras) if c not in index]
