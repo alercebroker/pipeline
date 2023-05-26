@@ -9,7 +9,8 @@ celerite2~=0.2.1
 jax~=0.4.10
 jaxlib~=0.4.10
 apf-base==2.4.0
-GPy==1.10.0  # Should be a requirement for turbofats, but it's not there
+matplotlib==3.7.1  # Sadly it is a requirement for GPy
+GPy==1.10.0  # Requirement for turbo-fats, even though it is unused
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
 -e git+https://github.com/alercebroker/P4J.git#egg=P4J
