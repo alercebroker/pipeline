@@ -35,6 +35,7 @@ The command must be formatted as follows:
     ```json
     {
         "features_version": "lc_classifier_1.2.1-P",
+        "features_group": "ztf_features"
         "features": [
             {
                 "name": "Amplitude",

@@ -63,6 +63,16 @@ class NoAlerceIdentificationProvidedException(ValueError):
         super().__init__("No AID provided in the command")
 
 
+class NoFeatureProvidedException(ValueError):
+    """
+    Exception to raise when a command doesn't provide the features list
+    when updating features
+    """
+
+    def __init__(self):
+        super().__init__("No features provided in the command")
+
+
 class NoFeatureVersionProvidedException(ValueError):
     """
     Exception to raise when a command doesn't provide the feature_version
@@ -71,3 +81,13 @@ class NoFeatureVersionProvidedException(ValueError):
 
     def __init__(self):
         super().__init__("No features_version provided in the command")
+
+
+class NoFeatureGroupProvidedException(ValueError):
+    """
+    Exception to raise when a command doesn't provide the feature_group
+    when updating features
+    """
+
+    def __init__(self):
+        super().__init__("No features_group provided in the command")
