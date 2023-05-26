@@ -16,5 +16,4 @@ class ZtfRandomForestParser(PredictorParser):
         return PredictorInput(dto.features)
 
     def parse_output(self, to_parse: dict) -> PredictorOutput:
-        print(to_parse)
         return PredictorOutput(to_parse)
