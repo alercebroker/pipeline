@@ -7,7 +7,7 @@ def _distmod(z):
     return WMAP5.distmod(z).to("mag").value
 
 
-def lsst(flux: np.ndarray, error: np.ndarray, band: np.ndarray, mwebv: float, zhost: float):
+def lsst(flux: np.ndarray, error: np.ndarray, band: np.ndarray, mwebv: float, zhost: float) -> tuple[np.ndarray, np.ndarray]:
     """Modifies flux and error inplace"""
     zhost = zhost if zhost >= 0.003 else 0
     z_deatt = 10 ** (-(_distmod(0.3) - _distmod(zhost)) / 2.5) if zhost else 1
@@ -30,3 +30,5 @@ def lsst(flux: np.ndarray, error: np.ndarray, band: np.ndarray, mwebv: float, zh
 
         flux[mask] *= z_deatt * dust_deatt
         error[mask] *= z_deatt * dust_deatt
+
+    return flux, error

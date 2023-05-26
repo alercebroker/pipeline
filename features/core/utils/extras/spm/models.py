@@ -23,8 +23,8 @@ def v1_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
     sigmoid_factor = 1 / 3
     t1 = t0 + gamma
 
-    sigmoid = jsigmoid(-sigmoid_factor * (times - t1))
-    one_over_den = jsigmoid(-(times - t0) / t_rise)
+    sigmoid = jsigmoid(sigmoid_factor * (times - t1))
+    one_over_den = jsigmoid((times - t0) / t_rise)
     temp = (1 - beta) * jnp.exp(-(times - t1) / t_fall) * sigmoid + (1. - beta * (times - t0) / gamma) * (1 - sigmoid)
     return temp * ampl * one_over_den
 
@@ -36,7 +36,7 @@ def v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     t1 = t0 + gamma
 
     sigmoid_arg = sigmoid_factor * (times - t1)
-    sigmoid = 1 / (1 + np.exp(-np.clip(sigmoid_arg, -10, 10)))
+    sigmoid = 1 / (1 + np.exp(-sigmoid_arg))
     sigmoid *= sigmoid_arg > -10  # set to zero  below -10
     sigmoid = np.where(sigmoid_arg < 10, sigmoid, 1)  # set to one above 10
 
@@ -44,8 +44,8 @@ def v2(times, ampl, t0, gamma, beta, t_rise, t_fall):
     stable = t_fall >= t_rise  # Early times diverge in unstable case
     sigmoid *= stable + (1 - stable) * (times > t1)
 
-    raise_arg = -(times - t0) / t_rise
-    den = 1 + np.exp(np.clip(raise_arg, -20, 20))
+    raise_arg = (times - t0) / t_rise
+    den = 1 + np.exp(-raise_arg)
 
     fall_arg = np.clip(-(times - t1) / t_fall, -20, 20)
     temp = (1 - beta) * np.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
@@ -67,9 +67,9 @@ def v2_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
     stable = t_fall < t_rise  # Early times diverge in unstable case
     sigmoid *= stable + (1 - stable) * (times > t1)
 
-    raise_arg = -(times - t0) / t_rise
-    one_over_den = jsigmoid(jnp.clip(raise_arg, -20, 20))
+    raise_arg = (times - t0) / t_rise
+    one_over_den = jsigmoid(raise_arg)
 
     fall_arg = jnp.clip(-(times - t1) / t_fall, -20, 20)
     temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
-    return jnp.where(raise_arg < 20, temp * ampl * one_over_den, 0)
+    return temp * ampl * one_over_den * (raise_arg > -20)
