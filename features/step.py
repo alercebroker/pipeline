@@ -1,15 +1,9 @@
-import logging
-import warnings
-import numpy as np
 import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
-from features.core.ztf import ZTFClassifierFeatureExtractor
+from features.core.ztf import ZTFFeatureExtractor
 from features.utils.parsers import parse_scribe_payload, parse_output
-
-warnings.filterwarnings("ignore")
-logging.getLogger("GP").setLevel(logging.WARNING)
 
 
 class FeaturesComputer(GenericStep):
@@ -27,13 +21,11 @@ class FeaturesComputer(GenericStep):
     def __init__(
         self,
         config=None,
-        preprocessor=None,
         features_extractor=None,
-        level=logging.INFO,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
-        self.features_extractor = features_extractor or ZTFClassifierFeatureExtractor
+        super().__init__(config=config, **step_args)
+        self.features_extractor = features_extractor or ZTFFeatureExtractor
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])

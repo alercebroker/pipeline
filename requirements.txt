@@ -8,7 +8,7 @@ celerite2~=0.2.1
 jaxlib~=0.4.10
 matplotlib==3.7.1
 GPy==1.10.0
-apf-base==2.1.5
+apf-base==2.4.0
 -e git+https://github.com/alercebroker/mhps.git#egg=mhps
 -e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
 -e git+https://github.com/alercebroker/db-plugins.git@4.0.0#egg=db_plugins
