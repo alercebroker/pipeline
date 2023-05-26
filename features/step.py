@@ -1,15 +1,9 @@
-import logging
-import warnings
-import numpy as np
 import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
-from features.core.ztf import ZTFClassifierFeatureExtractor
+from features.core.ztf import ZTFFeatureExtractor
 from features.utils.parsers import parse_scribe_payload, parse_output
-
-warnings.filterwarnings("ignore")
-logging.getLogger("GP").setLevel(logging.WARNING)
 
 
 class FeaturesComputer(GenericStep):
@@ -27,55 +21,37 @@ class FeaturesComputer(GenericStep):
     def __init__(
         self,
         config=None,
-        preprocessor=None,
-        features_computer=None,
-        level=logging.INFO,
+        features_extractor=None,
         **step_args,
     ):
-        super().__init__(config=config, level=level, **step_args)
-        self.features_computer = (
-            features_computer or ZTFClassifierFeatureExtractor
-        )
+        super().__init__(config=config, **step_args)
+        self.features_extractor = features_extractor or ZTFFeatureExtractor
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(
-            features,
-            self.features_computer.VERSION,
-            self.features_computer.NAME            
+            features, self.features_extractor
         )
-        
+
         for command in commands:
             command_aid = command["criteria"]["_id"]
             self.scribe_producer.produce(command, key=command_aid)
 
     def execute(self, messages):
-        self.logger.info(f"Processing {len(messages)} messages.")
-
-        self.logger.info(
-            "Getting batch alert data detections, non_detections and xmatches"
-        )
         detections, non_detections, xmatch = [], [], []
 
         for message in messages:
-            # cambiar los detections y no detections
-            msg_detections = message.get("detections")
-            msg_non_detections = message.get("non_detections")
-            detections.extend(msg_detections)
-            non_detections.extend(msg_non_detections)
-            xmatch.append({"aid": message["aid"], **message["xmatches"]})
+            detections.extend(message.get("detections", []))
+            non_detections.extend(message.get("non_detections", []))
+            xmatch.append({"aid": message["aid"], **message.get("xmatches", {})})
 
-        self.logger.info(f"Calculating features")
-        features_computer = self.features_computer(
-            detections, non_detections, xmatch
-        )
-        features = features_computer.generate_features()
-        self.logger.info(f"Features calculated: {features.shape}")
+        features_extractor = self.features_extractor(detections, non_detections, xmatch)
+        features = features_extractor.generate_features()
 
         if len(features) > 0:
             self.produce_to_scribe(features)
 
-        output = parse_output(features, messages)
+        output = parse_output(features, messages, self.features_extractor)
         return output

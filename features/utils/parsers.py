@@ -1,8 +1,12 @@
 import numpy as np
 import pandas as pd
+from features.core._base import BaseFeatureExtractor
+from features.core.utils.functions import collapse_fid_columns
 
 
-def parse_scribe_payload(features: pd.DataFrame, features_version: str, features_group: str):
+def parse_scribe_payload(
+    features: pd.DataFrame, extractor_class: BaseFeatureExtractor
+):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 
@@ -17,7 +21,7 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str, features
     commands_list = []
     for aid, features_df in features.iterrows():
         features_list = [
-            {"name": name, "fid": None if fid in [0, -99] else fid, "value": value}
+            {"name": name, "fid": None if fid == '' else fid, "value": value}
             for ((name, fid), value) in features_df.items()
         ]
         command = {
@@ -25,8 +29,8 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str, features
             "type": "update_features",
             "criteria": {"_id": aid},
             "data": {
-                "features_version": features_version,
-                "features_group": features_group,
+                "features_version": extractor_class.VERSION,
+                "features_group": extractor_class.NAME,
                 "features": features_list,
             },
             "options": {"upsert": True},
@@ -36,7 +40,7 @@ def parse_scribe_payload(features: pd.DataFrame, features_version: str, features
     return commands_list
 
 
-def parse_output(features: pd.DataFrame, alert_data: list[dict]) -> list[dict]:
+def parse_output(features: pd.DataFrame, alert_data: list[dict], extractor_class: BaseFeatureExtractor) -> list[dict]:
     """
     Parse output of the step. It uses the input data to extend the schema to
     add the features of each object, identified by its aid.
@@ -52,14 +56,14 @@ def parse_output(features: pd.DataFrame, alert_data: list[dict]) -> list[dict]:
     output_messages = []
 
     features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-    features.columns = features.columns.map(
-        lambda lvls: f"{'_'.join(str(l) for l in lvls if l not in [-99, 0, 12])}"
-    )
+    features = collapse_fid_columns(features, extractor_class.BANDS_MAPPING)
 
     for message in alert_data:
         aid = message["aid"]
-        features_row = features.loc[aid]
-        features_dict = features_row.to_dict()
+        try:
+            features_dict = features.loc[aid].to_dict()
+        except KeyError:  # No feature for the object
+            features_dict = None
         out_message = {
             "aid": aid,
             "meanra": message["meanra"],

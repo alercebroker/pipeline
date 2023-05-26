@@ -4,19 +4,6 @@
 import os
 from schema import SCHEMA
 
-FEATURE_VERSION = os.environ["FEATURE_VERSION"]
-STEP_VERSION = os.environ["STEP_VERSION"]
-
-DB_CONFIG = {
-    "SQL": {
-        "ENGINE": os.environ["DB_ENGINE"],
-        "HOST": os.environ["DB_HOST"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "PORT": int(os.environ["DB_PORT"]),
-        "DB_NAME": os.environ["DB_NAME"],
-    }
-}
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
@@ -47,10 +34,7 @@ SCRIBE_PRODUCER_CONFIG = {
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
-        {"key": "candid", "format": lambda x: str(x)},
-        {"key": "oid", "alias": "oid"},
         {"key": "aid", "alias": "aid"},
-        {"key": "tid", "format": lambda x: str(x)},
     ],
     "PARAMS": {
         "PARAMS": {
@@ -106,20 +90,10 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "features"),
-    "STEP_NAME": os.getenv("STEP_NAME", "features"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
-}
 
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
-    "DB_CONFIG": DB_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "STEP_METADATA": STEP_METADATA,
-    "FEATURE_VERSION": os.getenv("FEATURE_VERSION", "dev"),
 }

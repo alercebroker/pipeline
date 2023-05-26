@@ -19,6 +19,7 @@ class NonDetectionsHandler(BaseHandler):
         `first_mjd` (pd.Series):  MJD of first detection. Should be indexed by `id` (and, optionally, `fid`)
     """
 
+    _NAME = "non-detections"
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 
@@ -53,11 +54,17 @@ class NonDetectionsHandler(BaseHandler):
             raise ValueError(f"Unrecognized value for 'when': {when}")
 
         by_fid = "fid" in self.__first_mjd.index.names
-        mask = self.grouped(by_fid=by_fid, surveys=surveys, bands=bands)["mjd"].transform(func)
+        mask = self.grouped(by_fid=by_fid, surveys=surveys, bands=bands)[
+            "mjd"
+        ].transform(func)
         if mask.any():
             return self._alerts[mask]
-        columns = [c for c in self._alerts.columns if c not in self.__first_mjd.index.names]
-        return pd.DataFrame(np.nan, columns=columns, index=self.__first_mjd.index).reset_index()
+        columns = [
+            c for c in self._alerts.columns if c not in self.__first_mjd.index.names
+        ]
+        return pd.DataFrame(
+            np.nan, columns=columns, index=self.__first_mjd.index
+        ).reset_index()
 
     @methodtools.lru_cache()
     def grouped_when(
@@ -105,9 +112,13 @@ class NonDetectionsHandler(BaseHandler):
             pd.Series: First or last alert index. Indexed by `id` (and `fid` if `by_fid`).
         """
         if which not in ("first", "last"):
-            raise ValueError(f"Unrecognized value for 'which': {which} (can only be first or last)")
+            raise ValueError(
+                f"Unrecognized value for 'which': {which} (can only be first or last)"
+            )
         function = "idxmin" if which == "first" else "idxmax"
-        return self.agg_when("mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
+        return self.agg_when(
+            "mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands
+        )
 
     @methodtools.lru_cache()
     def which_value_when(
@@ -133,7 +144,9 @@ class NonDetectionsHandler(BaseHandler):
         Returns:
             pd.Series: First or last field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        idx = self.which_index_when(which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands)
+        idx = self.which_index_when(
+            which=which, when=when, by_fid=by_fid, surveys=surveys, bands=bands
+        )
         df = self.alerts_when(when=when, surveys=surveys, bands=bands)
         if idx.isna().all():  # Happens for empty non-detections
             return idx
@@ -163,4 +176,6 @@ class NonDetectionsHandler(BaseHandler):
         Returns:
 
         """
-        return self.grouped_when(when=when, by_fid=by_fid, surveys=surveys, bands=bands)[column].agg(func)
+        return self.grouped_when(
+            when=when, by_fid=by_fid, surveys=surveys, bands=bands
+        )[column].agg(func)

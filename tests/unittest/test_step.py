@@ -41,6 +41,7 @@ SCRIBE_PRODUCER_CONFIG = {
 
 class StepTestCase(unittest.TestCase):
     def setUp(self):
+        self.maxDiff = None
         self.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -54,13 +55,18 @@ class StepTestCase(unittest.TestCase):
                 "FEATURE_VERSION": "1.0-test",
             },
         }
-        self.mock_custom_hierarchical_extractor = mock.MagicMock()
-        self.mock_custom_hierarchical_extractor.compute_features.return_value = (
+        self.mock_extractor = mock.MagicMock()
+        self.mock_extractor.generate_features.return_value = (
             features_df_for_execute
         )
+        self.mock_extractor_class = mock.MagicMock()
+        self.mock_extractor_class.NAME = "group"
+        self.mock_extractor_class.VERSION = "v1"
+        self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
+        self.mock_extractor_class.return_value = self.mock_extractor
         self.step = FeaturesComputer(
             config=self.step_config,
-            features_computer=self.mock_custom_hierarchical_extractor,
+            features_extractor=self.mock_extractor_class
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
@@ -335,12 +341,10 @@ class StepTestCase(unittest.TestCase):
 
         result = self.step.execute(messages_for_execute)
 
-        self.mock_custom_hierarchical_extractor.compute_features.assert_called_once_with(
+        self.mock_extractor_class.assert_called_once_with(
             expected_detections_for_extractor,
             expected_non_detections_for_extractor,
             expected_xmatches_for_extractor,
-            [],
-            [],
         )
         self.assertEqual(result, expected_output)
 

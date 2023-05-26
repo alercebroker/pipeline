@@ -1,10 +1,18 @@
 import unittest
+from unittest import mock
 import pandas as pd
 from tests.data.data_for_unittest import messages_for_parsing, features_df_for_parse
 from features.utils.parsers import parse_output, parse_scribe_payload
 
 
 class ParsersTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mock_extractor_class = mock.MagicMock
+        self.mock_extractor_class.NAME = "group"
+        self.mock_extractor_class.VERSION = "v1"
+        self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
+
     def test_parse_output(self):
         expected_payload = [
             {
@@ -39,7 +47,7 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
-        parsed_result = parse_output(test_features_df, messages_for_parsing)
+        parsed_result = parse_output(test_features_df, messages_for_parsing, self.mock_extractor_class)
 
         self.assertEqual(parsed_result, expected_payload)
 
@@ -51,10 +59,11 @@ class ParsersTestCase(unittest.TestCase):
                 "criteria": {"_id": "aid1"},
                 "data": {
                     "features_version": "v1",
+                    "features_group": "group",
                     "features": [
-                        {"name": "feat1", "fid": 1, "value": 123},
-                        {"name": "feat1", "fid": 2, "value": 456},
-                        {"name": "feat2", "fid": 12, "value": 741},
+                        {"name": "feat1", "fid": "g", "value": 123},
+                        {"name": "feat1", "fid": "r", "value": 456},
+                        {"name": "feat2", "fid": "gr", "value": 741},
                         {"name": "feat3", "fid": None, "value": 963},
                         {"name": "feat4", "fid": None, "value": None},
                     ],
@@ -67,10 +76,11 @@ class ParsersTestCase(unittest.TestCase):
                 "criteria": {"_id": "aid2"},
                 "data": {
                     "features_version": "v1",
+                    "features_group": "group",
                     "features": [
-                        {"name": "feat1", "fid": 1, "value": 321},
-                        {"name": "feat1", "fid": 2, "value": 654},
-                        {"name": "feat2", "fid": 12, "value": 147},
+                        {"name": "feat1", "fid": "g", "value": 321},
+                        {"name": "feat1", "fid": "r", "value": 654},
+                        {"name": "feat2", "fid": "gr", "value": 147},
                         {"name": "feat3", "fid": None, "value": 369},
                         {"name": "feat4", "fid": None, "value": 888},
                     ],
@@ -78,8 +88,7 @@ class ParsersTestCase(unittest.TestCase):
                 "options": {"upsert": True},
             },
         ]
-        test_feature_version = "v1"
         test_features_df = features_df_for_parse.copy()
-        parsed_result = parse_scribe_payload(test_features_df, test_feature_version)
+        parsed_result = parse_scribe_payload(test_features_df, self.mock_extractor_class)
 
         self.assertEqual(parsed_result, expected_payload)

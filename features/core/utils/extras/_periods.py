@@ -20,12 +20,20 @@ def _indices(fids: tuple[str, ...]) -> pd.MultiIndex:
     """Creates indices for basic period pandas series."""
     n_fids = len(fids)
     level1 = ("".join(fids),) * 2 + fids + fids
-    level0 = ("Multiband_period", "PPE") + ("Period_band",) * n_fids + ("delta_period",) * n_fids
+    level0 = (
+        ("Multiband_period", "PPE")
+        + ("Period_band",) * n_fids
+        + ("delta_period",) * n_fids
+    )
     return pd.MultiIndex.from_arrays([level0, level1], names=(None, "fid"))
 
 
 def periods(
-    df: pd.DataFrame, fids: tuple[str, ...], kim: bool = False, n_harmonics: int = 0, factors: tuple[str, ...] = ()
+    df: pd.DataFrame,
+    fids: tuple[str, ...],
+    kim: bool = False,
+    n_harmonics: int = 0,
+    factors: tuple[str, ...] = (),
 ) -> pd.Series:
     """Compute period features for an object.
 
@@ -41,10 +49,11 @@ def periods(
     """
     periodogram = _get_multiband_periodogram()
 
-    df = df.groupby("fid").filter(lambda x: len(x) > 5).sort_values("mjd")
+    # Periods are only computed for bands with more than 5, but phase-folded and harmonics features use all, always
+    filtered_df = df.groupby("fid").filter(lambda x: len(x) > 5).sort_values("mjd")
 
-    fid = df["fid"].values
-    mag, e_mag, mjd = df[["mag_ml", "e_mag_ml", "mjd"]].T.values
+    fid = filtered_df["fid"].values
+    mag, e_mag, mjd = filtered_df[["mag_ml", "e_mag_ml", "mjd"]].T.values
     periodogram.set_data(mjd, mag, e_mag, fid)
     try:
         periodogram.frequency_grid_evaluation(fmin=1e-3, fmax=20.0, fresolution=1e-3)
@@ -75,7 +84,7 @@ def periods(
         except KeyError:
             continue
         per_band[i] = period_band
-        per_band[i + 2] = abs(period - period_band)
+        per_band[i + len(fids)] = abs(period - period_band)
 
     output = [pd.Series([period, significance, *per_band], index=_indices(fids))]
     if kim:

@@ -1,11 +1,11 @@
 import pandas as pd
 
 feature_columns_for_parse = [
-    ("feat1", 1),
-    ("feat1", 2),
-    ("feat2", 12),
-    ("feat3", -99),
-    ("feat4", 0),
+    ("feat1", "g"),
+    ("feat1", "r"),
+    ("feat2", "gr"),
+    ("feat3", ''),
+    ("feat4", ''),
 ]
 feature_multi_index_for_parse = pd.MultiIndex.from_tuples(feature_columns_for_parse)
 
@@ -36,11 +36,11 @@ messages_for_parsing = [
 ]
 
 feature_columns_for_execute = [
-    ("Amplitude", 1),
-    ("Amplitude", 2),
-    ("Multiband_period", 12),
-    ("feat3", -99),
-    ("rb", 0),
+    ("Amplitude", "g"),
+    ("Amplitude", "r"),
+    ("Multiband_period", "gr"),
+    ("feat3", ''),
+    ("rb", ''),
 ]
 feature_multi_index_for_execute = pd.MultiIndex.from_tuples(feature_columns_for_execute)
 
