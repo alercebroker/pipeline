@@ -46,6 +46,7 @@ def test_step_ztf_result(
     STEP_CONFIG[
         "STEP_PARSER_CLASS"
     ] = "lc_classification.core.parsers.alerce_parser.AlerceParser"
+    STEP_CONFIG["PREDICTOR_PARAMS"] = {}
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
@@ -72,6 +73,7 @@ def test_scribe_ztf_result(
     STEP_CONFIG[
         "STEP_PARSER_CLASS"
     ] = "lc_classification.core.parsers.alerce_parser.AlerceParser"
+    STEP_CONFIG["PREDICTOR_PARAMS"] = {}
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
