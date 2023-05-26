@@ -1,17 +1,10 @@
 from unittest import mock
-from lc_classification.core.parsers.elasticc_parser import ElasticcParser
 from lc_classification.core.step import (
     LateClassifier,
 )
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from json import loads
-from lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_parser import (
-    ElasticcRandomForestParser,
-)
-from lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_predictor import (
-    ElasticcRandomForestPredictor,
-)
 from tests.mockdata.input_ztf import INPUT_SCHEMA as INPUT_ZTF
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as INPUT_ELASTICC
 from fastavro import utils
