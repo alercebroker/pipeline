@@ -1,10 +1,10 @@
 import unittest
 from unittest import mock
-import pandas as pd
 from apf.producers import GenericProducer
 from features.step import FeaturesComputer
 from schema import SCHEMA
 from tests.data.message_factory import generate_input_batch
+from features.core.ztf import ZTFFeatureExtractor
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -38,22 +38,15 @@ SCRIBE_PRODUCER_CONFIG = {
 }
 
 
-class StepTestCase(unittest.TestCase):
+class TestZTFStep(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-            "FEATURE_VERSION": "v1",
-            "STEP_METADATA": {
-                "STEP_VERSION": "feature",
-                "STEP_ID": "feature",
-                "STEP_NAME": "feature",
-                "STEP_COMMENTS": "feature",
-                "FEATURE_VERSION": "1.0-test",
-            },
         }
         self.step = FeaturesComputer(
+            ZTFFeatureExtractor,
             config=self.step_config,
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)

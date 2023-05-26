@@ -24,12 +24,3 @@ services:
       - KAFKA_JMX_PORT=9101
     ports:
       - 9094:9094
-
-  postgres:
-    image: postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - 5432:5432
