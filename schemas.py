@@ -258,6 +258,42 @@ SCHEMA = {
         },
     ],
 }
+ELASTICC_SCHEMA = {
+    "namespace": "elasticc.v0_9",
+    "type": "record",
+    "name": "brokerClassification",
+    "doc": "sample avro alert schema v4.1",
+    "fields": [
+        {
+            "name": "brokerName",
+            "type": "string",
+            "doc": "Name of broker (never changes)",
+        },
+        {
+            "name": "brokerVersion",
+            "type": "string",
+            "doc": "Version/Release of broker's software",
+        },
+        {
+            "name": "classifications",
+            "type": {
+                "type": "array",
+                "items": {
+                    "type": "record",
+                    "name": "classificationDict",
+                    "fields": [
+                        {
+                            "name": "classId",
+                            "type": "int",
+                            "doc": "See https://github.com/LSSTDESC/elasticc/tree/main/taxonomy/taxonomy.ipynb for specification",
+                        },
+                        {"name": "probability", "type": "float", "doc": "0-1"},
+                    ],
+                },
+            },
+        },
+    ],
+}
 
 
 SCRIBE_SCHEMA = {

@@ -23,6 +23,8 @@ def create_features_dto(messages: List[dict], feature_list) -> pd.DataFrame:
     -------
     messages : list
         a list of dictionaries with at least aid, candid and features keys.
+    feature_list : list
+        a list of feature names used for validation
     Returns
     -------
     pd.DataFrame

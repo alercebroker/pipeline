@@ -2,7 +2,7 @@
 #       Late Classifier Settings File
 ##################################################
 import os
-from schemas import SCHEMA, SCRIBE_SCHEMA
+from schemas import SCHEMA, ELASTICC_SCHEMA, SCRIBE_SCHEMA
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -34,7 +34,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "CLASS": "apf.producers.KafkaProducer",
-    "SCHEMA": SCHEMA,
+    "SCHEMA": SCHEMA if os.getenv("STREAM", "ztf") == "ztf" else ELASTICC_SCHEMA,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -121,4 +121,10 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "MODEL_VERSION": os.getenv("MODEL_VERSION", "dev"),
+    "PREDICTOR_CLASS": os.getenv("PREDICTOR_CLASS"),
+    "PREDICTOR_PARAMS": {},
+    "PREDICTOR_PARSER_CLASS": os.getenv("PREDICTOR_PARSER_CLASS"),
+    "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
+    "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
 }
