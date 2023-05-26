@@ -1,5 +1,5 @@
 from unittest import mock
-from lc_classification.core.elasticc_parser import ElasticcParser
+from lc_classification.core.parsers.elasticc_parser import ElasticcParser
 from lc_classification.core.step import (
     LateClassifier,
 )

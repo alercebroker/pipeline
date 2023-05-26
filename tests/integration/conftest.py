@@ -9,7 +9,6 @@ from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
-
 from tests.mockdata.inputschema import INPUT_SCHEMA as SCHEMA
 
 

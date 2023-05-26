@@ -1,6 +1,7 @@
 from typing import List
 import pandas as pd
 import numpy as np
+from lc_classification.core.parsers.input_dto import create_input_dto
 from lc_classification.predictors.predictor.predictor_parser import (
     PredictorInput,
     PredictorOutput,
@@ -13,28 +14,8 @@ class ZtfRandomForestPredictorParser(PredictorParser):
         self.feature_list = feature_list
 
     def parse_input(self, to_parse: List[dict]) -> PredictorInput[pd.DataFrame]:
-        features = self._get_features(to_parse)
-        self._validate_features(features)
-        parsed = PredictorInput(features)
-        return parsed
-
-    def _get_features(self, messages: List[dict]) -> pd.DataFrame:
-        df = pd.DataFrame(
-            [
-                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
-                for message in messages
-            ]
-        )
-        features = pd.DataFrame([message["features"] for message in messages])
-        features["aid"] = df.aid
-        features["candid"] = df.candid
-        features.sort_values("candid", ascending=False, inplace=True)
-        features.drop_duplicates("aid", inplace=True)
-        features = features.set_index("aid")
-        if features is not None:
-            return features
-        else:
-            raise ValueError("Could not set index aid on features dataframe")
+        dto = create_input_dto(to_parse, feature_list=self.feature_list)
+        return PredictorInput(dto.features)
 
     def _validate_features(self, features: pd.DataFrame):
         required_features = set(self.feature_list)

@@ -1,4 +1,4 @@
-from .utils.no_class_post_processor import (
+from ..utils.no_class_post_processor import (
     NoClassifiedPostProcessor,
 )
 from .kafka_parser import KafkaOutput, KafkaParser

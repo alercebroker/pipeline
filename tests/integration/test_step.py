@@ -18,7 +18,7 @@ def assert_command_is_correct(command):
     assert not command["options"]["set_on_insert"]
 
 
-def test_step_result(
+def test_step_ztf_result(
     kafka_service,
     env_variables,
     kafka_consumer: KafkaConsumer,
@@ -33,7 +33,9 @@ def test_step_result(
         kafka_consumer.commit()
 
 
-def test_scribe_result(kafka_service, env_variables, scribe_consumer: KafkaConsumer):
+def test_scribe_ztf_result(
+    kafka_service, env_variables, scribe_consumer: KafkaConsumer
+):
     from settings import STEP_CONFIG
 
     step = LateClassifier(config=STEP_CONFIG)
