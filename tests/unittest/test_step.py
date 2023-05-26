@@ -66,7 +66,7 @@ class StepTestCase(unittest.TestCase):
         self.mock_extractor_class.return_value = self.mock_extractor
         self.step = FeaturesComputer(
             config=self.step_config,
-            features_extractor=self.mock_extractor_class
+            extractor=self.mock_extractor_class
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()

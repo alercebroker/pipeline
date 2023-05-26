@@ -4,6 +4,8 @@
 import os
 from schema import SCHEMA
 
+EXTRACTOR = os.environ["FEATURE_EXTRACTOR"]
+
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",

@@ -23,5 +23,8 @@ handler.setLevel(level)
 logger.addHandler(handler)
 
 from features import FeaturesComputer
-step = FeaturesComputer(config=STEP_CONFIG)
+from features.utils.selector import selector
+
+extractor = selector(EXTRACTOR)
+step = FeaturesComputer(extractor, config=STEP_CONFIG)
 step.start()

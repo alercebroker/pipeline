@@ -20,12 +20,12 @@ class FeaturesComputer(GenericStep):
 
     def __init__(
         self,
+        extractor,
         config=None,
-        features_extractor=None,
         **step_args,
     ):
         super().__init__(config=config, **step_args)
-        self.features_extractor = features_extractor or ZTFFeatureExtractor
+        self.features_extractor = extractor
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])

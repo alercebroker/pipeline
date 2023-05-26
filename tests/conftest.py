@@ -3,7 +3,6 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from confluent_kafka import Producer, Consumer
 import glob
 import os
-import psycopg2
 
 
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -60,28 +59,4 @@ def kafka_service(docker_ip, docker_services):
             print(f"produced to {topic}")
     except Exception as e:
         print(f"failed to produce to topic {topic}: {e}")
-    return server
-
-
-def is_responsive_psql(url):
-    try:
-        conn = psycopg2.connect(
-            f"dbname='postgres' user='postgres' host=localhost password='postgres'"
-        )
-        conn.close()
-        return True
-    except:
-        return False
-
-
-@pytest.fixture(scope="session")
-def psql_service(docker_ip, docker_services):
-    """Ensure that Kafka service is up and responsive."""
-    # `port_for` takes a container port and returns the corresponding host port
-    port = docker_services.port_for("postgres", 5432)
-    server = "{}:{}".format(docker_ip, port)
-    print("psql", server)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
-    )
     return server
