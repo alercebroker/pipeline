@@ -20,15 +20,21 @@ def step_creator():
     from settings import settings_creator
 
     settings = settings_creator()
-    level = logging.INFO
 
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    if settings["LOGGING_DEBUG"]:
+    level = logging.INFO
+    if os.getenv('LOGGING_DEBUG'):
         level = logging.DEBUG
+
+    logger = logging.getLogger("alerce")
+    logger.setLevel(level)
+
+    fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    handler.setLevel(level)
+
+    logger.addHandler(handler)
+
     if settings["PROMETHEUS"]:
         start_http_server(8000)
 
