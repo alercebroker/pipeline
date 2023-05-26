@@ -34,7 +34,7 @@ jobs:
       dockerfile: ./Dockerfile-elasticc
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   get_tags_ztf:
     runs-on: ubuntu-latest
     outputs:
@@ -64,4 +64,4 @@ jobs:
       dockerfile: ./Dockerfile-ztf
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

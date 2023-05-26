@@ -32,4 +32,4 @@ jobs:
       tags: ${{ needs.get_tags.outputs.tags }}
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
