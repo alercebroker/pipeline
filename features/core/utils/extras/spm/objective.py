@@ -6,11 +6,7 @@ from . import models
 
 
 @jjit
-def v1(params, time, flux, error, band, fids, smooth):
-    negative = (flux + error) < 0
-    # Give lower weights in square error to negative detections, based on how negative it is
-    weight = jnp.exp(-(((flux + error) * negative / (error + 1)) ** 2))
-
+def v1(params, time, flux, error, band, fids, smooth, weight):
     params = params.reshape((-1, 6))
     sq_err = 0.0
 
@@ -33,11 +29,7 @@ v1_grad = jjit(jgrad(v1))
 
 
 @jjit
-def v2(params, time, flux, error, band, fids, smooth):
-    negative = (flux + error) < 0
-    # Give lower weights in square error to negative detections, based on how negative it is
-    weight = jnp.exp(-(((flux + error) * negative / (error + 1)) ** 2))
-
+def v2(params, time, flux, error, band, fids, smooth, weight):
     params = params.reshape((-1, 6))
     sq_err = 0.0
 

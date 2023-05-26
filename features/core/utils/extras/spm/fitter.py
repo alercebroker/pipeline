@@ -41,11 +41,6 @@ def single_band(
     alt: bool = False,
     bug: bool = False,
 ):
-    time, flux, error = (
-        time.astype(np.float32),
-        flux.astype(np.float32),
-        error.astype(np.float32),
-    )
     time = time - np.min(time)
 
     initial, bounds = guess.single_band(time, flux, alt=alt, bug=bug)
@@ -84,52 +79,49 @@ def multi_band(
     preferred="irzYgu",
     mult=25,
 ):
-    time, flux, error = (
-        time.astype(np.float32),
-        flux.astype(np.float32),
-        error.astype(np.float32),
-    )
     time = time - np.min(time)
 
     initial, bounds = guess.multi_band(time, flux, band, preferred=preferred)
     fids, band = np.unique(
         band, return_inverse=True
     )  # `band` now has the fids as index of fids
-    ifids = np.arange(fids.size)  # used for mapping to and from `band`
     smooth = np.percentile(error, 10) * 0.5
 
+    weight = np.exp(-((flux + error) * ((flux + error) < 0) / (error + 1)) ** 2)
+
     # Padding is needed to minimize recompilations of jax jit functions
-    time, flux, error, band = _pad(time, flux, error, band, mult)
+    time, flux, error, band, weight = _pad(time, flux, error, band, weight, mult)
 
     func = _get_model(version)
     obj, grad = _get_objective(version)
 
-    args = (time, flux, error, band, ifids, smooth)  # For objective function
+    args = (time, flux, error, band, np.arange(fids.size), smooth, weight)  # For objective function
     kwargs = dict(method="TNC", options={"maxfun": 1000})  # For minimizer
     result = optimize.minimize(
         obj, initial, jac=grad, args=args, bounds=bounds, **kwargs
     )
 
-    params = result.x.reshape((-1, 6))
+    n_params = 6
+    params = result.x.reshape((-1, n_params))
 
     final = []
     for i, fid in enumerate(fids):
         mask = band == i
-        params_i = params[i]
 
-        prediction = func(time[mask], *params_i)
-        dof = prediction.size - params_i.size
+        prediction = func(time[mask], *params[i])
+
+        dof = prediction.size - n_params
         chi = (
             np.nan
             if dof < 1
             else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2) / dof
         )
-        final.append(pd.Series([*params_i, chi], index=_indices_with_fid(fid)))
+        final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
 
     return pd.concat(final)
 
 
-def _pad(time, flux, error, band, mult=25):
+def _pad(time, flux, error, band, weight, mult=25):
     pad = (
         mult - time.size % mult
     )  # All padded arrays are assumed to have the same length
@@ -137,4 +129,5 @@ def _pad(time, flux, error, band, mult=25):
     flux = np.pad(flux, (0, pad), "constant", constant_values=(0, 0))
     band = np.pad(band, (0, pad), "constant", constant_values=(0, -1))
     error = np.pad(error, (0, pad), "constant", constant_values=(0, 1))
-    return time, flux, error, band
+    weight = np.pad(weight, (0, pad), "constant", constant_values=(0, 0))
+    return time, flux, error, band, weight

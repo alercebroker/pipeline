@@ -130,16 +130,11 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     def calculate_colors(self) -> pd.DataFrame:
         index, colors = [], []
+
         for b1, b2 in zip(self.BANDS[:-1], self.BANDS[1:]):
             index.append((f"{b1}-{b2}", f"{b1}{b2}"))
-            colors.append(
-                self.detections.get_colors(
-                    "quantile", (b1, b2), ml=True, flux=self.FLUX, q=0.9
-                )
-            )
-        return pd.DataFrame(
-            colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))
-        ).T
+            colors.append(self.detections.get_colors(abs_p90, (b1, b2), ml=True, flux=self.FLUX))
+        return pd.DataFrame(colors, index=pd.MultiIndex.from_tuples(index, names=(None, "fid"))).T
 
     @decorators.logger
     @decorators.columns_per_fid
@@ -163,12 +158,12 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
         )
 
 
-def sn_features(
-    df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series
-) -> pd.Series:
-    (aid,) = df[
-        "id"
-    ].unique()  # Should never be called with more than one id at the time
+def abs_p90(x):
+    return x.abs().quantile(q=0.9)
+
+
+def sn_features(df: pd.DataFrame, first_mjd: pd.Series, first_flux: pd.Series) -> pd.Series:
+    aid, = df["id"].unique()  # Should never be called with more than one id at the time
     positive_fraction = (df["mag_ml"] > 0).mean()
 
     non_det_before = df[(df["mjd"] < first_mjd.loc[aid]) & ~df["detected"]]

@@ -34,3 +34,5 @@ def lsst(
 
         flux[mask] *= z_deatt * dust_deatt
         error[mask] *= z_deatt * dust_deatt
+
+    return flux, error
