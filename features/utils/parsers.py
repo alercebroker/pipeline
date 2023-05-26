@@ -60,8 +60,10 @@ def parse_output(features: pd.DataFrame, alert_data: list[dict], extractor_class
 
     for message in alert_data:
         aid = message["aid"]
-        features_row = features.loc[aid]
-        features_dict = features_row.to_dict()
+        try:
+            features_dict = features.loc[aid].to_dict()
+        except KeyError:  # No feature for the object
+            features_dict = None
         out_message = {
             "aid": aid,
             "meanra": message["meanra"],
