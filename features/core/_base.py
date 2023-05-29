@@ -170,6 +170,7 @@ class BaseFeatureExtractor(abc.ABC):
             else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
         )
         xmatches = xmatches.rename(columns={"aid": "id"})
+        xmatches = xmatches.drop_duplicates(subset=["id"])
         xmatches = xmatches[xmatches["id"].isin(self.detections.ids())]
         for c in self.XMATCH_COLUMNS:
             if c not in xmatches:
