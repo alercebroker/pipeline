@@ -1,9 +1,12 @@
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
-from alerce_classifiers.transformer_lc_features.mapper import LCFeatureMapper
+from alerce_classifiers.base.mapper import Mapper
+import numpy as np
 
-class RandomForestClassifierMapper(LCFeatureMapper):
+
+class RandomForestClassifierMapper(Mapper):
     def preprocess(self, input: InputDTO, **kwargs) -> tuple:
-        return (self._get_features(input), )
-    
+        features = input.features
+        return (features.replace({None: np.nan}),)
+
     def postprocess(self, model_output, **kwargs) -> OutputDTO:
         return OutputDTO(model_output)
