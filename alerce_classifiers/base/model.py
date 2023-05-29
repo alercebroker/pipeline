@@ -6,6 +6,7 @@ import wget
 import validators
 
 from .mapper import Mapper
+from .dto import InputDTO, OutputDTO
 
 class AlerceModel(ABC):
     mapper: Mapper
@@ -27,7 +28,7 @@ class AlerceModel(ABC):
 
     # TODO: change input and output type to their DTOs
     @abstractmethod
-    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, data_input: InputDTO) -> OutputDTO:
         """
         Calculate the prediction!
         """

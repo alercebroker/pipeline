@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import torch
-from alerce_classifiers.base.dto import InputDTO
+from typing import List
+
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.mapper import Mapper
 from alerce_classifiers.utils.dataframe import DataframeUtils
 from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
@@ -96,14 +98,18 @@ class LCHeaderMapper(Mapper):
         }
         return torch_input
 
-    def preprocess(self, input: InputDTO, **kwargs):
+    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
         # TODO: obtain the forced photometry field name
         detections = self._get_detections(input)
         headers = self._get_headers(input)
 
         preprocessed_light_curve = self._preprocess_detections(detections)
         preprocessed_headers = self._preprocess_headers(headers, kwargs["quantiles"])
-        return self._to_tensor_dict(preprocessed_light_curve, preprocessed_headers)
+        return self._to_tensor_dict(preprocessed_light_curve, preprocessed_headers), detections.index
     
-    def postprocess(self):
-        pass
+    def postprocess(self, model_output, **kwargs) -> OutputDTO:
+        probs = model_output["MLPMix"].exp().detach().numpy()
+        probs = pd.DataFrame(
+            probs, columns=kwargs["taxonomy"], index=kwargs["index"]
+        )
+        return OutputDTO(probs)

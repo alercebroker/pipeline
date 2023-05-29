@@ -33,5 +33,4 @@ class InputDTO:
 
 @dataclass
 class OutputDTO:
-    class_name: str
-    probability: str
+    probabilities: pd.DataFrame

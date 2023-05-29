@@ -1,10 +1,11 @@
 from alerce_classifiers.base.model import AlerceModel
-from alerce_classifiers.utils.input_mapper.elasticc import ELAsTiCCMapper
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classifier.classifier.models import ElasticcRandomForest
 
 import pandas as pd
 import validators
 
+from .mapper import RandomForestClassifierMapper
 
 class RandomForestFeaturesClassifier(AlerceModel):
     def __init__(self, path_to_model: str):
@@ -28,7 +29,7 @@ class RandomForestFeaturesClassifier(AlerceModel):
         }
         self._non_used_features = [f"iqr_{band}" for band in "ugrizY"]
         self.feature_list = None
-        super().__init__(path_to_model)
+        super().__init__(path_to_model, RandomForestClassifierMapper())
 
     def _load_model(self, path_to_model: str) -> None:
         self.model = ElasticcRandomForest(
@@ -44,11 +45,7 @@ class RandomForestFeaturesClassifier(AlerceModel):
             self.feature_list.extend(feat_group)
             self.feature_list = list(set(self.feature_list))
 
-    def preprocess(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        features = ELAsTiCCMapper.get_features(data_input)
-        return features
-
-    def predict(self, data_input: pd.DataFrame) -> pd.DataFrame:
-        features = self.preprocess(data_input)
+    def predict(self, input_dto: InputDTO) -> OutputDTO:
+        features, _ = self.mapper.preprocess(input_dto)
         probs = self.model.predict_proba(features)
-        return probs
+        return self.mapper.postprocess(probs)

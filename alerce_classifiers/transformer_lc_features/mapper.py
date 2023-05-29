@@ -26,19 +26,18 @@ class LCFeatureMapper(LCHeaderMapper):
         return response
 
     def _feat_to_tensor_dict(
-        self, pd_output: pd.DataFrame, np_headers: np.ndarray, np_features: np.ndarray
+        self, torch_input, np_features: np.ndarray
     ) -> dict:
-        torch_input = self._to_tensor_dict(pd_output, np_headers)
         torch_features = torch.from_numpy(np_features).float()
         torch_input["tabular_feat"] = torch.cat(
             [torch_input["tabular_feat"], torch_features], dim=1
         )
         return torch_input
 
-    def preprocess(self, input: InputDTO, **kwargs):
+    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
         features = self._get_features(input)
         preprocessed_features = self._preprocess_features(
             features, kwargs["feature_quantiles"]
         )
-        lc, headers = super().preprocess(input, quantiles=kwargs["header_quantiles"])
-        return self._feat_to_tensor_dict(lc, headers, preprocessed_features)
+        torch_input, aid_index = super().preprocess(input, quantiles=kwargs["header_quantiles"])
+        return self._feat_to_tensor_dict(torch_input, preprocessed_features), aid_index
