@@ -30,12 +30,12 @@ class LateClassifier(GenericStep):
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.predictor: Predictor = get_class(config["PREDICTOR_CLASS"])(
-            None, **config["PREDICTOR_PARAMS"]
+        self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
+            None, **config["PREDICTOR_CONFIG"]["PARAMS"]
         )
         self.scribe_producer = scribe_producer_class(config["SCRIBE_PRODUCER_CONFIG"])
         self.predictor_parser: PredictorParser = get_class(
-            config["PREDICTOR_PARSER_CLASS"]
+            config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
         )()
         self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
         self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()

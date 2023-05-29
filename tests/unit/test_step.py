@@ -17,7 +17,7 @@ step_mock_config = {
     "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
-    "PREDICTOR_PARAMS": {},
+    "PREDICTOR_CONFIG": {"PARAMS": {}},
 }
 
 messages_ztf = utils.generate_many(INPUT_ZTF, 10)
@@ -47,11 +47,11 @@ def assert_command_is_correct(command):
 
 @pytest.mark.skipif(os.getenv("MODEL") != "ztf", reason="ztf only")
 def test_step():
-    step_mock_config[
-        "PREDICTOR_CLASS"
+    step_mock_config["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-    step_mock_config[
-        "PREDICTOR_PARSER_CLASS"
+    step_mock_config["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser"
     step_mock_config[
         "SCRIBE_PARSER_CLASS"
@@ -83,12 +83,12 @@ def test_step():
 @pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
 def test_step_elasticc():
     model_path = "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
-    step_mock_config[
-        "PREDICTOR_CLASS"
+    step_mock_config["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_predictor.ElasticcRandomForestPredictor"
-    step_mock_config["PREDICTOR_PARAMS"] = {"model_path": model_path}
-    step_mock_config[
-        "PREDICTOR_PARSER_CLASS"
+    step_mock_config["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
+    step_mock_config["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_parser.ElasticcRandomForestParser"
     step_mock_config[
         "SCRIBE_PARSER_CLASS"

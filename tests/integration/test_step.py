@@ -34,11 +34,11 @@ def test_step_ztf_result(
 ):
     from settings import STEP_CONFIG
 
-    STEP_CONFIG[
-        "PREDICTOR_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-    STEP_CONFIG[
-        "PREDICTOR_PARSER_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
@@ -46,7 +46,7 @@ def test_step_ztf_result(
     STEP_CONFIG[
         "STEP_PARSER_CLASS"
     ] = "lc_classification.core.parsers.alerce_parser.AlerceParser"
-    STEP_CONFIG["PREDICTOR_PARAMS"] = {}
+    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {}
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
@@ -61,11 +61,11 @@ def test_scribe_ztf_result(
 ):
     from settings import STEP_CONFIG
 
-    STEP_CONFIG[
-        "PREDICTOR_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-    STEP_CONFIG[
-        "PREDICTOR_PARSER_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
@@ -73,7 +73,7 @@ def test_scribe_ztf_result(
     STEP_CONFIG[
         "STEP_PARSER_CLASS"
     ] = "lc_classification.core.parsers.alerce_parser.AlerceParser"
-    STEP_CONFIG["PREDICTOR_PARAMS"] = {}
+    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {}
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
@@ -92,12 +92,12 @@ def test_step_elasticc_result(
     from settings import STEP_CONFIG
 
     model_path = "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
-    STEP_CONFIG[
-        "PREDICTOR_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_predictor.ElasticcRandomForestPredictor"
-    STEP_CONFIG["PREDICTOR_PARAMS"] = {"model_path": model_path}
-    STEP_CONFIG[
-        "PREDICTOR_PARSER_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_parser.ElasticcRandomForestParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
@@ -120,12 +120,12 @@ def test_scribe_elasticc_result(
     from settings import STEP_CONFIG
 
     model_path = "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
-    STEP_CONFIG[
-        "PREDICTOR_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_predictor.ElasticcRandomForestPredictor"
-    STEP_CONFIG["PREDICTOR_PARAMS"] = {"model_path": model_path}
-    STEP_CONFIG[
-        "PREDICTOR_PARSER_CLASS"
+    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
+    STEP_CONFIG["PREDICTOR_CONFIG"][
+        "PARSER_CLASS"
     ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_parser.ElasticcRandomForestParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
