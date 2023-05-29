@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 
 from joblib import load
-from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
 from alerce_classifiers.transformer_lc_header.model import (
@@ -43,8 +43,8 @@ class TransformerLCFeaturesClassifier(AlerceModel):
             parsed_feat = feat.replace("/", "&&&")
             self.feature_quantiles[feat] = load(f"{path}/norm_{parsed_feat}.joblib")
 
-    def predict(self, data_input: InputDTO) -> pd.DataFrame:
-        input_nn = self.mapper.preprocess(
+    def predict(self, data_input: InputDTO) -> OutputDTO:
+        input_nn, aid_index = self.mapper.preprocess(
             data_input,
             header_quantiles=self._header_classifier.quantiles,
             feature_quantiles=self.feature_quantiles,
@@ -52,9 +52,5 @@ class TransformerLCFeaturesClassifier(AlerceModel):
 
         with torch.no_grad():
             pred = self.model.predict_mix(**input_nn)
-            pred = pred["MLPMix"].exp().detach().numpy()
-            preds = pd.DataFrame(
-                pred, columns=self._taxonomy, index=data_input.detections.index
-            )
-        del input_nn
-        return preds
+
+        return self.mapper.postprocess(pred, index=aid_index)
