@@ -1,20 +1,35 @@
 from dataclasses import dataclass
-from typing import Any, List
-from _types import *
+from ._types import *
+
 
 @dataclass
 class InputDTO:
-    detections: Detections #includes forced photometry
-    non_detections: NonDetections
-    features: Features
-    xmatch: Xmatch
-    stamps: Stamps
+    _detections: Detections  # includes forced photometry
+    _non_detections: NonDetections
+    _features: Features
+    _xmatch: Xmatch
+    _stamps: Stamps
 
-    def __getattribute__(self, name: str):
-        __dict__ = super(InputDTO, self).__getattribute__('__dict__')
-        if name in __dict__:
-            return super(InputDTO, self).__getattribute__(name)._value
-        raise AttributeError
+    @property
+    def detections(self):
+        return self._detections._value
+
+    @property
+    def non_detections(self):
+        return self._non_detections._value
+
+    @property
+    def features(self):
+        return self._features._value
+
+    @property
+    def xmatch(self):
+        return self._xmatch._value
+
+    @property
+    def stamps(self):
+        return self._stamps._value
+
 
 @dataclass
 class OutputDTO:
