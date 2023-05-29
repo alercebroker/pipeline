@@ -3,7 +3,7 @@ FROM python:3.8
 ARG GH_TOKEN={GH_TOKEN}
 
 COPY requirements.txt /app/requirements.txt
-COPY requirements.txt /app/requirements_ztf.txt
+COPY requirements_ztf.txt /app/requirements_ztf.txt
 
 RUN pip install -r /app/requirements_ztf.txt
 
