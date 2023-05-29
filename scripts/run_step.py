@@ -1,3 +1,4 @@
+import os
 import logging
 
 from prometheus_client import start_http_server
@@ -7,7 +8,6 @@ from db_plugins.db.mongo.connection import MongoConnection
 try:
     from lightcurve_step import LightcurveStep
 except ImportError:
-    import os
     import sys
 
     SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
