@@ -2,10 +2,10 @@ from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classifier.classifier.models import ElasticcRandomForest
 
-import pandas as pd
 import validators
 
 from .mapper import RandomForestClassifierMapper
+
 
 class RandomForestFeaturesClassifier(AlerceModel):
     def __init__(self, path_to_model: str):
@@ -46,6 +46,6 @@ class RandomForestFeaturesClassifier(AlerceModel):
             self.feature_list = list(set(self.feature_list))
 
     def predict(self, input_dto: InputDTO) -> OutputDTO:
-        features, _ = self.mapper.preprocess(input_dto)
+        features = self.mapper.preprocess(input_dto)[0]
         probs = self.model.predict_proba(features)
         return self.mapper.postprocess(probs)
