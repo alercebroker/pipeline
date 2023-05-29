@@ -1,8 +1,9 @@
+import json
+
 import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
-from features.core.ztf import ZTFFeatureExtractor
 from features.utils.parsers import parse_scribe_payload, parse_output
 
 
@@ -36,8 +37,7 @@ class FeaturesComputer(GenericStep):
         )
 
         for command in commands:
-            command_aid = command["criteria"]["_id"]
-            self.scribe_producer.produce(command, key=command_aid)
+            self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def execute(self, messages):
         detections, non_detections, xmatch = [], [], []
