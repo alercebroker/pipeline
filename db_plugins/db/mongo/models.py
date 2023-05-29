@@ -69,13 +69,23 @@ class Object(BaseModel):
         IndexModel([("loc", GEOSPHERE)], name="radec"),
         IndexModel(
             [
-                ("probabilities.ranking", DESCENDING),
                 ("probabilities.classifier_name", ASCENDING),
+                ("probabilities.ranking", DESCENDING),
                 ("probabilities.classifier_version", DESCENDING),
                 ("probabilities.class_name", DESCENDING),
                 ("probabilities.probability", DESCENDING),
             ],
             name="probabilities",
+        ),
+        IndexModel(
+            [
+                ("features.group", ASCENDING),
+                ("features.version", ASCENDING),
+                ("features.name", ASCENDING),
+                ("features.fid", ASCENDING),
+                ("features.value", ASCENDING),
+            ],
+            name="features",
         ),
     ]
     __tablename__ = "object"
@@ -192,42 +202,3 @@ class Taxonomy(BaseModel):
         ),
     ]
     __tablename__ = "taxonomy"
-
-
-class Step(BaseModel):
-    step_id = Field()
-    name = Field()
-    version = Field()
-    comments = Field()
-    date = Field()
-
-    __table_args__ = [
-        IndexModel([("step_id", ASCENDING)], name="step_id"),
-    ]
-    __tablename__ = "step"
-
-
-class FeatureVersion(BaseModel):
-    version = Field()
-    step_id_feature = Field()
-    step_id_preprocess = Field()
-
-    __table_args__ = [
-        IndexModel([("version", ASCENDING)], name="version"),
-    ]
-    __tablename__ = "feature_version"
-
-
-class Pipeline(BaseModel):
-    pipeline_id = Field()
-    step_id_corr = Field()
-    step_id_feat = Field()
-    step_id_clf = Field()
-    step_id_out = Field()
-    step_id_stamp = Field()
-    date = Field()
-
-    __table_args__ = [
-        IndexModel([("pipeline_id", ASCENDING)], name="id"),
-    ]
-    __tablename__ = "pipeline"

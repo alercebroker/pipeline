@@ -56,9 +56,6 @@ class MongoConnectionTest(unittest.TestCase):
             "forced_photometry",
             "non_detection",
             "taxonomy",
-            "step",
-            "feature_version",
-            "pipeline",
         ]
         self.assertEqual(collections, expected)
 
