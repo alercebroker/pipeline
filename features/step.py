@@ -37,7 +37,7 @@ class FeaturesComputer(GenericStep):
         )
 
         for command in commands:
-            self.scribe_producer.produce(json.dumps(command))
+            self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def execute(self, messages):
         detections, non_detections, xmatch = [], [], []
