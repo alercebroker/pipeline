@@ -11,10 +11,6 @@ from lc_classification.predictors.predictor.predictor_parser import (
 class ElasticcRandomForestParser(PredictorParser):
     def parse_input(self, to_parse, **kwargs) -> PredictorInput[InputDTO]:
         dto = create_input_dto(to_parse, **kwargs)
-        # features_as_list = dto.features.to_dict(orient="records")
-        # features_for_model = DataFrame(
-        #     {"features": features_as_list}, index=dto.features.index
-        # )
         return PredictorInput(dto)
 
     def parse_output(self, to_parse: OutputDTO, **kwargs) -> PredictorOutput:
