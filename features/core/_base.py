@@ -2,6 +2,7 @@ import abc
 import logging
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -170,6 +171,9 @@ class BaseFeatureExtractor(abc.ABC):
         )
         xmatches = xmatches.rename(columns={"aid": "id"})
         xmatches = xmatches[xmatches["id"].isin(self.detections.ids())]
+        for c in self.XMATCH_COLUMNS:
+            if c not in xmatches:
+                xmatches[c] = np.nan
         return xmatches.set_index("id")[self.XMATCH_COLUMNS]
 
     def clear_caches(self):
