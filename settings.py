@@ -3,6 +3,7 @@
 ##################################################
 import os
 from schema import SCHEMA
+from fastavro import schema
 
 EXTRACTOR = os.environ["FEATURE_EXTRACTOR"]
 
@@ -30,7 +31,12 @@ PRODUCER_CONFIG = {
 }
 
 SCRIBE_PRODUCER_CONFIG = {
-
+    "CLASS": "apf.producers.KafkaProducer",
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_SERVER"],
+    },
+    "TOPIC": os.environ["SCRIBE_TOPIC"],
+    "SCHEMA": schema.load_schema("scribe_schema.avsc"),
 }
 
 METRICS_CONFIG = {
