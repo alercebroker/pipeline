@@ -26,7 +26,7 @@ jobs:
           fi
           echo ::set-output name=tags::${TAGS}
   push_image_ztf:
-    needs: get_tags
+    needs: get_tags_ztf
     uses: ./.github/workflows/build.yml
     with:
       tags: ${{ needs.get_tags_ztf.outputs.tags }}
@@ -55,7 +55,7 @@ jobs:
           fi
           echo ::set-output name=tags::${TAGS}
   push_image_elasticc:
-    needs: get_tags
+    needs: get_tags_elasticc
     uses: ./.github/workflows/build.yml
     with:
       tags: ${{ needs.get_tags_elasticc.outputs.tags }}
