@@ -2,7 +2,7 @@
 #       Late Classifier Settings File
 ##################################################
 import os
-from schemas import SCHEMA, SCRIBE_SCHEMA
+from schemas import SCHEMA, ELASTICC_SCHEMA, SCRIBE_SCHEMA
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -34,7 +34,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "CLASS": "apf.producers.KafkaProducer",
-    "SCHEMA": SCHEMA,
+    "SCHEMA": SCHEMA if os.getenv("MODEL", "ztf") == "ztf" else ELASTICC_SCHEMA,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -114,6 +114,12 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
+PREDICTOR_CONFIG = {
+    "CLASS": os.getenv("PREDICTOR_CLASS"),
+    "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
+    "PARSER_CLASS": os.getenv("PREDICTOR_PARSER_CLASS"),
+    "PARSER_PARAMS": {},
+}
 
 STEP_CONFIG = {
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
@@ -121,4 +127,8 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "MODEL_VERSION": os.getenv("MODEL_VERSION", "dev"),
+    "PREDICTOR_CONFIG": PREDICTOR_CONFIG,
+    "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
+    "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
 }

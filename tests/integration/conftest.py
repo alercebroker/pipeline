@@ -9,7 +9,8 @@ from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
-from tests.mockdata.inputschema import INPUT_SCHEMA as SCHEMA
+from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
+from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
 
 
 @pytest.fixture(scope="session")
@@ -44,7 +45,8 @@ def is_responsive_kafka(url):
         try:
             future.result()
             if topic == "features":
-                produce_messages("features")
+                produce_messages("features_ztf", SCHEMA_ZTF)
+                produce_messages("features_elasticc", SCHEMA_ELASTICC)
         except Exception as e:
             logging.error(f"Can't create topic {topic}: {e}")
             return False
@@ -63,11 +65,11 @@ def kafka_service(docker_ip, docker_services):
 
 
 @pytest.fixture
-def env_variables():
+def env_variables_ztf():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
-        "CONSUMER_TOPICS": "features",
+        "CONSUMER_TOPICS": "features_ztf",
         "CONSUMER_GROUP_ID": random_string,
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC_FORMAT": "lc_classifier%s",
@@ -87,7 +89,32 @@ def env_variables():
     return env_variables_dict
 
 
-def produce_messages(topic):
+@pytest.fixture
+def env_variables_elasticc():
+    random_string = uuid.uuid4().hex
+    env_variables_dict = {
+        "CONSUMER_SERVER": "localhost:9092",
+        "CONSUMER_TOPICS": "features_elasticc",
+        "CONSUMER_GROUP_ID": random_string,
+        "PRODUCER_SERVER": "localhost:9092",
+        "PRODUCER_TOPIC_FORMAT": "lc_classifier%s",
+        "PRODUCER_DATE_FORMAT": "%Y%m%d",
+        "PRODUCER_CHANGE_HOUR": "23",
+        "PRODUCER_RETENTION_DAYS": "1",
+        "SCRIBE_SERVER": "localhost:9092",
+        "METRICS_HOST": "localhost:9092",
+        "METRICS_TOPIC": "metrics",
+        "SCRIBE_TOPIC": "w_object",
+        "CONSUME_MESSAGES": "1",
+        "ENABLE_PARTITION_EOF": "True",
+    }
+    for key, value in env_variables_dict.items():
+        os.environ[key] = value
+
+    return env_variables_dict
+
+
+def produce_messages(topic, SCHEMA):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -131,6 +158,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_object"],
+            "TIMEOUT": 0,
         }
     )
     yield consumer

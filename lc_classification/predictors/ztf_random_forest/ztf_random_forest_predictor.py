@@ -4,7 +4,7 @@ from lc_classification.predictors.predictor.predictor_parser import PredictorInp
 
 
 class ZtfRandomForestPredictor(Predictor):
-    def __init__(self, model=None):
+    def __init__(self, model=None, **kwargs):
         self.model = model or HierarchicalRandomForest({})
         self.model.download_model()
         self.model.load_model(self.model.MODEL_PICKLE_PATH)

@@ -1,23 +1,13 @@
-from typing import List, Union
+from typing import List
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
-from lc_classification.core.parsers.alerce_parser import AlerceParser
-from lc_classification.core.parsers.scribe_parser import ScribeParser
-
 import logging
 import json
 
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
-
-from lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser import (
-    ZtfRandomForestPredictorParser,
-)
-from lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor import (
-    ZtfRandomForestPredictor,
-)
 
 
 class LateClassifier(GenericStep):
@@ -35,31 +25,28 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(
-        self,
-        config={},
-        level=logging.INFO,
-        predictor: Union[Predictor, None] = None,
-        scribe_parser: KafkaParser = ScribeParser(),
-        step_parser: KafkaParser = AlerceParser(),
-        predictor_parser: Union[PredictorParser, None] = None,
-        **step_args
-    ):
+    def __init__(self, config={}, level=logging.INFO, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.predictor = predictor or ZtfRandomForestPredictor()
-        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
-        self.predictor_parser = predictor_parser or ZtfRandomForestPredictorParser(
-            self.predictor.get_feature_list()
+        scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
+            None, **config["PREDICTOR_CONFIG"]["PARAMS"]
         )
-        self.scribe_parser = scribe_parser
-        self.step_parser = step_parser
+        self.scribe_producer = scribe_producer_class(config["SCRIBE_PRODUCER_CONFIG"])
+        self.predictor_parser: PredictorParser = get_class(
+            config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
+        )()
+        self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
+        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
 
     def pre_produce(self, result: tuple):
         return self.step_parser.parse(
-            result[0], messages=result[1], features=result[2]
+            result[0],
+            messages=result[1],
+            features=result[2],
+            classifier_name=self.predictor.__class__,
+            classifier_version=self.config["MODEL_VERSION"],
         ).value
 
     def produce_scribe(self, commands: List[dict]):
@@ -77,7 +64,10 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        predictor_input = self.predictor_parser.parse_input(messages)
+        feature_list = self.predictor.get_feature_list()
+        predictor_input = self.predictor_parser.parse_input(
+            messages, feature_list=feature_list
+        )
         self.logger.info("Doing inference")
         probabilities = self.predictor.predict(predictor_input)
         self.logger.info("Processing results")

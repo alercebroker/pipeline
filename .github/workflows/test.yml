@@ -13,7 +13,7 @@ jobs:
     with:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
-      test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+      test-command: MODEL=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   integration-ztf:
@@ -22,7 +22,25 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
       test-dependencies: pytest pytest-docker
-      test-command: python -m pytest -x tests/integration
+      test-command: MODEL=ztf python -m pytest -x tests/integration
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  unittest-elasticc:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'requirements_elasticc.txt'
+      test-command: MODEL=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  integration-elasticc:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'requirements_elasticc.txt'
+      test-dependencies: pytest pytest-docker
+      test-command: MODEL=elasticc python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
