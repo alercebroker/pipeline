@@ -26,6 +26,7 @@ class NonDetectionsHandler(BaseHandler):
     def _post_process(self, **kwargs):
         """Extracts MJD of first detection from `kwargs` in addition to base post-processing"""
         self.__first_mjd: pd.Series = kwargs.pop("first_mjd")
+        self.__first_mjd = self.__first_mjd.fillna(self._alerts.groupby(["id", "fid"])["mjd"].max() + 1)
         super()._post_process(**kwargs)
 
     @methodtools.lru_cache()
