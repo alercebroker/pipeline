@@ -1,4 +1,4 @@
 Cython >=0.29
--e lc_classifier @ git+https://github.com/alercebroker/lc_classifier@elasticc
+-e lc_classifier @ git+https://github.com/alercebroker/lc_classifier@elasticc#egg=lc_classifier
 numpy >=1.16
 pandas >=1.1
