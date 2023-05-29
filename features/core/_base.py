@@ -7,7 +7,7 @@ import pandas as pd
 from scipy import stats
 
 from .handlers import DetectionsHandler, NonDetectionsHandler
-from .utils import decorators, extras
+from .utils import decorators, extras, functions
 
 
 class BaseFeatureExtractor(abc.ABC):
@@ -138,7 +138,7 @@ class BaseFeatureExtractor(abc.ABC):
         self._discard_detections()
         self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
 
-        first_mjd = self.detections.agg("mjd", "min", by_fid=True)
+        first_mjd = functions.fill_index(self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS)
 
         non_detections = non_detections if non_detections is not None else []
         if isinstance(non_detections, pd.DataFrame):
