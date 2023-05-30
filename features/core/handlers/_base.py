@@ -86,6 +86,7 @@ class BaseHandler(abc.ABC):
                 f"{len(self._alerts)} {self._NAME} remain after duplicate removal"
             )
         if self.INDEX:
+            self._alerts.drop_duplicates(self.INDEX, inplace=True)
             self._alerts.set_index(self.INDEX, inplace=True)
             self.logger.debug(f"Using column(s) {self.INDEX} for indexing")
 
