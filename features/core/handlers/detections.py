@@ -50,6 +50,12 @@ class DetectionsHandler(BaseHandler):
     def _use_corrected(self):
         """Sets corrected magnitudes, based on whether the first alert for an object is corrected."""
         idx = self._alerts.groupby("id")["mjd"].idxmin()
+        print("aids:")
+        for i in idx.index:
+            print(i)
+        print("candids:")
+        for i in idx:
+            print(i)
         corrected = (
             self._alerts["corrected"][idx]
             .set_axis(idx.index)
