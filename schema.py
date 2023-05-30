@@ -74,7 +74,7 @@ XMATCH = {
 
 FEATURES = {
     "type": "map",
-    "values": {"type": "map", "values": ["boolean", "float", "null", "int"]},
+    "values": ["boolean", "float", "null", "int"],
 }
 
 SCHEMA = {
