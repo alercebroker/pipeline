@@ -22,54 +22,43 @@ def create_features_dto(messages: List[dict], feature_list) -> pd.DataFrame:
     Parameters
     -------
     messages : list
-        a list of dictionaries with at least aid, candid and features keys.
+        a list of dictionaries with at least aid and features keys.
     feature_list : list
         a list of feature names used for validation
     Returns
     -------
     pd.DataFrame
         A dataframe where each feature is a column indexed by aid.
-        The rows are sorted by descending candid and duplicated aid are removed
-        leaving the one with the latest candid.
+        Duplicated aid are removed.
 
     Examples
     --------
     >>> messages = [
             {
                 'aid': 'aid1',
-                'candid': 'cand1',
                 'features': {'feat1': 1, 'feat2': 2}
             },
             {
                 'aid': 'aid1',
-                'candid': 'cand2',
                 'features': {'feat1': 2, 'feat2': 3}
             },
             {
                 'aid': 'aid2',
-                'candid': 'cand3',
                 'features': {'feat1': 4, 'feat2': 5}
             }
         ]
     >>> create_features_dto(messages)
 
-        feat1  feat2 candid
+        feat1  feat2
     aid
-    aid2      4      5  cand3
-    aid1      2      3  cand2
+    aid2      4      5
+    aid1      2      3
     """
-    df = pd.DataFrame(
-        [
-            {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
-            for message in messages
-        ]
-    )
+    df = pd.DataFrame([{"aid": message.get("aid")} for message in messages])
     features = pd.DataFrame(
         [message["features"] for message in messages if message["features"]]
     )
     features["aid"] = df.aid
-    features["candid"] = df.candid
-    features.sort_values("candid", ascending=False, inplace=True)
     features.drop_duplicates("aid", inplace=True)
     features = features.set_index("aid")
     if features is not None:
