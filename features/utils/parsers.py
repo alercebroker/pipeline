@@ -25,7 +25,7 @@ def parse_scribe_payload(
             for ((name, fid), value) in features_df.items()
         ]
         command = {
-            "collection": "name",
+            "collection": "object",
             "type": "update_features",
             "criteria": {"_id": aid},
             "data": {
