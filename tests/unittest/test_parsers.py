@@ -54,7 +54,7 @@ class ParsersTestCase(unittest.TestCase):
     def test_parse_scribe_payload(self):
         expected_payload = [
             {
-                "collection": "name",
+                "collection": "object",
                 "type": "update_features",
                 "criteria": {"_id": "aid1"},
                 "data": {
@@ -71,7 +71,7 @@ class ParsersTestCase(unittest.TestCase):
                 "options": {"upsert": True},
             },
             {
-                "collection": "name",
+                "collection": "object",
                 "type": "update_features",
                 "criteria": {"_id": "aid2"},
                 "data": {
