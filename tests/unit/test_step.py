@@ -29,6 +29,7 @@ def assert_object_is_correct(obj):
     assert "candid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
+    assert len(obj["lc_classification"]["probabilities"]) > 0
 
 
 def assert_elasticc_object_is_correct(obj):
@@ -75,6 +76,7 @@ def test_step():
 
     # Test producer produces correct data
     calls = step.producer.mock_calls
+    assert len(calls) > 0
     for call in calls:
         obj = call.args[0]
         assert_object_is_correct(obj)
