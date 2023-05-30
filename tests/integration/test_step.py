@@ -7,7 +7,6 @@ import os
 
 def assert_object_is_correct(obj):
     assert "aid" in obj
-    assert "candid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
 

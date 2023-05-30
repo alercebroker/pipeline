@@ -11,19 +11,13 @@ class AlerceParser(KafkaParser):
         messages = kwargs.get("messages", [])
         features = kwargs.get("features", pd.DataFrame())
         parsed = []
-        features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
         messages_df = pd.DataFrame(
-            [
-                {"aid": message.get("aid"), "candid": message.get("candid", np.nan)}
-                for message in messages
-            ]
+            [{"aid": message.get("aid")} for message in messages]
         )
-        messages_df.sort_values("candid", ascending=False, inplace=True)
         messages_df.drop_duplicates("aid", inplace=True)
         for _, row in messages_df.iterrows():
             aid = row.aid
-            candid = row.candid
             try:
                 features_aid = features.loc[aid].to_dict()
             except KeyError:
@@ -32,7 +26,6 @@ class AlerceParser(KafkaParser):
             tree_aid = self._get_aid_tree(model_output.classifications, aid)
             write = {
                 "aid": aid,
-                "candid": candid,
                 "features": features_aid,
                 "lc_classification": tree_aid,
             }

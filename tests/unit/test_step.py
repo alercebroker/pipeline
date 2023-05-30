@@ -26,7 +26,6 @@ messages_elasticc = utils.generate_many(INPUT_ELASTICC, 10)
 
 def assert_object_is_correct(obj):
     assert "aid" in obj
-    assert "candid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
     assert len(obj["lc_classification"]["probabilities"]) > 0

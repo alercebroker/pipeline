@@ -77,7 +77,6 @@ command = {
     'type': 'record',
     'fields': [
         {'name': 'oid', 'type': 'string'},
-        {"name": "candid", "type": "long"},
         FEATURES_SCHEMA,
         {
             'name': 'lc_classification',

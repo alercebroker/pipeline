@@ -223,7 +223,6 @@ SCHEMA = {
     "type": "record",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "candid", "type": "long"},
         FEATURES_SCHEMA,
         {
             "name": "lc_classification",
