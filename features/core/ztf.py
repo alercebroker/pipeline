@@ -37,7 +37,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2}
     EXTRA_COLUMNS = ["ra", "dec", "isdiffpos", "rb", "sgscore1"]
-    XMATCH_COLUMNS = ["W1mag", "W2mag", "W3mag"]
+    XMATCH_COLUMNS = {"allwise": ["W1mag", "W2mag", "W3mag"]}
     CORRECTED = True
     MIN_REAL_BOGUS = 0.55
     MAX_ERROR = 1.0
