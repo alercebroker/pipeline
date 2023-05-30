@@ -55,8 +55,9 @@ def parse_output(features: pd.DataFrame, alert_data: list[dict], extractor_class
     """
     output_messages = []
 
-    features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-    features = collapse_fid_columns(features, extractor_class.BANDS_MAPPING)
+    if len(features):
+        features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+        features = collapse_fid_columns(features, extractor_class.BANDS_MAPPING)
 
     for message in alert_data:
         aid = message["aid"]
