@@ -73,12 +73,8 @@ XMATCH = {
 }
 
 FEATURES = {
-    "type": "array",
-    "default": [],
-    "items": {
-        "type": "map",
-        "values": ["boolean", "float", "null", "int"],
-    }
+    "type": "map",
+    "values": ["boolean", "float", "null", "int"],
 }
 
 SCHEMA = {
