@@ -28,7 +28,7 @@ class DetectionsHandler(BaseHandler):
 
     _NAME = "detections"
     INDEX = "candid"
-    UNIQUE = ["id", "fid", "mjd"]
+    UNIQUE = ["candid", "id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml"]
 
     def _post_process(self, **kwargs):
