@@ -64,21 +64,15 @@ def create_features_dto(messages: List[dict], feature_list) -> pd.DataFrame:
             for message in messages
         ]
     )
-    features = pd.DataFrame([message["features"] for message in messages])
+    features = pd.DataFrame(
+        [message["features"] for message in messages if message["features"]]
+    )
     features["aid"] = df.aid
     features["candid"] = df.candid
     features.sort_values("candid", ascending=False, inplace=True)
     features.drop_duplicates("aid", inplace=True)
     features = features.set_index("aid")
     if features is not None:
-        _validate_features(features, feature_list)
         return features
     else:
         raise ValueError("Could not set index aid on features dataframe")
-
-
-def _validate_features(features: pd.DataFrame, feature_list):
-    required_features = set(feature_list)
-    missing_features = required_features.difference(set(features.columns))
-    if len(missing_features) > 0:
-        raise KeyError(f"Corrupted Batch: missing some features ({missing_features})")

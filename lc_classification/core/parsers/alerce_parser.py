@@ -6,11 +6,11 @@ import pandas as pd
 
 class AlerceParser(KafkaParser):
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
+        if len(model_output.classifications["probabilities"]) == 0:
+            return KafkaOutput([])
         messages = kwargs.get("messages", [])
         features = kwargs.get("features", pd.DataFrame())
-        step_metrics = kwargs.get("step_metrics", {})
         parsed = []
-        step_metrics["class"] = model_output.classifications["class"].tolist()
         features.drop(columns=["candid"], inplace=True)
         features.replace({np.nan: None}, inplace=True)
         messages_df = pd.DataFrame(

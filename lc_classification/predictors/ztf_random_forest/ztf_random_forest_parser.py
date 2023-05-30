@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Union
+from alerce_classifiers.base.dto import OutputDTO
 import pandas as pd
 from lc_classification.core.parsers.input_dto import create_input_dto
 from lc_classification.predictors.predictor.predictor_parser import (
@@ -15,5 +16,11 @@ class ZtfRandomForestParser(PredictorParser):
         dto = create_input_dto(to_parse, feature_list=kwargs["feature_list"])
         return PredictorInput(dto.features)
 
-    def parse_output(self, to_parse: dict) -> PredictorOutput:
+    def parse_output(self, to_parse: Union[dict, OutputDTO]) -> PredictorOutput:
+        if isinstance(to_parse, OutputDTO):
+            to_parse = {
+                "probabilities": to_parse.probabilities,
+                "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
+            }
+
         return PredictorOutput(to_parse)
