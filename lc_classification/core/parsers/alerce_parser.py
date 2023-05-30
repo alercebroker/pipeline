@@ -24,7 +24,10 @@ class AlerceParser(KafkaParser):
         for _, row in messages_df.iterrows():
             aid = row.aid
             candid = row.candid
-            features_aid = features.loc[aid].to_dict()
+            try:
+                features_aid = features.loc[aid].to_dict()
+            except KeyError:
+                continue
 
             tree_aid = self._get_aid_tree(model_output.classifications, aid)
             write = {
