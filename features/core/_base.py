@@ -45,7 +45,7 @@ class BaseFeatureExtractor(abc.ABC):
         BANDS: Bands to include in feature calculation. Empty tuple (default) means use all
         BANDS_MAPPING: Conversion of bands to values used in features. Mostly for compatibility with old classifiers
         EXTRA_COLUMNS: Additional fields used for detections. Default empty
-        XMATCH_COLUMNS: Fields needed from cross-match (if included). Default empty
+        XMATCH_COLUMNS: Mapping from cross-match catalogue to columns required in that catalogue. Default empty
         CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
         FLUX: Flag to indicate that "magnitude" fields are actually flux (field names do not change). Default `False`
         COMPUTE_KIM: Compute parameters from phase-folded light-curve. Default `True`
