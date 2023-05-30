@@ -11,10 +11,13 @@ class ZtfRandomForestPredictor(Predictor):
         self.model.load_model(self.model.MODEL_PICKLE_PATH)
 
     def _predict(self, model_input: PredictorInput[DataFrame]):
-        return self.model.predict_in_pipeline(model_input.value)
+        model_result = self.model.predict_in_pipeline(model_input.value)
+        return model_result
 
     def can_predict(self, model_input: PredictorInput[DataFrame]):
-        return "features" in model_input.value
+        copy = model_input.value.copy()
+        copy = copy.drop("candid", axis="columns")
+        return copy.any().any()
 
     def get_feature_list(self):
         return self.model.feature_list
