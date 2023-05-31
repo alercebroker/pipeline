@@ -69,6 +69,7 @@ def test_step():
     scribe_calls = step.scribe_producer.mock_calls
 
     # Tests scribe produces correct commands
+    assert len(scribe_calls) > 0
     for call in scribe_calls:
         message = loads(call.args[0]["payload"])
         assert_command_is_correct(message)
