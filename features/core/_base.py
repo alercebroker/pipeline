@@ -2,7 +2,6 @@ import abc
 import logging
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -46,7 +45,7 @@ class BaseFeatureExtractor(abc.ABC):
         BANDS: Bands to include in feature calculation. Empty tuple (default) means use all
         BANDS_MAPPING: Conversion of bands to values used in features. Mostly for compatibility with old classifiers
         EXTRA_COLUMNS: Additional fields used for detections. Default empty
-        XMATCH_COLUMNS: Fields needed from cross-match (if included). Default empty
+        XMATCH_COLUMNS: Mapping from cross-match catalogue to columns required in that catalogue. Default empty
         CORRECTED: Use corrected magnitudes if first detection of object is corrected. Default `False`
         FLUX: Flag to indicate that "magnitude" fields are actually flux (field names do not change). Default `False`
         COMPUTE_KIM: Compute parameters from phase-folded light-curve. Default `True`
@@ -67,7 +66,7 @@ class BaseFeatureExtractor(abc.ABC):
     BANDS: tuple[str, ...] = ()
     BANDS_MAPPING: dict[str, Any] = {}
     EXTRA_COLUMNS: list[str] = []
-    XMATCH_COLUMNS: list[str] = []
+    XMATCH_COLUMNS: dict[str, list] = {}
     CORRECTED: bool = False
     FLUX: bool = False
     COMPUTE_KIM: bool = True
@@ -150,7 +149,7 @@ class BaseFeatureExtractor(abc.ABC):
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
-        self.xmatches = self._create_xmatches(xmatches)
+        self.xmatches = self._create_xmatches(xmatches or [])  # If None, use empty list
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
         self.logger.info("Finished initialization")
@@ -164,18 +163,16 @@ class BaseFeatureExtractor(abc.ABC):
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
-        xmatches = (
-            pd.DataFrame(xmatches)
-            if xmatches
-            else pd.DataFrame(columns=["aid"] + self.XMATCH_COLUMNS)
-        )
-        xmatches = xmatches.rename(columns={"aid": "id"})
-        xmatches = xmatches.drop_duplicates(subset=["id"])
-        xmatches = xmatches[xmatches["id"].isin(self.detections.ids())]
-        for c in self.XMATCH_COLUMNS:
-            if c not in xmatches:
-                xmatches[c] = np.nan
-        return xmatches.set_index("id")[self.XMATCH_COLUMNS]
+        def expand_catalogues(xm):
+            return {k: v for cat in self.XMATCH_COLUMNS for k, v in xm.get(cat, {}).items()}
+
+        def get_required_columns():
+            return [col for cols in self.XMATCH_COLUMNS.values() for col in cols]
+
+        xmatches = [{"aid": xm["aid"]} | expand_catalogues(xm) for xm in xmatches]
+        xmatches = pd.DataFrame(xmatches, columns=["aid"] + get_required_columns())
+        xmatches = xmatches.rename(columns={"aid": "id"}).drop_duplicates(subset=["id"])
+        return xmatches[xmatches["id"].isin(self.detections.ids())].set_index("id")
 
     def clear_caches(self):
         """Clears the cache from detections and non-detections."""
