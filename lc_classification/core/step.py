@@ -74,7 +74,9 @@ class LateClassifier(GenericStep):
         predictor_output = self.predictor_parser.parse_output(probabilities)
         return {
             "public_info": (predictor_output, messages, predictor_input.value),
-            "db_results": self.scribe_parser.parse(predictor_output),
+            "db_results": self.scribe_parser.parse(
+                predictor_output, classifier_version=self.config["MODEL_VERSION"]
+            ),
         }
 
     def post_execute(self, result: dict):

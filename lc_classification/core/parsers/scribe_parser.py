@@ -6,7 +6,7 @@ from lc_classification.predictors.predictor.predictor_parser import PredictorOut
 
 
 class ScribeParser(KafkaParser):
-    def parse(self, to_parse: PredictorOutput) -> KafkaOutput[List[dict]]:
+    def parse(self, to_parse: PredictorOutput, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
         Parameters
         ----------
@@ -83,7 +83,7 @@ class ScribeParser(KafkaParser):
                     "classifier_name": classifications_by_classifier.iloc[0][
                         "classifier_name"
                     ],
-                    "classifier_version": "TODO: CHANGE",
+                    "classifier_version": kwargs["classifier_version"],
                 },
                 "options": {"upsert": True, "set_on_insert": False},
             }
