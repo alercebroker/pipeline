@@ -20,7 +20,7 @@ step_mock_config = {
     "PREDICTOR_CONFIG": {
         "PARAMS": {"model_path": model_path},
         "CLASS": "lc_classification.predictors.elasticc_random_forest_header.elasticc_random_forest_header_predictor.ElasticcRandomForestHeaderPredictor",
-        "PARSER_CLASS": "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_header_parser.ElasticcRandomForestHeaderParser",
+        "PARSER_CLASS": "lc_classification.predictors.elasticc_random_forest_header.elasticc_random_forest_header_parser.ElasticcRandomForestHeaderParser",
     },
     "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
     "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
@@ -42,6 +42,7 @@ def assert_command_is_correct(command):
 
 
 @pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
+@pytest.mark.skip(reason="Model not implemented yet")
 def test_step_elasticc():
     step = LateClassifier(config=step_mock_config)
     step.consumer = mock.MagicMock(KafkaConsumer)

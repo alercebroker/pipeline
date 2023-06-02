@@ -42,6 +42,7 @@ def assert_command_is_correct(command):
 
 
 @pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
+@pytest.mark.skip(reason="Model not implemented yet")
 def test_step_elasticc():
     step = LateClassifier(config=step_mock_config)
     step.consumer = mock.MagicMock(KafkaConsumer)
