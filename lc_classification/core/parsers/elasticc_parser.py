@@ -38,6 +38,25 @@ class ElasticcParser(KafkaParser):
     }
 
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
+        # create a hashmap that contains the new info (candid, oid and timestamps)
+        detection_extra_info = {}
+
+        messages = kwargs["messages"]
+        for message in messages:
+            new_detection = [
+                det for det in message["detections"] if det["new"] and det["has_stamp"]
+            ]
+
+            if len(new_detection) == 0:
+                continue
+
+            new_detection = new_detection[0]
+
+            detection_extra_info[new_detection["aid"]] = {
+                "candid": new_detection["candid"],
+                "oid": new_detection["oid"]
+            }
+
         predictions = model_output.classifications["probabilities"]
         classifier_name = kwargs["classifier_name"]
         classifier_version = kwargs["classifier_version"]
@@ -45,6 +64,9 @@ class ElasticcParser(KafkaParser):
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = predictions.to_dict(orient="records")
+        print(predictions.index.values)
+        print(classifications)
+        print(list(map(lambda x: (x["aid"]), messages)))
         output = []
         for classification in classifications:
             output_classification = [

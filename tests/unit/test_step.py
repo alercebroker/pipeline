@@ -18,6 +18,7 @@ step_mock_config = {
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
     "PREDICTOR_CONFIG": {"PARAMS": {}},
+    "NUM_MESSAGES": 5
 }
 
 messages_ztf = utils.generate_many(INPUT_ZTF, 10)

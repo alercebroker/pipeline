@@ -34,7 +34,7 @@ class Predictor(abc.ABC):
         return OutputDTO(DataFrame())
 
     def can_predict(self, model_input: PredictorInput[InputDTO]):
-        return "features" in model_input.value.features
+        return model_input.value.features.any().any()
 
     def get_feature_list(self):
         return []
