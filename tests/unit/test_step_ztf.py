@@ -1,4 +1,6 @@
 from unittest import mock
+
+from pandas import DataFrame
 from lc_classification.core.step import (
     LateClassifier,
 )
@@ -17,7 +19,7 @@ step_mock_config = {
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
     "PREDICTOR_CONFIG": {
-        "PARAMS": {},
+        "PARAMS": {"model": mock.MagicMock()},
         "CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor",
         "PARSER_CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser",
     },
@@ -25,7 +27,7 @@ step_mock_config = {
     "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
 }
 
-messages_ztf = utils.generate_many(INPUT_ZTF, 10)
+messages_ztf = list(utils.generate_many(INPUT_ZTF, 10))
 
 
 def assert_object_is_correct(obj):
@@ -50,7 +52,29 @@ def test_step():
     step.consumer.consume.return_value = messages_ztf
     step.producer = mock.MagicMock(KafkaProducer)
     step.scribe_producer = mock.create_autospec(KafkaProducer)
-
+    aids = [
+        message["aid"] for message in messages_ztf if message["features"] is not None
+    ]
+    print(aids)
+    step.predictor.model.predict_in_pipeline.return_value = {
+        "hierarchical": {
+            "top": DataFrame(
+                {"aid": aids, "CLASS": [1] * len(aids), "CLASS2": [0] * len(aids)}
+            ),
+            "children": {
+                "Transient": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                "Stochastic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                "Periodic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+            },
+        },
+        "probabilities": DataFrame(
+            {
+                "aid": aids,
+                "CLASS": [1] * len(aids),
+                "CLASS2": [0] * len(aids),
+            }
+        ),
+    }
     step.start()
     scribe_calls = step.scribe_producer.mock_calls
 
