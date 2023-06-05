@@ -80,7 +80,7 @@ def env_variables_ztf():
         "METRICS_HOST": "localhost:9092",
         "METRICS_TOPIC": "metrics",
         "SCRIBE_TOPIC": "w_object",
-        "CONSUME_MESSAGES": "1",
+        "CONSUME_MESSAGES": "5",
         "ENABLE_PARTITION_EOF": "True",
     }
     for key, value in env_variables_dict.items():
@@ -105,7 +105,7 @@ def env_variables_elasticc():
         "METRICS_HOST": "localhost:9092",
         "METRICS_TOPIC": "metrics",
         "SCRIBE_TOPIC": "w_object",
-        "CONSUME_MESSAGES": "1",
+        "CONSUME_MESSAGES": "5",
         "ENABLE_PARTITION_EOF": "True",
     }
     for key, value in env_variables_dict.items():

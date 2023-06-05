@@ -10,6 +10,10 @@ from fastavro import utils
 import pytest
 import os
 
+from tests.test_commons import (
+    assert_object_is_correct,
+    assert_command_is_correct,
+)
 
 step_mock_config = {
     "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
@@ -26,21 +30,6 @@ step_mock_config = {
 }
 
 messages_ztf = utils.generate_many(INPUT_ZTF, 10)
-
-
-def assert_object_is_correct(obj):
-    assert "aid" in obj
-    assert "features" in obj
-    assert "lc_classification" in obj
-    assert len(obj["lc_classification"]["probabilities"]) > 0
-
-
-def assert_command_is_correct(command):
-    assert command["collection"] == "object"
-    assert command["type"] == "update_probabilities"
-    assert command["criteria"]["_id"] is not None
-    assert "aid" not in command["data"]
-    assert not command["options"]["set_on_insert"]
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
