@@ -10,6 +10,10 @@ from fastavro import utils
 import pytest
 import os
 
+from tests.test_commons import (
+    assert_elasticc_object_is_correct,
+    assert_command_is_correct,
+)
 
 model_path = "TODO"
 step_mock_config = {
@@ -27,18 +31,6 @@ step_mock_config = {
 }
 
 messages_elasticc = utils.generate_many(INPUT_ELASTICC, 10)
-
-
-def assert_elasticc_object_is_correct(obj):
-    assert False
-
-
-def assert_command_is_correct(command):
-    assert command["collection"] == "object"
-    assert command["type"] == "update_probabilities"
-    assert command["criteria"]["_id"] is not None
-    assert "aid" not in command["data"]
-    assert not command["options"]["set_on_insert"]
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")

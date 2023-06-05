@@ -3,7 +3,7 @@ FROM python:3.8
 ARG GH_TOKEN={GH_TOKEN}
 
 COPY requirements.txt /app/requirements.txt
-COPY requirements_elasticc.txt /app/requirements_toretto.txt
+COPY requirements_toretto.txt /app/requirements_toretto.txt
 
 RUN pip install -r /app/requirements_toretto.txt
 
