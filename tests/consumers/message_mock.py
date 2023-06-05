@@ -19,3 +19,7 @@ class MessageMock:
 class MessageJsonMock(MessageMock):
     def value(self):
         return '{"a": "hi", "b": "bye"}'
+
+class SchemalessMessageMock(MessageMock):
+    def value(self):
+        return ""

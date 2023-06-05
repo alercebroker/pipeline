@@ -268,3 +268,21 @@ class KafkaJsonConsumer(KafkaConsumer):
         msg_value = message.value()
         data = json.loads(msg_value)
         return data
+
+
+class KafkaSchemalessConsumer(KafkaConsumer):
+
+    def __init__(self, config: dict):
+
+        schema_path = config.get("SCHEMA_PATH")
+        if schema_path:
+            self.schema = fastavro.schema.load_schema(schema_path)
+        else:
+            raise Exception("No Schema path provided")
+
+        super().__init__(config)
+
+    def _deserialize_message(self, message):
+        bytes_io = io.BytesIO(message.value())
+        data = fastavro.schemaless_reader(bytes_io, self.schema)
+        return data
