@@ -21,8 +21,8 @@ class Predictor(abc.ABC):
     By default, predict will return an empty list if no classification was made.
     """
 
-    def __init__(self, model=None, **kwargs):
-        self.model = model
+    def __init__(self, **kwargs):
+        self.model = kwargs.get("model", None)
 
     @abc.abstractmethod
     def _predict(self, model_input: PredictorInput):
@@ -34,7 +34,7 @@ class Predictor(abc.ABC):
         return OutputDTO(DataFrame())
 
     def can_predict(self, model_input: PredictorInput[InputDTO]):
-        return "features" in model_input.value.features
+        return model_input.value.features.any().any()
 
     def get_feature_list(self):
         return []
