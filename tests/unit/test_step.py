@@ -33,7 +33,21 @@ def assert_object_is_correct(obj):
 
 
 def assert_elasticc_object_is_correct(obj):
-    assert "classifications" in obj
+    valid_fields = [
+        "alertId",
+        "diaSourceId",
+        "elasticcPublishTimestamp",
+        "brokerIngestTimestamp",
+        "classifications",
+        "brokerVersion",
+        "classifierName",
+        "classifierParams",
+        "brokerPublishTimestamp",
+        "brokerName",
+    ]
+    for field in valid_fields:
+        assert field in obj
+        
     assert isinstance(obj["classifications"], list)
     assert len(obj["classifications"]) > 0
 

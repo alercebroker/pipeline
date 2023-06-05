@@ -51,13 +51,12 @@ class ElasticcParser(KafkaParser):
                 continue
 
             new_detection = new_detection[0]
-            print("aid: " + new_detection["aid"])
 
             detection_extra_info[new_detection["aid"]] = {
                 "candid": new_detection["candid"],
                 "oid": new_detection["oid"]
             }
-
+        print(detection_extra_info)
         predictions = model_output.classifications["probabilities"]
         predictions["aid"] = predictions.index
         classifier_name = kwargs["classifier_name"]
@@ -66,7 +65,6 @@ class ElasticcParser(KafkaParser):
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = predictions.to_dict(orient="records")
-        print(classifications)
         output = []
         for classification in classifications:
             aid = classification.pop("aid")
