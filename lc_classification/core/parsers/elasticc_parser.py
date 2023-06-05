@@ -54,9 +54,8 @@ class ElasticcParser(KafkaParser):
 
             detection_extra_info[new_detection["aid"]] = {
                 "candid": new_detection["candid"],
-                "oid": new_detection["oid"]
+                "oid": new_detection["oid"],
             }
-        print(detection_extra_info)
         predictions = model_output.classifications["probabilities"]
         predictions["aid"] = predictions.index
         classifier_name = kwargs["classifier_name"]
@@ -82,8 +81,8 @@ class ElasticcParser(KafkaParser):
             response = {
                 "alertId": int(detection_extra_info[aid]["candid"]),
                 "diaSourceId": int(detection_extra_info[aid]["oid"]),
-                "elasticcPublishTimestamp": 0, # TODO: get this from extraFields
-                "brokerIngestTimestamp": None, # TODO: get this from extraFields
+                "elasticcPublishTimestamp": 0,  # TODO: get this from extraFields
+                "brokerIngestTimestamp": None,  # TODO: get this from extraFields
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
