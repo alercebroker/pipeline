@@ -51,6 +51,7 @@ class ElasticcParser(KafkaParser):
                 continue
 
             new_detection = new_detection[0]
+            print("aid: " + new_detection["aid"])
 
             detection_extra_info[new_detection["aid"]] = {
                 "candid": new_detection["candid"],
@@ -58,17 +59,21 @@ class ElasticcParser(KafkaParser):
             }
 
         predictions = model_output.classifications["probabilities"]
+        predictions["aid"] = predictions.index
         classifier_name = kwargs["classifier_name"]
         classifier_version = kwargs["classifier_version"]
         for class_name in self._class_mapper.keys():
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = predictions.to_dict(orient="records")
-        print(predictions.index.values)
         print(classifications)
-        print(list(map(lambda x: (x["aid"]), messages)))
         output = []
         for classification in classifications:
+            aid = classification.pop("aid")
+
+            if aid not in detection_extra_info:
+                continue
+
             output_classification = [
                 {
                     "classId": self._class_mapper[predicted_class],
@@ -77,6 +82,8 @@ class ElasticcParser(KafkaParser):
                 for predicted_class, prob in classification.items()
             ]
             response = {
+                "alertId": int(detection_extra_info[aid]["candid"]),
+                "diaSourceId": int(detection_extra_info[aid]["oid"]),
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
