@@ -3,6 +3,8 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
 jobs:
   lint:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
