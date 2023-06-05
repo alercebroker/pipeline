@@ -19,7 +19,7 @@ def assert_command_is_correct(command):
     assert not command["options"]["set_on_insert"]
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
+@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
