@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  get_tags_elasticc:
+  get_tags_elasticc_rf_features:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.prep.outputs.tags }}
@@ -15,7 +15,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=ghcr.io/alercebroker/lc_classifier_step_elasticc
+          DOCKER_IMAGE=ghcr.io/alercebroker/elasticc_rf_features
           SHA=$(git rev-parse --short HEAD)
           VERSION=rc-$SHA
           if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -26,8 +26,8 @@ jobs:
             TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
           fi
           echo ::set-output name=tags::${TAGS}
-  push_image_elasticc:
-    needs: get_tags_elasticc
+  push_image_elasticc_rf_features:
+    needs: get_tags_elasticc_rf_features
     uses: ./.github/workflows/build.yml
     with:
       tags: ${{ needs.get_tags_elasticc.outputs.tags }}
