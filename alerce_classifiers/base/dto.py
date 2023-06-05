@@ -33,4 +33,12 @@ class InputDTO:
 
 @dataclass
 class OutputDTO:
+    """
+    Parameters
+    ----------
+    probabilities: DataFrame
+    aid     SN      AGN     Other
+    aid1    0.5     0.4     0.1
+    """
+
     probabilities: pd.DataFrame
