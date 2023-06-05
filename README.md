@@ -1,14 +1,40 @@
 # LC Classifier
 
 ## Description
+- Classification with Lightcurve Features
+- There are 4 models that can be run in this step
+  * ZTF [`Hierarchical Random Forest`](https://github.com/alercebroker/late_classifier/blob/4a37f6ee6a6ce6726fca4976b5206cffda8128b5/late_classifier/classifier/models.py#L117)
+  * Toretto: The ELASTICC Hierarchical Random Forest that uses only lightcurve features
+  * Barney: The ELASTICC Hierarchical Random Forest that uses header data
+  * Balto: The ELASTICC Transformer that only uses Lightcurve metadata
+  * Messi: The ELASTICC Transformer that uses Lightcurve metadata and features
 
-- Classification with [`Hierarchical RF`](https://github.com/alercebroker/late_classifier/blob/4a37f6ee6a6ce6726fca4976b5206cffda8128b5/late_classifier/classifier/models.py#L117) model.
-- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). - Version 1.0.1 of model from Light Curve Classification Paper.
-- Do inference of features of light curve and store result. 
-- If lack of some feature, it isn't classified.
+### Setup for ZTF Random Forest
+- Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). 
+- Version 1.0.1 of model from Light Curve Classification Paper.
+
+### Setup for Toretto
+- Download model from [S3 Bucket](https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/)
+- Current version is 2.0.1
+
+The following step configuration will be needed:
+
+``` python
+PREDICTOR_CONFIG = {
+    "CLASS": lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor,
+    "PARAMS": {"model_path": "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"},
+    "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+}
+```
+
+### Setup for Balto
+TODO
+### Setup for Messi
+TODO
+### Setup for Barney
+TODO
 
 #### Previous steps:
-
 - [LC Features](https://github.com/alercebroker/feature_step)
 
 ## Database interactions
@@ -32,10 +58,6 @@ command = {
     "options": {"upsert": True, "set_on_insert": False},
 }
 ```
-
-## Previous conditions
-
-- Fields of required features.
 
 ## Environment variables
 
