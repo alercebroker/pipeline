@@ -1,5 +1,5 @@
 from .test_core import GenericProducerTest
-from apf.producers import KafkaProducer
+from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from unittest import mock
 import datetime
 
@@ -75,3 +75,46 @@ class KafkaProducerTest(GenericProducerTest):
         self.component.produce({"key": "value", "int": 1})
         self.assertEqual(len(self.component.topic), 2)
         self.assertEqual(self.component.topic, topic_before)
+
+class TestKafkaSchemalessProducer(GenericProducerTest):
+    
+    def test_serialize_message(sefl):
+        params = {
+            "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
+            "TOPIC": "test_topic",
+            "SCHEMA": {
+                "namespace": "test.avro",
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "key", "type": "string"},
+                    {"name": "int", "type": "int"},
+                ],
+            },
+        }
+
+        producer = KafkaSchemalessProducer(params)
+
+        out_avro = producer._serialize_message({})
+
+        # assert que out_avro sea igual a algo
+
+    def test_serialize_bad_message(self):
+        params = {
+            "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
+            "TOPIC": "test_topic",
+            "SCHEMA": {
+                "namespace": "test.avro",
+                "type": "record",
+                "name": "test",
+                "fields": [ 
+                    {"name": "key", "type": "string"},
+                    {"name": "int", "type": "int"},
+                ],
+            },
+        }
+
+        producer = KafkaSchemalessProducer(params)
+
+        with self.assertRaises(Exception):
+            producer._serialize_message({"no_key": "bad_message"})
