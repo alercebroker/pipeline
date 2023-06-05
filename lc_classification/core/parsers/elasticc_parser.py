@@ -35,10 +35,16 @@ class ElasticcParser(KafkaParser):
         "ILOT": 133,
         "CART": 134,
         "PISN": 135,
+        "no_class": 0,
     }
 
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
         predictions = model_output.classifications["probabilities"]
+        messages = kwargs.get("messages", pd.DataFrame())
+        messages = pd.DataFrame().from_records(messages)
+        predictions = NoClassifiedPostProcessor(
+            messages, predictions
+        ).get_modified_classifications()
         classifier_name = kwargs["classifier_name"]
         classifier_version = kwargs["classifier_version"]
         for class_name in self._class_mapper.keys():
