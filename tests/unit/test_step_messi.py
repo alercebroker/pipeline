@@ -19,8 +19,8 @@ step_mock_config = {
     "MODEL_VERSION": "test",
     "PREDICTOR_CONFIG": {
         "PARAMS": {"model_path": model_path},
-        "CLASS": "lc_classification.predictors.elasticc_transformer_features.elasticc_transformer_features_predictor.ElasticcTransformerFeaturesPredictor",
-        "PARSER_CLASS": "lc_classification.predictors.elasticc_transformer.elasticc_transformer_features_parser.ElasticcTransformerFeaturesParser",
+        "CLASS": "lc_classification.predictors.messi.messi_predictor.MessiPredictor",
+        "PARSER_CLASS": "lc_classification.predictors.elasticc_transformer.messi_parser.MessiParser",
     },
     "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
     "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
@@ -41,7 +41,7 @@ def assert_command_is_correct(command):
     assert not command["options"]["set_on_insert"]
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
+@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 @pytest.mark.skip(reason="Model not implemented yet")
 def test_step_elasticc():
     step = LateClassifier(config=step_mock_config)
