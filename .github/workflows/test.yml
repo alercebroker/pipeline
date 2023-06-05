@@ -15,7 +15,7 @@ jobs:
     with:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
-      test-command: MODEL=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+      test-command: STREAM=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   integration-ztf:
@@ -24,7 +24,7 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
       test-dependencies: pytest pytest-docker
-      test-command: MODEL=ztf python -m pytest -x tests/integration
+      test-command: STREAM=ztf python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
@@ -33,7 +33,7 @@ jobs:
     with:
       python-version: '3.8'
       requirements-file: 'requirements_elasticc.txt'
-      test-command: MODEL=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+      test-command: STREAM=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   integration-elasticc:
@@ -42,7 +42,7 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_elasticc.txt'
       test-dependencies: pytest pytest-docker
-      test-command: MODEL=elasticc python -m pytest -x tests/integration
+      test-command: STREAM=elasticc python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
