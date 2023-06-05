@@ -3,7 +3,6 @@ from ..utils.no_class_post_processor import (
 )
 from .kafka_parser import KafkaOutput, KafkaParser
 from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
-import numpy as np
 import pandas as pd
 import datetime
 
