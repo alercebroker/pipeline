@@ -25,9 +25,9 @@ command = {
     "data": {
         "classifier_name": name,
         "classifier_version": version,
-        "class_name": class,
-        "probability": probability,
-        "ranking": ranking
+        "CLASS_NAME_1": probability1,
+        "CLASS_NAME_2": probability2,
+        ...
     },
     "options": {"upsert": True, "set_on_insert": False},
 }
@@ -39,28 +39,40 @@ command = {
 
 ## Environment variables
 
+- `STREAM`: Name of the stream to be consumed in lower caps. e.g: `ztf` or `elasticc`
+
+    This will set the output schema of the step.
+    This variable will be used for tests.
+
 ### Consumer setup
 
 - `CONSUMER_TOPICS`: Some topics. String separated by commas. e.g: `topic_one` or `topic_two,topic_three`
 - `CONSUMER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 - `CONSUMER_GROUP_ID`: Name for consumer group. e.g: `correction`
 - `CONSUMER_CLASS`: Class of the consumer object. e.g: `apf.consumers.KafkaConsumer`
-
+- `CONSUMER_KAFKA_USERNAME`: authentication for the consumer
+- `CONSUMER_KAFKA_PASSWORD`: authentication for the consumer
 ### Producer setup
 
 - `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
 - `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
 - `PRODUCER_CLASS`: Class of the producer object. e.g: `apf.producers.KafkaProducer`
+- `PRODUCER_KAFKA_USERNAME`: authentication for the consumer
+- `PRODUCER_KAFKA_PASSWORD`: authentication for the consumer
 
 ### Metrics setup
 
 - `METRICS_HOST`: Kafka host for storing metrics
 - `METRICS_TOPIC`: Name of the topic to store metrics
+- `METRICS_KAFKA_USERNAME`: authentication for the consumer
+- `METRICS_KAFKA_PASSWORD`: authentication for the consumer
 
 ### Scribe setup
 
 - `SCRIBE_TOPIC`: Name of output topic. Now just uses `w_object`.
 - `SCRIBE_SERVER`: Kafka host with port. e.g: `localhost:9092`
+- `SCRIBE_KAFKA_USERNAME`: authentication for the consumer
+- `SCRIBE_KAFKA_PASSWORD`: authentication for the consumer
 
 ## Stream
 
@@ -68,7 +80,7 @@ command = {
 
 - Output stream of [`Feature Step`](https://github.com/alercebroker/feature_step#output-schema).
 
-### Output schema
+### Output schema for ALeRCE
 
 ```python
 {
@@ -123,7 +135,10 @@ command = {
 }
 ```
 
-#### FEATURES_SCHEMA
+### Output schema for ELASTICC
+TODO
+
+#### FEATURES_SCHEMA for ZTF
 ```json
 {
   "name": "features",
@@ -344,6 +359,7 @@ command = {
 }
 ```
 
+
 ## Build docker image
 
 For use this step, first you must build the image of docker. After that you can run the step for use it.
@@ -370,20 +386,14 @@ Also you can edit the environment variables in [`docker-compose.yml`](https://gi
 docker-compose up -d
 ```
 
-If you want scale this container, you must set a number of containers to run.
-
-```bash
-docker-compose up -d --scale late_classification=32
-```
-
-**Note:** Use `docker-compose down` for stop all containers.
+**Note:** Use `docker-compose down` to stop all containers.
 
 ### Run the released image
 
 For each release an image is uploaded to ghcr.io that you can use instead of building your own. To do that replace `docker-compose.yml` or the `docker run` command with this image:
 
 ```bash
-docker pull ghcr.io/alercebroker/late_classification_step:latest
+docker pull ghcr.io/alercebroker/image_name:latest
 ```
 
 ## Local Installation
@@ -393,11 +403,33 @@ docker pull ghcr.io/alercebroker/late_classification_step:latest
 To install the required packages run
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_ztf.txt
 ```
 
-After that you can modify the logic of the step in [step.py](https://github.com/alercebroker/late_classification_step/blob/main/late_classification/step.py) and run
+or
 
 ```bash
-python scripts/run_step.py
+pip install -r requirements_elasticc.txt
 ```
+
+### Tests
+To run tests install 
+
+```bash
+pip install pytest pytest-docker
+```
+
+Then run the command for some test
+    
+```bash
+python -m pytest tests/unit
+```
+
+or
+
+```bash
+python -m pytest tests/integration
+```
+
+**NOTE:** Remember to set the STREAM env variable
+- `STREAM`: Name of the stream to be consumed in lower caps. e.g: `ztf` or `elasticc`
