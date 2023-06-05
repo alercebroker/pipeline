@@ -44,7 +44,6 @@ def test_step():
     aids = [
         message["aid"] for message in messages_ztf if message["features"] is not None
     ]
-    print(aids)
     step.predictor.model.predict_in_pipeline.return_value = {
         "hierarchical": {
             "top": DataFrame(
