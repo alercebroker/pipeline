@@ -23,8 +23,8 @@ step_mock_config = {
     "MODEL_VERSION": "test",
     "PREDICTOR_CONFIG": {
         "PARAMS": {"model_path": model_path},
-        "CLASS": "lc_classification.predictors.elasticc_random_forest_header.elasticc_random_forest_header_predictor.ElasticcRandomForestHeaderPredictor",
-        "PARSER_CLASS": "lc_classification.predictors.elasticc_random_forest_header.elasticc_random_forest_header_parser.ElasticcRandomForestHeaderParser",
+        "CLASS": "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
+        "PARSER_CLASS": "lc_classification.predictors.balto.balto_parser.BaltoParser",
     },
     "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
     "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
@@ -33,7 +33,7 @@ step_mock_config = {
 messages_elasticc = utils.generate_many(INPUT_ELASTICC, 10)
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "elasticc", reason="elasticc only")
+@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 @pytest.mark.skip(reason="Model not implemented yet")
 def test_step_elasticc():
     step = LateClassifier(config=step_mock_config)

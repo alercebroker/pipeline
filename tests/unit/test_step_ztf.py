@@ -32,7 +32,7 @@ step_mock_config = {
 messages_ztf = utils.generate_many(INPUT_ZTF, 10)
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "ztf", reason="ztf only")
+@pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
 def test_step():
     step = LateClassifier(config=step_mock_config)
     step.consumer = mock.MagicMock(KafkaConsumer)
@@ -57,7 +57,7 @@ def test_step():
         assert_object_is_correct(obj)
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "ztf", reason="ztf only")
+@pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
 def test_step_empty_features():
     step = LateClassifier(config=step_mock_config)
     step.consumer = mock.MagicMock(KafkaConsumer)

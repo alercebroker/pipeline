@@ -8,7 +8,7 @@ from lc_classification.predictors.predictor.predictor_parser import (
 )
 
 
-class ElasticcRandomForestParser(PredictorParser):
+class TorettoParser(PredictorParser):
     def parse_input(self, to_parse, **kwargs) -> PredictorInput[InputDTO]:
         dto = create_input_dto(to_parse, **kwargs)
         return PredictorInput(dto)

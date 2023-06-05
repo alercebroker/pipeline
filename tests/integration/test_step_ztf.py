@@ -7,7 +7,7 @@ import os
 from tests.test_commons import assert_command_is_correct, assert_object_is_correct
 
 
-@pytest.mark.skipif(os.getenv("MODEL") != "ztf", reason="ztf only")
+@pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
 def test_step_ztf_result(
     kafka_service,
     env_variables_ztf,

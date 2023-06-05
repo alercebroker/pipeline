@@ -7,7 +7,7 @@ from lc_classification.predictors.predictor.predictor_parser import PredictorInp
 from ..predictor.predictor import Predictor
 
 
-class ElasticcRandomForestPredictor(Predictor):
+class TorettoPredictor(Predictor):
     def __init__(self, model=None, **kwargs):
         model_path = str(kwargs["model_path"])
         self.model = model or RandomForestFeaturesClassifier(model_path)
