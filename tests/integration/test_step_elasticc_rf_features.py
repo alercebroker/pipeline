@@ -31,11 +31,11 @@ def test_step_elasticc_result(
     model_path = "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
-    ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_predictor.ElasticcRandomForestPredictor"
+    ] = "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor"
     STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "PARSER_CLASS"
-    ] = "lc_classification.predictors.elasticc_random_forest.elasticc_random_forest_parser.ElasticcRandomForestParser"
+    ] = "lc_classification.predictors.toretto.toretto_parser.TorettoParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
     ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"
