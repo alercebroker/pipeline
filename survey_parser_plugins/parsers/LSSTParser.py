@@ -47,6 +47,8 @@ class LSSTParser(SurveyParser):
         candidate = message["diaSource"].copy()
         # include all top fields
         candidate.update({k: v for k, v in message.items() if k != "diaSource"})
+        # so it can turn itself into a pickle
+        candidate["diaObject"] = [candidate["diaObject"]]
         return super(LSSTParser, cls).parse_message(candidate)
 
     @classmethod
