@@ -3,8 +3,9 @@ from apf.consumers.kafka import KafkaJsonConsumer, KafkaConsumer, KafkaSchemales
 import unittest
 from unittest import mock
 from confluent_kafka import KafkaException
-from .message_mock import MessageMock, MessageJsonMock, SchemalessMessageMock
+from .message_mock import MessageMock, MessageJsonMock, SchemalessMessageMock, SchemalessBadMessageMock
 import datetime
+import os
 
 
 def consume(num_messages=1):
@@ -157,13 +158,14 @@ class TestKafkaJsonConsumer(unittest.TestCase):
     def test_deserialize(self):
         msg = MessageJsonMock()
         consumer = self.component(self.params)
-
-        consumer._deserialize_message(msg)
+SchemalessMessageMock
 
 
 class TestKafkaSchemalessConsumer(unittest.TestCase):
-    SCHEMALESS_CONSUMER_SCHEMA_PATH = "" # el path relativo al archivo donde vamos a guardar el schema
-    SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH = "" # el path relativo al archivo donde vamos a guardar el schema
+
+    FILE_PATH = os.path.dirname(__file__)
+    SCHEMALESS_CONSUMER_SCHEMA_PATH = os.path.join(FILE_PATH, "../examples/kafka_schemalessconsumer_schema.avsc")
+    SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH =  os.path.join(FILE_PATH, "../examples/kafka_schemalessconsumer_bad_schema.avsc")
 
     def test_schema_no_path(self):
         params = {
@@ -183,16 +185,14 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
                 "bootstrap.servers": "127.0.0.1:9092",
                 "group.id": "apf_test",
             },
-            "SHEMA_PATH": self.SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH
         }
         with self.assertRaises(Exception):
             KafkaSchemalessConsumer(params)
 
     def test_schemaless_deserialize(self):
-        pass
-        # pendientes: crear el avro schemaless crear el expected dict que sea valido con el avro enviado
         schemaless_avro = SchemalessMessageMock(False)
-        expected_message = {}
+        expected_message = {"key": "llave", "value": 1}
 
         params = {
             "TOPICS": ["apf_test"],
@@ -200,7 +200,7 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
                 "bootstrap.servers": "127.0.0.1:9092",
                 "group.id": "apf_test",
             },
-            "SHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH
         }
 
         consumer = KafkaSchemalessConsumer(params)
@@ -208,3 +208,20 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
         result = consumer._deserialize_message(schemaless_avro)
 
         self.assertDictEqual(result, expected_message)
+
+    def test_schemaless_deserialize_bad_message(self):
+        schemaless_avro = SchemalessBadMessageMock(False)
+
+        params = {
+            "TOPICS": ["apf_test"],
+            "PARAMS": {
+                "bootstrap.servers": "127.0.0.1:9092",
+                "group.id": "apf_test",
+            },
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH
+        }
+
+        consumer = KafkaSchemalessConsumer(params)
+
+        with self.assertRaises(Exception):
+            consumer._deserialize_message(schemaless_avro)

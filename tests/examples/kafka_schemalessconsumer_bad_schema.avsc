@@ -1,0 +1,5 @@
+{
+	"namespace": "test_schemaless_consumer",
+	"type": "record",
+	"doc": "Simple avro schema for testing the consumer"
+}

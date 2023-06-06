@@ -22,4 +22,8 @@ class MessageJsonMock(MessageMock):
 
 class SchemalessMessageMock(MessageMock):
     def value(self):
-        return ""
+        return b'\nllave\x02'
+
+class SchemalessBadMessageMock(MessageMock):
+    def value(self):
+        return b'\nllave\nvalor'
