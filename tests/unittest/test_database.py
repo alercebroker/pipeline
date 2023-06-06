@@ -41,8 +41,10 @@ class DatabaseTestCase(unittest.TestCase):
         self.mock_db.query(Object).collection.find_one.assert_called_with(
             {
                 "loc": {
-                    "$nearSphere": [0, 0],
-                    "$maxDistance": 1,
+                    "$nearSphere": {
+                        "$geometry": {"type": "Point", "coordinates": [0, 0]},
+                        "$maxDistance": 1,
+                    },
                 },
             },
             {"_id": 1},  # only return alerce_id
