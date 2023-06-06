@@ -39,11 +39,16 @@ def conesearch_query(
     found = mongo_query.collection.find_one(
         {
             "loc": {
-                "$nearSphere": [ra - 180, dec],
-                "$maxDistance": math.radians(radius / 3600),
+                "$nearSphere": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [ra - 180, dec],
+                    },
+                    "$maxDistance": math.radians(radius / 3600),
+                },
             },
         },
-        {"_id": 1},  # rename _id to aid
+        {"_id": 1},
     )
     if found:
         return found["_id"]
