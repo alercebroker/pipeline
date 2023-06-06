@@ -161,8 +161,8 @@ class KafkaConsumer(GenericConsumer):
     def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
         reader = fastavro.reader(bytes_io)
-        data = reader.next()
-        return data
+        for data in reader:
+            return data
 
     def _check_topics(self):
         """
@@ -233,8 +233,9 @@ class KafkaConsumer(GenericConsumer):
                     self.logger.exception(f"Error in kafka stream: {message.error()}")
                     continue
                 else:
-                    message = self._deserialize_message(message)
-                    deserialized.append(message)
+                    ds_message = self._deserialize_message(message)
+                    ds_message["timestamp"] = message.timestamp()
+                    deserialized.append(ds_message)
 
             self.messages = messages
             messages = []
