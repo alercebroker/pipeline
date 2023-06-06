@@ -73,9 +73,6 @@ class ElasticcParser(KafkaParser):
         for classification in classifications:
             aid = classification.pop("aid")
 
-            if aid not in detection_extra_info:
-                continue
-
             output_classification = [
                 {
                     "classId": self._class_mapper[predicted_class],

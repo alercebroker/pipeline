@@ -37,7 +37,12 @@ def step_mock_config():
     }
 
 
-messages_elasticc = utils.generate_many(INPUT_ELASTICC, 10)
+messages_elasticc = list(utils.generate_many(INPUT_ELASTICC, 10))
+for message in messages_elasticc:
+    for det in message["detections"]:
+        det["aid"] = message["aid"]
+    message["detections"][0]["new"] = True
+    message["detections"][0]["has_stamp"] = True
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
@@ -65,6 +70,7 @@ def test_step_elasticc():
 
     # Test producer produces correct data
     calls = step.producer.mock_calls
+    assert len(calls) == len(messages_elasticc)
     for call in calls:
         obj = call.args[0]
         assert_elasticc_object_is_correct(obj)
@@ -98,7 +104,7 @@ def test_step_elasticc_without_features():
 
     # Test producer produces correct data
     calls = step.producer.mock_calls
-    assert len(calls) > 0
+    assert len(calls) == len(empty_features)
     for call in calls:
         obj = call.args[0]
         assert_elasticc_object_is_correct(obj)
