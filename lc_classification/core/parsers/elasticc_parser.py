@@ -72,6 +72,8 @@ class ElasticcParser(KafkaParser):
         output = []
         for classification in classifications:
             aid = classification.pop("aid")
+            if "classifier_name" in classification:
+                classification.pop("classifier_name")
 
             output_classification = [
                 {
@@ -89,11 +91,10 @@ class ElasticcParser(KafkaParser):
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
                 "classifierParams": classifier_version,
+                "brokerName": "ALeRCE",
+                "brokerPublishTimestamp": int(
+                    datetime.datetime.now().timestamp() * 1000
+                ),
             }
-
-            response["brokerPublishTimestamp"] = int(
-                datetime.datetime.now().timestamp() * 1000
-            )
-            response["brokerName"] = "ALeRCE"
             output.append(response)
         return KafkaOutput(output)

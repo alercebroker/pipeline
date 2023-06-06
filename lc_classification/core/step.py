@@ -45,7 +45,7 @@ class LateClassifier(GenericStep):
             result[0],
             messages=result[1],
             features=result[2],
-            classifier_name=self.predictor.__class__,
+            classifier_name=self.predictor.__class__.__name__,
             classifier_version=self.config["MODEL_VERSION"],
         ).value
 

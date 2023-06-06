@@ -1,4 +1,7 @@
 from typing import List
+
+from pandas.api.types import is_categorical_dtype
+from pandas.core.dtypes.common import is_all_strings
 from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
 import pandas as pd
 
@@ -18,7 +21,6 @@ class ScribeParser(KafkaParser):
 
                 "hierarchical": {"top": pd.DataFrame "children": dict}
                 "probabilities": pd.DataFrame,
-                "class": pd.DataFrame,
 
         Examples
         --------
@@ -42,8 +44,6 @@ class ScribeParser(KafkaParser):
         'probabilities':                    SLSN      SNII      SNIa     SNIbc  ...         E       LPV  Periodic-Other       RRL
                                     aid                                                 ...
                                     vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
-        'class':    aid
-                    vbKsodtqMI    RRL
         }
         """
         if len(to_parse.classifications["probabilities"]) == 0:
@@ -60,7 +60,12 @@ class ScribeParser(KafkaParser):
             results.append(children[key])
 
         results = pd.concat(results)
-        results.set_index("aid", inplace=True)
+        if not results.index.name == "aid":
+            try:
+                results.set_index("aid", inplace=True)
+            except KeyError as e:
+                if not is_all_strings(results.index.values):
+                    raise e
 
         commands = []
 
@@ -84,7 +89,7 @@ class ScribeParser(KafkaParser):
             return classifications_by_classifier
 
         for aid in results.index.unique():
-            results.loc[aid].groupby("classifier_name", group_keys=False).apply(
+            results.loc[[aid], :].groupby("classifier_name", group_keys=False).apply(
                 get_scribe_messages
             )
 

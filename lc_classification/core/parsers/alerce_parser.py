@@ -38,8 +38,18 @@ class AlerceParser(KafkaParser):
         for key in tree:
             data = tree[key]
             if isinstance(data, pd.DataFrame):
-                data_cpy = data.set_index("aid")
-                tree_aid[key] = data_cpy.loc[aid].to_dict()
+                try:
+                    data_cpy = data.set_index("aid")
+                    tree_aid[key] = data_cpy.loc[aid].to_dict()
+                    if "classifier_name" in tree_aid[key]:
+                        tree_aid[key].pop("classifier_name")
+                except KeyError as e:
+                    if not data.index.name == "aid":
+                        raise e
+                    else:
+                        tree_aid[key] = data.loc[aid].to_dict()
+                        if "classifier_name" in tree_aid[key]:
+                            tree_aid[key].pop("classifier_name")
             elif isinstance(data, pd.Series):
                 tree_aid[key] = data.loc[aid]
             elif isinstance(data, dict):

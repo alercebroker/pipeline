@@ -122,11 +122,15 @@ def produce_messages(topic, SCHEMA):
             "SCHEMA": SCHEMA,
         }
     )
+    random.seed(42)
     messages = generate_many(SCHEMA, 10)
     producer.set_key_field("aid")
-    random.seed(42)
 
     for message in messages:
+        for det in message["detections"]:
+            det["aid"] = message["aid"]
+        message["detections"][0]["new"] = True
+        message["detections"][0]["has_stamp"] = True
         producer.produce(message)
 
 
@@ -141,6 +145,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": [get_lc_classifier_topic()],
+            "TIMEOUT": 0,
         }
     )
     yield consumer
