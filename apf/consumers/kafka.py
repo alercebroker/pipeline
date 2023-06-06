@@ -286,4 +286,5 @@ class KafkaSchemalessConsumer(KafkaConsumer):
     def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
         data = fastavro.schemaless_reader(bytes_io, self.schema)
+
         return data

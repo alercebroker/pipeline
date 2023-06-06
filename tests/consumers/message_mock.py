@@ -32,4 +32,4 @@ class SchemalessMessageMock(MessageMock):
 
 class SchemalessBadMessageMock(MessageMock):
     def value(self):
-        return b'\nllave\nvalor'
+        return b'\nllave'
