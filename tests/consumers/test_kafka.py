@@ -158,7 +158,7 @@ class TestKafkaJsonConsumer(unittest.TestCase):
     def test_deserialize(self):
         msg = MessageJsonMock()
         consumer = self.component(self.params)
-SchemalessMessageMock
+        consumer._deserialize_message(msg)
 
 
 class TestKafkaSchemalessConsumer(unittest.TestCase):
