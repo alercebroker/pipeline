@@ -168,6 +168,21 @@ def _generate_atlas_batch(n: int, nearest: int = 0) -> List[dict]:
     return batch
 
 
+def _generate_elasticc_batch(n: int) -> List[dict]:
+    def gen_elasticc_object():
+        return {
+            "diaSourceId": random.randint(1000000, 9000000),
+            "diaObjectId": random.choice([None, random.randint(1000000, 9000000)]),
+            "midPointTai": random.uniform(57000, 60000),
+            "filterName": "fid",
+            "ra": random.uniform(0, 360),
+            "decl": random.uniform(-90, 90),
+        }
+
+    batch = []
+
+
+
 def random_sub_samples(samples: int, size: int):
     sequence = []
     if samples == 0:
