@@ -3,6 +3,7 @@ from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from unittest import mock
 import datetime
 
+import fastavro
 
 @mock.patch("apf.producers.kafka.Producer")
 class KafkaProducerTest(GenericProducerTest):
@@ -77,8 +78,8 @@ class KafkaProducerTest(GenericProducerTest):
         self.assertEqual(self.component.topic, topic_before)
 
 class TestKafkaSchemalessProducer(GenericProducerTest):
-    
-    def test_serialize_message(sefl):
+
+    def test_serialize_message(self):
         params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
@@ -95,9 +96,12 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
 
         producer = KafkaSchemalessProducer(params)
 
-        out_avro = producer._serialize_message({})
+        message = {"key": "test", "int" : 0}
+        out_avro = producer._serialize_message(message)
 
-        # assert que out_avro sea igual a algo
+        expected = b'\x08test\x00'
+
+        assert out_avro == expected
 
     def test_serialize_bad_message(self):
         params = {
@@ -107,7 +111,7 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
                 "namespace": "test.avro",
                 "type": "record",
                 "name": "test",
-                "fields": [ 
+                "fields": [
                     {"name": "key", "type": "string"},
                     {"name": "int", "type": "int"},
                 ],
