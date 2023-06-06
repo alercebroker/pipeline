@@ -7,14 +7,14 @@ with open("requirements.txt") as f:
 
 setup(
     name="survey-parser-plugins",
-    version="2.3.4",
+    version="2.3.5",
     description="ALeRCE Survey Parser Plugins",
     author="ALeRCE Team",
     author_email="contact@alerce.online",
     packages=find_packages(),
     install_requires=required_packages,
     extras_require={
-        "dev": ["pytest", "coverage", "black", "python-snappy", "fastavro>=0.22.0,<1.5.0"]
+        "dev": ["pytest", "coverage", "black", "python-snappy", "fastavro>=0.22.0,<=1.6.1"]
     },
     build_requires=required_packages,
     project_urls={

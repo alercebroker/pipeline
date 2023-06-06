@@ -12,10 +12,10 @@ ZTF_DATA_PATH = os.path.join(FILE_PATH, "../data/ZTF_samples")
 
 def get_content(file_path, is_atlas=False):
     with open(file_path, "rb") as f:
-        content = reader(f).next()
-        if is_atlas:
-            content["candidate"]["filter"] = 'o'
-    return content
+        for content in reader(f):
+            if is_atlas:
+                content["candidate"]["filter"] = 'o'
+            return content
 
 
 class TestParserSelector(unittest.TestCase):

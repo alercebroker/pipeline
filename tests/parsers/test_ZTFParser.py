@@ -12,8 +12,8 @@ ZTF_DATA_PATH = os.path.join(FILE_PATH, "../data/ZTF_samples")
 
 def get_content(file_path):
     with open(file_path, "rb") as f:
-        content = reader(f).next()
-    return content
+        for content in reader(f):
+            return content
 
 
 class TestZTFParser(unittest.TestCase):

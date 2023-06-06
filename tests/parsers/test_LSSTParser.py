@@ -12,14 +12,20 @@ LSST_DATA_PATH = os.path.join(FILE_PATH, "../data/LSST_samples")
 
 def get_content(file_path):
     with open(file_path, "rb") as f:
-        content = reader(f).next()
-    return content
+        for content in reader(f):
+            return content
 
 
 class TestLSSTParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]
-        self._lsst_sample = [get_content(os.path.join(LSST_DATA_PATH, f)) for f in os.listdir(LSST_DATA_PATH)]
+        self._atlas_sample = [
+            get_content(os.path.join(ATLAS_DATA_PATH, f))
+            for f in os.listdir(ATLAS_DATA_PATH)
+        ]
+        self._lsst_sample = [
+            get_content(os.path.join(LSST_DATA_PATH, f))
+            for f in os.listdir(LSST_DATA_PATH)
+        ]
 
     def test_can_parse(self):
         lsst_message = self._lsst_sample[0]
@@ -37,6 +43,7 @@ class TestLSSTParser(unittest.TestCase):
         if is_parseable:
             response = LSSTParser.parse_message(lsst_message)
             self.assertIsInstance(response, GenericAlert)
+            self.assertIsInstance(response.extra_fields["diaObject"], list)
 
     def test_parse_many_message(self):
         for lsst_message in self._lsst_sample:
