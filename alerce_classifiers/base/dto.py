@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 from ._types import *
+from dataclasses import dataclass
 
 
 @dataclass
