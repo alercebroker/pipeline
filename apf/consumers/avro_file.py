@@ -45,7 +45,10 @@ class AVROFileConsumer(GenericConsumer):
             left -= 1
             with open(file, "rb") as f:
                 avro_reader = fastavro.reader(f)
-                data = avro_reader.next()
+                data = None
+                for read in avro_reader:
+                    data = read
+                    break
             if num_messages == 1:
                 yield data
             else:
