@@ -199,7 +199,7 @@ def random_sub_samples(samples: int, size: int):
 
 
 def generate_alerts_batch(n: int, nearest: int = 0) -> List[dict]:
-    generators = [_generate_ztf_batch, _generate_atlas_batch, _generate_elasticc_batch]
+    generators = [_generate_ztf_batch, _generate_atlas_batch]
     sub_samples = random_sub_samples(n, len(generators))
     sub_nearest = random_sub_samples(nearest, len(generators))
     batch = []
