@@ -1,6 +1,7 @@
 from apf.core.step import GenericStep
 from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
+from datetime import datetime
 from typing import List
 
 from .utils import wizard, parser
@@ -53,6 +54,13 @@ class SortingHatStep(GenericStep):
         self.metrics["oid"] = alerts["oid"].tolist()
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
+
+    def pre_execute(self, messages: List[dict]):
+        ingestion_timestamp = datetime.now()
+        messages_with_timestamp = list(
+            map(lambda m: {**m, "brokerIngestTimestamp": ingestion_timestamp}, messages)
+        )
+        return messages_with_timestamp
 
     def execute(self, messages: List[dict]):
         """
