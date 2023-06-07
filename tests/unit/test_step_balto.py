@@ -1,4 +1,3 @@
-from json import loads
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as INPUT_ELASTICC
 from fastavro import utils
 import pytest
