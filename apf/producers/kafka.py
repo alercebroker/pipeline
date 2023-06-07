@@ -164,3 +164,10 @@ class KafkaProducer(GenericProducer):
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
         self.producer.flush()
+
+class KafkaSchemalessProducer(KafkaProducer):
+
+    def _serialize_message(self, message):
+        out = io.BytesIO()
+        fastavro.schemaless_writer(out, self.schema, message) #strict=True
+        return out.getvalue()
