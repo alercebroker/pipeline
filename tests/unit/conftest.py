@@ -1,0 +1,135 @@
+from alerce_classifiers.base.dto import OutputDTO
+import pytest
+from unittest import mock
+from pandas import DataFrame
+from lc_classification.core.step import (
+    LateClassifier,
+)
+from apf.producers import KafkaProducer
+from apf.consumers import KafkaConsumer
+
+base_config = {
+    "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
+    "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},
+    "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
+    "MODEL_VERSION": "test",
+    "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
+}
+
+
+def ztf_config():
+    return {
+        "PREDICTOR_CONFIG": {
+            "PARAMS": {"model": mock.MagicMock()},
+            "CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor",
+            "PARSER_CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
+    }
+
+
+def toretto_config():
+    return {
+        "PREDICTOR_CONFIG": {
+            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
+            "CLASS": "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
+            "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
+    }
+
+
+def balto_config():
+    return {
+        "PREDICTOR_CONFIG": {
+            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
+            "CLASS": "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
+            "PARSER_CLASS": "lc_classification.predictors.balto.balto_parser.BaltoParser",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
+    }
+
+
+def step_factory(messages, config):
+    step = LateClassifier(config=config)
+    step.consumer = mock.MagicMock(KafkaConsumer)
+    step.consumer.consume.return_value = messages
+    step.producer = mock.MagicMock(KafkaProducer)
+    step.scribe_producer = mock.create_autospec(KafkaProducer)
+    return step
+
+
+@pytest.fixture
+def ztf_model_output():
+    def output_factory(messages_ztf, model):
+        aids = [
+            message["aid"]
+            for message in messages_ztf
+            if message["features"] is not None
+        ]
+        model.predict_in_pipeline.return_value = {
+            "hierarchical": {
+                "top": DataFrame(
+                    {
+                        "aid": aids,
+                        "CLASS": [1] * len(aids),
+                        "CLASS2": [0] * len(aids),
+                    }
+                ),
+                "children": {
+                    "Transient": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                    "Stochastic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                    "Periodic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                },
+            },
+            "probabilities": DataFrame(
+                {
+                    "aid": aids,
+                    "CLASS": [1] * len(aids),
+                    "CLASS2": [0] * len(aids),
+                }
+            ),
+        }
+
+    return output_factory
+
+
+@pytest.fixture
+def elasticc_model_output():
+    def factory(_, model):
+        model.predict.return_value = OutputDTO(DataFrame())
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_ztf(ztf_model_output):
+    def factory(messages_ztf):
+        config = base_config.copy()
+        config.update(ztf_config())
+        ztf_model_output(messages_ztf, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        return step_factory(messages_ztf, config)
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_toretto(elasticc_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(toretto_config())
+        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        return step_factory(messages, config)
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_balto(elasticc_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(balto_config())
+        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        return step_factory(messages, config)
+
+    return factory
