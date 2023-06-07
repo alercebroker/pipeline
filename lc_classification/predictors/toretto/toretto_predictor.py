@@ -8,9 +8,11 @@ from ..predictor.predictor import Predictor
 
 
 class TorettoPredictor(Predictor):
-    def __init__(self, model=None, **kwargs):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         model_path = str(kwargs["model_path"])
-        self.model = model or RandomForestFeaturesClassifier(model_path)
+        if not self.model:
+            self.model = RandomForestFeaturesClassifier(model_path)
 
     def _predict(self, model_input: PredictorInput[InputDTO]):
         return self.model.predict(model_input.value)

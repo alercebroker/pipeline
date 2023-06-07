@@ -5,10 +5,14 @@ DETECTIONS = {
         "name": "detections_record",
         "type": "record",
         "fields": [
-            {"name": "candid", "type": ["string"]},
+            {
+                "name": "candid",
+                "type": "int",
+                "description": "integer just for test purposes",
+            },
             {"name": "tid", "type": "string"},
             {"name": "aid", "type": "string"},
-            {"name": "oid", "type": "string"},
+            {"name": "oid", "type": "int", "description": "int just for test purposes"},
             {"name": "mjd", "type": "double"},
             {"name": "sid", "type": "string"},
             {"name": "fid", "type": "string"},

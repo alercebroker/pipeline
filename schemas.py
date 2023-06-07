@@ -257,12 +257,19 @@ SCHEMA = {
         },
     ],
 }
+
 ELASTICC_SCHEMA = {
     "namespace": "elasticc.v0_9",
     "type": "record",
     "name": "brokerClassification",
     "doc": "sample avro alert schema v4.1",
     "fields": [
+        {"name": "alertId", "type": "long", "doc": "unique alert identifer"},
+        {
+            "name": "diaSourceId",
+            "type": "long",
+            "doc": "id of source that triggered this classification",
+        },
         {
             "name": "brokerName",
             "type": "string",
@@ -272,6 +279,16 @@ ELASTICC_SCHEMA = {
             "name": "brokerVersion",
             "type": "string",
             "doc": "Version/Release of broker's software",
+        },
+        {
+            "name": "classifierName",
+            "type": "string",
+            "doc": "Name of classifier broker is using, including software version",
+        },
+        {
+            "name": "classifierParams",
+            "type": "string",
+            "doc": "Any classifier parameter information worth noting for this classification",
         },
         {
             "name": "classifications",

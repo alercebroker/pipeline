@@ -3,7 +3,6 @@ from ..utils.no_class_post_processor import (
 )
 from .kafka_parser import KafkaOutput, KafkaParser
 from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
-import numpy as np
 import pandas as pd
 import datetime
 
@@ -35,6 +34,7 @@ class ElasticcParser(KafkaParser):
         "ILOT": 133,
         "CART": 134,
         "PISN": 135,
+        "no_class": 0,
     }
 
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
@@ -57,6 +57,11 @@ class ElasticcParser(KafkaParser):
                 "oid": new_detection["oid"],
             }
         predictions = model_output.classifications["probabilities"]
+        messages = kwargs.get("messages", pd.DataFrame())
+        messages = pd.DataFrame().from_records(messages)
+        predictions = NoClassifiedPostProcessor(
+            messages, predictions
+        ).get_modified_classifications()
         predictions["aid"] = predictions.index
         classifier_name = kwargs["classifier_name"]
         classifier_version = kwargs["classifier_version"]
@@ -67,9 +72,8 @@ class ElasticcParser(KafkaParser):
         output = []
         for classification in classifications:
             aid = classification.pop("aid")
-
-            if aid not in detection_extra_info:
-                continue
+            if "classifier_name" in classification:
+                classification.pop("classifier_name")
 
             output_classification = [
                 {
@@ -87,11 +91,10 @@ class ElasticcParser(KafkaParser):
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
                 "classifierParams": classifier_version,
+                "brokerName": "ALeRCE",
+                "brokerPublishTimestamp": int(
+                    datetime.datetime.now().timestamp() * 1000
+                ),
             }
-
-            response["brokerPublishTimestamp"] = int(
-                datetime.datetime.now().timestamp() * 1000
-            )
-            response["brokerName"] = "ALeRCE"
             output.append(response)
         return KafkaOutput(output)

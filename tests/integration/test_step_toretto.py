@@ -3,20 +3,10 @@ from lc_classification.core.step import LateClassifier
 from apf.consumers import KafkaConsumer
 import pytest
 import os
-
-
-def assert_elasticc_object_is_correct(obj):
-    assert "classifications" in obj
-    assert isinstance(obj["classifications"], list)
-    assert len(obj["classifications"]) > 0
-
-
-def assert_command_is_correct(command):
-    assert command["collection"] == "object"
-    assert command["type"] == "update_probabilities"
-    assert command["criteria"]["_id"] is not None
-    assert "aid" not in command["data"]
-    assert not command["options"]["set_on_insert"]
+from tests.test_commons import (
+    assert_elasticc_object_is_correct,
+    assert_command_is_correct,
+)
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
