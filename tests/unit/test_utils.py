@@ -27,7 +27,7 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
                 "aid4",
                 "aid5",
             ],
-            columns=["class1", "class2", "class3", "no_class"],
+            columns=["class1", "class2", "class3", "NotClassified"],
         )
         expected_df.index.name = "aid"
 
@@ -52,7 +52,7 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
                 "aid4",
                 "aid5",
             ],
-            columns=["class1", "class2", "class3", "no_class"],
+            columns=["class1", "class2", "class3", "NotClassified"],
         )
         expected_df.index.name = "aid"
 
