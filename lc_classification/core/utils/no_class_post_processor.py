@@ -2,7 +2,7 @@ import pandas as pd
 
 
 class NoClassifiedPostProcessor(object):
-    class_name = "no_class"
+    class_name = "NotClassified"
 
     def __init__(
         self, messages_dataframe: pd.DataFrame, classifications: pd.DataFrame
