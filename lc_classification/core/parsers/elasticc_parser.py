@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
 
+
 class ElasticcParser(KafkaParser):
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
         # create a hashmap that contains the new info (candid, oid and timestamps)

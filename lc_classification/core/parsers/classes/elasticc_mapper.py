@@ -31,17 +31,17 @@ class ClassMapper:
         "EB": 2325,
         "LPV/Mira": 2326,
         "Non-Periodic/Other": 2331,
-        "AGN": 2332
+        "AGN": 2332,
     }
 
     @classmethod
     def has_mapping(cls, name: str):
         return name in cls._mapping
-    
+
     @classmethod
     def get_class_value(cls, name: str):
         return cls._mapping[name]
-    
+
     @classmethod
     def get_class_names(cls):
         return cls._mapping.keys()
