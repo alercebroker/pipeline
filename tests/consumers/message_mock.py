@@ -25,3 +25,11 @@ class MessageMock:
 class MessageJsonMock(MessageMock):
     def value(self):
         return '{"a": "hi", "b": "bye"}'
+
+class SchemalessMessageMock(MessageMock):
+    def value(self):
+        return b'\nllave\x02'
+
+class SchemalessBadMessageMock(MessageMock):
+    def value(self):
+        return b'\nllave'
