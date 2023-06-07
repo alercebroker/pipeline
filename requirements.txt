@@ -3,5 +3,5 @@ apf_base==2.4.1
 scipy
 boto3==1.26.69
 
-git+https://github.com/alercebroker/survey-parser-plugins@2.3.5
+git+https://github.com/alercebroker/survey-parser-plugins@2.3.6
 git+https://github.com/alercebroker/db-plugins@4.1.1
