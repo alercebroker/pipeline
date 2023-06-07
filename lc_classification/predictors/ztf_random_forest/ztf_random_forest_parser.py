@@ -10,10 +10,8 @@ from lc_classification.predictors.predictor.predictor_parser import (
 
 
 class ZtfRandomForestParser(PredictorParser):
-    def parse_input(
-        self, to_parse: List[dict], **kwargs
-    ) -> PredictorInput[pd.DataFrame]:
-        dto = create_input_dto(to_parse, feature_list=kwargs["feature_list"])
+    def parse_input(self, to_parse: List[dict]) -> PredictorInput[pd.DataFrame]:
+        dto = create_input_dto(to_parse)
         return PredictorInput(dto.features)
 
     def parse_output(self, to_parse: Union[dict, OutputDTO]) -> PredictorOutput:
