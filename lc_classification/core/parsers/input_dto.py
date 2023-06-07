@@ -1,12 +1,19 @@
 from typing import List
 import pandas as pd
 from alerce_classifiers.base.factories import input_dto_factory
-import numpy as np
 
 
-def create_input_dto(messages: List[dict], **kwargs):
-    features = create_features_dto(messages, kwargs.get("feature_list"))
-    detections = pd.DataFrame()
+def create_input_dto(messages: List[dict]):
+    """Creates a InputDTO object with necessary inputs for models.
+
+    Parameters
+    ----------
+    messages : List[dict]
+        The list of messages as they come from the step execute method.
+        The schema of each dict should match the previous step's (FeaturesStep) schema
+    """
+    features = create_features_dto(messages)
+    detections = create_detections_dto(messages)
     non_detections = pd.DataFrame()
     xmatch = pd.DataFrame()
     stamps = pd.DataFrame()
@@ -14,7 +21,16 @@ def create_input_dto(messages: List[dict], **kwargs):
     return input_dto
 
 
-def create_features_dto(messages: List[dict], feature_list) -> pd.DataFrame:
+def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
+    """Creates a pandas dataframe with all detections.
+
+    TODO: add more documentation and examples.
+    """
+
+    return pd.DataFrame()
+
+
+def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     """Creates a pandas dataframe with all the features from all messages
 
     The index is the aid and each feature is a column.
@@ -23,8 +39,6 @@ def create_features_dto(messages: List[dict], feature_list) -> pd.DataFrame:
     -------
     messages : list
         a list of dictionaries with at least aid and features keys.
-    feature_list : list
-        a list of feature names used for validation
     Returns
     -------
     pd.DataFrame
