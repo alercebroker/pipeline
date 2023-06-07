@@ -37,8 +37,8 @@ class LSSTParser(SurveyParser):
     def _extract_stamps(cls, message: dict) -> dict:
         return {
             "science": None,
-            "template": message["cutoutTemplate"],
-            "difference": message["cutoutDifference"],
+            "template": message.get("cutoutTemplate"),
+            "difference": message.get("cutoutDifference"),
         }
 
     @classmethod

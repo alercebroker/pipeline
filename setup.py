@@ -7,7 +7,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="survey-parser-plugins",
-    version="2.3.5",
+    version="2.3.6",
     description="ALeRCE Survey Parser Plugins",
     author="ALeRCE Team",
     author_email="contact@alerce.online",
