@@ -3,7 +3,7 @@
 ##################################################
 import os
 from credentials import get_mongodb_credentials
-from schema import SCHEMA
+from schemas.output_schema import SCHEMA
 
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
@@ -16,7 +16,7 @@ DB_CONFIG = get_mongodb_credentials()
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -43,7 +43,7 @@ else:
 
 # Producer configuration
 PRODUCER_CONFIG = {
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],

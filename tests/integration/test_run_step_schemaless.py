@@ -6,7 +6,7 @@ import pytest
 import unittest
 from unittest import mock
 from sorting_hat_step import SortingHatStep
-from schema import SCHEMA
+from schemas.output_schema import SCHEMA
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -38,7 +38,7 @@ CONSUMER_CONFIG = {
     "consume.timeout": 10,
     "consume.messages": 1,
     "TOPICS": ["survey_stream"],
-    "SCHEMA_PATH": "" #al archivo del esquema
+    "SCHEMA_PATH": "../../schemas/elasticc/elasticc.v0_9_1.alert.avsc"
 }
 
 METRICS_CONFIG = {
@@ -64,7 +64,13 @@ METRICS_CONFIG = {
             ],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
-                "timestamp_sent": {SCHEMA
+                "timestamp_sent": {
+                    "$id": "#/properties/timestamp_sent",
+                    "type": "string",
+                    "title": "The timestamp_sent schema",
+                    "description": "Timestamp sent refers to the time at which a message is sent.",
+                    "default": "",
+                    "examples": ["2020-09-01"],
                 },
                 "timestamp_received": {
                     "$id": "#/properties/timestamp_received",
@@ -100,7 +106,7 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
 
 
         # ejecutar start_step
-        step = SortingHatStep(self.step_config)
+        step = SortingHatStep(config=self.step_config)
         step.start()
 
         # consumir todo lo que esta en el topico de salida y hacer asserts sobre el contenido
