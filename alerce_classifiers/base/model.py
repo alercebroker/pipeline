@@ -1,17 +1,22 @@
-import os.path
-from abc import ABC, abstractmethod
-
-import pandas as pd
-import wget
-import validators
-
+from .dto import InputDTO
+from .dto import OutputDTO
 from .mapper import Mapper
-from .dto import InputDTO, OutputDTO
+from abc import ABC
+from abc import abstractmethod
+from typing import Generic
+from typing import TypeVar
 
-class AlerceModel(ABC):
-    mapper: Mapper
+import os.path
+import validators
+import wget
 
-    def __init__(self, model_path: str, mapper: Mapper = None):
+T = TypeVar("T")
+
+
+class AlerceModel(ABC, Generic[T]):
+    mapper: Mapper[T]
+
+    def __init__(self, model_path: str, mapper: Mapper[T] = None):
         self.model = None
         self.mapper = mapper
         self._load_model(model_path)

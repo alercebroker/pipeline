@@ -1,4 +1,4 @@
-HEADERS = {
+HEADERS_SCHEMA = {
     "type": "record",
     "name": "headers_record",
     "fields": [
@@ -69,7 +69,7 @@ HEADERS = {
     ],
 }
 
-DETECTIONS = {
+DETECTIONS_SCHEMA = {
     "type": "array",
     "default": [],
     "items": {
@@ -106,14 +106,14 @@ DETECTIONS = {
                 "type": {
                     "type": "record",
                     "name": "extra_fields_record",
-                    "fields": [{"name": "diaObject", "type": [HEADERS, "null"]}],
+                    "fields": [{"name": "diaObject", "type": [HEADERS_SCHEMA, "null"]}],
                 },
             },
         ],
     },
 }
 
-FEATURES = {
+FEATURES_SCHEMA = {
     "type": "array",
     "default": [],
     "items": {

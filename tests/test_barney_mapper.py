@@ -1,26 +1,21 @@
 from alerce_classifiers.base.factories import input_dto_factory
-from alerce_classifiers.rf_features_header_classifier.mapper import (
-    RandomForestClassifierMapper as BarneyMapper,
-)
+from alerce_classifiers.rf_features_header_classifier.mapper import BarneyMapper
 from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
-from fastavro import utils
-from mockdata.input import DETECTIONS
-from mockdata.input import FEATURES
+from mockdata.detections import DETECTIONS
+from mockdata.features import FEATURES
 
+import numpy as np
 import pandas as pd
 
 feat_dict = FEAT_DICT
 
-mock_detections = pd.DataFrame(utils.generate_one(DETECTIONS))
-mock_features = pd.DataFrame(utils.generate_one(FEATURES))
+mock_detections = pd.DataFrame(DETECTIONS)
+mock_features = pd.DataFrame(FEATURES)
 
 
-def check_header_correct(headers):
-    assert all(header in feat_dict.values() for header in headers.columns)
-
-
-def check_features_correct(features):
-    pd.testing.assert_frame_equal(features, mock_features)
+def check_correct_input(input: pd.DataFrame):
+    columns = list(mock_features.columns) + list(feat_dict.values())
+    assert all(col in input.columns for col in columns)
 
 
 def test_preprocess():
@@ -29,8 +24,7 @@ def test_preprocess():
 
     preprocessed_input = mapper.preprocess(dto)
 
-    check_header_correct(preprocessed_input[0])
-    check_features_correct(preprocessed_input[1])
+    check_correct_input(preprocessed_input)
 
 
 def test_postprocess():

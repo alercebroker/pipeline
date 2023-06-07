@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 
-class RandomForestClassifierMapper(Mapper):
+class BarneyMapper(Mapper[pd.DataFrame]):
     feat_dict = FEAT_DICT
 
     def _get_headers_from_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
@@ -24,10 +24,10 @@ class RandomForestClassifierMapper(Mapper):
         headers = headers.rename(columns=self.feat_dict)
         return headers.sort_index()
 
-    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
+    def preprocess(self, input: InputDTO, **kwargs) -> pd.DataFrame:
         features = input.features.replace({None: np.nan})
         headers = self._get_headers_from_detections(input.detections)
-        return (headers, features)
+        return pd.concat([features, headers], axis=1)
 
     def postprocess(self, model_output, **kwargs) -> OutputDTO:
         return OutputDTO(model_output)

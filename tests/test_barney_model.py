@@ -2,16 +2,14 @@ from alerce_classifiers.base.factories import input_dto_factory
 from alerce_classifiers.rf_features_header_classifier.model import (
     RandomForestFeaturesHeaderClassifier,
 )
-from fastavro import utils
-from mockdata.input import DETECTIONS
-from mockdata.input import FEATURES
-from unittest.mock import Mock
+from mockdata.detections import DETECTIONS
+from mockdata.features import FEATURES
 from unittest.mock import patch
 
 import pandas as pd
 
-mock_detections = pd.DataFrame(utils.generate_one(DETECTIONS))
-mock_features = pd.DataFrame(utils.generate_one(FEATURES))
+mock_detections = pd.DataFrame(DETECTIONS)
+mock_features = pd.DataFrame(FEATURES)
 mock_probabilities = pd.DataFrame(
     {"aid": ["aid1"], "SN": [0.5], "AGN": [0.4], "Other": [0.3]}
 )

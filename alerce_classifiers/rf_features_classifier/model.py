@@ -1,13 +1,14 @@
+from .mapper import TorettoMapper
+from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.base.dto import OutputDTO
 from alerce_classifiers.base.model import AlerceModel
-from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classifier.classifier.models import ElasticcRandomForest
 
+import pandas as pd
 import validators
 
-from .mapper import RandomForestClassifierMapper
 
-
-class RandomForestFeaturesClassifier(AlerceModel):
+class RandomForestFeaturesClassifier(AlerceModel[pd.DataFrame]):
     def __init__(self, path_to_model: str):
         self._taxonomy_dictionary = {
             "Transient": [
@@ -29,7 +30,7 @@ class RandomForestFeaturesClassifier(AlerceModel):
         }
         self._non_used_features = [f"iqr_{band}" for band in "ugrizY"]
         self.feature_list = None
-        super().__init__(path_to_model, RandomForestClassifierMapper())
+        super().__init__(path_to_model, TorettoMapper())
 
     def _load_model(self, path_to_model: str) -> None:
         self.model = ElasticcRandomForest(
@@ -46,6 +47,6 @@ class RandomForestFeaturesClassifier(AlerceModel):
             self.feature_list = list(set(self.feature_list))
 
     def predict(self, input_dto: InputDTO) -> OutputDTO:
-        features = self.mapper.preprocess(input_dto)[0]
+        features = self.mapper.preprocess(input_dto)
         probs = self.model.predict_proba(features)
         return self.mapper.postprocess(probs)
