@@ -7,6 +7,11 @@ from lc_classification.core.step import (
 )
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
+from tests.test_commons import (
+    assert_elasticc_object_is_correct,
+    assert_command_is_correct,
+)
+from json import loads
 
 base_config = {
     "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
@@ -42,7 +47,11 @@ def toretto_config():
 def balto_config():
     return {
         "PREDICTOR_CONFIG": {
-            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+                "model": mock.MagicMock(),
+                "quantiles_path": mock.MagicMock(),
+            },
             "CLASS": "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
             "PARSER_CLASS": "lc_classification.predictors.balto.balto_parser.BaltoParser",
         },
@@ -133,3 +142,26 @@ def step_factory_balto(elasticc_model_output):
         return step_factory(messages, config)
 
     return factory
+
+
+@pytest.fixture
+def test_elasticc_model():
+    def test_model(factory, messages_elasticc):
+        step = factory(messages_elasticc)
+        step.start()
+        predictor_calls = step.predictor.model.predict.mock_calls
+        assert len(predictor_calls) > 0
+        # Tests scribe produces correct commands
+        scribe_calls = step.scribe_producer.mock_calls
+        for call in scribe_calls:
+            message = loads(call.args[0]["payload"])
+            assert_command_is_correct(message)
+
+        # Test producer produces correct data
+        calls = step.producer.mock_calls
+        assert len(calls) == len(messages_elasticc)
+        for call in calls:
+            obj = call.args[0]
+            assert_elasticc_object_is_correct(obj)
+
+    return test_model

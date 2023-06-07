@@ -19,25 +19,19 @@ for message in messages_elasticc:
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
-def test_step_toretto(step_factory_toretto):
+def test_step_toretto(test_elasticc_model, step_factory_toretto):
+    test_elasticc_model(step_factory_toretto, messages_elasticc)
+
+
+@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+def test_step_toretto_model_input_is_correct(step_factory_toretto):
     step = step_factory_toretto(messages_elasticc)
     step.start()
-    scribe_calls = step.scribe_producer.mock_calls
     predictor_calls = step.predictor.model.predict.mock_calls
     assert len(predictor_calls) > 0
     for call in predictor_calls:
         # check that there are features in the input of the model
         assert call[1][0].features.any().any()
-    # Tests scribe produces correct commands
-    for call in scribe_calls:
-        message = loads(call.args[0]["payload"])
-        assert_command_is_correct(message)
-    # Test producer produces correct data
-    calls = step.producer.mock_calls
-    assert len(calls) == len(messages_elasticc)
-    for call in calls:
-        obj = call.args[0]
-        assert_elasticc_object_is_correct(obj)
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
