@@ -8,7 +8,7 @@ import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
 from sorting_hat_step import SortingHatStep
-from schema import SCHEMA
+from schemas.output_schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
 import time
