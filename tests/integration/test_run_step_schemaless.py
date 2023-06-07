@@ -38,7 +38,7 @@ CONSUMER_CONFIG = {
     "consume.timeout": 10,
     "consume.messages": 1,
     "TOPICS": ["survey_stream"],
-    "SCHEMA_PATH": "../../schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+    "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
 }
 
 METRICS_CONFIG = {
@@ -106,7 +106,10 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
 
 
         # ejecutar start_step
-        step = SortingHatStep(config=self.step_config)
+        step = SortingHatStep(
+            db_connection=self.database,
+            config=self.step_config
+        )
         step.start()
 
         # consumir todo lo que esta en el topico de salida y hacer asserts sobre el contenido
