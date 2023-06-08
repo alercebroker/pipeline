@@ -1,30 +1,34 @@
-from pandas import DataFrame
-
 from alerce_classifiers.base.factories import input_dto_factory
+from alerce_classifiers.rf_features_header_classifier.mapper import BarneyMapper
+from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
+from mockdata.detections import DETECTIONS
+from mockdata.features import FEATURES
 
-feat_dict = {}
+import numpy as np
+import pandas as pd
+
+feat_dict = FEAT_DICT
+
+mock_detections = pd.DataFrame(DETECTIONS)
+mock_features = pd.DataFrame(FEATURES)
 
 
-def check_header_correct(preprocessed_input):
-    assert feat_dict.values() in preprocessed_input.columns
-
-
-def check_features_correct(preprocessed_input):
-    # TODO: obtain list of features from the model class
-    assert False
+def check_correct_input(input: pd.DataFrame):
+    columns = list(mock_features.columns) + list(feat_dict.values())
+    assert all(col in input.columns for col in columns)
 
 
 def test_preprocess():
-    detections = DataFrame()
-    features = DataFrame()
-    dto = input_dto_factory(detections, None, features, None, None)
+    dto = input_dto_factory(mock_detections, None, mock_features, None, None)
     mapper = BarneyMapper()
-    check_header_correct(mapper.preprocess())
-    check_features_correct(mapper.preprocess())
+
+    preprocessed_input = mapper.preprocess(dto)
+
+    check_correct_input(preprocessed_input)
 
 
 def test_postprocess():
     mapper = BarneyMapper()
-    probabilities = DataFrame({"aid": ["aid1"], "SN": [1]})
+    probabilities = pd.DataFrame({"aid": ["aid1"], "SN": [1]})
     dto = mapper.postprocess(probabilities)
     assert dto.probabilities.aid.iloc[0] == probabilities.aid.iloc[0]

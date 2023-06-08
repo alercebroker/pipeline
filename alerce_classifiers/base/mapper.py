@@ -1,9 +1,16 @@
-from abc import ABC, abstractmethod
-from .dto import InputDTO, OutputDTO
+from .dto import InputDTO
+from .dto import OutputDTO
+from abc import ABC
+from abc import abstractmethod
+from typing import Generic
+from typing import TypeVar
 
-class Mapper(ABC):
+T = TypeVar("T")
+
+
+class Mapper(Generic[T], ABC):
     @abstractmethod
-    def preprocess(self, input: InputDTO, **kwargs) -> tuple:
+    def preprocess(self, input: InputDTO, **kwargs) -> T:
         pass
 
     @abstractmethod
