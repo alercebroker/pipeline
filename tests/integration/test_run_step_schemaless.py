@@ -85,6 +85,9 @@ METRICS_CONFIG = {
         },
     },
 }
+from apf.consumers import KafkaConsumer
+from confluent_kafka import Producer
+from data.messages import generate_schemaless_batch
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -99,10 +102,12 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
         }
 
     def test_step(self):
-        # Generar mensajes avro sin schema (dinamica o estaticamente sirve)
-        avros = []
-
         # publicar los mensajes generados a kafka consumer topic
+        test_producer_confg = PRODUCER_CONFIG['PARAMS']
+        #test_producer_confg = {"bootstrap.servers": "localhost:9092"}
+        producer = Producer(test_producer_confg)
+        for message in generate_schemaless_batch(5):
+            producer.produce('survey_stream', value=message, key=None)
 
 
         # ejecutar start_step
@@ -111,12 +116,15 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             config=self.step_config
         )
         step.start()
+        step.producer.producer.flush()
 
         # consumir todo lo que esta en el topico de salida y hacer asserts sobre el contenido
-        # guardar los mensajes del topico de salida en step_result
-        # trampita: podriamos hacer un mock de produce y hacer assert called with.
+        config = CONSUMER_CONFIG.copy()
+        config["PARAMS"]["group.id"] = "assert"
+        config["TOPICS"] = ["sorting_hat_stream"]
+        consumer = KafkaConsumer(config)
         step_result = []
+        for message in consumer.consume():
+            step_result.append(message)
 
-        # En realidad solo importa que el step corra efectivamente y que no se pierda ningun mensaje
-        # el contenido del output deberia dar lo mismo y la estructura esta dada por el schema
-        self.assertEqual(len(step_result), 0)
+        self.assertEqual(len(step_result), 5)
