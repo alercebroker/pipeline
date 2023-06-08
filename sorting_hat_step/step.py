@@ -45,6 +45,7 @@ class SortingHatStep(GenericStep):
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
         output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
+        print(output_result)
         self.set_producer_key_field("aid")
         return output_result
 
