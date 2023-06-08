@@ -1,5 +1,5 @@
-from alerce_classifiers.transformer_lc_header.model import TransformerLCHeaderClassifier
-from alerce_classifiers.transformer_lc_header.mapper import LCHeaderMapper
+from alerce_classifiers.balto.model import BaltoClassifier
+from alerce_classifiers.balto.mapper import BaltoMapper
 from alerce_classifiers.base.dto import InputDTO
 from lc_classification.predictors.predictor.predictor_parser import PredictorInput
 from lc_classification.predictors.predictor.predictor import Predictor
@@ -12,8 +12,8 @@ class BaltoPredictor(Predictor):
         model_path = str(kwargs["model_path"])
         quantiles_path = str(kwargs["quantiles_path"])
         if not self.model:
-            self.model = TransformerLCHeaderClassifier(
-                model_path, quantiles_path, mapper=LCHeaderMapper()
+            self.model = BaltoClassifier(
+                model_path, quantiles_path, mapper=BaltoMapper()
             )
 
     def _predict(self, model_input: PredictorInput[InputDTO]):
