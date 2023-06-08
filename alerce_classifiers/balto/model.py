@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import sys
 import torch
 import validators
@@ -7,12 +6,12 @@ import validators
 from joblib import load
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
-from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
+from .dict_transform import FEAT_DICT
 
-from .mapper import LCHeaderMapper
+from .mapper import BaltoMapper
 
 
-class TranformerLCHeaderClassifier(AlerceModel):
+class BaltoClassifier(AlerceModel):
     _taxonomy = [
         "AGN",
         "CART",
@@ -37,7 +36,10 @@ class TranformerLCHeaderClassifier(AlerceModel):
     ]
 
     def __init__(
-        self, model_path: str, header_quantiles_path: str, mapper: LCHeaderMapper = None
+        self,
+        model_path: str,
+        header_quantiles_path: str,
+        mapper: BaltoMapper,
     ):
         super().__init__(model_path, mapper)
         self._local_files = f"/tmp/{type(self).__name__}"
@@ -65,11 +67,11 @@ class TranformerLCHeaderClassifier(AlerceModel):
         self.model = torch.load(model_path, map_location=torch.device("cpu")).eval()
 
     def predict(self, data_input: InputDTO) -> OutputDTO:
-        input_nn, aid_index = self.mapper.preprocess(data_input, quantiles=self.quantiles)
+        input_nn, aid_index = self.mapper.preprocess(
+            data_input, quantiles=self.quantiles
+        )
 
         with torch.no_grad():
             pred = self.model.predict_mix(**input_nn)
 
-        return self.mapper.postprocess(
-            pred, taxonomy=self._taxonomy, index=aid_index
-        )
+        return self.mapper.postprocess(pred, taxonomy=self._taxonomy, index=aid_index)

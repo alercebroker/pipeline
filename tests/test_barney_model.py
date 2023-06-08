@@ -2,8 +2,8 @@ from alerce_classifiers.base.factories import input_dto_factory
 from alerce_classifiers.rf_features_header_classifier.model import (
     RandomForestFeaturesHeaderClassifier,
 )
-from mockdata.detections import DETECTIONS
-from mockdata.features import FEATURES
+from tests.mockdata.detections import DETECTIONS
+from tests.mockdata.features import FEATURES
 from unittest.mock import patch
 
 import pandas as pd
