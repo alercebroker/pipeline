@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "sorting_hat_step"}]
 
 [tool.poetry.scripts]
-run-step = { callable = "scripts.run_step:step.start()" } # TODO: This script is not tested
+step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
 apf_base = "2.4.2"
@@ -31,7 +31,7 @@ pytest-cov = "^4.1.0"
 moto = {extras = ["secretsmanager"], version = "^4.1.11"}
 
 [tool.black]
-line-length = 120
+line-length = 88
 
 [tool.pytest.ini_options]
 addopts = "-x --cov sorting_hat_step --cov-report xml"
