@@ -1,12 +1,13 @@
+from .utils import FEAT_DICT
+from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.base.dto import OutputDTO
+from alerce_classifiers.base.mapper import Mapper
+from alerce_classifiers.utils.dataframe import DataframeUtils
+
 import numpy as np
 import pandas as pd
 import torch
-from typing import List
 
-from alerce_classifiers.base.dto import InputDTO, OutputDTO
-from alerce_classifiers.base.mapper import Mapper
-from alerce_classifiers.utils.dataframe import DataframeUtils
-from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
 
 class LCHeaderMapper(Mapper):
     _fid_mapper = {
@@ -31,8 +32,7 @@ class LCHeaderMapper(Mapper):
 
     def _get_headers(self, input: InputDTO):
         headers = pd.DataFrame.from_records(
-            input.detections["extra_fields"].values,
-            index=input.detections.index
+            input.detections["extra_fields"].values, index=input.detections.index
         )
         headers = headers[headers["diaObject"].notnull()]
         headers = headers[~headers.index.duplicated(keep="first")]
@@ -44,7 +44,6 @@ class LCHeaderMapper(Mapper):
         headers = headers.sort_index()
         headers.replace({np.nan: -9999}, inplace=True)
         return headers
-
 
     def _preprocess_detections(self, detections: pd.DataFrame):
         # Compute max epochs, maximum length per index and band
@@ -83,7 +82,7 @@ class LCHeaderMapper(Mapper):
         batch, num_features = response.shape
         response = response.reshape([batch, num_features, 1])
         return response
-    
+
     def _to_tensor_dict(self, pd_output: pd.DataFrame, np_headers: np.ndarray) -> dict:
         torch_input = {
             "data": torch.from_numpy(
@@ -105,11 +104,12 @@ class LCHeaderMapper(Mapper):
 
         preprocessed_light_curve = self._preprocess_detections(detections)
         preprocessed_headers = self._preprocess_headers(headers, kwargs["quantiles"])
-        return self._to_tensor_dict(preprocessed_light_curve, preprocessed_headers), detections.index
-    
+        return (
+            self._to_tensor_dict(preprocessed_light_curve, preprocessed_headers),
+            detections.index,
+        )
+
     def postprocess(self, model_output, **kwargs) -> OutputDTO:
         probs = model_output["MLPMix"].exp().detach().numpy()
-        probs = pd.DataFrame(
-            probs, columns=kwargs["taxonomy"], index=kwargs["index"]
-        )
+        probs = pd.DataFrame(probs, columns=kwargs["taxonomy"], index=kwargs["index"])
         return OutputDTO(probs)
