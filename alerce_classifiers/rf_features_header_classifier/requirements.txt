@@ -1,8 +1,5 @@
 Cython >=0.29
--e git+https://github.com/alercebroker/lc_classifier.git@elasticc-1.0.0#egg=lc_classifier
--e git+https://github.com/alercebroker/mhps.git#egg=mhps
+lc_classifier @ git+https://github.com/alercebroker/lc_classifier.git@elasticc-1.0.0
 numpy >=1.16
--e git+https://github.com/alercebroker/P4J.git#egg=P4J
 pandas >=1.1
--e git+https://github.com/alercebroker/turbo-fats.git#egg=turbofats
 validators==0.20.0
