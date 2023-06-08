@@ -234,7 +234,7 @@ class KafkaConsumer(GenericConsumer):
                     continue
                 else:
                     ds_message = self._deserialize_message(message)
-                    ds_message["timestamp"] = message.timestamp()
+                    ds_message["timestamp"] = message.timestamp()[1]
                     deserialized.append(ds_message)
 
             self.messages = messages
