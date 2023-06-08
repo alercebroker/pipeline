@@ -1,5 +1,5 @@
 confluent_kafka==2.0.2
-apf_base==2.4.2
+apf_base==2.4.3b
 scipy
 boto3==1.26.69
 
