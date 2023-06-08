@@ -78,9 +78,8 @@ class KafkaProducerTest(GenericProducerTest):
         self.assertEqual(self.component.topic, topic_before)
 
 class TestKafkaSchemalessProducer(GenericProducerTest):
-
-    def test_serialize_message(self):
-        params = {
+    def setUp(self) -> None:
+        self.params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
             "SCHEMA": {
@@ -94,7 +93,8 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
             },
         }
 
-        producer = KafkaSchemalessProducer(params)
+    def test_serialize_message(self):
+        producer = KafkaSchemalessProducer(self.params)
 
         message = {"key": "test", "int" : 0}
         out_avro = producer._serialize_message(message)
@@ -104,21 +104,14 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
         assert out_avro == expected
 
     def test_serialize_bad_message(self):
-        params = {
-            "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
-            "TOPIC": "test_topic",
-            "SCHEMA": {
-                "namespace": "test.avro",
-                "type": "record",
-                "name": "test",
-                "fields": [
-                    {"name": "key", "type": "string"},
-                    {"name": "int", "type": "int"},
-                ],
-            },
-        }
-
-        producer = KafkaSchemalessProducer(params)
+        producer = KafkaSchemalessProducer(self.params)
 
         with self.assertRaises(Exception):
             producer._serialize_message({"no_key": "bad_message"})
+
+    def test_serielize_strict(self):
+        producer = KafkaSchemalessProducer(self.params)
+
+        with self.assertRaises(Exception):
+            message = {"key": "test", "int" : 'not an int'}
+            producer._serialize_message(message)
