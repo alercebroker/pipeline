@@ -8,10 +8,10 @@ from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
 from .dict_transform import FEAT_DICT
 
-from .mapper import LCHeaderMapper
+from .mapper import BaltoMapper
 
 
-class TransformerLCHeaderClassifier(AlerceModel):
+class BaltoClassifier(AlerceModel):
     _taxonomy = [
         "AGN",
         "CART",
@@ -39,7 +39,7 @@ class TransformerLCHeaderClassifier(AlerceModel):
         self,
         model_path: str,
         header_quantiles_path: str,
-        mapper: LCHeaderMapper,
+        mapper: BaltoMapper,
     ):
         super().__init__(model_path, mapper)
         self._local_files = f"/tmp/{type(self).__name__}"

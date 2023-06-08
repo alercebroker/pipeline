@@ -1,10 +1,8 @@
 from alerce_classifiers.base.factories import input_dto_factory
 from alerce_classifiers.rf_features_header_classifier.mapper import BarneyMapper
 from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
-from mockdata.detections import DETECTIONS
-from mockdata.features import FEATURES
-
-import numpy as np
+from tests.mockdata.detections import DETECTIONS
+from tests.mockdata.features import FEATURES
 import pandas as pd
 
 feat_dict = FEAT_DICT

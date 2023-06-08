@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import torch
-from typing import List
 
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.mapper import Mapper
@@ -9,7 +8,7 @@ from alerce_classifiers.utils.dataframe import DataframeUtils
 from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
 
 
-class LCHeaderMapper(Mapper):
+class BaltoMapper(Mapper):
     _fid_mapper = {
         0: "u",
         1: "g",

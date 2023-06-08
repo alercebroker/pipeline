@@ -8,8 +8,8 @@ from joblib import load
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
-from alerce_classifiers.transformer_lc_header.model import (
-    TransformerLCHeaderClassifier,
+from alerce_classifiers.balto.model import (
+    BaltoClassifier,
 )
 from .mapper import LCFeatureMapper
 
@@ -25,12 +25,8 @@ class TransformerLCFeaturesClassifier(AlerceModel):
         super().__init__(model_path, mapper)
         self.local_files = f"/tmp/{type(self).__name__}/features"
         # some ugly hack
-        sys.path.append(
-            os.path.join(os.path.dirname(__file__), "../transformer_lc_header")
-        )
-        self._header_classifier = TransformerLCHeaderClassifier(
-            model_path, header_quantiles_path
-        )
+        sys.path.append(os.path.join(os.path.dirname(__file__), "../balto"))
+        self._header_classifier = BaltoClassifier(model_path, header_quantiles_path)
         self._taxonomy = self._header_classifier._taxonomy
         self._load_feature_quantiles(feature_quantiles_path)
 
