@@ -1,3 +1,3 @@
-from .model import TranformerLCHeaderClassifier
+from .model import TransformerLCHeaderClassifier
 
 __all__ = ["TransformerLCHeaderClassifier"]

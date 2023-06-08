@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import sys
 import torch
 import validators
@@ -12,7 +11,7 @@ from .dict_transform import FEAT_DICT
 from .mapper import LCHeaderMapper
 
 
-class TranformerLCHeaderClassifier(AlerceModel):
+class TransformerLCHeaderClassifier(AlerceModel):
     _taxonomy = [
         "AGN",
         "CART",
@@ -37,7 +36,10 @@ class TranformerLCHeaderClassifier(AlerceModel):
     ]
 
     def __init__(
-        self, model_path: str, header_quantiles_path: str, mapper: LCHeaderMapper = None
+        self,
+        model_path: str,
+        header_quantiles_path: str,
+        mapper: LCHeaderMapper,
     ):
         super().__init__(model_path, mapper)
         self._local_files = f"/tmp/{type(self).__name__}"
