@@ -15,9 +15,9 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
     :return: existing aid if exists else is None
     """
     mongo_query = db.query(Object)
-    found = mongo_query.collection.find_one({"oid": {"$in": oid}}, {"aid": "$_id"})
+    found = mongo_query.collection.find_one({"oid": {"$in": oid}}, {"_id": 1})
     if found:
-        return found["aid"]
+        return found["_id"]
     return None
 
 
@@ -39,12 +39,17 @@ def conesearch_query(
     found = mongo_query.collection.find_one(
         {
             "loc": {
-                "$nearSphere": [ra - 180, dec],
-                "$maxDistance": math.radians(radius / 3600),
+                "$nearSphere": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [ra - 180, dec],
+                    },
+                    "$maxDistance": math.radians(radius / 3600),
+                },
             },
         },
-        {"aid": "$_id"},  # rename _id to aid
+        {"_id": 1},
     )
     if found:
-        return found["aid"]
+        return found["_id"]
     return None

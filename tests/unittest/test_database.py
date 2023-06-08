@@ -14,11 +14,11 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_oid_query(self):
         # Mock a response with elements in database
-        self.mock_db.query(Object).collection.find_one.return_value = {"aid": 1}
+        self.mock_db.query(Object).collection.find_one.return_value = {"_id": 1}
         aid = database.oid_query(self.mock_db, ["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_db.query(Object).collection.find_one.assert_called_with(
-            {"oid": {"$in": ["x", "y", "z"]}}, {"aid": "$_id"}
+            {"oid": {"$in": ["x", "y", "z"]}}, {"_id": 1}
         )
 
     def test_oid_query_with_no_elements(self):
@@ -31,21 +31,23 @@ class DatabaseTestCase(unittest.TestCase):
             "field1": 1,
             "field2": 2,
         }
-        with self.assertRaisesRegex(KeyError, "aid"):
+        with self.assertRaisesRegex(KeyError, "_id"):
             database.oid_query(self.mock_db, ["x", "y", "z"])
 
     def test_conesearch_query(self):
-        self.mock_db.query(Object).collection.find_one.return_value = {"aid": 1}
+        self.mock_db.query(Object).collection.find_one.return_value = {"_id": 1}
         aid = database.conesearch_query(self.mock_db, 180, 0, math.degrees(3600))
         assert aid == 1
         self.mock_db.query(Object).collection.find_one.assert_called_with(
             {
                 "loc": {
-                    "$nearSphere": [0, 0],
-                    "$maxDistance": 1,
+                    "$nearSphere": {
+                        "$geometry": {"type": "Point", "coordinates": [0, 0]},
+                        "$maxDistance": 1,
+                    },
                 },
             },
-            {"aid": "$_id"},  # only return alerce_id
+            {"_id": 1},  # only return alerce_id
         )
 
     def test_conesearch_query_without_results(self):

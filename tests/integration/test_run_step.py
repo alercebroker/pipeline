@@ -139,6 +139,13 @@ class MongoIntegrationTest(unittest.TestCase):
         return messages
 
     def assert_message_stamps(self, message: dict):
+        # LSST has not stamps
+        if message["tid"] == "LSST":
+            assert message["stamps"]["science"] is None
+            assert message["stamps"]["template"] is None
+            assert message["stamps"]["difference"] is None
+            return
+
         assert message["stamps"]["science"] == b"science"
         if message["tid"] == "ZTF":
             assert message["stamps"]["template"] == b"template"
