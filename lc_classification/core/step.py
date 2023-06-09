@@ -64,10 +64,7 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        feature_list = self.predictor.get_feature_list()
-        predictor_input = self.predictor_parser.parse_input(
-            messages, feature_list=feature_list
-        )
+        predictor_input = self.predictor_parser.parse_input(messages)
         self.logger.info("Doing inference")
         probabilities = self.predictor.predict(predictor_input)
         self.logger.info("Processing results")

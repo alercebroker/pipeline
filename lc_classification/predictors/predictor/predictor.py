@@ -2,7 +2,9 @@ import abc
 
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 
-from lc_classification.predictors.predictor.predictor_parser import PredictorInput
+from lc_classification.predictors.predictor.predictor_parser import (
+    PredictorInput,
+)
 from pandas import DataFrame
 
 
@@ -26,6 +28,10 @@ class Predictor(abc.ABC):
 
     @abc.abstractmethod
     def _predict(self, model_input: PredictorInput):
+        """Wrapper for self.model's prediction method.
+
+        The idea is that this wrapper only replaces the actual model prediction call.
+        """
         raise NotImplementedError()
 
     def predict(self, model_input: PredictorInput):
