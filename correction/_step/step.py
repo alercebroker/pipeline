@@ -106,6 +106,12 @@ class CorrectionStep(GenericStep):
             is_forced = detection.pop("forced")
             candid = detection.pop("candid")
             set_on_insert = not detection.get("has_stamp", False)
+
+            # remove possible elasticc extrafields
+            for to_remove in ["diaObject", "prvDiaSources", "prvDiaForcedSources"]:
+                if to_remove in detection["extra_fields"]:
+                    detection["extra_fields"].pop(to_remove)
+
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
