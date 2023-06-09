@@ -30,7 +30,7 @@ class LSSTParser(SurveyParser):
         "e_dec": Mapper(lambda: ERROR),  # UPDATE ME
         "mag": Mapper(origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
         "e_mag": Mapper(origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
-        "isdiffpos": Mapper(lambda x: int(x / abs(x)), extras=["psFlux"]),
+        "isdiffpos": Mapper(lambda x: 1 if x >= 0 else -1, extras=["psFlux"]),
     }
 
     @classmethod

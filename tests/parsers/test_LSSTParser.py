@@ -37,6 +37,11 @@ class TestLSSTParser(unittest.TestCase):
         response = LSSTParser.can_parse(atlas_message)
         self.assertFalse(response)
 
+    def test_psflux_zero(self):
+        lsst_msg = self._lsst_sample[0]
+        lsst_msg["diaSource"]["psFlux"] = 0.0
+        LSSTParser.parse_message(lsst_msg)
+
     def test_parse(self):
         lsst_message = self._lsst_sample[0]
         is_parseable = LSSTParser.can_parse(lsst_message)
