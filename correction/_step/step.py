@@ -111,7 +111,7 @@ class CorrectionStep(GenericStep):
             for to_remove in ["diaObject", "prvDiaSources", "prvDiaForcedSources"]:
                 if to_remove in detection["extra_fields"]:
                     detection["extra_fields"].pop(to_remove)
-                    
+
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
