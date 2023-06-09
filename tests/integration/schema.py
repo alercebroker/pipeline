@@ -3,7 +3,7 @@
 
 EXTRA_FIELDS = {
     "type": "map",
-    "values": ["null", "int", "float", "string", "boolean"],
+    "values": ["null", "int", "float", "string", "boolean", "bytes"],
     "default": {},
 }
 

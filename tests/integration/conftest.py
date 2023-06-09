@@ -70,18 +70,24 @@ def produce_messages(topic):
             "SCHEMA": SCHEMA,
         }
     )
-    messages = generate_many(SCHEMA, 10)
+    messages = generate_many(SCHEMA, 15)
     producer.set_key_field("aid")
     random.seed(42)
 
     for message in messages:
         for detection in message["detections"]:
             detection["forced"] = False
-            detection["tid"] = "ZTF" if random.random() > 0.5 else "ATLAS"
+            detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
             if str(detection["tid"]).lower() == "ztf":
                 detection["extra_fields"] = ztf_extra_fields()
+            elif str(detection["tid"]).lower() == "lsst":
+                detection["extra_fields"] = {
+                    "field": "value",
+                    "prvDiaForcedSources": b"bainari",
+                    "prvDiaSources": b"bainari2",
+                    "diaObject": b"bainari2"
+                }
         producer.produce(message)
-
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
