@@ -1,0 +1,2 @@
+apf_base==1.0.8
+redis_om==0.0.27
