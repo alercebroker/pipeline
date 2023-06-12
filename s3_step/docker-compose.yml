@@ -1,0 +1,22 @@
+version: '3'
+services:
+  s3_storage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - CONSUMER_TOPICS=
+      - CONSUMER_SERVER=
+      - CONSUMER_GROUP_ID=
+      - BUCKET_NAME=
+      - DB_ENGINE=
+      - DB_HOST=
+      - DB_USER=
+      - DB_PASSWORD=
+      - DB_PORT=
+      - DB_NAME=
+      - STEP_VERSION=
+      - STEP_ID=
+      - STEP_NAME=
+      - STEP_COMMENTS=
