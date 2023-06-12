@@ -19,7 +19,7 @@ DB_CONFIG = {
 
 PRODUCER_CONFIG = {
     "CLASS": "apf.producers.KafkaProducer",
-    "TOPIC": "sorting_hat_stream",
+    "TOPIC": "sorting_hat_stream_schemaless",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
@@ -37,7 +37,7 @@ CONSUMER_CONFIG = {
     },
     "consume.timeout": 10,
     "consume.messages": 1,
-    "TOPICS": ["survey_stream"],
+    "TOPICS": ["survey_stream_schemaless"],
     "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
 }
 
@@ -107,21 +107,22 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
         #test_producer_confg = {"bootstrap.servers": "localhost:9092"}
         producer = Producer(test_producer_confg)
         for message in generate_schemaless_batch(5):
-            producer.produce('survey_stream', value=message, key=None)
+            producer.produce('survey_stream_schemaless', value=message, key=None)
 
 
         # ejecutar start_step
-        step = SortingHatStep(
-            db_connection=self.database,
-            config=self.step_config
-        )
-        step.start()
-        step.producer.producer.flush()
+        with mock.patch.object(SortingHatStep, "_write_success"):
+            step = SortingHatStep(
+                db_connection=self.database,
+                config=self.step_config
+            )
+            step.start()
+            step.producer.producer.flush()
 
         # consumir todo lo que esta en el topico de salida y hacer asserts sobre el contenido
         config = CONSUMER_CONFIG.copy()
         config["PARAMS"]["group.id"] = "assert"
-        config["TOPICS"] = ["sorting_hat_stream"]
+        config["TOPICS"] = ["sorting_hat_stream_schemaless"]
         consumer = KafkaConsumer(config)
         step_result = []
         for message in consumer.consume():
