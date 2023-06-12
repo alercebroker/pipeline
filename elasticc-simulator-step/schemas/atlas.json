@@ -1,0 +1,224 @@
+{
+  "type": "record",
+  "namespace": "atlas",
+  "name": "alert",
+  "doc": "avro schema for ATLAS alerts",
+  "fields": [
+    {
+      "name": "schemavsn",
+      "doc": "schema version used",
+      "type": "string"
+    },
+    {
+      "name": "candidate",
+      "type": {
+        "type": "record",
+        "namespace": "atlas",
+        "name": "candidate",
+        "doc": "avro schema for ATLAS candidates",
+        "fields": [
+          {
+            "name": "RA",
+            "doc": "RA",
+            "type": "double"
+          },
+          {
+            "name": "Dec",
+            "doc": "Dec",
+            "type": "double"
+          },
+          {
+            "name": "Mag",
+            "doc": "Mag",
+            "type": "double"
+          },
+          {
+            "name": "filter",
+            "doc": "filter",
+            "type": "string",
+            "default": "o"
+          },
+          {
+            "name": "Dmag",
+            "doc": "Dmag",
+            "type": "double"
+          },
+          {
+            "name": "X",
+            "doc": "X",
+            "type": "double"
+          },
+          {
+            "name": "Y",
+            "doc": "Y",
+            "type": "double"
+          },
+          {
+            "name": "Major",
+            "doc": "Major",
+            "type": "double"
+          },
+          {
+            "name": "Minor",
+            "doc": "Minor",
+            "type": "double"
+          },
+          {
+            "name": "Phi",
+            "doc": "Phi",
+            "type": "double"
+          },
+          {
+            "name": "Det",
+            "doc": "Det",
+            "type": "double"
+          },
+          {
+            "name": "ChiN",
+            "doc": "ChiN",
+            "type": "double"
+          },
+          {
+            "name": "Pvr",
+            "doc": "Pvr",
+            "type": "double"
+          },
+          {
+            "name": "Ptr",
+            "doc": "Ptr",
+            "type": "double"
+          },
+          {
+            "name": "Pmv",
+            "doc": "Pmv",
+            "type": "double"
+          },
+          {
+            "name": "Pkn",
+            "doc": "Pkn",
+            "type": "double"
+          },
+          {
+            "name": "Pno",
+            "doc": "Pno",
+            "type": "double"
+          },
+          {
+            "name": "Pbn",
+            "doc": "Pbn",
+            "type": "double"
+          },
+          {
+            "name": "Pcr",
+            "doc": "Pcr",
+            "type": "double"
+          },
+          {
+            "name": "Pxt",
+            "doc": "Pxt",
+            "type": "double"
+          },
+          {
+            "name": "Psc",
+            "doc": "Psc",
+            "type": "double"
+          },
+          {
+            "name": "Dup",
+            "doc": "Dup",
+            "type": "double"
+          },
+          {
+            "name": "WPflx",
+            "doc": "WPflx",
+            "type": "double"
+          },
+          {
+            "name": "Dflx",
+            "doc": "Dflx",
+            "type": "double"
+          },
+          {
+            "name": "candid",
+            "doc": "alert identifier",
+            "type": "string"
+          },
+          {
+            "name": "mjd",
+            "doc": "Mjd",
+            "type": "double"
+          },
+          {
+            "name": "pid",
+            "type": "long",
+            "doc": "Processing ID for science image to facilitate archive retrieval",
+            "default": 1
+          },
+          {
+            "name": "isdiffpos",
+            "type": "string",
+            "doc": "t or 1 => candidate is from positive (sci minus ref) subtraction; f or 0 => candidate is from negative (ref minus sci) subtraction",
+            "default": "1"
+          },
+          {
+            "name": "flux",
+            "type": "double",
+            "doc": "magnitude of detection [uJy]",
+            "default": 1.0
+          },
+          {
+            "name": "Dflux",
+            "type": "double",
+            "doc": "magnitude uncertainty [AB]",
+            "default": 1.0
+          },
+          {
+            "name": "rb",
+            "type": "float",
+            "doc": "RealBogus quality score from Random Forest classifier; range is 0 to 1 where closer to 1 is more reliable",
+            "default": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "name": "candid",
+      "doc": "alert identifier",
+      "type": "string"
+    },
+    {
+      "name": "publisher",
+      "doc": "source identifier",
+      "type": "string"
+    },
+    {
+      "name": "objectId",
+      "doc": "object identifier",
+      "type": "string"
+    },
+    {
+      "name": "cutoutScience",
+      "type": {
+        "type": "record",
+        "namespace": "atlas",
+        "name": "cutout",
+        "doc": "avro schema for ATLAS cutouts",
+        "fields": [
+          {
+            "name": "fileName",
+            "type": "string"
+          },
+          {
+            "name": "stampData",
+            "doc": "fits.gz",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cutoutDifference",
+      "type": "cutout"
+    }
+  ]
+}
