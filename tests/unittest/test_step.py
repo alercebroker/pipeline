@@ -22,6 +22,7 @@ class SortingHatStepTestCase(unittest.TestCase):
                 "STEP_VERSION": "",
                 "STEP_COMMENTS": "",
             },
+            "RUN_CONESEARCH": "True",
         }
         self.mock_database_connection = mock.create_autospec(MongoConnection)
         self.mock_producer = mock.create_autospec(KafkaProducer)
@@ -67,3 +68,71 @@ class SortingHatStepTestCase(unittest.TestCase):
         assert self.step.metrics["oid"] == [3]
         assert self.step.metrics["tid"] == [4]
         assert self.step.metrics["aid"] == [5]
+
+
+class RunConesearchTestCase(unittest.TestCase):
+    
+    def setUp(self):
+        self.mock_database_connection = mock.create_autospec(MongoConnection)
+        self.dataframe = pd.DataFrame(
+            [[1, 2, 3, 4, 5]], columns=["ra", "dec", "oid", "tid", "aid"]
+        )
+
+    @mock.patch("sorting_hat_step.step.wizard")
+    def test_run_conesearch_explicit_true(self, mock_wizzard):
+        step_config = {
+            "DB_CONFIG": {},
+            "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "RUN_CONESEARCH": "True",
+        }
+
+        step = SortingHatStep(
+            config=step_config,
+            db_connection=self.mock_database_connection
+        )
+        step.add_aid(self.dataframe) # the wizzard is mocked
+
+        mock_wizzard.internal_cross_match.assert_called_once()
+        mock_wizzard.find_existing_id.assert_called_once()
+        mock_wizzard.find_id_by_conesearch.assert_called_once()
+        mock_wizzard.generate_new_id.assert_called_once()
+
+    @mock.patch("sorting_hat_step.step.wizard")
+    def test_run_conesearch_default_true(self, mock_wizzard):
+        step_config = {
+            "DB_CONFIG": {},
+            "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "RUN_CONESEARCH": "ASDF",
+        }
+
+        step = SortingHatStep(
+            config=step_config,
+            db_connection=self.mock_database_connection
+        )
+        step.add_aid(self.dataframe) # the wizzard is mocked
+
+        mock_wizzard.internal_cross_match.assert_called_once()
+        mock_wizzard.find_existing_id.assert_called_once()
+        mock_wizzard.find_id_by_conesearch.assert_called_once()
+        mock_wizzard.generate_new_id.assert_called_once()
+
+    @mock.patch("sorting_hat_step.step.wizard")
+    def test_dont_run_conesearch(self, mock_wizzard):
+        step_config = {
+            "DB_CONFIG": {},
+            "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "RUN_CONESEARCH": "False",
+        }
+        step = SortingHatStep(
+            config=step_config,
+            db_connection=self.mock_database_connection
+        )
+        step.add_aid(self.dataframe) # the wizzard is mocked
+
+        mock_wizzard.internal_cross_match.assert_called_once()
+        mock_wizzard.find_existing_id.assert_called_once()
+        mock_wizzard.find_id_by_conesearch.assert_not_called()
+        mock_wizzard.generate_new_id.assert_called_once()

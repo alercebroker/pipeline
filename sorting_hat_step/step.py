@@ -18,7 +18,7 @@ class SortingHatStep(GenericStep):
         super().__init__(config=config, **kwargs)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
-        self.run_conesearch = config.get("RUN_CONESEARCH", "True") != "False"
+        self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
 
     def pre_produce(self, result: pd.DataFrame):
