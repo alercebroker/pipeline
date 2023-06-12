@@ -1,0 +1,3 @@
+-r requirements.txt
+-e git+https://github.com/alercebroker/lc_classifier.git@1.2.3-P#egg=lc_classifier
+alerce_classifiers @ git+https://alerceadmin:${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git@a436134cc5b2d9745bd13f718fff76ee01dae341

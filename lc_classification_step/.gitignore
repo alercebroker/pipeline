@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pkl
+.idea/
+.coverage
+src/
+htmlcov/
+__SUCCESS__
+.env

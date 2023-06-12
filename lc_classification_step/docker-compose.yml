@@ -1,0 +1,29 @@
+version: "3"
+services:
+  lc_classification:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-elasticc
+      args:
+        GH_TOKEN: ${GH_TOKEN}
+    environment:
+      - CONSUMER_CLASS=apf.consumers.KafkaConsumer
+      - CONSUMER_TOPICS=features
+      - CONSUMER_SERVER="localhost:9092"
+      - CONSUMER_GROUP_ID=lc_classification
+      - PRODUCER_TOPIC_FORMAT="format%s"
+      - PRODUCER_DATE_FORMAT="YYYYmmdd"
+      - PRODUCER_CHANGE_HOUR=22
+      - PRODUCER_RETENTION_DAYS=1
+      - PRODUCER_SERVER="localhost:9092"
+      - SCRIBE_SERVER="localhost:9092"
+      - SCRIBE_TOPIC="w_object"
+      - METRICS_HOST="localhost:9092"
+      - METRICS_TOPIC="metrics"
+      - CONSUME_TIMEOUT=0
+      - CONSUME_MESSAGES=2
+      - PREDICTOR_CLASS=lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor
+      - MODEL_PATH="https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
+      - PREDICTOR_PARSER_CLASS=lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser
+      - SCRIBE_PARSER_CLASS=lc_classification.core.parsers.scribe_parser.ScribeParser
+      - STEP_PARSER_CLASS=lc_classification.core.parsers.alerce_parser.AlerceParser

@@ -1,0 +1,67 @@
+name: build_staging_image
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  get_tags_elasticc_rf_features:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.prep.outputs.tags }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=ghcr.io/alercebroker/elasticc_rf_features
+          SHA=$(git rev-parse --short HEAD)
+          VERSION=rc-$SHA
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:rc"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
+          fi
+          echo ::set-output name=tags::${TAGS}
+  push_image_elasticc_rf_features:
+    needs: get_tags_elasticc_rf_features
+    uses: ./.github/workflows/build.yml
+    with:
+      tags: ${{ needs.get_tags_elasticc.outputs.tags }}
+      dockerfile: ./Dockerfile-elasticc
+    secrets:
+      PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  get_tags_ztf:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.prep.outputs.tags }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=ghcr.io/alercebroker/lc_classifier_step_ztf
+          SHA=$(git rev-parse --short HEAD)
+          VERSION=rc-$SHA
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:rc"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:rc-$SHA"
+          fi
+          echo ::set-output name=tags::${TAGS}
+  push_image_ztf:
+    needs: get_tags_ztf
+    uses: ./.github/workflows/build.yml
+    with:
+      tags: ${{ needs.get_tags_ztf.outputs.tags }}
+      dockerfile: ./Dockerfile-ztf
+    secrets:
+      PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
