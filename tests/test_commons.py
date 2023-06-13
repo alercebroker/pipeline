@@ -22,6 +22,10 @@ def assert_elasticc_object_is_correct(obj):
 
     assert isinstance(obj["classifications"], list)
     assert len(obj["classifications"]) > 0
+    suma = 0
+    for classification in obj["classifications"]:
+        suma += classification["probability"]
+    assert suma == 1
 
 
 def assert_command_is_correct(command):

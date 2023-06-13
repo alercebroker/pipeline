@@ -35,6 +35,10 @@ class ClassMapper:
     }
 
     @classmethod
+    def set_mapping(cls, mapping: dict):
+        cls._mapping = mapping
+
+    @classmethod
     def has_mapping(cls, name: str):
         return name in cls._mapping
 
