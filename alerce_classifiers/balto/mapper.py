@@ -110,6 +110,5 @@ class BaltoMapper(Mapper):
 
     def postprocess(self, model_output, **kwargs) -> OutputDTO:
         probs = model_output["MLPMix"].exp().detach().numpy()
-        print(probs)
         probs = pd.DataFrame(probs, columns=kwargs["taxonomy"], index=kwargs["index"])
         return OutputDTO(probs)
