@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       tags: ${{ needs.get_tags_elasticc_rf_features.outputs.tags }}
-      dockerfile: ./Dockerfile-elasticc
+      dockerfile: ./Dockerfile-toretto
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
