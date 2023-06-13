@@ -1,7 +1,7 @@
 from pytest import approx
 
 
-def assert_object_is_correct(obj):
+def assert_ztf_object_is_correct(obj):
     assert "aid" in obj
     assert "features" in obj
     assert "lc_classification" in obj

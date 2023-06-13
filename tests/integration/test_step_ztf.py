@@ -4,7 +4,7 @@ from apf.consumers import KafkaConsumer
 import pytest
 import os
 from typing import Callable
-from tests.test_commons import assert_command_is_correct, assert_object_is_correct
+from tests.test_commons import assert_command_is_correct, assert_ztf_object_is_correct
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
@@ -35,11 +35,11 @@ def test_step_ztf_result(
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
-    for message in kconsumer().consume():
-        assert_object_is_correct(message)
+    for message in kconsumer.consume():
+        assert_ztf_object_is_correct(message)
         kconsumer.commit()
 
-    for message in sconsumer().consume():
+    for message in sconsumer.consume():
         command = json.loads(message["payload"])
         assert_command_is_correct(command)
         sconsumer.commit()
