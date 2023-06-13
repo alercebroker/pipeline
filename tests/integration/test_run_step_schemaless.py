@@ -2,6 +2,10 @@ from apf.metrics.prometheus import PrometheusMetrics
 import requests
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from db_plugins.db.mongo.models import Object
+from apf.consumers import KafkaConsumer
+from confluent_kafka import Producer
+from data.messages import generate_schemaless_batch
 import pytest
 import unittest
 from unittest import mock
@@ -85,9 +89,6 @@ METRICS_CONFIG = {
         },
     },
 }
-from apf.consumers import KafkaConsumer
-from confluent_kafka import Producer
-from data.messages import generate_schemaless_batch
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -101,6 +102,10 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
         }
+
+    def tearDown(self):
+        mongo_query = self.database.query(Object)
+        mongo_query.collection.delete_many({})
 
     def test_step(self):
         # publicar los mensajes generados a kafka consumer topic
