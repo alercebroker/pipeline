@@ -1,3 +1,6 @@
+from pytest import approx
+
+
 def assert_object_is_correct(obj):
     assert "aid" in obj
     assert "features" in obj
@@ -25,7 +28,7 @@ def assert_elasticc_object_is_correct(obj):
     suma = 0
     for classification in obj["classifications"]:
         suma += classification["probability"]
-    assert suma == 1
+    assert suma == approx(1)
 
 
 def assert_command_is_correct(command):
