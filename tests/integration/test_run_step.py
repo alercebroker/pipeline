@@ -102,6 +102,7 @@ class MongoIntegrationTest(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
+            "RUN_CONESEARCH": "True",
         }
 
     def tearDown(self):
@@ -204,6 +205,7 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
+            "RUN_CONESEARCH": "True",
         }
 
     def test_step(self):
