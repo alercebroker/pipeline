@@ -1,27 +1,25 @@
-from alerce_classifiers.base.factories import input_dto_factory
 from alerce_classifiers.rf_features_header_classifier.mapper import BarneyMapper
 from alerce_classifiers.rf_features_header_classifier.utils import FEAT_DICT
-from mockdata.detections import DETECTIONS
-from mockdata.features import FEATURES
+from tests import utils
+from tests.mockdata.mock_message import MESSAGES
 
 import pandas as pd
 
 feat_dict = FEAT_DICT
 
-mock_detections = pd.DataFrame(DETECTIONS)
-mock_features = pd.DataFrame(FEATURES)
+mock_input_dto = utils.create_input_dto(MESSAGES)
 
 
 def check_correct_input(input: pd.DataFrame):
-    columns = list(mock_features.columns) + list(feat_dict.values())
+    columns = list(mock_input_dto.features.columns) + list(feat_dict.values())
     assert all(col in input.columns for col in columns)
 
 
 def test_preprocess():
-    dto = input_dto_factory(mock_detections, None, mock_features, None, None)
+    mock_input_dto = utils.create_input_dto(MESSAGES)
     mapper = BarneyMapper()
 
-    preprocessed_input = mapper.preprocess(dto)
+    preprocessed_input = mapper.preprocess(mock_input_dto)
 
     check_correct_input(preprocessed_input)
 
