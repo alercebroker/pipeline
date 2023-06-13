@@ -1,56 +1,93 @@
-name: Lint and test
+name: Test with pip
 on:
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: '3.10'
+      sources-folder:
+        required: false
+        type: string
+        default: 'src'
+      test-folder:
+        required: false
+        type: string
+        default: 'tests'
+      pre-dependencies:
+        required: false
+        type: string
+      requirements-file:
+        required: false
+        type: string
+        default: 'requirements.txt'
+      test-dependencies:
+        required: false
+        type: string
+        default: 'pytest pytest-cov'
+      codecov-flags:
+        required: false
+        type: string
+        default: 'unittest'
+      base-folder:
+        required: false
+        type: string
+        default: '.'
+      test-command:
+        required: false
+        type: string
+        default: 'pytest -x ${{ inputs.test-folder }} --cov ${{ inputs.sources-folder }} --cov-report xml'
+    secrets:
+      GH_TOKEN:
+        required: true
+        description: 'A github PAT that enables installation of package from private repo'
+      TEST_BALTO_MODEL_PATH:
+        required: true
+        description: 'A path to a .pt file'
+      TEST_BALTO_QUANTILES_PATH:
+        required: true
+        description: 'A path to the directory containing joblib files for balto'
+      TEST_TORETTO_MODEL_PATH:
+        required: true
+        description: 'A path to a .pkl file'
 jobs:
-  lint:
-    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
-    with:
-      sources-folder: 'lc_classification'
-  unittest-ztf:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-    with:
-      python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt'
-      test-command: STREAM=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  integration-ztf:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-    with:
-      python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt'
-      test-dependencies: pytest pytest-docker
-      test-command: STREAM=ztf python -m pytest -x tests/integration
-      codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  unittest-elasticc:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-    with:
-      python-version: '3.8'
-      requirements-file: 'requirements_elasticc.txt'
-      test-command: |
-        STREAM=elasticc \
-        TEST_TORETTO_MODEL_PATH=${{ secrets.TEST_TORETTO_MODEL_PATH }} \
-        TEST_BALTO_MODEL_PATH=${{ secrets.TEST_BALTO_MODEL_PATH }} \
-        python -m pytest -x tests/unit --cov lc_classification --cov-report xml
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  integration-elasticc:
-    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
-    with:
-      python-version: '3.8'
-      requirements-file: 'requirements_elasticc.txt'
-      test-dependencies: pytest pytest-docker
-      test-command: |
-        STREAM=elasticc \
-        TEST_TORETTO_MODEL_PATH=${{ secrets.TEST_TORETTO_MODEL_PATH }} \
-        TEST_BALTO_MODEL_PATH=${{ secrets.TEST_BALTO_MODEL_PATH }} \
-        python -m pytest -x tests/integration
-      codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: "${{ secrets.GH_TOKEN }}"
+      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
+      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Install pre dependencies
+        if: ${{ inputs.pre-dependencies != '' }}
+        run: |
+          cd ${{ inputs.base-folder }}
+          pip install --upgrade pip
+          pip install ${{ inputs.pre-dependencies }}
+      - name: Install dependencies
+        run: |
+          cd ${{ inputs.base-folder }}
+          pip install --upgrade pip
+          pip install -r ${{ inputs.requirements-file }}
+      - name: Install test dependencies
+        run: |
+          cd ${{ inputs.base-folder }}
+          pip install --upgrade pip
+          pip install ${{ inputs.test-dependencies }}
+      - name: Tests
+        run: |
+          cd ${{ inputs.base-folder }}
+          ${{ inputs.test-command }}
+      - name: Upload test coverage to Codecov
+        if: ${{ inputs.codecov-flags != '' }}
+        uses: codecov/codecov-action@v3
+        with:
+          files: ${{ inputs.base-folder }}/coverage.xml
+          flags: ${{ inputs.codecov-flags }}
