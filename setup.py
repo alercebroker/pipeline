@@ -16,7 +16,6 @@ extras_require = {
     if os.path.exists(os.path.join(sp, "requirements.txt"))
 }
 extras_require["complete"] = sorted({v for req in extras_require.values() for v in req})
-print(extras_require)
 
 packages = [sp.replace("/", ".") for sp in sub_packages]
 
@@ -25,7 +24,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="alerce_classifiers",
-    version="0.0.8",
+    version="0.0.9",
     packages=packages,
     install_requires=install_requires,
     extras_require=extras_require,
