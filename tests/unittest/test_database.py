@@ -54,3 +54,12 @@ class DatabaseTestCase(unittest.TestCase):
         self.mock_db.query(Object).collection.find_one.return_value = None
         aid = database.conesearch_query(self.mock_db, 1, 2, 3)
         assert aid is None
+
+    def test_insert_query(self):
+        self.mock_db.query(Object).collection.insert_many.return_value.inserted_ids = [0, 1]
+        records = [
+            {'oid': [10], '_id': 0},
+            {'oid': [20, 30], '_id': 1},
+                        ]
+        ids = database.insert_query(self.mock_db, records)
+        assert len(ids) == 2

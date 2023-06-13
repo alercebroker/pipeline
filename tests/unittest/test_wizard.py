@@ -142,3 +142,20 @@ class SortingHatTestCase(unittest.TestCase):
         aid_int = wizard.decode(aid_str)
         self.assertIsInstance(aid_int, int)
         self.assertEqual(aid_int, 1000000000000000000)
+
+    @mock.patch("sorting_hat_step.utils.wizard.insert_query")
+    def test_write_object(self, mock_query):
+        alerts = pd.DataFrame([
+            {'oid': 10, 'aid': 0, 'extra': 'extra1'},
+            {'oid': 20, 'aid': 1, 'extra': 'extra2'},
+            {'oid': 30, 'aid': 0, 'extra': 'extra3'}
+                        ])
+        mock_query.side_effect = [[0, 1, 2]]
+        response = wizard.insert_empty_objets(self.mock_db, alerts)
+        self.assertEqual(len(response), 3)
+
+        expected_records = [
+            {'oid': [10, 30], '_id': 0},
+            {'oid': [20], '_id': 1},
+                        ]
+        mock_query.assert_called_with(self.mock_db, expected_records)

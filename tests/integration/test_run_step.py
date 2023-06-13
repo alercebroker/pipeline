@@ -3,6 +3,7 @@ from apf.metrics.prometheus import PrometheusMetrics
 import requests
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from db_plugins.db.mongo.models import Object
 import pytest
 import unittest
 from unittest import mock
@@ -11,7 +12,7 @@ from sorting_hat_step import SortingHatStep
 from schemas.output_schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
-import time
+import pandas as pd
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -127,6 +128,11 @@ class MongoIntegrationTest(unittest.TestCase):
             # TODO add other assertions
             self.assert_message_stamps(message)
 
+        # Check that only 100 objects are inserted
+        mongo_query = self.database.query(Object)
+        cursor = mongo_query.collection.find()
+        assert len(list(cursor)) == 100
+
     def consume_messages(self):
         config = CONSUMER_CONFIG.copy()
         config["PARAMS"]["group.id"] = "assert"
@@ -152,6 +158,27 @@ class MongoIntegrationTest(unittest.TestCase):
         if message["tid"] == "ATLAS":
             assert message["stamps"]["template"] == None
         assert message["stamps"]["difference"] == b"difference"
+
+    def test_write_object(self):
+        step = SortingHatStep(
+            config=self.step_config,
+            db_connection=self.database,
+        )
+
+        alerts = pd.DataFrame([
+            {'oid': 10, 'aid': 0, 'extra': 'extra1'},
+            {'oid': 20, 'aid': 1, 'extra': 'extra2'},
+            {'oid': 30, 'aid': 0, 'extra': 'extra3'}
+                        ])
+        step.post_execute(alerts)
+
+        mongo_query = self.database.query(Object)
+        cursor = mongo_query.collection.find()
+        result = list(cursor)
+        # 2 entries
+        assert len(result) == 2
+        # 2 columns
+        assert len(result[0]) == 2
 
 
 @pytest.mark.usefixtures("mongo_service")
