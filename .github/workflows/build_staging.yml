@@ -30,7 +30,7 @@ jobs:
     needs: get_tags_elasticc_rf_features
     uses: ./.github/workflows/build.yml
     with:
-      tags: ${{ needs.get_tags_elasticc.outputs.tags }}
+      tags: ${{ needs.get_tags_elasticc_rf_features.outputs.tags }}
       dockerfile: ./Dockerfile-elasticc
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
