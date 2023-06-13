@@ -82,6 +82,7 @@ class SortingHatStep(GenericStep):
         :param alerts: Dataframe of alerts
         """
         wizard.insert_empty_objets(self.driver, alerts)
+        return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
         """

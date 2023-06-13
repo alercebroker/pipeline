@@ -241,4 +241,5 @@ def insert_empty_objets(db: DatabaseConnection, alerts: pd.DataFrame):
     to_insert = to_insert.groupby("aid").oid.apply(list).reset_index()
     to_insert = to_insert.rename(columns={"aid": "_id"})
     inserted_ids = insert_query(db, to_insert.to_dict("records"))
+    logger.debug(f"Inserted {len(inserted_ids)} out of {len(to_insert)} objects with unique oid")
     return inserted_ids

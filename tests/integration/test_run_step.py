@@ -104,6 +104,11 @@ class MongoIntegrationTest(unittest.TestCase):
             "METRICS_CONFIG": METRICS_CONFIG,
         }
 
+    def tearDown(self):
+        mongo_query = self.database.query(Object)
+        mongo_query.collection.delete_many({})
+
+
     def test_step(self):
         """
         Nota: este test hace trampa. Lo correcto sería llamar a
@@ -128,10 +133,12 @@ class MongoIntegrationTest(unittest.TestCase):
             # TODO add other assertions
             self.assert_message_stamps(message)
 
-        # Check that only 100 objects are inserted
+        # Check that there are no duplicates inserted
         mongo_query = self.database.query(Object)
         cursor = mongo_query.collection.find()
-        assert len(list(cursor)) == 100
+        inserted_objects = list(cursor)
+        unique_count = pd.DataFrame(messages).aid.nunique()
+        assert len(inserted_objects) == unique_count
 
     def consume_messages(self):
         config = CONSUMER_CONFIG.copy()
