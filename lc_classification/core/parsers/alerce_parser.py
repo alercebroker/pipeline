@@ -6,7 +6,7 @@ import pandas as pd
 
 class AlerceParser(KafkaParser):
     def __init__(self):
-        super().__init__(self, None)
+        super().__init__(None)
 
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
         if len(model_output.classifications["probabilities"]) == 0:
