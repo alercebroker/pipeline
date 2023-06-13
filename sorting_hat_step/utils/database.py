@@ -1,5 +1,6 @@
 import math
 from typing import Union, List
+from pymongo.errors import BulkWriteError
 
 from db_plugins.db.mongo.connection import DatabaseConnection
 from db_plugins.db.mongo.models import Object
@@ -56,6 +57,16 @@ def conesearch_query(
 
 
 def insert_query(db: DatabaseConnection, records: List[dict]):
+    """
+    Inserts the records into the Object collection. Attempts to insert every record and ignores errors.
+    :param db: Database connection
+    :param records: List of records to insert.
+    """
     mongo_query = db.query(Object)
-    result = mongo_query.collection.insert_many(records)
-    return result.inserted_ids
+    inserted_ids = []
+    try:
+        result = mongo_query.collection.insert_many(records, ordered=False)
+        inserted_ids = result.inserted_ids
+    except BulkWriteError as e:
+        pass
+    return inserted_ids
