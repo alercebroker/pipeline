@@ -83,7 +83,6 @@ class SortingHatStep(GenericStep):
         """
         wizard.insert_empty_objets(self.driver, alerts)
 
-
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
         """
         Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.

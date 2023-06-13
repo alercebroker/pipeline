@@ -1,5 +1,5 @@
 import math
-from typing import Union,List
+from typing import Union, List
 
 from db_plugins.db.mongo.connection import DatabaseConnection
 from db_plugins.db.mongo.models import Object
@@ -53,6 +53,7 @@ def conesearch_query(
     if found:
         return found["_id"]
     return None
+
 
 def insert_query(db: DatabaseConnection, records: List[dict]):
     mongo_query = db.query(Object)
