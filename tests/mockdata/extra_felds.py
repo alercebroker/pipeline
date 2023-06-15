@@ -1,5 +1,6 @@
 import random
 import pickle
+import datetime
 
 diaobject_keys = [
     "hostgal2_ellipticity",
@@ -73,4 +74,8 @@ def generate_extra_fields():
     diaobject = {}
     for key in diaobject_keys:
         diaobject[key] = random.random()
-    return {"diaObject": pickle.dumps([diaobject])}
+    return {
+        "diaObject": pickle.dumps([diaobject]),
+        "timestamp": datetime.datetime.now().timestamp(),
+        "brokerIngestTimestamp": datetime.datetime.now().timestamp(),
+    }
