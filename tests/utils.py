@@ -1,7 +1,19 @@
 from alerce_classifiers.base.factories import input_dto_factory
 from typing import List
 
+import os
 import pandas as pd
+import pickle
+
+
+def create_mock_dto() -> List[dict]:
+    base_dir = os.path.dirname(__file__)
+    pickle_messages = open(
+        os.path.join(base_dir, "./mockdata/mock_messages.pickle"), "rb"
+    )
+    messages = pickle.load(pickle_messages)
+    mock_input_dto = create_input_dto(messages)
+    return mock_input_dto
 
 
 def create_input_dto(messages: List[dict]):

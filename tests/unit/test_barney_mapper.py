@@ -1,13 +1,12 @@
 from alerce_classifiers.rf_features_header_classifier.mapper import BarneyMapper
 from alerce_classifiers.rf_features_header_classifier.utils import FEAT_DICT
 from tests import utils
-from tests.mockdata.mock_message import MESSAGES
 
 import pandas as pd
 
 feat_dict = FEAT_DICT
 
-mock_input_dto = utils.create_input_dto(MESSAGES)
+mock_input_dto = utils.create_mock_dto()
 
 
 def check_correct_input(input: pd.DataFrame):
@@ -16,7 +15,6 @@ def check_correct_input(input: pd.DataFrame):
 
 
 def test_preprocess():
-    mock_input_dto = utils.create_input_dto(MESSAGES)
     mapper = BarneyMapper()
 
     preprocessed_input = mapper.preprocess(mock_input_dto)

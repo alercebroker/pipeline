@@ -3,16 +3,15 @@ from alerce_classifiers.rf_features_header_classifier.model import (
     RandomForestFeaturesHeaderClassifier,
 )
 from tests import utils
-from tests.mockdata.mock_message import MESSAGES
 from unittest.mock import patch
 
 import pandas as pd
 
-mock_input_dto = utils.create_input_dto(MESSAGES)
-
 mock_probabilities = pd.DataFrame(
     {"aid": ["aid1"], "SN": [0.5], "AGN": [0.4], "Other": [0.3]}
 )
+
+mock_input_dto = utils.create_mock_dto()
 
 
 @patch("alerce_classifiers.rf_features_header_classifier.model.ElasticcRandomForest")
