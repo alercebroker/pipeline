@@ -7,18 +7,22 @@ from tests.test_commons import (
     assert_elasticc_object_is_correct,
     assert_command_is_correct,
 )
+from typing import Callable
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: KafkaConsumer,
-    scribe_consumer: KafkaConsumer,
+    kafka_consumer: Callable[[], KafkaConsumer],
+    scribe_consumer: Callable[[], KafkaConsumer],
 ):
     from settings import STEP_CONFIG
 
-    model_path = "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"
+    kconsumer = kafka_consumer()
+    sconsumer = scribe_consumer()
+
+    model_path = os.getenv("TEST_TORETTO_MODEL_PATH")
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor"
@@ -35,11 +39,11 @@ def test_step_elasticc_result(
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
-    for message in kafka_consumer.consume():
+    for message in kconsumer.consume():
         assert_elasticc_object_is_correct(message)
-        kafka_consumer.commit()
+        kconsumer.commit()
 
-    for message in scribe_consumer.consume():
+    for message in sconsumer.consume():
         command = json.loads(message["payload"])
         assert_command_is_correct(command)
-        scribe_consumer.commit()
+        sconsumer.commit()

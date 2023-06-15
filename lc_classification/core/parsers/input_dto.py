@@ -1,6 +1,7 @@
 from typing import List
 import pandas as pd
 from alerce_classifiers.base.factories import input_dto_factory
+import pickle
 
 
 def create_input_dto(messages: List[dict]):
@@ -24,10 +25,46 @@ def create_input_dto(messages: List[dict]):
 def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
     """Creates a pandas dataframe with all detections.
 
-    TODO: add more documentation and examples.
+    Examples
+    --------
+    >>> messages = [
+            {
+                "detections": [
+                    {"aid": "aid1", "candid": "cand1"},
+                    {"aid": "aid1", "candid": "cand2"},
+                ]
+            },
+            {
+                "detections": [
+                    {"aid": "aid2", "candid": "cand3"},
+                ]
+            },
+        ]
+    >>> create_detections_dto(messages)
+                candid
+        aid
+        aid1    cand1
+        aid2    cand3
     """
+    detections = [pd.DataFrame.from_records(msg["detections"]) for msg in messages]
+    detections = pd.concat(detections)
+    detections.drop_duplicates("aid", inplace=True)
+    detections = detections.set_index("aid")
+    detections["extra_fields"] = parse_extra_fields(detections)
+    if detections is not None:
+        return detections
+    else:
+        raise ValueError("Could not set index aid on features dataframe")
 
-    return pd.DataFrame()
+
+def parse_extra_fields(detections: pd.DataFrame) -> List[dict]:
+    for ef in detections["extra_fields"]:
+        for key in ef.copy():
+            if type(ef[key]) == bytes:
+                extra_field = pickle.loads(ef[key])
+                # the loaded pickle is a list of one element
+                ef[key] = extra_field[0]
+    return detections["extra_fields"]
 
 
 def create_features_dto(messages: List[dict]) -> pd.DataFrame:

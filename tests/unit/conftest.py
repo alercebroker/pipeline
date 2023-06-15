@@ -106,7 +106,9 @@ def ztf_model_output():
 @pytest.fixture
 def elasticc_model_output():
     def factory(_, model):
-        model.predict.return_value = OutputDTO(DataFrame())
+        aids = ["aid1", "aid2"]
+        df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=aids)
+        model.predict.return_value = OutputDTO(df)
 
     return factory
 
@@ -128,7 +130,9 @@ def step_factory_toretto(elasticc_model_output):
         config = base_config.copy()
         config.update(toretto_config())
         elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        return step_factory(messages, config)
+        step = step_factory(messages, config)
+        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        return step
 
     return factory
 
@@ -139,7 +143,9 @@ def step_factory_balto(elasticc_model_output):
         config = base_config.copy()
         config.update(balto_config())
         elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        return step_factory(messages, config)
+        step = step_factory(messages, config)
+        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        return step
 
     return factory
 
