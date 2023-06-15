@@ -136,3 +136,19 @@ class RunConesearchTestCase(unittest.TestCase):
         mock_wizzard.find_existing_id.assert_called_once()
         mock_wizzard.find_id_by_conesearch.assert_not_called()
         mock_wizzard.generate_new_id.assert_called_once()
+
+    @mock.patch("sorting_hat_step.step.wizard")
+    def test_run_post_execute(self, mock_wizzard):
+        step_config = {
+            "DB_CONFIG": {},
+            "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "RUN_CONESEARCH": "False",
+        }
+        step = SortingHatStep(
+            config=step_config,
+            db_connection=self.mock_database_connection
+        )
+        step.post_execute(self.dataframe) # the wizzard is mocked
+
+        mock_wizzard.insert_empty_objects.assert_called_once()

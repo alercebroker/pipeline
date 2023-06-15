@@ -55,18 +55,22 @@ def conesearch_query(
         return found["_id"]
     return None
 
-
-def insert_query(db: DatabaseConnection, records: List[dict]):
+def id_query(db: DatabaseConnection, _ids: list) -> List[dict]:
     """
-    Inserts the records into the Object collection. Attempts to insert every record and ignores errors.
+    Query the database and check which _id values are already in the database
+
     :param db: Database connection
-    :param records: List of records to insert.
+    :param _ids: _id values to look for
+
+    :return: All the found ids with the corresponding list of oids
     """
     mongo_query = db.query(Object)
-    inserted_ids = []
-    try:
-        result = mongo_query.collection.insert_many(records, ordered=False)
-        inserted_ids = result.inserted_ids
-    except BulkWriteError as e:
-        pass
-    return inserted_ids
+    found_cursor = mongo_query.collection.find({"_id": {"$in": _ids}}, {"_id": 1, "oid": 1})
+    return list(found_cursor)
+
+def update_query(db: DatabaseConnection, records: List[dict]):
+    mongo_query = db.query(Object)
+    for record in records:
+        query = {"_id": {"$in": [record["_id"]]}}
+        new_value = { "$set": { 'oid': record['oid'] } }
+        mongo_query.collection.update_one(query, new_value, upsert=True)

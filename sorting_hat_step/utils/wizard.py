@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial import cKDTree
 from db_plugins.db.mongo import DatabaseConnection
 
-from .database import oid_query, conesearch_query, insert_query
+from .database import oid_query, conesearch_query, update_query, id_query
 
 
 CHARACTERS = string.ascii_lowercase
@@ -230,18 +230,23 @@ def generate_new_id(alerts: pd.DataFrame):
     return alerts
 
 
-def insert_empty_objets(db: DatabaseConnection, alerts: pd.DataFrame):
+def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
     :param db: Connection to the database.
     :alerts: Dataframe with alerts.
     """
-    to_insert = alerts[["oid", "aid"]]
-    to_insert = to_insert.groupby("aid").oid.apply(list).reset_index()
-    to_insert = to_insert.rename(columns={"aid": "_id"})
-    inserted_ids = insert_query(db, to_insert.to_dict("records"))
-    logger.debug(
-        f"Inserted {len(inserted_ids)} out of {len(to_insert)} objects with unique oid"
-    )
-    return inserted_ids
+    objects = alerts[["oid", "aid"]]
+    objects = objects.rename(columns={"aid": "_id"})
+    objects = objects.groupby("_id").oid.apply(list)
+
+    found_data = id_query(db, objects.index.tolist())
+    for found in found_data:
+        old_oid_array = objects[found['_id']]
+        new_oid = old_oid_array + found['oid']
+        objects.at[found['_id']] = new_oid
+
+    objects = objects.reset_index()
+    logger.debug(f"Inserting or updating {len(objects)} entries into the Objects collection")
+    update_query(db, objects.to_dict('records'))

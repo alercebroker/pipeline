@@ -1,6 +1,7 @@
 import math
 import unittest
 from unittest import mock
+from pymongo.errors import BulkWriteError
 
 from db_plugins.db.mongo.connection import MongoConnection
 from db_plugins.db.mongo.models import Object
@@ -55,11 +56,25 @@ class DatabaseTestCase(unittest.TestCase):
         aid = database.conesearch_query(self.mock_db, 1, 2, 3)
         assert aid is None
 
-    def test_insert_query(self):
-        self.mock_db.query(Object).collection.insert_many.return_value.inserted_ids = [0, 1]
+    def test_id_query(self):
+        self.mock_db.query(Object).collection.find.return_value = [{"_id": 1, "oid": [10]}, {"_id": 2, "oid": [20, 30]}]
+        found = database.id_query(self.mock_db, [1, 2])
+        self.assertEqual(found, [{"_id": 1, "oid": [10]}, {"_id": 2, "oid": [20, 30]}])
+        self.mock_db.query(Object).collection.find.assert_called_with(
+                {"_id": {"$in": [1, 2]}}, {"_id": 1, "oid": 1}
+        )
+
+    def test_update_query(self):
         records = [
             {'oid': [10], '_id': 0},
             {'oid': [20, 30], '_id': 1},
                         ]
-        ids = database.insert_query(self.mock_db, records)
-        assert len(ids) == 2
+        database.update_query(self.mock_db, records)
+
+        assert self.mock_db.query(Object).collection.update_one.call_count == 2
+
+        query = {"_id": {"$in": [0]}}
+        new_value = { "$set": { 'oid': [10] } }
+        self.mock_db.query(Object).collection.update_one.assert_any_call(
+            query, new_value, upsert=True
+        )
