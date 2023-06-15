@@ -68,10 +68,12 @@ class ElasticcParser(KafkaParser):
                 "diaSourceId": int(detection_extra_info[aid]["oid"]),
                 "elasticcPublishTimestamp": detection_extra_info[aid][
                     "elasticcPublishTimestamp"
-                ] * 1000,
+                ]
+                * 1000,
                 "brokerIngestTimestamp": detection_extra_info[aid][
                     "brokerIngestTimestamp"
-                ] * 1000,
+                ]
+                * 1000,
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
