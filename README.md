@@ -27,12 +27,12 @@ pre-commit install
 The `setup.py` script allows to pack all the mini-packages on `alerce_classifiers` folder in spited packages. So you can install specific mini-packages in your project:
 
 ```commandline
-pip install https://${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git@0.0.6#egg=alerce_classifiers[transformer_lc_header]
+pip install https://${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git@0.0.6#egg=alerce_classifiers[balto]
 ```
 
 Or in your local environment:
 ```commandline
-pip install .[transformer_lc_header]
+pip install .[balto]
 ```
 So you will install the specific requirements for this model (and not install all the classifiers).
 
@@ -46,10 +46,10 @@ For example the `ELAsTiCCMapper` transform light curves and features of the stre
 Once installed the model, you can use the model just with:
 
 ```python
-from alerce_classifiers.transformer_lc_header import TransformerLCHeaderClassifier
+from alerce_classifiers.balto import BaltoClassifier
 
 light_curves_dataframe = ...
-model = TransformerLCHeaderClassifier("MODEL_PATH", "HEADER_QUANTILES_PATH")
+model = BaltoClassifier("MODEL_PATH", "HEADER_QUANTILES_PATH")
 predictions = model.predict_proba(light_curves_dataframe)
 ```
 

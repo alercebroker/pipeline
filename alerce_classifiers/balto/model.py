@@ -1,4 +1,4 @@
-from .mapper import LCHeaderMapper
+from .mapper import BaltoMapper
 from .utils import FEAT_DICT
 from alerce_classifiers.base.dto import InputDTO
 from alerce_classifiers.base.dto import OutputDTO
@@ -11,7 +11,7 @@ import torch
 import validators
 
 
-class TranformerLCHeaderClassifier(AlerceModel):
+class BaltoClassifier(AlerceModel):
     _taxonomy = [
         "AGN",
         "CART",
@@ -36,12 +36,14 @@ class TranformerLCHeaderClassifier(AlerceModel):
     ]
 
     def __init__(
-        self, model_path: str, header_quantiles_path: str, mapper: LCHeaderMapper = None
+        self,
+        model_path: str,
+        header_quantiles_path: str,
+        mapper: BaltoMapper,
     ):
-        super().__init__(model_path, mapper)
-        self._local_files = f"/tmp/{type(self).__name__}"
         _file = os.path.dirname(__file__)
         sys.path.append(_file)
+        super().__init__(model_path, mapper)
         self._load_quantiles(header_quantiles_path)
 
     def _load_quantiles(self, path: str):
@@ -59,6 +61,7 @@ class TranformerLCHeaderClassifier(AlerceModel):
         }
 
     def _load_model(self, model_path: str) -> None:
+        self._local_files = f"/tmp/{type(self).__name__}"
         if validators.url(model_path):
             model_path = self.download(model_path, self._local_files)
         self.model = torch.load(model_path, map_location=torch.device("cpu")).eval()

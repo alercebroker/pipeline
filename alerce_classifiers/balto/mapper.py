@@ -9,7 +9,8 @@ import pandas as pd
 import torch
 
 
-class LCHeaderMapper(Mapper):
+
+class BaltoMapper(Mapper):
     _fid_mapper = {
         0: "u",
         1: "g",
@@ -27,8 +28,8 @@ class LCHeaderMapper(Mapper):
     _feat_dict = FEAT_DICT
 
     def _get_detections(self, input: InputDTO):
-        needed_cols = list(self._rename_cols.keys()).append("forced")
-        return input.detections[needed_cols]
+        detections = input.detections.rename(columns=self._rename_cols)
+        return detections
 
     def _get_headers(self, input: InputDTO):
         headers = pd.DataFrame.from_records(
