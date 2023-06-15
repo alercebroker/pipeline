@@ -243,10 +243,12 @@ def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
 
     found_data = id_query(db, objects.index.tolist())
     for found in found_data:
-        old_oid_array = objects[found['_id']]
-        new_oid = old_oid_array + found['oid']
-        objects.at[found['_id']] = new_oid
+        old_oid_array = objects[found["_id"]]
+        new_oid = old_oid_array + found["oid"]
+        objects.at[found["_id"]] = new_oid
 
     objects = objects.reset_index()
-    logger.debug(f"Inserting or updating {len(objects)} entries into the Objects collection")
-    update_query(db, objects.to_dict('records'))
+    logger.debug(
+        f"Inserting or updating {len(objects)} entries into the Objects collection"
+    )
+    update_query(db, objects.to_dict("records"))
