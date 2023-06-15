@@ -1,7 +1,9 @@
 name: Lint
 
-on: [pull_request]
-
+on:
+  pull_request:
+    paths:
+      - './alerce-reflector-step/**'
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -10,4 +12,4 @@ jobs:
       - uses: psf/black@stable
         with:
           options: "--check --verbose"
-          src: "cmirrormaker/"
+          src: "alerce-reflector-step/cmirrormaker/"
