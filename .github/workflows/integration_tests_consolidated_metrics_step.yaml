@@ -1,0 +1,26 @@
+name: integration_tests
+
+on:
+  pull_request:
+    paths:
+      - 'consolidated_metrics_step/**'
+    branches:
+      - main
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy pytest-docker faker
+          if [ -f consolidated_metrics_step/requirements.txt ]; then pip install -r consolidated_metrics_step/requirements.txt; fi
+      - name: Test with pytest
+        run: |
+          python -m pytest -x consolidated_metrics_step/tests/integration/

@@ -1,0 +1,26 @@
+name: Lint and test
+on:
+  pull_request:
+    paths:
+      - 'magstats_step/**'
+    branches:
+      - main
+
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'magstats_step/magstats_step'
+  unittest:
+    uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+    with:
+      python-version: '3.9'
+      sources-folder: 'magstats_step/magstats_step'
+      test-folder: 'magstats_step/tests/unittests'
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+    with:
+      python-version: '3.9'
+      sources-folder: 'magstats_step/magstats_step'
+      test-folder: 'magstats_step/tests/integration'
+      codecov-flags: ''  # Do not upload

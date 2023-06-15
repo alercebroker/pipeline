@@ -1,0 +1,50 @@
+name: Lint and test
+on:
+  pull_request:
+    paths:
+      - 'lc_classification_step/**'
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'lc_classification_step/lc_classification'
+  unittest-ztf:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_ztf.txt'
+      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/unit --cov lc_classification --cov-report xml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  integration-ztf:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_ztf.txt'
+      test-dependencies: pytest pytest-docker
+      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/integration
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  unittest-elasticc:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
+      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/unit --cov lc_classification --cov-report xml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  integration-elasticc:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
+      test-dependencies: pytest pytest-docker
+      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/integration
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
