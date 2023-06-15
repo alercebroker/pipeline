@@ -143,26 +143,20 @@ class SortingHatTestCase(unittest.TestCase):
         self.assertIsInstance(aid_int, int)
         self.assertEqual(aid_int, 1000000000000000000)
 
-    @mock.patch("sorting_hat_step.utils.wizard.id_query")
     @mock.patch("sorting_hat_step.utils.wizard.update_query")
-    def test_write_object(self, insert_mock, id_mock):
+    def test_write_object(self, insert_mock):
         alerts = pd.DataFrame([
             {'oid': 10, 'aid': 0, 'extra': 'extra1'},
             {'oid': 20, 'aid': 1, 'extra': 'extra2'},
             {'oid': 30, 'aid': 0, 'extra': 'extra3'},
             {'oid': 40, 'aid': 2, 'extra': 'extra4'}
                         ])
-        id_mock.return_value = [
-                {'_id': 2, 'oid': [100, 200]}
-                ]
 
         wizard.insert_empty_objects(self.mock_db, alerts)
 
-        id_mock.assert_called_with(self.mock_db, [0, 1, 2])
-
-        inserted_and_renamed_records = [
+        updated_records = [
             {'oid': [10, 30], '_id': 0},
             {'oid': [20], '_id': 1},
-            {'oid': [40, 100, 200], '_id': 2},
+            {'oid': [40], '_id': 2},
                         ]
-        insert_mock.assert_called_with(self.mock_db, inserted_and_renamed_records)
+        insert_mock.assert_called_with(self.mock_db, updated_records)

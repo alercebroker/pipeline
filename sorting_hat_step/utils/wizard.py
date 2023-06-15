@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial import cKDTree
 from db_plugins.db.mongo import DatabaseConnection
 
-from .database import oid_query, conesearch_query, update_query, id_query
+from .database import oid_query, conesearch_query, update_query
 
 
 CHARACTERS = string.ascii_lowercase
@@ -239,15 +239,8 @@ def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
     """
     objects = alerts[["oid", "aid"]]
     objects = objects.rename(columns={"aid": "_id"})
-    objects = objects.groupby("_id").oid.apply(list)
+    objects = objects.groupby("_id").oid.apply(list).reset_index()
 
-    found_data = id_query(db, objects.index.tolist())
-    for found in found_data:
-        old_oid_array = objects[found["_id"]]
-        new_oid = old_oid_array + found["oid"]
-        objects.at[found["_id"]] = new_oid
-
-    objects = objects.reset_index()
     logger.debug(
         f"Inserting or updating {len(objects)} entries into the Objects collection"
     )

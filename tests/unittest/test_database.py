@@ -56,25 +56,25 @@ class DatabaseTestCase(unittest.TestCase):
         aid = database.conesearch_query(self.mock_db, 1, 2, 3)
         assert aid is None
 
-    def test_id_query(self):
-        self.mock_db.query(Object).collection.find.return_value = [{"_id": 1, "oid": [10]}, {"_id": 2, "oid": [20, 30]}]
-        found = database.id_query(self.mock_db, [1, 2])
-        self.assertEqual(found, [{"_id": 1, "oid": [10]}, {"_id": 2, "oid": [20, 30]}])
-        self.mock_db.query(Object).collection.find.assert_called_with(
-                {"_id": {"$in": [1, 2]}}, {"_id": 1, "oid": 1}
-        )
-
     def test_update_query(self):
+        mock_find_and_update = self.mock_db.query(Object).collection.find_one_and_update
+        mock_find_and_update.side_effect = [
+            {"oid": [10, 100], "_id": 0},
+            {"oid": [20, 30], "_id": 1},
+                ]
         records = [
-            {'oid': [10], '_id': 0},
-            {'oid': [20, 30], '_id': 1},
-                        ]
+            {"oid": [10], "_id": 0},
+            {"oid": [20, 30], "_id": 1},
+        ]
+
         database.update_query(self.mock_db, records)
 
-        assert self.mock_db.query(Object).collection.update_one.call_count == 2
+        assert mock_find_and_update.call_count == 2
 
         query = {"_id": {"$in": [0]}}
-        new_value = { "$set": { 'oid': [10] } }
-        self.mock_db.query(Object).collection.update_one.assert_any_call(
-            query, new_value, upsert=True
+        new_value = {
+                "$push": {"oid": {"$each": [10]}},
+                }
+        self.mock_db.query(Object).collection.find_one_and_update.assert_any_call(
+            query, new_value, upsert=True, return_document=True
         )

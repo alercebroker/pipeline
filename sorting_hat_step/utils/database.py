@@ -56,25 +56,10 @@ def conesearch_query(
     return None
 
 
-def id_query(db: DatabaseConnection, _ids: list) -> List[dict]:
-    """
-    Query the database and check which _id values are already in the database
-
-    :param db: Database connection
-    :param _ids: _id values to look for
-
-    :return: All the found ids with the corresponding list of oids
-    """
-    mongo_query = db.query(Object)
-    found_cursor = mongo_query.collection.find(
-        {"_id": {"$in": _ids}}, {"_id": 1, "oid": 1}
-    )
-    return list(found_cursor)
-
-
 def update_query(db: DatabaseConnection, records: List[dict]):
     """
-    Insert or update the records in a dictionary.
+    Insert or update the records in a dictionary. Pushes the oid array to
+    oid column.
 
     :param db: Database connection
     :param records: Records containing _id and oid fields to insert or update
@@ -82,5 +67,9 @@ def update_query(db: DatabaseConnection, records: List[dict]):
     mongo_query = db.query(Object)
     for record in records:
         query = {"_id": {"$in": [record["_id"]]}}
-        new_value = {"$set": {"oid": record["oid"]}}
-        mongo_query.collection.update_one(query, new_value, upsert=True)
+        new_value = {
+                "$push": {"oid": {"$each": record["oid"]}},
+        }
+        updated = mongo_query.collection.find_one_and_update(
+            query, new_value, upsert=True, return_document=True
+        )

@@ -173,21 +173,24 @@ class MongoIntegrationTest(unittest.TestCase):
             db_connection=self.database,
         )
 
+        # Insert a preexisting entry
+        mongo_query = self.database.query(Object)
+        mongo_query.collection.insert_one({'_id': 2, 'oid': [100]})
+
         alerts = pd.DataFrame([
             {'oid': 10, 'aid': 0, 'extra': 'extra1'},
             {'oid': 20, 'aid': 1, 'extra': 'extra2'},
-            {'oid': 30, 'aid': 0, 'extra': 'extra3'}
+            {'oid': 30, 'aid': 0, 'extra': 'extra3'},
+            {'oid': 40, 'aid': 2, 'extra': 'extra4'},
                         ])
         step.post_execute(alerts)
 
-        mongo_query = self.database.query(Object)
         cursor = mongo_query.collection.find()
         result = list(cursor)
-        # 2 entries
-        assert len(result) == 2
-        # 2 columns
-        assert len(result[0]) == 2
-
+        expected = [
+                {'_id': 2, 'oid': [100, 40]}, {'_id': 0, 'oid': [10, 30]}, {'_id': 1, 'oid': [20]}
+                ]
+        assert len(result) == len(expected) and all(x in result for x in expected)
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
