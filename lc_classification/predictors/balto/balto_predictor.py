@@ -1,9 +1,10 @@
-from alerce_classifiers.balto.model import BaltoClassifier
 from alerce_classifiers.balto.mapper import BaltoMapper
+from alerce_classifiers.balto.model import BaltoClassifier
+from alerce_classifiers.balto.utils import FEAT_DICT
 from alerce_classifiers.base.dto import InputDTO
-from lc_classification.predictors.predictor.predictor_parser import PredictorInput
+
 from lc_classification.predictors.predictor.predictor import Predictor
-from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
+from lc_classification.predictors.predictor.predictor_parser import PredictorInput
 
 
 class BaltoPredictor(Predictor):
