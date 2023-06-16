@@ -73,7 +73,7 @@ class DatabaseTestCase(unittest.TestCase):
 
         query = {"_id": {"$in": [0]}}
         new_value = {
-                "$push": {"oid": {"$each": [10]}},
+                "$addToSet": {"oid": {"$each": [10]}},
                 }
         self.mock_db.query(Object).collection.find_one_and_update.assert_any_call(
             query, new_value, upsert=True, return_document=True
