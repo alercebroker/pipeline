@@ -19,7 +19,7 @@ jobs:
        sources-folder: "lightcurve_step/lightcurve_step"
        test-folder: "lightcurve_step/tests/unittest"
        test-dependencies: "pytest pytest-cov"
-       test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step --cov-report xml"
+       test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step/lightcurve_step --cov-report xml"
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:

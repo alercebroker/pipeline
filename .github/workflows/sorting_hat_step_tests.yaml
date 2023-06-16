@@ -22,7 +22,7 @@ jobs:
       test-folder: 'sorting_hat_step/tests/unittest'
       test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
       pre-dependencies: 'numpy'
-      test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step --cov-report xml'
+      test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step/sorting_hat_step --cov-report xml'
   integration:
     uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
     with:
