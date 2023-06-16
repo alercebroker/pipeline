@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
-from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.generic import new_DBConnection
+from db_plugins.db.mongo.connection import MongoDatabaseCreator
 from db_plugins.db.mongo.models import Object, Detection, NonDetection, ForcedPhotometry
 from ..command.commands import Command
 from ..command.exceptions import NonExistentCollectionException
@@ -19,7 +20,7 @@ class ScribeCommandExecutor:
     )
 
     def __init__(self, config):
-        connection = MongoConnection()
+        connection = new_DBConnection(MongoDatabaseCreator)
         connection.connect(config["MONGO"])
         self.connection = connection
 
