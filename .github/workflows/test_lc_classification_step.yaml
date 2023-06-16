@@ -3,10 +3,9 @@ on:
   pull_request:
     paths:
       - 'lc_classification_step/**'
+      - '!lc_classification_step/README.md'
     branches:
       - main
-    paths-ignore:
-      - 'README.md'
 jobs:
   lint:
     uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main

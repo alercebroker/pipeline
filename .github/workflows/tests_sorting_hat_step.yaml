@@ -4,11 +4,10 @@ on:
   pull_request:
     paths:
       - 'sorting_hat_step/**'
+      - '!sorting_hat_step/doc'
+      - '!sorting_hat_step/scripts'
     branches:
       - main
-    paths-ignore:
-      - 'doc'
-      - 'scripts'
 
 jobs:
   lint:
