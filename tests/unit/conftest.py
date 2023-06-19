@@ -152,7 +152,7 @@ def step_factory_toretto(elasticc_model_output):
 def step_factory_barney(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
-        config.update(toretto_config())
+        config.update(barney_config())
         elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})

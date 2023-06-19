@@ -27,7 +27,7 @@ def test_step_barney(test_elasticc_model, step_factory_barney):
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
-def test_step_toretto_model_input_is_correct(step_factory_barney):
+def test_step_braney_model_input_is_correct(step_factory_barney):
     step = step_factory_barney(messages_elasticc)
     step.start()
     predictor_calls = step.predictor.model.predict.mock_calls
