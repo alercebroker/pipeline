@@ -21,6 +21,18 @@ for message in messages_elasticc:
     message["detections"][0]["has_stamp"] = True
 
 
+def assert_classified_as_not_classified(step, obj):
+    class_mapper = step.step_parser.ClassMapper
+    not_classified_id = class_mapper.get_class_value("NotClassified")
+    not_classified_probability = next(
+        classification["probability"]
+        for classification in obj["classifications"]
+        if classification["classId"] == not_classified_id
+    )
+
+    assert not_classified_probability == 1
+
+
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_barney(test_elasticc_model, step_factory_barney):
     test_elasticc_model(step_factory_barney, messages_elasticc)
@@ -59,4 +71,5 @@ def test_step_elasticc_without_features(step_factory_barney):
     assert len(calls) == len(empty_features)
     for call in calls:
         obj = call.args[0]
+        assert_classified_as_not_classified(step, obj)
         assert_elasticc_object_is_correct(obj)
