@@ -71,7 +71,7 @@ class DatabaseTestCase(unittest.TestCase):
 
         assert mock_find_and_update.call_count == 2
 
-        query = {"_id": {"$in": [0]}}
+        query = {"_id": 0}
         new_value = {
                 "$addToSet": {"oid": {"$each": [10]}},
                 }

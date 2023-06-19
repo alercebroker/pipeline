@@ -66,7 +66,7 @@ def update_query(db: DatabaseConnection, records: List[dict]):
     """
     mongo_query = db.query(Object)
     for record in records:
-        query = {"_id": {"$in": [record["_id"]]}}
+        query = {"_id": record["_id"]}
         new_value = {
             "$addToSet": {"oid": {"$each": record["oid"]}},
         }
