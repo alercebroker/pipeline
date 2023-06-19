@@ -1,0 +1,43 @@
+name: tests_alert_archiving_step
+
+on:
+  pull_request:
+    paths:
+      - 'alert_archiving_step/**'
+    branches:
+      - main
+
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+  unittest:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      test-folder: 'alert_archiving_step/tests/unittest'
+      test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
+      requirements-file: 'alert_archiving_step/requirements.txt'
+      test-command: 'python -m pytest -x alert_archiving_step/tests/unittest --cov alert_archiving_step/alert_archiving_step --cov-report xml'
+
+  unittest_cli:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      test-folder: 'alert_archiving_step/tests/cli'
+      test-dependencies: 'pytest pytest-docker pytest-cov'
+      requirements-file: 'alert_archiving_step/requirements_cli.txt'
+      test-command: 'python -m pytest -x alert_archiving_step/tests/cli --cov alert_archiving_step/cli --cov-report xml'
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      test-folder: 'alert_archiving_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker numpy Cython'
+      requirements-file: 'alert_archiving_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x alert_archiving_step/tests/integration'
