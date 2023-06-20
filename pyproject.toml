@@ -35,8 +35,6 @@ optional = true
 [tool.poetry.group.elasticc]
 optional = true
 
-# poetry config http-basic.git edipizarro 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
-
 [tool.poetry.group.ztf.dependencies]
 # lc_classifier = {git = "https://github.com/alercebroker/lc_classifier.git", tag = "1.2.3-P", optional = true }
 # alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", rev = "a436134cc5b2d9745bd13f718fff76ee01dae341", optional = true }
