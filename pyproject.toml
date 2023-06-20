@@ -1,0 +1,68 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "lc_classification_step"
+version = "1.0.99"
+description = "LC Classification Step"
+authors = []
+readme = "README.md"
+packages = [{include = "lc_classification"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.9"
+apf-base = { version = "2.1.5" }
+numexpr = { version = "*" }
+numpy = { version = "*" }
+scipy = { version = ">=1.5.2,<1.6" }
+pandas = { version = "2.0.1" }
+GPy = {git = "https://github.com/SheffieldML/GPy.git", rev = "v1.10.0"}
+pickle5 = { version = "*" }
+
+[tool.poetry.group.ztf]
+optional = true
+
+[tool.poetry.group.toretto]
+optional = true
+
+[tool.poetry.group.messi]
+optional = true
+
+[tool.poetry.group.balto]
+optional = true
+
+[tool.poetry.group.elasticc]
+optional = true
+
+# poetry config http-basic.git edipizarro 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
+
+[tool.poetry.group.ztf.dependencies]
+# lc_classifier = {git = "https://github.com/alercebroker/lc_classifier.git", tag = "1.2.3-P", optional = true }
+# alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", rev = "a436134cc5b2d9745bd13f718fff76ee01dae341", optional = true }
+
+[tool.poetry.group.toretto.dependencies]
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", extras = ["rf_features_classifier"], branch = "main" }
+
+[tool.poetry.group.messi.dependencies]
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", extras = ["transformer_lc_features"], branch = "main" }
+
+[tool.poetry.group.balto.dependencies]
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", extras = ["balto"], branch = "main" }
+
+[tool.poetry.group.elasticc.dependencies]
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers.git", extras = ["rf_features_classifier, transformer_lc_features, balto"], branch = "main" }
+
+[tool.poetry.group.dev.dependencies]
+black = "~=21.0"
+ 
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-cov = "^4.1.0"
+pytest-docker = "^1.0.1"
+
+[tool.black]
+line-length = 88
+
+[tool.pytest.ini_options]
+addopts = "-x -s"
