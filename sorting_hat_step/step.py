@@ -77,6 +77,14 @@ class SortingHatStep(GenericStep):
         self._add_metrics(alerts)
         return alerts
 
+    def post_execute(self, alerts: pd.DataFrame):
+        """
+        Writes entries to the database with _id and oid only.
+        :param alerts: Dataframe of alerts
+        """
+        wizard.insert_empty_objects(self.driver, alerts)
+        return alerts
+
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
         """
         Generate an alerce_id to a batch of alerts given its oid, ra, dec and radius.
