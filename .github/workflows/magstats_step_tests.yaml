@@ -1,4 +1,4 @@
-name: Lint and test
+name: Tests_magstats_step
 on:
   pull_request:
     paths:

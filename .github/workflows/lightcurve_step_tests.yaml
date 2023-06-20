@@ -1,4 +1,4 @@
-name: Tests
+name: Tests_lightcurve_step
 
 on:
   pull_request:

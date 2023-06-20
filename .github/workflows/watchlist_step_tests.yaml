@@ -1,0 +1,32 @@
+name: tests_watchlist_step
+
+on:
+    pull_request:
+      paths:
+        - 'watchlist_step/**'
+      branches:
+        - main
+jobs:
+  lint:
+    uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+    with:
+      sources-folder: 'watchlist_step/watchlist_step/'
+  unittest:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.8'
+      sources-folder: 'watchlist_step/watchlist_step/'
+      test-folder: 'watchlist_step/tests/unit'
+      test-dependencies: 'pytest pytest-cov'
+      requirements-file: 'watchlist_step/requirements.txt'
+      test-command: 'python -m pytest -x watchlist_step/tests/unit --cov watchlist_step/watchlist_step/ --cov-report xml'
+  integration:
+    uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+    with:
+      python-version: '3.9'
+      sources-folder: 'watchlist_step/watchlist_step/'
+      test-folder: 'watchlist_step/tests/integration'
+      test-dependencies: 'pytest==7.2.0 pytest-docker'
+      requirements-file: 'watchlist_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x watchlist_step/tests/integration'

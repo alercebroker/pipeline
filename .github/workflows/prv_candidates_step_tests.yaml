@@ -1,4 +1,4 @@
-name: Tests
+name: Tests_prv_candidates_step
 
 on:
   pull_request:
