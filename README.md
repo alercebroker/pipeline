@@ -440,8 +440,8 @@ pip install -r requirements_elasticc.txt
 - If you want to set create `.venv` environment in the project folder: `poetry config virtualenvs.in-project true`
 - Set github configuration, use poetry config or env variables.
   - `poetry config http-basic.git <username> <password>`
-  - `export POETRY_HTTP_BASIC_PYPI_USERNAME=<username>`
-  - `export POETRY_HTTP_BASIC_PYPI_PASSWORD=<password>`
+  - `export POETRY_HTTP_BASIC_GIT_USERNAME=<username>`
+  - `export POETRY_HTTP_BASIC_GIT_PASSWORD=<password>`
 - Install desired environment: 
   - `poetry install --with ztf`
   - `poetry install --with toretto`
