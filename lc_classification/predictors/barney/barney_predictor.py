@@ -2,6 +2,7 @@ from alerce_classifiers.base.dto import InputDTO
 from alerce_classifiers.rf_features_header_classifier.model import (
     RandomForestFeaturesHeaderClassifier,
 )
+from alerce_classifiers.rf_features_header_classifier.utils import FEAT_DICT
 
 from lc_classification.predictors.predictor.predictor_parser import PredictorInput
 
@@ -19,4 +20,4 @@ class BarneyPredictor(Predictor):
         return self.model.predict(model_input.value)
 
     def get_feature_list(self):
-        return None
+        return FEAT_DICT.values()
