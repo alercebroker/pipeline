@@ -1,11 +1,13 @@
+from .utils import FEAT_DICT
+from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.base.dto import OutputDTO
+from alerce_classifiers.base.mapper import Mapper
+from alerce_classifiers.utils.dataframe import DataframeUtils
+
 import numpy as np
 import pandas as pd
 import torch
 
-from alerce_classifiers.base.dto import InputDTO, OutputDTO
-from alerce_classifiers.base.mapper import Mapper
-from alerce_classifiers.utils.dataframe import DataframeUtils
-from alerce_classifiers.utils.input_mapper.elasticc.dict_transform import FEAT_DICT
 
 
 class BaltoMapper(Mapper):

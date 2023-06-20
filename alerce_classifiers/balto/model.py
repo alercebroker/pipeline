@@ -1,14 +1,14 @@
+from .mapper import BaltoMapper
+from .utils import FEAT_DICT
+from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.base.dto import OutputDTO
+from alerce_classifiers.base.model import AlerceModel
+from joblib import load
+
 import os
 import sys
 import torch
 import validators
-
-from joblib import load
-from alerce_classifiers.base.dto import InputDTO, OutputDTO
-from alerce_classifiers.base.model import AlerceModel
-from .dict_transform import FEAT_DICT
-
-from .mapper import BaltoMapper
 
 
 class BaltoClassifier(AlerceModel):
