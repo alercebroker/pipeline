@@ -441,7 +441,7 @@ pip install -r requirements_elasticc.txt
 - Set github configuration, use poetry config or env variables.
   - `poetry config http-basic.git <username> <password>`
   - `export POETRY_HTTP_BASIC_GIT_USERNAME=<username>`
-  - `export POETRY_HTTP_BASIC_GIT_PASSWORD=<password>`
+  - `export POETRY_HTTP_BASIC_GIT_PASSWORD=<gh_token>`
 - Install desired environment: 
   - `poetry install --with ztf`
   - `poetry install --with toretto`
