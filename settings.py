@@ -111,12 +111,23 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
-PREDICTOR_CONFIG = {
-    "CLASS": os.getenv("PREDICTOR_CLASS"),
-    "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
-    "PARSER_CLASS": os.getenv("PREDICTOR_PARSER_CLASS"),
-    "PARSER_PARAMS": {},
-}
+
+def predictor_config_factory():
+    config = {
+        "CLASS": os.getenv("PREDICTOR_CLASS"),
+        "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
+        "PARSER_CLASS": os.getenv("PREDICTOR_PARSER_CLASS"),
+        "PARSER_PARAMS": {},
+    }
+    if isinstance(config["CLASS"], str):
+        if (
+            config["CLASS"].endswith("BaltoPredictor")
+            or config["CLASS"].endswith("MessiPredictor")
+            or config["CLASS"].endswith("BarneyPredictor")
+        ):
+            config["PARAMS"]["quantiles_path"] = os.getenv("QUANTILES_PATH")
+    return config
+
 
 STEP_CONFIG = {
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
@@ -125,7 +136,7 @@ STEP_CONFIG = {
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "MODEL_VERSION": os.getenv("MODEL_VERSION", "dev"),
-    "PREDICTOR_CONFIG": PREDICTOR_CONFIG,
+    "PREDICTOR_CONFIG": predictor_config_factory(),
     "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
     "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
 }
