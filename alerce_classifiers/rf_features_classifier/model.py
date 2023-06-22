@@ -34,7 +34,11 @@ class RandomForestFeaturesClassifier(AlerceModel[pd.DataFrame]):
 
     def _load_model(self, path_to_model: str) -> None:
         self.model = ElasticcRandomForest(
-            self._taxonomy_dictionary, self._non_used_features, n_trees=500, n_jobs=1
+            self._taxonomy_dictionary,
+            self._non_used_features,
+            n_trees=500,
+            n_jobs=1,
+            model_name="toretto_elasticc_rf",
         )
         if validators.url(path_to_model):
             self.model.url_model = path_to_model
