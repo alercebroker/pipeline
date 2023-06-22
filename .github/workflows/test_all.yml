@@ -21,6 +21,7 @@ jobs:
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   integration-ztf:
     uses: ./.github/workflows/test.yml
     with:
@@ -34,6 +35,7 @@ jobs:
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   unittest-elasticc:
     uses: ./.github/workflows/test.yml
     with:
@@ -47,6 +49,7 @@ jobs:
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   integration-elasticc:
     uses: ./.github/workflows/test.yml
     with:
@@ -62,3 +65,4 @@ jobs:
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
