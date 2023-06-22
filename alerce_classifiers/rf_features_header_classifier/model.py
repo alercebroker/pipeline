@@ -24,12 +24,12 @@ class RandomForestFeaturesHeaderClassifier(AlerceModel[pd.DataFrame]):
                 "TDE",
                 "ILOT",
                 "KN",
+                "uLens",
             ],
             "Stochastic": [
                 "M-dwarf Flare",
                 "Dwarf Novae",
                 "AGN",
-                "uLens",
             ],
             "Periodic": ["Delta Scuti", "RR Lyrae", "Cepheid", "EB"],
         }
