@@ -50,6 +50,9 @@ on:
       TEST_TORETTO_MODEL_PATH:
         required: true
         description: 'A path to a .pkl file'
+      TEST_BARNEY_MODEL_PATH:
+        required: true
+        description: 'A path to a .pkl file'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -58,6 +61,7 @@ jobs:
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3

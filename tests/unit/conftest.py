@@ -1,17 +1,17 @@
-from alerce_classifiers.base.dto import OutputDTO
-import pytest
-from unittest import mock
-from pandas import DataFrame
-from lc_classification.core.step import (
-    LateClassifier,
-)
-from apf.producers import KafkaProducer
-from apf.consumers import KafkaConsumer
-from tests.test_commons import (
-    assert_elasticc_object_is_correct,
-    assert_command_is_correct,
-)
 from json import loads
+from unittest import mock
+
+import pytest
+from alerce_classifiers.base.dto import OutputDTO
+from apf.consumers import KafkaConsumer
+from apf.producers import KafkaProducer
+from pandas import DataFrame
+
+from lc_classification.core.step import LateClassifier
+from tests.test_commons import (
+    assert_command_is_correct,
+    assert_elasticc_object_is_correct,
+)
 
 base_config = {
     "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
@@ -39,6 +39,17 @@ def toretto_config():
             "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
             "CLASS": "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
             "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
+    }
+
+
+def barney_config():
+    return {
+        "PREDICTOR_CONFIG": {
+            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
+            "CLASS": "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
+            "PARSER_CLASS": "lc_classification.predictors.barney.barney_parser.BarneyParser",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
     }
@@ -129,6 +140,19 @@ def step_factory_toretto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(toretto_config())
+        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        step = step_factory(messages, config)
+        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        return step
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_barney(elasticc_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(barney_config())
         elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
