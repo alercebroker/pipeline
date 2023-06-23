@@ -1,12 +1,13 @@
+from alerce_classifiers.balto.mapper import BaltoMapper
+from alerce_classifiers.base.dto import InputDTO
+from alerce_classifiers.messi.utils import FEATURES_ORDER
+
 import numpy as np
 import pandas as pd
 import torch
-from alerce_classifiers.base.dto import InputDTO
-from alerce_classifiers.balto.mapper import BaltoMapper
-from alerce_classifiers.transformer_lc_features.utils import FEATURES_ORDER
 
 
-class LCFeatureMapper(BaltoMapper):
+class MessiMapper(BaltoMapper):
     def _get_features(self, input: InputDTO):
         features = input.features
         return features.replace({None: np.nan})
