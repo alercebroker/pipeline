@@ -8,7 +8,6 @@ on:
     secrets:
       PUBLISH_IMAGE_TOKEN:
         required: true
-
 jobs:
   build_and_push:
     name: Push Docker image to GitHub Packages
@@ -30,6 +29,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ../../alerce-reflector-step/Dockerfile
+          file: ../alerce-reflector-step/Dockerfile
           push: true
           tags: ${{ inputs.tags }}
