@@ -78,6 +78,8 @@ def generate_alert_ztf(aid: str, band: str, num_messages: int, identifier: int) 
             "dubious": random.choice([True, False]),
             "has_stamp": random.choice([True, False]),
             "stellar": random.choice([True, False]),
+            "new": random.choice([True, False]),
+            "forced": random.choice([True, False]),
             "extra_fields": get_extra_fields("ZTF"),
         }
         alerts.append(alert)
