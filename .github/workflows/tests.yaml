@@ -15,11 +15,11 @@ jobs:
     if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
@@ -28,7 +28,7 @@ jobs:
           pre-dependencies: 'apf-base==1.0.7'
           test-command: 'python -m pytest -x alerce-reflector-step/tests/unittest --cov alerce-reflector-step/cmirrormaker --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
@@ -44,11 +44,11 @@ jobs:
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'alert_archiving_step/alert_archiving_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'alert_archiving_step/alert_archiving_step/'
@@ -57,7 +57,7 @@ jobs:
           requirements-file: 'alert_archiving_step/requirements.txt'
           test-command: 'python -m pytest -x alert_archiving_step/tests/unittest --cov alert_archiving_step/alert_archiving_step --cov-report xml'
       - name: unittest_cli
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'alert_archiving_step/alert_archiving_step/'
@@ -66,7 +66,7 @@ jobs:
           requirements-file: 'alert_archiving_step/requirements_cli.txt'
           test-command: 'python -m pytest -x alert_archiving_step/tests/cli --cov alert_archiving_step/cli --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'alert_archiving_step/alert_archiving_step/'
@@ -82,11 +82,11 @@ jobs:
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
@@ -95,7 +95,7 @@ jobs:
           requirements-file: 'alert_archiving_step/requirements.txt'
           test-command: 'python -m pytest -x consolidated_metrics_step/tests/unit --cov consolidated_metrics_step/consolidated_metrics_step --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
@@ -111,17 +111,17 @@ jobs:
     if: needs.detect_changes.outputs.correction_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'correction_step/correction'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+        uses: ./.github/workflows/poetry-tests-template.yaml
         with:
           python-version: '3.10'
           sources-folder: 'correction_step/correction'
           test-folder: 'correction_step/tests/unittests'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+        uses: ./.github/workflows/poetry-tests-template.yaml
         with:
           python-version: '3.10'
           sources-folder: 'correction_step/correction'
@@ -134,11 +134,11 @@ jobs:
     if: needs.detect_changes.outputs.feature_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'feature_step/feature_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.10'
           sources-folder: 'feature_step/feature_step/'
@@ -148,7 +148,7 @@ jobs:
           codecov-flags: ''  # Do not upload
           test-command: 'python -m pytest -x feature_step/tests/unittest --cov feature_step/features--cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.10'
           sources-folder: 'feature_step/alerce-reflector-step/'
@@ -164,11 +164,11 @@ jobs:
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'lc_classification_step/lc_classification'
       - name: unittest_ztf
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_ztf.txt'
@@ -176,7 +176,7 @@ jobs:
         secrets:
           GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       - name: integration_ztf
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_ztf.txt'
@@ -186,7 +186,7 @@ jobs:
         secrets:
           GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       - name: unittest_elastic
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_elasticc.txt'
@@ -194,7 +194,7 @@ jobs:
         secrets:
           GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       - name: integration_elastic
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_elasticc.txt'
@@ -210,11 +210,11 @@ jobs:
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'lightcurve_step/lightcurve_step' 
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: "3.9"
           sources-folder: "lightcurve_step/lightcurve_step"
@@ -222,7 +222,7 @@ jobs:
           test-dependencies: "pytest pytest-cov"
           test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step/lightcurve_step --cov-report xml"
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: "3.9"
           sources-folder: "lightcurve_step/lightcurve_step"
@@ -237,17 +237,17 @@ jobs:
     if: needs.detect_changes.outputs.magstats_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'magstats_step/magstats_step'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+        uses: ./.github/workflows/poetry-tests-template.yaml
         with:
           python-version: '3.9'
           sources-folder: 'magstats_step/magstats_step'
           test-folder: 'magstats_step/tests/unittests'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/poetry-tests.yml@main
+        uses: ./.github/workflows/poetry-tests-template.yaml
         with:
           python-version: '3.9'
           sources-folder: 'magstats_step/magstats_step'
@@ -260,11 +260,11 @@ jobs:
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: "prv_candidates_step/prv_candidates_step"
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: "3.10"
           sources-folder: "prv_candidates_step/prv_candidates_step"
@@ -272,7 +272,7 @@ jobs:
           test-dependencies: "pytest pytest-cov pytest-mock"
           test-command: "python -m pytest -x prv_candidates_step/tests/unit --cov prv_candidates_step/prv_candidates_step --cov-report xml"
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: "3.10"
           sources-folder: "prv_candidates_step/prv_candidates_step"
@@ -287,11 +287,11 @@ jobs:
     if: needs.detect_changes.outputs.s3_step== 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 's3_step/s3_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.9'
           sources-folder: 's3_step/s3_step/'
@@ -300,7 +300,7 @@ jobs:
           requirements-file: 's3_step/requirements.txt'
           test-command: 'python -m pytest -x s3_step/tests/unit --cov s3_step/s3_step/ --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.9'
           sources-folder: 's3_step/s3_step/'
@@ -316,11 +316,11 @@ jobs:
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'sorting_hat_step/sorting_hat_step'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           sources-folder: 'sorting_hat_step/sorting_hat_step'
@@ -329,7 +329,7 @@ jobs:
           pre-dependencies: 'numpy'
           test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step/sorting_hat_step --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           sources-folder: 'sorting_hat_step/sorting_hat_step'
@@ -345,11 +345,11 @@ jobs:
     if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'watchlist_step/watchlist_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           sources-folder: 'watchlist_step/watchlist_step/'
@@ -358,7 +358,7 @@ jobs:
           requirements-file: 'watchlist_step/requirements.txt'
           test-command: 'python -m pytest -x watchlist_step/tests/unit --cov watchlist_step/watchlist_step/ --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.9'
           sources-folder: 'watchlist_step/watchlist_step/'
@@ -374,11 +374,11 @@ jobs:
     if: needs.detect_changes.outputs.xmatch_step== 'true'
     steps:
       - name: lint
-        uses: alercebroker/workflow-templates/.github/workflows/lint.yml@main
+        uses: ./.github/workflows/lint-template.yaml
         with:
           sources-folder: 'xmatch_step/xmatch_step/'
       - name: unittest
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'xmatch_step/xmatch_step/'
@@ -387,7 +387,7 @@ jobs:
           requirements-file: 'xmatch_step/requirements.txt'
           test-command: 'python -m pytest -x xmatch_step/tests/unit --cov xmatch_step/xmatch_step/ --cov-report xml'
       - name: integration
-        uses: alercebroker/workflow-templates/.github/workflows/pip-tests.yml@main
+        uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
           sources-folder: 'xmatch_step/xmatch_step/'
