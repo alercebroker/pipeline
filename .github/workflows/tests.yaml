@@ -173,8 +173,7 @@ jobs:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_ztf.txt'
           test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
-        secrets:
-          GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
       - name: integration_ztf
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
@@ -183,16 +182,14 @@ jobs:
           test-dependencies: pytest pytest-docker
           test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/integration
           codecov-flags: ''  # Do not upload
-        secrets:
-          GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
       - name: unittest_elastic
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.8'
           requirements-file: 'lc_classification_step/requirements_elasticc.txt'
           test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
-        secrets:
-          GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
       - name: integration_elastic
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
@@ -201,8 +198,6 @@ jobs:
           test-dependencies: pytest pytest-docker
           test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/integration
           codecov-flags: ''  # Do not upload
-        secrets:
-          GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lightcurve_step_tests:
     runs-on: ubuntu-latests
