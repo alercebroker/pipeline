@@ -1,5 +1,6 @@
 from .utils.metric import ConsolidatedMetric
 from .utils.metric import STEP_MAPPER
+
 from .utils.metric import StepMetric
 from apf.core.step import GenericStep
 from apf.metrics import KafkaMetricsProducer
