@@ -276,10 +276,10 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "criteria": {"_id": "update_features_id"},
             "data": {
                 "features_version": "v1",
-                "features_group": "group",
+                "features_group": "elasticc",
                 "features": [
-                    {"name": "feat1", "value": 123, "fid": 0},
-                    {"name": "feat2", "value": 456, "fid": 2},
+                    {"name": "feat1", "value": 123, "fid": 'g'},
+                    {"name": "feat2", "value": 456, "fid": 'Y'},
                 ],
             },
             "options": {"upsert": True},
@@ -293,10 +293,10 @@ def test_update_features_into_database(kafka_service, mongo_service):
             "criteria": {"_id": "update_features_id"},
             "data": {
                 "features_version": "v1",
-                "features_group": "group",
+                "features_group": "elasticc",
                 "features": [
-                    {"name": "feat1", "value": 741, "fid": 0},
-                    {"name": "feat2", "value": 369, "fid": 2},
+                    {"name": "feat1", "value": 741, "fid": 'g'},
+                    {"name": "feat2", "value": 369, "fid": 'Y'},
                 ],
             },
             "options": {"upsert": True},
@@ -305,25 +305,33 @@ def test_update_features_into_database(kafka_service, mongo_service):
     producer.produce({"payload": command})
     producer.produce({"payload": command})
 
+    command = json.dumps({
+        "collection": "object",
+        "type": "update_features",
+        "criteria": {"_id": "update_features_id"},
+        "data": {
+            "features_version": "v1",
+            "features_group": "ztf",
+            "features": [
+                {"name": "feat3", "value": 555, "fid": 'r'},
+                {"name": "feat4", "value": 777, "fid": 'g'},
+            ],
+        },
+        "options": {"upsert": True},
+    })
+    producer.produce({"payload": command})
+
     step.start()
     collection = step.db_client.connection.database["object"]
     result = collection.find_one({"_id": "update_features_id"})
     assert result is not None
+    assert "elasticc" in result["features"]
+    assert "ztf" in result["features"]
+    assert "g" in result["features"]["elasticc"]
     assert {
-        "version": "v1",
         "name": "feat1",
-        "group": "group",
         "value": 741,
-        "fid": 0,
-    } in result["features"]
-
-    assert {
-        "version": "v1",
-        "name": "feat2",
-        "group": "group",
-        "value": 369,
-        "fid": 2,
-    } in result["features"]
+    } in result["features"]["elasticc"]["g"]
 
 
 def test_print_into_console(kafka_service, mongo_service):
