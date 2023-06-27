@@ -2,6 +2,7 @@ from datetime import datetime
 from redis_om import EmbeddedJsonModel, Field, JsonModel
 from typing import Optional
 
+
 STEP_MAPPER = {
     "S3Step": "s3",
     "EarlyClassifier": "early_classifier",

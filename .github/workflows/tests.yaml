@@ -17,12 +17,12 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
+          sources-folder: 'alerce-reflector-step/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
+          sources-folder: 'alerce-reflector-step/cmirrormaker/'
           test-folder: 'alerce-reflector-step/tests/unittest'
           test-dependencies: 'pytest pytest-docker pytest-cov'
           pre-dependencies: 'apf-base==1.0.7'
@@ -31,7 +31,7 @@ jobs:
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
           python-version: '3.7'
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
+          sources-folder: 'alerce-reflector-step/cmirrormaker/'
           test-folder: 'alerce-reflector-step/tests/integration'
           test-dependencies: 'pytest pytest-docker pytest-cov'
           pre-dependencies: 'apf-base==1.0.7'
@@ -46,7 +46,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'alert_archiving_step/alert_archiving_step/'
+          sources-folder: 'alert_archiving_step/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
@@ -84,7 +84,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
+          sources-folder: 'consolidated_metrics_step/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
