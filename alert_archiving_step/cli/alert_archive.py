@@ -1,5 +1,5 @@
 import click
-from cli.core.download import download, format_tar_file_url
+from cli.core.download import format_tar_file_url, download 
 from cli.core.concat import concat_avro, decompress
 from cli.core.upload import upload_to_s3
 

@@ -17,7 +17,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'alerce-reflector-step/'
+          sources-folder: 'alerce-reflector-step/cmirrormaker/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
@@ -46,7 +46,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'alert_archiving_step/'
+          sources-folder: 'alert_archiving_step/alert_archiving_step/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
@@ -84,7 +84,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'consolidated_metrics_step/'
+          sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:
