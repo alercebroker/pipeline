@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List, Dict
 from db_plugins.db.generic import new_DBConnection
@@ -33,12 +34,16 @@ class ScribeCommandExecutor:
             raise NonExistentCollectionException(collection_name)
 
         operations = []
+        operation_counters = {}
         for command in commands:
+            operation_counters[command.type] = operation_counters.get(command.type, 0) + 1
             operations.extend(command.get_operations())
 
         if os.getenv("MOCK_DB_COLLECTION"):
             print(operations)
         elif operations:
+            logging.info(f"Executing {len(operations)} operations in {collection_name}")
+            logging.info(operation_counters)
             self.connection.database[collection_name].bulk_write(operations)
         else:
             return
