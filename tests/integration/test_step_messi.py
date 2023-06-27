@@ -24,15 +24,9 @@ def test_step_elasticc_result(
     kconsumer = kafka_consumer()
     sconsumer = scribe_consumer()
 
-    model_path = (
-        "https://assets.alerce.online/pipeline/elasticc/messi/1.0.0/EncoderFeat.pt"
-    )
-    header_quantiles_path = (
-        "https://assets.alerce.online/pipeline/elasticc/messi/1.0.0/HeaderNorm1QT/"
-    )
-    feature_quantiles_path = (
-        "https://assets.alerce.online/pipeline/elasticc/messi/1.0.0/FeatNorm1QT/"
-    )
+    model_path = os.getenv("TEST_MESSI_MODEL_PATH")
+    header_quantiles_path = os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH")
+    feature_quantiles_path = os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH")
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.messi.messi_predictor.MessiPredictor"
