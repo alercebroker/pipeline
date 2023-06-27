@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List, Dict
 from db_plugins.db.generic import new_DBConnection
@@ -39,6 +40,7 @@ class ScribeCommandExecutor:
         if os.getenv("MOCK_DB_COLLECTION"):
             print(operations)
         elif operations:
+            logging.info(f"Executing {len(operations)} operations")
             self.connection.database[collection_name].bulk_write(operations)
         else:
             return
