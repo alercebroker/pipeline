@@ -222,51 +222,28 @@ class UpdateFeaturesCommand(UpdateCommand):
         self.features_group = data.pop("features_group")
 
     def get_operations(self) -> list:
-        find_existing_criteria = {
-            "features.group": {"$ne": self.features_group},
-            **self.criteria,
-        }
-        features = [
-            {
-                "version": self.features_version,
-                "group": self.features_group,
-                "name": feature["name"],
-                "value": feature["value"],
-                "fid": feature["fid"],
-            }
-            for feature in self.data["features"]
-        ]
-        insert = {"$push": {"features": {"$each": features}}}
+        features_by_bands = {}
 
-        # Insert empty features list if AID doesn't exist
-        upsert_operation = {"$setOnInsert": {"features": []}}
+        for feature in self.data["features"]:
+            band_features = features_by_bands.get(feature["fid"], [])
+            band_features.append({ "name": feature["name"], "value": feature["value"] })
+            features_by_bands[feature["fid"]] = band_features
+
+        upsert_operation = {"$setOnInsert": {"features": {}}}
         ops = [
             UpdateOne(
                 self.criteria, upsert_operation, upsert=self.options.upsert
             ),
-            UpdateOne(find_existing_criteria, insert),
         ]
 
-        if self.options.set_on_insert:
-            return ops
-
-        for feature in self.data["features"]:
-            filters = {
-                "el.version": self.features_version,
-                "el.group": self.features_group,
-                "el.name": feature["name"],
-                "el.fid": feature["fid"]
-            }
-            update = {
+        for band, features in features_by_bands.items():
+            operation = {
                 "$set": {
-                    "features.$[el].value": feature["value"],
+                   f"features.{self.features_group}.{band}": features
                 }
             }
             ops.append(
-                UpdateOne(
-                    self.criteria,
-                    update,
-                    array_filters=[filters],
-                )
+                UpdateOne(self.criteria, operation, upsert=self.options.upsert)
             )
+
         return ops

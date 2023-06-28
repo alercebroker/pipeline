@@ -334,40 +334,19 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
+        self.assertEqual(len(operations), 3)
         self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"features": []}}
+            operations[0]._doc, {"$setOnInsert": {"features": {}}}
         )
         self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
         self.assertFalse(operations[0]._upsert)
         self.assertEqual(
             operations[1]._doc,
             {
-                "$push": {
-                    "features": {
-                        "$each": [
-                            {
-                                "version": "v1",
-                                "group": "group",
-                                "name": "feature1",
-                                "value": 12.34,
-                                "fid": 0,
-                            },
-                            {
-                                "version": "v1",
-                                "group": "group",
-                                "name": "feature2",
-                                "value": None,
-                                "fid": 2,
-                            },
-                        ]
-                    }
+                "$set": {
+                    "features.group.g": [{ "name": "feature1", "value": 12.34}],
                 }
-            },
-        )
-        self.assertEqual(
-            operations[1]._filter,
-            {"features.group": {"$ne": "group"}, "_id": "AID51423"},
+            }
         )
 
     def test_update_features_with_set_on_insert_with_upsert(self):
@@ -384,9 +363,9 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
+        self.assertEqual(len(operations), 3)
         self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"features": []}}
+            operations[0]._doc, {"$setOnInsert": {"features": {}}}
         )
         self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
         self.assertTrue(operations[0]._upsert)
@@ -401,44 +380,13 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 4)
+        self.assertEqual(len(operations), 3)
         self.assertEqual(operations[2]._filter, {"_id": "AID51423"})
         self.assertEqual(
             operations[2]._doc,
             {
                 "$set": {
-                    "features.$[el].value": 12.34,
+                    "features.group.Y": [{ "name": "feature2", "value": None }],
                 }
             },
-        )
-        self.assertEqual(
-            operations[2]._array_filters,
-            [
-                {
-                    "el.name": "feature1",
-                    "el.group": "group",
-                    "el.version": "v1",
-                    "el.fid": 0,
-                }
-            ],
-        )
-        self.assertEqual(operations[3]._filter, {"_id": "AID51423"})
-        self.assertEqual(
-            operations[3]._doc,
-            {
-                "$set": {
-                    "features.$[el].value": None,
-                }
-            },
-        )
-        self.assertEqual(
-            operations[3]._array_filters,
-            [
-                {
-                    "el.name": "feature2",
-                    "el.group": "group",
-                    "el.version": "v1",
-                    "el.fid": 2,
-                }
-            ],
         )

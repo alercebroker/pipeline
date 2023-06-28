@@ -2,7 +2,6 @@ import json
 from random import seed, randint, choice
 from typing import Dict
 
-feature_versions = ["v1", "v2", "v3"]
 feature_groups = ["group1", "group2"]
 classifiers = ["lc_classifier", "dummy_classifier", "random_classifier"]
 
@@ -50,27 +49,21 @@ class CommandGenerator:
         self._command_hash["insert"][self._generated_inserts] = command["data"]
         self._command_hash["update"][self._generated_inserts] = {}
         self._command_hash["update_probability"][self._generated_inserts] = []
-        self._command_hash["update_feature"][self._generated_inserts] = []
+        self._command_hash["update_feature"][self._generated_inserts] = {}
         self._generated_inserts += 1
         return {"payload": json.dumps(command)}
 
     def _add_feature(self, aid: int, feature: dict):
-        def remove_value_from_dict(d: dict):
-            return {k: v for k, v in d.items() if k not in ["value", "version"]}
-
-        parsed_features = []
+        parsed_features = {}
         for feats in feature["features"]:
-            parsed_features.append(
-                {**feats, "version": feature["features_version"], "group": feature["features_group"]}
-            )
-        parsed_no_values = list(map(remove_value_from_dict, parsed_features))
-        buffer: list = self._command_hash["update_feature"][aid]
-        buffer = [
-            feat
-            for feat in buffer
-            if remove_value_from_dict(feat) not in parsed_no_values
-        ]
-        buffer.extend(parsed_features)
+            feature_in_band = parsed_features.get(feats["fid"], [])
+            feature_in_band.append({ "name": feats["name"], "value": feats["value"] })
+            parsed_features[feats["fid"]] = feature_in_band
+        
+        buffer = self._command_hash["update_feature"][aid]
+        buffer.update({
+            feature["features_group"]: parsed_features
+        })
         self._command_hash["update_feature"][aid] = buffer
 
     def _add_probability(self, aid: int, prob: dict):
@@ -136,11 +129,11 @@ class CommandGenerator:
             "type": "update_features",
             "criteria": {"_id": f"ID{aid}"},
             "data": {
-                "features_version": choice(feature_versions),
                 "features_group": choice(feature_groups),
+                "features_version": "v",
                 "features": [
-                    {"name": "feature1", "value": 12.34, "fid": 0},
-                    {"name": "feature2", "value": None, "fid": 2},
+                    {"name": "feature1", "value": 123, "fid": 'r'},
+                    {"name": "feature2", "value": 456, "fid": 'g'},
                 ],
             },
             "options": options,
