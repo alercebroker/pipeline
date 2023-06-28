@@ -98,7 +98,7 @@ jobs:
       sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       test-folder: 'consolidated_metrics_step/tests/unit'
       test-dependencies: 'pytest pytest-cov numpy fastavro faker'
-      requirements-file: 'alert_archiving_step/requirements.txt'
+      requirements-file: 'consolidated_metrics_step/requirements.txt'
       test-command: 'python -m pytest -x consolidated_metrics_step/tests/unit --cov consolidated_metrics_step/consolidated_metrics_step --cov-report xml'
   consolidated_metrics_step_integration:
     needs: detect_changes
@@ -109,7 +109,7 @@ jobs:
       sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       test-folder: 'consolidated_metrics_step/tests/integration'
       test-dependencies: 'pytest pytest-docker numpy faker'
-      requirements-file: 'alert_archiving_step/requirements.txt'
+      requirements-file: 'consolidated_metrics_step/requirements.txt'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x consolidated_metrics_step/tests/integration'
 
