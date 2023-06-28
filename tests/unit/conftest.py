@@ -70,6 +70,22 @@ def balto_config():
     }
 
 
+def messi_config():
+    return {
+        "PREDICTOR_CONFIG": {
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+                "model": mock.MagicMock(),
+                "header_quantiles_path": mock.MagicMock(),
+                "feature_quantiles_path": mock.MagicMock(),
+            },
+            "CLASS": "lc_classification.predictors.messi.messi_predictor.MessiPredictor",
+            "PARSER_CLASS": "lc_classification.predictors.messi.messi_parser.MessiParser",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
+    }
+
+
 def step_factory(messages, config):
     step = LateClassifier(config=config)
     step.consumer = mock.MagicMock(KafkaConsumer)
@@ -166,6 +182,19 @@ def step_factory_balto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(balto_config())
+        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        step = step_factory(messages, config)
+        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        return step
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_messi(elasticc_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(messi_config())
         elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
