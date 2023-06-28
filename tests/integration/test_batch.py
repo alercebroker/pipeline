@@ -98,12 +98,7 @@ def test_bulk(kafka_service, mongo_service):
     sample_id = choice(list(updated_feats.keys()))
     result = collection.find_one({"_id": f"ID{sample_id}"})
     tracked = updated_feats[sample_id]
-    diff = [
-        feat
-        for feat in result["features"] + tracked
-        if feat not in result["features"] or feat not in tracked
-    ]
-    assert len(diff) == 0
+    assert result["features"] == tracked
 
     # # the same as above but with probabilities
     updated_probs = {
