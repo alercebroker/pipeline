@@ -1,6 +1,6 @@
 from multiprocessing import Process
-import logging
 import sys
+import logging
 import os
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
