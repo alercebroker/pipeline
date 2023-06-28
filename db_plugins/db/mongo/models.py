@@ -57,7 +57,7 @@ class Object(BaseModel):
         }
     )
     magstats = SpecialField(lambda **kwargs: kwargs.get("magstats", []))
-    features = SpecialField(lambda **kwargs: kwargs.get("features", []))
+    features = SpecialField(lambda **kwargs: kwargs.get("features", {}))
     probabilities = SpecialField(lambda **kwargs: kwargs.get("probabilities", []))
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
@@ -76,16 +76,6 @@ class Object(BaseModel):
                 ("probabilities.probability", DESCENDING),
             ],
             name="probabilities",
-        ),
-        IndexModel(
-            [
-                ("features.group", ASCENDING),
-                ("features.version", ASCENDING),
-                ("features.name", ASCENDING),
-                ("features.fid", ASCENDING),
-                ("features.value", ASCENDING),
-            ],
-            name="features",
         ),
     ]
     __tablename__ = "object"
