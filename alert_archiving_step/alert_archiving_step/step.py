@@ -1,8 +1,8 @@
 import fastavro
+import logging
 import io
 from apf.core.step import GenericStep
 from fastavro import writer
-import logging
 import boto3
 from botocore.exceptions import ClientError
 from uuid import uuid4

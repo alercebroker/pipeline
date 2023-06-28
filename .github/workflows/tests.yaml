@@ -25,6 +25,7 @@ jobs:
         test-folder: 'alerce-reflector-step/tests/unittest'
         test-dependencies: 'pytest pytest-docker pytest-cov'
         pre-dependencies: 'apf-base==1.0.7'
+        requirements-file: '/alerce-reflector-step/requirements.txt'
         test-command: 'python -m pytest -x alerce-reflector-step/tests/unittest --cov alerce-reflector-step/cmirrormaker --cov-report xml'
   alerce_reflector_step_integration:
     needs: detect_changes
@@ -36,6 +37,7 @@ jobs:
       test-folder: 'alerce-reflector-step/tests/integration'
       test-dependencies: 'pytest pytest-docker pytest-cov'
       pre-dependencies: 'apf-base==1.0.7'
+      requirements-file: '/alerce-reflector-step/requirements.txt'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x alerce-reflector-step/tests/integration'
 
@@ -63,7 +65,7 @@ jobs:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       python-version: '3.7'
-      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      sources-folder: 'alert_archiving_step/cli/'
       test-folder: 'alert_archiving_step/tests/cli'
       test-dependencies: 'pytest pytest-docker pytest-cov'
       requirements-file: 'alert_archiving_step/requirements_cli.txt'
@@ -92,7 +94,7 @@ jobs:
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.7'
+      python-version: '3.10'
       sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       test-folder: 'consolidated_metrics_step/tests/unit'
       test-dependencies: 'pytest pytest-cov numpy fastavro faker'
@@ -103,7 +105,7 @@ jobs:
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.7'
+      python-version: '3.10'
       sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
       test-folder: 'consolidated_metrics_step/tests/integration'
       test-dependencies: 'pytest pytest-docker numpy faker'
