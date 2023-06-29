@@ -3,7 +3,7 @@ import pytest
 from confluent_kafka import Producer
 from alerce_reflector_step.cmirrormaker.step import CustomMirrormaker
 from alerce_reflector_step.cmirrormaker.utils import RawKafkaConsumer
-from tests.unittest.data.datagen import create_messages
+from alerce_reflector_step.tests.unittest.data.datagen import create_messages
 
 
 STEP_METADATA = {
