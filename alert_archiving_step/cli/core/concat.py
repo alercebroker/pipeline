@@ -64,17 +64,15 @@ def concat_avro(
         date = date[0]
     else:
         date = ""
-    output_path = (
-        pathlib.Path(output_path) / f"concatenated_avro_files_{date}/"
-    )
-    avro_tools_jar_path = (
-        avro_tools_jar_path or libpath / "avro-tools-1.8.2.jar"
-    )
+    output_path = pathlib.Path(output_path) / f"concatenated_avro_files_{date}/"
+    avro_tools_jar_path = avro_tools_jar_path or libpath / "avro-tools-1.8.2.jar"
     files = list(avro_path.iterdir())
     n_partitions = ceil(len(files) / partition_size)
     partition_files = split_files(files, n_partitions)
     for i, part in enumerate(partition_files):
         part = [str(p) for p in part]
         output_file = output_path / f"partition_{i}.avro"
-        command = f"java -jar {avro_tools_jar_path} concat {' '.join(part)} {output_file}"
+        command = (
+            f"java -jar {avro_tools_jar_path} concat {' '.join(part)} {output_file}"
+        )
         os.system(command)

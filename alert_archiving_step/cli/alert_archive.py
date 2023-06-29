@@ -1,13 +1,11 @@
 import click
-from cli.core.download import format_tar_file_url, download 
+from cli.core.download import format_tar_file_url, download
 from cli.core.concat import concat_avro, decompress
 from cli.core.upload import upload_to_s3
 
 
 @click.group(invoke_without_command=True)
-@click.option(
-    "--avro-tools-jar-path", default=None, help="Avro tools utility path"
-)
+@click.option("--avro-tools-jar-path", default=None, help="Avro tools utility path")
 @click.argument("date")
 @click.argument("avro_path")
 @click.argument("output_path")
@@ -25,9 +23,7 @@ def cli(
 ):
 
     if ctx.invoked_subcommand is None:
-        tar_file = ctx.invoke(
-            download_archive, date=date, download_dir=avro_path
-        )
+        tar_file = ctx.invoke(download_archive, date=date, download_dir=avro_path)
         avro_files = ctx.invoke(extract_file, tar_file=tar_file)
         ctx.invoke(
             concat_files,
@@ -72,9 +68,7 @@ def extract_file(tar_file, output_dir):
 
 
 @cli.command()
-@click.option(
-    "--avro-tools-jar-path", default=None, help="Avro tools utility path"
-)
+@click.option("--avro-tools-jar-path", default=None, help="Avro tools utility path")
 @click.argument("avro_path")
 @click.argument("output_path")
 @click.argument("partition_size")
@@ -91,9 +85,7 @@ def concat_files(avro_tools_jar_path, avro_path, output_path, partition_size):
     partition_size : int
         The size (number of original avro files) of each output concatenated avro file
     """
-    concat_avro(
-        avro_path, output_path, int(partition_size), avro_tools_jar_path
-    )
+    concat_avro(avro_path, output_path, int(partition_size), avro_tools_jar_path)
 
 
 @cli.command()
