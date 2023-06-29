@@ -108,54 +108,34 @@ class TimeModulatorHandler(nn.Module):
             self.time_mod += [TimeModulator(M, embed_dim, T_max)]
         self.time_mod = nn.ModuleList(self.time_mod)
 
-
 class EncTimeModulatorHandler(TimeModulatorHandler):
-    def __init__(self, cat_noise_to_E=False, which_encoder="vanilla", **kwargs):
+    def __init__(self, cat_noise_to_E = False, **kwargs):
         super().__init__(**kwargs)
         self.cat_noise_to_E = cat_noise_to_E
-        self.which_encoder = which_encoder
-        if self.which_encoder == "bert":
-            self.time_token = nn.Parameter(torch.randn(1, 1, self.input_dim_mha))
 
-    def forward(self, x, t, mask, var=None, time_token_mask=None):
-        # [Batch x seq len x features]
-        all_mod_emb_x = []
-        if self.cat_noise_to_E and var is not None:
-            all_x = [
-                torch.stack([x[:, :, i], var[:, :, i]], -1)
-                for i in range(self.dataset_channel)
-            ]
-        else:
-            all_x = [x[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
-        all_time = [t[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
-        all_mask = [mask[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
-        for i in range(self.dataset_channel):
-            ### Modulate input ###
-            x, time, mask = all_x[i], all_time[i], all_mask[i]
-            emb_x = self.to_emb(x)
-            time_emb_sin, time_emb_cos = self.time_mod[i].get_sin_cos(time)
-            aux_emb_x = self.time_mod[i](emb_x, time_emb_sin, time_emb_cos)
-            if self.which_encoder == "bert":
-                token_emb_x = self.time_mod[i](
-                    self.time_token.repeat(1, emb_x.shape[1], 1),
-                    time_emb_sin,
-                    time_emb_cos,
-                )
-                aux_emb_x = (
-                    aux_emb_x * (1 - time_token_mask) + token_emb_x * time_token_emb
-                )
-            all_mod_emb_x += [aux_emb_x]
+    def forward(self, x, t, mask, var = None):
+      # [Batch x seq len x features]
+      all_mod_emb_x = []
+      if self.cat_noise_to_E and var is not None:
+        all_x = [torch.stack([x[:, :, i], var[:, :, i] ], -1) for i in range(self.dataset_channel)]
+      else:
+        all_x  = [x[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
+      all_time = [t[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
+      all_mask = [mask[:, :, i].unsqueeze(2) for i in range(self.dataset_channel)]
+      for i in range(self.dataset_channel):
+          ### Modulate input ###
+          x, time, mask              = all_x[i], all_time[i], all_mask[i]
+          emb_x                      = self.to_emb(x)
+          time_emb_sin, time_emb_cos = self.time_mod[i].get_sin_cos(time)
+          aux_emb_x                  = self.time_mod[i](emb_x, time_emb_sin, time_emb_cos)
+          all_mod_emb_x             += [aux_emb_x]
 
-        mod_emb_x, time, mask = (
-            torch.cat(all_mod_emb_x, 1),
-            torch.cat(all_time, 1),
-            torch.cat(all_mask, 1),
-        )
-        a_time = (time * mask + (1 - mask) * 9999999).argsort(1)
-        return mod_emb_x.gather(
-            1, a_time.repeat(1, 1, mod_emb_x.shape[-1])
-        ), mask.gather(1, a_time)
+      mod_emb_x, time, mask = torch.cat(all_mod_emb_x, 1), torch.cat(all_time, 1),\
+                                        torch.cat(all_mask, 1)
 
+      a_time = (time * mask + (1 - mask) * 9999999).argsort(1)
+
+      return mod_emb_x.gather(1, a_time.repeat(1, 1, mod_emb_x.shape[-1])), mask.gather(1, a_time)
 
 class EncJustTimeModulatorHandler(TimeModulatorHandler):
     def __init__(self, dataset_channel=1, **kwargs):
