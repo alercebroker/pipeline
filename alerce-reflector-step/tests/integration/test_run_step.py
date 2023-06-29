@@ -1,5 +1,4 @@
 import unittest
-
 import pytest
 from confluent_kafka import Producer
 from cmirrormaker.step import CustomMirrormaker

@@ -25,7 +25,7 @@ jobs:
         test-folder: 'alerce-reflector-step/tests/unittest'
         test-dependencies: 'pytest pytest-docker pytest-cov'
         pre-dependencies: 'apf-base==1.0.7'
-        requirements-file: 'alerce-reflector-step/requirements.txt'
+        requirements-file: 'alerce-reflector-step/requirements.txt -r alerce-reflector-step/dev-requirements.txt'
         test-command: 'python -m pytest -x alerce-reflector-step/tests/unittest --cov alerce-reflector-step/cmirrormaker --cov-report xml'
   alerce_reflector_step_integration:
     needs: detect_changes
@@ -37,7 +37,7 @@ jobs:
       test-folder: 'alerce-reflector-step/tests/integration'
       test-dependencies: 'pytest pytest-docker pytest-cov'
       pre-dependencies: 'apf-base==1.0.7'
-      requirements-file: 'alerce-reflector-step/requirements.txt'
+      requirements-file: 'alerce-reflector-step/requirements.txt -r alerce-reflector-step/dev-requirements.txt'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x alerce-reflector-step/tests/integration'
 
