@@ -1,4 +1,4 @@
 Cython>=0.29
 numpy>=1.16
 pandas>=1.1
-lc_classifier @ git+https://github.com/alercebroker/lc_classifier@elasticc
+lc_classifier @ git+https://github.com/alercebroker/lc_classifier@main
