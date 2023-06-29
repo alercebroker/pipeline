@@ -1,9 +1,11 @@
 import unittest
 import pytest
 from confluent_kafka import Producer
-from ...cmirrormaker.step import CustomMirrormaker
-from ...cmirrormaker.utils.consumer import RawKafkaConsumer
+from cmirrormaker.step import CustomMirrormaker
+from cmirrormaker.utils import RawKafkaConsumer
 from tests.unittest.data.datagen import create_messages
+
+
 
 STEP_METADATA = {
     'STEP_VERSION': 'test',
