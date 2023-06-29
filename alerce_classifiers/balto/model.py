@@ -30,7 +30,6 @@ class BaltoClassifier(AlerceModel):
         "Iax",
         "Ib/c",
         "II",
-        "SN-like/Other",
         "TDE",
         "uLens",
     ]

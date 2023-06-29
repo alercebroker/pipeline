@@ -355,9 +355,6 @@ class Encoder(nn.Module):
             time,
             mask,
             var=data_var,
-            time_token_mask=self.mask_to_modify(mask, mask_pred)
-            if self.which_encoder == "bert" and mask_pred is not None
-            else None,
         )
         if self.use_detection_token:
             emb_x += (
