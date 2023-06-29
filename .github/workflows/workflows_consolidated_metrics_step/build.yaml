@@ -29,6 +29,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
+          file: .consolidated_metrics_step/Dockerfile
           push: true
           tags: ${{ inputs.tags }}

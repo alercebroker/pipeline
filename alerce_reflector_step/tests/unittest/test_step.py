@@ -1,8 +1,8 @@
 from unittest import mock, TestCase
 from confluent_kafka import Message
-from cmirrormaker.utils.consumer import RawKafkaConsumer
-from cmirrormaker.utils.producer import RawKafkaProducer
-from cmirrormaker.step import CustomMirrormaker
+from alerce_reflector_step.cmirrormaker.utils.consumer import RawKafkaConsumer
+from alerce_reflector_step.cmirrormaker.utils.producer import RawKafkaProducer
+from alerce_reflector_step.cmirrormaker.step import CustomMirrormaker
 from data.datagen import create_messages
 
 
@@ -75,7 +75,7 @@ class TestStep(TestCase):
         with self.assertRaisesRegex(Exception, 'producer not configured'):
             CustomMirrormaker(consumer=self.mock_consumer)
 
-    @mock.patch('cmirrormaker.step.get_class')
+    @mock.patch('alerce_reflector_step/cmirrormaker.step.get_class')
     def test_step_uses_config_if_producer_is_defined_as_arg_and_in_config(self, mock_class_getter):
         step = CustomMirrormaker(
             consumer=self.mock_consumer,

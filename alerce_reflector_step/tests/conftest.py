@@ -7,7 +7,7 @@ from confluent_kafka.admin import AdminClient, NewTopic
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return os.path.join(
-        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
+        str(pytestconfig.rootdir), "alerce_reflector_step/tests/integration", "docker-compose.yml"
     )
 
 

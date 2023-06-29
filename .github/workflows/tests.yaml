@@ -9,385 +9,409 @@ jobs:
   detect_changes:
     uses: ./.github/workflows/detect_changes.yaml
 
-  alerce_reflector_step_tests:
-    runs-on: ubuntu-latest
+  alerce_reflector_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
-          test-folder: 'alerce-reflector-step/tests/unittest'
-          test-dependencies: 'pytest pytest-docker pytest-cov'
-          pre-dependencies: 'apf-base==1.0.7'
-          test-command: 'python -m pytest -x alerce-reflector-step/tests/unittest --cov alerce-reflector-step/cmirrormaker --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
-          test-folder: 'alerce-reflector-step/tests/integration'
-          test-dependencies: 'pytest pytest-docker pytest-cov'
-          pre-dependencies: 'apf-base==1.0.7'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x alerce-reflector-step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+        sources-folder: 'alerce_reflector_step/cmirrormaker/'
+  alerce_reflector_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+        python-version: '3.7'
+        sources-folder: 'alerce_reflector_step/cmirrormaker/'
+        test-folder: 'alerce_reflector_step/tests/unittest'
+        test-dependencies: 'pytest pytest-docker pytest-cov'
+        pre-dependencies: 'apf-base==1.0.7'
+        requirements-file: 'alerce_reflector_step/requirements.txt -r alerce_reflector_step/dev-requirements.txt'
+        test-command: 'python -m pytest -x alerce_reflector_step/tests/unittest --cov alerce_reflector_step/cmirrormaker --cov-report xml'
+  alerce_reflector_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'alerce_reflector_step/cmirrormaker/'
+      test-folder: 'alerce_reflector_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker pytest-cov'
+      pre-dependencies: 'apf-base==1.0.7'
+      requirements-file: 'alerce_reflector_step/requirements.txt -r alerce_reflector_step/dev-requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x alerce_reflector_step/tests/integration'
 
-  alert_archiving_step_tests:
-    runs-on: ubuntu-latest
+
+  alert_archiving_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'alert_archiving_step/alert_archiving_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'alert_archiving_step/alert_archiving_step/'
-          test-folder: 'alert_archiving_step/tests/unittest'
-          test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
-          requirements-file: 'alert_archiving_step/requirements.txt'
-          test-command: 'python -m pytest -x alert_archiving_step/tests/unittest --cov alert_archiving_step/alert_archiving_step --cov-report xml'
-      - name: unittest_cli
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'alert_archiving_step/alert_archiving_step/'
-          test-folder: 'alert_archiving_step/tests/cli'
-          test-dependencies: 'pytest pytest-docker pytest-cov'
-          requirements-file: 'alert_archiving_step/requirements_cli.txt'
-          test-command: 'python -m pytest -x alert_archiving_step/tests/cli --cov alert_archiving_step/cli --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'alert_archiving_step/alert_archiving_step/'
-          test-folder: 'alert_archiving_step/tests/integration'
-          test-dependencies: 'pytest pytest-docker numpy Cython'
-          requirements-file: 'alert_archiving_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x alert_archiving_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+        sources-folder: 'alert_archiving_step/alert_archiving_step/'
+  alert_archiving_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      test-folder: 'alert_archiving_step/tests/unittest'
+      test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
+      requirements-file: 'alert_archiving_step/requirements.txt'
+      test-command: 'python -m pytest -x alert_archiving_step/tests/unittest --cov alert_archiving_step/alert_archiving_step --cov-report xml'
+  alert_archiving_step_unittest_cli:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/cli/'
+      test-folder: 'alert_archiving_step/tests/cli'
+      test-dependencies: 'pytest pytest-docker pytest-cov'
+      requirements-file: 'alert_archiving_step/requirements_cli.txt'
+      test-command: 'python -m pytest -x alert_archiving_step/tests/cli --cov alert_archiving_step/cli --cov-report xml'
+  alert_archiving_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'    
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'alert_archiving_step/alert_archiving_step/'
+      test-folder: 'alert_archiving_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker numpy Cython'
+      requirements-file: 'alert_archiving_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x alert_archiving_step/tests/integration'
 
-  consolidated_metrics_step_tests:
-    runs-on: ubuntu-latest
+  consolidated_metrics_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
-          test-folder: 'consolidated_metrics_step/tests/unit'
-          test-dependencies: 'pytest pytest-cov numpy fastavro faker'
-          requirements-file: 'alert_archiving_step/requirements.txt'
-          test-command: 'python -m pytest -x consolidated_metrics_step/tests/unit --cov consolidated_metrics_step/consolidated_metrics_step --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
-          test-folder: 'consolidated_metrics_step/tests/integration'
-          test-dependencies: 'pytest pytest-docker numpy faker'
-          requirements-file: 'alert_archiving_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x consolidated_metrics_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
+  consolidated_metrics_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
+      test-folder: 'consolidated_metrics_step/tests/unit'
+      test-dependencies: 'pytest pytest-cov numpy fastavro faker'
+      requirements-file: 'consolidated_metrics_step/requirements.txt'
+      test-command: 'python -m pytest -x consolidated_metrics_step/tests/unit --cov consolidated_metrics_step/consolidated_metrics_step --cov-report xml'
+  consolidated_metrics_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
+      test-folder: 'consolidated_metrics_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker numpy faker'
+      requirements-file: 'consolidated_metrics_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x consolidated_metrics_step/tests/integration'
 
-  correction_step_tests:
-    runs-on: ubuntu-latest
+  correction_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'correction_step/correction'
-      - name: unittest
-        uses: ./.github/workflows/poetry-tests-template.yaml
-        with:
-          python-version: '3.10'
-          sources-folder: 'correction_step/correction'
-          test-folder: 'correction_step/tests/unittests'
-      - name: integration
-        uses: ./.github/workflows/poetry-tests-template.yaml
-        with:
-          python-version: '3.10'
-          sources-folder: 'correction_step/correction'
-          test-folder: 'correction_step/tests/integration'
-          codecov-flags: ''  # Do not upload
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'correction_step/correction'
+  correction_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.correction_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'correction_step/correction'
+      test-folder: 'correction_step/tests/unittests'
+  correction_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.correction_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'correction_step/correction'
+      test-folder: 'correction_step/tests/integration'
+      codecov-flags: ''  # Do not upload
 
-  feature_step_tests:
-    runs-on: ubuntu-latest
+  feature_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'feature_step/feature_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.10'
-          sources-folder: 'feature_step/feature_step/'
-          test-folder: 'feature_step/tests/unittest'
-          test-dependencies: 'pytest pytest-cov'
-          requirements-file: 'feature_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x feature_step/tests/unittest --cov feature_step/features--cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.10'
-          sources-folder: 'feature_step/alerce-reflector-step/'
-          test-folder: 'feature_step/tests/integration'
-          test-dependencies: 'pytest pytest-docker'
-          requirements-file: 'feature_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x feature_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'feature_step/feature_step/'
+  feature_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.feature_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'feature_step/feature_step/'
+      test-folder: 'feature_step/tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      requirements-file: 'feature_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x feature_step/tests/unittest --cov feature_step/features--cov-report xml'
+  feature_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.feature_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.10'
+      sources-folder: 'feature_step/alerce-reflector-step/'
+      test-folder: 'feature_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      requirements-file: 'feature_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x feature_step/tests/integration'
 
-  lc_classification_step_tests:
-    runs-on: ubuntu-latest
+  lc_classification_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'lc_classification_step/lc_classification'
-      - name: unittest_ztf
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          requirements-file: 'lc_classification_step/requirements_ztf.txt'
-          test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'lc_classification_step/lc_classification'
+  lc_classification_step_unittest_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_ztf.txt'
+      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
 
-      - name: integration_ztf
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          requirements-file: 'lc_classification_step/requirements_ztf.txt'
-          test-dependencies: pytest pytest-docker
-          test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/integration
-          codecov-flags: ''  # Do not upload
+  lc_classification_step_integration_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_ztf.txt'
+      test-dependencies: pytest pytest-docker
+      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/integration
+      codecov-flags: ''  # Do not upload
 
-      - name: unittest_elastic
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          requirements-file: 'lc_classification_step/requirements_elasticc.txt'
-          test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
+  lc_classification_step_unittest_elastic:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
+      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
 
-      - name: integration_elastic
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          requirements-file: 'lc_classification_step/requirements_elasticc.txt'
-          test-dependencies: pytest pytest-docker
-          test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/integration
-          codecov-flags: ''  # Do not upload
+  lc_classification_step_integration_elastic:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
+      test-dependencies: pytest pytest-docker
+      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/integration
+      codecov-flags: ''  # Do not upload
 
-  lightcurve_step_tests:
-    runs-on: ubuntu-latest
+  lightcurve_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'lightcurve_step/lightcurve_step' 
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: "3.9"
-          sources-folder: "lightcurve_step/lightcurve_step"
-          test-folder: "lightcurve_step/tests/unittest"
-          test-dependencies: "pytest pytest-cov"
-          test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step/lightcurve_step --cov-report xml"
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: "3.9"
-          sources-folder: "lightcurve_step/lightcurve_step"
-          test-folder: "lightcurve_step/tests/integration"
-          test-dependencies: "pytest pytest-docker"
-          codecov-flags: "" # Do not upload
-          test-command: "python -m pytest -x lightcurve_step/tests/integration"
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'lightcurve_step/lightcurve_step' 
+  lightcurve_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: "3.9"
+      sources-folder: "lightcurve_step/lightcurve_step"
+      test-folder: "lightcurve_step/tests/unittest"
+      test-dependencies: "pytest pytest-cov"
+      test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step/lightcurve_step --cov-report xml"
+  lightcurve_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: "3.9"
+      sources-folder: "lightcurve_step/lightcurve_step"
+      test-folder: "lightcurve_step/tests/integration"
+      test-dependencies: "pytest pytest-docker"
+      codecov-flags: "" # Do not upload
+      test-command: "python -m pytest -x lightcurve_step/tests/integration"
 
-  magstats_step_tests:
-    runs-on: ubuntu-latest
+  magstats_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'magstats_step/magstats_step'
-      - name: unittest
-        uses: ./.github/workflows/poetry-tests-template.yaml
-        with:
-          python-version: '3.9'
-          sources-folder: 'magstats_step/magstats_step'
-          test-folder: 'magstats_step/tests/unittests'
-      - name: integration
-        uses: ./.github/workflows/poetry-tests-template.yaml
-        with:
-          python-version: '3.9'
-          sources-folder: 'magstats_step/magstats_step'
-          test-folder: 'magstats_step/tests/integration'
-          codecov-flags: ''  # Do not upload
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'magstats_step/magstats_step'
+  magstats_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.magstats_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'magstats_step/magstats_step'
+      test-folder: 'magstats_step/tests/unittests'
+  magstats_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.magstats_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'magstats_step/magstats_step'
+      test-folder: 'magstats_step/tests/integration'
+      codecov-flags: ''  # Do not upload
 
-  prv_candidates_step_tests:
-    runs-on: ubuntu-latest
+  prv_candidates_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: "prv_candidates_step/prv_candidates_step"
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: "3.10"
-          sources-folder: "prv_candidates_step/prv_candidates_step"
-          test-folder: "prv_candidates_step/tests/unit"
-          test-dependencies: "pytest pytest-cov pytest-mock"
-          test-command: "python -m pytest -x prv_candidates_step/tests/unit --cov prv_candidates_step/prv_candidates_step --cov-report xml"
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: "3.10"
-          sources-folder: "prv_candidates_step/prv_candidates_step"
-          test-folder: "prv_candidates_step/tests/integration"
-          test-dependencies: "pytest pytest-docker pytest-mock"
-          codecov-flags: "" # Do not upload
-          test-command: "python -m pytest -x prv_candidates_step/tests/integration"
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: "prv_candidates_step/prv_candidates_step"
+  prv_candidates_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: "3.10"
+      sources-folder: "prv_candidates_step/prv_candidates_step"
+      test-folder: "prv_candidates_step/tests/unit"
+      test-dependencies: "pytest pytest-cov pytest-mock"
+      test-command: "python -m pytest -x prv_candidates_step/tests/unit --cov prv_candidates_step/prv_candidates_step --cov-report xml"
+  prv_candidates_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: "3.10"
+      sources-folder: "prv_candidates_step/prv_candidates_step"
+      test-folder: "prv_candidates_step/tests/integration"
+      test-dependencies: "pytest pytest-docker pytest-mock"
+      codecov-flags: "" # Do not upload
+      test-command: "python -m pytest -x prv_candidates_step/tests/integration"
 
-  s3_step_tests:
-    runs-on: ubuntu-latest
+  s3_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step== 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 's3_step/s3_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.9'
-          sources-folder: 's3_step/s3_step/'
-          test-folder: 's3_step/tests/unit'
-          test-dependencies: 'pytest pytest-cov'
-          requirements-file: 's3_step/requirements.txt'
-          test-command: 'python -m pytest -x s3_step/tests/unit --cov s3_step/s3_step/ --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.9'
-          sources-folder: 's3_step/s3_step/'
-          test-folder: 's3_step/tests/integration'
-          test-dependencies: 'pytest pytest-docker moto'
-          requirements-file: 's3_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x s3_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 's3_step/s3_step/'
+  s3_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.s3_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 's3_step/s3_step/'
+      test-folder: 's3_step/tests/unit'
+      test-dependencies: 'pytest pytest-cov'
+      requirements-file: 's3_step/requirements.txt'
+      test-command: 'python -m pytest -x s3_step/tests/unit --cov s3_step/s3_step/ --cov-report xml'
+  s3_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.s3_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 's3_step/s3_step/'
+      test-folder: 's3_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker moto'
+      requirements-file: 's3_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x s3_step/tests/integration'
 
-  sorting_hat_step_tests:
-    runs-on: ubuntu-latest
+  sorting_hat_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'sorting_hat_step/sorting_hat_step'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          sources-folder: 'sorting_hat_step/sorting_hat_step'
-          test-folder: 'sorting_hat_step/tests/unittest'
-          test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
-          pre-dependencies: 'numpy'
-          test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step/sorting_hat_step --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          sources-folder: 'sorting_hat_step/sorting_hat_step'
-          test-folder: 'sorting_hat_step/tests/integration'
-          test-dependencies: 'requests confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
-          pre-dependencies: 'numpy'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x sorting_hat_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'sorting_hat_step/sorting_hat_step'
+  sorting_hat_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.sorting_hat_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step/sorting_hat_step'
+      test-folder: 'sorting_hat_step/tests/unittest'
+      test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
+      pre-dependencies: 'numpy'
+      test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step/sorting_hat_step --cov-report xml'
+  sorting_hat_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.sorting_hat_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      sources-folder: 'sorting_hat_step/sorting_hat_step'
+      test-folder: 'sorting_hat_step/tests/integration'
+      test-dependencies: 'requests confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
+      pre-dependencies: 'numpy'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x sorting_hat_step/tests/integration'
 
-  watchlist_step_tests:
-    runs-on: ubuntu-latest
+  watchlist_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'watchlist_step/watchlist_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.8'
-          sources-folder: 'watchlist_step/watchlist_step/'
-          test-folder: 'watchlist_step/tests/unit'
-          test-dependencies: 'pytest pytest-cov'
-          requirements-file: 'watchlist_step/requirements.txt'
-          test-command: 'python -m pytest -x watchlist_step/tests/unit --cov watchlist_step/watchlist_step/ --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.9'
-          sources-folder: 'watchlist_step/watchlist_step/'
-          test-folder: 'watchlist_step/tests/integration'
-          test-dependencies: 'pytest==7.2.0 pytest-docker'
-          requirements-file: 'watchlist_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x watchlist_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'watchlist_step/watchlist_step/'
+  watchlist_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.8'
+      sources-folder: 'watchlist_step/watchlist_step/'
+      test-folder: 'watchlist_step/tests/unit'
+      test-dependencies: 'pytest pytest-cov'
+      requirements-file: 'watchlist_step/requirements.txt'
+      test-command: 'python -m pytest -x watchlist_step/tests/unit --cov watchlist_step/watchlist_step/ --cov-report xml'
+  watchlist_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'watchlist_step/watchlist_step/'
+      test-folder: 'watchlist_step/tests/integration'
+      test-dependencies: 'pytest==7.2.0 pytest-docker'
+      requirements-file: 'watchlist_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x watchlist_step/tests/integration'
 
-  xmatch_step_tests:
-    runs-on: ubuntu-latest
+  xmatch_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
-    steps:
-      - name: lint
-        uses: ./.github/workflows/lint-template.yaml
-        with:
-          sources-folder: 'xmatch_step/xmatch_step/'
-      - name: unittest
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'xmatch_step/xmatch_step/'
-          test-folder: 'xmatch_step/tests/unit'
-          test-dependencies: 'pytest pytest-cov'
-          requirements-file: 'xmatch_step/requirements.txt'
-          test-command: 'python -m pytest -x xmatch_step/tests/unit --cov xmatch_step/xmatch_step/ --cov-report xml'
-      - name: integration
-        uses: ./.github/workflows/pip-tests-template.yaml
-        with:
-          python-version: '3.7'
-          sources-folder: 'xmatch_step/xmatch_step/'
-          test-folder: 'xmatch_step/tests/integration'
-          test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
-          requirements-file: 'xmatch_step/requirements.txt'
-          codecov-flags: ''  # Do not upload
-          test-command: 'python -m pytest -x xmatch_step/tests/integration'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'xmatch_step/xmatch_step/'
+  xmatch_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.xmatch_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'xmatch_step/xmatch_step/'
+      test-folder: 'xmatch_step/tests/unit'
+      test-dependencies: 'pytest pytest-cov'
+      requirements-file: 'xmatch_step/requirements.txt'
+      test-command: 'python -m pytest -x xmatch_step/tests/unit --cov xmatch_step/xmatch_step/ --cov-report xml'
+  xmatch_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.xmatch_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      python-version: '3.7'
+      sources-folder: 'xmatch_step/xmatch_step/'
+      test-folder: 'xmatch_step/tests/integration'
+      test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
+      requirements-file: 'xmatch_step/requirements.txt'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x xmatch_step/tests/integration'
+
+      

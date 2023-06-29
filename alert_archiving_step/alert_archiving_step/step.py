@@ -1,8 +1,8 @@
 import fastavro
+import logging
 import io
 from apf.core.step import GenericStep
 from fastavro import writer
-import logging
 import boto3
 from botocore.exceptions import ClientError
 from uuid import uuid4
@@ -20,13 +20,14 @@ class AlertArchivingStep(GenericStep):
 
     """
 
-    def __init__(
-        self, consumer=None, config=None, level=logging.INFO, **step_args
-    ):
+    def __init__(self, consumer=None, config=None, level=logging.INFO, **step_args):
         super().__init__(consumer, config=config, level=level, **step_args)
         self.formatt = config["FORMAT"]  # = "avro"
 
-        self.bucket_name = {'ztf': config["ZTF_BUCKET_NAME"], 'atlas': config["ATLAS_BUCKET_NAME"]}
+        self.bucket_name = {
+            "ztf": config["ZTF_BUCKET_NAME"],
+            "atlas": config["ATLAS_BUCKET_NAME"],
+        }
 
     def upload_file(self, filee, bucket, object_name):
         """Upload a file to an S3 bucket
@@ -60,9 +61,7 @@ class AlertArchivingStep(GenericStep):
                 if message.error().name() == "_PARTITION_EOF":
                     self.logger.info("PARTITION_EOF: No more messages")
                     return
-                self.logger.exception(
-                    f"Error in kafka stream: {message.error()}"
-                )
+                self.logger.exception(f"Error in kafka stream: {message.error()}")
                 continue
             else:
                 topic = message.topic()
@@ -89,9 +88,7 @@ class AlertArchivingStep(GenericStep):
             file_name = topic_date + "_" + partition_name + ".avro"
             fo = io.BytesIO()
             writer(fo, self.schema, clean_messages[topic], codec="snappy")
-            object_name = "{}_{}/{}".format(
-                self.formatt, topic_date, file_name
-            )
+            object_name = "{}_{}/{}".format(self.formatt, topic_date, file_name)
 
             # Reset read pointer. DOT NOT FORGET THIS, else all uploaded files will be empty!
             fo.seek(0)
