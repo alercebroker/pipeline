@@ -147,31 +147,32 @@ jobs:
     if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'feature_step/feature_step/'
+      sources-folder: 'feature_step'
+      base-folder: 'feature_step'
   feature_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'feature_step/feature_step/'
-      test-folder: 'feature_step/tests/unittest'
+      base-folder: 'feature_step'
+      sources-folder: 'feature_step'
+      test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
-      requirements-file: 'feature_step/requirements.txt'
+      requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x feature_step/tests/unittest --cov feature_step/features--cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov features--cov-report xml'
   feature_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'feature_step/alerce-reflector-step/'
-      test-folder: 'feature_step/tests/integration'
+      base-folder: 'feature_step'
+      sources-folder: 'alerce-reflector-step/'
+      test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker'
-      requirements-file: 'feature_step/requirements.txt'
+      requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x feature_step/tests/integration'
+      test-command: 'python -m pytest -x tests/integration'
 
   lc_classification_step_lint:
     needs: detect_changes
