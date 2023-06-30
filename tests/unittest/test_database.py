@@ -1,6 +1,7 @@
 import math
 import unittest
 from unittest import mock
+from pymongo.errors import BulkWriteError
 
 from db_plugins.db.mongo.connection import MongoConnection
 from db_plugins.db.mongo.models import Object
@@ -54,3 +55,26 @@ class DatabaseTestCase(unittest.TestCase):
         self.mock_db.query(Object).collection.find_one.return_value = None
         aid = database.conesearch_query(self.mock_db, 1, 2, 3)
         assert aid is None
+
+    def test_update_query(self):
+        mock_find_and_update = self.mock_db.query(Object).collection.find_one_and_update
+        mock_find_and_update.side_effect = [
+            {"oid": [10, 100], "_id": 0},
+            {"oid": [20, 30], "_id": 1},
+                ]
+        records = [
+            {"oid": [10], "_id": 0},
+            {"oid": [20, 30], "_id": 1},
+        ]
+
+        database.update_query(self.mock_db, records)
+
+        assert mock_find_and_update.call_count == 2
+
+        query = {"_id": 0}
+        new_value = {
+                "$addToSet": {"oid": {"$each": [10]}},
+                }
+        self.mock_db.query(Object).collection.find_one_and_update.assert_any_call(
+            query, new_value, upsert=True, return_document=True
+        )
