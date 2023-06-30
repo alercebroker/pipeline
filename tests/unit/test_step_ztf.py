@@ -5,7 +5,6 @@ import os
 from lc_classification.core.step import LateClassifier
 from tests.mockdata.input_ztf import INPUT_SCHEMA as INPUT_ZTF
 from fastavro import utils
-from tests.mockdata.extra_felds import generate_extra_fields
 
 from tests.test_commons import (
     assert_ztf_object_is_correct,

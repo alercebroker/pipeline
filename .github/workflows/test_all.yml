@@ -20,7 +20,11 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   integration-ztf:
     uses: ./.github/workflows/test.yml
     with:
@@ -33,7 +37,11 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   unittest-elasticc:
     uses: ./.github/workflows/test.yml
     with:
@@ -46,7 +54,11 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   integration-elasticc:
     uses: ./.github/workflows/test.yml
     with:
@@ -61,4 +73,8 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"

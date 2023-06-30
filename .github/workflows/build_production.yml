@@ -34,7 +34,7 @@ jobs:
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-  get_tags_elasticc:
+  get_tags_balto:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.prep.outputs.tags }}
@@ -44,7 +44,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=ghcr.io/alercebroker/lc_classifier_step_elasticc
+          DOCKER_IMAGE=ghcr.io/alercebroker/lc_classifier_step_balto
           VERSION=latest
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
@@ -54,12 +54,42 @@ jobs:
             TAGS="$TAGS,${DOCKER_IMAGE}:latest"
           fi
           echo ::set-output name=tags::${TAGS}
-  push_image_elasticc:
-    needs: get_tags_elasticc
+  push_image_balto:
+    needs: get_tags_balto
     uses: ./.github/workflows/build.yml
     with:
-      tags: ${{ needs.get_tags_elasticc.outputs.tags }}
-      dockerfile: ./Dockerfile-elasticc
+      tags: ${{ needs.get_tags_balto.outputs.tags }}
+      dockerfile: ./Dockerfile-balto
+    secrets:
+      PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  get_tags_toretto:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.prep.outputs.tags }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=ghcr.io/alercebroker/lc_classifier_step_toretto
+          VERSION=latest
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+          echo ::set-output name=tags::${TAGS}
+  push_image_toretto:
+    needs: get_tags_toretto
+    uses: ./.github/workflows/build.yml
+    with:
+      tags: ${{ needs.get_tags_toretto.outputs.tags }}
+      dockerfile: ./Dockerfile-toretto
     secrets:
       PUBLISH_IMAGE_TOKEN: ${{ secrets.PUBLISH_IMAGE_TOKEN }}
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
