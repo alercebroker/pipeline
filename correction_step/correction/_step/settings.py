@@ -1,5 +1,5 @@
-import json
 import os
+import json
 
 from fastavro import schema
 

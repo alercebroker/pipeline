@@ -122,23 +122,24 @@ jobs:
     if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'correction_step/correction'
+      sources-folder: 'correction'
+      base-folder: 'correction_step'
   correction_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'correction_step/correction'
-      test-folder: 'correction_step/tests/unittests'
+      base-folder: 'correction_step'
+      sources-folder: 'correction'
+      test-folder: 'tests/unittests'
   correction_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'correction_step/correction'
-      test-folder: 'correction_step/tests/integration'
+      base-folder: 'correction_step'
+      sources-folder: 'correction'
+      test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
 
   feature_step_lint:
