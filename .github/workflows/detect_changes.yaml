@@ -65,7 +65,7 @@ jobs:
         with:
           filters: |
             alerce_reflector_step:
-                - 'alerce-reflector-step/**'
+                - 'alerce_reflector_step/**'
             alert_archiving_step:
                 - 'alert_archiving_step/**'
             consolidated_metrics_step:

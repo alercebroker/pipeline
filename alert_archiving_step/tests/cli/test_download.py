@@ -60,9 +60,7 @@ def test_file_exists_warning(tmp_path):
     with runner.isolated_filesystem(temp_dir=tmp_path):
         p = tmp_path / "ztf_public_123456.tar.gz"
         p.write_text("this file exists and has content")
-        with pytest.warns(
-            RuntimeWarning, match="File .* exists, overwritting"
-        ):
+        with pytest.warns(RuntimeWarning, match="File .* exists, overwritting"):
             result = runner.invoke(
                 download_archive,
                 [
