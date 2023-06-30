@@ -62,7 +62,6 @@ jobs:
       sources-folder: 'alert_archiving_step'
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
-      requirements-file: 'requirements.txt'
       test-command: 'python -m pytest -x tests/unittest --cov alert_archiving_step --cov-report xml'
   alert_archiving_step_unittest_cli:
     needs: detect_changes
@@ -71,8 +70,6 @@ jobs:
     with:
       python-version: '3.7'
       base-folder: 'alert_archiving_step'
-      sources-folder: 'cli'
-      test-folder: 'tests/cli'
       test-dependencies: 'pytest pytest-docker pytest-cov'
       requirements-file: 'requirements_cli.txt'
       test-command: 'python -m pytest -x tests/cli --cov cli --cov-report xml'
@@ -86,7 +83,6 @@ jobs:
       sources-folder: 'alert_archiving_step'
       test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker numpy Cython'
-      requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
 
