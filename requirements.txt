@@ -5,3 +5,4 @@ Jinja2>=2.10.0
 pandas>=0.24,<=2.0.1
 boto3==1.26.69
 prometheus-client==0.16.0
+pyroscope-io==0.8.4
