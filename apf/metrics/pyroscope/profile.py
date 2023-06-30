@@ -2,7 +2,7 @@ import functools
 import os
 import pyroscope
 
-def profile(func: function):
+def profile(func):
     """ Creates a Pyroscope context for the function to execute """
     @functools.wraps(func)
     def pyroscope_context(func):
