@@ -91,30 +91,31 @@ jobs:
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
+      sources-folder: 'consolidated_metrics_step'
+      base-folder: 'consolidated_metrics_step'
   consolidated_metrics_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
-      test-folder: 'consolidated_metrics_step/tests/unit'
+      base-folder: 'consolidated_metrics_step'
+      sources-folder: 'consolidated_metrics_step'
+      test-folder: 'tests/unit'
       test-dependencies: 'pytest pytest-cov numpy fastavro faker'
-      requirements-file: 'consolidated_metrics_step/requirements.txt'
-      test-command: 'python -m pytest -x consolidated_metrics_step/tests/unit --cov consolidated_metrics_step/consolidated_metrics_step --cov-report xml'
+      requirements-file: 'requirements.txt'
+      test-command: 'python -m pytest -x tests/unit --cov consolidated_metrics_step --cov-report xml'
   consolidated_metrics_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: '3.10'
-      sources-folder: 'consolidated_metrics_step/consolidated_metrics_step/'
-      test-folder: 'consolidated_metrics_step/tests/integration'
+      base-folder: 'consolidated_metrics_step'
+      sources-folder: 'consolidated_metrics_step/'
+      test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker numpy faker'
-      requirements-file: 'consolidated_metrics_step/requirements.txt'
+      requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x consolidated_metrics_step/tests/integration'
+      test-command: 'python -m pytest -x tests/integration'
 
   correction_step_lint:
     needs: detect_changes
