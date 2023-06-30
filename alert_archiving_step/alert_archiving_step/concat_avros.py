@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import shutil
 
-
 def concat_avros(input_directory, output_directory):
 
     names = os.listdir(input_directory)
