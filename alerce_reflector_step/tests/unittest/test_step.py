@@ -1,8 +1,8 @@
 from unittest import mock, TestCase
 from confluent_kafka import Message
-from alerce_reflector_step.cmirrormaker.utils.consumer import RawKafkaConsumer
-from alerce_reflector_step.cmirrormaker.utils.producer import RawKafkaProducer
-from alerce_reflector_step.cmirrormaker.step import CustomMirrormaker
+from cmirrormaker.utils.consumer import RawKafkaConsumer
+from cmirrormaker.utils.producer import RawKafkaProducer
+from cmirrormaker.step import CustomMirrormaker
 from data.datagen import create_messages
 
 
