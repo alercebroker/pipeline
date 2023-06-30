@@ -4,9 +4,7 @@ from features.core._base import BaseFeatureExtractor
 from features.core.utils.functions import collapse_fid_columns
 
 
-def parse_scribe_payload(
-    features: pd.DataFrame, extractor_class: BaseFeatureExtractor
-):
+def parse_scribe_payload(features: pd.DataFrame, extractor_class: BaseFeatureExtractor):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 
@@ -21,7 +19,7 @@ def parse_scribe_payload(
     commands_list = []
     for aid, features_df in features.iterrows():
         features_list = [
-            {"name": name, "fid": None if fid == '' else fid, "value": value}
+            {"name": name, "fid": None if fid == "" else fid, "value": value}
             for ((name, fid), value) in features_df.items()
         ]
         command = {
@@ -40,7 +38,11 @@ def parse_scribe_payload(
     return commands_list
 
 
-def parse_output(features: pd.DataFrame, alert_data: list[dict], extractor_class: BaseFeatureExtractor) -> list[dict]:
+def parse_output(
+    features: pd.DataFrame,
+    alert_data: list[dict],
+    extractor_class: BaseFeatureExtractor,
+) -> list[dict]:
     """
     Parse output of the step. It uses the input data to extend the schema to
     add the features of each object, identified by its aid.

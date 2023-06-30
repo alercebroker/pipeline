@@ -56,17 +56,14 @@ class StepTestCase(unittest.TestCase):
             },
         }
         self.mock_extractor = mock.MagicMock()
-        self.mock_extractor.generate_features.return_value = (
-            features_df_for_execute
-        )
+        self.mock_extractor.generate_features.return_value = features_df_for_execute
         self.mock_extractor_class = mock.MagicMock()
         self.mock_extractor_class.NAME = "group"
         self.mock_extractor_class.VERSION = "v1"
         self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
         self.mock_extractor_class.return_value = self.mock_extractor
         self.step = FeaturesComputer(
-            config=self.step_config,
-            extractor=self.mock_extractor_class
+            config=self.step_config, extractor=self.mock_extractor_class
         )
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()

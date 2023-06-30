@@ -4,8 +4,8 @@ feature_columns_for_parse = [
     ("feat1", "g"),
     ("feat1", "r"),
     ("feat2", "gr"),
-    ("feat3", ''),
-    ("feat4", ''),
+    ("feat3", ""),
+    ("feat4", ""),
 ]
 feature_multi_index_for_parse = pd.MultiIndex.from_tuples(feature_columns_for_parse)
 
@@ -39,8 +39,8 @@ feature_columns_for_execute = [
     ("Amplitude", "g"),
     ("Amplitude", "r"),
     ("Multiband_period", "gr"),
-    ("feat3", ''),
-    ("rb", ''),
+    ("feat3", ""),
+    ("rb", ""),
 ]
 feature_multi_index_for_execute = pd.MultiIndex.from_tuples(feature_columns_for_execute)
 

@@ -1,6 +1,6 @@
 import fastavro
-import logging
 import io
+import logging
 from apf.core.step import GenericStep
 from fastavro import writer
 import boto3

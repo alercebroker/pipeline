@@ -1,7 +1,7 @@
 from multiprocessing import Process
 import sys
-import logging
 import os
+import logging
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
