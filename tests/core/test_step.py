@@ -8,6 +8,9 @@ import pytest
 
 
 class MockStep(GenericStep):
+    def start():
+        return
+
     def execute(self, _):
         return {}
 
@@ -160,6 +163,9 @@ def test_post_execute(step, mocker):
 
 def test_start_with_execute_returning_iterable(basic_config, mocker):
     class StepWithIterableExecute(GenericStep):
+        def start():
+            return 
+
         def execute(self, _):
             return [{}]
 
