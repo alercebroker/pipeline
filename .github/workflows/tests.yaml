@@ -14,32 +14,35 @@ jobs:
     if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-        sources-folder: 'alerce_reflector_step/cmirrormaker/'
+        sources-folder: 'cmirrormaker'
+        base-folder: 'alerce_reflector_step' 
   alerce_reflector_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
         python-version: '3.7'
-        sources-folder: 'alerce_reflector_step/cmirrormaker/'
-        test-folder: 'alerce_reflector_step/tests/unittest'
+        sources-folder: 'cmirrormaker'
+        test-folder: 'tests/unittest'
+        base-folder: 'alerce_reflector_step' 
         test-dependencies: 'pytest pytest-docker pytest-cov'
         pre-dependencies: 'apf-base==1.0.7'
-        requirements-file: 'alerce_reflector_step/requirements.txt -r alerce_reflector_step/dev-requirements.txt'
-        test-command: 'python -m pytest -x alerce_reflector_step/tests/unittest --cov alerce_reflector_step/cmirrormaker --cov-report xml'
+        requirements-file: 'requirements.txt -r alerce_reflector_step/dev-requirements.txt'
+        test-command: 'python -m pytest -x tests/unittest --cov cmirrormaker --cov-report xml'
   alerce_reflector_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       python-version: '3.7'
-      sources-folder: 'alerce_reflector_step/cmirrormaker/'
-      test-folder: 'alerce_reflector_step/tests/integration'
+      sources-folder: 'cmirrormaker'
+      base-folder: 'alerce_reflector_step'
+      test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker pytest-cov'
       pre-dependencies: 'apf-base==1.0.7'
-      requirements-file: 'alerce_reflector_step/requirements.txt -r alerce_reflector_step/dev-requirements.txt'
+      requirements-file: 'requirements.txt -r alerce_reflector_step/dev-requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x alerce_reflector_step/tests/integration'
+      test-command: 'python -m pytest -x tests/integration'
 
 
   alert_archiving_step_lint:
