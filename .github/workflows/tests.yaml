@@ -17,7 +17,7 @@ jobs:
       - name: lint
         uses: ./.github/workflows/lint-template.yaml
         with:
-          sources-folder: 'alerce-reflector-step/alerce-reflector-step/'
+          sources-folder: 'alerce-reflector-step/cmirrormaker'
       - name: unittest
         uses: ./.github/workflows/pip-tests-template.yaml
         with:

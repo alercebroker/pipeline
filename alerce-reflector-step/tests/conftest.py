@@ -1,6 +1,5 @@
 import pytest
 import os
-
 from confluent_kafka.admin import AdminClient, NewTopic
 
 
