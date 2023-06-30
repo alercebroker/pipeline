@@ -87,7 +87,7 @@ def multi_band(
     )  # `band` now has the fids as index of fids
     smooth = np.percentile(error, 10) * 0.5
 
-    weight = np.exp(-((flux + error) * ((flux + error) < 0) / (error + 1)) ** 2)
+    weight = np.exp(-(((flux + error) * ((flux + error) < 0) / (error + 1)) ** 2))
 
     # Padding is needed to minimize recompilations of jax jit functions
     time, flux, error, band, weight = _pad(time, flux, error, band, weight, mult)
@@ -95,7 +95,15 @@ def multi_band(
     func = _get_model(version)
     obj, grad = _get_objective(version)
 
-    args = (time, flux, error, band, np.arange(fids.size), smooth, weight)  # For objective function
+    args = (
+        time,
+        flux,
+        error,
+        band,
+        np.arange(fids.size),
+        smooth,
+        weight,
+    )  # For objective function
     kwargs = dict(method="TNC", options={"maxfun": 1000})  # For minimizer
     result = optimize.minimize(
         obj, initial, jac=grad, args=args, bounds=bounds, **kwargs

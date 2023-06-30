@@ -52,7 +52,9 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> list[dict]:
     return alerts
 
 
-def generate_alert_ztf(aid: str, band: str, num_messages: int, identifier: int) -> list[dict]:
+def generate_alert_ztf(
+    aid: str, band: str, num_messages: int, identifier: int
+) -> list[dict]:
     alerts = []
     for i in range(num_messages):
         alert = {
@@ -116,8 +118,8 @@ def generate_input_batch(n: int) -> list[dict]:
         detections_g = generate_alert_ztf(aid, "g", random.randint(5, 10), m)
         detections_r = generate_alert_ztf(aid, "r", random.randint(5, 10), m)
         non_det = generate_non_det(aid, random.randint(1, 5), m)
-        #candid = int(str(m + 1).ljust(8, "0"))
-        #detections[-1]["candid"] = candid
+        # candid = int(str(m + 1).ljust(8, "0"))
+        # detections[-1]["candid"] = candid
         xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,

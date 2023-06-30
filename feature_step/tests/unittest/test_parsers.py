@@ -6,7 +6,6 @@ from features.utils.parsers import parse_output, parse_scribe_payload
 
 
 class ParsersTestCase(unittest.TestCase):
-
     def setUp(self) -> None:
         self.mock_extractor_class = mock.MagicMock
         self.mock_extractor_class.NAME = "group"
@@ -47,7 +46,9 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
-        parsed_result = parse_output(test_features_df, messages_for_parsing, self.mock_extractor_class)
+        parsed_result = parse_output(
+            test_features_df, messages_for_parsing, self.mock_extractor_class
+        )
 
         self.assertEqual(parsed_result, expected_payload)
 
@@ -89,6 +90,8 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
-        parsed_result = parse_scribe_payload(test_features_df, self.mock_extractor_class)
+        parsed_result = parse_scribe_payload(
+            test_features_df, self.mock_extractor_class
+        )
 
         self.assertEqual(parsed_result, expected_payload)

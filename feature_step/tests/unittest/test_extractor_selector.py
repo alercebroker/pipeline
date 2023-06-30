@@ -4,7 +4,6 @@ from features.utils.selector import selector, ExtractorNotFoundException
 
 
 class ExtractorSelectorTestCase(unittest.TestCase):
-
     def test_get_ztf_extractor(self):
         input_str = "ZTF"
         selected_extractor = selector(input_str)

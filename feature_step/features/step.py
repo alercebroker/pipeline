@@ -32,9 +32,7 @@ class FeaturesComputer(GenericStep):
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(
-            features, self.features_extractor
-        )
+        commands = parse_scribe_payload(features, self.features_extractor)
 
         for command in commands:
             self.scribe_producer.produce({"payload": json.dumps(command)})
@@ -45,7 +43,9 @@ class FeaturesComputer(GenericStep):
         for message in messages:
             detections.extend(message.get("detections", []))
             non_detections.extend(message.get("non_detections", []))
-            xmatch.append({"aid": message["aid"], **(message.get("xmatches", {}) or {})})
+            xmatch.append(
+                {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
+            )
 
         features_extractor = self.features_extractor(detections, non_detections, xmatch)
         features = features_extractor.generate_features()

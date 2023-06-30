@@ -160,7 +160,7 @@ jobs:
       test-dependencies: 'pytest pytest-cov'
       requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/unittest --cov features--cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov features --cov-report xml'
   feature_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'

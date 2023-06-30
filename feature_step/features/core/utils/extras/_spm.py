@@ -66,7 +66,9 @@ def fit_spm(
             mwebv = df["mwebv"][mask].median()
             zhost = df["z_final"][mask].median()
 
-            target[mask], error[mask] = func(target[mask], error[mask], band[mask], mwebv, zhost)
+            target[mask], error[mask] = func(
+                target[mask], error[mask], band[mask], mwebv, zhost
+            )
 
     func = _get_fitter(multiband)
 

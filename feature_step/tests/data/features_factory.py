@@ -11,8 +11,8 @@ def generate_features_df(messages: pd.DataFrame):
         ("Amplitude", "g"),
         ("Amplitude", "r"),
         ("Multiband_period", "gr"),
-        ("feat3", ''),
-        ("rb", ''),
+        ("feat3", ""),
+        ("rb", ""),
     ]
     feature_multi_index = pd.MultiIndex.from_tuples(feature_columns)
 

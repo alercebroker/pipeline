@@ -27,7 +27,9 @@ def v1_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
 
     sigmoid = jsigmoid(sigmoid_factor * (times - t1))
     one_over_den = jsigmoid((times - t0) / t_rise)
-    temp = (1 - beta) * jnp.exp(-(times - t1) / t_fall) * sigmoid + (1. - beta * (times - t0) / gamma) * (1 - sigmoid)
+    temp = (1 - beta) * jnp.exp(-(times - t1) / t_fall) * sigmoid + (
+        1.0 - beta * (times - t0) / gamma
+    ) * (1 - sigmoid)
     return temp * ampl * one_over_den
 
 
@@ -75,5 +77,7 @@ def v2_jax(times, ampl, t0, gamma, beta, t_rise, t_fall):
     one_over_den = jsigmoid(raise_arg)
 
     fall_arg = jnp.clip(-(times - t1) / t_fall, -20, 20)
-    temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (1 - beta * (times - t0) / gamma) * (1 - sigmoid)
+    temp = (1 - beta) * jnp.exp(fall_arg) * sigmoid + (
+        1 - beta * (times - t0) / gamma
+    ) * (1 - sigmoid)
     return temp * ampl * one_over_den * (raise_arg > -20)

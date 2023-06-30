@@ -137,7 +137,9 @@ class BaseFeatureExtractor(abc.ABC):
         self._discard_detections()
         self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
 
-        first_mjd = functions.fill_index(self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS)
+        first_mjd = functions.fill_index(
+            self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS
+        )
 
         non_detections = non_detections if non_detections is not None else []
         if isinstance(non_detections, pd.DataFrame):
@@ -163,8 +165,11 @@ class BaseFeatureExtractor(abc.ABC):
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
         """Ensures cross-matches contain `aid` in detections and selects required columns."""
+
         def expand_catalogues(xm):
-            return {k: v for cat in self.XMATCH_COLUMNS for k, v in xm.get(cat, {}).items()}
+            return {
+                k: v for cat in self.XMATCH_COLUMNS for k, v in xm.get(cat, {}).items()
+            }
 
         def get_required_columns():
             return [col for cols in self.XMATCH_COLUMNS.values() for col in cols]
@@ -232,7 +237,9 @@ class BaseFeatureExtractor(abc.ABC):
             pd.DataFrame: Feature indexed by object with two-level columns (feature name and band)
         """
         if not self.detections.ids().size:
-            self.logger.debug("No objects present after filtering, skipping feature generation")
+            self.logger.debug(
+                "No objects present after filtering, skipping feature generation"
+            )
             return pd.DataFrame()
         exclude = exclude or set()  # Empty default
         exclude |= self._AUTO_EXCLUDE  # Add all permanently excluded
