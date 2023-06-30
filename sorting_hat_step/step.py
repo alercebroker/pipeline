@@ -4,7 +4,7 @@ from survey_parser_plugins import ALeRCEParser
 from datetime import datetime
 from typing import List
 
-from .utils import wizard, parser
+from .utils import wizard, parser, statistics
 import pandas as pd
 
 
@@ -75,6 +75,15 @@ class SortingHatStep(GenericStep):
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
         self._add_metrics(alerts)
+
+        mean_prv = alerts.apply(statistics.get_prv_candidates_len).mean()
+        mean_forced = alerts.apply(statistics.get_prv_forced_len).mean()
+
+        self.logger.debug(
+            f"On average, this batch contains {mean_prv} \
+            prv_candidates and {mean_forced} prv_forced"
+        )
+
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:

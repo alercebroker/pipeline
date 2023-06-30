@@ -2,6 +2,7 @@ import os
 import sys
 
 import logging
+import pyroscope
 
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
@@ -32,6 +33,9 @@ logger.addHandler(handler)
 from sorting_hat_step import SortingHatStep
 
 database = new_DBConnection(MongoDatabaseCreator)
+
+if bool(os.getenv("USE_PROFILING", True)):
+    pyroscope.configure(application_name="steps.SortingHat", server_address=os.getenv("PYROSCOPE_SERVER"))
 
 prometheus_metrics = PrometheusMetrics()
 start_http_server(8000)
