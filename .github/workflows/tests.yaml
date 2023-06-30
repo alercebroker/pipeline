@@ -179,25 +179,28 @@ jobs:
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'lc_classification_step/lc_classification'
+      base-folder: 'lc_classification_step'
+      sources-folder: 'lc_classification'
   lc_classification_step_unittest_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'lc_classification_step/requirements_ztf.txt'
-      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
+      requirements-file: 'requirements_ztf.txt'
+      test-command: STREAM=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
 
   lc_classification_step_integration_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'lc_classification_step/requirements_ztf.txt'
+      requirements-file: 'requirements_ztf.txt'
       test-dependencies: pytest pytest-docker
-      test-command: STREAM=ztf python -m pytest -x lc_classification_step/tests/integration
+      test-command: STREAM=ztf python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
 
   lc_classification_step_unittest_elastic:
@@ -205,19 +208,21 @@ jobs:
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
-      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/unit --cov lc_classification/lc_classification --cov-report xml
+      requirements-file: 'requirements_elasticc.txt'
+      test-command: STREAM=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
 
   lc_classification_step_integration_elastic:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'lc_classification_step/requirements_elasticc.txt'
+      requirements-file: 'requirements_elasticc.txt'
       test-dependencies: pytest pytest-docker
-      test-command: STREAM=elasticc python -m pytest -x lc_classification_step/tests/integration
+      test-command: STREAM=elasticc python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
 
   lightcurve_step_lint:
@@ -225,28 +230,31 @@ jobs:
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'lightcurve_step/lightcurve_step' 
+      sources-folder: 'lightcurve_step'
+      base-folder: 'lightcurve_step' 
   lightcurve_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lightcurve_step' 
       python-version: "3.9"
-      sources-folder: "lightcurve_step/lightcurve_step"
-      test-folder: "lightcurve_step/tests/unittest"
+      sources-folder: "lightcurve_step"
+      test-folder: "tests/unittest"
       test-dependencies: "pytest pytest-cov"
-      test-command: "python -m pytest -x lightcurve_step/tests/unittest --cov lightcurve_step/lightcurve_step --cov-report xml"
+      test-command: "python -m pytest -x tests/unittest --cov lightcurve_step --cov-report xml"
   lightcurve_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'lightcurve_step' 
       python-version: "3.9"
-      sources-folder: "lightcurve_step/lightcurve_step"
-      test-folder: "lightcurve_step/tests/integration"
+      sources-folder: "lightcurve_step"
+      test-folder: "tests/integration"
       test-dependencies: "pytest pytest-docker"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x lightcurve_step/tests/integration"
+      test-command: "python -m pytest -x tests/integration"
 
   magstats_step_lint:
     needs: detect_changes
