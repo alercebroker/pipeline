@@ -75,6 +75,7 @@ class SortingHatStep(GenericStep):
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
         self._add_metrics(alerts)
+
         return alerts
 
     def post_execute(self, alerts: pd.DataFrame):
