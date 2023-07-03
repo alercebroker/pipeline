@@ -187,7 +187,12 @@ class GenericStep(abc.ABC):
             # if tid:
             #     tid = str(tid).upper()
             #     self.prometheus_metrics.telescope_id.state(tid)
-        preprocessed = self.pre_execute(self.message)
+        try:
+            preprocessed = self.pre_execute(self.message)
+        except Exception as error:
+            self.logger.debug("Error at pre_execute")
+            self.logger.debug(f"The message(s) that caused the error: {message}")
+            raise error
         return preprocessed
 
     def pre_execute(self, messages: List[dict]):
@@ -216,7 +221,12 @@ class GenericStep(abc.ABC):
 
     def _post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
         self.logger.info("Processed message. Begin post processing")
-        final_result = self.post_execute(result)
+        try:
+            final_result = self.post_execute(result)
+        except Exception as error:
+            self.logger.debug("Error at post_execute")
+            self.logger.debug(f"The result that caused the error: {result}")
+            raise error
         if self.commit:
             self.consumer.commit()
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
@@ -249,7 +259,12 @@ class GenericStep(abc.ABC):
         self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]
     ) -> Union[Iterable[Dict[str, Any]], Dict[str, Any]]:
         self.logger.info("Finished all processing. Begin message production")
-        message_to_produce = self.pre_produce(result)
+        try:
+            message_to_produce = self.pre_produce(result)
+        except Exception as error:
+            self.logger.debug("Error at pre_produce")
+            self.logger.debug(f"The result that caused the error: {result}")
+            raise error
         return message_to_produce
 
     def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
@@ -264,7 +279,11 @@ class GenericStep(abc.ABC):
 
     def _post_produce(self):
         self.logger.info("Messages produced. Begin post production")
-        self.post_produce()
+        try:
+            self.post_produce()
+        except Exception as error:
+            self.logger.debug("Error at post_produce")
+            raise error
 
     def post_produce(self):
         """
@@ -399,7 +418,12 @@ class GenericStep(abc.ABC):
         self._pre_consume()
         for message in self.consumer.consume():
             preprocessed_msg = self._pre_execute(message)
-            result = self.execute(preprocessed_msg)
+            try:
+                result = self.execute(preprocessed_msg)
+            except Exception as error:
+                self.logger.debug("Error at execute")
+                self.logger.debug(f"The message(s) that caused the error: {message}")
+                raise error
             result = self._post_execute(result)
             result = self._pre_produce(result)
             self.produce(result)
@@ -408,7 +432,11 @@ class GenericStep(abc.ABC):
 
     def _tear_down(self):
         self.logger.info("Processing finished. No more messages. Begin tear down.")
-        self.tear_down()
+        try:
+            self.tear_down()
+        except Exception as error:
+            self.logger.debug("Error at tear_down")
+            raise error
         self._write_success()
 
     def _write_success(self):
