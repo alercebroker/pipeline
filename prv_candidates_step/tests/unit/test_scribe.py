@@ -27,9 +27,7 @@ def test_produce_scribe(env_variables):
         "data": non_detection,
         "options": {"upsert": True},
     }
-    step.scribe_producer.produce.assert_called_once_with(
-        {"payload": json.dumps(expected_data)}
-    )
+    step.scribe_producer.produce.assert_called_once_with({"payload": json.dumps(expected_data)})
 
 
 def test_post_execute(env_variables):
@@ -55,6 +53,4 @@ def test_post_execute(env_variables):
         "data": non_detection,
         "options": {"upsert": True},
     }
-    step.scribe_producer.produce.assert_called_once_with(
-        {"payload": json.dumps(expected_data)}
-    )
+    step.scribe_producer.produce.assert_called_once_with({"payload": json.dumps(expected_data)})

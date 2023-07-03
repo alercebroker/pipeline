@@ -62,9 +62,7 @@ def settings_creator():
                 "title": "The root schema",
                 "description": "The root schema comprises the entire JSON document.",
                 "default": {},
-                "examples": [
-                    {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-                ],
+                "examples": [{"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}],
                 "required": ["timestamp_sent", "timestamp_received"],
                 "properties": {
                     "timestamp_sent": {
@@ -92,39 +90,23 @@ def settings_creator():
     if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
         consumer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
         consumer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-        consumer_config["PARAMS"]["sasl.username"] = os.getenv(
-            "CONSUMER_KAFKA_USERNAME"
-        )
-        consumer_config["PARAMS"]["sasl.password"] = os.getenv(
-            "CONSUMER_KAFKA_PASSWORD"
-        )
+        consumer_config["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
+        consumer_config["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
     if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
         producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
         producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-        producer_config["PARAMS"]["sasl.username"] = os.getenv(
-            "PRODUCER_KAFKA_USERNAME"
-        )
-        producer_config["PARAMS"]["sasl.password"] = os.getenv(
-            "PRODUCER_KAFKA_PASSWORD"
-        )
+        producer_config["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
+        producer_config["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
     if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
         scribe_producer_config["PARAMS"]["security.protocol"] = "SASL_SSL"
         scribe_producer_config["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-        scribe_producer_config["PARAMS"]["sasl.username"] = os.getenv(
-            "SCRIBE_KAFKA_USERNAME"
-        )
-        scribe_producer_config["PARAMS"]["sasl.password"] = os.getenv(
-            "SCRIBE_KAFKA_PASSWORD"
-        )
+        scribe_producer_config["PARAMS"]["sasl.username"] = os.getenv("SCRIBE_KAFKA_USERNAME")
+        scribe_producer_config["PARAMS"]["sasl.password"] = os.getenv("SCRIBE_KAFKA_PASSWORD")
     if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         metrics_config["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
         metrics_config["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-        metrics_config["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
-            "METRICS_KAFKA_USERNAME"
-        )
-        metrics_config["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
-            "METRICS_KAFKA_PASSWORD"
-        )
+        metrics_config["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("METRICS_KAFKA_USERNAME")
+        metrics_config["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("METRICS_KAFKA_PASSWORD")
 
     # Step Configuration
     return {

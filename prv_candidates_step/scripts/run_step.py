@@ -19,7 +19,7 @@ def step_creator():
     settings = settings_creator()
 
     level = logging.INFO
-    if os.getenv('LOGGING_DEBUG'):
+    if os.getenv("LOGGING_DEBUG"):
         level = logging.DEBUG
 
     logger = logging.getLogger("alerce")
