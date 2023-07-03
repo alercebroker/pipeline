@@ -27,13 +27,15 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
 }
 
-if os.getenv("TOPIC_STRATEGY_FORMAT"):
+if os.getenv("TOPIC_STRATEGY_TOPIC_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
-            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
-            "date_format": "%Y%m%d",
-            "change_hour": 23,
+            "topic_format": os.environ["TOPIC_STRATEGY_TOPIC_FORMAT"]
+            .strip()
+            .split(","),
+            "date_format": os.getenv("TOPIC_STRATEGY_DATE_FORMAT", "%Y%m%d"),
+            "change_hour": os.getenv("TOPIC_STRATEGY_CHANGE_HOUR", 23),
         },
     }
 elif os.getenv("CONSUMER_TOPICS"):
@@ -43,8 +45,7 @@ else:
 
 if os.getenv("CONSUMER_CLASS") == "apf.consumers.KafkaSchemalessConsumer":
     CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
-        os.path.dirname(__file__),
-        "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+        os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
     )
 
 # Producer configuration
