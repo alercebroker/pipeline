@@ -1,5 +1,5 @@
-import datetime
 import logging
+import datetime
 from apf.core.step import GenericStep
 from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection

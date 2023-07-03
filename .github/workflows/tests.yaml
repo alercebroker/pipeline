@@ -424,7 +424,7 @@ jobs:
       sources-folder: 'xmatch_step'
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unit --cov xmatch_step --cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov xmatch_step --cov-report xml'
   xmatch_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
