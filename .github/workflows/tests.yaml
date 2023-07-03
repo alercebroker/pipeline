@@ -317,60 +317,64 @@ jobs:
     if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 's3_step/s3_step/'
+      sources-folder: 's3_step'
+      base-folder: 's3_step'
   s3_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 's3_step'
       python-version: '3.9'
-      sources-folder: 's3_step/s3_step/'
-      test-folder: 's3_step/tests/unit'
+      sources-folder: 's3_step'
+      test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
-      requirements-file: 's3_step/requirements.txt'
-      test-command: 'python -m pytest -x s3_step/tests/unit --cov s3_step/s3_step/ --cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov s3_step --cov-report xml'
   s3_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 's3_step'
       python-version: '3.9'
-      sources-folder: 's3_step/s3_step/'
-      test-folder: 's3_step/tests/integration'
+      sources-folder: 's3_step'
+      test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker moto'
-      requirements-file: 's3_step/requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x s3_step/tests/integration'
+      test-command: 'python -m pytest -x tests/integration'
 
   sorting_hat_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'sorting_hat_step/sorting_hat_step'
+      base-folder: 'sorting_hat_step'
+      sources-folder: 'sorting_hat_step'
   sorting_hat_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'sorting_hat_step'
       python-version: '3.8'
-      sources-folder: 'sorting_hat_step/sorting_hat_step'
-      test-folder: 'sorting_hat_step/tests/unittest'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/unittest'
       test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
       pre-dependencies: 'numpy'
-      test-command: 'python -m pytest -x sorting_hat_step/tests/unittest --cov sorting_hat_step/sorting_hat_step --cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov sorting_hat_step --cov-report xml'
   sorting_hat_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
+      base-folder: 'sorting_hat_step'
       python-version: '3.8'
-      sources-folder: 'sorting_hat_step/sorting_hat_step'
-      test-folder: 'sorting_hat_step/tests/integration'
+      sources-folder: 'sorting_hat_step'
+      test-folder: 'tests/integration'
       test-dependencies: 'requests confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
       pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x sorting_hat_step/tests/integration'
+      test-command: 'python -m pytest -x tests/integration'
 
   watchlist_step_lint:
     needs: detect_changes
