@@ -2,8 +2,8 @@ from typing import List
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
-import logging
 import json
+import logging
 
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor

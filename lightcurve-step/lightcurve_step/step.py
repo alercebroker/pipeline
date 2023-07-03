@@ -1,7 +1,6 @@
 from typing import List
-
-import numpy as np
 import pandas as pd
+import numpy as np
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
 from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
