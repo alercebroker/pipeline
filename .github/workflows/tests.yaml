@@ -261,23 +261,26 @@ jobs:
     if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'magstats_step/magstats_step'
+      sources-folder: 'magstats_step'
+      base-folder: 'magstats_step' 
   magstats_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
+      base-folder: 'magstats_step' 
       python-version: '3.9'
-      sources-folder: 'magstats_step/magstats_step'
-      test-folder: 'magstats_step/tests/unittests'
+      sources-folder: 'magstats_step'
+      test-folder: 'tests/unittests'
   magstats_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
+      base-folder: 'magstats_step' 
       python-version: '3.9'
-      sources-folder: 'magstats_step/magstats_step'
-      test-folder: 'magstats_step/tests/integration'
+      sources-folder: 'magstats_step'
+      test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
 
   prv_candidates_step_lint:
@@ -285,28 +288,29 @@ jobs:
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: "prv_candidates_step/prv_candidates_step"
+      base-folder: 'prv_candidates_step' 
+      sources-folder: "prv_candidates_step"
   prv_candidates_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: "3.10"
-      sources-folder: "prv_candidates_step/prv_candidates_step"
-      test-folder: "prv_candidates_step/tests/unit"
+      base-folder: 'prv_candidates_step' 
+      sources-folder: "prv_candidates_step"
+      test-folder: "tests/unit"
       test-dependencies: "pytest pytest-cov pytest-mock"
-      test-command: "python -m pytest -x prv_candidates_step/tests/unit --cov prv_candidates_step/prv_candidates_step --cov-report xml"
+      test-command: "python -m pytest -x tests/unit --cov prv_candidates_step --cov-report xml"
   prv_candidates_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      python-version: "3.10"
-      sources-folder: "prv_candidates_step/prv_candidates_step"
-      test-folder: "prv_candidates_step/tests/integration"
+      base-folder: 'prv_candidates_step' 
+      sources-folder: "prv_candidates_step"
+      test-folder: "tests/integration"
       test-dependencies: "pytest pytest-docker pytest-mock"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x prv_candidates_step/tests/integration"
+      test-command: "python -m pytest -x tests/integration"
 
   s3_step_lint:
     needs: detect_changes

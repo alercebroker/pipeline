@@ -67,7 +67,15 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 3, "mag": 1, "candid": "a", "forced": False},  # last
         {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 1, "mag": 2, "candid": "b", "forced": False},  # first
         {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 2, "mag": 3, "candid": "c", "forced": False},
-        {"aid": "AID2", "sid": "SURVEY", "fid": 1, "mjd": 1, "mag": 1, "candid": "d", "forced": False},  # last and first
+        {
+            "aid": "AID2",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 1,
+            "mag": 1,
+            "candid": "d",
+            "forced": False,
+        },  # last and first
         {"aid": "AID1", "sid": "SURVEY", "fid": 2, "mjd": 1, "mag": 1, "candid": "e", "forced": False},  # first
         {"aid": "AID1", "sid": "SURVEY", "fid": 2, "mjd": 2, "mag": 2, "candid": "f", "forced": False},  # last
     ]
@@ -88,14 +96,86 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
 
 def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magnitude_per_aid_and_fid():
     detections = [
-        {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 3, "mag_corr": 1, "corrected": True, "candid": "a", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 1, "mag_corr": 2, "corrected": True, "candid": "b", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 2, "mag_corr": 3, "corrected": True, "candid": "c", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 1, "mjd": 4, "mag_corr": 3, "corrected": False, "candid": "c1", "forced": False},
-        {"aid": "AID2", "sid": "SURVEY", "fid": 1, "mjd": 1, "mag_corr": 1, "corrected": True, "candid": "d", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 2, "mjd": 1, "mag_corr": 1, "corrected": True, "candid": "e", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 2, "mjd": 2, "mag_corr": 2, "corrected": True, "candid": "f", "forced": False},
-        {"aid": "AID2", "sid": "SURVEY", "fid": 2, "mjd": 0, "mag_corr": 2, "corrected": False, "candid": "f1", "forced": False},
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 3,
+            "mag_corr": 1,
+            "corrected": True,
+            "candid": "a",
+            "forced": False,
+        },
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 1,
+            "mag_corr": 2,
+            "corrected": True,
+            "candid": "b",
+            "forced": False,
+        },
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 2,
+            "mag_corr": 3,
+            "corrected": True,
+            "candid": "c",
+            "forced": False,
+        },
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 4,
+            "mag_corr": 3,
+            "corrected": False,
+            "candid": "c1",
+            "forced": False,
+        },
+        {
+            "aid": "AID2",
+            "sid": "SURVEY",
+            "fid": 1,
+            "mjd": 1,
+            "mag_corr": 1,
+            "corrected": True,
+            "candid": "d",
+            "forced": False,
+        },
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 2,
+            "mjd": 1,
+            "mag_corr": 1,
+            "corrected": True,
+            "candid": "e",
+            "forced": False,
+        },
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 2,
+            "mjd": 2,
+            "mag_corr": 2,
+            "corrected": True,
+            "candid": "f",
+            "forced": False,
+        },
+        {
+            "aid": "AID2",
+            "sid": "SURVEY",
+            "fid": 2,
+            "mjd": 0,
+            "mag_corr": 2,
+            "corrected": False,
+            "candid": "f1",
+            "forced": False,
+        },
     ]
     calculator = MagnitudeStatistics(detections)
     result = calculator._calculate_stats_over_time(True)
@@ -143,7 +223,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "firstmjd": [0, 0.5, 1],
             "aid": ["AID1", "AID2", "AID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
-            "fid": [1, 1, 2]
+            "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(result, expected.set_index(["aid", "sid", "fid"]), check_like=True)
@@ -162,12 +242,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
     result = calculator.calculate_lastmjd()
 
     expected = pd.DataFrame(
-        {
-            "lastmjd": [3, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
-            "sid": ["SURVEY", "SURVEY", "SURVEY"],
-            "fid": [1, 1, 2]
-        }
+        {"lastmjd": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "sid": ["SURVEY", "SURVEY", "SURVEY"], "fid": [1, 1, 2]}
     )
     assert_frame_equal(result, expected.set_index(["aid", "sid", "fid"]), check_like=True)
 
@@ -231,12 +306,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
     result = calculator.calculate_ndet()
 
     expected = pd.DataFrame(
-        {
-            "ndet": [3, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
-            "sid": ["SURVEY", "SURVEY", "SURVEY"],
-            "fid": [1, 1, 2]
-        }
+        {"ndet": [3, 1, 2], "aid": ["AID1", "AID2", "AID1"], "sid": ["SURVEY", "SURVEY", "SURVEY"], "fid": [1, 1, 2]}
     )
     assert_frame_equal(result, expected.set_index(["aid", "sid", "fid"]), check_like=True)
 
@@ -258,7 +328,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "ndubious": [2, 0, 1],
             "aid": ["AID1", "AID2", "AID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
-            "fid": [1, 1, 2]
+            "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(result, expected.set_index(["aid", "sid", "fid"]), check_like=True)
@@ -271,11 +341,43 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         {"aid": "AID1", "sid": "ZTF", "fid": 1, "corrected": True, "mag_corr": 100, "candid": "c", "forced": False},
         {"aid": "AID1", "sid": "ZTF", "fid": 1, "corrected": True, "mag_corr": 0, "candid": "c1", "forced": False},
         {"aid": "AID2", "sid": "ZTF", "fid": 2, "corrected": False, "mag_corr": np.nan, "candid": "d", "forced": False},
-        {"aid": "AID2", "sid": "ZTF", "fid": 3, "corrected": False, "mag_corr": np.nan, "candid": "d1", "forced": False},
+        {
+            "aid": "AID2",
+            "sid": "ZTF",
+            "fid": 3,
+            "corrected": False,
+            "mag_corr": np.nan,
+            "candid": "d1",
+            "forced": False,
+        },
         {"aid": "AID2", "sid": "ZTF", "fid": 3, "corrected": True, "mag_corr": 100, "candid": "d2", "forced": False},
-        {"aid": "AID1", "sid": "SURVEY", "fid": 10, "corrected": True, "mag_corr": 0, "candid": "e", "forced": False},  # No threshold
-        {"aid": "AID1", "sid": "SURVEY", "fid": 10, "corrected": True, "mag_corr": 100, "candid": "f", "forced": False},  # No threshold
-        {"aid": "AID3", "sid": "SURVEY", "fid": 1, "corrected": False, "mag_corr": 0, "candid": "g", "forced": False},  # No threshold
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 10,
+            "corrected": True,
+            "mag_corr": 0,
+            "candid": "e",
+            "forced": False,
+        },  # No threshold
+        {
+            "aid": "AID1",
+            "sid": "SURVEY",
+            "fid": 10,
+            "corrected": True,
+            "mag_corr": 100,
+            "candid": "f",
+            "forced": False,
+        },  # No threshold
+        {
+            "aid": "AID3",
+            "sid": "SURVEY",
+            "fid": 1,
+            "corrected": False,
+            "mag_corr": 0,
+            "candid": "g",
+            "forced": False,
+        },  # No threshold
     ]
     calculator = MagnitudeStatistics(detections)
     result = calculator.calculate_saturation_rate()

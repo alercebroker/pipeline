@@ -1,9 +1,7 @@
 import json
-from typing import List
-
 import numpy as np
+from typing import List
 from apf.core.step import GenericStep, get_class
-
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
 
