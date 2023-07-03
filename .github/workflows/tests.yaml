@@ -378,14 +378,14 @@ jobs:
 
   watchlist_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'watchlist_step'
       base-folder: 'watchlist_step'
   watchlist_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
@@ -396,7 +396,7 @@ jobs:
       test-command: 'python -m pytest -x tests/unit --cov watchlist_step --cov-report xml'
   watchlist_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_watchlist_step== 'true'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
