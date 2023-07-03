@@ -6,8 +6,8 @@ from db_plugins.db.sql.models import Detection, Object, Probability
 from apf.consumers import KafkaConsumer
 from confluent_kafka import KafkaError, KafkaException, Consumer
 from fastavro import writer, parse_schema, reader
-import glob
 import os
+import glob
 import psycopg2
 from io import BytesIO
 
