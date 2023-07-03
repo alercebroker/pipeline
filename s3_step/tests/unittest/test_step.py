@@ -25,7 +25,9 @@ class StepTestCase(unittest.TestCase):
         self.mock_message.topic.return_value = SVY1_TOPIC
         self.mock_consumer.messages = [self.mock_message]
         self.s3_mock = mock.MagicMock()
-        self.step = S3Step(config=self.step_config, consumer=self.mock_consumer, s3_client=self.s3_mock)
+        self.step = S3Step(
+            config=self.step_config, consumer=self.mock_consumer, s3_client=self.s3_mock
+        )
 
     def test_get_object_url(self):
         candid = 123

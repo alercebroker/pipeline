@@ -43,8 +43,7 @@ else:
 
 if os.getenv("CONSUMER_CLASS") == "apf.consumers.KafkaSchemalessConsumer":
     CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
-        os.path.dirname(__file__),
-        "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+        os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
     )
 
 # Producer configuration
