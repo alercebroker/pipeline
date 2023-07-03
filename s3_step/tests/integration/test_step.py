@@ -1,6 +1,5 @@
 import io
 import unittest
-
 import fastavro
 import boto3
 import pytest
