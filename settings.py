@@ -35,7 +35,7 @@ if os.getenv("TOPIC_STRATEGY_TOPIC_FORMAT"):
             .strip()
             .split(","),
             "date_format": os.getenv("TOPIC_STRATEGY_DATE_FORMAT", "%Y%m%d"),
-            "change_hour": os.getenv("TOPIC_STRATEGY_CHANGE_HOUR", 23),
+            "change_hour": int(os.getenv("TOPIC_STRATEGY_CHANGE_HOUR", 23)),
         },
     }
 elif os.getenv("CONSUMER_TOPICS"):
