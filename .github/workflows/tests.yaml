@@ -393,7 +393,7 @@ jobs:
       sources-folder: 'watchlist_step'
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unit --cov watchlist_step --cov-report xml'
+      test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
   watchlist_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step== 'true'
