@@ -2,8 +2,9 @@ from abc import abstractmethod
 import abc
 from typing import Any, Dict, Iterable, List, Type, Union
 from apf.consumers import GenericConsumer
-from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
 from apf.metrics.generic import GenericMetricsProducer
+from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
+from apf.metrics.pyroscope import profile
 from apf.producers import GenericProducer
 from apf.core import get_class
 import logging
@@ -413,6 +414,7 @@ class GenericStep(abc.ABC):
         """
         self.producer.set_key_field(key_field)
 
+    @profile
     def start(self):
         """Start running the step."""
         self._pre_consume()
