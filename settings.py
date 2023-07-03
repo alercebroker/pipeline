@@ -91,5 +91,7 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", "True")),
     "RETRIES": int(os.getenv("RETRIES", "3")),
-    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", "1"))
+    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", "1")),
+    "USE_PROFILING": bool(os.getenv("USE_PROFILING", True)),
+    "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
 }
