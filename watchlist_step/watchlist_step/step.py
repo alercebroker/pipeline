@@ -45,8 +45,10 @@ class WatchlistStep(GenericStep):
         coordinates = self.get_coordinates(candids)
 
         if len(coordinates) == 0:
-            raise ValueError("The object has not been inserted in the database yet.\
-                             No further action required.")
+            raise ValueError(
+                "The object has not been inserted in the database yet.\
+                             No further action required."
+            )
 
         matches = self.match_user_targets(coordinates)
         if len(matches) > 0:
