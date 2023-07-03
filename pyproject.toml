@@ -10,6 +10,11 @@ authors = []
 readme = "README.md"
 packages = [{include = "lc_classification"}]
 
+[[tool.poetry.source]]
+name = "git"
+url = "https://github.com/alercebroker/alerce_classifiers"
+priority = "primary"
+
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9"
 apf-base = { version = "2.1.5" }
