@@ -487,7 +487,26 @@ or
 ```bash
 pip install -r requirements_elasticc.txt
 ```
+### Poetry
 
+#### Set-up poetry:
+- Install poetry: `pip install poetry`
+- If you want to set create `.venv` environment in the project folder: `poetry config virtualenvs.in-project true`
+- Set github configuration, use poetry config or env variables.
+  - `poetry config http-basic.git <username> <password>`
+  - `export POETRY_HTTP_BASIC_GIT_USERNAME=<username>`
+  - `export POETRY_HTTP_BASIC_GIT_PASSWORD=<gh_token>`
+- Install desired environment: 
+  - `poetry install --with ztf`
+  - `poetry install --with toretto`
+  - `poetry install --with messi`
+  - `poetry install --with balto`
+  - `poetry install --with elasticc`
+- Add a new dependency 
+  - `poetry add -G <group> PACKAGE`
+
+#### Run command with poetry environment
+- Run: `poetry run <command>`
 ### Tests
 To run tests install 
 
