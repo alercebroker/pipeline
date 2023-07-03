@@ -34,5 +34,5 @@ if use_profiling:
 prometheus_metrics = PrometheusMetrics()
 start_http_server(8000)
 
-step = MongoScribe(config=STEP_CONFIG, level=level, prometheus_metrics=prometheus_metrics)
+step = MongoScribe(config=STEP_CONFIG, prometheus_metrics=prometheus_metrics)
 step.start()
