@@ -7,10 +7,29 @@ on:
 
 jobs:
   detect_changes:
+    runs-on: ubuntu-latest
+    outputs:
+        alerce_reflector_step: ${{ steps.changes.outputs.alerce_reflector_step }}
+        alert_archiving_step: ${{ steps.changes.outputs.alert_archiving_step }}
+        consolidated_metrics_step: ${{ steps.changes.outputs.consolidated_metrics_step }}
+        correction_step: ${{ steps.changes.outputs.correction_step }}
+        early_classification_step: ${{ steps.changes.outputs.early_classification_step }}
+        feature_step: ${{ steps.changes.outputs.feature_step }}
+        lc_classification_step: ${{ steps.changes.outputs.lc_classification_step }}
+        lightcurve_step: ${{ steps.changes.outputs.lightcurve_step }}
+        magstats_step: ${{ steps.changes.outputs.magstats_step }}
+        prv_candidates_step: ${{ steps.changes.outputs.prv_candidates_step }}
+        s3_step: ${{ steps.changes.outputs.s3_step }}
+        sorting_hat_step: ${{ steps.changes.outputs.sorting_hat_step }}
+        stamp_classifier_step: ${{ steps.changes.outputs.stamp_classifier_step }}
+        transformer_online_classifier_step: ${{ steps.changes.outputs.transformer_online_classifier_step }}
+        watchlist_step: ${{ steps.changes.outputs.watchlist_step }}
+        xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
+        libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
-        id: filter
+        id: changes
         with:
           base: main
           filters: |
