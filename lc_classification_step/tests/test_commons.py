@@ -1,4 +1,7 @@
-def assert_object_is_correct(obj):
+from pytest import approx
+
+
+def assert_ztf_object_is_correct(obj):
     assert "aid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
@@ -22,6 +25,10 @@ def assert_elasticc_object_is_correct(obj):
 
     assert isinstance(obj["classifications"], list)
     assert len(obj["classifications"]) > 0
+    suma = 0
+    for classification in obj["classifications"]:
+        suma += classification["probability"]
+    assert suma == approx(1)
 
 
 def assert_command_is_correct(command):

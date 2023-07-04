@@ -2,6 +2,8 @@ name: integration_test
 
 on:
   pull_request:
+    paths:
+      - 'early_classification_step/**'
     branches:
       - main
 

@@ -9,6 +9,38 @@
   * Balto: The ELASTICC Transformer that only uses Lightcurve metadata
   * Messi: The ELASTICC Transformer that uses Lightcurve metadata and features
 
+### Step Setup
+The following environment variables will be needed:
+
+The regular step configuration:
+| variable                | Required | Typical Value                                                              |
+|:-----------------------:|:--------:|:--------------------------------------------------------------------------:|
+| CONSUMER_CLASS          | No       | apf.consumers.KafkaConsumer                                                |
+| CONSUMER_TOPICS         | Yes      | features                                                                   |
+| CONSUMER_SERVER         | Yes      | b-<1,2,3>.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9096 |
+| CONSUMER_GROUP_ID       | Yes      | lc-classifier-step                                                         |
+| CONSUMER_KAFKA_USERNAME | No       | secret                                                                     |
+| CONSUMER_KAFKA_PASSWORD | No       | secret                                                                     |
+| ENABLE_PARTITION_EOF    | No       | Do not set                                                                 |
+| CONSUME_TIMEOUT         | No       | 0                                                                          |
+| CONSUME_MESSAGES        | No       | 1000                                                                       |
+| PRODUCER_TOPIC_FORMAT   | Yes      | lc_classifier_%s                                                           |
+| PRODUCER_DATE_FORMAT    | Yes      | '%Y%m%d'                                                                   |
+| PRODUCER_CHANGE_HOUR    | Yes      | 23                                                                         |
+| PRODUCER_RETENTION_DAYS | Yes      | 1                                                                          |
+| PRODUCER_SERVER         | Yes      | b-<1,2,3>.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9096 |
+| PRODUCER_KAFKA_USERNAME | No       | secret                                                                     |
+| PRODUCER_KAFKA_PASSWORD | No       | secret                                                                     |
+| STREAM                  | No       | 'ztf' or 'elasticc'                                                        |
+| SCRIBE_SERVER           | Yes      | b-<1,2,3>.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9096 |
+| SCRIBE_TOPIC            | Yes      | 'w_object'                                                                 |
+| SCRIBE_KAFKA_USERNAME   | No       | secret                                                                     |
+| SCRIBE_KAFKA_PASSWORD   | No       | secret                                                                     |
+| METRICS_HOST            | Yes      | b-<1,2,3>.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9096 |
+| METRICS_TOPIC           | Yes      | metrics                                                                    |
+| METRICS_KAFKA_USERNAME  | No       | secret                                                                     |
+| METRICS_KAFKA_PASSWORD  | No       | secret                                                                     |
+
 ### Setup for ZTF Random Forest
 - Download model from [S3 bucket](https://assets.alerce.online/pipeline/hierarchical_rf_1.0.1/). 
 - Version 1.0.1 of model from Light Curve Classification Paper.
@@ -17,18 +49,23 @@
 - Download model from [S3 Bucket](https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/)
 - Current version is 2.0.1
 
-The following step configuration will be needed:
+The following environment variables will be needed in adition to the regular step configuration:
 
-``` python
-PREDICTOR_CONFIG = {
-    "CLASS": lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor,
-    "PARAMS": {"model_path": "https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1/"},
-    "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
-}
+``` 
+PREDICTOR_CLASS=lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor
+MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1
+PREDICTOR_PARSER_CLASS=lc_classification.predictors.toretto.toretto_parser.TorettoParser
 ```
 
 ### Setup for Balto
-TODO
+The following environment variables will be needed in adition to the regular step configuration:
+
+``` 
+PREDICTOR_CLASS=lc_classification.predictors.balto.balt_predictor.BaltoPredictor
+MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/3.0.0/EncoderHeader.pt
+QUANTILES_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/3.0.0/HeaderNorm1QT/
+PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoParser
+```
 ### Setup for Messi
 TODO
 ### Setup for Barney
@@ -58,43 +95,6 @@ command = {
     "options": {"upsert": True, "set_on_insert": False},
 }
 ```
-
-## Environment variables
-
-- `STREAM`: Name of the stream to be consumed in lower caps. e.g: `ztf` or `elasticc`
-
-    This will set the output schema of the step.
-    This variable will be used for tests.
-
-### Consumer setup
-
-- `CONSUMER_TOPICS`: Some topics. String separated by commas. e.g: `topic_one` or `topic_two,topic_three`
-- `CONSUMER_SERVER`: Kafka host with port. e.g: `localhost:9092`
-- `CONSUMER_GROUP_ID`: Name for consumer group. e.g: `correction`
-- `CONSUMER_CLASS`: Class of the consumer object. e.g: `apf.consumers.KafkaConsumer`
-- `CONSUMER_KAFKA_USERNAME`: authentication for the consumer
-- `CONSUMER_KAFKA_PASSWORD`: authentication for the consumer
-### Producer setup
-
-- `PRODUCER_TOPIC`: Name of output topic. e.g: `correction`
-- `PRODUCER_SERVER`: Kafka host with port. e.g: `localhost:9092`
-- `PRODUCER_CLASS`: Class of the producer object. e.g: `apf.producers.KafkaProducer`
-- `PRODUCER_KAFKA_USERNAME`: authentication for the consumer
-- `PRODUCER_KAFKA_PASSWORD`: authentication for the consumer
-
-### Metrics setup
-
-- `METRICS_HOST`: Kafka host for storing metrics
-- `METRICS_TOPIC`: Name of the topic to store metrics
-- `METRICS_KAFKA_USERNAME`: authentication for the consumer
-- `METRICS_KAFKA_PASSWORD`: authentication for the consumer
-
-### Scribe setup
-
-- `SCRIBE_TOPIC`: Name of output topic. Now just uses `w_object`.
-- `SCRIBE_SERVER`: Kafka host with port. e.g: `localhost:9092`
-- `SCRIBE_KAFKA_USERNAME`: authentication for the consumer
-- `SCRIBE_KAFKA_PASSWORD`: authentication for the consumer
 
 ## Stream
 
@@ -158,7 +158,61 @@ command = {
 ```
 
 ### Output schema for ELASTICC
-TODO
+
+``` python
+ELASTICC_SCHEMA = {
+    "namespace": "elasticc.v0_9",
+    "type": "record",
+    "name": "brokerClassification",
+    "doc": "sample avro alert schema v4.1",
+    "fields": [
+        {"name": "alertId", "type": "long", "doc": "unique alert identifer"},
+        {
+            "name": "diaSourceId",
+            "type": "long",
+            "doc": "id of source that triggered this classification",
+        },
+        {
+            "name": "brokerName",
+            "type": "string",
+            "doc": "Name of broker (never changes)",
+        },
+        {
+            "name": "brokerVersion",
+            "type": "string",
+            "doc": "Version/Release of broker's software",
+        },
+        {
+            "name": "classifierName",
+            "type": "string",
+            "doc": "Name of classifier broker is using, including software version",
+        },
+        {
+            "name": "classifierParams",
+            "type": "string",
+            "doc": "Any classifier parameter information worth noting for this classification",
+        },
+        {
+            "name": "classifications",
+            "type": {
+                "type": "array",
+                "items": {
+                    "type": "record",
+                    "name": "classificationDict",
+                    "fields": [
+                        {
+                            "name": "classId",
+                            "type": "int",
+                            "doc": "See https://github.com/LSSTDESC/elasticc/tree/main/taxonomy/taxonomy.ipynb for specification",
+                        },
+                        {"name": "probability", "type": "float", "doc": "0-1"},
+                    ],
+                },
+            },
+        },
+    ],
+}
+```
 
 #### FEATURES_SCHEMA for ZTF
 ```json
@@ -433,7 +487,26 @@ or
 ```bash
 pip install -r requirements_elasticc.txt
 ```
+### Poetry
 
+#### Set-up poetry:
+- Install poetry: `pip install poetry`
+- If you want to set create `.venv` environment in the project folder: `poetry config virtualenvs.in-project true`
+- Set github configuration, use poetry config or env variables.
+  - `poetry config http-basic.git <username> <password>`
+  - `export POETRY_HTTP_BASIC_GIT_USERNAME=<username>`
+  - `export POETRY_HTTP_BASIC_GIT_PASSWORD=<gh_token>`
+- Install desired environment: 
+  - `poetry install --with ztf`
+  - `poetry install --with toretto`
+  - `poetry install --with messi`
+  - `poetry install --with balto`
+  - `poetry install --with elasticc`
+- Add a new dependency 
+  - `poetry add -G <group> PACKAGE`
+
+#### Run command with poetry environment
+- Run: `poetry run <command>`
 ### Tests
 To run tests install 
 

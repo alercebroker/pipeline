@@ -3,12 +3,15 @@ from ..utils.no_class_post_processor import (
 )
 from .kafka_parser import KafkaOutput, KafkaParser
 from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
+from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
 import pandas as pd
 import datetime
-from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
 
 
 class ElasticcParser(KafkaParser):
+    def __init__(self):
+        super().__init__(ClassMapper)
+
     def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
         # create a hashmap that contains the new info (candid, oid and timestamps)
         detection_extra_info = {}
@@ -27,6 +30,12 @@ class ElasticcParser(KafkaParser):
             detection_extra_info[new_detection["aid"]] = {
                 "candid": new_detection["candid"],
                 "oid": new_detection["oid"],
+                "elasticcPublishTimestamp": new_detection["extra_fields"].get(
+                    "timestamp"
+                ),
+                "brokerIngestTimestamp": new_detection["extra_fields"].get(
+                    "brokerIngestTimestamp"
+                ),
             }
         predictions = model_output.classifications["probabilities"]
         messages = kwargs.get("messages", pd.DataFrame())
@@ -37,7 +46,7 @@ class ElasticcParser(KafkaParser):
         predictions["aid"] = predictions.index
         classifier_name = kwargs["classifier_name"]
         classifier_version = kwargs["classifier_version"]
-        for class_name in ClassMapper.get_class_names():
+        for class_name in self.ClassMapper.get_class_names():
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = predictions.to_dict(orient="records")
@@ -57,8 +66,14 @@ class ElasticcParser(KafkaParser):
             response = {
                 "alertId": int(detection_extra_info[aid]["candid"]),
                 "diaSourceId": int(detection_extra_info[aid]["oid"]),
-                "elasticcPublishTimestamp": 0,  # TODO: get this from extraFields
-                "brokerIngestTimestamp": None,  # TODO: get this from extraFields
+                "elasticcPublishTimestamp": detection_extra_info[aid][
+                    "elasticcPublishTimestamp"
+                ]
+                * 1000,
+                "brokerIngestTimestamp": detection_extra_info[aid][
+                    "brokerIngestTimestamp"
+                ]
+                * 1000,
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
