@@ -2,34 +2,57 @@ name: Build_template
 on:
   workflow_call:
     inputs:
-      tags:
-        required: true
-        type: string
       base-folder:
         required: false
         type: string
         default: '.'
-      username:
-        required: true
-        type: string
-      password:
-        required: true
-        type: string
       file:
         required: false
         type: string
         default: 'Dockerfile'
-
-    secrets:
-      PUBLISH_IMAGE_TOKEN:
+      step-name:
         required: true
+        type: string
+      build-type:
+        required: true
+        type: string
+
 jobs:
+  get_tags:
+    env:
+      STEP_NAME: ${{ inputs.step-name }}
+      BUILD_TYPE: ${{ inputs.build-type }}
+    name: get tags
+    outputs:
+      tags: ${{ steps.prep.outputs.tags }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Prepare
+        id: prep
+        run: |
+          if [[ $BUILD_TYPE == production ]]; then
+            BUILD_TYPE=latest
+          else
+            BUILD_TYPE=rc
+          fi
+          DOCKER_IMAGE=ghcr.io/alercebroker/${STEP_NAME}
+          SHA=$(git rev-parse --short HEAD)
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=rc-$SHA
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${BUILD_TYPE}"
+
   build_and_push:
     name: Push Docker image to GitHub Packages
+    needs: get_tags
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -38,12 +61,12 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: ${{ inputs.username}}
-          password: ${{ inputs.password }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./${{ inputs.file }}
+          file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: true
-          tags: ${{ inputs.tags }}
+          tags: ${{needs.get_tags.outputs.tags}}
