@@ -4,16 +4,19 @@ on:
   push:
     branches:
       - main
+env:
+  build_type: staging
 
 jobs:
-  detect_changes:
-    uses: ./.github/workflows/detect_changes.yaml
-
   alerce_reflector_step_staging:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: alerce_reflector_step
       step-name: alerce_reflector_step
-      build-type: staging
+      build-type: ${{ env.build_type }}
+  correction_step_staging:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      base-folder: correction_step
+      step-name: correction_step
+      build-type: ${{ env.build_type }}
