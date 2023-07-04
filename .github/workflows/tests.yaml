@@ -190,6 +190,8 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_ztf.txt'
       test-command: STREAM=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_integration_ztf:
     needs: detect_changes
@@ -202,6 +204,8 @@ jobs:
       test-dependencies: pytest pytest-docker
       test-command: STREAM=ztf python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_unittest_elastic:
     needs: detect_changes
@@ -212,6 +216,8 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_elasticc.txt'
       test-command: STREAM=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_integration_elastic:
     needs: detect_changes
@@ -224,6 +230,8 @@ jobs:
       test-dependencies: pytest pytest-docker
       test-command: STREAM=elasticc python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lightcurve_step_lint:
     needs: detect_changes
