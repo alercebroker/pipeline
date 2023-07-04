@@ -35,7 +35,7 @@ on:
             xmatch_step:
                 value: ${{ jobs.detect_changes.outputs.xmatch_step }}      
             libs_alerce_classifiers:
-                value: ${{ jobs.detect_changes.output.libs_alerce_classifiers}}    
+                value: ${{ jobs.detect_changes.outputs.libs_alerce_classifiers}}    
 
 jobs:
   detect_changes:
