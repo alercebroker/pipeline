@@ -1,6 +1,5 @@
 from typing import List
 
-from pandas.api.types import is_categorical_dtype
 from pandas.core.dtypes.common import is_all_strings
 from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
 import pandas as pd
@@ -9,6 +8,9 @@ from lc_classification.predictors.predictor.predictor_parser import PredictorOut
 
 
 class ScribeParser(KafkaParser):
+    def __init__(self):
+        super().__init__(self)
+
     def parse(self, to_parse: PredictorOutput, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
         Parameters
