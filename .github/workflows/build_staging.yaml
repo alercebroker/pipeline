@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-env:
-  BUILD_TYPE: staging
 
 jobs:
   alerce_reflector_step_staging:
@@ -13,10 +11,10 @@ jobs:
     with:
       base-folder: alerce_reflector_step
       step-name: alerce_reflector_step
-      build-type: "${{ env.BUILD_TYPE }}"
+      build-type: staging
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: correction_step
       step-name: correction_step
-      build-type: "${{ env.BUILD_TYPE }}"
+      build-type: staging
