@@ -1,6 +1,7 @@
 from apf.core import get_class
-from apf.core.step import GenericStep
 import logging
+from apf.core.step import GenericStep
+
 
 
 class CustomMirrormaker(GenericStep):
