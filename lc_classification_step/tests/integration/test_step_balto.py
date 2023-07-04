@@ -1,13 +1,14 @@
 import json
-from lc_classification.core.step import LateClassifier
-from apf.consumers import KafkaConsumer
-import pytest
 import os
-from tests.test_commons import (
-    assert_elasticc_object_is_correct,
-    assert_command_is_correct,
-)
 from typing import Callable
+
+import pytest
+from apf.consumers import KafkaConsumer
+from lc_classification.core.step import LateClassifier
+from tests.test_commons import (
+    assert_command_is_correct,
+    assert_elasticc_object_is_correct,
+)
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
@@ -22,14 +23,18 @@ def test_step_elasticc_result(
     kconsumer = kafka_consumer()
     sconsumer = scribe_consumer()
 
-    model_path = os.getenv("TEST_TORETTO_MODEL_PATH")
+    model_path = os.getenv("TEST_BALTO_MODEL_PATH")
+    quantiles_path = os.getenv("TEST_BALTO_QUANTILES_PATH")
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
-    ] = "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
+    ] = "lc_classification.predictors.balto.balto_predictor.BaltoPredictor"
+    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {
+        "model_path": model_path,
+        "quantiles_path": quantiles_path,
+    }
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "PARSER_CLASS"
-    ] = "lc_classification.predictors.toretto.toretto_parser.TorettoParser"
+    ] = "lc_classification.predictors.balto.balto_parser.BaltoParser"
     STEP_CONFIG[
         "SCRIBE_PARSER_CLASS"
     ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"

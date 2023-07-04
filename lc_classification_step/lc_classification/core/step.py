@@ -2,8 +2,8 @@ from typing import List
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
-import json
 import logging
+import json
 
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor
@@ -11,8 +11,8 @@ from lc_classification.predictors.predictor.predictor_parser import PredictorPar
 
 
 class LateClassifier(GenericStep):
-    """Light Curve Classification Step, for a description of the algorithm used to process
-    check the `execute()` method.
+    """Light Curve Classification Step, for a description of the algorithm used
+    to process check the `execute()` method.
 
     Parameters
     ----------

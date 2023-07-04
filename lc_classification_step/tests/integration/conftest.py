@@ -11,6 +11,8 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
 from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
+from tests.mockdata.extra_felds import generate_extra_fields
+import time
 
 
 @pytest.fixture(scope="session")
@@ -123,12 +125,13 @@ def produce_messages(topic, SCHEMA):
         }
     )
     random.seed(42)
-    messages = generate_many(SCHEMA, 10)
+    messages = generate_many(SCHEMA, 2)
     producer.set_key_field("aid")
 
     for message in messages:
         for det in message["detections"]:
             det["aid"] = message["aid"]
+            det["extra_fields"] = generate_extra_fields()
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         producer.produce(message)
@@ -136,35 +139,39 @@ def produce_messages(topic, SCHEMA):
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
-    consumer = KafkaConsumer(
-        {
-            "PARAMS": {
-                "bootstrap.servers": "localhost:9092",
-                "group.id": "test_steppu",
-                "auto.offset.reset": "beginning",
-                "enable.partition.eof": True,
-            },
-            "TOPICS": [get_lc_classifier_topic()],
-            "TIMEOUT": 0,
-        }
-    )
-    yield consumer
-    consumer.consumer.close()
+    def factory():
+        consumer = KafkaConsumer(
+            {
+                "PARAMS": {
+                    "bootstrap.servers": "localhost:9092",
+                    "group.id": f"test_steppu{time.time()}",
+                    "auto.offset.reset": "beginning",
+                    "enable.partition.eof": True,
+                },
+                "TOPICS": [get_lc_classifier_topic()],
+                "TIMEOUT": 0,
+            }
+        )
+        return consumer
+
+    return factory
 
 
 @pytest.fixture(scope="session")
 def scribe_consumer():
-    consumer = KafkaConsumer(
-        {
-            "PARAMS": {
-                "bootstrap.servers": "localhost:9092",
-                "group.id": "test_step_",
-                "auto.offset.reset": "beginning",
-                "enable.partition.eof": True,
-            },
-            "TOPICS": ["w_object"],
-            "TIMEOUT": 0,
-        }
-    )
-    yield consumer
-    consumer.consumer.close()
+    def factory():
+        consumer = KafkaConsumer(
+            {
+                "PARAMS": {
+                    "bootstrap.servers": "localhost:9092",
+                    "group.id": "test_step_",
+                    "auto.offset.reset": "beginning",
+                    "enable.partition.eof": True,
+                },
+                "TOPICS": ["w_object"],
+                "TIMEOUT": 0,
+            }
+        )
+        return consumer
+
+    return factory
