@@ -416,6 +416,7 @@ class GenericStep(abc.ABC):
 
     @profile
     def start(self):
+        logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         """Start running the step."""
         self._pre_consume()
         for message in self.consumer.consume():
@@ -423,8 +424,8 @@ class GenericStep(abc.ABC):
             try:
                 result = self.execute(preprocessed_msg)
             except Exception as error:
-                self.logger.debug("Error at execute")
-                self.logger.debug(f"The message(s) that caused the error: {message}")
+                logger.debug("Error at execute")
+                logger.debug(f"The message(s) that caused the error: {message}")
                 raise error
             result = self._post_execute(result)
             result = self._pre_produce(result)
