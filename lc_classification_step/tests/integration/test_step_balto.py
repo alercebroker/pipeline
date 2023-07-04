@@ -1,14 +1,13 @@
 import json
-import os
-from typing import Callable
-
-import pytest
-from apf.consumers import KafkaConsumer
 from lc_classification.core.step import LateClassifier
+from apf.consumers import KafkaConsumer
+import pytest
+import os
 from tests.test_commons import (
-    assert_command_is_correct,
     assert_elasticc_object_is_correct,
+    assert_command_is_correct,
 )
+from typing import Callable
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")

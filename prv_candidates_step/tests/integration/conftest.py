@@ -13,9 +13,7 @@ import uuid
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return (
-        pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml"
-    ).absolute()
+    return (pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml").absolute()
 
 
 @pytest.fixture(scope="session")
@@ -47,9 +45,7 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
-    )
+    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
     return server
 
 
@@ -103,7 +99,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["prv-candidates"],
-            "TIMEOUT": 5
+            "TIMEOUT": 5,
         }
     )
     yield consumer
@@ -120,7 +116,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_non_detections"],
-            "TIMEOUT": 10
+            "TIMEOUT": 10,
         }
     )
     yield consumer

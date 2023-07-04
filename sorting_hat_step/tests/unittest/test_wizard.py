@@ -34,7 +34,9 @@ class SortingHatTestCase(unittest.TestCase):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
         batch = wizard.internal_cross_match(example_batch)
-        self.assertSetEqual(set(batch.index), set(batch["tmp_id"]))  # The index must be equal to tmp_id
+        self.assertSetEqual(
+            set(batch.index), set(batch["tmp_id"])
+        )  # The index must be equal to tmp_id
         self.assertEqual(len(batch["oid"].unique()), 500)
 
     def test_internal_cross_match_closest_objects(self):

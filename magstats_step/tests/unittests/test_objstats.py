@@ -27,7 +27,7 @@ def test_composition_of_arcsec2dec_and_dec2arcsec_results_in_same_input():
 def test_calculate_weights_gives_inverse_square_of_errors():
     sigs = pd.Series([2.0, 3.0])
     result = ObjectStatistics._compute_weights(sigs)
-    assert (result == 1 / sigs**2).all()
+    assert (result == 1 / sigs ** 2).all()
 
 
 def test_calculate_weighted_mean_with_equal_errors_is_standard_mean():
@@ -267,11 +267,32 @@ def test_calculate_tid_uses_calculate_unique_with_tid():
 
 def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
     detections = [
-        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": False, "candid": "a", "forced": False},  # Should ignore
+        {
+            "aid": "AID1",
+            "sid": "MOCK_SURVEY",
+            "mjd": 1,
+            "corrected": False,
+            "candid": "a",
+            "forced": False,
+        },  # Should ignore
         {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "corrected": True, "candid": "b", "forced": False},  # True for AID1
         {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "corrected": False, "candid": "c", "forced": False},
-        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "corrected": True, "candid": "d", "forced": False},  # Should ignore
-        {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "corrected": False, "candid": "e", "forced": False},  # False for AID3
+        {
+            "aid": "AID2",
+            "sid": "MOCK_SURVEY",
+            "mjd": 1,
+            "corrected": True,
+            "candid": "d",
+            "forced": False,
+        },  # Should ignore
+        {
+            "aid": "AID3",
+            "sid": "SURVEY",
+            "mjd": 2,
+            "corrected": False,
+            "candid": "e",
+            "forced": False,
+        },  # False for AID3
         {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "corrected": True, "candid": "f", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
@@ -291,10 +312,24 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
 
 def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
     detections = [
-        {"aid": "AID1", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": False, "candid": "a", "forced": False},  # Should ignore
+        {
+            "aid": "AID1",
+            "sid": "MOCK_SURVEY",
+            "mjd": 1,
+            "stellar": False,
+            "candid": "a",
+            "forced": False,
+        },  # Should ignore
         {"aid": "AID1", "sid": "SURVEY", "mjd": 2, "stellar": True, "candid": "b", "forced": False},  # True for AID1
         {"aid": "AID1", "sid": "SURVEY", "mjd": 3, "stellar": False, "candid": "c", "forced": False},
-        {"aid": "AID2", "sid": "MOCK_SURVEY", "mjd": 1, "stellar": True, "candid": "d", "forced": False},  # Should ignore
+        {
+            "aid": "AID2",
+            "sid": "MOCK_SURVEY",
+            "mjd": 1,
+            "stellar": True,
+            "candid": "d",
+            "forced": False,
+        },  # Should ignore
         {"aid": "AID3", "sid": "SURVEY", "mjd": 2, "stellar": False, "candid": "e", "forced": False},  # False for AID3
         {"aid": "AID3", "sid": "SURVEY", "mjd": 3, "stellar": True, "candid": "f", "forced": False},
     ]
@@ -313,4 +348,6 @@ def test_object_statistics_ignores_forced_photometry():
     detections = [{"candid": "a", "check": "this", "forced": False}, {"candid": "b", "check": "that", "forced": True}]
     calculator = ObjectStatistics(detections)
 
-    assert_series_equal(calculator._detections["check"], pd.Series(["this"], index=pd.Index(["a"], name="candid"), name="check"))
+    assert_series_equal(
+        calculator._detections["check"], pd.Series(["this"], index=pd.Index(["a"], name="candid"), name="check")
+    )

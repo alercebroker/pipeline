@@ -16,7 +16,7 @@ def step_factory():
     step_config = settings_factory()
 
     level = logging.INFO
-    if os.getenv('LOGGING_DEBUG'):
+    if os.getenv("LOGGING_DEBUG"):
         level = logging.DEBUG
 
     logger = logging.getLogger("alerce")
