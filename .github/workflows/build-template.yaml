@@ -45,6 +45,7 @@ jobs:
             VERSION=rc-$SHA
           fi
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${BUILD_TYPE}"
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
 
   build_and_push:
     name: Push Docker image to GitHub Packages
