@@ -1,0 +1,19 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  detect_changes:
+    uses: ./.github/workflows/detect_changes.yaml
+
+  alerce_reflector_step_staging:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      base-folder: alerce_reflector_step
+      step-name: alerce_reflector_step
+      build-type: staging

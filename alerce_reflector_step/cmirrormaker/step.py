@@ -1,5 +1,5 @@
-from apf.core import get_class
 import logging
+from apf.core import get_class
 from apf.core.step import GenericStep
 
 
