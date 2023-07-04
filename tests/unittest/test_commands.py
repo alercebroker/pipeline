@@ -334,7 +334,7 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 3)
+        self.assertEqual(len(operations), 2)
         self.assertEqual(
             operations[0]._doc, {"$setOnInsert": {"features": {}}}
         )
@@ -344,7 +344,13 @@ class CommandTests(unittest.TestCase):
             operations[1]._doc,
             {
                 "$set": {
-                    "features.group.g": [{ "name": "feature1", "value": 12.34}],
+                    "features.group": {
+                        "features": [
+                            { "name": "feature1", "value": 12.34, "fid": "g" },
+                            { "name": "feature2", "value": None, "fid": "Y" }
+                        ],
+                        "version": "v1"
+                    }
                 }
             }
         )
@@ -363,7 +369,7 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 3)
+        self.assertEqual(len(operations), 2)
         self.assertEqual(
             operations[0]._doc, {"$setOnInsert": {"features": {}}}
         )
@@ -380,13 +386,19 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 3)
-        self.assertEqual(operations[2]._filter, {"_id": "AID51423"})
+        self.assertEqual(len(operations), 2)
+        self.assertEqual(operations[1]._filter, {"_id": "AID51423"})
         self.assertEqual(
-            operations[2]._doc,
+            operations[1]._doc,
             {
                 "$set": {
-                    "features.group.Y": [{ "name": "feature2", "value": None }],
+                    "features.group": {
+                        "features": [
+                            { "name": "feature1", "value": 12.34, "fid": "g" },
+                            { "name": "feature2", "value": None, "fid": "Y" }
+                        ],
+                        "version": "v1"
+                    }
                 }
             },
         )

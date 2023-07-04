@@ -222,12 +222,10 @@ class UpdateFeaturesCommand(UpdateCommand):
         self.features_group = data.pop("features_group")
 
     def get_operations(self) -> list:
-        features_by_bands = {}
-
-        for feature in self.data["features"]:
-            band_features = features_by_bands.get(feature["fid"], [])
-            band_features.append({ "name": feature["name"], "value": feature["value"] })
-            features_by_bands[feature["fid"]] = band_features
+        features = {
+            "version": self.features_version,
+            "features": self.data["features"],
+        }
 
         upsert_operation = {"$setOnInsert": {"features": {}}}
         ops = [
@@ -236,14 +234,9 @@ class UpdateFeaturesCommand(UpdateCommand):
             ),
         ]
 
-        for band, features in features_by_bands.items():
-            operation = {
-                "$set": {
-                   f"features.{self.features_group}.{band}": features
-                }
-            }
-            ops.append(
-                UpdateOne(self.criteria, operation, upsert=self.options.upsert)
-            )
+        operation = {"$set": {f"features.{self.features_group}": features}}
+        ops.append(
+            UpdateOne(self.criteria, operation, upsert=self.options.upsert)
+        )
 
         return ops

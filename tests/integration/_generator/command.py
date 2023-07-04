@@ -54,16 +54,16 @@ class CommandGenerator:
         return {"payload": json.dumps(command)}
 
     def _add_feature(self, aid: int, feature: dict):
-        parsed_features = {}
-        for feats in feature["features"]:
-            feature_in_band = parsed_features.get(feats["fid"], [])
-            feature_in_band.append({ "name": feats["name"], "value": feats["value"] })
-            parsed_features[feats["fid"]] = feature_in_band
+        feature = feature.copy()
+        survey = feature.pop("features_group")
+        version = feature.pop("features_version")
+        feature["version"] = version
+        parsed_features = {
+            survey: feature
+        }
         
         buffer = self._command_hash["update_feature"][aid]
-        buffer.update({
-            feature["features_group"]: parsed_features
-        })
+        buffer.update(parsed_features)
         self._command_hash["update_feature"][aid] = buffer
 
     def _add_probability(self, aid: int, prob: dict):
@@ -130,7 +130,7 @@ class CommandGenerator:
             "criteria": {"_id": f"ID{aid}"},
             "data": {
                 "features_group": choice(feature_groups),
-                "features_version": "v",
+                "features_version": "v1",
                 "features": [
                     {"name": "feature1", "value": 123, "fid": 'r'},
                     {"name": "feature2", "value": 456, "fid": 'g'},

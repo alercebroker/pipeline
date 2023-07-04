@@ -327,11 +327,11 @@ def test_update_features_into_database(kafka_service, mongo_service):
     assert result is not None
     assert "elasticc" in result["features"]
     assert "ztf" in result["features"]
-    assert "g" in result["features"]["elasticc"]
     assert {
         "name": "feat1",
         "value": 741,
-    } in result["features"]["elasticc"]["g"]
+        "fid": "g",
+    } in result["features"]["elasticc"]["features"]
 
 
 def test_print_into_console(kafka_service, mongo_service):
