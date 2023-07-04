@@ -1,0 +1,58 @@
+name: Build Production
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  detect_changes:
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: main
+          filters: |
+            alerce_reflector_step:
+                - 'alerce_reflector_step/**'
+            alert_archiving_step:
+                - 'alert_archiving_step/**'
+            consolidated_metrics_step:
+                - 'consolidated_metrics_step/**'
+            correction_step:
+                - 'correction_step/**'
+            early_classification_step:
+                - 'early_classification_step/**'
+            feature_step:
+                - 'feature_step/**'
+            lc_classification_step:
+                - 'lc_classification_step/**'
+            lightcurve_step:
+                - 'lightcurve-step/**'
+            magstats_step:
+                - 'magstats_step/**'
+            prv_candidates_step:
+                - 'prv_candidates_step/**'
+            s3_step:
+                - 's3_step/**'
+            sorting_hat_step:
+                - 'sorting_hat_step/**'
+            stamp_classifier_step:
+                - 'stamp_classifier_step/**'
+            transformer_online_classifier_step:
+                - 'transformer_online_classifier_step/**'
+            watchlist_step:
+                - 'watchlist_step/**'
+            xmatch_step:
+                - 'xmatch_step/**'
+            libs_alerce_classifiers:
+                - 'libs/alerce_classifiers/**'
+  alerce_reflector_step_staging:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      base-folder: alerce_reflector_step
+      step-name: alerce_reflector_step
+      build-type: production
