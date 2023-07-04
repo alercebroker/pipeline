@@ -12,6 +12,9 @@ class KafkaOutput(Generic[T]):
 
 
 class KafkaParser(ABC):
+    def __init__(self, class_mapper):
+        self.ClassMapper = class_mapper
+
     @abstractmethod
     def parse(self, output: PredictorOutput, **kwargs) -> KafkaOutput:
         pass

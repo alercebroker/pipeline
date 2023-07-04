@@ -7,12 +7,19 @@ from tests.mockdata.input_ztf import INPUT_SCHEMA as INPUT_ZTF
 from fastavro import utils
 
 from tests.test_commons import (
-    assert_object_is_correct,
+    assert_ztf_object_is_correct,
     assert_command_is_correct,
 )
 
 
-messages_ztf = list(utils.generate_many(INPUT_ZTF, 10))
+messages_ztf = list(utils.generate_many(INPUT_ZTF, 2))
+
+for message in messages_ztf:
+    for det in message["detections"]:
+        det["aid"] = message["aid"]
+        det["extra_fields"] = {}
+    message["detections"][0]["new"] = True
+    message["detections"][0]["has_stamp"] = True
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
@@ -31,7 +38,7 @@ def test_step(step_factory_ztf):
     assert len(calls) > 0
     for call in calls:
         obj = call.args[0]
-        assert_object_is_correct(obj)
+        assert_ztf_object_is_correct(obj)
 
 
 @pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")

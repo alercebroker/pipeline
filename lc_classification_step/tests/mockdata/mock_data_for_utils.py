@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy
-
 
 messages_df = pd.DataFrame(
     [

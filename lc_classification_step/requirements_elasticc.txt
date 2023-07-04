@@ -1,3 +1,4 @@
 -r requirements_messi.txt
 -r requirements_toretto.txt
 -r requirements_balto.txt
+-r requirements_barney.txt
