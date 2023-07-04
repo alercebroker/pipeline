@@ -1,2 +1,2 @@
 -r requirements.txt
--e ../libs/alerce_classifiers
+-e ../libs/alerce_classifiers[messi]
