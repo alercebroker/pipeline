@@ -1,2 +1,2 @@
 -r requirements.txt
-alerce_classifiers @ git+https://alerceadmin:${GH_TOKEN}@github.com/alercebroker/alerce_classifiers.git@main#egg=alerce_classifiers[rf_features_classifier]
+-e ../libs/alerce_classifiers[rf_features_classifier]
