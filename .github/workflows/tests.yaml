@@ -487,5 +487,5 @@ jobs:
     with:
       base-folder: 'libs/alerce_classifiers'
       python-version: '3.8'
-      requirements-file: 'requirements.txt'
-      test-command: python -m pytest -x tests/unit --cov libs/alerce_classifiers/alerce_classifiers --cov-report xml
+      requirements-file: 'requirements_tests.txt'
+      test-command: python -m pytest -x tests --cov libs/alerce_classifiers/alerce_classifiers --cov-report xml
