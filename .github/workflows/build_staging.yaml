@@ -20,7 +20,8 @@ jobs:
       - name: Install poetry ${{ matrix.poetry-version }}
         run: |
           pip install --upgrade pip
-          pip install poetry
+          python3 -m venv $POETRY_HOME
+          $POETRY_HOME/bin/pip install poetry
           $POETRY_HOME/bin/poetry --version
       - name: Update version
         run: |
