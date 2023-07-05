@@ -1,11 +1,16 @@
-FROM python:3.6
+FROM python:3.9-slim as builder
+MAINTAINER ALeRCE
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app/
+RUN pip install poetry
+COPY ./poetry.lock ./pyproject.toml /app/
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-interaction --without=dev --no-root
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
 
-WORKDIR /app
-COPY . /app
-
-WORKDIR /app/scripts
-
-CMD ["python", "run_step.py"]
+FROM builder
+COPY ./correction /app/correction
+COPY ./README.md /app/
+RUN poetry install --no-interaction --only-root
+CMD ["poetry", "run", "run-step"]
