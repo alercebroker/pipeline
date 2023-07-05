@@ -48,6 +48,7 @@ jobs:
           else
             BUILD_TYPE=rc
           fi
+          cd ${{ inputs.base-folder }}
           DOCKER_IMAGE=ghcr.io/alercebroker/${STEP_NAME}
           VERSION=$($POETRY_HOME/bin/poetry version --short)
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${BUILD_TYPE}"
