@@ -9,40 +9,32 @@ jobs:
   detect_changes:
     uses: ./.github/workflows/detect_changes.yaml
 
-  alerce_reflector_step_lint:
+  reflector_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'
+    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
         sources-folder: 'cmirrormaker'
-        base-folder: 'alerce_reflector_step' 
-  alerce_reflector_step_unittest:
+        base-folder: 'reflector_step'
+  reflector_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.reflector_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
         python-version: '3.7'
         sources-folder: 'cmirrormaker'
         test-folder: 'tests/unittest'
-        base-folder: 'alerce_reflector_step' 
-        test-dependencies: 'pytest pytest-docker pytest-cov'
-        pre-dependencies: 'apf-base==1.0.7'
-        requirements-file: 'requirements.txt -r dev-requirements.txt'
-        test-command: 'python -m pytest -x tests/unittest --cov cmirrormaker --cov-report xml'
-  alerce_reflector_step_integration:
+        base-folder: 'reflector_step'
+  reflector_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alerce_reflector_step == 'true'  
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.reflector_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
       sources-folder: 'cmirrormaker'
-      base-folder: 'alerce_reflector_step'
+      base-folder: 'reflector_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker pytest-cov'
-      pre-dependencies: 'apf-base==1.0.7'
-      requirements-file: 'requirements.txt -r dev-requirements.txt'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
 
 
   alert_archiving_step_lint:
