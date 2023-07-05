@@ -7,14 +7,12 @@ on:
 
 jobs:
   alerce_reflector_step_staging:
-    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: alerce_reflector_step
       step-name: alerce_reflector_step
       build-type: staging
   correction_step_staging:
-    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: correction_step
