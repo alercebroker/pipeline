@@ -10,7 +10,8 @@ RUN poetry install --no-interaction --without=dev --no-root
 
 
 FROM builder
-COPY ./correction /app/correction
+COPY ./reflector_step /app/reflector_step
+COPY ./scripts /app/scripts
 COPY ./README.md /app/
 RUN poetry install --no-interaction --only-root
 CMD ["poetry", "run", "run-step"]
