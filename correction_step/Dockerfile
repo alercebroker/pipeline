@@ -5,13 +5,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/
 
-RUN pip install --no-cache-dir poetry
+RUN pip install poetry
 COPY ./poetry.lock ./pyproject.toml /app/
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-interaction --no-cache -E apf --without=dev --no-root
+RUN poetry install --no-interaction --without=dev --no-root
 
 COPY ./correction /app/correction
 COPY ./README.md /app/
-RUN poetry install --no-interaction --no-cache -E apf --only-root
+RUN poetry install --no-interaction --only-root
 
 CMD ["poetry", "run", "run-step"]
