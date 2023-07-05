@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  alerce_reflector_step_staging:
+  reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
     with:
-      base-folder: alerce_reflector_step
-      step-name: alerce_reflector_step
+      base-folder: reflector_step
+      step-name: reflector_step
       build-type: staging
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
