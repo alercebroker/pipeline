@@ -10,15 +10,17 @@ sys.path.append(PACKAGE_PATH)
 from settings import *
 
 level = logging.INFO
-if 'LOGGING_DEBUG' in locals():
+if "LOGGING_DEBUG" in locals():
     if LOGGING_DEBUG:
         level = logging.DEBUG
 
-logging.basicConfig(level=level,
-                    format='%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=level,
+    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
-from cmirrormaker import CustomMirrormaker
+from reflector_step import CustomMirrormaker
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:

@@ -32,9 +32,9 @@ def kafka_service(docker_ip, docker_services):
     server1 = "{}:{}".format(docker_ip, port1)
     server2 = "{}:{}".format(docker_ip, port2)
     docker_services.wait_until_responsive(
-        timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server1)
+        timeout=60.0, pause=0.5, check=lambda: is_responsive_kafka(server1)
     )
     docker_services.wait_until_responsive(
-        timeout=40.0, pause=0.1, check=lambda: is_responsive_kafka(server2)
+        timeout=60.0, pause=0.5, check=lambda: is_responsive_kafka(server2)
     )
     return server1, server2
