@@ -6,13 +6,39 @@ on:
       - main
 
 jobs:
+  update_versions:
+    name: Update Versions
+    runs-on: ubuntu-latest
+    env:
+      POETRY_HOME: /opt/poetry
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install poetry ${{ matrix.poetry-version }}
+        run: |
+          pip install --upgrade pip
+          pip install poetry
+          $POETRY_HOME/bin/poetry --version
+      - name: Update version
+        run: |
+          cd correction_step
+          CURRENT_VERSION=$(poetry version --short)
+          $POETRY_HOME/bin/poetry version prerelease
+          git add pyproject.toml
+          git commit -m "chore: update version"
+          git push
   alerce_reflector_step_staging:
+    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: alerce_reflector_step
       step-name: alerce_reflector_step
       build-type: staging
   correction_step_staging:
+    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: correction_step

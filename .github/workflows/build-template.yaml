@@ -22,6 +22,7 @@ jobs:
     env:
       STEP_NAME: 'monorepo_${{ inputs.step-name }}'
       BUILD_TYPE: ${{ inputs.build-type }}
+      POETRY_HOME: /opt/poetry
     name: get tags
     outputs:
       tags: ${{ steps.prep.outputs.tags }}
@@ -29,6 +30,15 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install poetry ${{ matrix.poetry-version }}
+        run: |
+          pip install --upgrade pip
+          pip install poetry
+          $POETRY_HOME/bin/poetry --version
       - name: Prepare
         id: prep
         run: |
@@ -38,12 +48,7 @@ jobs:
             BUILD_TYPE=rc
           fi
           DOCKER_IMAGE=ghcr.io/alercebroker/${STEP_NAME}
-          SHA=$(git rev-parse --short HEAD)
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          else
-            VERSION=rc-$SHA
-          fi
+          VERSION=$($POETRY_HOME/bin/poetry version --short)
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${BUILD_TYPE}"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
 
