@@ -26,7 +26,7 @@ jobs:
       - name: Update version
         run: |
           cd correction_step
-          CURRENT_VERSION=$(poetry version --short)
+          CURRENT_VERSION=$($POETRY_HOME/bin/poetry version --short)
           $POETRY_HOME/bin/poetry version prerelease
           git add pyproject.toml
           git commit -m "chore: update version"
