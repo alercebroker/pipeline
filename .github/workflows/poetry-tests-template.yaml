@@ -30,17 +30,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      POETRY_HOME: /opt/poetry
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Set up Poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ inputs.poetry-version }}
+          cache: 'poetry'
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
