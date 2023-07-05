@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
-          poetry install --no-root --all-extras
+          poetry install --all-extras
       - name: Tests with pytest
         run: |
           cd ${{ inputs.base-folder }}

@@ -55,7 +55,7 @@ No special conditions, only connection to Kafka.
 ### Consumer setup
 
 * `CONSUMER_SERVER`: Kafka host with ports, e.g., `localhost:9092`
-* `CONSUMER_GROUP_ID`: Name for the consumer group, e.g., `cmirrormaker-step`
+* `CONSUMER_GROUP_ID`: Name for the consumer group, e.g., `reflector-step`
 * `CONSUME_TIMEOUT`: Maximum time in seconds to wait for a message. Defaults to `10`
 * `CONSUME_MESSAGES`: Number of messages to consume per operation. Defaults to `1000`
 * `TOPIC_STRATEGY_FORMAT`: Format of topics that change daily, e.g., `ztf_%s_programid1` or `ztf_%s_programid1,ztf_%s_programid3`. The `{}` will be replaced by the date formatted as `%Y%m%d`, set to change every day at 23:00 UTC
@@ -72,8 +72,8 @@ If both are set, then `CONSUMER_TOPICS` will be ignored.
 ### Step metadata
 
 * `STEP_VERSION`: Current version of the step, e.g., `1.0.0`. Defaults to `dev`
-* `STEP_ID`: Unique identifier for the step. Defaults to `cmirrormaker`
-* `STEP_NAME`: Name of the step. Defaults to `cmirrormaker`
+* `STEP_ID`: Unique identifier for the step. Defaults to `reflector`
+* `STEP_NAME`: Name of the step. Defaults to `reflector`
 * `STEP_COMMENTS`: Comments on the specific version of the step
 
 ## Stream

@@ -36,7 +36,7 @@ class CustomMirrormaker(GenericStep):
             ):
                 self.use_message_topic = False
             producer = get_class(
-                pconfig.pop("CLASS", "cmirrormaker.utils.RawKafkaProducer")
+                pconfig.pop("CLASS", "reflector_step.utils.RawKafkaProducer")
             )(pconfig)
         if producer is None:
             raise Exception("Kafka producer not configured in settings.py")

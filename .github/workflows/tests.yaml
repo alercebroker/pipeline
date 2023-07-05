@@ -14,7 +14,7 @@ jobs:
     if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
-        sources-folder: 'cmirrormaker'
+        sources-folder: 'reflector_step'
         base-folder: 'reflector_step'
   reflector_step_unittest:
     needs: detect_changes
@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
         python-version: '3.7'
-        sources-folder: 'cmirrormaker'
+        sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
   reflector_step_integration:
@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
-      sources-folder: 'cmirrormaker'
+      sources-folder: 'reflector_step'
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
