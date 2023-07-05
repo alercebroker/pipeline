@@ -24,7 +24,6 @@ jobs:
       BUILD_TYPE: ${{ inputs.build-type }}
       POETRY_HOME: /opt/poetry
     name: get tags
-    needs: update_versions
     outputs:
       tags: ${{ steps.prep.outputs.tags }}
     runs-on: ubuntu-latest
