@@ -25,6 +25,8 @@ jobs:
           $POETRY_HOME/bin/poetry --version
       - name: Update version
         run: |
+          git config --global user.name "@alerceadmin"
+          git config --global user.email "alerceadmin@users.noreply.github.com"
           cd correction_step
           CURRENT_VERSION=$($POETRY_HOME/bin/poetry version --short)
           $POETRY_HOME/bin/poetry version prerelease
