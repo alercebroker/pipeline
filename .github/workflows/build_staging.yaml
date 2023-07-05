@@ -6,14 +6,20 @@ on:
       - main
 
 jobs:
+  update_versions:
+    uses: ./.github/workflows/update-versions.yaml
+    with:
+      build-type: staging
   reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       base-folder: reflector_step
       step-name: reflector_step
       build-type: staging
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       base-folder: correction_step
       step-name: correction_step
