@@ -1,17 +1,16 @@
-FROM python:3.10-slim
+FROM python:3.10-slim as builder
 MAINTAINER ALeRCE
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
 WORKDIR /app/
-
 RUN pip install poetry
 COPY ./poetry.lock ./pyproject.toml /app/
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-interaction --without=dev --no-root
+RUN poetry install --no-interaction --without=dev -E apf --no-root
 
+
+FROM builder
 COPY ./correction /app/correction
 COPY ./README.md /app/
-RUN poetry install --no-interaction --only-root
-
+RUN poetry install --no-interaction --only-root -E apf
 CMD ["poetry", "run", "run-step"]
