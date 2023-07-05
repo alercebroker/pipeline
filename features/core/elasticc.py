@@ -139,7 +139,7 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
-    def _calculate_spm(self) -> pd.DataFrame:
+    def calculate_spm(self) -> pd.DataFrame:
         # To use single band version, it requires multiband=False, by_fid=True and return without stacking fid
         features = self.detections.apply(
             extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True
