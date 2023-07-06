@@ -32,7 +32,8 @@ class TestElasticcExtractor(unittest.TestCase):
         an error
         """
         bands_incomplete = ["u", "g"]
-        messages = generate_input_batch(5, ELASTICC_BANDS) + generate_input_batch(5, bands_incomplete, offset=10)
+        bands_incomplete_2 = ["r", "i", "z", "Y"]
+        messages = generate_input_batch(5, bands_incomplete) + generate_input_batch(5, bands_incomplete_2, offset=10)
         
         detections, non_detections, xmatch = [], [], []
 
