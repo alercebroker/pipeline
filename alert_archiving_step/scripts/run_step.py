@@ -32,4 +32,7 @@ else:
 consumer = Consumer(config=CONSUMER_CONFIG)
 
 step = AlertArchivingStep(consumer, config=STEP_CONFIG, level=level)
-step.start()
+
+
+def run_step():
+    step.start()
