@@ -25,6 +25,11 @@ logger.addHandler(handler)
 from features import FeaturesComputer
 from features.utils.selector import selector
 
+if STEP_CONFIG["USE_PROFILING"]:
+    from pyroscope import configure
+    configure(application_name="step.Feature", server_address=STEP_CONFIG["PYROSCOPE_SERVER"])
+
+
 extractor = selector(EXTRACTOR)
 step = FeaturesComputer(extractor, config=STEP_CONFIG)
 step.start()
