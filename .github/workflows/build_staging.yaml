@@ -18,6 +18,7 @@ jobs:
       build-type: staging
       step-name: alert_archiving_step
       base-folder: alert_archiving_step
+      build-context: alert_archiving_step
 
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -26,6 +27,7 @@ jobs:
       build-type: staging
       step-name: correction_step
       base-folder: correction_step
+      build-context: correction_step
 
   early_classification_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -34,6 +36,7 @@ jobs:
       build-type: staging
       step-name: early_classification_step
       base-folder: early_classification_step
+      build-context: early_classification_step
 
   feature_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -42,6 +45,7 @@ jobs:
       build-type: staging
       step-name: feature_step
       base-folder: feature_step
+      build-context: feature_step
 
   lc_classification_step_ztf_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -49,7 +53,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_ztf
-      base-folder: .
+      build-context: .
+      base-folder: lc_classification_step
       file: lc_classification_step/Dockerfile-ztf
 
   lc_classification_step_balto_staging:
@@ -58,7 +63,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_balto
-      base-folder: .
+      build-context: .
+      base-folder: lc_classification_step
       file: lc_classification_step/Dockerfile-balto
 
   lc_classification_step_messi_staging:
@@ -67,7 +73,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_messi
-      base-folder: .
+      build-context: .
+      base-folder: lc_classification_step
       file: lc_classification_step/Dockerfile-messi
 
   lc_classification_step_barney_staging:
@@ -76,7 +83,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_barney
-      base-folder: .
+      build-context: .
+      base-folder: lc_classification_step
       file: lc_classification_step/Dockerfile-barney
 
   lc_classification_step_toretto_staging:
@@ -85,7 +93,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_toretto
-      base-folder: .
+      build-context: .
+      base-folder: lc_classification_step
       file: lc_classification_step/Dockerfile-toretto
 
   lightcurve_step_staging:
@@ -95,6 +104,7 @@ jobs:
       build-type: staging
       step-name: lightcurve_step
       base-folder: lightcurve-step
+      build-context: lightcurve-step
 
   magstats_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -103,6 +113,7 @@ jobs:
       build-type: staging
       step-name: magstats_step
       base-folder: magstats_step
+      build-context: magstats_step
 
   prv_candidates_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -111,12 +122,14 @@ jobs:
       build-type: staging
       step-name: prv_candidates_step
       base-folder: prv_candidates_step
+      build-context: prv_candidates_step
 
   reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       base-folder: reflector_step
+      build-context: reflector_step
       step-name: reflector_step
       build-type: staging
 
@@ -127,6 +140,7 @@ jobs:
       build-type: staging
       step-name: s3_step
       base-folder: s3_step
+      build-context: s3_step
 
   sorting_hat_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -135,6 +149,7 @@ jobs:
       build-type: staging
       step-name: sorting_hat_step
       base-folder: sorting_hat_step
+      build-context: sorting_hat_step
 
   watchlist_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -143,6 +158,7 @@ jobs:
       build-type: staging
       step-name: watchlist_step
       base-folder: watchlist_step
+      build-context: watchlist_step
 
   xmatch_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -151,3 +167,4 @@ jobs:
       build-type: staging
       step-name: xmatch_step
       base-folder: xmatch_step
+      build-context: xmatch_step

@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: 'Dockerfile'
+      build-context:
+        required: false
+        type: string
+        default: '.'
       step-name:
         required: true
         type: string
@@ -81,7 +85,7 @@ jobs:
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v4
         with:
-          context: ./${{ inputs.base-folder }}
+          context: ./${{ inputs.build-context }}
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: true
           tags: ${{needs.get_tags.outputs.tags}}
