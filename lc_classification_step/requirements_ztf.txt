@@ -1,3 +1,3 @@
 -r requirements.txt
--e git+https://github.com/alercebroker/lc_classifier.git@main#egg=lc_classifier
+lc_classifier @ git+https://github.com/alercebroker/lc_classifier@main
 -e ../libs/alerce_classifiers
