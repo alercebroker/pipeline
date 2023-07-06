@@ -177,8 +177,8 @@ jobs:
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt'
-      test-command: STREAM=ztf python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+      requirements-file: 'requirements_ztf.txt -r requirements_elasticc.txt'
+      test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
@@ -195,9 +195,9 @@ jobs:
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt'
+      requirements-file: 'requirements_ztf.txt -r requirements_elasticc.txt'
       test-dependencies: pytest pytest-docker
-      test-command: STREAM=ztf python -m pytest -x tests/integration
+      test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
@@ -208,6 +208,7 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+
   lc_classification_step_build_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
@@ -217,44 +218,6 @@ jobs:
       step-name: "lc_classification_step"
       file: "Dockerfile-ztf"
 
-  lc_classification_step_unittest_elastic:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'lc_classification_step'
-      python-version: '3.8'
-      requirements-file: 'requirements_elasticc.txt'
-      test-command: STREAM=elasticc python -m pytest -x tests/unit --cov lc_classification --cov-report xml
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
-      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
-      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
-      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
-      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
-      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-  lc_classification_step_integration_elastic:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'lc_classification_step'
-      python-version: '3.8'
-      requirements-file: 'requirements_elasticc.txt'
-      test-dependencies: pytest pytest-docker
-      test-command: STREAM=elasticc python -m pytest -x tests/integration
-      codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
-      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
-      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
-      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
-      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
-      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
