@@ -84,37 +84,13 @@ jobs:
       test-dependencies: 'pytest pytest-docker numpy Cython'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
-
-  consolidated_metrics_step_lint:
+  alert_archiving_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
-    uses: ./.github/workflows/lint-template.yaml
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
     with:
-      sources-folder: 'consolidated_metrics_step'
-      base-folder: 'consolidated_metrics_step'
-  consolidated_metrics_step_unittest:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'consolidated_metrics_step'
-      sources-folder: 'consolidated_metrics_step'
-      test-folder: 'tests/unit'
-      test-dependencies: 'pytest pytest-cov numpy fastavro faker'
-      requirements-file: 'requirements.txt'
-      test-command: 'python -m pytest -x tests/unit --cov consolidated_metrics_step --cov-report xml'
-  consolidated_metrics_step_integration:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.consolidated_metrics_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'consolidated_metrics_step'
-      sources-folder: 'consolidated_metrics_step/'
-      test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker numpy faker'
-      requirements-file: 'requirements.txt'
-      codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
+      base-folder: "alert_archiving_step"
+      step-name: "alert_archiving_step"
 
   correction_step_lint:
     needs: detect_changes
@@ -140,6 +116,13 @@ jobs:
       sources-folder: 'correction'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+  correction_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.correction_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "correction_step"
+      step-name: "correction_step"
 
   feature_step_lint:
     needs: detect_changes
@@ -172,6 +155,13 @@ jobs:
       requirements-file: 'requirements.txt'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+  feature_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.feature_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "feature_step"
+      step-name: "feature_step"
 
   lc_classification_step_lint:
     needs: detect_changes
@@ -198,7 +188,6 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-
   lc_classification_step_integration_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
@@ -219,6 +208,14 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+  lc_classification_step_build_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lc_classification_step"
+      step-name: "lc_classification_step"
+      file: "Dockerfile-ztf"
 
   lc_classification_step_unittest_elastic:
     needs: detect_changes
@@ -238,7 +235,6 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-
   lc_classification_step_integration_elastic:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
@@ -259,6 +255,38 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+  lc_classification_step_build_balto:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lc_classification_step"
+      step-name: "lc_classification_step"
+      file: "Dockerfile-balto"
+  lc_classification_step_build_messi:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lc_classification_step"
+      step-name: "lc_classification_step"
+      file: "Dockerfile-messi"
+  lc_classification_step_build_barney:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lc_classification_step"
+      step-name: "lc_classification_step"
+      file: "Dockerfile-barney"
+  lc_classification_step_build_toretto:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lc_classification_step"
+      step-name: "lc_classification_step"
+      file: "Dockerfile-toretto"
 
   lightcurve_step_lint:
     needs: detect_changes
@@ -290,6 +318,13 @@ jobs:
       test-dependencies: "pytest pytest-docker"
       codecov-flags: "" # Do not upload
       test-command: "python -m pytest -x tests/integration"
+  lightcurve_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "lightcurve-step"
+      step-name: "lightcurve-step"
 
   magstats_step_lint:
     needs: detect_changes
@@ -317,6 +352,13 @@ jobs:
       sources-folder: 'magstats_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+  magstats_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.magstats_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "magstats_step"
+      step-name: "magstats_step"
 
   prv_candidates_step_lint:
     needs: detect_changes
@@ -346,6 +388,13 @@ jobs:
       test-dependencies: "pytest pytest-docker pytest-mock"
       codecov-flags: "" # Do not upload
       test-command: "python -m pytest -x tests/integration"
+  prv_candidates_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "prv_candidates_step"
+      step-name: "prv_candidates_step"
 
   s3_step_lint:
     needs: detect_changes
@@ -377,6 +426,13 @@ jobs:
       test-dependencies: 'pytest pytest-docker moto'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+  s3_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.s3_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "s3_step"
+      step-name: "s3_step"
 
   sorting_hat_step_lint:
     needs: detect_changes
@@ -410,6 +466,13 @@ jobs:
       pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+  sorting_hat_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.sorting_hat_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "sorting_hat_step"
+      step-name: "sorting_hat_step"
 
   watchlist_step_lint:
     needs: detect_changes
@@ -441,6 +504,13 @@ jobs:
       test-dependencies: 'pytest==7.2.0 pytest-docker'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+  watchlist_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.watchlist_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "watchlist_step"
+      step-name: "watchlist_step"
 
   xmatch_step_lint:
     needs: detect_changes
@@ -472,6 +542,13 @@ jobs:
       test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+  xmatch_step_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.xmatch_step == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "xmatch_step"
+      step-name: "xmatch_step"
 
   libs_alerce_classifiers_lint:
     needs: detect_changes
