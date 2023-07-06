@@ -60,7 +60,8 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
         # Additional field required to compute SN features
         value, error = self.detections.alerts()[["mag_ml", "e_mag_ml"]].T.values
         # TODO: "3" is an arbitrary, should be replaced with a new one
-        self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
+        self.detections.add_field("detected", True)
+        # the true is a placeholder till we dessing a better way to check if an object was correctly detected
 
     @staticmethod
     def _legacy(detections, non_detections, xmatches, metadata):
@@ -139,7 +140,7 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.columns_per_fid
     @decorators.fill_in_every_fid()
-    def _calculate_spm(self) -> pd.DataFrame:
+    def calculate_spm(self) -> pd.DataFrame:
         # To use single band version, it requires multiband=False, by_fid=True and return without stacking fid
         features = self.detections.apply(
             extras.fit_spm, version="v2", multiband=True, flux=self.FLUX, correct=True
