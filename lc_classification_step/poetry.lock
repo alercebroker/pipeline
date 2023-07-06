@@ -29,20 +29,20 @@ description = ""
 optional = false
 python-versions = "*"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 Cython = {version = ">=0.29", optional = true, markers = "extra == \"rf_features_classifier\""}
 joblib = {version = "*", optional = true, markers = "extra == \"messi\""}
 lc_classifier = {git = "https://github.com/alercebroker/lc_classifier", rev = "main", optional = true, markers = "extra == \"rf_features_classifier\""}
 numpy = [
-    {version = ">=1.16", optional = true, markers = "extra == \"rf_features_classifier\""},
     {version = "*", optional = true, markers = "extra == \"messi\""},
+    {version = ">=1.16", optional = true, markers = "extra == \"rf_features_classifier\""},
 ]
 pandas = [
     {version = "2.0.1"},
-    {version = ">=1.1", optional = true, markers = "extra == \"rf_features_classifier\""},
     {version = "*", optional = true, markers = "extra == \"messi\""},
+    {version = ">=1.1", optional = true, markers = "extra == \"rf_features_classifier\""},
 ]
 scikit-learn = {version = "*", optional = true, markers = "extra == \"messi\""}
 torch = {version = "1.11.0", optional = true, markers = "extra == \"messi\""}
@@ -58,10 +58,8 @@ rf-features-classifier = ["Cython (>=0.29)", "lc_classifier @ git+https://github
 rf-features-header-classifier = ["Cython (>=0.29)", "lc_classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)", "pandas (>=1.1)"]
 
 [package.source]
-type = "git"
-url = "https://github.com/alercebroker/alerce_classifiers"
-reference = "main"
-resolved_reference = "843174d6b1a78e3692717d39ab8868d3df7343e0"
+type = "directory"
+url = "../libs/alerce_classifiers"
 
 [[package]]
 name = "apf-base"
@@ -887,7 +885,7 @@ six = "*"
 
 [package.extras]
 docs = ["sphinx"]
-notebook = ["ipykernel (>=4.1.0)", "ipywidgets (>=4.0.3)", "jupyter-client (>=4.0.6)", "notebook (>=4.0.5)"]
+notebook = ["ipykernel (>=4.1.0)", "ipywidgets (>=4.0.3)", "jupyter_client (>=4.0.6)", "notebook (>=4.0.5)"]
 optional = ["ipython (>=4.0.0)", "mpi4py"]
 plotting = ["matplotlib (>=3.0)", "plotly (>=1.8.6)"]
 
@@ -2893,4 +2891,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.9"
-content-hash = "eae83c7fe54b0df2607525163e97a29c658741322848d13a718e1dd55c02ecc6"
+content-hash = "25e9df3d130960b8deecef08a5e2f0dfacffb126702e819174c78c103146d5a8"
