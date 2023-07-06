@@ -64,7 +64,7 @@ alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extra
 alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["rf_features_classifier", "messi", "rf_features_header_classifier", "balto"] }
 
 [tool.poetry.group.dev.dependencies]
-black = "~=21.0"
+black = "~=23.0"
  
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
