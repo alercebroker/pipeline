@@ -13,6 +13,7 @@ jobs:
 
   alert_archiving_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: alert_archiving_step
@@ -20,6 +21,7 @@ jobs:
 
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: correction_step
@@ -27,6 +29,7 @@ jobs:
 
   early_classification_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: early_classification_step
@@ -34,6 +37,7 @@ jobs:
 
   feature_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: feature_step
@@ -41,6 +45,7 @@ jobs:
 
   lc_classification_step_ztf_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lc_classification_step_ztf
@@ -49,6 +54,7 @@ jobs:
 
   lc_classification_step_balto_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lc_classification_step_balto
@@ -57,6 +63,7 @@ jobs:
 
   lc_classification_step_messi_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lc_classification_step_messi
@@ -65,6 +72,7 @@ jobs:
 
   lc_classification_step_barney_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lc_classification_step_barney
@@ -73,6 +81,7 @@ jobs:
 
   lc_classification_step_toretto_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lc_classification_step_toretto
@@ -81,6 +90,7 @@ jobs:
 
   lightcurve_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: lightcurve_step
@@ -88,6 +98,7 @@ jobs:
 
   magstats_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: magstats_step
@@ -95,6 +106,7 @@ jobs:
 
   prv_candidates_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: prv_candidates_step
@@ -110,6 +122,7 @@ jobs:
 
   s3_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: s3_step
@@ -117,6 +130,7 @@ jobs:
 
   sorting_hat_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: sorting_hat_step
@@ -124,6 +138,7 @@ jobs:
 
   watchlist_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: watchlist_step
@@ -131,6 +146,7 @@ jobs:
 
   xmatch_step_staging:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: staging
       step-name: xmatch_step
