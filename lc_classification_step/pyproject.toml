@@ -38,6 +38,9 @@ optional = true
 [tool.poetry.group.balto]
 optional = true
 
+[tool.poetry.group.barney]
+optional = true
+
 [tool.poetry.group.elasticc]
 optional = true
 
@@ -49,13 +52,16 @@ alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers"
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier"], branch = "main" }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["transformer_lc_features"], branch = "main" }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi"], branch = "main" }
 
 [tool.poetry.group.balto.dependencies]
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"], branch = "main" }
 
+[tool.poetry.group.barney.dependencies]
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_header_classifier"], branch = "main" }
+
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier, transformer_lc_features, balto"], branch = "main" }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto, messi, rf_features_classifier, rf_features_header_classifier"], branch = "main" }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=21.0"
