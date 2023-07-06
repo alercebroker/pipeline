@@ -1,5 +1,0 @@
-apf-base==2.1.5
-numexpr
-numpy
-scipy~=1.5.2
-pandas==2.0.1

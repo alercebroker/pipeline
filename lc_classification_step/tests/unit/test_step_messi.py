@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from fastavro import utils
 
@@ -15,6 +13,6 @@ for message in messages_elasticc:
     message["detections"][0]["has_stamp"] = True
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_messi(test_elasticc_model, step_factory_messi):
     test_elasticc_model(step_factory_messi, messages_elasticc)

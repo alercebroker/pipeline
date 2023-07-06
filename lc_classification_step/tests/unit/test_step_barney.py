@@ -1,4 +1,3 @@
-import os
 from json import loads
 
 import pytest
@@ -33,12 +32,12 @@ def assert_classified_as_not_classified(step, obj):
     assert not_classified_probability == 1
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_barney(test_elasticc_model, step_factory_barney):
     test_elasticc_model(step_factory_barney, messages_elasticc)
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_braney_model_input_is_correct(step_factory_barney):
     step = step_factory_barney(messages_elasticc)
     step.start()
@@ -49,7 +48,7 @@ def test_step_braney_model_input_is_correct(step_factory_barney):
         assert call[1][0].features.any().any()
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_elasticc_without_features(step_factory_barney):
     empty_features = []
     for msg in messages_elasticc:

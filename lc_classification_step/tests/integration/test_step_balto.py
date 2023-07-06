@@ -1,29 +1,34 @@
 import json
-from lc_classification.core.step import LateClassifier
-from apf.consumers import KafkaConsumer
-import pytest
 import os
-from tests.test_commons import (
-    assert_elasticc_object_is_correct,
-    assert_command_is_correct,
-)
 from typing import Callable
 
+import pytest
+from apf.consumers import KafkaConsumer
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+from lc_classification.core.step import LateClassifier
+from tests.test_commons import (
+    assert_command_is_correct,
+    assert_elasticc_object_is_correct,
+)
+
+
+@pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[], KafkaConsumer],
+    kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    env_variables_elasticc("balto")
+
     from settings import STEP_CONFIG
 
-    kconsumer = kafka_consumer()
+    kconsumer = kafka_consumer("balto")
     sconsumer = scribe_consumer()
 
     model_path = os.getenv("TEST_BALTO_MODEL_PATH")
     quantiles_path = os.getenv("TEST_BALTO_QUANTILES_PATH")
+
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.balto.balto_predictor.BaltoPredictor"

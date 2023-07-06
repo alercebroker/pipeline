@@ -12,21 +12,24 @@ from tests.test_commons import (
 )
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[], KafkaConsumer],
+    kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    env_variables_elasticc("messi")
+
     from settings import STEP_CONFIG
 
-    kconsumer = kafka_consumer()
+    kconsumer = kafka_consumer("messi")
     sconsumer = scribe_consumer()
 
     model_path = os.getenv("TEST_MESSI_MODEL_PATH")
     header_quantiles_path = os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH")
     feature_quantiles_path = os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH")
+
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.messi.messi_predictor.MessiPredictor"

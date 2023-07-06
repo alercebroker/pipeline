@@ -1,15 +1,19 @@
-FROM python:3.8
-
-ARG GH_TOKEN={GH_TOKEN}
-
-COPY requirements.txt /app/requirements.txt
-COPY requirements_barney.txt /app/requirements_barney.txt
-
-RUN pip install -r /app/requirements_barney.txt
-
-WORKDIR /app
-COPY . /app
-
+## IMPORTANT ##
+## This Dockerfile MUST be built with the context of the monorepo root directory
+FROM python:3.8 as builder
 ENV NUMEXPR_MAX_THREADS=1
+MAINTAINER ALeRCE
+ARG GH_TOKEN={GH_TOKEN}
+WORKDIR /app/
+RUN pip install poetry
+COPY ./lc_classification_step/poetry.lock ./lc_classification_step/pyproject.toml /app/
+COPY ./libs/alerce_classifiers /libs/alerce_classifiers
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-interaction --without=dev --with=barney --no-root
 
-CMD ["python", "scripts/run_step.py"]
+FROM builder
+COPY ./lc_classification_step/lc_classification /app/lc_classification
+COPY ./lc_classification_step/scripts /app/scripts
+COPY ./lc_classification_step/README.md /app/
+RUN poetry install --no-interaction --only-root
+CMD ["poetry", "run", "python", "scripts/run-step.py"]

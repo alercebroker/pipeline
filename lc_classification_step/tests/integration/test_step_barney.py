@@ -12,19 +12,22 @@ from tests.test_commons import (
 )
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
+@pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[], KafkaConsumer],
+    kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    env_variables_elasticc("barney")
+
     from settings import STEP_CONFIG
 
-    kconsumer = kafka_consumer()
+    kconsumer = kafka_consumer("barney")
     sconsumer = scribe_consumer()
 
     model_path = os.getenv("TEST_BARNEY_MODEL_PATH")
+
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.barney.barney_predictor.BarneyPredictor"

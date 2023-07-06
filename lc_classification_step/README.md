@@ -62,14 +62,22 @@ The following environment variables will be needed in adition to the regular ste
 
 ``` 
 PREDICTOR_CLASS=lc_classification.predictors.balto.balt_predictor.BaltoPredictor
-MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/3.0.0/EncoderHeader.pt
-QUANTILES_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/3.0.0/HeaderNorm1QT/
+MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/4.0.0/EncoderHeader.pt
+QUANTILES_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/4.0.0/HeaderNorm1QT/
 PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoParser
 ```
+
 ### Setup for Messi
 TODO
+
 ### Setup for Barney
-TODO
+The following environment variables will be needed in adition to the regular step configuration:
+
+``` 
+PREDICTOR_CLASS=lc_classification.predictors.barney.barney_predictor.BarneyPredictor
+MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/barney/2.0.0/barney.tar.gz
+PREDICTOR_PARSER_CLASS=lc_classification.predictors.barney.barney_parser.BarneyParser
+```
 
 #### Previous steps:
 - [LC Features](https://github.com/alercebroker/feature_step)

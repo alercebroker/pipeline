@@ -13,6 +13,12 @@ from tests.test_commons import (
     assert_elasticc_object_is_correct,
 )
 
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
+    config.addinivalue_line("markers", "elasticc: mark a test as a elasticc test.")
+
+
 base_config = {
     "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
     "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},

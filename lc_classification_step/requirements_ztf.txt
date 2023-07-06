@@ -1,3 +1,0 @@
--r requirements.txt
--e git+https://github.com/alercebroker/lc_classifier.git@main#egg=lc_classifier
--e ../libs/alerce_classifiers

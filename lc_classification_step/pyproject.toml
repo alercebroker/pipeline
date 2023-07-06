@@ -38,27 +38,33 @@ optional = true
 [tool.poetry.group.balto]
 optional = true
 
+[tool.poetry.group.barney]
+optional = true
+
 [tool.poetry.group.elasticc]
 optional = true
 
 [tool.poetry.group.ztf.dependencies]
 lc_classifier = {git = "https://github.com/alercebroker/lc_classifier", branch = "main" }
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", branch = "main" }
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true }
 
 [tool.poetry.group.toretto.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier"], branch = "main" }
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["rf_features_classifier"] }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["transformer_lc_features"], branch = "main" }
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["messi"] }
 
 [tool.poetry.group.balto.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"], branch = "main" }
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["balto"] }
+
+[tool.poetry.group.barney.dependencies]
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["rf_features_header_classifier"] }
 
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier, transformer_lc_features, balto"], branch = "main" }
+alerce_classifiers = {path = "../libs/alerce_classifiers", develop = true, extras = ["rf_features_classifier", "messi", "rf_features_header_classifier", "balto"] }
 
 [tool.poetry.group.dev.dependencies]
-black = "~=21.0"
+black = "~=23.0"
  
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"

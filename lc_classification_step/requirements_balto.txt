@@ -1,2 +1,0 @@
--r requirements.txt
--e ../libs/alerce_classifiers[balto]
