@@ -1,8 +1,8 @@
-import os
 from json import loads
 
 import pytest
 from fastavro import utils
+
 from tests.mockdata.extra_felds import generate_extra_fields
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as INPUT_ELASTICC
 from tests.test_commons import (
@@ -20,10 +20,12 @@ for message in messages_elasticc:
     message["detections"][0]["has_stamp"] = True
 
 
+@pytest.mark.elasticc
 def test_step_toretto(test_elasticc_model, step_factory_toretto):
     test_elasticc_model(step_factory_toretto, messages_elasticc)
 
 
+@pytest.mark.elasticc
 def test_step_toretto_model_input_is_correct(step_factory_toretto):
     step = step_factory_toretto(messages_elasticc)
     step.start()
@@ -34,6 +36,7 @@ def test_step_toretto_model_input_is_correct(step_factory_toretto):
         assert call[1][0].features.any().any()
 
 
+@pytest.mark.elasticc
 def test_step_elasticc_without_features(step_factory_toretto):
     empty_features = []
     for msg in messages_elasticc:

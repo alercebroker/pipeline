@@ -2,19 +2,21 @@ import json
 import os
 from typing import Callable
 
+import pytest
 from apf.consumers import KafkaConsumer
+
 from lc_classification.core.step import LateClassifier
-from schemas import ELASTICC_SCHEMA
 from tests.test_commons import (
     assert_command_is_correct,
     assert_elasticc_object_is_correct,
 )
 
 
+@pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[], KafkaConsumer],
+    kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc("balto")

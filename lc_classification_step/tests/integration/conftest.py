@@ -11,9 +11,15 @@ from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
+
 from tests.mockdata.extra_felds import generate_extra_fields
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
 from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
+    config.addinivalue_line("markers", "elasticc: mark a test as a elasticc test.")
 
 
 @pytest.fixture(scope="session")
