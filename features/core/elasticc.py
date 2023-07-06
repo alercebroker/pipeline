@@ -60,7 +60,8 @@ class ELAsTiCCFeatureExtractor(BaseFeatureExtractor):
         # Additional field required to compute SN features
         value, error = self.detections.alerts()[["mag_ml", "e_mag_ml"]].T.values
         # TODO: "3" is an arbitrary, should be replaced with a new one
-        self.detections.add_field("detected", np.abs(value) - 3 * error > 0)
+        self.detections.add_field("detected", True)
+        # the true is a placeholder till we dessing a better way to check if an object was correctly detected
 
     @staticmethod
     def _legacy(detections, non_detections, xmatches, metadata):

@@ -79,6 +79,8 @@ def multi_band(
     preferred="irzYgu",
     mult=25,
 ):
+    # this makes the function non valid for other surveys
+    ELASTICC_FIDS = ["u", "g", "r", "i", "z", "Y"]
     time = time - np.min(time)
 
     initial, bounds = guess.multi_band(time, flux, band, preferred=preferred)
@@ -105,18 +107,21 @@ def multi_band(
     params = result.x.reshape((-1, n_params))
 
     final = []
-    for i, fid in enumerate(fids):
-        mask = band == i
+    for i, fid in enumerate(ELASTICC_FIDS):
+        if fid in fids:
+            mask = band == i
 
-        prediction = func(time[mask], *params[i])
+            prediction = func(time[mask], *params[i])
 
-        dof = prediction.size - n_params
-        chi = (
-            np.nan
-            if dof < 1
-            else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2) / dof
-        )
-        final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
+            dof = prediction.size - n_params
+            chi = (
+                np.nan
+                if dof < 1
+                else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2) / dof
+            )
+            final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
+        else:
+            final.append(pd.Series([np.nan]*7, index=_indices_with_fid(fid)))      
 
     return pd.concat(final)
 
