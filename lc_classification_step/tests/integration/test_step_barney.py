@@ -2,29 +2,30 @@ import json
 import os
 from typing import Callable
 
-import pytest
 from apf.consumers import KafkaConsumer
-
 from lc_classification.core.step import LateClassifier
+from schemas import ELASTICC_SCHEMA
 from tests.test_commons import (
     assert_command_is_correct,
     assert_elasticc_object_is_correct,
 )
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_elasticc_result(
     kafka_service,
     env_variables_elasticc,
     kafka_consumer: Callable[[], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    env_variables_elasticc("barney")
+
     from settings import STEP_CONFIG
 
-    kconsumer = kafka_consumer()
+    kconsumer = kafka_consumer("barney")
     sconsumer = scribe_consumer()
 
     model_path = os.getenv("TEST_BARNEY_MODEL_PATH")
+
     STEP_CONFIG["PREDICTOR_CONFIG"][
         "CLASS"
     ] = "lc_classification.predictors.barney.barney_predictor.BarneyPredictor"

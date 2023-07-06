@@ -1,16 +1,12 @@
+import os
 from json import loads
 from unittest.mock import MagicMock
+
 import pytest
-import os
+from fastavro import utils
 from lc_classification.core.step import LateClassifier
 from tests.mockdata.input_ztf import INPUT_SCHEMA as INPUT_ZTF
-from fastavro import utils
-
-from tests.test_commons import (
-    assert_ztf_object_is_correct,
-    assert_command_is_correct,
-)
-
+from tests.test_commons import assert_command_is_correct, assert_ztf_object_is_correct
 
 messages_ztf = list(utils.generate_many(INPUT_ZTF, 2))
 
@@ -22,7 +18,6 @@ for message in messages_ztf:
     message["detections"][0]["has_stamp"] = True
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
 def test_step(step_factory_ztf):
     step: LateClassifier = step_factory_ztf(messages_ztf)
     step.start()
@@ -41,7 +36,6 @@ def test_step(step_factory_ztf):
         assert_ztf_object_is_correct(obj)
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "ztf", reason="ztf only")
 def test_step_empty_features(step_factory_ztf):
     empty_features = []
     for msg in messages_ztf:

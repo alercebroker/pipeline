@@ -2,7 +2,6 @@ import os
 
 import pytest
 from fastavro import utils
-
 from tests.mockdata.extra_felds import generate_extra_fields
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as INPUT_ELASTICC
 
@@ -15,6 +14,5 @@ for message in messages_elasticc:
     message["detections"][0]["has_stamp"] = True
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_messi(test_elasticc_model, step_factory_messi):
     test_elasticc_model(step_factory_messi, messages_elasticc)

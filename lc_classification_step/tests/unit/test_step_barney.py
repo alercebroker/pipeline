@@ -3,7 +3,6 @@ from json import loads
 
 import pytest
 from fastavro import utils
-
 from tests.mockdata.extra_felds import generate_extra_fields
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as INPUT_ELASTICC
 from tests.test_commons import (
@@ -33,12 +32,10 @@ def assert_classified_as_not_classified(step, obj):
     assert not_classified_probability == 1
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_barney(test_elasticc_model, step_factory_barney):
     test_elasticc_model(step_factory_barney, messages_elasticc)
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_braney_model_input_is_correct(step_factory_barney):
     step = step_factory_barney(messages_elasticc)
     step.start()
@@ -49,7 +46,6 @@ def test_step_braney_model_input_is_correct(step_factory_barney):
         assert call[1][0].features.any().any()
 
 
-@pytest.mark.skipif(os.getenv("STREAM") != "elasticc", reason="elasticc only")
 def test_step_elasticc_without_features(step_factory_barney):
     empty_features = []
     for msg in messages_elasticc:

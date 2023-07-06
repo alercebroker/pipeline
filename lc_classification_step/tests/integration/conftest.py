@@ -1,18 +1,19 @@
+import logging
 import os
 import pathlib
-import logging
 import random
+import time
 import uuid
 from datetime import datetime
+
 import pytest
-from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
+from apf.producers import KafkaProducer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
-from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
-from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
 from tests.mockdata.extra_felds import generate_extra_fields
-import time
+from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
+from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
 
 
 @pytest.fixture(scope="session")
@@ -29,25 +30,31 @@ def docker_compose_file(pytestconfig):
     ).absolute()
 
 
-def get_lc_classifier_topic():
-    return "lc_classifier%s" % datetime.utcnow().strftime("%Y%m%d")
+def get_lc_classifier_topic(model: str):
+    return f"lc_classifier_{model}{datetime.utcnow().strftime('%Y%m%d')}"
 
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
     futures = client.create_topics(
         [
-            NewTopic("features", num_partitions=1),
+            NewTopic("features_ztf", num_partitions=1),
+            NewTopic("features_elasticc", num_partitions=1),
             NewTopic("w_object", num_partitions=1),
-            NewTopic(get_lc_classifier_topic(), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("ztf"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("balto"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
             NewTopic("metrics", num_partitions=1),
         ]
     )
     for topic, future in futures.items():
         try:
             future.result()
-            if topic == "features":
+            if topic == "features_ztf":
                 produce_messages("features_ztf", SCHEMA_ZTF)
+            elif topic == "features_elasticc":
                 produce_messages("features_elasticc", SCHEMA_ELASTICC)
         except Exception as e:
             logging.error(f"Can't create topic {topic}: {e}")
@@ -68,52 +75,56 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def env_variables_ztf():
-    random_string = uuid.uuid4().hex
-    env_variables_dict = {
-        "CONSUMER_SERVER": "localhost:9092",
-        "CONSUMER_TOPICS": "features_ztf",
-        "CONSUMER_GROUP_ID": random_string,
-        "PRODUCER_SERVER": "localhost:9092",
-        "PRODUCER_TOPIC_FORMAT": "lc_classifier%s",
-        "PRODUCER_DATE_FORMAT": "%Y%m%d",
-        "PRODUCER_CHANGE_HOUR": "23",
-        "PRODUCER_RETENTION_DAYS": "1",
-        "SCRIBE_SERVER": "localhost:9092",
-        "METRICS_HOST": "localhost:9092",
-        "METRICS_TOPIC": "metrics",
-        "SCRIBE_TOPIC": "w_object",
-        "CONSUME_MESSAGES": "5",
-        "ENABLE_PARTITION_EOF": "True",
-    }
-    for key, value in env_variables_dict.items():
-        os.environ[key] = value
+    def set_env_variables():
+        random_string = uuid.uuid4().hex
+        env_variables_dict = {
+            "CONSUMER_SERVER": "localhost:9092",
+            "CONSUMER_TOPICS": "features_ztf",
+            "CONSUMER_GROUP_ID": random_string,
+            "PRODUCER_SERVER": "localhost:9092",
+            "PRODUCER_TOPIC_FORMAT": "lc_classifier_ztf%s",
+            "PRODUCER_DATE_FORMAT": "%Y%m%d",
+            "PRODUCER_CHANGE_HOUR": "23",
+            "PRODUCER_RETENTION_DAYS": "1",
+            "SCRIBE_SERVER": "localhost:9092",
+            "METRICS_HOST": "localhost:9092",
+            "METRICS_TOPIC": "metrics",
+            "SCRIBE_TOPIC": "w_object",
+            "CONSUME_MESSAGES": "5",
+            "ENABLE_PARTITION_EOF": "True",
+            "STREAM": "ztf",
+        }
+        for key, value in env_variables_dict.items():
+            os.environ[key] = value
 
-    return env_variables_dict
+    return set_env_variables
 
 
 @pytest.fixture
 def env_variables_elasticc():
-    random_string = uuid.uuid4().hex
-    env_variables_dict = {
-        "CONSUMER_SERVER": "localhost:9092",
-        "CONSUMER_TOPICS": "features_elasticc",
-        "CONSUMER_GROUP_ID": random_string,
-        "PRODUCER_SERVER": "localhost:9092",
-        "PRODUCER_TOPIC_FORMAT": "lc_classifier%s",
-        "PRODUCER_DATE_FORMAT": "%Y%m%d",
-        "PRODUCER_CHANGE_HOUR": "23",
-        "PRODUCER_RETENTION_DAYS": "1",
-        "SCRIBE_SERVER": "localhost:9092",
-        "METRICS_HOST": "localhost:9092",
-        "METRICS_TOPIC": "metrics",
-        "SCRIBE_TOPIC": "w_object",
-        "CONSUME_MESSAGES": "5",
-        "ENABLE_PARTITION_EOF": "True",
-    }
-    for key, value in env_variables_dict.items():
-        os.environ[key] = value
+    def set_env_variables(model: str):
+        random_string = uuid.uuid4().hex
+        env_variables_dict = {
+            "CONSUMER_SERVER": "localhost:9092",
+            "CONSUMER_TOPICS": "features_elasticc",
+            "CONSUMER_GROUP_ID": random_string,
+            "PRODUCER_SERVER": "localhost:9092",
+            "PRODUCER_TOPIC_FORMAT": f"lc_classifier_{model}%s",
+            "PRODUCER_DATE_FORMAT": "%Y%m%d",
+            "PRODUCER_CHANGE_HOUR": "23",
+            "PRODUCER_RETENTION_DAYS": "1",
+            "SCRIBE_SERVER": "localhost:9092",
+            "METRICS_HOST": "localhost:9092",
+            "METRICS_TOPIC": "metrics",
+            "SCRIBE_TOPIC": "w_object",
+            "CONSUME_MESSAGES": "5",
+            "ENABLE_PARTITION_EOF": "True",
+            "STREAM": "elasticc",
+        }
+        for key, value in env_variables_dict.items():
+            os.environ[key] = value
 
-    return env_variables_dict
+    return set_env_variables
 
 
 def produce_messages(topic, SCHEMA):
@@ -139,7 +150,7 @@ def produce_messages(topic, SCHEMA):
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
-    def factory():
+    def factory(stream: str):
         consumer = KafkaConsumer(
             {
                 "PARAMS": {
@@ -148,7 +159,9 @@ def kafka_consumer():
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },
-                "TOPICS": [get_lc_classifier_topic()],
+                "TOPICS": [
+                    get_lc_classifier_topic(stream),
+                ],
                 "TIMEOUT": 0,
             }
         )
