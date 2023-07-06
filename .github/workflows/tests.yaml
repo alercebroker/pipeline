@@ -173,12 +173,13 @@ jobs:
   lc_classification_step_unittest_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt -r requirements_elasticc.txt'
-      test-command: python -m pytest -x tests/unit --cov lc_classification --cov-report xml
+      poetry-install: "--with ztf"
+      test-folder: "tests/unit"
+      stream: "ztf"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
@@ -191,14 +192,14 @@ jobs:
   lc_classification_step_integration_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      requirements-file: 'requirements_ztf.txt -r requirements_elasticc.txt'
-      test-dependencies: pytest pytest-docker
-      test-command: python -m pytest -x tests/integration
       codecov-flags: ''  # Do not upload
+      poetry-install: "--with ztf"
+      test-folder: "tests/integration"
+      stream: "ztf"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
@@ -208,7 +209,6 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-
   lc_classification_step_build_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
@@ -217,6 +217,46 @@ jobs:
       base-folder: .
       step-name: "lc_classification_step"
       file: "lc_classification_step/Dockerfile-ztf"
+
+  lc_classification_step_unittest_elasticc:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: 'lc_classification_step'
+      python-version: '3.8'
+      poetry-install: "--with elasticc"
+      test-folder: "tests/unit"
+      stream: "elasticc"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
+      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
+      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+  lc_classification_step_integration_elasticc:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: 'lc_classification_step'
+      python-version: '3.8'
+      codecov-flags: ''  # Do not upload
+      poetry-install: "--with elasticc"
+      test-folder: "tests/integration"
+      stream: "elasticc"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
+      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
+      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
+      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
+      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
+      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
+      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
