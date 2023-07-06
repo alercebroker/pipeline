@@ -6,9 +6,132 @@ on:
       - published
 
 jobs:
-  alerce_reflector_step_staging:
+  update_versions:
+    uses: ./.github/workflows/update-versions.yaml
+    with:
+      build-type: production
+
+  alert_archiving_step_production:
     uses: ./.github/workflows/build-template.yaml
     with:
-      base-folder: alerce_reflector_step
-      step-name: alerce_reflector_step
       build-type: production
+      step-name: alert_archiving_step
+      base-folder: alert_archiving_step
+
+  correction_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: correction_step
+      base-folder: correction_step
+
+  early_classification_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: early_classification_step
+      base-folder: early_classification_step
+
+  feature_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: feature_step
+      base-folder: feature_step
+
+  lc_classification_step_ztf_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lc_classification_step_ztf
+      base-folder: lc_classification_step
+      file: Dockerfile-ztf
+
+  lc_classification_step_balto_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lc_classification_step_balto
+      base-folder: lc_classification_step
+      file: Dockerfile-balto
+
+  lc_classification_step_messi_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lc_classification_step_messi
+      base-folder: lc_classification_step
+      file: Dockerfile-messi
+
+  lc_classification_step_barney_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lc_classification_step_barney
+      base-folder: lc_classification_step
+      file: Dockerfile-barney
+
+  lc_classification_step_toretto_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lc_classification_step_toretto
+      base-folder: lc_classification_step
+      file: Dockerfile-toretto
+
+  lightcurve_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: lightcurve_step
+      base-folder: lightcurve-step
+
+  magstats_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: magstats_step
+      base-folder: magstats_step
+
+  prv_candidates_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: prv_candidates_step
+      base-folder: prv_candidates_step
+
+  reflector_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
+    with:
+      base-folder: reflector_step
+      step-name: reflector_step
+      build-type: production
+
+  s3_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: s3_step
+      base-folder: s3_step
+
+  sorting_hat_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: sorting_hat_step
+      base-folder: sorting_hat_step
+
+  watchlist_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: watchlist_step
+      base-folder: watchlist_step
+
+  xmatch_step_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: xmatch_step
+      base-folder: xmatch_step
