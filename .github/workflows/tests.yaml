@@ -170,16 +170,15 @@ jobs:
     with:
       base-folder: 'lc_classification_step'
       sources-folder: 'lc_classification'
-  lc_classification_step_unittest_ztf:
+  lc_classification_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      poetry-install: "--with ztf"
+      poetry-install: "--with ztf --with elasticc"
       test-folder: "tests/unit"
-      stream: "ztf"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
@@ -189,7 +188,7 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-  lc_classification_step_integration_ztf:
+  lc_classification_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -197,9 +196,8 @@ jobs:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
       codecov-flags: ''  # Do not upload
-      poetry-install: "--with ztf"
+      poetry-install: "--with ztf --with elasticc"
       test-folder: "tests/integration"
-      stream: "ztf"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
@@ -215,55 +213,16 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: .
-      step-name: "lc_classification_step"
+      step-name: "lc_classification_step_ztf"
       file: "lc_classification_step/Dockerfile-ztf"
 
-  lc_classification_step_unittest_elasticc:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
-    with:
-      base-folder: 'lc_classification_step'
-      python-version: '3.8'
-      poetry-install: "--with elasticc"
-      test-folder: "tests/unit"
-      stream: "elasticc"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
-      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
-      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
-      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
-      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
-      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-  lc_classification_step_integration_elasticc:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
-    with:
-      base-folder: 'lc_classification_step'
-      python-version: '3.8'
-      codecov-flags: ''  # Do not upload
-      poetry-install: "--with elasticc"
-      test-folder: "tests/integration"
-      stream: "elasticc"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-      TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
-      TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
-      TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
-      TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
-      TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
-      TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: .
-      step-name: "lc_classification_step"
+      step-name: "lc_classification_step_balto"
       file: "lc_classification_step/Dockerfile-balto"
   lc_classification_step_build_messi:
     needs: detect_changes
@@ -271,7 +230,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: .
-      step-name: "lc_classification_step"
+      step-name: "lc_classification_step_messi"
       file: "lc_classification_step/Dockerfile-messi"
   lc_classification_step_build_barney:
     needs: detect_changes
@@ -279,7 +238,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: .
-      step-name: "lc_classification_step"
+      step-name: "lc_classification_step-barney"
       file: "lc_classification_step/Dockerfile-barney"
   lc_classification_step_build_toretto:
     needs: detect_changes
@@ -287,7 +246,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: .
-      step-name: "lc_classification_step"
+      step-name: "lc_classification_step-toretto"
       file: "lc_classification_step/Dockerfile-toretto"
 
   lightcurve_step_lint:
