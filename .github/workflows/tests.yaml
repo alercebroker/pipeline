@@ -214,42 +214,41 @@ jobs:
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: "lc_classification_step"
+      base-folder: .
       step-name: "lc_classification_step"
-      file: "Dockerfile-ztf"
-
+      file: "lc_classification_step/Dockerfile-ztf"
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: "lc_classification_step"
+      base-folder: .
       step-name: "lc_classification_step"
-      file: "Dockerfile-balto"
+      file: "lc_classification_step/Dockerfile-balto"
   lc_classification_step_build_messi:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: "lc_classification_step"
+      base-folder: .
       step-name: "lc_classification_step"
-      file: "Dockerfile-messi"
+      file: "lc_classification_step/Dockerfile-messi"
   lc_classification_step_build_barney:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: "lc_classification_step"
+      base-folder: .
       step-name: "lc_classification_step"
-      file: "Dockerfile-barney"
+      file: "lc_classification_step/Dockerfile-barney"
   lc_classification_step_build_toretto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: "lc_classification_step"
+      base-folder: .
       step-name: "lc_classification_step"
-      file: "Dockerfile-toretto"
+      file: "lc_classification_step/Dockerfile-toretto"
 
   lightcurve_step_lint:
     needs: detect_changes

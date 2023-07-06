@@ -49,8 +49,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_ztf
-      base-folder: lc_classification_step
-      file: Dockerfile-ztf
+      base-folder: .
+      file: lc_classification_step/Dockerfile-ztf
 
   lc_classification_step_balto_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -58,8 +58,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_balto
-      base-folder: lc_classification_step
-      file: Dockerfile-balto
+      base-folder: .
+      file: lc_classification_step/Dockerfile-balto
 
   lc_classification_step_messi_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -67,8 +67,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_messi
-      base-folder: lc_classification_step
-      file: Dockerfile-messi
+      base-folder: .
+      file: lc_classification_step/Dockerfile-messi
 
   lc_classification_step_barney_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -76,8 +76,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_barney
-      base-folder: lc_classification_step
-      file: Dockerfile-barney
+      base-folder: .
+      file: lc_classification_step/Dockerfile-barney
 
   lc_classification_step_toretto_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -85,8 +85,8 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_toretto
-      base-folder: lc_classification_step
-      file: Dockerfile-toretto
+      base-folder: .
+      file: lc_classification_step/Dockerfile-toretto
 
   lightcurve_step_staging:
     uses: ./.github/workflows/build-template.yaml
