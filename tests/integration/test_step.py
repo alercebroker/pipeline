@@ -311,10 +311,10 @@ def test_update_features_into_database(kafka_service, mongo_service):
         "criteria": {"_id": "update_features_id"},
         "data": {
             "features_version": "v1",
-            "features_group": "ztf",
+            "features_group": "elasticc",
             "features": [
-                {"name": "feat3", "value": 555, "fid": 'r'},
-                {"name": "feat4", "value": 777, "fid": 'g'},
+                {"name": "feat1", "value": 741, "fid": 'g'},
+                {"name": "feat2", "value": 369, "fid": 'Y'},
             ],
         },
         "options": {"upsert": True},
