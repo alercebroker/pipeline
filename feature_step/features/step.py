@@ -5,6 +5,7 @@ import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 from features.utils.parsers import parse_scribe_payload, parse_output
+from features.utils.metrics import get_sid
 
 
 class FeaturesComputer(GenericStep):
@@ -55,3 +56,7 @@ class FeaturesComputer(GenericStep):
 
         output = parse_output(features, messages, self.features_extractor)
         return output
+
+    def post_execute(self, result):
+        self.metrics["sid"] = get_sid(result)
+        return result

@@ -39,14 +39,6 @@ SCRIBE_PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
-METRICS_CONFIG = {
-    "EXTRA_METRICS": [
-        {"key": "aid", "alias": "aid"},
-        {"key": "detections", "alias": "sid", "format": get_sid},
-    ],
-    "PARAMS": {},
-}
-
 
 class TestZTFStep(unittest.TestCase):
     def setUp(self):
@@ -54,7 +46,6 @@ class TestZTFStep(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-            "METRICS_CONFIG": METRICS_CONFIG,
         }
         self.step = FeaturesComputer(
             ZTFFeatureExtractor,
@@ -91,4 +82,4 @@ class TestZTFStep(unittest.TestCase):
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = self.step.scribe_producer.produce.call_count
         self.assertEqual(scribe_producer_call_count, 5)
-        assert self.step.metrics["sid"] == [["ZTF"]]
+        assert self.step.metrics["sid"] == ["ZTF"]
