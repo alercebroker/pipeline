@@ -35,5 +35,3 @@ jobs:
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: false
           tags: "ghcr.io/alercebroker/test_${{ inputs.step-name }}:test"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
