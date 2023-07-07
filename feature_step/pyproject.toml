@@ -18,12 +18,13 @@ numba = ">=0.56.4,<0.57.0"
 celerite2 = ">=0.2.1,<0.3.0"
 jax = ">=0.4.10,<0.5.0"
 jaxlib = ">=0.4.10,<0.5.0"
-apf-base = "2.4.2"
+apf-base = "2.4.4"
 matplotlib = "3.7.1"
 GPy = {git = "https://github.com/SheffieldML/GPy.git", rev = "v1.10.0"} # Poetry requires scipy<1.5  if installed from PyPI # Requirement for turbo-fats, even though it is unused
 mhps = {git = "https://github.com/alercebroker/mhps.git"}
 P4J = {git = "https://github.com/alercebroker/P4J.git"}
 turbofats = {git = "https://github.com/alercebroker/turbo-fats.git", develop = true}
+pyroscope-io = "^0.8.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

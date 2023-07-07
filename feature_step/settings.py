@@ -106,9 +106,14 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
 
+use_profiling = bool(os.getenv("USE_PROFILING", True))
+pyroscope_server = os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
+
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "USE_PROFILING": use_profiling,
+    "PYROSCOPE_SERVER": pyroscope_server,
 }
