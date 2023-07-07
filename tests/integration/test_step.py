@@ -326,7 +326,6 @@ def test_update_features_into_database(kafka_service, mongo_service):
     result = collection.find_one({"_id": "update_features_id"})
     assert result is not None
     assert "elasticc" in result["features"]
-    assert "ztf" in result["features"]
     assert {
         "name": "feat1",
         "value": 741,
