@@ -69,7 +69,7 @@ jobs:
   build_and_push:
     name: Push Docker image to GitHub Packages
     needs: get_tags
-    runs-on: ubuntu-latest
+    runs-on: alerce-runner
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
