@@ -89,5 +89,3 @@ jobs:
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: true
           tags: ${{needs.get_tags.outputs.tags}}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
