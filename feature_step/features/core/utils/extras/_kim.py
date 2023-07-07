@@ -26,7 +26,7 @@ def kim(df: pd.DataFrame, period: float) -> pd.Series:
     sigma = np.std(mag)
     s = np.cumsum(mag - np.mean(mag)) / (mag.size * sigma)
     psi_cs = np.max(s) - np.min(s)
-    psi_eta = np.sum(np.diff(mag) ** 2) / ((mag.size - 1) * sigma ** 2)
+    psi_eta = np.sum(np.diff(mag) ** 2) / ((mag.size - 1) * sigma**2)
 
     return pd.Series([psi_cs, psi_eta], index=INDICES)
 

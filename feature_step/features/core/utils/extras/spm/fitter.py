@@ -116,9 +116,8 @@ def multi_band(
     params = result.x.reshape((-1, n_params))
 
     final = []
-    
+
     for fid in ELASTICC_FIDS:
-        
         if fid in fids:
             i = np.where(fids == fid)[0][0]
             mask = band == i
@@ -129,13 +128,13 @@ def multi_band(
             chi = (
                 np.nan
                 if dof < 1
-                else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2) / dof
+                else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2)
+                / dof
             )
             final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
 
         else:
-            final.append(pd.Series([np.nan]*7, index=_indices_with_fid(fid)))
-
+            final.append(pd.Series([np.nan] * 7, index=_indices_with_fid(fid)))
 
     return pd.concat(final)
 

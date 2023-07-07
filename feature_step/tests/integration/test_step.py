@@ -6,7 +6,6 @@ from features.step import FeaturesComputer
 from schema import SCHEMA
 from tests.data.message_factory import generate_input_batch
 from features.core.ztf import ZTFFeatureExtractor
-from features.utils.metrics import get_sid
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
