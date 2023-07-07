@@ -227,16 +227,15 @@ class UpdateFeaturesCommand(UpdateCommand):
             "features": self.data["features"],
         }
 
-        upsert_operation = {"$setOnInsert": {"features": {}}}
-        ops = [
-            UpdateOne(
-                self.criteria, upsert_operation, upsert=self.options.upsert
-            ),
-        ]
+        # Grug patch
+        # upsert_operation = {"$setOnInsert": {"features": {}}}
+        # ops = [
+        #    UpdateOne(
+        #        self.criteria, upsert_operation, upsert=self.options.upsert
+        #    ),
+        # ]
 
-        operation = {"$set": {f"features.{self.features_group}": features}}
-        ops.append(
-            UpdateOne(self.criteria, operation, upsert=self.options.upsert)
-        )
+        operation = {"$set": {"features": {self.features_group: features}}}
+        ops = [UpdateOne(self.criteria, operation, upsert=self.options.upsert)]
 
         return ops
