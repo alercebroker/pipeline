@@ -44,6 +44,7 @@ jobs:
     with:
       build-type: staging
       step-name: feature_step
+      step-name-prefix: ""
       base-folder: feature_step
       build-context: feature_step
 
@@ -53,6 +54,7 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_ztf
+      step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-ztf
@@ -63,6 +65,7 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_balto
+      step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-balto
@@ -73,6 +76,7 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_messi
+      step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-messi
@@ -83,6 +87,7 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_barney
+      step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-barney
@@ -93,6 +98,7 @@ jobs:
     with:
       build-type: staging
       step-name: lc_classification_step_toretto
+      step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-toretto

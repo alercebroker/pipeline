@@ -4,6 +4,7 @@
 import os
 from schema import SCHEMA
 from fastavro import schema
+from features.utils.metrics import get_sid
 
 EXTRACTOR = os.environ["FEATURE_EXTRACTOR"]
 
@@ -40,15 +41,16 @@ SCRIBE_PRODUCER_CONFIG = {
     "SCHEMA": schema.load_schema("scribe_schema.avsc"),
 }
 
+
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "aid", "alias": "aid"},
+        {"key": "detections", "alias": "sid", "format": get_sid},
     ],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {

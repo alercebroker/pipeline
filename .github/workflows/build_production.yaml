@@ -37,6 +37,7 @@ jobs:
     with:
       build-type: production
       step-name: feature_step
+      step-name-prefix: ""
       base-folder: feature_step
 
   lc_classification_step_ztf_production:
@@ -44,6 +45,7 @@ jobs:
     with:
       build-type: production
       step-name: lc_classification_step_ztf
+      step-name-prefix: ""
       base-folder: .
       file: lc_classification_step/Dockerfile-ztf
 
@@ -52,6 +54,7 @@ jobs:
     with:
       build-type: production
       step-name: lc_classification_step_balto
+      step-name-prefix: ""
       base-folder: .
       file: lc_classification_step/Dockerfile-balto
 
@@ -60,6 +63,7 @@ jobs:
     with:
       build-type: production
       step-name: lc_classification_step_messi
+      step-name-prefix: ""
       base-folder: .
       file: lc_classification_step/Dockerfile-messi
 
@@ -68,6 +72,7 @@ jobs:
     with:
       build-type: production
       step-name: lc_classification_step_barney
+      step-name-prefix: ""
       base-folder: .
       file: lc_classification_step/Dockerfile-barney
 
@@ -76,6 +81,7 @@ jobs:
     with:
       build-type: production
       step-name: lc_classification_step_toretto
+      step-name-prefix: ""
       base-folder: .
       file: lc_classification_step/Dockerfile-toretto
 

@@ -17,6 +17,10 @@ on:
       step-name:
         required: true
         type: string
+      step-name-prefix:
+        required: false
+        type: string
+        default: "monorepo_"
       build-type:
         required: true
         type: string
@@ -24,7 +28,7 @@ on:
 jobs:
   get_tags:
     env:
-      STEP_NAME: 'monorepo_${{ inputs.step-name }}'
+      STEP_NAME: '${{ inputs.step-name-prefix}}${{ inputs.step-name }}'
       BUILD_TYPE: ${{ inputs.build-type }}
       POETRY_HOME: /opt/poetry
     name: get tags

@@ -1,10 +1,12 @@
 import unittest
 from unittest import mock
 from apf.producers import GenericProducer
+from apf.consumers import KafkaConsumer
 from features.step import FeaturesComputer
 from schema import SCHEMA
 from tests.data.message_factory import generate_input_batch
 from features.core.ztf import ZTFFeatureExtractor
+from features.utils.metrics import get_sid
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -16,7 +18,7 @@ CONSUMER_CONFIG = {
     },
     "TOPICS": ["topic"],
     "consume.messages": "1",
-    "consume.timeout": "10",
+    "consume.timeout": "0",
 }
 
 PRODUCER_CONFIG = {
@@ -37,6 +39,14 @@ SCRIBE_PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
+METRICS_CONFIG = {
+    "EXTRA_METRICS": [
+        {"key": "aid", "alias": "aid"},
+        {"key": "detections", "alias": "sid", "format": get_sid},
+    ],
+    "PARAMS": {},
+}
+
 
 class TestZTFStep(unittest.TestCase):
     def setUp(self):
@@ -44,6 +54,7 @@ class TestZTFStep(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+            "METRICS_CONFIG": METRICS_CONFIG,
         }
         self.step = FeaturesComputer(
             ZTFFeatureExtractor,
@@ -52,11 +63,9 @@ class TestZTFStep(unittest.TestCase):
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
 
-    def test_step(self):
+    def test_execute(self):
         input_messages = generate_input_batch(5)
-
         result = self.step.execute(input_messages)
-
         self.assertEqual(len(result), 5)
         for output_message in result:
             self.assertIn("aid", output_message)
@@ -70,3 +79,16 @@ class TestZTFStep(unittest.TestCase):
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = self.step.scribe_producer.produce.call_count
         self.assertEqual(scribe_producer_call_count, 5)
+
+    def test_step(self):
+        input_messages = generate_input_batch(5)
+        consumer: mock.MagicMock = self.step.consumer
+        producer: mock.MagicMock = self.step.producer
+        consumer.mock_add_spec(KafkaConsumer)
+        producer.mock_add_spec(GenericProducer)
+        consumer.consume.return_value = input_messages
+        self.step.start()
+        self.step.scribe_producer.produce.assert_called()
+        scribe_producer_call_count = self.step.scribe_producer.produce.call_count
+        self.assertEqual(scribe_producer_call_count, 5)
+        assert self.step.metrics["sid"] == [["ZTF"]]
