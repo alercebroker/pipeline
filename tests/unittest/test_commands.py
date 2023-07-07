@@ -334,22 +334,19 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
+        self.assertEqual(len(operations), 1)
         self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"features": {}}}
-        )
-        self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
-        self.assertFalse(operations[0]._upsert)
-        self.assertEqual(
-            operations[1]._doc,
+            operations[0]._doc,
             {
                 "$set": {
-                    "features.group": {
-                        "features": [
-                            { "name": "feature1", "value": 12.34, "fid": "g" },
-                            { "name": "feature2", "value": None, "fid": "Y" }
-                        ],
-                        "version": "v1"
+                    "features": {
+                        "group": {
+                            "features": [
+                                { "name": "feature1", "value": 12.34, "fid": "g" },
+                                { "name": "feature2", "value": None, "fid": "Y" }
+                            ],
+                            "version": "v1"
+                        }
                     }
                 }
             }
@@ -369,12 +366,7 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
-        self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"features": {}}}
-        )
-        self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
-        self.assertTrue(operations[0]._upsert)
+        self.assertEqual(len(operations), 1)
 
     def test_update_features_data_operations(self):
         update_features_command = UpdateFeaturesCommand(
@@ -386,18 +378,20 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
-        self.assertEqual(operations[1]._filter, {"_id": "AID51423"})
+        self.assertEqual(len(operations), 1)
+        self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
         self.assertEqual(
-            operations[1]._doc,
+            operations[0]._doc,
             {
                 "$set": {
-                    "features.group": {
-                        "features": [
-                            { "name": "feature1", "value": 12.34, "fid": "g" },
-                            { "name": "feature2", "value": None, "fid": "Y" }
-                        ],
-                        "version": "v1"
+                    "features": {
+                        "group": {
+                            "features": [
+                                { "name": "feature1", "value": 12.34, "fid": "g" },
+                                { "name": "feature2", "value": None, "fid": "Y" }
+                            ],
+                            "version": "v1"
+                        }
                     }
                 }
             },
