@@ -67,7 +67,7 @@ jobs:
       TEST_MESSI_HEADER_QUANTILES_PATH: ${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}
       TEST_MESSI_FEATURE_QUANTILES_PATH: ${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}
       TEST_TORETTO_MODEL_PATH: ${{ secrets.TEST_TORETTO_MODEL_PATH }}
-      TEST_BARNEY_MODEL_PATH: ${{ secrets.TEST_TORETTO_MODEL_PATH }}
+      TEST_BARNEY_MODEL_PATH: ${{ secrets.TEST_BARNEY_MODEL_PATH }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
