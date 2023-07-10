@@ -15,5 +15,7 @@ FROM builder
 COPY ./lc_classification_step/lc_classification /app/lc_classification
 COPY ./lc_classification_step/scripts /app/scripts
 COPY ./lc_classification_step/README.md /app/
+COPY ./lc_classification_step/settings.py /app/settings.py
+COPY ./lc_classification_step/schemas.py /app/schemas.py
 RUN poetry install --no-interaction --only-root
-CMD ["poetry", "run", "python", "scripts/run-step.py"]
+CMD ["poetry", "run", "python", "scripts/run_step.py"]
