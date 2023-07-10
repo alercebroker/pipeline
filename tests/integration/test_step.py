@@ -2,6 +2,8 @@ import json
 import os
 import pytest
 import unittest
+from db_plugins.db.generic import new_DBConnection
+from db_plugins.db.mongo import MongoDatabaseCreator
 from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
 
@@ -54,6 +56,8 @@ step_config = {
 
 step = MongoScribe(config=step_config)
 producer = KafkaProducer(config=PRODUCER_CONFIG)
+db = new_DBConnection(MongoDatabaseCreator)
+db.connect(DB_CONFIG["MONGO"])
 
 
 def test_insert_into_database(kafka_service, mongo_service):
@@ -64,6 +68,7 @@ def test_insert_into_database(kafka_service, mongo_service):
             "data": {"_id": "inserted_id1", "field": "some_value"},
         }
     )
+    db.create_db()
     producer.produce({"payload": command})
     command = json.dumps(
         {
