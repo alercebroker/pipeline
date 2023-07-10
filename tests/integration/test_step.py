@@ -340,14 +340,14 @@ def test_print_into_console(kafka_service, mongo_service):
             {
                 "collection": "object",
                 "type": "insert",
-                "data": {"field": "some printed value"},
+                "data": {"_id": "some printed value"},
             }
         ),
         json.dumps(
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"field": "some printed value"},
+                "criteria": {"_id": "some printed value"},
                 "data": {"field2": "hehe"},
             }
         ),
@@ -358,5 +358,5 @@ def test_print_into_console(kafka_service, mongo_service):
 
     os.environ["MOCK_DB_COLLECTION"] = ""
     collection = step.db_client.connection.database["object"]
-    result = collection.find({"field2": "hehe"})
+    result = collection.find({"_id": "some printed value"})
     assert len(list(result)) == 0
