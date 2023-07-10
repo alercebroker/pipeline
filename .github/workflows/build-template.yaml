@@ -94,4 +94,4 @@ jobs:
           push: true
           tags: ${{needs.get_tags.outputs.tags}}
           build-args:
-            - GH_TOKEN=${secrets.ADMIN_TOKEN}
+            - GH_TOKEN=${{secrets.ADMIN_TOKEN}}
