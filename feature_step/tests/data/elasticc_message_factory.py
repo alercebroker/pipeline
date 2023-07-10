@@ -91,7 +91,7 @@ def generate_input_batch(n: int, bands: list[str], offset=0) -> list[dict]:
         meandec = random.uniform(-90, 90)
         detections = []
         for band in bands:
-            detections.extend(generate_alert(aid, band, random.randint(5, 10), m))
+            detections.extend(generate_alert(aid, band, random.randint(6, 10), m))
         non_det = generate_non_det(aid, random.randint(0, 1), m)
         #candid = int(str(m + 1).ljust(8, "0"))
         #detections[-1]["candid"] = candid

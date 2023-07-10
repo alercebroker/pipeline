@@ -90,10 +90,9 @@ class DetectionsHandler(BaseHandler):
         first, second = bands
 
         column = f"mag{'_ml' if ml else ''}"
-        mags = self.agg(
-            column, func, by_fid=True, surveys=surveys, bands=bands, **kwargs
-        )
+        mags = self.agg(column, func, by_fid=True, surveys=surveys, **kwargs)
         mags = functions.fill_index(mags, fid=bands)
+
         if flux:  # + 1 in denominator to avoid division errors
             return mags.xs(first, level="fid") / (mags.xs(second, level="fid") + 1)
         return mags.xs(first, level="fid") - mags.xs(second, level="fid")
