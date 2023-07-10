@@ -24,9 +24,9 @@ on:
       build-type:
         required: true
         type: string
-  secrets:
-    GH_TOKEN:
-      required: false
+    secrets:
+      GH_TOKEN:
+        required: false
 
 jobs:
   get_tags:
