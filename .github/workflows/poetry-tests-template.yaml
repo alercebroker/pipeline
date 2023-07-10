@@ -81,6 +81,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
+          poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
           poetry install ${{ inputs.poetry-install }}
       - name: Tests with pytest
         run: |

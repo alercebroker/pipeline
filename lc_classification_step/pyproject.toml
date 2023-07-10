@@ -49,19 +49,19 @@ lc_classifier = {git = "https://github.com/alercebroker/lc_classifier", branch =
 alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers" }
 
 [tool.poetry.group.toretto.dependencies]
-alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier"] }
+alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers",  extras = ["toretto"] }
 
 [tool.poetry.group.messi.dependencies]
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi"] }
 
 [tool.poetry.group.balto.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"]}
 
 [tool.poetry.group.barney.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_header_classifier"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney"] }
 
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["rf_features_classifier", "messi", "rf_features_header_classifier", "balto"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney", "messi", "toretto", "balto"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"

@@ -203,47 +203,57 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+
   lc_classification_step_build_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_ztf"
-      file: "lc_classification_step/Dockerfile-ztf"
-
+      file: "Dockerfile-ztf"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_balto"
-      file: "lc_classification_step/Dockerfile-balto"
+      file: "Dockerfile-balto"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_messi"
-      file: "lc_classification_step/Dockerfile-messi"
+      file: "Dockerfile-messi"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step-barney"
-      file: "lc_classification_step/Dockerfile-barney"
+      file: "Dockerfile-barney"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step-toretto"
-      file: "lc_classification_step/Dockerfile-toretto"
+      file: "Dockerfile-toretto"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_lint:
     needs: detect_changes
