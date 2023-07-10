@@ -42,48 +42,58 @@ jobs:
 
   lc_classification_step_ztf_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lc_classification_step_ztf
       step-name-prefix: ""
-      base-folder: .
-      file: lc_classification_step/Dockerfile-ztf
+      build-context: lc_classification_step
+      base-folder: lc_classification_step
+      file: Dockerfile-ztf
 
   lc_classification_step_balto_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lc_classification_step_balto
       step-name-prefix: ""
-      base-folder: .
-      file: lc_classification_step/Dockerfile-balto
+      build-context: lc_classification_step
+      base-folder: lc_classification_step
+      file: Dockerfile-balto
 
   lc_classification_step_messi_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lc_classification_step_messi
       step-name-prefix: ""
-      base-folder: .
-      file: lc_classification_step/Dockerfile-messi
+      build-context: lc_classification_step
+      base-folder: lc_classification_step
+      file: Dockerfile-messi
 
   lc_classification_step_barney_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lc_classification_step_barney
       step-name-prefix: ""
-      base-folder: .
-      file: lc_classification_step/Dockerfile-barney
+      build-context: lc_classification_step
+      base-folder: lc_classification_step
+      file: Dockerfile-barney
 
   lc_classification_step_toretto_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lc_classification_step_toretto
       step-name-prefix: ""
-      base-folder: .
-      file: lc_classification_step/Dockerfile-toretto
+      build-context: lc_classification_step
+      base-folder: lc_classification_step
+      file: Dockerfile-toretto
 
   lightcurve_step_production:
     uses: ./.github/workflows/build-template.yaml
