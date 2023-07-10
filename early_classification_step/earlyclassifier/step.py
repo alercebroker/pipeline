@@ -1,10 +1,9 @@
 import sys
 import os
-import logging
 import requests
+import logging
 import datetime
 import pandas as pd
-
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from db_plugins.db.sql.models import Object, Probability, Step
@@ -16,7 +15,6 @@ MODEL = os.path.join(DIRNAME, "../model")
 sys.path.append(MODEL)
 
 from deployment import StampClassifier
-
 
 FULL_ASTEROID_PROBABILITY = {
     "AGN": 0,

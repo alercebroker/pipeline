@@ -46,9 +46,7 @@ class PSQLIntegrationTest(unittest.TestCase):
         }
         self.mock_session = mock.create_autospec(earlyclassifier.step.requests.Session)
         self.step = EarlyClassifier(
-            config=self.step_config,
-            request_session=self.mock_session,
-            test_mode=True
+            config=self.step_config, request_session=self.mock_session, test_mode=True
         )
 
     @classmethod
