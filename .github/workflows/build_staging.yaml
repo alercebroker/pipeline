@@ -55,9 +55,11 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_ztf
       step-name-prefix: ""
-      build-context: .
+      build-context: lc_classification_step
       base-folder: lc_classification_step
       file: Dockerfile-ztf
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_balto_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -66,9 +68,11 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_balto
       step-name-prefix: ""
-      build-context: .
+      build-context: lc_classification_step
       base-folder: lc_classification_step
       file: Dockerfile-balto
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_messi_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -77,9 +81,11 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_messi
       step-name-prefix: ""
-      build-context: .
+      build-context: lc_classification_step
       base-folder: lc_classification_step
       file: Dockerfile-messi
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_barney_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -88,9 +94,11 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_barney
       step-name-prefix: ""
-      build-context: .
+      build-context: lc_classification_step
       base-folder: lc_classification_step
       file: Dockerfile-barney
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_toretto_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -99,9 +107,11 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_toretto
       step-name-prefix: ""
-      build-context: .
+      build-context: lc_classification_step
       base-folder: lc_classification_step
       file: Dockerfile-toretto
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_staging:
     uses: ./.github/workflows/build-template.yaml
