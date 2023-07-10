@@ -27,3 +27,4 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: mongo
     ports:
       - "27017:27017"
+    command: mongod --notablescan
