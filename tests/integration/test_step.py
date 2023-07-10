@@ -65,6 +65,12 @@ class MongoIntegrationTest(unittest.TestCase):
         cls.step = MongoScribe(config=step_config)
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
+    def tearDown(self):
+        object_collection = self.db.database["object"]
+        object_collection.delete_many({})
+        object_detection = self.db.database["detection"]
+        object_detection.delete_many({})
+
     def test_insert_into_database(self):
         command = json.dumps(
             {
@@ -110,7 +116,7 @@ class MongoIntegrationTest(unittest.TestCase):
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         detection_coll = self.step.db_client.connection.database["detection"]
-        result = collection.find_one({"_id": "inserted_id1"})
+        result = collection.find_one({"_id": "inserted_id10"})
         assert result is not None
         assert result["field"] == "some_value"
         result_detection = detection_coll.find_one({"_id": "inserted_id2"})
