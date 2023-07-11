@@ -1,11 +1,12 @@
 FROM python:3.9
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+RUN pip install poetry
 
 WORKDIR /app
+
+COPY poetry.lock pyproject.toml /app/
+RUN poetry install --no-interaction
+
 COPY . /app
 
-WORKDIR /app/scripts
-
-CMD ["python", "run_step.py"]
+CMD ["poetry", "run", "python", "scripts/run_step.py"]
