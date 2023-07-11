@@ -296,13 +296,9 @@ jobs:
       base-folder: 'lightcurve-step' 
       sources-folder: "lightcurve_step"
       test-folder: "tests/unittest"
-<<<<<<< HEAD
-=======
-      test-dependencies: "pytest pytest-cov"
-      test-command: "python -m pytest -x tests/unittest --cov lightcurve_step --cov-report xml"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
->>>>>>> a1ebf03769fea48574681158e5d63136e7047f9a
+
   lightcurve_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
@@ -312,12 +308,8 @@ jobs:
       sources-folder: "lightcurve_step"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
-<<<<<<< HEAD
-=======
-      test-command: "python -m pytest -x tests/integration"
-    secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
->>>>>>> a1ebf03769fea48574681158e5d63136e7047f9a
+
   lightcurve_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
