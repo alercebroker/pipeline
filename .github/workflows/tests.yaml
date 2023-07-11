@@ -296,6 +296,7 @@ jobs:
       base-folder: 'lightcurve-step' 
       sources-folder: "lightcurve_step"
       test-folder: "tests/unittest"
+      python-version: '3.9'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
@@ -308,6 +309,7 @@ jobs:
       sources-folder: "lightcurve_step"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
+      python-version: '3.9'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
