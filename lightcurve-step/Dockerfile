@@ -1,8 +1,12 @@
 FROM python:3.9
 
-COPY . /app
-WORKDIR /app
-COPY pyproject.toml pyproject.toml
-RUN pip install .[apf]
+RUN pip install poetry
 
-CMD ["python", "scripts/run_step.py"]
+WORKDIR /app
+
+COPY poetry.lock pyproject.toml /app/
+RUN poetry install --no-interaction
+
+COPY . /app
+
+CMD ["poetry", "run", "python", "scripts/run_step.py"]

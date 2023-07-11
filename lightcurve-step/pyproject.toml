@@ -1,18 +1,17 @@
 [tool.poetry]
 name = "lightcurve-step"
-version = "1.0.1a26"
-description = "Lightcurve step"
+version = "1.0.0"
+description = "Light curve step"
 authors = []
 readme = "README.md"
-packages = [{include = "lightcurve_step"}]
-
-[tool.poetry.scripts]
-step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
 python = "~3.9.0"
 apf_base = "~2.4.2"
 db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.0"}
+fastavro = "~1.4.12"
+prometheus-client = "~0.16.0"
+confluent-kafka = "~2.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
