@@ -9,7 +9,9 @@ def test_step_initialization(kafka_service, env_variables):
     assert isinstance(step_creator(), PrvCandidatesStep)
 
 
-def test_result_has_everything(kafka_service, env_variables, kafka_consumer: KafkaConsumer):
+def test_result_has_everything(
+    kafka_service, env_variables, kafka_consumer: KafkaConsumer
+):
     from scripts.run_step import step_creator
 
     step_creator().start()
