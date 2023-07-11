@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "lightcurve-step"
+version = "1.0.1a26"
+description = "Lightcurve step"
+authors = []
+readme = "README.md"
+packages = [{include = "lightcurve_step"}]
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+python = "~3.9.0"
+apf_base = "~2.4.2"
+db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.0"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-docker = "^1.0.1"
+
+[tool.black]
+line-length = 88
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

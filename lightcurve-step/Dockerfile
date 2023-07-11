@@ -1,10 +1,8 @@
 FROM python:3.9
 
-WORKDIR /app
-
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
-
 COPY . /app
+WORKDIR /app
+COPY pyproject.toml pyproject.toml
+RUN pip install .[apf]
 
 CMD ["python", "scripts/run_step.py"]
