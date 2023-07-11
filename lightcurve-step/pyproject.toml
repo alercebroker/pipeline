@@ -23,6 +23,9 @@ pytest-docker = "^1.0.1"
 [tool.black]
 line-length = 88
 
+[tool.pytest.ini_options]
+addopts = "-x --cov sorting_hat_step --cov-report xml"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
