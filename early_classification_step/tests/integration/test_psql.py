@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from unittest import mock
 import subprocess
 import time
@@ -17,7 +18,7 @@ import random
 
 FILE_PATH = os.path.dirname(__file__)
 
-
+@pytest.mark.usefixtures("config_database")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
