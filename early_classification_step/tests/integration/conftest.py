@@ -4,6 +4,14 @@ import os
 
 
 @pytest.fixture(scope="session")
+def docker_compose_command():
+    v2 = False
+    if os.getenv("COMPOSE", "v1") == "v2":
+        v2 = True
+    return "docker compose" if v2 else "docker-compose"
+
+
+@pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return os.path.join(
         str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml"
@@ -17,17 +25,19 @@ def config_database(docker_ip, docker_services):
     port = docker_services.port_for("postgres", 5432)
     server = "{}:{}".format(docker_ip, port)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
+        timeout=30.0,
+        pause=0.1,
+        check=lambda: is_responsive_psql(port),
     )
     return server
 
 
-def is_responsive_psql(docker_ip, port):
+def is_responsive_psql(port):
     try:
         conn = psycopg2.connect(
             dbname="postgres",
             user="postgres",
-            host=docker_ip,
+            host="localhost",
             password="postgres",
             port=port,
         )
