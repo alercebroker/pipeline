@@ -489,26 +489,22 @@ jobs:
   xmatch_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
-      sources-folder: 'xmatch_step'
+      poetry-install: ''
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov xmatch_step --cov-report xml'
   xmatch_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
-      sources-folder: 'xmatch_step'
-      test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
+      poetry-install: ''
+      test-folder: 'tests/integration'
   xmatch_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step == 'true'
@@ -516,6 +512,7 @@ jobs:
     with:
       base-folder: "xmatch_step"
       step-name: "xmatch_step"
+  
 
   libs_alerce_classifiers_lint:
     needs: detect_changes
