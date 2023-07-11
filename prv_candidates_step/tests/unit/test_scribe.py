@@ -23,11 +23,17 @@ def test_produce_scribe(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"aid": non_detection["aid"], "fid": non_detection["fid"], "mjd": non_detection["mjd"]},
+        "criteria": {
+            "aid": non_detection["aid"],
+            "fid": non_detection["fid"],
+            "mjd": non_detection["mjd"],
+        },
         "data": non_detection,
         "options": {"upsert": True},
     }
-    step.scribe_producer.produce.assert_called_once_with({"payload": json.dumps(expected_data)})
+    step.scribe_producer.produce.assert_called_once_with(
+        {"payload": json.dumps(expected_data)}
+    )
 
 
 def test_post_execute(env_variables):
@@ -49,8 +55,14 @@ def test_post_execute(env_variables):
     expected_data = {
         "collection": "non_detection",
         "type": "update",
-        "criteria": {"aid": non_detection["aid"], "fid": non_detection["fid"], "mjd": non_detection["mjd"]},
+        "criteria": {
+            "aid": non_detection["aid"],
+            "fid": non_detection["fid"],
+            "mjd": non_detection["mjd"],
+        },
         "data": non_detection,
         "options": {"upsert": True},
     }
-    step.scribe_producer.produce.assert_called_once_with({"payload": json.dumps(expected_data)})
+    step.scribe_producer.produce.assert_called_once_with(
+        {"payload": json.dumps(expected_data)}
+    )
