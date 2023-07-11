@@ -2,6 +2,7 @@ import pytest
 import psycopg2
 import os
 
+
 @pytest.fixture(scope="session")
 def docker_compose_command():
     v2 = False
@@ -24,7 +25,9 @@ def config_database(docker_ip, docker_services):
     port = docker_services.port_for("postgres", 5432)
     server = "{}:{}".format(docker_ip, port)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(port),
+        timeout=30.0,
+        pause=0.1,
+        check=lambda: is_responsive_psql(port),
     )
     return server
 

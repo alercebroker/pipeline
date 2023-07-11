@@ -30,7 +30,7 @@ def plot_class_atlas_hist(
     plt.xticks(label_values, class_names_short[label_values], rotation=90)
     # plt.xticks(range(len_nonzero),
     #            indices[:len_nonzero], rotation=90)
-    plt.ylim([1, 10 ** 5])
+    plt.ylim([1, 10**5])
     plt.xlim([-1, len(label_values)])
     plt.ylabel("N° Samples")
     plt.xlabel("Label Names")

@@ -18,6 +18,7 @@ import random
 
 FILE_PATH = os.path.dirname(__file__)
 
+
 @pytest.mark.usefixtures("config_database")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
