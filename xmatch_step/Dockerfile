@@ -24,7 +24,8 @@ COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 
-FROM builder as production
+FROM python:3.7-slim as production
+RUN pip install poetry
 
 COPY --from=builder /app/.venv /app/.venv
 
