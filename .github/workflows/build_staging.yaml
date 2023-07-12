@@ -120,6 +120,7 @@ jobs:
     with:
       build-type: staging
       step-name: lightcurve_step
+      step-name-prefix: ""
       base-folder: lightcurve-step
       build-context: lightcurve-step
 
