@@ -183,5 +183,6 @@ jobs:
     with:
       build-type: staging
       step-name: xmatch_step
+      step-name-prefix: ""
       base-folder: xmatch_step
       build-context: xmatch_step
