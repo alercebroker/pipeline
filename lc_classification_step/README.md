@@ -68,7 +68,16 @@ PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoPars
 ```
 
 ### Setup for Messi
-TODO
+The following environment variables will be needed in adition to the regular step configuration:
+
+``` 
+PREDICTOR_CLASS=lc_classification.predictors.messi.messi_predictor.MessiPredictor
+PREDICTOR_PARSER_CLASS=lc_classification.predictors.messi.messi_parser.MessiParser
+MODEL_PATH=path_to_model.pt
+HEADER_QUANTILES_PATH=path_to/header_quantiles/
+FEATURE_QUANTILES_PATH=path_to/header_quantiles/
+```
+
 
 ### Setup for Barney
 The following environment variables will be needed in adition to the regular step configuration:

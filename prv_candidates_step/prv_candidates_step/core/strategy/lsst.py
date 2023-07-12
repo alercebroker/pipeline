@@ -51,7 +51,9 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
     for candidate in prv_candidates:
         candidate = LSSTPreviousDetectionsParser.parse(candidate)
-        candidate.update({"aid": aid, "has_stamp": False, "forced": False, "parent_candid": parent})
+        candidate.update(
+            {"aid": aid, "has_stamp": False, "forced": False, "parent_candid": parent}
+        )
         candidate.pop("stamps", None)
         detections.append(candidate)
 
@@ -59,7 +61,9 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     prv_forced = pickle.loads(prv_forced) if prv_forced else []
     for candidate in prv_forced:
         candidate = LSSTForcedPhotometryParser.parse(candidate, ra, dec)
-        candidate.update({"aid": aid, "has_stamp": False, "forced": True, "parent_candid": parent})
+        candidate.update(
+            {"aid": aid, "has_stamp": False, "forced": True, "parent_candid": parent}
+        )
         candidate.pop("stamps", None)
         detections.append(candidate)
 

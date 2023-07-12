@@ -26,6 +26,7 @@ jobs:
     with:
       build-type: staging
       step-name: correction_step
+      step-name-prefix: ""
       base-folder: correction_step
       build-context: correction_step
 

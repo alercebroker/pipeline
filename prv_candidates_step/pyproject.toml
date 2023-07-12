@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "prv-candidates-step"
+version = "0.1.1a3"
+description = "Previous Detections Step"
+authors = []
+readme = "README.md"
+packages = [{include = "prv_candidates_step"}]
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+python = "^3.8"
+confluent-kafka = "2.0.2"
+apf-base = "2.4.2"
+survey-parser-plugins = {git = "https://github.com/alercebroker/survey-parser-plugins", rev = "2.3.7"}
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-docker = "^1.0.1"
+pytest-mock = "^3.11.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.0.0"
+
+[tool.black]
+line-length = 88
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
