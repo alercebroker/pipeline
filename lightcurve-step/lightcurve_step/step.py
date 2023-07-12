@@ -1,5 +1,6 @@
 from typing import List
 import pandas as pd
+import pickle
 import numpy as np
 from apf.core.step import GenericStep
 from db_plugins.db.mongo import MongoConnection
@@ -84,6 +85,13 @@ class LightcurveStep(GenericStep):
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:
+        def serialize_dia_object(ef: dict):
+            if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
+                return ef
+            
+            ef["diaObject"] = pickle.dumps(ef["diaObject"])
+            return ef
+
         detections = result["detections"].replace(np.nan, None).groupby("aid")
         try:  # At least one non-detection
             non_detections = (
@@ -97,6 +105,7 @@ class LightcurveStep(GenericStep):
                 nd = non_detections.get_group(aid).to_dict("records")
             except KeyError:
                 nd = []
+            dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
             output.append(
                 {
                     "aid": aid,
