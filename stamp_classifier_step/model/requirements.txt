@@ -21,12 +21,12 @@ MarkupSafe==2.0
 numpy >=1.16
 pandas==0.24.2
 pkginfo==1.5.0.1
-protobuf==3.8.0
+protobuf==3.15.3
 Pygments==2.12
 python-dateutil==2.8.0
 pytz==2019.1
 readme-renderer==24.0
-requests==2.22.0
+requests==2.22
 requests-toolbelt==0.9.1
 scikit-learn>=0.21.2
 scipy==1.3.0
@@ -35,7 +35,7 @@ tensorflow >=1.14.0,<2.0
 termcolor==1.1.0
 tqdm==4.32.1
 twine==1.13.0
-urllib3==1.25.3
+urllib3==1.25.4
 webencodings==0.5.1
 Werkzeug==0.15.4
 wrapt==1.11.2
