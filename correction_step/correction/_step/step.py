@@ -1,4 +1,5 @@
 from __future__ import annotations
+import pickle
 import json
 import logging
 
@@ -108,9 +109,12 @@ class CorrectionStep(GenericStep):
             set_on_insert = not detection.get("has_stamp", False)
             extra_fields = detection["extra_fields"].copy()
             # remove possible elasticc extrafields
-            for to_remove in ["diaObject", "prvDiaSources", "prvDiaForcedSources"]:
+            for to_remove in ["prvDiaSources", "prvDiaForcedSources"]:
                 if to_remove in extra_fields:
                     extra_fields.pop(to_remove)
+
+            if "diaObject" in extra_fields:
+                extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
 
             detection["extra_fields"] = extra_fields
             scribe_data = {
