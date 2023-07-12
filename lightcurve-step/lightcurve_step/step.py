@@ -88,7 +88,7 @@ class LightcurveStep(GenericStep):
         def serialize_dia_object(ef: dict):
             if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
                 return ef
-            
+
             ef["diaObject"] = pickle.dumps(ef["diaObject"])
             return ef
 

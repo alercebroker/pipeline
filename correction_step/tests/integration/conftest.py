@@ -1,5 +1,6 @@
 import os
 import pathlib
+import pickle
 import logging
 import random
 import uuid
@@ -85,7 +86,7 @@ def produce_messages(topic):
                     "field": "value",
                     "prvDiaForcedSources": b"bainari",
                     "prvDiaSources": b"bainari2",
-                    "diaObject": b"bainari2"
+                    "diaObject": pickle.dumps("bainari2"),
                 }
         producer.produce(message)
 
