@@ -584,6 +584,9 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   stamp_classifier_step_unittest_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
@@ -596,6 +599,9 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   stamp_classifiier_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
@@ -608,4 +614,8 @@ jobs:
       test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker'
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+
 
