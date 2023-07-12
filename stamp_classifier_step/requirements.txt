@@ -1,4 +1,4 @@
-git+https://github.com/alercebroker/atlas_stamp_classifier.git@main
+atlas_stamp_classifier @ git+https://alerceadmin:${GH_TOKEN}@github.com/alercebroker/atlas_stamp_classifier.git@main
 apf_base<2.0
 astropy
 pandas
