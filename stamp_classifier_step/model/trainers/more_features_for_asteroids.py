@@ -12,7 +12,6 @@ from parameters import param_keys, general_keys
 from modules.data_loaders.frame_to_input_with_features import FrameToInputWithFeatures
 
 if __name__ == "__main__":
-
     N_TRAINS = 5
     DATA_PATH = os.path.join(PROJECT_PATH, "../pickles", "training_set_May-06-2020.pkl")
     # DATA_PATH = "../../pickles/converted_data.pkl"

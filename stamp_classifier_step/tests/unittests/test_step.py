@@ -6,14 +6,14 @@ from unittest.mock import MagicMock
 
 def test_format_output_message():
     predictions = {
-            "ZTF20aaelulu": {
-                "agn": 0.5,
-                "bogus": 0.3,
-                "asteroid": 0.1,
-                "sn": 0.05,
-                "vs": 0.05,
-            },
-        }
+        "ZTF20aaelulu": {
+            "agn": 0.5,
+            "bogus": 0.3,
+            "asteroid": 0.1,
+            "sn": 0.05,
+            "vs": 0.05,
+        },
+    }
     consumer_mock = MagicMock()
     producer_mock = MagicMock()
     strategy_mock = MagicMock()
@@ -62,14 +62,14 @@ def test_write_predictions():
         strategy=strategy_mock,
     )
     predictions = {
-            "ZTF20aaelulu": {
-                "agn": 0.5,
-                "bogus": 0.3,
-                "asteroid": 0.1,
-                "sn": 0.05,
-                "vs": 0.05,
-            }
+        "ZTF20aaelulu": {
+            "agn": 0.5,
+            "bogus": 0.3,
+            "asteroid": 0.1,
+            "sn": 0.05,
+            "vs": 0.05,
         }
+    }
 
     step.write_predictions(predictions)
     scribe_data = {
@@ -85,7 +85,7 @@ def test_write_predictions():
             "sn": 0.05,
             "vs": 0.05,
         },
-        "options": {"upsert": True, "set_on_insert": True}
+        "options": {"upsert": True, "set_on_insert": True},
     }
     scribe_producer.produce.assert_called_once_with(
         {"payload": json.dumps(scribe_data)}

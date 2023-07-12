@@ -6,7 +6,7 @@ from apf.producers import KafkaProducer
 import tensorflow as tf
 import pytest
 
-if tf.__version__.startswith('1'):
+if tf.__version__.startswith("1"):
     pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 

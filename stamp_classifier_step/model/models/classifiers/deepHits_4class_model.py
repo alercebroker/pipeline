@@ -25,6 +25,7 @@ from modules.data_set_generic import Dataset
 from modules.data_splitters.data_splitter_n_samples import DatasetDividerInt
 from parameters import param_keys
 
+
 # TODO: refactor train test and validate
 class DeepHiTS4ClassModel(DeepHitsModel):  # , Base4ClassModel):
     """

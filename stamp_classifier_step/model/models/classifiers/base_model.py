@@ -41,7 +41,6 @@ class BaseModel(object):
     """
 
     def __init__(self, params=None, model_name="Base", session=None):
-
         self.model_name = model_name
 
         # TODO put this into an object; a param manager
@@ -283,7 +282,6 @@ class BaseModel(object):
         # train model
         self._init_learning_rate()
         while it < self.params[param_keys.TRAIN_ITERATIONS_HORIZON]:
-
             # perform a trainning iteration
             if it % self.params[param_keys.PRINT_EVERY] != 0:
                 self.sess.run(

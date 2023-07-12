@@ -72,7 +72,6 @@ class MaxPool(Module):
         self.R = None
 
     def check_shapePy(self, R):
-
         activations_shape = self.activations.get_shape().as_list()
         # if len(R_shape)!=4:
         if len(R.shape) != 4:

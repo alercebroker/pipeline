@@ -33,7 +33,6 @@ class AddBogus(object):
         self.save_path = save_path
 
     def json2dataframe(self):
-
         for i, alert in enumerate(self.bogus_alerts):
             object_id = alert["objectId"]
             images = {}

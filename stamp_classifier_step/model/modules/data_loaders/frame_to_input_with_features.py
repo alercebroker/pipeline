@@ -172,7 +172,6 @@ class FrameToInputWithFeatures(FrameToInput):
 
 
 if __name__ == "__main__":
-
     DATA_PATH = os.path.join(
         PROJECT_PATH, "..", "pickles/full_unlabeled_set/combined_set/full_frame.pkl"
     )

@@ -71,7 +71,6 @@ class Linear(Module):
 
     ##Aqui no se inicializan los pesos en cada forward que se haga!??!?!?!?!
     def forward(self, input_tensor):
-
         # input tensor shape=(samples, feturemap_h, featuremap_w, channels)
         # get input sensor and its dimensions
         self.input_tensor = input_tensor

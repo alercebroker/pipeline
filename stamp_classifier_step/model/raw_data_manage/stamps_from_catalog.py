@@ -67,7 +67,6 @@ class StampsFromCatalog(object):
 
 
 if __name__ == "__main__":
-
     today = date.today()
     today_str = today.strftime("%b-%d-%Y")
 

@@ -31,7 +31,6 @@ def remove_feature(feature_list, clipping_values, feature_to_remove):
 
 
 if __name__ == "__main__":
-
     N_TRAINS = 3
     DATA_PATH = os.path.join(PROJECT_PATH, "../pickles", "training_set_Jun-22-2020.pkl")
     # DATA_PATH = "../../pickles/converted_data.pkl"

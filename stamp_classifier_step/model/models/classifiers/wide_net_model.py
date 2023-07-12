@@ -24,6 +24,7 @@ from modules.data_loaders.frame_to_input import FrameToInput
 from modules.networks.wide_net import WideNet
 from parameters import param_keys, general_keys
 
+
 # TODO: refactor train test and validate
 class WideNetModel(DeepHiTSNanNormCropStampModel):
     """

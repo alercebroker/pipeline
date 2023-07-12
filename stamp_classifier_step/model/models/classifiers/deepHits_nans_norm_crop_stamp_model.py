@@ -21,6 +21,7 @@ from models.classifiers.deepHits_4class_model import DeepHiTS4ClassModel
 from modules.data_loaders.frame_to_input_with_features import FrameToInputWithFeatures
 from parameters import param_keys
 
+
 # TODO: refactor train test and validate
 class DeepHiTSNanNormCropStampModel(DeepHiTS4ClassModel):
     """

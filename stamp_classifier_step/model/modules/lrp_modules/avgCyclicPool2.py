@@ -27,6 +27,7 @@ from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import sparse_ops
 
+
 # avCyclicPool2 is more stable but may be slower or expensive
 class CyclicAvgPool(Module):
     def __init__(self, pool_size=2, pool_stride=None, pad="SAME", name="avgpool"):
@@ -94,7 +95,6 @@ class CyclicAvgPool(Module):
     #     return R
 
     def check_shapePy(self, R):
-
         activations_shape = self.activations.get_shape().as_list()
         # if len(R_shape)!=4:
         if len(R.shape) != 4:

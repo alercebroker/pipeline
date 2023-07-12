@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from modules.data_set_generic import Dataset as data_set_class
 
+
 # Todo: CODE
 class DatasetDivider(object):
 
@@ -30,7 +31,6 @@ class DatasetDivider(object):
         test_random_seed=42,
         val_random_seed=42,
     ):
-
         self.data_set_obj = data_set_obj
         if data_set_obj:  # is not None
             self.batch_size = self.data_set_obj.batch_size

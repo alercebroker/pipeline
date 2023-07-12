@@ -136,7 +136,6 @@ class DeepHiTSAtlasWithFeatures(DeepHiTSWithFeaturesEntropyReg):
         # train model
         self._init_learning_rate()
         while it < self.params[param_keys.TRAIN_ITERATIONS_HORIZON]:
-
             # perform a trainning iteration
             if it % self.params[param_keys.PRINT_EVERY] != 0:
                 self.sess.run(

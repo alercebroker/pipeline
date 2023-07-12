@@ -62,7 +62,6 @@ class BaseAEVisualizer(BaseModel):
         model_name="BaseAEVisualizer",
         session=None,
     ):
-
         # with tf.variable_scope("model2vis"):
         #   self.model_to_visualize = model_to_visualize
 
@@ -416,7 +415,6 @@ class BaseAEVisualizer(BaseModel):
         # train model
         self._init_learning_rate()
         while it < self.params[param_keys.TRAIN_ITERATIONS_HORIZON]:
-
             # perform a trainning iteration
             if it % self.params[param_keys.PRINT_EVERY] != 0:
                 self.sess.run(

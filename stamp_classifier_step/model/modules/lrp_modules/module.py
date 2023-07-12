@@ -141,7 +141,6 @@ class Module:
             print("Unknown lrp variant", lrp_var)
 
     def lrpPy(self, sess, feed_dict, R, lrp_var=None, param=None):
-
         if lrp_var == None and param == None:
             # module.lrp(R) has been called without further parameters.
             # set default values / preset values

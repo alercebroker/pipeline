@@ -291,7 +291,7 @@ print(np.mean(acc), np.std(acc))
 all_cms = np.stack(all_cms)
 mean_cm, std_cm = np.mean(all_cms, axis=0), np.std(all_cms, axis=0)
 
-#% matplotlib
+# % matplotlib
 # inline
 p = plot_cm_std(
     mean_cm=mean_cm,

@@ -73,7 +73,6 @@ if __name__ == "__main__":
 
             # print(image_oid)
             if metadata_filename != []:
-
                 img_oid_idx_position_in_metadata_array = np.argwhere(
                     np.array(metadata_IDs) == image_oid
                 )[0][0]

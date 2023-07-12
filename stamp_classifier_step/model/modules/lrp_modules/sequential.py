@@ -25,6 +25,7 @@ import tensorflow as tf
 # no lo usa el 'na'
 na = np.newaxis
 
+
 # -------------------------------
 # Sequential layer
 # -------------------------------
@@ -52,7 +53,6 @@ class Sequential(module.Module):
         module.layer_count = 0
 
     def forward(self, X):
-
         """
         Realizes the forward pass of an input through the net
 
@@ -169,7 +169,6 @@ class Sequential(module.Module):
         self.Rel = []  # ADD
         self.Rel.append(R)
         for m in self.modules[::-1]:
-
             R = m.lrp(R, lrp_var, param)
             self.Rel.append(R)  # ADD
             print(m.name + "::", R.get_shape().as_list())
@@ -184,7 +183,6 @@ class Sequential(module.Module):
         # self.Rel = [] #ADD
         # self.Rel.append(R)
         for m in self.modules[::-1]:
-
             R = m.lrpPy(sess, feed_dict, R, lrp_var, param)
             # self.Rel.append(R) #ADD
             print(m.name + "::", R.shape)

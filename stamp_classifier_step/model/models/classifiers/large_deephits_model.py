@@ -23,6 +23,7 @@ from models.classifiers.deepHits_nans_norm_crop_stamp_model import (
 from modules.networks.large_deep_hits import LargeDeepHits
 from parameters import param_keys, general_keys
 
+
 # TODO: refactor train test and validate
 class LargeDeepHiTSModel(DeepHiTSNanNormCropStampModel):
     """

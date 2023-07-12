@@ -58,7 +58,6 @@ class Convolution(Module):
         param_dir=None,
         init_DH=False,
     ):
-
         self.name = name
         # self.input_tensor = input_tensor
         Module.__init__(self)
@@ -198,7 +197,6 @@ class Convolution(Module):
         return self.activations
 
     def check_shapePy(self, R):
-
         activations_shape = self.activations.get_shape().as_list()
         # if len(R_shape)!=4:
         if len(R.shape) != 4:
