@@ -61,9 +61,26 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
     LightcurveStep.__init__ = lambda self: None
     step = LightcurveStep()
     step.db_client = mock_client
+    step.logger = mock.MagicMock()
     mock_client.query.return_value.collection.aggregate.return_value = [
-        {"candid": "d", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False, "extra_fields": {}},
-        {"candid": "a", "has_stamp": True, "sid": "SURVEY", "fid": "g", "new": False, "extra_fields": {}},
+        {
+            "candid": "d",
+            "parent_candid": "p_d",
+            "has_stamp": True,
+            "sid": "SURVEY",
+            "fid": "g",
+            "new": False,
+            "extra_fields": {},
+        },
+        {
+            "candid": 97923792234,
+            "parent_candid": "p_a",
+            "has_stamp": True,
+            "sid": "SURVEY",
+            "fid": "g",
+            "new": False,
+            "extra_fields": {},
+        },
     ]
     mock_client.query.return_value.collection.find.return_value = []
 
@@ -71,7 +88,8 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         "aids": {"aid1", "aid2"},
         "detections": [
             {
-                "candid": "a",
+                "candid": 97923792234,
+                "parent_candid": "p_a",
                 "has_stamp": True,
                 "sid": "SURVEY",
                 "fid": "g",
@@ -80,6 +98,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "b",
+                "parent_candid": "p_b",
                 "has_stamp": False,
                 "sid": "SURVEY",
                 "fid": "g",
@@ -88,6 +107,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "c",
+                "parent_candid": "p_c",
                 "has_stamp": True,
                 "sid": "SURVEY",
                 "fid": "g",
@@ -96,11 +116,12 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "d",
+                "parent_candid": "p_d",
                 "has_stamp": False,
                 "sid": "SURVEY",
                 "fid": "g",
                 "new": True,
-                "extra_fields": {}
+                "extra_fields": {},
             },
         ],
         "non_detections": [
@@ -115,36 +136,40 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
     expected = {
         "detections": [
             {
-                "candid": "a",
+                "candid": "97923792234",
+                "parent_candid": "p_a",
                 "has_stamp": True,
                 "sid": "SURVEY",
                 "fid": "g",
                 "new": False,
-                "extra_fields": {}
+                "extra_fields": {},
             },
             {
                 "candid": "c",
+                "parent_candid": "p_c",
                 "has_stamp": True,
                 "sid": "SURVEY",
                 "fid": "g",
                 "new": True,
-                "extra_fields": {}
+                "extra_fields": {},
             },
             {
                 "candid": "b",
+                "parent_candid": "p_b",
                 "has_stamp": False,
                 "sid": "SURVEY",
                 "fid": "g",
                 "new": True,
-                "extra_fields": {}
+                "extra_fields": {},
             },
             {
                 "candid": "d",
+                "parent_candid": "p_d",
                 "has_stamp": True,
                 "sid": "SURVEY",
                 "fid": "g",
                 "new": False,
-                "extra_fields": {}
+                "extra_fields": {},
             },
         ],
         "non_detections": [
@@ -172,13 +197,19 @@ def test_pre_produce_restores_messages():
     message = {
         "detections": pd.DataFrame(
             [
-                {"candid": "a", "has_stamp": True, "aid": "AID1", "extra_fields": {
-                    "diaObject": b"bainari"
-                }},
+                {
+                    "candid": "a",
+                    "has_stamp": True,
+                    "aid": "AID1",
+                    "extra_fields": {"diaObject": b"bainari"},
+                },
                 {"candid": "c", "has_stamp": True, "aid": "AID2", "extra_fields": {}},
-                {"candid": "d", "has_stamp": True, "aid": "AID1", "extra_fields": {
-                    "diaObject": [{"a": "b"}]
-                }},
+                {
+                    "candid": "d",
+                    "has_stamp": True,
+                    "aid": "AID1",
+                    "extra_fields": {"diaObject": [{"a": "b"}]},
+                },
                 {"candid": "b", "has_stamp": False, "aid": "AID2", "extra_fields": {}},
             ]
         ),
@@ -196,12 +227,18 @@ def test_pre_produce_restores_messages():
         {
             "aid": "AID1",
             "detections": [
-                {"candid": "a", "has_stamp": True, "aid": "AID1", "extra_fields": {
-                    "diaObject": b"bainari"
-                }},
-                {"candid": "d", "has_stamp": True, "aid": "AID1", "extra_fields": {
-                    "diaObject": pickle.dumps([{"a": "b"}])
-                }},
+                {
+                    "candid": "a",
+                    "has_stamp": True,
+                    "aid": "AID1",
+                    "extra_fields": {"diaObject": b"bainari"},
+                },
+                {
+                    "candid": "d",
+                    "has_stamp": True,
+                    "aid": "AID1",
+                    "extra_fields": {"diaObject": pickle.dumps([{"a": "b"}])},
+                },
             ],
             "non_detections": [{"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"}],
         },

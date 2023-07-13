@@ -10,7 +10,7 @@ from credentials import get_mongodb_credentials
 
 def settings_creator():
     # Set the global logging level to debug
-    logging_debug = False
+    logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
     db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
 
@@ -114,6 +114,8 @@ def settings_creator():
         )
 
     prometheus = os.getenv("USE_PROMETHEUS", False)
+    use_profiling = bool(os.getenv("USE_PROFILING", True))
+    pyroscope_server = os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
 
     # Step Configuration
     step_config = {
@@ -123,5 +125,7 @@ def settings_creator():
         "PROMETHEUS": prometheus,
         "DB_CONFIG": db_config,
         "LOGGING_DEBUG": logging_debug,
+        "USE_PROFILING": use_profiling,
+        "PYROSCOPE_SERVER": pyroscope_server
     }
     return step_config
