@@ -621,6 +621,7 @@ jobs:
       test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
   scribe_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe== 'true'
@@ -633,5 +634,15 @@ jobs:
       test-folder: 'tests/integration'
       test-dependencies: 'pytest numpy Cython pytest-docker psycopg2'
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "scribe"
+      step-name: "scribe"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
