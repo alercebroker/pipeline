@@ -19,28 +19,20 @@ def test_step_elasticc_result(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    env_variables_elasticc("barney")
+    env_variables_elasticc(
+        "barney",
+        "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
+        "lc_classification.predictors.barney.barney_parser.BarneyParser",
+        {
+            "MODEL_PATH": os.getenv("TEST_BARNEY_MODEL_PATH"),
+        },
+    )
 
     from settings import STEP_CONFIG
 
     kconsumer = kafka_consumer("barney")
     sconsumer = scribe_consumer()
 
-    model_path = os.getenv("TEST_BARNEY_MODEL_PATH")
-
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "CLASS"
-    ] = "lc_classification.predictors.barney.barney_predictor.BarneyPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "PARSER_CLASS"
-    ] = "lc_classification.predictors.barney.barney_parser.BarneyParser"
-    STEP_CONFIG[
-        "SCRIBE_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"
-    STEP_CONFIG[
-        "STEP_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 

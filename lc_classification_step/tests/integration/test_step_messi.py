@@ -19,34 +19,22 @@ def test_step_elasticc_result(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    env_variables_elasticc("messi")
+    env_variables_elasticc(
+        "messi",
+        "lc_classification.predictors.messi.messi_predictor.MessiPredictor",
+        "lc_classification.predictors.messi.messi_parser.MessiParser",
+        {
+            "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
+            "HEADER_QUANTILES_PATH": os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH"),
+            "FEATURE_QUANTILES_PATH": os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH"),
+        },
+    )
 
     from settings import STEP_CONFIG
 
     kconsumer = kafka_consumer("messi")
     sconsumer = scribe_consumer()
 
-    model_path = os.getenv("TEST_MESSI_MODEL_PATH")
-    header_quantiles_path = os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH")
-    feature_quantiles_path = os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH")
-
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "CLASS"
-    ] = "lc_classification.predictors.messi.messi_predictor.MessiPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {
-        "model_path": model_path,
-        "header_quantiles_path": header_quantiles_path,
-        "feature_quantiles_path": feature_quantiles_path,
-    }
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "PARSER_CLASS"
-    ] = "lc_classification.predictors.messi.messi_parser.MessiParser"
-    STEP_CONFIG[
-        "SCRIBE_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"
-    STEP_CONFIG[
-        "STEP_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 
