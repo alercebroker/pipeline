@@ -3,6 +3,7 @@
 ##################################################
 import os
 from schemas import SCHEMA, ELASTICC_SCHEMA, SCRIBE_SCHEMA
+from predictor_settings import configurator
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -113,22 +114,13 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
 
 
 def predictor_config_factory():
+    predictor_class = os.getenv("PREDICTOR_CLASS")
     config = {
-        "CLASS": os.getenv("PREDICTOR_CLASS"),
-        "PARAMS": {"model_path": os.getenv("MODEL_PATH")},
+        "CLASS": predictor_class,
+        "PARAMS": configurator(predictor_class),
         "PARSER_CLASS": os.getenv("PREDICTOR_PARSER_CLASS"),
         "PARSER_PARAMS": {},
     }
-    if isinstance(config["CLASS"], str):
-        if config["CLASS"].endswith("BaltoPredictor"):
-            config["PARAMS"]["quantiles_path"] = os.getenv("QUANTILES_PATH")
-        if config["CLASS"].endswith("MessiPredictor"):
-            config["PARAMS"]["header_quantiles_path"] = os.getenv(
-                "HEADER_QUANTILES_PATH"
-            )
-            config["PARAMS"]["feature_quantiles_path"] = os.getenv(
-                "FEATURE_QUANTILES_PATH"
-            )
     return config
 
 
