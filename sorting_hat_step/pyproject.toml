@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "sorting-hat-step"
+version = "1.0"
+description = "Sorting hat step"
+authors = []
+readme = "README.md"
+packages = [{include = "sorting_hat_step"}]
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+apf_base = "2.4.2"
+boto3 = "1.26.69"
+confluent_kafka = "2.0.2"
+db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.5"}
+numpy = "^1.24.3"
+python = ">=3.8,<3.9"
+scipy = "1.10.1"
+survey-parser-plugins = {git = "https://github.com/alercebroker/survey-parser-plugins", rev = "2.3.6"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+requests = "^2.31.0"
+pymongo = "^4.3.3"
+pytest-docker = "^1.0.1"
+pytest-cov = "^4.1.0"
+moto = {extras = ["secretsmanager"], version = "^4.1.11"}
+
+[tool.black]
+line-length = 88
+
+[tool.pytest.ini_options]
+addopts = "-x --cov sorting_hat_step --cov-report xml"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
