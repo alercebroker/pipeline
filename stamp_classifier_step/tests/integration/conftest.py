@@ -29,7 +29,7 @@ def consume_messages() -> list:
             "bootstrap.servers": "localhost:9092",
             "group.id": "conftest",
             "auto.offset.reset": "beginning",
-            "max.poll.interval.ms": 3600000,
+            "max.poll.interval.ms": 100,
             "enable.partition.eof": True,
         },
         "consume.timeout": 10,
