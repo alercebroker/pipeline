@@ -120,6 +120,7 @@ jobs:
     with:
       build-type: staging
       step-name: lightcurve_step
+      step-name-prefix: ""
       base-folder: lightcurve-step
       build-context: lightcurve-step
 
@@ -183,5 +184,6 @@ jobs:
     with:
       build-type: staging
       step-name: xmatch_step
+      step-name-prefix: ""
       base-folder: xmatch_step
       build-context: xmatch_step
