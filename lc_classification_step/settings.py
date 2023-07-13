@@ -120,12 +120,15 @@ def predictor_config_factory():
         "PARSER_PARAMS": {},
     }
     if isinstance(config["CLASS"], str):
-        if (
-            config["CLASS"].endswith("BaltoPredictor")
-            or config["CLASS"].endswith("MessiPredictor")
-            or config["CLASS"].endswith("BarneyPredictor")
-        ):
+        if config["CLASS"].endswith("BaltoPredictor"):
             config["PARAMS"]["quantiles_path"] = os.getenv("QUANTILES_PATH")
+        if config["CLASS"].endswith("MessiPredictor"):
+            config["PARAMS"]["header_quantiles_path"] = os.getenv(
+                "HEADER_QUANTILES_PATH"
+            )
+            config["PARAMS"]["feature_quantiles_path"] = os.getenv(
+                "FEATURE_QUANTILES_PATH"
+            )
     return config
 
 
