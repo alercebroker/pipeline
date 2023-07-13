@@ -188,7 +188,7 @@ jobs:
       base-folder: xmatch_step
       build-context: xmatch_step
 
-  scribe_stating:
+  scribe_staging:
     uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
