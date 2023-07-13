@@ -60,7 +60,7 @@ jobs:
         watchlist_step: ${{ steps.changes.outputs.watchlist_step }}
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
-        libs_alerce_classifiers: ${{ steps.changes.outputs.scribe }}
+        scribe: ${{ steps.changes.outputs.scribe }}
 
     steps:
       - name: Checkout repo
