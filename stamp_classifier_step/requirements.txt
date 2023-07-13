@@ -2,6 +2,7 @@ atlas_stamp_classifier @ git+https://alerceadmin:${GH_TOKEN}@github.com/alercebr
 apf_base<2.0
 astropy
 pandas
+numpy
 # Fixed versions to prevent clashes with tensorflow
 protobuf==3.15.3
 grpcio==1.32
