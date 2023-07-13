@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial import cKDTree
 from db_plugins.db.mongo import DatabaseConnection
 
-from .database import oid_query, conesearch_query
+from .database import oid_query, conesearch_query, update_query
 
 
 CHARACTERS = string.ascii_lowercase
@@ -228,3 +228,20 @@ def generate_new_id(alerts: pd.DataFrame):
     logger.debug(f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts")
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
+
+
+def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
+    """
+    Inserts an empty entry to the database for every unique _id in the
+    alerts dataframe
+    :param db: Connection to the database.
+    :alerts: Dataframe with alerts.
+    """
+    objects = alerts[["oid", "aid"]]
+    objects = objects.rename(columns={"aid": "_id"})
+    objects = objects.groupby("_id").oid.apply(list).reset_index()
+
+    logger.debug(
+        f"Inserting or updating {len(objects)} entries into the Objects collection"
+    )
+    update_query(db, objects.to_dict("records"))
