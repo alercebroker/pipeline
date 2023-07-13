@@ -281,7 +281,6 @@ jobs:
       python-version: "3.9"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x tests/integration"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
