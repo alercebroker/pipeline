@@ -148,6 +148,7 @@ jobs:
     with:
       build-type: production
       step-name: sorting_hat_step
+      step-name-prefix: ""
       base-folder: sorting_hat_step
 
   watchlist_step_production:
