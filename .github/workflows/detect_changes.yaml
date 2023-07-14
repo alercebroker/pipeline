@@ -103,7 +103,7 @@ jobs:
                 - 'xmatch_step/**'
             libs_alerce_classifiers:
                 - 'libs/alerce_classifiers/**'
-            surver_parser_plugins:
-                - 'survey_parser_plugins'
+            survey_parser_plugins:
+                - 'survey_parser_plugins/**'
 
 
