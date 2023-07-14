@@ -588,30 +588,25 @@ jobs:
   scribe_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'scribe'
       python-version: '3.9'
       sources-folder: 'mongo_scribe'
-      requirements-file: 'requirements.txt'
+      base-folder: 'scribe'
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov numpy fastavro'
-      test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+      codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   scribe_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'scribe'
       python-version: '3.9'
       sources-folder: 'mongo_scribe'
-      requirements-file: 'requirements.txt'
+      base-folder: 'scribe'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest numpy Cython pytest-docker psycopg2'
-      test-command: 'python -m pytest -x tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 

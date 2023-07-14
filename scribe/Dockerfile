@@ -1,11 +1,35 @@
-FROM python:3.9
+FROM python:3.9-slim as python-base
+LABEL org.opencontainers.image.authors="ALeRCE"
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONFAULTHANDLER=1 \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100 \
+  POETRY_VIRTUALENVS_IN_PROJECT=true \
+  POETRY_NO_INTERACTION=1
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
 
+FROM python-base as builder
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends git && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN pip install poetry
 WORKDIR /app
-COPY . /app
+COPY ./poetry.lock ./pyproject.toml ./
+RUN poetry install --no-root --without=dev --without=test
 
-WORKDIR /app/scripts
 
-CMD ["python", "run_step.py"]
+FROM python:3.9-slim as production
+RUN pip install poetry
+COPY --from=builder /app /app
+WORKDIR /app
+COPY ./mongo_scribe /app/mongo_scribe
+COPY ./scripts /app/scripts
+COPY ./README.md /app/README.md
+COPY ./settings.py /app/settings.py
+COPY ./credentials.py /app/credentials.py
+RUN poetry install --only-root
+CMD ["poetry", "run", "python", "scripts/run_step.py"]
