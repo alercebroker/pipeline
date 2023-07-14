@@ -1,0 +1,14 @@
+language: python
+
+services:
+  - docker
+
+before_install:
+  - docker build -t stamp_clf .
+  - docker run -d --name stamp_clf -p 5000:5000 stamp_clf
+
+script:
+  - cd service/tests && python run_tests.py
+
+after_failure:
+- docker logs stamp_clf

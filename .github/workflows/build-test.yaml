@@ -13,6 +13,9 @@ on:
       step-name:
         required: true
         type: string
+    secrets:
+      GH_TOKEN:
+        required: false
 
 jobs:
   build:
@@ -35,3 +38,5 @@ jobs:
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: false
           tags: "ghcr.io/alercebroker/test_${{ inputs.step-name }}:test"
+          build-args: |
+            GH_TOKEN=${{secrets.GH_TOKEN}}

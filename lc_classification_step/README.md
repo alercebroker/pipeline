@@ -53,7 +53,7 @@ The following environment variables will be needed in adition to the regular ste
 
 ``` 
 PREDICTOR_CLASS=lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor
-MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/random_forest/2.0.1
+MODEL_PATH=path_to_tar.gz
 PREDICTOR_PARSER_CLASS=lc_classification.predictors.toretto.toretto_parser.TorettoParser
 ```
 
@@ -62,20 +62,29 @@ The following environment variables will be needed in adition to the regular ste
 
 ``` 
 PREDICTOR_CLASS=lc_classification.predictors.balto.balt_predictor.BaltoPredictor
-MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/4.0.0/EncoderHeader.pt
-QUANTILES_PATH=https://assets.alerce.online/pipeline/elasticc/balto_classifier_lc_header/4.0.0/HeaderNorm1QT/
+MODEL_PATH=path_to_model.pt
+QUANTILES_PATH=path_to/header_quantiles/
 PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoParser
 ```
 
 ### Setup for Messi
-TODO
+The following environment variables will be needed in adition to the regular step configuration:
+
+``` 
+PREDICTOR_CLASS=lc_classification.predictors.messi.messi_predictor.MessiPredictor
+PREDICTOR_PARSER_CLASS=lc_classification.predictors.messi.messi_parser.MessiParser
+MODEL_PATH=path_to_model.pt
+HEADER_QUANTILES_PATH=path_to/header_quantiles/
+FEATURE_QUANTILES_PATH=path_to/header_quantiles/
+```
+
 
 ### Setup for Barney
 The following environment variables will be needed in adition to the regular step configuration:
 
 ``` 
 PREDICTOR_CLASS=lc_classification.predictors.barney.barney_predictor.BarneyPredictor
-MODEL_PATH=https://assets.alerce.online/pipeline/elasticc/barney/2.0.0/barney.tar.gz
+MODEL_PATH=path_to_tar.gz
 PREDICTOR_PARSER_CLASS=lc_classification.predictors.barney.barney_parser.BarneyParser
 ```
 

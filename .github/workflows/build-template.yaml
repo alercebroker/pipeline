@@ -24,6 +24,9 @@ on:
       build-type:
         required: true
         type: string
+    secrets:
+      GH_TOKEN:
+        required: false
 
 jobs:
   get_tags:
@@ -93,3 +96,5 @@ jobs:
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: true
           tags: ${{needs.get_tags.outputs.tags}}
+          build-args: |
+            GH_TOKEN=${{secrets.GH_TOKEN}}

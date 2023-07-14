@@ -19,28 +19,20 @@ def test_step_elasticc_result(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    env_variables_elasticc("toretto")
+    env_variables_elasticc(
+        "toretto",
+        "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
+        "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+        {
+            "MODEL_PATH": os.getenv("TEST_TORETTO_MODEL_PATH"),
+        },
+    )
 
     from settings import STEP_CONFIG
 
     kconsumer = kafka_consumer("toretto")
     sconsumer = scribe_consumer()
 
-    model_path = os.getenv("TEST_TORETTO_MODEL_PATH")
-
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "CLASS"
-    ] = "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {"model_path": model_path}
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "PARSER_CLASS"
-    ] = "lc_classification.predictors.toretto.toretto_parser.TorettoParser"
-    STEP_CONFIG[
-        "SCRIBE_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"
-    STEP_CONFIG[
-        "STEP_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 

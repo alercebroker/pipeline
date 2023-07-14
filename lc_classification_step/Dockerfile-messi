@@ -1,21 +1,25 @@
-## IMPORTANT ##
-## This Dockerfile MUST be built with the context of the monorepo root directory
-FROM python:3.8 as builder
+FROM python:3.8 as poetry
 ENV NUMEXPR_MAX_THREADS=1
 MAINTAINER ALeRCE
-ARG GH_TOKEN={GH_TOKEN}
+ARG GH_TOKEN
 WORKDIR /app/
 RUN pip install poetry
-COPY ./lc_classification_step/poetry.lock ./lc_classification_step/pyproject.toml /app/
-COPY ./libs/alerce_classifiers /libs/alerce_classifiers
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-interaction --without=dev --with=messi --no-root
+RUN poetry config virtualenvs.in-project true
+RUN poetry config http-basic.git alerceadmin ${GH_TOKEN}
 
-FROM builder
-COPY ./lc_classification_step/lc_classification /app/lc_classification
-COPY ./lc_classification_step/scripts /app/scripts
-COPY ./lc_classification_step/README.md /app/
-COPY ./lc_classification_step/settings.py /app/settings.py
-COPY ./lc_classification_step/schemas.py /app/schemas.py
+FROM poetry as source
+COPY ./poetry.lock ./pyproject.toml /app/
+RUN poetry install --no-interaction --without=dev --with=messi --no-root
+COPY ./README.md /app/
+COPY ./schemas.py /app/schemas.py
+COPY ./settings.py /app/settings.py
+COPY ./predictor_settings.py /app/predictor_settings.py
+COPY ./scripts /app/scripts
+COPY ./lc_classification /app/lc_classification
 RUN poetry install --no-interaction --only-root
+
+FROM python:3.8-slim
+RUN pip install poetry
+WORKDIR /app/
+COPY --from=source /app /app
 CMD ["poetry", "run", "python", "scripts/run_step.py"]

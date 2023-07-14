@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 # from prometheus_client import start_http_server
 # from apf.metrics.prometheus import PrometheusMetrics
@@ -25,7 +25,9 @@ def step_creator():
     logger = logging.getLogger("alerce")
     logger.setLevel(level)
 
-    fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+    fmt = logging.Formatter(
+        "%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
     handler = logging.StreamHandler()
     handler.setFormatter(fmt)
     handler.setLevel(level)
@@ -38,5 +40,7 @@ def step_creator():
     return PrvCandidatesStep(config=settings)
 
 
+step = step_creator()
+
 if __name__ == "__main__":
-    step_creator().start()
+    step.start()

@@ -203,47 +203,57 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
+
   lc_classification_step_build_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_ztf"
-      file: "lc_classification_step/Dockerfile-ztf"
-
+      file: "Dockerfile-ztf"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_balto"
-      file: "lc_classification_step/Dockerfile-balto"
+      file: "Dockerfile-balto"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step_messi"
-      file: "lc_classification_step/Dockerfile-messi"
+      file: "Dockerfile-messi"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step-barney"
-      file: "lc_classification_step/Dockerfile-barney"
+      file: "Dockerfile-barney"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
-      base-folder: .
+      base-folder: "lc_classification_step"
       step-name: "lc_classification_step-toretto"
-      file: "lc_classification_step/Dockerfile-toretto"
+      file: "Dockerfile-toretto"
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_lint:
     needs: detect_changes
@@ -255,26 +265,24 @@ jobs:
   lightcurve_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step' 
       python-version: "3.9"
-      sources-folder: "lightcurve_step"
       test-folder: "tests/unittest"
-      test-dependencies: "pytest pytest-cov"
-      test-command: "python -m pytest -x tests/unittest --cov lightcurve_step --cov-report xml"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'lightcurve-step' 
+      base-folder: 'lightcurve-step'
       python-version: "3.9"
-      sources-folder: "lightcurve_step"
       test-folder: "tests/integration"
-      test-dependencies: "pytest pytest-docker"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x tests/integration"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
@@ -522,3 +530,90 @@ jobs:
       python-version: '3.8'
       requirements-file: 'requirements_tests.txt'
       test-command: python -m pytest -x tests --cov libs/alerce_classifiers/alerce_classifiers --cov-report xml
+      
+  early_classification_step_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'early_classification_step'
+      sources-folder: 'earlyclassifier'         
+  early_classification_step_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'early_classification_step'
+      python-version: '3.7'
+      sources-folder: 'earlyclassifier'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+  early_classification_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'early_classification_step'
+      python-version: '3.7'
+      sources-folder: 'earlyclassifier'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      test-command: 'python -m pytest -x tests/integration'
+
+  stamp_classifier_step_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      sources-folder: 'stamp_classifier_step'         
+  stamp_classifier_step_unittest_atlas:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.8'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  stamp_classifier_step_unittest_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.7'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  stamp_classifiier_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.8'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+
+

@@ -24,7 +24,10 @@ def lsst_extra_fields_generator():
             "decl": 1.0,
         }
     ]
-    extra_fields = {"prvDiaSources": pickle.dumps(prv_detection), "prvDiaForcedSources": pickle.dumps(prv_forced)}
+    extra_fields = {
+        "prvDiaSources": pickle.dumps(prv_detection),
+        "prvDiaForcedSources": pickle.dumps(prv_forced),
+    }
     return extra_fields
 
 

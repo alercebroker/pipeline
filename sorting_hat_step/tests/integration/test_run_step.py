@@ -3,6 +3,7 @@ from apf.metrics.prometheus import PrometheusMetrics
 import requests
 from db_plugins.db.generic import new_DBConnection
 from db_plugins.db.mongo.connection import MongoDatabaseCreator
+from db_plugins.db.mongo.models import Object
 import pytest
 import unittest
 from unittest import mock
@@ -11,7 +12,7 @@ from sorting_hat_step import SortingHatStep
 from schemas.output_schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
-import time
+import pandas as pd
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -101,7 +102,13 @@ class MongoIntegrationTest(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
+            "RUN_CONESEARCH": "True",
         }
+
+    def tearDown(self):
+        mongo_query = self.database.query(Object)
+        mongo_query.collection.delete_many({})
+
 
     def test_step(self):
         """
@@ -126,6 +133,13 @@ class MongoIntegrationTest(unittest.TestCase):
         for message in messages:
             # TODO add other assertions
             self.assert_message_stamps(message)
+
+        # Check that there are no duplicates inserted
+        mongo_query = self.database.query(Object)
+        cursor = mongo_query.collection.find()
+        inserted_objects = list(cursor)
+        unique_count = pd.DataFrame(messages).aid.nunique()
+        assert len(inserted_objects) == unique_count
 
     def consume_messages(self):
         config = CONSUMER_CONFIG.copy()
@@ -153,6 +167,31 @@ class MongoIntegrationTest(unittest.TestCase):
             assert message["stamps"]["template"] == None
         assert message["stamps"]["difference"] == b"difference"
 
+    def test_write_object(self):
+        step = SortingHatStep(
+            config=self.step_config,
+            db_connection=self.database,
+        )
+
+        # Insert a preexisting entry
+        mongo_query = self.database.query(Object)
+        mongo_query.collection.insert_one({'_id': 2, 'oid': [50, 100]})
+
+        alerts = pd.DataFrame([
+            {'oid': 10, 'aid': 0, 'extra': 'extra1'},
+            {'oid': 20, 'aid': 1, 'extra': 'extra2'},
+            {'oid': 30, 'aid': 0, 'extra': 'extra3'},
+            {'oid': 40, 'aid': 2, 'extra': 'extra4'},
+            {'oid': 50, 'aid': 2, 'extra': 'extra4'},
+                        ])
+        step.post_execute(alerts)
+
+        cursor = mongo_query.collection.find()
+        result = list(cursor)
+        expected = [
+                {'_id': 2, 'oid': [50, 100, 40]}, {'_id': 0, 'oid': [10, 30]}, {'_id': 1, 'oid': [20]}
+                ]
+        assert len(result) == len(expected) and all(x in result for x in expected)
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -170,6 +209,7 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
+            "RUN_CONESEARCH": "True",
         }
 
     def test_step(self):

@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from unittest import mock
 import subprocess
 import time
@@ -18,6 +19,7 @@ import random
 FILE_PATH = os.path.dirname(__file__)
 
 
+@pytest.mark.usefixtures("config_database")
 class PSQLIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -46,9 +48,7 @@ class PSQLIntegrationTest(unittest.TestCase):
         }
         self.mock_session = mock.create_autospec(earlyclassifier.step.requests.Session)
         self.step = EarlyClassifier(
-            config=self.step_config,
-            request_session=self.mock_session,
-            test_mode=True
+            config=self.step_config, request_session=self.mock_session, test_mode=True
         )
 
     @classmethod

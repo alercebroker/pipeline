@@ -49,9 +49,7 @@ class XmatchStep(GenericStep):
 
         result = xmatches.rename(ALLWISE_MAP, axis="columns")
         result["catid"] = "allwise"
-        result.rename(
-            columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True
-        )
+        result.rename(columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True)
 
         data = result[["aid", "catoid", "dist", "catid"]]
         object_list = data.to_dict(orient="records")
@@ -69,9 +67,7 @@ class XmatchStep(GenericStep):
     def pre_produce(self, result: List[dict]):
         def _add_non_detection(message):
             message["non_detections"] = (
-                []
-                if message["non_detections"] is None
-                else message["non_detections"]
+                [] if message["non_detections"] is None else message["non_detections"]
             )
             return message
 
@@ -100,9 +96,7 @@ class XmatchStep(GenericStep):
                 return result
 
             except Exception as e:
-                self.logger.warning(
-                    f"CDS xmatch client returned with error {e}"
-                )
+                self.logger.warning(f"CDS xmatch client returned with error {e}")
                 time.sleep(self.retry_interval)
                 self.logger.warning("Retrying request")
                 return self.request_xmatch(input_catalog, retries_count - 1)
@@ -151,9 +145,7 @@ class XmatchStep(GenericStep):
         if len(input_catalog) == 0:
             return [], pd.DataFrame.from_records([])
         # rename columns of meanra and meandec to (ra, dec)
-        input_catalog.rename(
-            columns={"meanra": "ra", "meandec": "dec"}, inplace=True
-        )
+        input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
 
         self.logger.info("Getting xmatches")
         xmatches = self.request_xmatch(input_catalog, self.retries)
