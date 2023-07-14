@@ -73,7 +73,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
                     "parent_candid": parent,
                     "extra_fields": {
                         **alert["extra_fields"],
-                        **candidate["extra_fields"]
+                        **candidate["extra_fields"],
                     },
                 }
             )
