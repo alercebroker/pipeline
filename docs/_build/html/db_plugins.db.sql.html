@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>db_plugins.db.sql package &mdash; ALeRCE Pipeline  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="db_plugins.db.mongo.helpers package" href="db_plugins.db.mongo.helpers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALeRCE Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">APF</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="APF.html">APF package</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="db_plugins.html">db_plugins package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="db_plugins.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="db_plugins.cli.html">db_plugins.cli package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="db_plugins.db.html">db_plugins.db package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="db_plugins.html#module-db_plugins">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALeRCE Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">APF</a></li>
+          <li class="breadcrumb-item"><a href="db_plugins.html">db_plugins package</a></li>
+          <li class="breadcrumb-item"><a href="db_plugins.db.html">db_plugins.db package</a></li>
+      <li class="breadcrumb-item active">db_plugins.db.sql package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/db_plugins.db.sql.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="db-plugins-db-sql-package">
+<h1>db_plugins.db.sql package<a class="headerlink" href="#db-plugins-db-sql-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-db_plugins.db.sql.connection">
+<span id="db-plugins-db-sql-connection-module"></span><h2>db_plugins.db.sql.connection module<a class="headerlink" href="#module-db_plugins.db.sql.connection" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.connection.</span></span><span class="sig-name descname"><span class="pre">SQLConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.DatabaseConnection" title="db_plugins.db.generic.DatabaseConnection"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseConnection</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_scoped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.connect" title="Permalink to this definition"></a></dt>
+<dd><p>Establishes connection to a database and initializes a session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – <p>Database configuration. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;SQL&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;ENGINE&quot;</span><span class="p">:</span> <span class="s2">&quot;postgresql&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HOST&quot;</span><span class="p">:</span> <span class="s2">&quot;host&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;USER&quot;</span><span class="p">:</span> <span class="s2">&quot;username&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PASSWORD&quot;</span><span class="p">:</span> <span class="s2">&quot;pwd&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PORT&quot;</span><span class="p">:</span> <span class="mi">5432</span><span class="p">,</span> <span class="c1"># postgresql tipically runs on port 5432. Notice that we use an int here.</span>
+    <span class="s2">&quot;DB_NAME&quot;</span><span class="p">:</span> <span class="s2">&quot;database&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>base</strong> (<em>sqlalchemy.ext.declarative.declarative_base</em><em>(</em><em>)</em>) – Base class used by sqlalchemy to create tables</p></li>
+<li><p><strong>session_options</strong> (<em>dict</em>) – Options passed to sessionmaker</p></li>
+<li><p><strong>create_session</strong> (<em>Boolean</em>) – <p>Whether to instantiate a session or not. The default value is True since this is the previous behavior.
+Proper usage should be to pass False and create / close the session on demand inside the application.
+You should call this method first and then call SQLConnection.create_session(use_scoped)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># scoped session example</span>
+<span class="n">conn</span> <span class="o">=</span> <span class="n">SQLConnection</span><span class="p">()</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">create_session</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">create_session</span><span class="p">(</span><span class="n">use_scoped</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># use session</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">query</span><span class="p">()</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>use_scoped</strong> (<em>Boolean</em>) – Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.
+Read more about scoped sessions at: <a class="reference external" href="https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped">https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped</a></p></li>
+<li><p><strong>scope_func</strong> (<em>function</em>) – A function which serves as the scope for the session. The session will live only in the scope of that function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.create_db">
+<span class="sig-name descname"><span class="pre">create_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.create_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.create_db" title="Permalink to this definition"></a></dt>
+<dd><p>Create database collections or tables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.create_session">
+<span class="sig-name descname"><span class="pre">create_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_scoped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.create_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.create_session" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a SQLAlchemy Session object to interact with the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>use_scoped</strong> (<em>Boolean</em>) – <p>Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.
+Read more about scoped sessions at: <a class="reference external" href="https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped">https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped</a></p>
+</p></li>
+<li><p><strong>scope_func</strong> (<em>function</em>) – A function which serves as the scope for the session. The session will live only in the scope of that function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.drop_db">
+<span class="sig-name descname"><span class="pre">drop_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.drop_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.drop_db" title="Permalink to this definition"></a></dt>
+<dd><p>Remove database collections or tables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.end_session" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLConnection.query">
+<span class="sig-name descname"><span class="pre">query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLConnection.query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLConnection.query" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a BaseQuery object that allows you to query the database using the SQLAlchemy API,
+or using the BaseQuery methods like <code class="docutils literal notranslate"><span class="pre">get_or_create</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>tuple</em>) – Args you can pass to SQLALchemy Query class, for example a model.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using SQLAlchemy API</span>
+<span class="n">db_conn</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Probability</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="c1"># Using db-plugins</span>
+<span class="n">db_conn</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Probability</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">filter_by</span><span class="o">=**</span><span class="n">filters</span><span class="p">)</span>
+<span class="n">db_conn</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">Object</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=**</span><span class="n">filters</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLDatabaseCreator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.connection.</span></span><span class="sig-name descname"><span class="pre">SQLDatabaseCreator</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLDatabaseCreator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLDatabaseCreator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.DatabaseCreator" title="db_plugins.db.generic.DatabaseCreator"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseCreator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.SQLDatabaseCreator.create_database">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_database</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#db_plugins.db.sql.connection.SQLConnection" title="db_plugins.db.sql.connection.SQLConnection"><span class="pre">SQLConnection</span></a></span></span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#SQLDatabaseCreator.create_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.SQLDatabaseCreator.create_database" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract factory method.</p>
+<p>Note that the Creator may also provide some default implementation of
+the factory method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.satisfy_keys">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.connection.</span></span><span class="sig-name descname"><span class="pre">satisfy_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_keys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#satisfy_keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.satisfy_keys" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.connection.settings_map">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.connection.</span></span><span class="sig-name descname"><span class="pre">settings_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/connection.html#settings_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.connection.settings_map" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-db_plugins.db.sql.initialization">
+<span id="db-plugins-db-sql-initialization-module"></span><h2>db_plugins.db.sql.initialization module<a class="headerlink" href="#module-db_plugins.db.sql.initialization" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.initialization.init">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.initialization.</span></span><span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/initialization.html#init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.initialization.init" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.initialization.init_sql_database">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.initialization.</span></span><span class="sig-name descname"><span class="pre">init_sql_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/initialization.html#init_sql_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.initialization.init_sql_database" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.initialization.make_migrations">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.initialization.</span></span><span class="sig-name descname"><span class="pre">make_migrations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/initialization.html#make_migrations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.initialization.make_migrations" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="db_plugins.db.sql.initialization.migrate">
+<span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.initialization.</span></span><span class="sig-name descname"><span class="pre">migrate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/initialization.html#migrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.initialization.migrate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-db_plugins.db.sql.models">
+<span id="db-plugins-db-sql-models-module"></span><h2>db_plugins.db.sql.models module<a class="headerlink" href="#module-db_plugins.db.sql.models" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Allwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Allwise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Allwise" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.dec">
+<span class="sig-name descname"><span class="pre">dec</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.dec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.h_m_2mass">
+<span class="sig-name descname"><span class="pre">h_m_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.h_m_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.h_msig_2mass">
+<span class="sig-name descname"><span class="pre">h_msig_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.h_msig_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.j_m_2mass">
+<span class="sig-name descname"><span class="pre">j_m_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.j_m_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.j_msig_2mass">
+<span class="sig-name descname"><span class="pre">j_msig_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.j_msig_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.k_m_2mass">
+<span class="sig-name descname"><span class="pre">k_m_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.k_m_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.k_msig_2mass">
+<span class="sig-name descname"><span class="pre">k_msig_2mass</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.k_msig_2mass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.oid_catalog">
+<span class="sig-name descname"><span class="pre">oid_catalog</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.oid_catalog" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.ra">
+<span class="sig-name descname"><span class="pre">ra</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.ra" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w1mpro">
+<span class="sig-name descname"><span class="pre">w1mpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w1mpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w1sigmpro">
+<span class="sig-name descname"><span class="pre">w1sigmpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w1sigmpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w2mpro">
+<span class="sig-name descname"><span class="pre">w2mpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w2mpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w2sigmpro">
+<span class="sig-name descname"><span class="pre">w2sigmpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w2sigmpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w3mpro">
+<span class="sig-name descname"><span class="pre">w3mpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w3mpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w3sigmpro">
+<span class="sig-name descname"><span class="pre">w3sigmpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w3sigmpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w4mpro">
+<span class="sig-name descname"><span class="pre">w4mpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w4mpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Allwise.w4sigmpro">
+<span class="sig-name descname"><span class="pre">w4sigmpro</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Allwise.w4sigmpro" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Commons">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Commons</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Commons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Commons" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Dataquality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Dataquality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractDataquality" title="db_plugins.db.generic.AbstractDataquality"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractDataquality</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.aimage">
+<span class="sig-name descname"><span class="pre">aimage</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.aimage" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.aimagerat">
+<span class="sig-name descname"><span class="pre">aimagerat</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.aimagerat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.bimage">
+<span class="sig-name descname"><span class="pre">bimage</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.bimage" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.bimagerat">
+<span class="sig-name descname"><span class="pre">bimagerat</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.bimagerat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.chipsf">
+<span class="sig-name descname"><span class="pre">chipsf</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.chipsf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.classtar">
+<span class="sig-name descname"><span class="pre">classtar</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.classtar" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.clrcoeff">
+<span class="sig-name descname"><span class="pre">clrcoeff</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.clrcoeff" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.clrcounc">
+<span class="sig-name descname"><span class="pre">clrcounc</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.clrcounc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.clrmed">
+<span class="sig-name descname"><span class="pre">clrmed</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.clrmed" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.clrrms">
+<span class="sig-name descname"><span class="pre">clrrms</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.clrrms" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.dsnrms">
+<span class="sig-name descname"><span class="pre">dsnrms</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.dsnrms" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.exptime">
+<span class="sig-name descname"><span class="pre">exptime</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.exptime" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.fwhm">
+<span class="sig-name descname"><span class="pre">fwhm</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.fwhm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.magzpsci">
+<span class="sig-name descname"><span class="pre">magzpsci</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.magzpsci" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.magzpscirms">
+<span class="sig-name descname"><span class="pre">magzpscirms</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.magzpscirms" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.magzpsciunc">
+<span class="sig-name descname"><span class="pre">magzpsciunc</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.magzpsciunc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.mindtoedge">
+<span class="sig-name descname"><span class="pre">mindtoedge</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.mindtoedge" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.nbad">
+<span class="sig-name descname"><span class="pre">nbad</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.nbad" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.nmatches">
+<span class="sig-name descname"><span class="pre">nmatches</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.nmatches" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.nneg">
+<span class="sig-name descname"><span class="pre">nneg</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.nneg" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.scorr">
+<span class="sig-name descname"><span class="pre">scorr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.scorr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.seeratio">
+<span class="sig-name descname"><span class="pre">seeratio</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.seeratio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.sky">
+<span class="sig-name descname"><span class="pre">sky</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.sky" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.ssnrms">
+<span class="sig-name descname"><span class="pre">ssnrms</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.ssnrms" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.sumrat">
+<span class="sig-name descname"><span class="pre">sumrat</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.sumrat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.xpos">
+<span class="sig-name descname"><span class="pre">xpos</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.xpos" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.ypos">
+<span class="sig-name descname"><span class="pre">ypos</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.ypos" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.zpclrcov">
+<span class="sig-name descname"><span class="pre">zpclrcov</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.zpclrcov" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Dataquality.zpmed">
+<span class="sig-name descname"><span class="pre">zpmed</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Dataquality.zpmed" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Detection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Detection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Detection" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractDetection" title="db_plugins.db.generic.AbstractDetection"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractDetection</span></code></a>, <a class="reference internal" href="#db_plugins.db.sql.models.Commons" title="db_plugins.db.sql.models.Commons"><code class="xref py py-class docutils literal notranslate"><span class="pre">Commons</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.corrected">
+<span class="sig-name descname"><span class="pre">corrected</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.corrected" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.dataquality">
+<span class="sig-name descname"><span class="pre">dataquality</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.dataquality" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.dec">
+<span class="sig-name descname"><span class="pre">dec</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.dec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.diffmaglim">
+<span class="sig-name descname"><span class="pre">diffmaglim</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.diffmaglim" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.distnr">
+<span class="sig-name descname"><span class="pre">distnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.distnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.drb">
+<span class="sig-name descname"><span class="pre">drb</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.drb" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.drbversion">
+<span class="sig-name descname"><span class="pre">drbversion</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.drbversion" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.dubious">
+<span class="sig-name descname"><span class="pre">dubious</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.dubious" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.has_stamp">
+<span class="sig-name descname"><span class="pre">has_stamp</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.has_stamp" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.isdiffpos">
+<span class="sig-name descname"><span class="pre">isdiffpos</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.isdiffpos" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.magap">
+<span class="sig-name descname"><span class="pre">magap</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.magap" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.magapbig">
+<span class="sig-name descname"><span class="pre">magapbig</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.magapbig" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.magpsf">
+<span class="sig-name descname"><span class="pre">magpsf</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.magpsf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.magpsf_corr">
+<span class="sig-name descname"><span class="pre">magpsf_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.magpsf_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.mjd">
+<span class="sig-name descname"><span class="pre">mjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.mjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.nid">
+<span class="sig-name descname"><span class="pre">nid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.nid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.parent_candid">
+<span class="sig-name descname"><span class="pre">parent_candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.parent_candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.pid">
+<span class="sig-name descname"><span class="pre">pid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.pid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.ra">
+<span class="sig-name descname"><span class="pre">ra</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.ra" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.rb">
+<span class="sig-name descname"><span class="pre">rb</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.rb" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.rbversion">
+<span class="sig-name descname"><span class="pre">rbversion</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.rbversion" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.rfid">
+<span class="sig-name descname"><span class="pre">rfid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.rfid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.sigmagap">
+<span class="sig-name descname"><span class="pre">sigmagap</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.sigmagap" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.sigmagapbig">
+<span class="sig-name descname"><span class="pre">sigmagapbig</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.sigmagapbig" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.sigmapsf">
+<span class="sig-name descname"><span class="pre">sigmapsf</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.sigmapsf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.sigmapsf_corr">
+<span class="sig-name descname"><span class="pre">sigmapsf_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.sigmapsf_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.sigmapsf_corr_ext">
+<span class="sig-name descname"><span class="pre">sigmapsf_corr_ext</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.sigmapsf_corr_ext" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Detection.step_id_corr">
+<span class="sig-name descname"><span class="pre">step_id_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Detection.step_id_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Feature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Feature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Feature" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Feature.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Feature.name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Feature.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Feature.value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Feature.version">
+<span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Feature.version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.FeatureVersion">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">FeatureVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#FeatureVersion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.FeatureVersion" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.FeatureVersion.step_id_feature">
+<span class="sig-name descname"><span class="pre">step_id_feature</span></span><a class="headerlink" href="#db_plugins.db.sql.models.FeatureVersion.step_id_feature" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.FeatureVersion.step_id_preprocess">
+<span class="sig-name descname"><span class="pre">step_id_preprocess</span></span><a class="headerlink" href="#db_plugins.db.sql.models.FeatureVersion.step_id_preprocess" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.FeatureVersion.version">
+<span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#db_plugins.db.sql.models.FeatureVersion.version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Gaia_ztf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Gaia_ztf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractGaia_ztf" title="db_plugins.db.generic.AbstractGaia_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractGaia_ztf</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.maggaia">
+<span class="sig-name descname"><span class="pre">maggaia</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.maggaia" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.maggaiabright">
+<span class="sig-name descname"><span class="pre">maggaiabright</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.maggaiabright" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.neargaia">
+<span class="sig-name descname"><span class="pre">neargaia</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.neargaia" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.neargaiabright">
+<span class="sig-name descname"><span class="pre">neargaiabright</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.neargaiabright" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Gaia_ztf.unique1">
+<span class="sig-name descname"><span class="pre">unique1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Gaia_ztf.unique1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">MagStats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#MagStats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.MagStats" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractMagnitudeStatistics" title="db_plugins.db.generic.AbstractMagnitudeStatistics"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractMagnitudeStatistics</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.corrected">
+<span class="sig-name descname"><span class="pre">corrected</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.corrected" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.dm_first">
+<span class="sig-name descname"><span class="pre">dm_first</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.dm_first" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.dmdt_first">
+<span class="sig-name descname"><span class="pre">dmdt_first</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.dmdt_first" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.dt_first">
+<span class="sig-name descname"><span class="pre">dt_first</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.dt_first" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.firstmjd">
+<span class="sig-name descname"><span class="pre">firstmjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.firstmjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.lastmjd">
+<span class="sig-name descname"><span class="pre">lastmjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.lastmjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magfirst">
+<span class="sig-name descname"><span class="pre">magfirst</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magfirst" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magfirst_corr">
+<span class="sig-name descname"><span class="pre">magfirst_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magfirst_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.maglast">
+<span class="sig-name descname"><span class="pre">maglast</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.maglast" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.maglast_corr">
+<span class="sig-name descname"><span class="pre">maglast_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.maglast_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmax">
+<span class="sig-name descname"><span class="pre">magmax</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmax" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmax_corr">
+<span class="sig-name descname"><span class="pre">magmax_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmax_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmean">
+<span class="sig-name descname"><span class="pre">magmean</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmean" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmean_corr">
+<span class="sig-name descname"><span class="pre">magmean_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmean_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmedian">
+<span class="sig-name descname"><span class="pre">magmedian</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmedian" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmedian_corr">
+<span class="sig-name descname"><span class="pre">magmedian_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmedian_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmin">
+<span class="sig-name descname"><span class="pre">magmin</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmin" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magmin_corr">
+<span class="sig-name descname"><span class="pre">magmin_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magmin_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magsigma">
+<span class="sig-name descname"><span class="pre">magsigma</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magsigma" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.magsigma_corr">
+<span class="sig-name descname"><span class="pre">magsigma_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.magsigma_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.ndet">
+<span class="sig-name descname"><span class="pre">ndet</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.ndet" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.ndubious">
+<span class="sig-name descname"><span class="pre">ndubious</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.ndubious" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.saturation_rate">
+<span class="sig-name descname"><span class="pre">saturation_rate</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.saturation_rate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.sigmadm_first">
+<span class="sig-name descname"><span class="pre">sigmadm_first</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.sigmadm_first" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.stellar">
+<span class="sig-name descname"><span class="pre">stellar</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.stellar" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.MagStats.step_id_corr">
+<span class="sig-name descname"><span class="pre">step_id_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.MagStats.step_id_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.NonDetection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">NonDetection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#NonDetection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.NonDetection" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractNonDetection" title="db_plugins.db.generic.AbstractNonDetection"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractNonDetection</span></code></a>, <a class="reference internal" href="#db_plugins.db.sql.models.Commons" title="db_plugins.db.sql.models.Commons"><code class="xref py py-class docutils literal notranslate"><span class="pre">Commons</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.NonDetection.diffmaglim">
+<span class="sig-name descname"><span class="pre">diffmaglim</span></span><a class="headerlink" href="#db_plugins.db.sql.models.NonDetection.diffmaglim" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.NonDetection.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.NonDetection.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.NonDetection.mjd">
+<span class="sig-name descname"><span class="pre">mjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.NonDetection.mjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.NonDetection.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.NonDetection.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Object" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractObject" title="db_plugins.db.generic.AbstractObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractObject</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.corrected">
+<span class="sig-name descname"><span class="pre">corrected</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.corrected" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.deltajd">
+<span class="sig-name descname"><span class="pre">deltajd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.deltajd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.detections">
+<span class="sig-name descname"><span class="pre">detections</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.detections" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.diffpos">
+<span class="sig-name descname"><span class="pre">diffpos</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.diffpos" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.features">
+<span class="sig-name descname"><span class="pre">features</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.features" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.firstmjd">
+<span class="sig-name descname"><span class="pre">firstmjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.firstmjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.g_r_max">
+<span class="sig-name descname"><span class="pre">g_r_max</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.g_r_max" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.g_r_max_corr">
+<span class="sig-name descname"><span class="pre">g_r_max_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.g_r_max_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.g_r_mean">
+<span class="sig-name descname"><span class="pre">g_r_mean</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.g_r_mean" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.g_r_mean_corr">
+<span class="sig-name descname"><span class="pre">g_r_mean_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.g_r_mean_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.get_lightcurve">
+<span class="sig-name descname"><span class="pre">get_lightcurve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Object.get_lightcurve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Object.get_lightcurve" title="Permalink to this definition"></a></dt>
+<dd><p>Get the lightcurve of the object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.lastmjd">
+<span class="sig-name descname"><span class="pre">lastmjd</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.lastmjd" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.magstats">
+<span class="sig-name descname"><span class="pre">magstats</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.magstats" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.meandec">
+<span class="sig-name descname"><span class="pre">meandec</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.meandec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.meanra">
+<span class="sig-name descname"><span class="pre">meanra</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.meanra" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.mjdendhist">
+<span class="sig-name descname"><span class="pre">mjdendhist</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.mjdendhist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.mjdstarthist">
+<span class="sig-name descname"><span class="pre">mjdstarthist</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.mjdstarthist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.ncovhist">
+<span class="sig-name descname"><span class="pre">ncovhist</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.ncovhist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.ndet">
+<span class="sig-name descname"><span class="pre">ndet</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.ndet" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.ndethist">
+<span class="sig-name descname"><span class="pre">ndethist</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.ndethist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.non_detections">
+<span class="sig-name descname"><span class="pre">non_detections</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.non_detections" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.probabilities">
+<span class="sig-name descname"><span class="pre">probabilities</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.probabilities" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.reference_change">
+<span class="sig-name descname"><span class="pre">reference_change</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.reference_change" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.sigmadec">
+<span class="sig-name descname"><span class="pre">sigmadec</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.sigmadec" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.sigmara">
+<span class="sig-name descname"><span class="pre">sigmara</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.sigmara" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.stellar">
+<span class="sig-name descname"><span class="pre">stellar</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.stellar" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Object.step_id_corr">
+<span class="sig-name descname"><span class="pre">step_id_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Object.step_id_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractPipeline" title="db_plugins.db.generic.AbstractPipeline"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPipeline</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.date">
+<span class="sig-name descname"><span class="pre">date</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.date" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.pipeline_id">
+<span class="sig-name descname"><span class="pre">pipeline_id</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.pipeline_id" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.step_id_clf">
+<span class="sig-name descname"><span class="pre">step_id_clf</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.step_id_clf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.step_id_corr">
+<span class="sig-name descname"><span class="pre">step_id_corr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.step_id_corr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.step_id_feat">
+<span class="sig-name descname"><span class="pre">step_id_feat</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.step_id_feat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.step_id_out">
+<span class="sig-name descname"><span class="pre">step_id_out</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.step_id_out" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Pipeline.step_id_stamp">
+<span class="sig-name descname"><span class="pre">step_id_stamp</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Pipeline.step_id_stamp" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Probability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Probability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Probability" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.class_name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.classifier_name">
+<span class="sig-name descname"><span class="pre">classifier_name</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.classifier_name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.classifier_version">
+<span class="sig-name descname"><span class="pre">classifier_version</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.classifier_version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.probability">
+<span class="sig-name descname"><span class="pre">probability</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.probability" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Probability.ranking">
+<span class="sig-name descname"><span class="pre">ranking</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Probability.ranking" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Ps1_ztf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Ps1_ztf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractPs1_ztf" title="db_plugins.db.generic.AbstractPs1_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractPs1_ztf</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.distpsnr1">
+<span class="sig-name descname"><span class="pre">distpsnr1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.distpsnr1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.distpsnr2">
+<span class="sig-name descname"><span class="pre">distpsnr2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.distpsnr2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.distpsnr3">
+<span class="sig-name descname"><span class="pre">distpsnr3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.distpsnr3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.nmtchps">
+<span class="sig-name descname"><span class="pre">nmtchps</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.nmtchps" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.objectidps1">
+<span class="sig-name descname"><span class="pre">objectidps1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.objectidps1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.objectidps2">
+<span class="sig-name descname"><span class="pre">objectidps2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.objectidps2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.objectidps3">
+<span class="sig-name descname"><span class="pre">objectidps3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.objectidps3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgmag1">
+<span class="sig-name descname"><span class="pre">sgmag1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgmag1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgmag2">
+<span class="sig-name descname"><span class="pre">sgmag2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgmag2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgmag3">
+<span class="sig-name descname"><span class="pre">sgmag3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgmag3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgscore1">
+<span class="sig-name descname"><span class="pre">sgscore1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgscore1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgscore2">
+<span class="sig-name descname"><span class="pre">sgscore2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgscore2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.sgscore3">
+<span class="sig-name descname"><span class="pre">sgscore3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.sgscore3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.simag1">
+<span class="sig-name descname"><span class="pre">simag1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.simag1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.simag2">
+<span class="sig-name descname"><span class="pre">simag2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.simag2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.simag3">
+<span class="sig-name descname"><span class="pre">simag3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.simag3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.srmag1">
+<span class="sig-name descname"><span class="pre">srmag1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.srmag1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.srmag2">
+<span class="sig-name descname"><span class="pre">srmag2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.srmag2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.srmag3">
+<span class="sig-name descname"><span class="pre">srmag3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.srmag3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.szmag1">
+<span class="sig-name descname"><span class="pre">szmag1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.szmag1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.szmag2">
+<span class="sig-name descname"><span class="pre">szmag2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.szmag2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.szmag3">
+<span class="sig-name descname"><span class="pre">szmag3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.szmag3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.unique1">
+<span class="sig-name descname"><span class="pre">unique1</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.unique1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.unique2">
+<span class="sig-name descname"><span class="pre">unique2</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.unique2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ps1_ztf.unique3">
+<span class="sig-name descname"><span class="pre">unique3</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ps1_ztf.unique3" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Reference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Reference" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractReference" title="db_plugins.db.generic.AbstractReference"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractReference</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.chinr">
+<span class="sig-name descname"><span class="pre">chinr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.chinr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.decnr">
+<span class="sig-name descname"><span class="pre">decnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.decnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.fid">
+<span class="sig-name descname"><span class="pre">fid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.fid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.field">
+<span class="sig-name descname"><span class="pre">field</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.field" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.magnr">
+<span class="sig-name descname"><span class="pre">magnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.magnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.mjdendref">
+<span class="sig-name descname"><span class="pre">mjdendref</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.mjdendref" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.mjdstartref">
+<span class="sig-name descname"><span class="pre">mjdstartref</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.mjdstartref" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.nframesref">
+<span class="sig-name descname"><span class="pre">nframesref</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.nframesref" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.ranr">
+<span class="sig-name descname"><span class="pre">ranr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.ranr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.rcid">
+<span class="sig-name descname"><span class="pre">rcid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.rcid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.rfid">
+<span class="sig-name descname"><span class="pre">rfid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.rfid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.sharpnr">
+<span class="sig-name descname"><span class="pre">sharpnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.sharpnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Reference.sigmagnr">
+<span class="sig-name descname"><span class="pre">sigmagnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Reference.sigmagnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Ss_ztf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Ss_ztf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractSs_ztf" title="db_plugins.db.generic.AbstractSs_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractSs_ztf</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf.candid">
+<span class="sig-name descname"><span class="pre">candid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf.candid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf.ssdistnr">
+<span class="sig-name descname"><span class="pre">ssdistnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf.ssdistnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf.ssmagnr">
+<span class="sig-name descname"><span class="pre">ssmagnr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf.ssmagnr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Ss_ztf.ssnamenr">
+<span class="sig-name descname"><span class="pre">ssnamenr</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Ss_ztf.ssnamenr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Step" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code>, <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.AbstractStep" title="db_plugins.db.generic.AbstractStep"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractStep</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step.comments">
+<span class="sig-name descname"><span class="pre">comments</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Step.comments" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step.date">
+<span class="sig-name descname"><span class="pre">date</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Step.date" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Step.name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step.step_id">
+<span class="sig-name descname"><span class="pre">step_id</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Step.step_id" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Step.version">
+<span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Step.version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Taxonomy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Taxonomy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Taxonomy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Taxonomy" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Taxonomy.classes">
+<span class="sig-name descname"><span class="pre">classes</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Taxonomy.classes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Taxonomy.classifier_name">
+<span class="sig-name descname"><span class="pre">classifier_name</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Taxonomy.classifier_name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Taxonomy.classifier_version">
+<span class="sig-name descname"><span class="pre">classifier_version</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Taxonomy.classifier_version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.models.</span></span><span class="sig-name descname"><span class="pre">Xmatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/models.html#Xmatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.catid">
+<span class="sig-name descname"><span class="pre">catid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.catid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.class_catalog">
+<span class="sig-name descname"><span class="pre">class_catalog</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.class_catalog" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.dist">
+<span class="sig-name descname"><span class="pre">dist</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.dist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.oid">
+<span class="sig-name descname"><span class="pre">oid</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.oid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.oid_catalog">
+<span class="sig-name descname"><span class="pre">oid_catalog</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.oid_catalog" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.models.Xmatch.period">
+<span class="sig-name descname"><span class="pre">period</span></span><a class="headerlink" href="#db_plugins.db.sql.models.Xmatch.period" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-db_plugins.db.sql.query">
+<span id="db-plugins-db-sql-query-module"></span><h2>db_plugins.db.sql.query module<a class="headerlink" href="#module-db_plugins.db.sql.query" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.query.</span></span><span class="sig-name descname"><span class="pre">SQLQuery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="db_plugins.db.html#db_plugins.db.generic.BaseQuery" title="db_plugins.db.generic.BaseQuery"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseQuery</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Query</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.bulk_insert">
+<span class="sig-name descname"><span class="pre">bulk_insert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.bulk_insert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.bulk_insert" title="Permalink to this definition"></a></dt>
+<dd><p>Inserts multiple objects to the database improving performance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objects</strong> (<em>list</em>) – Objects to be added</p></li>
+<li><p><strong>model</strong> (<em>Model</em>) – Class of the model to be added</p></li>
+<li><p><strong>session</strong> (<em>Session</em>) – Session instance</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.check_exists">
+<span class="sig-name descname"><span class="pre">check_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.check_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.check_exists" title="Permalink to this definition"></a></dt>
+<dd><p>Check if record exists in database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> – The connection session</p></li>
+<li><p><strong>model</strong> – The class of the model to be instantiated</p></li>
+<li><p><strong>filter_by</strong> (<em>dict</em>) – attributes used to find object in the database</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – attributes used to create the object that are not used in filter_by</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if object exists else False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.find">
+<span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paginate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.find" title="Permalink to this definition"></a></dt>
+<dd><p>Finds list of items of the specified model.
+If there are too many items a timeout can happen.
+:param model: Class of the model to be retrieved
+:type model: Model
+:param filter_by: attributes used to find objects in the database
+:type filter_by: dict
+:param paginate: whether to get a paginated result or not
+:type paginate: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.find_all">
+<span class="sig-name descname"><span class="pre">find_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paginate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.find_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.find_all" title="Permalink to this definition"></a></dt>
+<dd><p>Finds list of items of the specified model.</p>
+<p>If there are too many items a timeout can happen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>Model</em>) – Class of the model to be retrieved</p></li>
+<li><p><strong>filter_by</strong> (<em>dict</em>) – attributes used to find objects in the database</p></li>
+<li><p><strong>paginate</strong> (<em>bool</em>) – whether to get a paginated result or not</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.find_one">
+<span class="sig-name descname"><span class="pre">find_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.find_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.find_one" title="Permalink to this definition"></a></dt>
+<dd><p>Finds one item of the specified model.</p>
+<p>If there are more than one item an error occurs.
+If there are no items, then it returns None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>Model</em>) – Class of the model to be retrieved</p></li>
+<li><p><strong>filter_by</strong> (<em>dict</em>) – attributes used to find object in the database</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.get_or_create">
+<span class="sig-name descname"><span class="pre">get_or_create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.get_or_create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.get_or_create" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes a model by creating it or getting it from the database if it exists
+:param session: The connection session
+:type session: Session
+:param model: The class of the model to be instantiated
+:type model: Model
+:param filter_by: attributes used to find object in the database
+:type filter_by: dict
+:param kwargs: attributes used to create the object that are not used in filter_by
+:type kwargs: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple with the instanced object and wether it was created or not</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>instance, created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.paginate">
+<span class="sig-name descname"><span class="pre">paginate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_page</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.paginate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.paginate" title="Permalink to this definition"></a></dt>
+<dd><p>Returns pagination object with the results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>page</strong> (<em>int</em>) – page or offset of the query</p></li>
+<li><p><strong>per_page</strong> (<em>int</em>) – number of items per each result page</p></li>
+<li><p><strong>count</strong> (<em>bool</em>) – whether to count total elements in query</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="db_plugins.db.sql.query.SQLQuery.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/query.html#SQLQuery.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.query.SQLQuery.update" title="Permalink to this definition"></a></dt>
+<dd><p>Updates an object
+Parameter
+———–
+instance : Model</p>
+<blockquote>
+<div><p>Object to be updated</p>
+</div></blockquote>
+<dl class="simple">
+<dt>args<span class="classifier">dict</span></dt><dd><p>Attributes updated</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The updated object instance</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-db_plugins.db.sql.serializers">
+<span id="db-plugins-db-sql-serializers-module"></span><h2>db_plugins.db.sql.serializers module<a class="headerlink" href="#module-db_plugins.db.sql.serializers" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Gaia_ztfSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.serializers.</span></span><span class="sig-name descname"><span class="pre">Gaia_ztfSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Gaia_ztfSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Gaia_ztfSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SQLAlchemyAutoSchema</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Gaia_ztfSchema.Meta">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Meta</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Gaia_ztfSchema.Meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Gaia_ztfSchema.Meta" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Gaia_ztfSchema.Meta.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#db_plugins.db.sql.serializers.Gaia_ztfSchema.Meta.model" title="Permalink to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#db_plugins.db.sql.models.Gaia_ztf" title="db_plugins.db.sql.models.Gaia_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gaia_ztf</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Gaia_ztfSchema.opts">
+<span class="sig-name descname"><span class="pre">opts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SchemaOpts</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;marshmallow_sqlalchemy.schema.SQLAlchemyAutoSchemaOpts</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#db_plugins.db.sql.serializers.Gaia_ztfSchema.opts" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ps1_ztfSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.serializers.</span></span><span class="sig-name descname"><span class="pre">Ps1_ztfSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Ps1_ztfSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Ps1_ztfSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SQLAlchemyAutoSchema</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ps1_ztfSchema.Meta">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Meta</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Ps1_ztfSchema.Meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Ps1_ztfSchema.Meta" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ps1_ztfSchema.Meta.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#db_plugins.db.sql.serializers.Ps1_ztfSchema.Meta.model" title="Permalink to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#db_plugins.db.sql.models.Ps1_ztf" title="db_plugins.db.sql.models.Ps1_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ps1_ztf</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ps1_ztfSchema.opts">
+<span class="sig-name descname"><span class="pre">opts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SchemaOpts</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;marshmallow_sqlalchemy.schema.SQLAlchemyAutoSchemaOpts</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#db_plugins.db.sql.serializers.Ps1_ztfSchema.opts" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.ReferenceSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.serializers.</span></span><span class="sig-name descname"><span class="pre">ReferenceSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#ReferenceSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.ReferenceSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SQLAlchemyAutoSchema</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.ReferenceSchema.Meta">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Meta</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#ReferenceSchema.Meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.ReferenceSchema.Meta" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.ReferenceSchema.Meta.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#db_plugins.db.sql.serializers.ReferenceSchema.Meta.model" title="Permalink to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#db_plugins.db.sql.models.Reference" title="db_plugins.db.sql.models.Reference"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reference</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.ReferenceSchema.opts">
+<span class="sig-name descname"><span class="pre">opts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SchemaOpts</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;marshmallow_sqlalchemy.schema.SQLAlchemyAutoSchemaOpts</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#db_plugins.db.sql.serializers.ReferenceSchema.opts" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ss_ztfSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">db_plugins.db.sql.serializers.</span></span><span class="sig-name descname"><span class="pre">Ss_ztfSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Ss_ztfSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Ss_ztfSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">SQLAlchemyAutoSchema</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ss_ztfSchema.Meta">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Meta</span></span><a class="reference internal" href="_modules/db_plugins/db/sql/serializers.html#Ss_ztfSchema.Meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#db_plugins.db.sql.serializers.Ss_ztfSchema.Meta" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ss_ztfSchema.Meta.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#db_plugins.db.sql.serializers.Ss_ztfSchema.Meta.model" title="Permalink to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#db_plugins.db.sql.models.Ss_ztf" title="db_plugins.db.sql.models.Ss_ztf"><code class="xref py py-class docutils literal notranslate"><span class="pre">Ss_ztf</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="db_plugins.db.sql.serializers.Ss_ztfSchema.opts">
+<span class="sig-name descname"><span class="pre">opts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SchemaOpts</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;marshmallow_sqlalchemy.schema.SQLAlchemyAutoSchemaOpts</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#db_plugins.db.sql.serializers.Ss_ztfSchema.opts" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-db_plugins.db.sql">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-db_plugins.db.sql" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="db_plugins.db.mongo.helpers.html" class="btn btn-neutral float-left" title="db_plugins.db.mongo.helpers package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, ALeRCE Devs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

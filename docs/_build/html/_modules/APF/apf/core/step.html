@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APF.apf.core.step &mdash; ALeRCE Pipeline  documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ALeRCE Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">APF</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ALeRCE Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../core.html">APF.apf.core</a></li>
+      <li class="breadcrumb-item active">APF.apf.core.step</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for APF.apf.core.step</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">apf.consumers</span> <span class="kn">import</span> <span class="n">GenericConsumer</span>
+<span class="kn">from</span> <span class="nn">apf.metrics.generic</span> <span class="kn">import</span> <span class="n">GenericMetricsProducer</span>
+<span class="kn">from</span> <span class="nn">apf.metrics.prometheus</span> <span class="kn">import</span> <span class="n">DefaultPrometheusMetrics</span><span class="p">,</span> <span class="n">PrometheusMetrics</span>
+<span class="kn">from</span> <span class="nn">apf.metrics.pyroscope</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="kn">from</span> <span class="nn">apf.producers</span> <span class="kn">import</span> <span class="n">GenericProducer</span>
+<span class="kn">from</span> <span class="nn">apf.core</span> <span class="kn">import</span> <span class="n">get_class</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+
+<div class="viewcode-block" id="DefaultConsumer"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultConsumer">[docs]</a><span class="k">class</span> <span class="nc">DefaultConsumer</span><span class="p">(</span><span class="n">GenericConsumer</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultConsumer.consume"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultConsumer.consume">[docs]</a>    <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">{}</span></div></div>
+
+
+<div class="viewcode-block" id="DefaultProducer"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultProducer">[docs]</a><span class="k">class</span> <span class="nc">DefaultProducer</span><span class="p">(</span><span class="n">GenericProducer</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultProducer.produce"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultProducer.produce">[docs]</a>    <span class="k">def</span> <span class="nf">produce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="DefaultMetricsProducer"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultMetricsProducer">[docs]</a><span class="k">class</span> <span class="nc">DefaultMetricsProducer</span><span class="p">(</span><span class="n">GenericMetricsProducer</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultMetricsProducer.send_metrics"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.DefaultMetricsProducer.send_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">send_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="GenericStep"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep">[docs]</a><span class="k">class</span> <span class="nc">GenericStep</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic Step for apf.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    consumer : :class:`GenericConsumer`</span>
+<span class="sd">        An object of type GenericConsumer.</span>
+<span class="sd">    level : logging.level</span>
+<span class="sd">        Logging level, has to be a logging.LEVEL constant.</span>
+
+<span class="sd">        Adding `LOGGING_DEBUG` to `settings.py` set the step&#39;s global logging level to debug.</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            #settings.py</span>
+<span class="sd">            LOGGING_DEBUG = True</span>
+
+<span class="sd">    **step_args : dict</span>
+<span class="sd">        Additional parameters for the step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">consumer</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericConsumer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultConsumer</span><span class="p">,</span>
+        <span class="n">producer</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericProducer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultProducer</span><span class="p">,</span>
+        <span class="n">metrics_sender</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericMetricsProducer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultMetricsProducer</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+        <span class="n">prometheus_metrics</span><span class="p">:</span> <span class="n">PrometheusMetrics</span> <span class="o">=</span> <span class="n">DefaultPrometheusMetrics</span><span class="p">(),</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_logger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_consumer</span><span class="p">(</span><span class="n">consumer</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_producer</span><span class="p">(</span><span class="n">producer</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">producer_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics_sender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_metrics_sender</span><span class="p">(</span><span class="n">metrics_sender</span><span class="p">)(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metrics_producer_params</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;EXTRA_METRICS&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;candid&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;COMMIT&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span> <span class="o">=</span> <span class="n">prometheus_metrics</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">consumer_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;CONSUMER_CONFIG&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">producer_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PRODUCER_CONFIG&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metrics_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;METRICS_CONFIG&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metrics_producer_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="p">[</span><span class="s2">&quot;PARAMS&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_set_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;alerce.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_consumer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericConsumer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericConsumer</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumer_config</span><span class="p">:</span>
+            <span class="n">Consumer</span> <span class="o">=</span> <span class="n">default</span>
+            <span class="k">if</span> <span class="s2">&quot;CLASS&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumer_config</span><span class="p">:</span>
+                <span class="n">Consumer</span> <span class="o">=</span> <span class="n">get_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_config</span><span class="p">[</span><span class="s2">&quot;CLASS&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">Consumer</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find CONSUMER_CONFIG in the step config&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_producer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericProducer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericProducer</span><span class="p">]:</span>
+        <span class="n">Producer</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="k">if</span> <span class="s2">&quot;CLASS&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">producer_config</span><span class="p">:</span>
+            <span class="n">Producer</span> <span class="o">=</span> <span class="n">get_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">producer_config</span><span class="p">[</span><span class="s2">&quot;CLASS&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Producer</span>
+
+    <span class="k">def</span> <span class="nf">_get_metrics_sender</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericMetricsProducer</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">GenericMetricsProducer</span><span class="p">]:</span>
+        <span class="n">Metrics</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;CLASS&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_config</span><span class="p">:</span>
+                <span class="n">Metrics</span> <span class="o">=</span> <span class="n">get_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;METRICS_CONFIG&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;CLASS&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Metrics</span>
+
+<div class="viewcode-block" id="GenericStep.send_metrics"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.send_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">send_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">metrics</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send Metrics with a metrics producer.</span>
+
+<span class="sd">        For this method to work the `METRICS_CONFIG` variable has to be set in the `STEP_CONFIG`</span>
+<span class="sd">        variable.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        Send the compute time for an object.</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            #example_step/step.py</span>
+<span class="sd">            self.send_metrics(compute_time=compute_time, oid=oid)</span>
+
+<span class="sd">        For this to work we need to declare</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            #settings.py</span>
+<span class="sd">            STEP_CONFIG = {...</span>
+<span class="sd">                &quot;METRICS_CONFIG&quot;:{ #Can be a empty dictionary</span>
+<span class="sd">                    &quot;CLASS&quot;: &quot;apf.metrics.KafkaMetricsProducer&quot;,</span>
+<span class="sd">                    &quot;PARAMS&quot;: { # params for the apf.metrics.KafkaMetricsProducer</span>
+<span class="sd">                        &quot;PARAMS&quot;:{</span>
+<span class="sd">                            ## this producer uses confluent_kafka.Producer, so here we provide</span>
+<span class="sd">                            ## arguments for that class, like bootstrap.servers</span>
+<span class="sd">                            bootstrap.servers&quot;: &quot;kafka1:9092&quot;,</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;TOPIC&quot;: &quot;metrics_topic&quot; # the topic to store the metrics</span>
+<span class="sd">                    },</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **metrics : dict-like</span>
+<span class="sd">            Parameters sent to the kafka topic as message.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_sender</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metrics_sender</span><span class="o">.</span><span class="n">send_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_pre_consume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting step. Begin processing&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_consume</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GenericStep.pre_consume"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.pre_consume">[docs]</a>    <span class="k">def</span> <span class="nf">pre_consume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform operations before the first message arrives.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="nf">_pre_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Received message. Begin preprocessing&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timestamp_received&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">[</span><span class="n">message</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span><span class="o">.</span><span class="n">consumed_messages</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># tid = self.message.get(&quot;tid&quot;)</span>
+            <span class="c1"># if tid:</span>
+            <span class="c1">#     tid = str(tid).upper()</span>
+            <span class="c1">#     self.prometheus_metrics.telescope_id.state(tid)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span><span class="o">.</span><span class="n">consumed_messages</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">))</span>
+            <span class="c1"># tid = self.message[0].get(&quot;tid&quot;)</span>
+            <span class="c1"># if tid:</span>
+            <span class="c1">#     tid = str(tid).upper()</span>
+            <span class="c1">#     self.prometheus_metrics.telescope_id.state(tid)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">preprocessed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at pre_execute&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The message(s) that caused the error: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span>
+        <span class="k">return</span> <span class="n">preprocessed</span>
+
+<div class="viewcode-block" id="GenericStep.pre_execute"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.pre_execute">[docs]</a>    <span class="k">def</span> <span class="nf">pre_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform operations on each batch of messages consumed.</span>
+
+<span class="sd">        Typically this method is used for pre processing operations such as parsing,</span>
+<span class="sd">        formatting and overall preparation for the execute method that handles</span>
+<span class="sd">        all the complex logic applied to the messages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">messages</span></div>
+
+<div class="viewcode-block" id="GenericStep.execute"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.execute">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the logic of the step. This method has to be implemented by</span>
+<span class="sd">        the instanced class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        message : dict, list</span>
+<span class="sd">            Dict-like message to be processed or list of dict-like messages</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="nf">_post_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processed message. Begin post processing&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">final_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_execute</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at post_execute&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The result that caused the error: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">commit</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">consumer</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timestamp_sent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="n">time_difference</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timestamp_sent&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;timestamp_received&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;execution_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_difference</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_metrics</span><span class="p">:</span>
+            <span class="n">extra_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_extra_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">extra_metrics</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_metrics</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span><span class="o">.</span><span class="n">processed_messages</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span><span class="o">.</span><span class="n">processed_messages</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prometheus_metrics</span><span class="o">.</span><span class="n">execution_time</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">time_difference</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">final_result</span>
+
+<div class="viewcode-block" id="GenericStep.post_execute"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.post_execute">[docs]</a>    <span class="k">def</span> <span class="nf">post_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform additional operations on</span>
+<span class="sd">        the processed data coming from :py:func:`apf.core.step.GenericStep.execute`</span>
+<span class="sd">        method.</span>
+
+<span class="sd">        Typically used to do post processing, parsing, output formatting, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">_pre_produce</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished all processing. Begin message production&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">message_to_produce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_produce</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at pre_produce&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The result that caused the error: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span>
+        <span class="k">return</span> <span class="n">message_to_produce</span>
+
+<div class="viewcode-block" id="GenericStep.pre_produce"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.pre_produce">[docs]</a>    <span class="k">def</span> <span class="nf">pre_produce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform additional operations on</span>
+<span class="sd">        the processed data coming from :py:func:`apf.core.step.GenericStep.post_execute`</span>
+<span class="sd">        method.</span>
+
+<span class="sd">        Typically used to format data output as described in the step producer&#39;s Schema</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">_post_produce</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Messages produced. Begin post production&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">post_produce</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at post_produce&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span>
+
+<div class="viewcode-block" id="GenericStep.post_produce"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.post_produce">[docs]</a>    <span class="k">def</span> <span class="nf">post_produce</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform operations after data has been</span>
+<span class="sd">        produced by the producer.</span>
+
+<span class="sd">        You can use this lifecycle method to perform cleanup, send additional metrics,</span>
+<span class="sd">        notifications, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="GenericStep.get_value"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.get_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get values from a massage and process it to create a new metric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        message : dict</span>
+<span class="sd">            Dict-like message to be processed</span>
+
+<span class="sd">        params : str, dict</span>
+<span class="sd">            String of the value key or dict with the following:</span>
+
+<span class="sd">            - &#39;key&#39;: str</span>
+<span class="sd">                Must have parameter, has to be in the message.</span>
+<span class="sd">            - &#39;alias&#39;: str</span>
+<span class="sd">                New key returned, this can be used to standarize some message keys.</span>
+<span class="sd">            - &#39;format&#39;: callable</span>
+<span class="sd">                Function to be call on the message value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        new_key, value</span>
+<span class="sd">            Aliased key and processed value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">params</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;key&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;&#39;key&#39; in parameteres not found&quot;</span><span class="p">)</span>
+
+            <span class="n">val</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s2">&quot;format&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;format&quot;</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;format&#39; parameter must be a calleable.&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;format&quot;</span><span class="p">](</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;alias&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;alias&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;alias&quot;</span><span class="p">],</span> <span class="n">val</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;alias&#39; parameter must be a string.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">],</span> <span class="n">val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;params must be str or dict, received </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenericStep.get_extra_metrics"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.get_extra_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">get_extra_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate extra metrics from the EXTRA_METRICS metrics configuration.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        message : dict, list</span>
+<span class="sd">            Dict-like message to be processed or list of dict-like messages</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary with extra metrics from the messages.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Is the message is a list then the metrics are</span>
+        <span class="c1"># added to an array of values.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">extra_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">msj</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_metrics</span><span class="p">:</span>
+                    <span class="n">aliased_metric</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">msj</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+                    <span class="c1"># Checking if the metric exists</span>
+                    <span class="k">if</span> <span class="n">aliased_metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_metrics</span><span class="p">:</span>
+                        <span class="n">extra_metrics</span><span class="p">[</span><span class="n">aliased_metric</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">extra_metrics</span><span class="p">[</span><span class="n">aliased_metric</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">extra_metrics</span><span class="p">[</span><span class="s2">&quot;n_messages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="c1"># If not they are only added as a single value.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">extra_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_metrics</span><span class="p">:</span>
+                <span class="n">aliased_metric</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+                <span class="n">extra_metrics</span><span class="p">[</span><span class="n">aliased_metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">extra_metrics</span><span class="p">[</span><span class="s2">&quot;n_messages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">extra_metrics</span></div>
+
+<div class="viewcode-block" id="GenericStep.produce"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.produce">[docs]</a>    <span class="k">def</span> <span class="nf">produce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produces messages using the configured producer class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        result: dict | list[dict]</span>
+<span class="sd">            The result of the step&#39;s execution.</span>
+<span class="sd">            This parameter can be an iterable or a single message, where the message should be</span>
+<span class="sd">            a dictionary that matches the output schema of the step.</span>
+
+<span class="sd">        NOTE: If you want to produce with a key, use the set_producer_key_field(key_field)</span>
+<span class="sd">        method somewhere in the lifecycle of the step prior to the produce state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_messages</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">to_produce</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">to_produce</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">for</span> <span class="n">prod_message</span> <span class="ow">in</span> <span class="n">to_produce</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">produce</span><span class="p">(</span><span class="n">prod_message</span><span class="p">)</span>
+            <span class="n">n_messages</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="p">,</span> <span class="n">DefaultProducer</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Produced </span><span class="si">{</span><span class="n">n_messages</span><span class="si">}</span><span class="s2"> messages&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenericStep.set_producer_key_field"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.set_producer_key_field">[docs]</a>    <span class="k">def</span> <span class="nf">set_producer_key_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the producer key, used in producer.produce(message, key=message[key_field])</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key_field : str</span>
+<span class="sd">            the key of the message which value will be used as key for the producer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">set_key_field</span><span class="p">(</span><span class="n">key_field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenericStep.start"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.start">[docs]</a>    <span class="nd">@profile</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;alerce.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start running the step.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pre_consume</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">():</span>
+            <span class="n">preprocessed_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_execute</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">preprocessed_msg</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at execute&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The message(s) that caused the error: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">error</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_execute</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_produce</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">produce</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_post_produce</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tear_down</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_tear_down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing finished. No more messages. Begin tear down.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tear_down</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error at tear_down&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_success</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_write_success</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;__SUCCESS__&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GenericStep.tear_down"><a class="viewcode-back" href="../../../../APF.apf.core.html#APF.apf.core.step.GenericStep.tear_down">[docs]</a>    <span class="k">def</span> <span class="nf">tear_down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method to perform operations after the consumer</span>
+<span class="sd">        has stopped consuming data.</span>
+
+<span class="sd">        This method is called only once after processing messages and right before</span>
+<span class="sd">        the start method ends.</span>
+
+<span class="sd">        You can use this lifecycle method to perform cleanup, send additional metrics,</span>
+<span class="sd">        notifications, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, ALeRCE Devs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

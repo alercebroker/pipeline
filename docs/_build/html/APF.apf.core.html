@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APF.apf.core package &mdash; ALeRCE Pipeline  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="APF.apf.core.management package" href="APF.apf.core.management.html" />
+    <link rel="prev" title="APF.apf.consumers package" href="APF.apf.consumers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALeRCE Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">APF</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="APF.html">APF package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="APF.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="APF.apf.html">APF.apf package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="APF.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APF.html#apf-setup-module">APF.setup module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APF.html#module-APF">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="db_plugins.html">db_plugins package</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALeRCE Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">APF</a></li>
+          <li class="breadcrumb-item"><a href="APF.html">APF package</a></li>
+          <li class="breadcrumb-item"><a href="APF.apf.html">APF.apf package</a></li>
+      <li class="breadcrumb-item active">APF.apf.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/APF.apf.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="apf-apf-core-package">
+<h1>APF.apf.core package<a class="headerlink" href="#apf-apf-core-package" title="Permalink to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="APF.apf.core.management.html">APF.apf.core.management package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="APF.apf.core.management.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APF.apf.core.management.html#module-APF.apf.core.management.helpers">APF.apf.core.management.helpers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APF.apf.core.management.html#module-APF.apf.core.management">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-APF.apf.core.secret_manager">
+<span id="apf-apf-core-secret-manager-module"></span><h2>APF.apf.core.secret_manager module<a class="headerlink" href="#module-APF.apf.core.secret_manager" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="APF.apf.core.secret_manager.get_secret">
+<span class="sig-prename descclassname"><span class="pre">APF.apf.core.secret_manager.</span></span><span class="sig-name descname"><span class="pre">get_secret</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_to_return</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SecretString'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'us-east-1'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/secret_manager.html#get_secret"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.secret_manager.get_secret" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-APF.apf.core.step">
+<span id="apf-apf-core-step-module"></span><h2>APF.apf.core.step module<a class="headerlink" href="#module-APF.apf.core.step" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultConsumer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.step.</span></span><span class="sig-name descname"><span class="pre">DefaultConsumer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultConsumer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultConsumer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">GenericConsumer</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultConsumer.consume">
+<span class="sig-name descname"><span class="pre">consume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultConsumer.consume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultConsumer.consume" title="Permalink to this definition"></a></dt>
+<dd><p>Get a message from a data source</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>dict</em> – Dictionary like message of an alert.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultMetricsProducer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.step.</span></span><span class="sig-name descname"><span class="pre">DefaultMetricsProducer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultMetricsProducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultMetricsProducer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">GenericMetricsProducer</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultMetricsProducer.send_metrics">
+<span class="sig-name descname"><span class="pre">send_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultMetricsProducer.send_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultMetricsProducer.send_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Write metrics into a data store or other metrics system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>metrics</strong> (<em>dict</em>) – Metrics to be written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultProducer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.step.</span></span><span class="sig-name descname"><span class="pre">DefaultProducer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultProducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultProducer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">GenericProducer</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.DefaultProducer.produce">
+<span class="sig-name descname"><span class="pre">produce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#DefaultProducer.produce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.DefaultProducer.produce" title="Permalink to this definition"></a></dt>
+<dd><p>Send a message after processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message</strong> (<em>dict-like</em>) – Message to be sended.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.step.</span></span><span class="sig-name descname"><span class="pre">GenericStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">consumer:</span> <span class="pre">~typing.Type[~apf.consumers.generic.GenericConsumer]</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'APF.apf.core.step.DefaultConsumer'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer:</span> <span class="pre">~typing.Type[~apf.producers.generic.GenericProducer]</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'APF.apf.core.step.DefaultProducer'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_sender:</span> <span class="pre">~typing.Type[~apf.metrics.generic.GenericMetricsProducer]</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'APF.apf.core.step.DefaultMetricsProducer'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prometheus_metrics:</span> <span class="pre">~apf.metrics.prometheus.prometheus.PrometheusMetrics</span> <span class="pre">=</span> <span class="pre">&lt;apf.metrics.prometheus.prometheus.DefaultPrometheusMetrics</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Generic Step for apf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>consumer</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">GenericConsumer</span></code>) – An object of type GenericConsumer.</p></li>
+<li><p><strong>level</strong> (<em>logging.level</em>) – <p>Logging level, has to be a logging.LEVEL constant.</p>
+<p>Adding <cite>LOGGING_DEBUG</cite> to <cite>settings.py</cite> set the step’s global logging level to debug.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#settings.py</span>
+<span class="n">LOGGING_DEBUG</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>**step_args</strong> (<em>dict</em>) – Additional parameters for the step.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.consumer_config">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">consumer_config</span></span><a class="headerlink" href="#APF.apf.core.step.GenericStep.consumer_config" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.execute">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.execute" title="Permalink to this definition"></a></dt>
+<dd><p>Execute the logic of the step. This method has to be implemented by
+the instanced class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message</strong> (<em>dict</em><em>, </em><em>list</em>) – Dict-like message to be processed or list of dict-like messages</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.get_extra_metrics">
+<span class="sig-name descname"><span class="pre">get_extra_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.get_extra_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.get_extra_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Generate extra metrics from the EXTRA_METRICS metrics configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message</strong> (<em>dict</em><em>, </em><em>list</em>) – Dict-like message to be processed or list of dict-like messages</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with extra metrics from the messages.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.get_value">
+<span class="sig-name descname"><span class="pre">get_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.get_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.get_value" title="Permalink to this definition"></a></dt>
+<dd><p>Get values from a massage and process it to create a new metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<em>dict</em>) – Dict-like message to be processed</p></li>
+<li><p><strong>params</strong> (<em>str</em><em>, </em><em>dict</em>) – <p>String of the value key or dict with the following:</p>
+<ul>
+<li><dl class="simple">
+<dt>’key’: str</dt><dd><p>Must have parameter, has to be in the message.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>’alias’: str</dt><dd><p>New key returned, this can be used to standarize some message keys.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>’format’: callable</dt><dd><p>Function to be call on the message value.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aliased key and processed value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new_key, value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.metrics_config">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_config</span></span><a class="headerlink" href="#APF.apf.core.step.GenericStep.metrics_config" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.metrics_producer_params">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics_producer_params</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#APF.apf.core.step.GenericStep.metrics_producer_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.post_execute">
+<span class="sig-name descname"><span class="pre">post_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.post_execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.post_execute" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform additional operations on
+the processed data coming from <code class="xref py py-func docutils literal notranslate"><span class="pre">apf.core.step.GenericStep.execute()</span></code>
+method.</p>
+<p>Typically used to do post processing, parsing, output formatting, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.post_produce">
+<span class="sig-name descname"><span class="pre">post_produce</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.post_produce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.post_produce" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform operations after data has been
+produced by the producer.</p>
+<p>You can use this lifecycle method to perform cleanup, send additional metrics,
+notifications, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.pre_consume">
+<span class="sig-name descname"><span class="pre">pre_consume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.pre_consume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.pre_consume" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform operations before the first message arrives.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.pre_execute">
+<span class="sig-name descname"><span class="pre">pre_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.pre_execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.pre_execute" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform operations on each batch of messages consumed.</p>
+<p>Typically this method is used for pre processing operations such as parsing,
+formatting and overall preparation for the execute method that handles
+all the complex logic applied to the messages.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.pre_produce">
+<span class="sig-name descname"><span class="pre">pre_produce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.pre_produce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.pre_produce" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform additional operations on
+the processed data coming from <code class="xref py py-func docutils literal notranslate"><span class="pre">apf.core.step.GenericStep.post_execute()</span></code>
+method.</p>
+<p>Typically used to format data output as described in the step producer’s Schema</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.produce">
+<span class="sig-name descname"><span class="pre">produce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.produce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.produce" title="Permalink to this definition"></a></dt>
+<dd><p>Produces messages using the configured producer class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result</strong> (<em>dict</em><em> | </em><em>list</em><em>[</em><em>dict</em><em>]</em>) – The result of the step’s execution.
+This parameter can be an iterable or a single message, where the message should be
+a dictionary that matches the output schema of the step.</p></li>
+<li><p><strong>NOTE</strong> (<em>If you want to produce with a key</em><em>, </em><em>use the set_producer_key_field</em><em>(</em><em>key_field</em><em>)</em>) – </p></li>
+<li><p><strong>state.</strong> (<em>method somewhere in the lifecycle</em><em> of </em><em>the step prior to the produce</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.producer_config">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">producer_config</span></span><a class="headerlink" href="#APF.apf.core.step.GenericStep.producer_config" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.send_metrics">
+<span class="sig-name descname"><span class="pre">send_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metrics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.send_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.send_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Send Metrics with a metrics producer.</p>
+<p>For this method to work the <cite>METRICS_CONFIG</cite> variable has to be set in the <cite>STEP_CONFIG</cite>
+variable.</p>
+<p><strong>Example:</strong></p>
+<p>Send the compute time for an object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#example_step/step.py</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">send_metrics</span><span class="p">(</span><span class="n">compute_time</span><span class="o">=</span><span class="n">compute_time</span><span class="p">,</span> <span class="n">oid</span><span class="o">=</span><span class="n">oid</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For this to work we need to declare</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#settings.py</span>
+<span class="n">STEP_CONFIG</span> <span class="o">=</span> <span class="p">{</span><span class="o">...</span>
+    <span class="s2">&quot;METRICS_CONFIG&quot;</span><span class="p">:{</span> <span class="c1">#Can be a empty dictionary</span>
+        <span class="s2">&quot;CLASS&quot;</span><span class="p">:</span> <span class="s2">&quot;apf.metrics.KafkaMetricsProducer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PARAMS&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="c1"># params for the apf.metrics.KafkaMetricsProducer</span>
+            <span class="s2">&quot;PARAMS&quot;</span><span class="p">:{</span>
+                <span class="c1">## this producer uses confluent_kafka.Producer, so here we provide</span>
+                <span class="c1">## arguments for that class, like bootstrap.servers</span>
+                <span class="n">bootstrap</span><span class="o">.</span><span class="n">servers</span><span class="s2">&quot;: &quot;</span><span class="n">kafka1</span><span class="p">:</span><span class="mi">9092</span><span class="s2">&quot;,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;TOPIC&quot;</span><span class="p">:</span> <span class="s2">&quot;metrics_topic&quot;</span> <span class="c1"># the topic to store the metrics</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**metrics</strong> (<em>dict-like</em>) – Parameters sent to the kafka topic as message.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.set_producer_key_field">
+<span class="sig-name descname"><span class="pre">set_producer_key_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.set_producer_key_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.set_producer_key_field" title="Permalink to this definition"></a></dt>
+<dd><p>Set the producer key, used in producer.produce(message, key=message[key_field])</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key_field</strong> (<em>str</em>) – the key of the message which value will be used as key for the producer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.start" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.step.GenericStep.tear_down">
+<span class="sig-name descname"><span class="pre">tear_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/step.html#GenericStep.tear_down"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.step.GenericStep.tear_down" title="Permalink to this definition"></a></dt>
+<dd><p>Override this method to perform operations after the consumer
+has stopped consuming data.</p>
+<p>This method is called only once after processing messages and right before
+the start method ends.</p>
+<p>You can use this lifecycle method to perform cleanup, send additional metrics,
+notifications, etc.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-APF.apf.core.topic_management">
+<span id="apf-apf-core-topic-management-module"></span><h2>APF.apf.core.topic_management module<a class="headerlink" href="#module-APF.apf.core.topic_management" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.topic_management.DailyTopicStrategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.topic_management.</span></span><span class="sig-name descname"><span class="pre">DailyTopicStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ztf_%s_programid1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%Y%m%d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">change_hour</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retention_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/topic_management.html#DailyTopicStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.topic_management.DailyTopicStrategy" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#APF.apf.core.topic_management.GenericTopicStrategy" title="APF.apf.core.topic_management.GenericTopicStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">GenericTopicStrategy</span></code></a></p>
+<p>Gives a KafkaConsumer a new topic every day. (For more information check the <code class="xref py py-class docutils literal notranslate"><span class="pre">apf.consumers.KafkaConsumer</span></code>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic_format</strong> (<em>str/list</em>) – Topic format with %s for the date field.</p></li>
+<li><p><strong>date_format</strong> (<em>str</em>) – <dl class="simple">
+<dt>Date format code. Must be a valid 1989 C code.</dt><dd><p>i.e: %Y%m%d = YYYY-mm-dd</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>change_hour</strong> (<em>int</em>) – UTC hour to change the topic.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.topic_management.DailyTopicStrategy.get_topics">
+<span class="sig-name descname"><span class="pre">get_topics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/topic_management.html#DailyTopicStrategy.get_topics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.topic_management.DailyTopicStrategy.get_topics" title="Permalink to this definition"></a></dt>
+<dd><p>Get list of topics updated to the current date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of updated topics.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.topic_management.GenericTopicStrategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.topic_management.</span></span><span class="sig-name descname"><span class="pre">GenericTopicStrategy</span></span><a class="reference internal" href="_modules/APF/apf/core/topic_management.html#GenericTopicStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.topic_management.GenericTopicStrategy" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="APF.apf.core.topic_management.GenericTopicStrategy.get_topics">
+<span class="sig-name descname"><span class="pre">get_topics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/topic_management.html#GenericTopicStrategy.get_topics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.topic_management.GenericTopicStrategy.get_topics" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="APF.apf.core.topic_management.Topic">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">APF.apf.core.topic_management.</span></span><span class="sig-name descname"><span class="pre">Topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_format</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/APF/apf/core/topic_management.html#Topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.topic_management.Topic" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</section>
+<section id="module-APF.apf.core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-APF.apf.core" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="APF.apf.core.get_class">
+<span class="sig-prename descclassname"><span class="pre">APF.apf.core.</span></span><span class="sig-name descname"><span class="pre">get_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">APFClass</span></span></span><a class="reference internal" href="_modules/APF/apf/core.html#get_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#APF.apf.core.get_class" title="Permalink to this definition"></a></dt>
+<dd><p>Import class from string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>string</strong> (<em>str</em>) – absolute python import path for the class. (i.e. apf.consumers.GenericConsumer)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Class imported.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="APF.apf.consumers.html" class="btn btn-neutral float-left" title="APF.apf.consumers package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="APF.apf.core.management.html" class="btn btn-neutral float-right" title="APF.apf.core.management package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, ALeRCE Devs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

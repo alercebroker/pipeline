@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>db_plugins.db.sql.connection &mdash; ALeRCE Pipeline  documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ALeRCE Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">APF</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ALeRCE Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">db_plugins.db.sql.connection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for db_plugins.db.sql.connection</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">sessionmaker</span><span class="p">,</span> <span class="n">scoped_session</span>
+
+<span class="kn">from</span> <span class="nn">.query</span> <span class="kn">import</span> <span class="n">SQLQuery</span>
+<span class="kn">from</span> <span class="nn">..generic</span> <span class="kn">import</span> <span class="n">DatabaseConnection</span><span class="p">,</span> <span class="n">DatabaseCreator</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Base</span>
+
+<span class="n">MAP_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;USER&quot;</span><span class="p">,</span> <span class="s2">&quot;PASSWORD&quot;</span><span class="p">,</span> <span class="s2">&quot;PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;DB_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;ENGINE&quot;</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="satisfy_keys"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.satisfy_keys">[docs]</a><span class="k">def</span> <span class="nf">satisfy_keys</span><span class="p">(</span><span class="n">config_keys</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">MAP_KEYS</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">config_keys</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="settings_map"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.settings_map">[docs]</a><span class="k">def</span> <span class="nf">settings_map</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ENGINE&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">://</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;USER&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;PASSWORD&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;HOST&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;PORT&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;DB_NAME&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="SQLConnection"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection">[docs]</a><span class="k">class</span> <span class="nc">SQLConnection</span><span class="p">(</span><span class="n">DatabaseConnection</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Session</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Base</span> <span class="o">=</span> <span class="n">Base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Session</span> <span class="o">=</span> <span class="n">Session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_scoped</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SQLConnection.connect"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+        <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">session_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">create_session</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_scoped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">scope_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Establishes connection to a database and initializes a session.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        config : dict</span>
+<span class="sd">            Database configuration. For example:</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                &quot;SQL&quot;: {</span>
+<span class="sd">                    &quot;ENGINE&quot;: &quot;postgresql&quot;,</span>
+<span class="sd">                    &quot;HOST&quot;: &quot;host&quot;,</span>
+<span class="sd">                    &quot;USER&quot;: &quot;username&quot;,</span>
+<span class="sd">                    &quot;PASSWORD&quot;: &quot;pwd&quot;,</span>
+<span class="sd">                    &quot;PORT&quot;: 5432, # postgresql tipically runs on port 5432. Notice that we use an int here.</span>
+<span class="sd">                    &quot;DB_NAME&quot;: &quot;database&quot;,</span>
+<span class="sd">                }</span>
+<span class="sd">        base : sqlalchemy.ext.declarative.declarative_base()</span>
+<span class="sd">            Base class used by sqlalchemy to create tables</span>
+<span class="sd">        session_options : dict</span>
+<span class="sd">            Options passed to sessionmaker</span>
+<span class="sd">        create_session : Boolean</span>
+<span class="sd">            Whether to instantiate a session or not. The default value is True since this is the previous behavior.</span>
+<span class="sd">            Proper usage should be to pass False and create / close the session on demand inside the application.</span>
+<span class="sd">            You should call this method first and then call SQLConnection.create_session(use_scoped)</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                # scoped session example</span>
+<span class="sd">                conn = SQLConnection()</span>
+<span class="sd">                conn.connect(config, create_session=False)</span>
+<span class="sd">                conn.create_session(use_scoped=True)</span>
+<span class="sd">                # use session</span>
+<span class="sd">                conn.query()</span>
+<span class="sd">                conn.session.remove()</span>
+<span class="sd">        use_scoped : Boolean</span>
+<span class="sd">            Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.</span>
+<span class="sd">            Read more about scoped sessions at: `&lt;https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped&gt;`_</span>
+<span class="sd">        scope_func : function</span>
+<span class="sd">            A function which serves as the scope for the session. The session will live only in the scope of that function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">satisfy_keys</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;SQLALCHEMY_DATABASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">settings_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="ow">or</span> <span class="n">create_engine</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;SQLALCHEMY_DATABASE_URL&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Base</span> <span class="o">=</span> <span class="n">base</span> <span class="ow">or</span> <span class="n">Base</span>
+        <span class="n">session_options</span> <span class="o">=</span> <span class="n">session_options</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">session_options</span><span class="p">[</span><span class="s2">&quot;query_cls&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SQLQuery</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="o">**</span><span class="n">session_options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">create_session</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_session</span><span class="p">(</span><span class="n">use_scoped</span><span class="p">,</span> <span class="n">scope_func</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLConnection.create_session"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.create_session">[docs]</a>    <span class="k">def</span> <span class="nf">create_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_scoped</span><span class="p">,</span> <span class="n">scope_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a SQLAlchemy Session object to interact with the database.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        use_scoped : Boolean</span>
+<span class="sd">            Whether to use scoped session or not. Use a scoped session if you are using it in a web service like an API.</span>
+<span class="sd">            Read more about scoped sessions at: `&lt;https://docs.sqlalchemy.org/en/13/orm/contextual.html?highlight=scoped&gt;`_</span>
+<span class="sd">        scope_func : function</span>
+<span class="sd">            A function which serves as the scope for the session. The session will live only in the scope of that function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_scoped</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_unscoped_session</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_create_scoped_session</span><span class="p">(</span><span class="n">scope_func</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_create_scoped_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope_func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">scoped_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Session</span><span class="p">,</span> <span class="n">scopefunc</span><span class="o">=</span><span class="n">scope_func</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query_property</span><span class="p">(</span><span class="n">query_cls</span><span class="o">=</span><span class="n">SQLQuery</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_scoped</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_create_unscoped_session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SQLConnection.end_session"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.end_session">[docs]</a>    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_scoped</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SQLConnection.create_db"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.create_db">[docs]</a>    <span class="k">def</span> <span class="nf">create_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLConnection.drop_db"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.drop_db">[docs]</a>    <span class="k">def</span> <span class="nf">drop_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">drop_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SQLConnection.query"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLConnection.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a BaseQuery object that allows you to query the database using the SQLAlchemy API,</span>
+<span class="sd">        or using the BaseQuery methods like ``get_or_create``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : tuple</span>
+<span class="sd">            Args you can pass to SQLALchemy Query class, for example a model.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            # Using SQLAlchemy API</span>
+<span class="sd">            db_conn.query(Probability).all()</span>
+<span class="sd">            # Using db-plugins</span>
+<span class="sd">            db_conn.query(Probability).find(filter_by=**filters)</span>
+<span class="sd">            db_conn.query().get_or_create(model=Object, filter_by=**filters)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SQLDatabaseCreator"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLDatabaseCreator">[docs]</a><span class="k">class</span> <span class="nc">SQLDatabaseCreator</span><span class="p">(</span><span class="n">DatabaseCreator</span><span class="p">):</span>
+<div class="viewcode-block" id="SQLDatabaseCreator.create_database"><a class="viewcode-back" href="../../../../db_plugins.db.sql.html#db_plugins.db.sql.connection.SQLDatabaseCreator.create_database">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_database</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SQLConnection</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SQLConnection</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, ALeRCE Devs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

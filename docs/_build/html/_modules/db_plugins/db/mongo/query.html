@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>db_plugins.db.mongo.query &mdash; ALeRCE Pipeline  documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ALeRCE Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">APF</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ALeRCE Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">db_plugins.db.mongo.query</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for db_plugins.db.mongo.query</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">zip_longest</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pymongo</span> <span class="kn">import</span> <span class="n">UpdateOne</span>
+
+<span class="kn">from</span> <span class="nn">..generic</span> <span class="kn">import</span> <span class="n">BaseQuery</span><span class="p">,</span> <span class="n">Pagination</span><span class="p">,</span> <span class="n">PaginationNoCount</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<div class="viewcode-block" id="CollectionNotFound"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.CollectionNotFound">[docs]</a><span class="k">class</span> <span class="nc">CollectionNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MongoQuery"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery">[docs]</a><span class="k">class</span> <span class="nc">MongoQuery</span><span class="p">(</span><span class="n">BaseQuery</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">and</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only one of &#39;model&#39; or &#39;name&#39; can be defined&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db</span> <span class="o">=</span> <span class="n">database</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="c1"># Ignore model and use pure pymongo API</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">model</span><span class="p">:</span>
+            <span class="c1"># Using custom ORM API</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MongoQuery.init_collection"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.init_collection">[docs]</a>    <span class="k">def</span> <span class="nf">init_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the collection used by the various methods based on the model</span>
+<span class="sd">        class provided. If no model is provided, it will use the collection</span>
+<span class="sd">        provided during creation, if any.</span>
+
+<span class="sd">        Raises a :class:`CollectionNotFound` error if no model is provided</span>
+<span class="sd">        and no collection was selected during creation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : Type[BaseModel]</span>
+<span class="sd">            Model class used for queries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">_meta</span><span class="o">.</span><span class="n">tablename</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CollectionNotFound</span><span class="p">(</span>
+                <span class="s2">&quot;A valid model must be provided at instantiation or in method call&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoQuery.check_exists"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.check_exists">[docs]</a>    <span class="k">def</span> <span class="nf">check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if record exists in database.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filter_by : dict</span>
+<span class="sd">            Attributes for finding a document in database</span>
+<span class="sd">        model : Type[BaseModel]</span>
+<span class="sd">            Class of the model whose collection will be searched for</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            Whether an object exists in the collection or not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filter_by</span> <span class="o">=</span> <span class="n">filter_by</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">count_documents</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="MongoQuery.get_or_create"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.get_or_create">[docs]</a>    <span class="k">def</span> <span class="nf">get_or_create</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a model by creating it or getting it from the database.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : Type[BaseModel]</span>
+<span class="sd">            Class of the model to be searched for or created</span>
+<span class="sd">        filter_by : dict</span>
+<span class="sd">            Attributes for finding a document in the database</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Additional attributes for creating a document (will be overridden by ``filter_by`` attributes)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tuple[dict or InsertOneResult, bool]</span>
+<span class="sd">            Tuple with the document (if not created) and whether it was created or not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filter_by</span> <span class="o">=</span> <span class="n">filter_by</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="n">filter_by</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="kc">False</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">filter_by</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">model_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">insert_one</span><span class="p">(</span><span class="n">model_instance</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="MongoQuery.update"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a document in collection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        instance : BaseModel</span>
+<span class="sd">            Document to be updated</span>
+<span class="sd">        attrs : dict</span>
+<span class="sd">            Attributes to be updated</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pymongo.results.UpdateResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">instance</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="n">attrs</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="MongoQuery.bulk_update"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.bulk_update">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">filter_fields</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update multiple documents in a collection at once.</span>
+
+<span class="sd">        The length of `instances` and `attrs` must be the same.</span>
+
+<span class="sd">        If `filter_fields` is defined, it must also match the length of</span>
+<span class="sd">        `instances` and its contents will take precedence over the</span>
+<span class="sd">        corresponding instance when querying for documents to update.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        instances : list[BaseModel]</span>
+<span class="sd">            List with documents to be updated</span>
+<span class="sd">        attrs : list[dict]</span>
+<span class="sd">            List with dictionary of fields to update for corresponding instance</span>
+<span class="sd">        filter_fields : list[dict], optional</span>
+<span class="sd">            Attributes for finding the document that needs to be updates</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pymongo.results.BulkWriteResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">instances</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span> <span class="o">!=</span> <span class="n">model</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">instances</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All instances must have the same model class&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length of instances and attributes must match&quot;</span><span class="p">)</span>
+        <span class="n">filter_fields</span> <span class="o">=</span> <span class="n">filter_fields</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filter_fields</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">filter_fields</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length of filter_fields must be 0 or equal to instances&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">requests</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">UpdateOne</span><span class="p">(</span><span class="n">filters</span> <span class="ow">or</span> <span class="n">instance</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;$set&quot;</span><span class="p">:</span> <span class="n">attr</span><span class="p">})</span>
+            <span class="k">for</span> <span class="n">instance</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">filters</span> <span class="ow">in</span> <span class="n">zip_longest</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">filter_fields</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">bulk_write</span><span class="p">(</span><span class="n">requests</span><span class="o">=</span><span class="n">requests</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoQuery.bulk_insert"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.bulk_insert">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">documents</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert multiple documents to the database at once.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        documents : list[dict]</span>
+<span class="sd">            Documents to be added</span>
+<span class="sd">        model: Type[BaseModel]</span>
+<span class="sd">            Class of the model documents to be added</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pymongo.results.InsertManyResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">documents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">documents</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">doc</span><span class="p">)</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">documents</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">insert_many</span><span class="p">(</span><span class="n">documents</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoQuery.paginate"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.paginate">[docs]</a>    <span class="k">def</span> <span class="nf">paginate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">per_page</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">50000</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return pagination object with selected documents.</span>
+
+<span class="sd">        https://arpitbhayani.me/blogs/benchmark-and-compare-pagination-approach-in-mongodb</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filter_by : dict, list</span>
+<span class="sd">            Attributes used to find documents in the database or aggregation pipeline</span>
+<span class="sd">        page : int</span>
+<span class="sd">            Page of the query</span>
+<span class="sd">        per_page : int</span>
+<span class="sd">            Number of items per page</span>
+<span class="sd">        count : bool</span>
+<span class="sd">            Whether to count total number of documents in query</span>
+<span class="sd">        max_results: int</span>
+<span class="sd">            If counting is used, only count up to this amount of documents</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Pagination</span>
+<span class="sd">            Paginated results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">page</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">per_page</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">per_page</span> <span class="o">=</span> <span class="mi">10</span>
+
+        <span class="n">filter_by</span> <span class="o">=</span> <span class="n">filter_by</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">filter_by</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;$match&quot;</span><span class="p">:</span> <span class="n">filter_by</span><span class="p">}]</span>
+
+        <span class="c1"># Calculate number of documents to skip</span>
+        <span class="n">filter_by</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;$skip&quot;</span><span class="p">:</span> <span class="n">per_page</span> <span class="o">*</span> <span class="p">(</span><span class="n">page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)})</span>
+        <span class="n">filter_by</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;$limit&quot;</span><span class="p">:</span> <span class="n">per_page</span> <span class="k">if</span> <span class="n">count</span> <span class="k">else</span> <span class="n">per_page</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">filter_by</span><span class="p">)</span>
+
+        <span class="c1"># Return documents</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cursor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">count</span><span class="p">:</span>
+            <span class="n">has_next</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">per_page</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="n">items</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_next</span> <span class="k">else</span> <span class="n">items</span>
+            <span class="k">return</span> <span class="n">PaginationNoCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">per_page</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">has_next</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filter_by</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Removes pagination $limit step</span>
+            <span class="n">filter_by</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Removes pagination $skip step</span>
+            <span class="c1"># $sorting can be too slow and is fully irrelevant for counting</span>
+            <span class="n">filter_by</span> <span class="o">=</span> <span class="p">[</span><span class="n">step</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">filter_by</span> <span class="k">if</span> <span class="s2">&quot;$sort&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">step</span><span class="p">]</span>
+            <span class="n">filter_by</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;$limit&quot;</span><span class="p">:</span> <span class="n">max_results</span><span class="p">})</span>
+            <span class="n">filter_by</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;$count&quot;</span><span class="p">:</span> <span class="s2">&quot;n&quot;</span><span class="p">})</span>
+            <span class="n">summary</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">filter_by</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;n&quot;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">Pagination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">per_page</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoQuery.find_one"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.find_one">[docs]</a>    <span class="k">def</span> <span class="nf">find_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find one item of the specified model.</span>
+
+<span class="sd">        If there are no items, then it returns None.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        model : Model</span>
+<span class="sd">            Class of the model to be retrieved</span>
+<span class="sd">        filter_by : dict</span>
+<span class="sd">            Attributes used to find object document in the database</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict, None</span>
+<span class="sd">            First document that matches</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filter_by</span> <span class="o">=</span> <span class="n">filter_by</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MongoQuery.find_all"><a class="viewcode-back" href="../../../../db_plugins.db.mongo.html#db_plugins.db.mongo.query.MongoQuery.find_all">[docs]</a>    <span class="k">def</span> <span class="nf">find_all</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">filter_by</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">paginate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find list of items of the specified model.</span>
+
+<span class="sd">        If there are too many items a timeout can happen.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        model : Model</span>
+<span class="sd">            Class of the model to be retrieved</span>
+<span class="sd">        filter_by : dict</span>
+<span class="sd">            Attributes used to find documents in the database or aggregation pipeline</span>
+<span class="sd">        paginate : bool</span>
+<span class="sd">            Whether to get a paginated result</span>
+<span class="sd">        kwargs : dict</span>
+<span class="sd">            All other arguments are passed to `paginate` and/or</span>
+<span class="sd">            `pymongo.collection.Collection.aggregate`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pymongo.cursor.Cursor or Paginate</span>
+<span class="sd">            Cursor to iterate over query results or a pagination object,</span>
+<span class="sd">            depending on the `paginate` option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_collection</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">filter_by</span> <span class="o">=</span> <span class="n">filter_by</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">filter_by</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;$match&quot;</span><span class="p">:</span> <span class="n">filter_by</span><span class="p">}]</span>
+
+        <span class="k">if</span> <span class="n">paginate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">filter_by</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;MongoQuery(model=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, ALeRCE Devs.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
