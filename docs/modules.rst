@@ -1,7 +1,15 @@
-pipeline
-========
+APF
+===
 
 .. toctree::
    :maxdepth: 4
 
-   sorting_hat_step
+   APF
+
+DB Plugins
+===
+
+.. toctree::
+   :maxdepth: 4
+
+   db_plugins
