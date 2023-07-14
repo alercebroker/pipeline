@@ -166,6 +166,7 @@ jobs:
     with:
       build-type: staging
       step-name: sorting_hat_step
+      step-name-prefix: ""
       base-folder: sorting_hat_step
       build-context: sorting_hat_step
 

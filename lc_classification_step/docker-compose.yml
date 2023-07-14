@@ -20,7 +20,7 @@ services:
       - CONSUMER_CLASS=apf.consumers.KafkaConsumer
       - CONSUMER_TOPICS=features_elasticc
       - CONSUMER_SERVER=${CONSUMER_SERVER}
-      - CONSUMER_GROUP_ID=lc_classifier_balto_debugger
+      - CONSUMER_GROUP_ID=lc_classifier_balto
       - CONSUMER_KAFKA_USERNAME=${CONSUMER_KAFKA_USERNAME}
       - CONSUMER_KAFKA_PASSWORD=${CONSUMER_KAFKA_PASSWORD}
       - PRODUCER_TOPIC_FORMAT=format%s
@@ -33,11 +33,12 @@ services:
       - METRICS_HOST=kafka:9092
       - METRICS_TOPIC=metrics
       - CONSUME_TIMEOUT=10
-      - CONSUME_MESSAGES=2
+      - CONSUME_MESSAGES=100
       - PREDICTOR_CLASS=lc_classification.predictors.balto.balto_predictor.BaltoPredictor
       - MODEL_PATH=${BALTO_MODEL_PATH}
       - QUANTILES_PATH=${BALTO_QUANTILES_PATH}
       - PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoParser
       - SCRIBE_PARSER_CLASS=lc_classification.core.parsers.scribe_parser.ScribeParser
-      - STEP_PARSER_CLASS=lc_classification.core.parsers.alerce_parser.AlerceParser
+      - STEP_PARSER_CLASS=lc_classification.core.parsers.elasticc_parser.ElasticcParser
       - LOGGING_DEBUG=yes
+      - STREAM=elasticc

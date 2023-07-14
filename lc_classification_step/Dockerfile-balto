@@ -10,11 +10,12 @@ RUN poetry config http-basic.git alerceadmin ${GH_TOKEN}
 FROM poetry as source
 COPY ./poetry.lock ./pyproject.toml /app/
 RUN poetry install --no-interaction --without=dev --with=balto --no-root
-COPY ./lc_classification /app/lc_classification
-COPY ./scripts /app/scripts
 COPY ./README.md /app/
-COPY ./settings.py /app/settings.py
 COPY ./schemas.py /app/schemas.py
+COPY ./settings.py /app/settings.py
+COPY ./predictor_settings.py /app/predictor_settings.py
+COPY ./scripts /app/scripts
+COPY ./lc_classification /app/lc_classification
 RUN poetry install --no-interaction --only-root
 
 FROM python:3.8-slim
