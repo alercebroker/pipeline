@@ -391,6 +391,7 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
   s3_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step == 'true'
