@@ -624,7 +624,7 @@ jobs:
       python-version: '3.7'
       sources-folder: 'survey_parser_plugins'
       requirements-file: 'requirements.txt'
-      test-folder: 'tests/unittest'
+      apt-get_install: 'sudo apt-get -y install libsnappy-dev'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/ --cov survey_parser_plugins --cov-report xml'
 
