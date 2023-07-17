@@ -110,7 +110,9 @@ jobs:
     with:
       build-type: production
       step-name: lightcurve_step
+      step-name-prefix: ""
       base-folder: lightcurve-step
+      build-context: lightcurve-step
 
   magstats_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -121,10 +123,13 @@ jobs:
 
   prv_candidates_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: prv_candidates_step
+      step-name-prefix: ""
       base-folder: prv_candidates_step
+      build-context: prv_candidates_step
 
   reflector_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -146,6 +151,7 @@ jobs:
     with:
       build-type: production
       step-name: sorting_hat_step
+      step-name-prefix: ""
       base-folder: sorting_hat_step
 
   watchlist_step_production:
@@ -161,3 +167,10 @@ jobs:
       build-type: production
       step-name: xmatch_step
       base-folder: xmatch_step
+
+  scribe_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: scribe
+      base-folder: scribe

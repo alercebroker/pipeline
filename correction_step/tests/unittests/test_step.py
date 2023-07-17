@@ -1,11 +1,12 @@
 import copy
 import json
+import pickle
 from copy import deepcopy
 from unittest import mock
 
 from correction._step import CorrectionStep
 
-from tests.utils import ztf_alert, atlas_alert, non_detection
+from tests.utils import ztf_alert, atlas_alert, non_detection, elasticc_alert
 
 messages = [
     {
@@ -19,6 +20,7 @@ messages = [
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
     {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
+    {"aid": "AID4", "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)], "non_detections": []},
 ]
 
 message4produce = [
@@ -43,6 +45,13 @@ message4produce = [
         "detections": [atlas_alert(aid="AID3", candid="e", new=True)],
         "non_detections": [],
     },
+    {
+        "aid": "AID4",
+        "meanra": 1,
+        "meandec": 1,
+        "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
+        "non_detections": []
+    }
 ]
 
 message4execute = {
@@ -52,6 +61,7 @@ message4execute = {
         ztf_alert(aid="AID2", candid="c", new=True),
         ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
         atlas_alert(aid="AID3", candid="e", new=True),
+        elasticc_alert(aid="AID4", candid="hehe", new=True),
     ],
     "non_detections": [
         non_detection(aid="AID2", mjd=1, oid="oid1", fid=1),
@@ -60,6 +70,7 @@ message4execute = {
         "AID1": {"meanra": 1, "meandec": 1},
         "AID2": {"meanra": 1, "meandec": 1},
         "AID3": {"meanra": 1, "meandec": 1},
+        "AID4": {"meanra": 1, "meandec": 1},
     },
 }
 
@@ -110,6 +121,7 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
     class MockCorrectionStep(CorrectionStep):
         def __init__(self):
             self.scribe_producer = mock.MagicMock()
+            self.logger = mock.MagicMock()
 
     step = MockCorrectionStep()
     output = step.post_execute(copy.deepcopy(message4execute))
@@ -117,6 +129,11 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
     for det in message4execute_copy["detections"]:
         if not det["new"]:  # does not write
             continue
+        det["extra_fields"] = {k: v for k, v in det["extra_fields"].items() if k not in ["prvDiaSources", "prvDiaForcedSources"]}
+        
+        if "diaObject" in det["extra_fields"]:
+            det["extra_fields"]["diaObject"] = pickle.loads(det["extra_fields"]["diaObject"])
+
         data = {
             "collection": "detection" if not det["forced"] else "forced_photometry",
             "type": "update",

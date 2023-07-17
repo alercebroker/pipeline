@@ -2,11 +2,10 @@ from unittest import mock
 
 import pandas as pd
 import pandas.testing
-
 import tensorflow as tf
 import pytest
 
-if tf.__version__.startswith('1'):
+if tf.__version__.startswith("1"):
     pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 from stamp_classifier_step.strategies.atlas import ATLASStrategy
@@ -28,7 +27,7 @@ def test_prediction_with_stamp_classifier(mock_classifier, alerts):
     df = strategy._to_dataframe(alerts)
     strategy.get_probabilities(alerts)
 
-    df_called, = mock_classifier.return_value.predict_probs.call_args[0]
+    (df_called,) = mock_classifier.return_value.predict_probs.call_args[0]
 
     pandas.testing.assert_frame_equal(df, df_called)
 
@@ -37,14 +36,14 @@ def test_prediction_with_stamp_classifier(mock_classifier, alerts):
 def test_duplicate_aid_keeps_first(mock_classifier, alerts):
     strategy = ATLASStrategy()
 
-    first, = alerts
+    (first,) = alerts
     second, third, fourth = first.copy(), first.copy(), first.copy()
     second["mjd"], third["mjd"], fourth["aid"] = 100, 1000, "otherid"
 
     df = strategy._to_dataframe([first, fourth])
     strategy.get_probabilities([second, first, third, fourth])
 
-    df_called, = mock_classifier.return_value.predict_probs.call_args[0]
+    (df_called,) = mock_classifier.return_value.predict_probs.call_args[0]
 
     pandas.testing.assert_frame_equal(df, df_called)
 
@@ -61,12 +60,12 @@ def test_get_probabilities_reformats_dictionary(mock_classifier, alerts):
     # alerts works as a dummy here
     probs = strategy.get_probabilities(alerts)
     expected = {
-            "ZTF20aaelulu": {
-                "agn": 0.5,
-                "bogus": 0.3,
-                "asteroid": 0.1,
-                "sn": 0.05,
-                "vs": 0.05,
-            },
-        }
+        "ZTF20aaelulu": {
+            "agn": 0.5,
+            "bogus": 0.3,
+            "asteroid": 0.1,
+            "sn": 0.05,
+            "vs": 0.05,
+        },
+    }
     assert probs == expected

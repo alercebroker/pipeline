@@ -1,0 +1,31 @@
+version: "3"
+services:
+  kafka:
+    image: "bitnami/kafka:latest"
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  xmatch:
+    build:
+      context: .
+      tags:
+        - "xmatch:local"
+    environment:
+      - CONSUMER_CLASS=apf.consumers.KafkaConsumer
+      - CONSUMER_TOPICS=correction_elasticc
+      - CONSUMER_SERVER=${CONSUMER_SERVER}
+      - CONSUMER_GROUP_ID=xmatch_elasticc_debug
+      - CONSUMER_KAFKA_USERNAME=${CONSUMER_KAFKA_USERNAME}
+      - CONSUMER_KAFKA_PASSWORD=${CONSUMER_KAFKA_PASSWORD}
+      - PRODUCER_SERVER=kafka:9092
+      - PRODUCER_TOPIC=xmatch_dummy
+      - SCRIBE_SERVER=kafka:9092
+      - SCRIBE_TOPIC=w_object
+      - METRICS_HOST=kafka:9092
+      - METRICS_TOPIC=metrics
+      - CONSUME_TIMEOUT=10
+      - CONSUME_MESSAGES=2
+    depends_on:
+      - "kafka"

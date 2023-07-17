@@ -1,5 +1,6 @@
 import math
-from typing import Union
+from typing import Union, List
+from pymongo.errors import BulkWriteError
 
 from db_plugins.db.mongo.connection import DatabaseConnection
 from db_plugins.db.mongo.models import Object
@@ -53,3 +54,22 @@ def conesearch_query(
     if found:
         return found["_id"]
     return None
+
+
+def update_query(db: DatabaseConnection, records: List[dict]):
+    """
+    Insert or update the records in a dictionary. Pushes the oid array to
+    oid column.
+
+    :param db: Database connection
+    :param records: Records containing _id and oid fields to insert or update
+    """
+    mongo_query = db.query(Object)
+    for record in records:
+        query = {"_id": record["_id"]}
+        new_value = {
+            "$addToSet": {"oid": {"$each": record["oid"]}},
+        }
+        updated = mongo_query.collection.find_one_and_update(
+            query, new_value, upsert=True, return_document=True
+        )

@@ -25,8 +25,6 @@ jobs:
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.reflector_step == 'true'
@@ -37,8 +35,6 @@ jobs:
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.reflector_step == 'true'
@@ -46,8 +42,6 @@ jobs:
     with:
       base-folder: "reflector_step"
       step-name: "reflector_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
 
   alert_archiving_step_lint:
@@ -68,8 +62,6 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
       test-command: 'python -m pytest -x tests/unittest --cov alert_archiving_step --cov-report xml'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_unittest_cli:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
@@ -80,8 +72,6 @@ jobs:
       test-dependencies: 'pytest pytest-docker pytest-cov'
       requirements-file: 'requirements_cli.txt'
       test-command: 'python -m pytest -x tests/cli --cov cli --cov-report xml'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'    
@@ -94,8 +84,6 @@ jobs:
       test-dependencies: 'pytest pytest-docker numpy Cython'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
@@ -103,8 +91,6 @@ jobs:
     with:
       base-folder: "alert_archiving_step"
       step-name: "alert_archiving_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   correction_step_lint:
     needs: detect_changes
@@ -121,8 +107,6 @@ jobs:
       base-folder: 'correction_step'
       sources-folder: 'correction'
       test-folder: 'tests/unittests'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
@@ -132,8 +116,6 @@ jobs:
       sources-folder: 'correction'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
@@ -141,8 +123,6 @@ jobs:
     with:
       base-folder: "correction_step"
       step-name: "correction_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   feature_step_lint:
     needs: detect_changes
@@ -161,8 +141,6 @@ jobs:
       sources-folder: 'features'
       test-folder: 'tests/unittest'
       codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
@@ -173,8 +151,6 @@ jobs:
       sources-folder: 'features/'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
@@ -182,8 +158,6 @@ jobs:
     with:
       base-folder: "feature_step"
       step-name: "feature_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_lint:
     needs: detect_changes
@@ -291,28 +265,22 @@ jobs:
   lightcurve_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step' 
       python-version: "3.9"
-      sources-folder: "lightcurve_step"
       test-folder: "tests/unittest"
-      test-dependencies: "pytest pytest-cov"
-      test-command: "python -m pytest -x tests/unittest --cov lightcurve_step --cov-report xml"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'lightcurve-step' 
+      base-folder: 'lightcurve-step'
       python-version: "3.9"
-      sources-folder: "lightcurve_step"
       test-folder: "tests/integration"
-      test-dependencies: "pytest pytest-docker"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x tests/integration"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
@@ -322,8 +290,6 @@ jobs:
     with:
       base-folder: "lightcurve-step"
       step-name: "lightcurve-step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   magstats_step_lint:
     needs: detect_changes
@@ -341,8 +307,6 @@ jobs:
       python-version: '3.9'
       sources-folder: 'magstats_step'
       test-folder: 'tests/unittests'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
@@ -353,8 +317,6 @@ jobs:
       sources-folder: 'magstats_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
@@ -362,8 +324,6 @@ jobs:
     with:
       base-folder: "magstats_step"
       step-name: "magstats_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   prv_candidates_step_lint:
     needs: detect_changes
@@ -372,30 +332,27 @@ jobs:
     with:
       base-folder: 'prv_candidates_step' 
       sources-folder: "prv_candidates_step"
-
   prv_candidates_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'prv_candidates_step'
-      python-version: '3.8'
-      poetry-install: ""
+      base-folder: 'prv_candidates_step' 
+      sources-folder: "prv_candidates_step"
       test-folder: "tests/unit"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: "pytest pytest-cov pytest-mock"
+      test-command: "python -m pytest -x tests/unit --cov prv_candidates_step --cov-report xml"
   prv_candidates_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'prv_candidates_step'
-      python-version: '3.8'
-      codecov-flags: ''  # Do not upload
-      poetry-install: ""
+      base-folder: 'prv_candidates_step' 
+      sources-folder: "prv_candidates_step"
       test-folder: "tests/integration"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: "pytest pytest-docker pytest-mock"
+      codecov-flags: "" # Do not upload
+      test-command: "python -m pytest -x tests/integration"
   prv_candidates_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
@@ -403,8 +360,6 @@ jobs:
     with:
       base-folder: "prv_candidates_step"
       step-name: "prv_candidates_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   s3_step_lint:
     needs: detect_changes
@@ -436,6 +391,7 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
   s3_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step == 'true'
@@ -443,8 +399,6 @@ jobs:
     with:
       base-folder: "s3_step"
       step-name: "s3_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   sorting_hat_step_lint:
     needs: detect_changes
@@ -465,8 +419,6 @@ jobs:
       test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
       pre-dependencies: 'numpy'
       test-command: 'python -m pytest -x tests/unittest --cov sorting_hat_step --cov-report xml'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
@@ -480,8 +432,6 @@ jobs:
       pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step == 'true'
@@ -489,8 +439,6 @@ jobs:
     with:
       base-folder: "sorting_hat_step"
       step-name: "sorting_hat_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   watchlist_step_lint:
     needs: detect_changes
@@ -502,26 +450,26 @@ jobs:
   watchlist_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step== 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
       python-version: '3.8'
-      poetry-install: ''
+      sources-folder: 'watchlist_step'
       test-folder: 'tests/unittest'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
   watchlist_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step== 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
-      python-version: '3.8'
-      codecov-flags: ''  # Do not upload
-      poetry-install: ''
+      python-version: '3.9'
+      sources-folder: 'watchlist_step'
       test-folder: 'tests/integration'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: 'pytest==7.2.0 pytest-docker'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x tests/integration'
   watchlist_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step == 'true'
@@ -529,8 +477,6 @@ jobs:
     with:
       base-folder: "watchlist_step"
       step-name: "watchlist_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   xmatch_step_lint:
     needs: detect_changes
@@ -542,26 +488,26 @@ jobs:
   xmatch_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
-      poetry-install: ''
+      sources-folder: 'xmatch_step'
       test-folder: 'tests/unittest'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittest --cov xmatch_step --cov-report xml'
   xmatch_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/poetry-tests-template.yaml
+    uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
-      codecov-flags: ''  # Do not upload
-      poetry-install: ''
+      sources-folder: 'xmatch_step'
       test-folder: 'tests/integration'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
+      codecov-flags: ''  # Do not upload
+      test-command: 'python -m pytest -x tests/integration'
   xmatch_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step == 'true'
@@ -569,10 +515,23 @@ jobs:
     with:
       base-folder: "xmatch_step"
       step-name: "xmatch_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  
 
+  libs_alerce_classifiers_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.libs_alerce_classifiers == 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: 'libs/alerce_classifiers/alerce_classifiers'
+  libs_alerce_classifiers_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.libs_alerce_classifiers == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'libs/alerce_classifiers'
+      python-version: '3.8'
+      requirements-file: 'requirements_tests.txt'
+      test-command: python -m pytest -x tests --cov libs/alerce_classifiers/alerce_classifiers --cov-report xml
+      
   early_classification_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.early_classification_step== 'true'
@@ -592,8 +551,6 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   early_classification_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.early_classification_step== 'true'
@@ -606,5 +563,90 @@ jobs:
       test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker'
       test-command: 'python -m pytest -x tests/integration'
+
+  stamp_classifier_step_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      sources-folder: 'stamp_classifier_step'         
+  stamp_classifier_step_unittest_atlas:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.8'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe== 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'mongo_scribe'
+      base-folder: 'scribe'
+      test-folder: 'tests/unittest'
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe== 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'mongo_scribe'
+      base-folder: 'scribe'
+      test-folder: 'tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "scribe"
+      step-name: "scribe"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  stamp_classifier_step_unittest_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.7'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  stamp_classifiier_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.8'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

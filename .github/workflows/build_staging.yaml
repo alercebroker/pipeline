@@ -26,6 +26,7 @@ jobs:
     with:
       build-type: staging
       step-name: correction_step
+      step-name-prefix: ""
       base-folder: correction_step
       build-context: correction_step
 
@@ -119,6 +120,7 @@ jobs:
     with:
       build-type: staging
       step-name: lightcurve_step
+      step-name-prefix: ""
       base-folder: lightcurve-step
       build-context: lightcurve-step
 
@@ -137,6 +139,7 @@ jobs:
     with:
       build-type: staging
       step-name: prv_candidates_step
+      step-name-prefix: ""
       base-folder: prv_candidates_step
       build-context: prv_candidates_step
 
@@ -164,6 +167,7 @@ jobs:
     with:
       build-type: staging
       step-name: sorting_hat_step
+      step-name-prefix: ""
       base-folder: sorting_hat_step
       build-context: sorting_hat_step
 
@@ -182,5 +186,16 @@ jobs:
     with:
       build-type: staging
       step-name: xmatch_step
+      step-name-prefix: ""
       base-folder: xmatch_step
       build-context: xmatch_step
+
+  scribe_staging:
+    uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
+    with:
+      build-type: staging
+      step-name: scribe
+      step-name-prefix: ""
+      base-folder: scribe
+      build-context: scribe
