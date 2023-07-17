@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "1.0.100a43"
+version = "1.0.100a46"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
@@ -52,7 +52,7 @@ alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers
 alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers",  extras = ["toretto"] }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi", "balto"] }
 
 [tool.poetry.group.balto.dependencies]
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"]}
