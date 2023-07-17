@@ -21,7 +21,7 @@ WORKDIR /app
 COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
-FROM python:3.10-slim as production
+FROM python:3.9-slim as production
 RUN pip install poetry
 COPY --from=builder /app /app
 WORKDIR /app
