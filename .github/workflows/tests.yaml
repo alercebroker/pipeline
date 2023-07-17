@@ -615,5 +615,17 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+  survey_parser_plugins:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.survey_parser_plugins== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'survey_parser_plugins'
+      python-version: '3.7'
+      sources-folder: 'survey_parser_plugins'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/ --cov survey_parser_plugins --cov-report xml'
 
 
