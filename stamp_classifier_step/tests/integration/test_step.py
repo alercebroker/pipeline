@@ -1,12 +1,10 @@
 from typing import List
-
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
-
 import tensorflow as tf
 import pytest
 
-if tf.__version__.startswith('1'):
+if tf.__version__.startswith("1"):
     pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
 
 
@@ -21,7 +19,8 @@ def consume_messages(topic) -> List[dict]:
             "bootstrap.servers": "localhost:9092",
             "group.id": "assert",
             "auto.offset.reset": "beginning",
-            "max.poll.interval.ms": 3600000,
+            "max.poll.interval.ms": 36000,
+            "session.timeout.ms": 36000,
             "enable.partition.eof": True,
         },
         "consume.timeout": 10,
@@ -30,8 +29,8 @@ def consume_messages(topic) -> List[dict]:
     }
     consumer = KafkaConsumer(config)
     messages = []
-    # if len(consumer.consumer.assignment()) == 0:
-    #     return messages
+    #if len(consumer.consumer.assignment()) == 0:
+    #    return messages
 
     for message in consumer.consume():
         messages.append(message)
@@ -60,7 +59,8 @@ def test_atlas_step():
                 "bootstrap.servers": "localhost:9092",
                 "group.id": "test-id",
                 "auto.offset.reset": "beginning",
-                "max.poll.interval.ms": 3600000,
+                "max.poll.interval.ms": 36000,
+                "session.timeout.ms": 36000,
                 "enable.partition.eof": True,
             },
             "consume.timeout": 10,

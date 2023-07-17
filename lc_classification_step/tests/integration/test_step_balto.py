@@ -19,32 +19,21 @@ def test_step_elasticc_result(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    env_variables_elasticc("balto")
+    env_variables_elasticc(
+        "balto",
+        "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
+        "lc_classification.predictors.balto.balto_parser.BaltoParser",
+        {
+            "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
+            "QUANTILES_PATH": os.getenv("TEST_BALTO_QUANTILES_PATH"),
+        },
+    )
 
     from settings import STEP_CONFIG
 
     kconsumer = kafka_consumer("balto")
     sconsumer = scribe_consumer()
 
-    model_path = os.getenv("TEST_BALTO_MODEL_PATH")
-    quantiles_path = os.getenv("TEST_BALTO_QUANTILES_PATH")
-
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "CLASS"
-    ] = "lc_classification.predictors.balto.balto_predictor.BaltoPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {
-        "model_path": model_path,
-        "quantiles_path": quantiles_path,
-    }
-    STEP_CONFIG["PREDICTOR_CONFIG"][
-        "PARSER_CLASS"
-    ] = "lc_classification.predictors.balto.balto_parser.BaltoParser"
-    STEP_CONFIG[
-        "SCRIBE_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.scribe_parser.ScribeParser"
-    STEP_CONFIG[
-        "STEP_PARSER_CLASS"
-    ] = "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
 

@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/rcarrasco/Projects/stamp_classifier/stamp_classifier/results/alerce_dataset_entropy_reg/DeepHitsEntropyRegBeta1.0000_6_20191126-140507/checkpoints/model"
+all_model_checkpoint_paths: "/home/rcarrasco/Projects/stamp_classifier/stamp_classifier/results/alerce_dataset_entropy_reg/DeepHitsEntropyRegBeta1.0000_6_20191126-140507/checkpoints/model"
