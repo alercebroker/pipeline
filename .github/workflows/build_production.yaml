@@ -141,10 +141,13 @@ jobs:
 
   s3_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: s3_step
+      step-name-prefix: ""
       base-folder: s3_step
+      build-context: s3_step
 
   sorting_hat_step_production:
     uses: ./.github/workflows/build-template.yaml
