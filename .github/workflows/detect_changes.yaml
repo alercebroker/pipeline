@@ -38,6 +38,8 @@ on:
                 value: ${{ jobs.detect_changes.outputs.libs_alerce_classifiers}}    
             survey_parser_plugins:
                 value: ${{ jobs.detect_changes.outputs.survey_parser_plugins}}  
+            scribe:
+                value: ${{ jobs.detect_changes.outputs.scribe}}    
 
 jobs:
   detect_changes:
@@ -61,6 +63,8 @@ jobs:
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
         survey_parser_plugins: ${{ steps.changes.outputs.survey_parser_plugins }}
+        scribe: ${{ steps.changes.outputs.scribe }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -105,5 +109,7 @@ jobs:
                 - 'libs/alerce_classifiers/**'
             survey_parser_plugins:
                 - 'survey_parser_plugins/**'
+            scribe:
+               - 'scribe/**'
 
 

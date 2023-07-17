@@ -1,29 +1,30 @@
 [tool.poetry]
-name = "lightcurve-step"
-version = "1.0.1a11"
-description = "Lightcurve Step"
+name = "scribe"
+version = "1.0.1a9"
+description = "Mongo scribe"
 authors = []
 readme = "README.md"
-packages = [{include = "lightcurve_step"}]
+packages = [{include = "mongo_scribe"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 apf-base = "2.5.1"
-db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.0"}
+db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.5"}
+pandas = "1.5.3"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
+black = "^22.12.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.1"
+pytest = "^7.2.0"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
 
 [tool.black]
-line-length = 88
+line-length = 79
 
 [tool.pytest.ini_options]
-addopts = "-x --cov lightcurve_step --cov-report xml"
+addopts = "-x --cov mongo_scribe --cov-report xml"
 
 [build-system]
 requires = ["poetry-core"]

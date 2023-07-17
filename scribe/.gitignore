@@ -1,0 +1,9 @@
+__pycache__/
+__SUCCESS__
+.pytest_cache/
+.env
+.python-version
+*.egg-info
+
+.idea
+.python-version

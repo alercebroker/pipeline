@@ -1,29 +1,28 @@
 [tool.poetry]
-name = "lightcurve-step"
-version = "1.0.1a11"
-description = "Lightcurve Step"
+name = "s3-step"
+version = "1.0.1a0"
+description = "S3 step"
 authors = []
 readme = "README.md"
-packages = [{include = "lightcurve_step"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.10"
-apf-base = "2.5.1"
-db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.0"}
+python = "~3.9.0"
+apf_base = "1.0.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
-pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
+pytest-docker = "^1.0.1"
+moto = {extras = ["secretsmanager"], version = "4.1.12"}
 
 [tool.black]
 line-length = 88
 
 [tool.pytest.ini_options]
-addopts = "-x --cov lightcurve_step --cov-report xml"
+addopts = "-x --cov sorting_hat_step --cov-report xml"
 
 [build-system]
 requires = ["poetry-core"]

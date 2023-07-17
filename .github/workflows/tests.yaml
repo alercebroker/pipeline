@@ -371,26 +371,27 @@ jobs:
   s3_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 's3_step'
       python-version: '3.9'
       sources-folder: 's3_step'
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov s3_step --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   s3_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 's3_step'
       python-version: '3.9'
       sources-folder: 's3_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker moto'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
   s3_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step == 'true'
@@ -583,7 +584,42 @@ jobs:
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
     secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe== 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'mongo_scribe'
+      base-folder: 'scribe'
+      test-folder: 'tests/unittest'
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe== 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      python-version: '3.9'
+      sources-folder: 'mongo_scribe'
+      base-folder: 'scribe'
+      test-folder: 'tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  scribe_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe == 'true'
+    uses: ./.github/workflows/build-test.yaml
+    with:
+      base-folder: "scribe"
+      step-name: "scribe"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   stamp_classifier_step_unittest_ztf:
     needs: detect_changes
