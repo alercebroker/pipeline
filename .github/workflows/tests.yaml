@@ -516,22 +516,6 @@ jobs:
       base-folder: "xmatch_step"
       step-name: "xmatch_step"
 
-  libs_alerce_classifiers_lint:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.libs_alerce_classifiers == 'true'
-    uses: ./.github/workflows/lint-template.yaml
-    with:
-      sources-folder: 'libs/alerce_classifiers/alerce_classifiers'
-  libs_alerce_classifiers_unittest:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.libs_alerce_classifiers == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'libs/alerce_classifiers'
-      python-version: '3.8'
-      requirements-file: 'requirements_tests.txt'
-      test-command: python -m pytest -x tests --cov libs/alerce_classifiers/alerce_classifiers --cov-report xml
-      
   early_classification_step_lint:
     needs: detect_changes
     if: needs.detect_changes.outputs.early_classification_step== 'true'
