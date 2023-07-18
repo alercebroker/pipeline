@@ -410,28 +410,22 @@ jobs:
   sorting_hat_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
-      test-dependencies: "pytest pytest-cov 'moto[secretsmanager]'"
-      pre-dependencies: 'numpy'
-      test-command: 'python -m pytest -x tests/unittest --cov sorting_hat_step --cov-report xml'
   sorting_hat_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'requests confluent_kafka numpy pymongo pytest pytest-docker pytest-cov'
-      pre-dependencies: 'numpy'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
   sorting_hat_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step == 'true'
