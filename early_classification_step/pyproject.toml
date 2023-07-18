@@ -16,7 +16,10 @@ apf-base = "1.0.7"
 db-plugins = {git = "https://git@github.com/alercebroker/db-plugins", rev = "2.1.4"}
 
 [tool.poetry.group.dev.dependencies]
-black = "~=21.0"
+black = "^22.3.0"
+
+[tool.black]
+line-length = 88
 
 [tool.poetry.group.test.dependencies]
 coverage = "^7.2.7"
