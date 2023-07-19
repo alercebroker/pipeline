@@ -1457,10 +1457,8 @@ develop = false
 dev = ["black", "coverage", "fastavro (>=0.22.0,<=1.6.1)", "pytest", "python-snappy"]
 
 [package.source]
-type = "git"
-url = "https://github.com/alercebroker/survey-parser-plugins"
-reference = "2.3.6"
-resolved_reference = "7fbd6d8b83e26b785906b962ad8630c15a654f11"
+type = "directory"
+url = "../survey_parser_plugins"
 
 [[package]]
 name = "tomli"
@@ -1568,4 +1566,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.9"
-content-hash = "6f643da1653e1a3e985e20f19816f8829662647e03018597a3e5bc5544ea3a98"
+content-hash = "a2753dd7ee0ef3bd3f0b015f07dee268f962aaf813347a03f166cc863e81a706"
