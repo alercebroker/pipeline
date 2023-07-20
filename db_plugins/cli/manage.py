@@ -1,11 +1,9 @@
 import click
 import sys
 import os
-from db_plugins.db.sql import (
-    init as init_sql,
-    make_migrations as make_sql_migrations,
-    migrate as migrate_sql,
-)
+from db_plugins.db.sql.initialization import init as init_sql
+from db_plugins.db.sql.initialization import make_migrations as make_sql_migrations
+from db_plugins.db.sql.initialization import migrate as migrate_sql
 from db_plugins.db.mongo.initialization import (
     init_mongo_database as init_mongo,
 )

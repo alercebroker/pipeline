@@ -1,11 +1,11 @@
-from db_plugins.db.sql import (
-    models,
+from db_plugins.db.sql.models import Object
+from db_plugins.db.sql.connection import (
     SQLConnection,
-    SQLQuery,
     create_engine,
-    Base,
     sessionmaker,
+    Base,
 )
+from db_plugins.db.sql.query import SQLQuery
 from db_plugins.db.generic import Pagination
 from sqlalchemy.engine.reflection import Inspector
 import pytest
@@ -86,7 +86,7 @@ class SQLConnectionTest(unittest.TestCase):
         self.assertEqual(len(inspector.get_table_names()), 0)
 
     def test_query(self):
-        query = self.db.query(models.Object)
+        query = self.db.query(Object)
         self.assertIsInstance(query, SQLQuery)
 
 
@@ -121,7 +121,7 @@ class SQLQueryTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        obj = models.Object(
+        obj = Object(
             oid="ZTF1",
         )
         self.db.session.add(obj)
@@ -132,15 +132,13 @@ class SQLQueryTest(unittest.TestCase):
         self.db.drop_db()
 
     def test_get_or_create(self):
-        instance, created = self.db.query().get_or_create(
-            models.Object, {"oid": "ZTF1"}
-        )
-        self.assertIsInstance(instance, models.Object)
+        instance, created = self.db.query().get_or_create(Object, {"oid": "ZTF1"})
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)
 
     def test_get_or_create_created(self):
         instance, created = self.db.query().get_or_create(
-            models.Object,
+            Object,
             {
                 "oid": "ZTF2",
                 "ndethist": 0,
@@ -164,45 +162,43 @@ class SQLQueryTest(unittest.TestCase):
                 "step_id_corr": "test",
             },
         )
-        self.assertIsInstance(instance, models.Object)
+        self.assertIsInstance(instance, Object)
         self.assertTrue(created)
 
     def test_check_exists(self):
-        self.assertTrue(self.db.query().check_exists(models.Object, {"oid": "ZTF1"}))
+        self.assertTrue(self.db.query().check_exists(Object, {"oid": "ZTF1"}))
 
     def test_update(self):
         instance = (
-            self.db.session.query(models.Object)
-            .filter(models.Object.oid == "ZTF1")
-            .one_or_none()
+            self.db.session.query(Object).filter(Object.oid == "ZTF1").one_or_none()
         )
         updated = self.db.query().update(instance, {"oid": "ZTF2"})
         self.assertEqual(updated.oid, "ZTF2")
 
     def test_bulk_insert(self):
         objs = [{"oid": "ZTF2"}, {"oid": "ZTF3"}]
-        self.db.query().bulk_insert(objs, models.Object)
-        objects = self.db.session.query(models.Object).all()
+        self.db.query().bulk_insert(objs, Object)
+        objects = self.db.session.query(Object).all()
         self.assertEqual(len(objects), 3)
 
     def test_paginate(self):
-        pagination = self.db.query(models.Object).paginate()
+        pagination = self.db.query(Object).paginate()
         self.assertIsInstance(pagination, Pagination)
         self.assertEqual(pagination.total, 1)
         self.assertEqual(pagination.items[0].oid, "ZTF1")
 
     def test_find_one(self):
-        obj = self.db.query(models.Object).find_one(filter_by={"oid": "ZTF1"})
-        self.assertIsInstance(obj, models.Object)
+        obj = self.db.query(Object).find_one(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(obj, Object)
 
     def test_find(self):
-        obj_page = self.db.query(models.Object).find()
+        obj_page = self.db.query(Object).find()
         self.assertIsInstance(obj_page, Pagination)
         self.assertEqual(obj_page.total, 1)
         self.assertEqual(obj_page.items[0].oid, "ZTF1")
 
     def test_find_paginate_false(self):
-        obj_page = self.db.query(models.Object).find(paginate=False)
+        obj_page = self.db.query(Object).find(paginate=False)
         self.assertIsInstance(obj_page, list)
 
 
@@ -237,7 +233,7 @@ class ScopedSQLQueryTest(unittest.TestCase):
 
     def setUp(self):
         self.db.create_db()
-        obj = models.Object(
+        obj = Object(
             oid="ZTF1",
         )
         self.db.session.add(obj)
@@ -248,17 +244,17 @@ class ScopedSQLQueryTest(unittest.TestCase):
         self.db.drop_db()
 
     def test_query_property(self):
-        self.assertEqual(len(models.Object.query.all()), 1)
-        self.assertEqual(models.Object.query.first().oid, "ZTF1")
+        self.assertEqual(len(Object.query.all()), 1)
+        self.assertEqual(Object.query.first().oid, "ZTF1")
 
     def test_method_access_from_session(self):
         instance, created = self.db.session.query().get_or_create(
-            model=models.Object, filter_by={"oid": "ZTF1"}
+            model=Object, filter_by={"oid": "ZTF1"}
         )
-        self.assertIsInstance(instance, models.Object)
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)
 
     def test_method_access_from_query_property(self):
-        instance, created = models.Object.query.get_or_create(filter_by={"oid": "ZTF1"})
-        self.assertIsInstance(instance, models.Object)
+        instance, created = Object.query.get_or_create(filter_by={"oid": "ZTF1"})
+        self.assertIsInstance(instance, Object)
         self.assertFalse(created)

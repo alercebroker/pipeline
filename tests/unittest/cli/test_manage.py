@@ -9,7 +9,7 @@ class TestManage(unittest.TestCase):
         self.runner = CliRunner()
         self.settings_path = "/tmp"
 
-    @mock.patch("db_plugins.db.sql.SQLConnection", autospec=True)
+    @mock.patch("db_plugins.db.sql.connection.SQLConnection", autospec=True)
     @mock.patch("os.makedirs")
     @mock.patch("db_plugins.db.sql.initialization.alembic.config.main")
     def test_init_sql(self, main_mock, mock_makedirs, mock_connection):
@@ -81,7 +81,7 @@ class TestManage(unittest.TestCase):
         assert result.exit_code != 0
         assert "Settings file not found" == str(result.exception)
 
-    @mock.patch("db_plugins.db.mongo.MongoConnection", autospec=True)
+    @mock.patch("db_plugins.db.mongo.connection.MongoConnection", autospec=True)
     def test_init_mongo(self, mock_connection):
         manage.init_mongo(
             {
