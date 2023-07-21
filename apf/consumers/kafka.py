@@ -272,9 +272,7 @@ class KafkaJsonConsumer(KafkaConsumer):
 
 
 class KafkaSchemalessConsumer(KafkaConsumer):
-
     def __init__(self, config: dict):
-
         schema_path = config.get("SCHEMA_PATH")
         if schema_path:
             self.schema = fastavro.schema.load_schema(schema_path)
