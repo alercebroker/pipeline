@@ -228,8 +228,6 @@ class GenericStep(abc.ABC):
             self.logger.debug("Error at post_execute")
             self.logger.debug(f"The result that caused the error: {result}")
             raise error
-        if self.commit:
-            self.consumer.commit()
         self.metrics["timestamp_sent"] = datetime.datetime.now(datetime.timezone.utc)
         time_difference = (
             self.metrics["timestamp_sent"] - self.metrics["timestamp_received"]
@@ -266,6 +264,8 @@ class GenericStep(abc.ABC):
             self.logger.debug("Error at pre_produce")
             self.logger.debug(f"The result that caused the error: {result}")
             raise error
+        if self.commit:
+            self.consumer.commit()
         return message_to_produce
 
     def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
