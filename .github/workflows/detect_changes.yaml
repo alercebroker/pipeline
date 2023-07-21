@@ -28,8 +28,6 @@ on:
                 value: ${{ jobs.detect_changes.outputs.sorting_hat_step }}
             stamp_classifier_step:
                 value: ${{ jobs.detect_changes.outputs.stamp_classifier_step }}
-            transformer_online_classifier_step:
-                value: ${{ jobs.detect_changes.outputs.transformer_online_classifier_step }}
             watchlist_step:
                 value: ${{ jobs.detect_changes.outputs.watchlist_step }}
             xmatch_step:
@@ -56,7 +54,6 @@ jobs:
         s3_step: ${{ steps.changes.outputs.s3_step }}
         sorting_hat_step: ${{ steps.changes.outputs.sorting_hat_step }}
         stamp_classifier_step: ${{ steps.changes.outputs.stamp_classifier_step }}
-        transformer_online_classifier_step: ${{ steps.changes.outputs.transformer_online_classifier_step }}
         watchlist_step: ${{ steps.changes.outputs.watchlist_step }}
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
@@ -96,8 +93,6 @@ jobs:
                 - 'sorting_hat_step/**'
             stamp_classifier_step:
                 - 'stamp_classifier_step/**'
-            transformer_online_classifier_step:
-                - 'transformer_online_classifier_step/**'
             watchlist_step:
                 - 'watchlist_step/**'
             xmatch_step:
