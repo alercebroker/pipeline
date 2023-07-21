@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 FROM python-base as builder
 RUN pip install poetry
-COPY ../survey_parser_plugins ./
+COPY ../survey_parser_plugins ../
 WORKDIR /app
 COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
