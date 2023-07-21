@@ -1,13 +1,14 @@
 [tool.poetry]
-name = "apf"
+name = "apf-base"
 version = "2.5.2"
 description = "Alert Processing Framework"
 authors = []
 license = "MIT"
 readme = "README.md"
+packages = [{include = "apf"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8"
 click = ">=7.1.1"
 confluent-kafka = ">=1.4.0,<2.1.0"
 fastavro = ">=0.22.0,<=1.6.1"

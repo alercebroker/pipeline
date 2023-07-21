@@ -108,7 +108,7 @@ jobs:
             libs_alerce_classifiers:
                 - 'libs/alerce_classifiers/**'
             libs_apf:
-                -'libs/apf/**'
+                - 'libs/apf/**'
             scribe:
                - 'scribe/**'
 
