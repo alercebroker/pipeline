@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pkl
+.idea/
+.coverage
+src/
+htmlcov/
