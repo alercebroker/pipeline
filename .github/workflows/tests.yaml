@@ -650,3 +650,5 @@ jobs:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
       test-folder: 'tests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
