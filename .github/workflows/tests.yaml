@@ -655,8 +655,8 @@ jobs:
     if: needs.detect_changes.outputs.libs_apf == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'libs/apf'
-      sources-folder: 'apf'
+      base-folder: 'apf'
+      sources-folder: 'libs/apf'
       test-folder: 'tests'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
