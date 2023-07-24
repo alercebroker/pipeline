@@ -13,7 +13,7 @@ step = { callable = "scripts.run_step:step" }
 python = "^3.8"
 apf-base = "1.0.9"
 psycopg2 = "^2.9.6"
-db-plugins = {git = "https://github.com/alercebroker/db-plugins.git", rev = "2.0.2"}
+db-plugins = {path = "../libs/", develop = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"
