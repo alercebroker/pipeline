@@ -79,8 +79,9 @@ class LateClassifier(GenericStep):
         ranking = ranking.stack()
         df.rename("probability", inplace=True)
         ranking.rename("ranking", inplace=True)
+        df.index.names = ["oid", "class_name"]
+        ranking.index.names = ["oid", "class_name"]
         result = pd.concat([df, ranking], axis=1)
-        result.index.names = ["oid", "class_name"]
         result.reset_index(inplace=True)
         return result
 
