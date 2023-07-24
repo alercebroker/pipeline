@@ -51,7 +51,7 @@ def test_init(step):
     assert "consumed_messages summary" in result.text
     assert "processed_messages summary" in result.text
     assert "execution_time summary" in result.text
-    #assert "telescope_id gauge" in result.text
+    # assert "telescope_id gauge" in result.text
 
 
 def test_consume(step):

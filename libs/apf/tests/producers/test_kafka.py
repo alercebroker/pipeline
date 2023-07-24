@@ -5,6 +5,7 @@ import datetime
 
 import fastavro
 
+
 @mock.patch("apf.producers.kafka.Producer")
 class KafkaProducerTest(GenericProducerTest):
     def setUp(self) -> None:
@@ -77,6 +78,7 @@ class KafkaProducerTest(GenericProducerTest):
         self.assertEqual(len(self.component.topic), 2)
         self.assertEqual(self.component.topic, topic_before)
 
+
 class TestKafkaSchemalessProducer(GenericProducerTest):
     def setUp(self) -> None:
         self.params = {
@@ -96,10 +98,10 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
     def test_serialize_message(self):
         producer = KafkaSchemalessProducer(self.params)
 
-        message = {"key": "test", "int" : 0}
+        message = {"key": "test", "int": 0}
         out_avro = producer._serialize_message(message)
 
-        expected = b'\x08test\x00'
+        expected = b"\x08test\x00"
 
         assert out_avro == expected
 
@@ -113,5 +115,5 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
         producer = KafkaSchemalessProducer(self.params)
 
         with self.assertRaises(Exception):
-            message = {"key": "test", "int" : 'not an int'}
+            message = {"key": "test", "int": "not an int"}
             producer._serialize_message(message)

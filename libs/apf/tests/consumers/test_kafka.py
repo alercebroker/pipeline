@@ -1,9 +1,18 @@
 from .test_core import GenericConsumerTest
-from apf.consumers.kafka import KafkaJsonConsumer, KafkaConsumer, KafkaSchemalessConsumer
+from apf.consumers.kafka import (
+    KafkaJsonConsumer,
+    KafkaConsumer,
+    KafkaSchemalessConsumer,
+)
 import unittest
 from unittest import mock
 from confluent_kafka import KafkaException
-from .message_mock import MessageMock, MessageJsonMock, SchemalessMessageMock, SchemalessBadMessageMock
+from .message_mock import (
+    MessageMock,
+    MessageJsonMock,
+    SchemalessMessageMock,
+    SchemalessBadMessageMock,
+)
 import datetime
 import os
 
@@ -12,6 +21,7 @@ def consume(num_messages=1):
     messages = [[MessageMock(False)] * num_messages]
     messages.append([MessageMock(True)])
     return messages
+
 
 @mock.patch("apf.consumers.kafka.Consumer")
 class TestKafkaConsumer(GenericConsumerTest):
@@ -162,10 +172,13 @@ class TestKafkaJsonConsumer(unittest.TestCase):
 
 
 class TestKafkaSchemalessConsumer(unittest.TestCase):
-
     FILE_PATH = os.path.dirname(__file__)
-    SCHEMALESS_CONSUMER_SCHEMA_PATH = os.path.join(FILE_PATH, "../examples/kafka_schemalessconsumer_schema.avsc")
-    SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH =  os.path.join(FILE_PATH, "../examples/kafka_schemalessconsumer_bad_schema.avsc")
+    SCHEMALESS_CONSUMER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_schemalessconsumer_schema.avsc"
+    )
+    SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_schemalessconsumer_bad_schema.avsc"
+    )
 
     def test_schema_no_path(self):
         params = {
@@ -185,7 +198,7 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
                 "bootstrap.servers": "127.0.0.1:9092",
                 "group.id": "apf_test",
             },
-            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_BAD_SCHEMA_PATH,
         }
         with self.assertRaises(Exception):
             KafkaSchemalessConsumer(params)
@@ -200,7 +213,7 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
                 "bootstrap.servers": "127.0.0.1:9092",
                 "group.id": "apf_test",
             },
-            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH,
         }
 
         consumer = KafkaSchemalessConsumer(params)
@@ -218,7 +231,7 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
                 "bootstrap.servers": "127.0.0.1:9092",
                 "group.id": "apf_test",
             },
-            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH
+            "SCHEMA_PATH": self.SCHEMALESS_CONSUMER_SCHEMA_PATH,
         }
 
         consumer = KafkaSchemalessConsumer(params)

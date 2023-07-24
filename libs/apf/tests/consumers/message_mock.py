@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class MessageMock:
     make_error = False
 
@@ -8,12 +9,14 @@ class MessageMock:
 
     def error(self):
         if self.make_error:
+
             class Error:
                 def name(self):
                     return "_PARTITION_EOF"
+
             return Error()
         return None
-    
+
     # This is assuming the original Kafka message has this method
     def timestamp(self):
         return (1, datetime.now().timestamp())
@@ -26,10 +29,12 @@ class MessageJsonMock(MessageMock):
     def value(self):
         return '{"a": "hi", "b": "bye"}'
 
+
 class SchemalessMessageMock(MessageMock):
     def value(self):
-        return b'\nllave\x02'
+        return b"\nllave\x02"
+
 
 class SchemalessBadMessageMock(MessageMock):
     def value(self):
-        return b'\nllave'
+        return b"\nllave"
