@@ -35,7 +35,9 @@ on:
             libs_alerce_classifiers:
                 value: ${{ jobs.detect_changes.outputs.libs_alerce_classifiers}}    
             scribe:
-                value: ${{ jobs.detect_changes.outputs.scribe}}    
+                value: ${{ jobs.detect_changes.outputs.scribe}}
+            libs_db_plugins:
+              value: ${{ jobs.detect_changes.outputs.libs_db_plugins}}
 
 jobs:
   detect_changes:
@@ -58,6 +60,7 @@ jobs:
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
         scribe: ${{ steps.changes.outputs.scribe }}
+        libs_db_plugins: ${{ steps.changes.outputs.libs_db_plugins }}
 
     steps:
       - name: Checkout repo
@@ -101,5 +104,7 @@ jobs:
                 - 'libs/alerce_classifiers/**'
             scribe:
                - 'scribe/**'
+            libs_db_plugins:
+                - 'libs/db-plugins/**'
 
 

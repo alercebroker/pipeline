@@ -200,3 +200,12 @@ jobs:
       step-name-prefix: ""
       base-folder: scribe
       build-context: scribe
+
+  db_plugins_staging:
+    uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
+    with:
+      build-type: staging
+      step-name: db_plugins
+      base-folder: libs/db-plugins
+      build-context: db-plugins

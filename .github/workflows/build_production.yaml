@@ -177,3 +177,10 @@ jobs:
       build-type: production
       step-name: scribe
       base-folder: scribe
+
+  db_plugins_production:
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      build-type: production
+      step-name: db_plugins
+      base-folder: libs/db-plugins
