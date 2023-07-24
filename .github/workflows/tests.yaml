@@ -649,7 +649,6 @@ jobs:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'db-plugins'
-      python-version: ["3.7", "3.9"]
       sources-folder: 'db_plugins'
       requirements-file: 'requirements.txt -r model/requirements.txt'
       test-folder: 'tests/unittest'
@@ -664,7 +663,6 @@ jobs:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'db-plugins'
-      python-version: ["3.7", "3.9"]
       sources-folder: 'db_plugins'
       requirements-file: 'requirements.txt'
       test-folder: 'tests/integration'
