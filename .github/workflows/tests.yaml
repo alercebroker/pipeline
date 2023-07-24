@@ -107,6 +107,8 @@ jobs:
       base-folder: 'correction_step'
       sources-folder: 'correction'
       test-folder: 'tests/unittests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
@@ -116,6 +118,8 @@ jobs:
       sources-folder: 'correction'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
@@ -307,6 +311,8 @@ jobs:
       python-version: '3.9'
       sources-folder: 'magstats_step'
       test-folder: 'tests/unittests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
@@ -317,6 +323,8 @@ jobs:
       sources-folder: 'magstats_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
