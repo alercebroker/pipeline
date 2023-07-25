@@ -5,10 +5,6 @@ on:
       build-type:
         required: true
         type: string
-      git-ref:
-        required: false
-        type: string
-        default: main
 
 jobs:
   update_versions:
@@ -19,8 +15,6 @@ jobs:
       POETRY_HOME: /opt/poetry
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.git-ref }}
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:

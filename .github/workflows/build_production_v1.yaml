@@ -1,9 +1,9 @@
 name: Build Production V1
 
 on:
-  push:
-    tags:
-      - "1.*"
+  release:
+    types:
+      - published
 
 concurrency:
   group: ${{ github.ref }}
@@ -15,7 +15,6 @@ jobs:
     needs: update_versions
     with:
       build-type: production
-      git_ref: release/v1
 
   alert_archiving_step_production:
     uses: ./.github/workflows/build-template.yaml

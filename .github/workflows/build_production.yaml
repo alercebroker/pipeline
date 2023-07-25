@@ -1,9 +1,9 @@
 name: Build Production
 
 on:
-  push:
-    tags:
-      - "2.*"
+  release:
+    types:
+      - published
 
 concurrency:
   group: ${{ github.ref }}
