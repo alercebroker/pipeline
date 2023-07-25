@@ -28,12 +28,11 @@ RUN poetry install --no-root --without=dev --without=test
 FROM python:3.10-slim as production
 RUN pip install poetry
 
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/poetry.lock /app/pyproject.toml /app/
+COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 
-COPY correction_step/README.md /app
 COPY correction_step/correction /app/correction
+COPY correction_step/README.md /app
 
 WORKDIR /app
 RUN poetry install --only-root
