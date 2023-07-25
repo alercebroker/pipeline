@@ -45,7 +45,7 @@ jobs:
       step-name-prefix: ""
       build-context: lc_classification_step
       base-folder: lc_classification_step
-      file: Dockerfile-ztf
+      file: Dockerfile
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
