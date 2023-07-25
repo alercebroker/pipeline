@@ -18,9 +18,10 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
+COPY correction_step/poetry.lock correction_step/pyproject.toml /app/
+COPY libs/apf /libs/apf
+
 WORKDIR /app
-COPY ./correction_step/poetry.lock ./correction_step/pyproject.toml ./
-COPY ../libs/apf ../libs/apf
 RUN poetry install --no-root --without=dev --without=test
 
 
@@ -28,11 +29,13 @@ FROM python:3.10-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/poetry.lock /app/pyproject.toml /app/
 COPY --from=builder /libs /libs
 
-WORKDIR /app
-COPY ./correction_step ./
+COPY correction_step/README.md /app
+COPY correction_step/correction /app/correction
 
+WORKDIR /app
 RUN poetry install --only-root
 
 CMD ["poetry", "run", "step"]
