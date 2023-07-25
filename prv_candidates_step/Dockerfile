@@ -19,19 +19,28 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
+COPY prv_candidates_step/poetry.lock prv_candidates_step/pyproject.toml /app/
+COPY libs/apf libs/apf
+
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.10-slim as production
 RUN pip install poetry
 
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY prv_candidates_step/prv_candidates_step /app/prv_candidates_step
+COPY prv_candidates_step/scripts /app/scripts
+COPY prv_candidates_step/README.md \
+    prv_candidates_step/settings.py \
+    prv_candidates_step/schema.avsc \
+    prv_candidates_step/scribe_schema.avsc \
+    /app/
 
 WORKDIR /app
-COPY ./ ./
-
 RUN poetry install --only-root
 
 CMD ["poetry", "run", "step"]

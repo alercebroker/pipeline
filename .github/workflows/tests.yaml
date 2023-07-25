@@ -378,7 +378,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "prv_candidates_step"
-      build-context: "prv_candidates_step"
+      build-context: "."
       step-name: "prv_candidates_step"
 
   s3_step_lint:

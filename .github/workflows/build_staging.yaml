@@ -141,7 +141,7 @@ jobs:
       step-name: prv_candidates_step
       step-name-prefix: ""
       base-folder: prv_candidates_step
-      build-context: prv_candidates_step
+      build-context: .
 
   reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
