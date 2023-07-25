@@ -3,9 +3,7 @@ name: Build Production
 on:
   push:
     tags:
-      - 2.
-    branches:
-      - main
+      - "2.*"
 
 concurrency:
   group: ${{ github.ref }}
@@ -14,11 +12,13 @@ concurrency:
 jobs:
   update_versions:
     uses: ./.github/workflows/update-versions.yaml
+    needs: update_versions
     with:
       build-type: production
 
   alert_archiving_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: alert_archiving_step
@@ -26,6 +26,7 @@ jobs:
 
   correction_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: correction_step
@@ -33,6 +34,7 @@ jobs:
 
   early_classification_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: early_classification_step
@@ -40,6 +42,7 @@ jobs:
 
   feature_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: feature_step
@@ -113,6 +116,7 @@ jobs:
 
   lightcurve_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: lightcurve_step
@@ -122,6 +126,7 @@ jobs:
 
   magstats_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: magstats_step
@@ -157,6 +162,7 @@ jobs:
 
   sorting_hat_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: sorting_hat_step
@@ -165,6 +171,7 @@ jobs:
 
   watchlist_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: watchlist_step
@@ -172,6 +179,7 @@ jobs:
 
   xmatch_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: xmatch_step
@@ -179,6 +187,7 @@ jobs:
 
   scribe_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: scribe

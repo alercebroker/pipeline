@@ -3,23 +3,23 @@ name: Build Production V1
 on:
   push:
     tags:
-      - 1.
-    branches:
-      - main
+      - "1.*"
 
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  update_versions_v1:
+  update_versions:
     uses: ./.github/workflows/update-versions.yaml
+    needs: update_versions
     with:
       build-type: production
       git_ref: release/v1
 
   alert_archiving_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: alert_archiving_step
@@ -28,6 +28,7 @@ jobs:
 
   early_classification_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: early_classification_step
@@ -37,6 +38,7 @@ jobs:
 
   feature_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: feature_step
@@ -74,6 +76,7 @@ jobs:
 
   sorting_hat_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: sorting_hat_step
@@ -84,6 +87,7 @@ jobs:
 
   watchlist_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: watchlist_step
@@ -93,6 +97,7 @@ jobs:
 
   xmatch_step_production:
     uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
     with:
       build-type: production
       step-name: xmatch_step
