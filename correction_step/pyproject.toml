@@ -5,8 +5,9 @@ description = "Correction library for ALeRCE pipeline."
 authors = ["ALeRCE Broker <alercebroker@gmail.com>"]
 readme = "README.md"
 
+
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
 fastavro = { version = "~1.4.12", optional = true }
@@ -26,7 +27,7 @@ pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
 
 [tool.poetry.scripts]
-run-step = { callable = "correction._step:run_step", extras = ["apf"] }
+step = { callable = "correction._step:run_step", extras = ["apf"] }
 
 [tool.black]
 line-length = 120
