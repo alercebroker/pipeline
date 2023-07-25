@@ -9,7 +9,7 @@ packages = [{include = "mongo_scribe"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 apf-base = "2.5.1"
-db-plugins = {path = "../libs/", develop = true}
+db-plugins = {path = "../libs/db-plugins", develop = true}
 pandas = "1.5.3"
 
 [tool.poetry.group.dev.dependencies]

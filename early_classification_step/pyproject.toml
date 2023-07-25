@@ -13,7 +13,7 @@ packages = [{include = "earlyclassifier"}]
 [tool.poetry.dependencies]
 python = ">=3.7,<3.8"
 apf-base = "1.0.7"
-db-plugins = {path = "../libs/", develop = true}
+db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
