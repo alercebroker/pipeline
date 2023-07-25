@@ -1,16 +1,39 @@
-FROM python:3.10-slim as builder
-MAINTAINER ALeRCE
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-WORKDIR /app/
+FROM python:3.10-slim as python-base
+LABEL org.opencontainers.image.authors="ALeRCE"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1
+
+FROM python-base as builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev python3-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN pip install poetry
-COPY ./poetry.lock ./pyproject.toml /app/
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-interaction --without=dev -E apf --no-root
+
+WORKDIR /app
+COPY ./poetry.lock ./pyproject.toml ./
+COPY ../libs/apf ../libs/apf
+RUN poetry install --no-root --without=dev --without=test
 
 
-FROM builder
+FROM python:3.10-slim as production
+RUN pip install poetry
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /libs /libs
+
+WORKDIR /app
 COPY ./correction /app/correction
 COPY ./README.md /app/
-RUN poetry install --no-interaction --only-root -E apf
-CMD ["poetry", "run", "run-step"]
+
+RUN poetry install --only-root
+
+CMD ["poetry", "run", "step"]
