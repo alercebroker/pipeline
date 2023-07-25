@@ -4,7 +4,7 @@ import pandas as pd
 import pickle
 from typing import List
 from apf.core.step import GenericStep
-from db_plugins.db.mongo import MongoConnection
+from db_plugins.db.mongo.connection import MongoConnection
 from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
 
 
