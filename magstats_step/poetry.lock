@@ -855,4 +855,4 @@ apf = ["apf-base", "confluent-kafka", "fastavro", "prometheus-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.9.0"
-content-hash = "e948619d82d0a467f4409e71acf9e9f5f57cc987d2e34ce9655306d8899e8268"
+content-hash = "7012bd54a9e28b8cf7ca7d9d73ac65a9d04a8cd17cc8b2411e59fc8200f7515c"

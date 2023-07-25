@@ -121,6 +121,7 @@ jobs:
       build-type: production
       step-name: magstats_step
       base-folder: magstats_step
+      build-context: .
 
   prv_candidates_step_production:
     uses: ./.github/workflows/build-template.yaml

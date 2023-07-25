@@ -341,7 +341,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "magstats_step"
-      build-context: "magstats_step"
+      build-context: "."
       step-name: "magstats_step"
 
   prv_candidates_step_lint:
