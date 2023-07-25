@@ -3,7 +3,7 @@ import os
 import pytest
 import unittest
 from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo import MongoDatabaseCreator
+from db_plugins.db.mongo.connection import MongoDatabaseCreator
 from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
 
