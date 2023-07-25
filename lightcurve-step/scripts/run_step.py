@@ -58,7 +58,5 @@ def step_creator():
     return LightcurveStep(**step_params)
 
 
-step = step_creator()
-
 if __name__ == "__main__":
-    step.start()
+    step_creator().start()

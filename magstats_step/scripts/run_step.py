@@ -34,7 +34,5 @@ def step_factory():
     return MagstatsStep(config=step_config)
 
 
-step = step_factory()
-
 if __name__ == "__main__":
-    step.start()
+    step_factory().start()
