@@ -157,7 +157,8 @@ jobs:
       build-type: production
       step-name: sorting_hat_step
       step-name-prefix: ""
-      base-folder: .
+      base-folder: sorting_hat_step
+      build-context: .
 
   watchlist_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -179,3 +180,4 @@ jobs:
       build-type: production
       step-name: scribe
       base-folder: scribe
+      build-context: .

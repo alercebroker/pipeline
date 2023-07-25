@@ -199,4 +199,4 @@ jobs:
       step-name: scribe
       step-name-prefix: ""
       base-folder: scribe
-      build-context: scribe
+      build-context: .

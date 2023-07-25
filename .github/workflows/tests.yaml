@@ -606,7 +606,6 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
   scribe_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe== 'true'
@@ -618,14 +617,13 @@ jobs:
       test-folder: 'tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
   scribe_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "scribe"
-      build-context: "scribe"
+      build-context: "."
       step-name: "scribe"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
