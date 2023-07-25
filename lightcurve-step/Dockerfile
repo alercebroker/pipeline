@@ -19,6 +19,7 @@ RUN apt-get update && \
 RUN pip install poetry
 WORKDIR /app
 COPY ./poetry.lock ./pyproject.toml ./
+COPY ../libs/db-plugins ../libs/db-plugins
 RUN poetry install --no-root --without=dev --without=test
 
 
