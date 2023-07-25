@@ -113,7 +113,7 @@ jobs:
       step-name: lightcurve_step
       step-name-prefix: ""
       base-folder: lightcurve-step
-      build-context: lightcurve-step
+      build-context: .
 
   magstats_step_production:
     uses: ./.github/workflows/build-template.yaml

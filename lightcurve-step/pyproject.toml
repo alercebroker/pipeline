@@ -25,6 +25,9 @@ line-length = 88
 [tool.pytest.ini_options]
 addopts = "-x --cov lightcurve_step --cov-report xml"
 
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step", extras = ["apf"] }
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

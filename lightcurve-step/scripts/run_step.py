@@ -1,10 +1,9 @@
-import os
 import logging
+import os
 
-from prometheus_client import start_http_server
 from apf.metrics.prometheus import PrometheusMetrics
-
 from db_plugins.db.mongo.connection import MongoConnection
+from prometheus_client import start_http_server
 
 try:
     from lightcurve_step import LightcurveStep
@@ -38,7 +37,7 @@ def step_creator():
 
     logger.addHandler(handler)
     db = MongoConnection()
-    
+
     step_params = {
         "config": settings,
         "db_client": db,
@@ -50,10 +49,16 @@ def step_creator():
 
     if settings["USE_PROFILING"]:
         from pyroscope import configure
-        configure(application_name="step.Lightcurve", server_address=settings["PYROSCOPE_SERVER"])
+
+        configure(
+            application_name="step.Lightcurve",
+            server_address=settings["PYROSCOPE_SERVER"],
+        )
 
     return LightcurveStep(**step_params)
 
 
+step = step_creator()
+
 if __name__ == "__main__":
-    step_creator().start()
+    step.start()
