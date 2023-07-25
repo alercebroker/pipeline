@@ -157,7 +157,7 @@ jobs:
       build-type: production
       step-name: sorting_hat_step
       step-name-prefix: ""
-      base-folder: sorting_hat_step
+      base-folder: .
 
   watchlist_step_production:
     uses: ./.github/workflows/build-template.yaml
