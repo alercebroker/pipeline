@@ -19,14 +19,6 @@ jobs:
       step-name: alert_archiving_step
       base-folder: alert_archiving_step
 
-  correction_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: correction_step
-      base-folder: correction_step
-
   early_classification_step_production:
     uses: ./.github/workflows/build-template.yaml
     needs: update_versions
@@ -56,94 +48,6 @@ jobs:
       file: Dockerfile-ztf
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  lc_classification_step_balto_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_balto
-      step-name-prefix: ""
-      build-context: lc_classification_step
-      base-folder: lc_classification_step
-      file: Dockerfile-balto
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  lc_classification_step_messi_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_messi
-      step-name-prefix: ""
-      build-context: lc_classification_step
-      base-folder: lc_classification_step
-      file: Dockerfile-messi
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  lc_classification_step_barney_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_barney
-      step-name-prefix: ""
-      build-context: lc_classification_step
-      base-folder: lc_classification_step
-      file: Dockerfile-barney
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  lc_classification_step_toretto_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_toretto
-      step-name-prefix: ""
-      build-context: lc_classification_step
-      base-folder: lc_classification_step
-      file: Dockerfile-toretto
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  lightcurve_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lightcurve_step
-      step-name-prefix: ""
-      base-folder: lightcurve-step
-      build-context: lightcurve-step
-
-  magstats_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: magstats_step
-      base-folder: magstats_step
-
-  prv_candidates_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: prv_candidates_step
-      step-name-prefix: ""
-      base-folder: prv_candidates_step
-      build-context: prv_candidates_step
-
-  reflector_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      base-folder: reflector_step
-      step-name: reflector_step
-      build-type: production
 
   s3_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -179,11 +83,3 @@ jobs:
       build-type: production
       step-name: xmatch_step
       base-folder: xmatch_step
-
-  scribe_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: scribe
-      base-folder: scribe
