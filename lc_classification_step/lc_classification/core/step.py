@@ -30,11 +30,16 @@ class LateClassifier(GenericStep):
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        if scribe_producer_class == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor":
+        if (
+            scribe_producer_class
+            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
+        ):
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
             )
-            self.scribe_producer = scribe_producer_class(config["SCRIBE_PRODUCER_CONFIG"])
+            self.scribe_producer = scribe_producer_class(
+                config["SCRIBE_PRODUCER_CONFIG"]
+            )
             self.predictor_parser: PredictorParser = get_class(
                 config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
             )()
@@ -44,7 +49,9 @@ class LateClassifier(GenericStep):
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
             )
-            self.scribe_producer = scribe_producer_class(config["SCRIBE_PRODUCER_CONFIG"])
+            self.scribe_producer = scribe_producer_class(
+                config["SCRIBE_PRODUCER_CONFIG"]
+            )
             self.predictor_parser: PredictorParser = get_class(
                 config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
             )()
@@ -75,6 +82,22 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
+        if (
+            self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
+            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
+        ):
+
+            predictor_input = self.predictor_parser.parse_input(messages)
+            self.logger.info("Doing inference")
+            probabilities = self.predictor.predict(predictor_input)
+            self.logger.info("Processing results")
+            predictor_output = self.predictor_parser.parse_output(probabilities)
+            return {
+                "public_info": (predictor_output, messages, predictor_input.value),
+                "db_results": self.scribe_parser.parse(
+                    predictor_output, classifier_version=self.config["MODEL_VERSION"]
+                ),
+            }
         predictor_input = self.predictor_parser.parse_input(messages)
         self.logger.info("Doing inference")
         probabilities = self.predictor.predict(predictor_input)
