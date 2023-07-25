@@ -24,6 +24,7 @@ jobs:
       build-type: production
       step-name: correction_step
       base-folder: correction_step
+      build-context: .
 
   early_classification_step_production:
     uses: ./.github/workflows/build-template.yaml

@@ -18,10 +18,12 @@ apf_base = { path = "../libs/apf", develop = true }
 apf = ["fastavro", "prometheus-client", "confluent-kafka", "apf_base"]
 
 [tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
-black = "^22.12.0"
 
 [tool.poetry.scripts]
 run-step = { callable = "correction._step:run_step", extras = ["apf"] }

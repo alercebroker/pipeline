@@ -19,7 +19,7 @@ RUN apt-get update && \
 RUN pip install poetry
 
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
+COPY ./correction_step/poetry.lock ./correction_step/pyproject.toml ./
 COPY ../libs/apf ../libs/apf
 RUN poetry install --no-root --without=dev --without=test
 
@@ -31,8 +31,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /libs /libs
 
 WORKDIR /app
-COPY ./correction /app/correction
-COPY ./README.md /app/
+COPY ./correction_step ./
 
 RUN poetry install --only-root
 

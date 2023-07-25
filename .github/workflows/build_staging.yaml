@@ -28,7 +28,7 @@ jobs:
       step-name: correction_step
       step-name-prefix: ""
       base-folder: correction_step
-      build-context: correction_step
+      build-context: .
 
   early_classification_step_staging:
     uses: ./.github/workflows/build-template.yaml

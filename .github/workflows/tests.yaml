@@ -41,6 +41,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "reflector_step"
+      build-context: "reflector_step"
       step-name: "reflector_step"
 
 
@@ -90,6 +91,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "alert_archiving_step"
+      build-context: "alert_archiving_step"
       step-name: "alert_archiving_step"
 
   correction_step_lint:
@@ -126,6 +128,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "correction_step"
+      build-context: "."
       step-name: "correction_step"
 
   feature_step_lint:
@@ -161,6 +164,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "feature_step"
+      build-context: "feature_step"
       step-name: "feature_step"
 
   lc_classification_step_lint:
@@ -214,6 +218,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_ztf"
       file: "Dockerfile-ztf"
     secrets:
@@ -224,6 +229,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_balto"
       file: "Dockerfile-balto"
     secrets:
@@ -234,6 +240,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_messi"
       file: "Dockerfile-messi"
     secrets:
@@ -244,6 +251,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step-barney"
       file: "Dockerfile-barney"
     secrets:
@@ -254,6 +262,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step-toretto"
       file: "Dockerfile-toretto"
     secrets:
@@ -293,6 +302,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lightcurve-step"
+      build-context: "lightcurve-step"
       step-name: "lightcurve-step"
 
   magstats_step_lint:
@@ -331,6 +341,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "magstats_step"
+      build-context: "magstats_step"
       step-name: "magstats_step"
 
   prv_candidates_step_lint:
@@ -367,6 +378,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "prv_candidates_step"
+      build-context: "prv_candidates_step"
       step-name: "prv_candidates_step"
 
   s3_step_lint:
@@ -406,6 +418,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "s3_step"
+      build-context: "s3_step"
       step-name: "s3_step"
 
   sorting_hat_step_lint:
@@ -446,6 +459,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "sorting_hat_step"
+      build-context: "sorting_hat_step"
       step-name: "sorting_hat_step"
 
   watchlist_step_lint:
@@ -484,6 +498,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "watchlist_step"
+      build-context: "watchlist_step"
       step-name: "watchlist_step"
 
   xmatch_step_lint:
@@ -522,6 +537,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "xmatch_step"
+      build-context: "xmatch_step"
       step-name: "xmatch_step"
 
   early_classification_step_lint:
@@ -609,6 +625,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "scribe"
+      build-context: "scribe"
       step-name: "scribe"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
