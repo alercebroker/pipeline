@@ -1,9 +1,15 @@
 name: Build Production
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - 2.
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   update_versions:
