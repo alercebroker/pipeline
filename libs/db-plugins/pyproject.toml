@@ -30,12 +30,3 @@ mongomock="*"
 [tool.poetry.group.doc.dependencies]
 numpydoc="*"
 recommonmark="*"
-
-[tool.setuptools.dynamic]
-version = {attr = "db_plugins.__version__"}
-
-[project.scripts]
-dbp = "db_plugins.cli.manage:cli"
-
-[project.urls]
-repository = "https://github.com/alercebroker/db-plugins"
