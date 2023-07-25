@@ -40,7 +40,5 @@ def step_creator():
     return PrvCandidatesStep(config=settings)
 
 
-step = step_creator()
-
 if __name__ == "__main__":
-    step.start()
+    step_creator().start()
