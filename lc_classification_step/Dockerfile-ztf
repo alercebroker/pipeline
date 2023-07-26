@@ -10,7 +10,6 @@ RUN poetry config http-basic.git alerceadmin ${GH_TOKEN}
 FROM poetry as source
 COPY ./poetry.lock ./pyproject.toml /app/
 RUN poetry install --no-interaction --without=dev --with=ztf --no-root
-COPY ./libs/alerce_classifiers ./libs/alerce_classifiers
 COPY ./README.md /app/
 COPY ./schemas.py /app/schemas.py
 COPY ./settings.py /app/settings.py
