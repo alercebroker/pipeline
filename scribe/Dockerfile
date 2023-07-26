@@ -1,5 +1,6 @@
 FROM python:3.9-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONFAULTHANDLER=1 \
@@ -9,7 +10,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1
 
-
 FROM python-base as builder
 RUN apt-get update && \
   apt-get install -y --no-install-recommends git && \
@@ -17,19 +17,28 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry
+
+COPY scribe/poetry.lock scribe/pyproject.toml /app/
+COPY libs/apf libs/apf
+
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.9-slim as production
 RUN pip install poetry
+
 COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY scribe/mongo_scribe /app/mongo_scribe
+COPY scribe/scripts /app/scripts
+COPY scribe/README.md \
+  scribe/settings.py \
+  scribe/credentials.py \
+  /app/
+
 WORKDIR /app
-COPY ./mongo_scribe /app/mongo_scribe
-COPY ./scripts /app/scripts
-COPY ./README.md /app/README.md
-COPY ./settings.py /app/settings.py
-COPY ./credentials.py /app/credentials.py
 RUN poetry install --only-root
+
 CMD ["poetry", "run", "python", "scripts/run_step.py"]

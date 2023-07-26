@@ -28,8 +28,6 @@ on:
                 value: ${{ jobs.detect_changes.outputs.sorting_hat_step }}
             stamp_classifier_step:
                 value: ${{ jobs.detect_changes.outputs.stamp_classifier_step }}
-            transformer_online_classifier_step:
-                value: ${{ jobs.detect_changes.outputs.transformer_online_classifier_step }}
             watchlist_step:
                 value: ${{ jobs.detect_changes.outputs.watchlist_step }}
             xmatch_step:
@@ -38,8 +36,10 @@ on:
                 value: ${{ jobs.detect_changes.outputs.libs_alerce_classifiers}}    
             survey_parser_plugins:
                 value: ${{ jobs.detect_changes.outputs.survey_parser_plugins}}  
+            libs_apf:
+                value: ${{ jobs.detect_changes.outputs.libs_apf }}   
             scribe:
-                value: ${{ jobs.detect_changes.outputs.scribe}}    
+                value: ${{ jobs.detect_changes.outputs.scribe }}    
 
 jobs:
   detect_changes:
@@ -58,11 +58,11 @@ jobs:
         s3_step: ${{ steps.changes.outputs.s3_step }}
         sorting_hat_step: ${{ steps.changes.outputs.sorting_hat_step }}
         stamp_classifier_step: ${{ steps.changes.outputs.stamp_classifier_step }}
-        transformer_online_classifier_step: ${{ steps.changes.outputs.transformer_online_classifier_step }}
         watchlist_step: ${{ steps.changes.outputs.watchlist_step }}
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
         survey_parser_plugins: ${{ steps.changes.outputs.survey_parser_plugins }}
+        libs_apf: ${{ steps.changes.outputs.libs_apf }}
         scribe: ${{ steps.changes.outputs.scribe }}
 
     steps:
@@ -99,8 +99,6 @@ jobs:
                 - 'sorting_hat_step/**'
             stamp_classifier_step:
                 - 'stamp_classifier_step/**'
-            transformer_online_classifier_step:
-                - 'transformer_online_classifier_step/**'
             watchlist_step:
                 - 'watchlist_step/**'
             xmatch_step:
@@ -108,7 +106,9 @@ jobs:
             libs_alerce_classifiers:
                 - 'libs/alerce_classifiers/**'
             survey_parser_plugins:
-                - 'survey_parser_plugins/**'
+                - 'libs/survey_parser_plugins/**'
+            libs_apf:
+                - 'libs/apf/**'
             scribe:
                - 'scribe/**'
 

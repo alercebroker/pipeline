@@ -28,7 +28,7 @@ jobs:
       step-name: correction_step
       step-name-prefix: ""
       base-folder: correction_step
-      build-context: correction_step
+      build-context: .
 
   early_classification_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -122,7 +122,7 @@ jobs:
       step-name: lightcurve_step
       step-name-prefix: ""
       base-folder: lightcurve-step
-      build-context: lightcurve-step
+      build-context: .
 
   magstats_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -131,7 +131,7 @@ jobs:
       build-type: staging
       step-name: magstats_step
       base-folder: magstats_step
-      build-context: magstats_step
+      build-context: .
 
   prv_candidates_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -141,7 +141,7 @@ jobs:
       step-name: prv_candidates_step
       step-name-prefix: ""
       base-folder: prv_candidates_step
-      build-context: prv_candidates_step
+      build-context: .
 
   reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -170,7 +170,7 @@ jobs:
       step-name: sorting_hat_step
       step-name-prefix: ""
       base-folder: sorting_hat_step
-      build-context: sorting_hat_step
+      build-context: .
 
   watchlist_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -199,4 +199,4 @@ jobs:
       step-name: scribe
       step-name-prefix: ""
       base-folder: scribe
-      build-context: scribe
+      build-context: .
