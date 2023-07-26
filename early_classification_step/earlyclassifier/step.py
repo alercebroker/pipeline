@@ -14,7 +14,7 @@ DIRNAME = os.path.dirname(__file__)
 MODEL = os.path.join(DIRNAME, "../model")
 sys.path.append(MODEL)
 
-import StampClassifier
+from deployment import StampClassifier
 
 FULL_ASTEROID_PROBABILITY = {
     "AGN": 0,
