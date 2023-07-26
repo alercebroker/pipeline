@@ -26,9 +26,19 @@ class ZTFParser(SurveyParser):
         "fid": Mapper(lambda x: FILTER[x], origin="fid"),
         "mjd": Mapper(lambda x: x - 2400000.5, origin="jd"),
         "ra": Mapper(origin="ra"),
-        "e_ra": Mapper(lambda x, y: x if x else ERRORS[y], origin="sigmara", extras=["fid"], required=False),
+        "e_ra": Mapper(
+            lambda x, y: x if x else ERRORS[y],
+            origin="sigmara",
+            extras=["fid"],
+            required=False,
+        ),
         "dec": Mapper(origin="dec"),
-        "e_dec": Mapper(lambda x, y: x if x else ERRORS[y], origin="sigmadec", extras=["fid"], required=False),
+        "e_dec": Mapper(
+            lambda x, y: x if x else ERRORS[y],
+            origin="sigmadec",
+            extras=["fid"],
+            required=False,
+        ),
         "mag": Mapper(origin="magpsf"),
         "e_mag": Mapper(origin="sigmapsf"),
         "isdiffpos": Mapper(lambda x: 1 if x in ["t", "1"] else -1, origin="isdiffpos"),
@@ -47,7 +57,13 @@ class ZTFParser(SurveyParser):
         # the alert data is actually in candidate
         candidate = message["candidate"].copy()
         # additional fields from top-level message are included here
-        fields_from_top = ["objectId", "prv_candidates", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+        fields_from_top = [
+            "objectId",
+            "prv_candidates",
+            "cutoutScience",
+            "cutoutTemplate",
+            "cutoutDifference",
+        ]
         candidate.update({k: v for k, v in message.items() if k in fields_from_top})
         return super(ZTFParser, cls).parse_message(candidate)
 

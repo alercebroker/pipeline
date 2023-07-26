@@ -7,6 +7,7 @@ class Mapper:
     Instances can be called with a message, which will execute the callable passed during construction
     with arguments given by fields in the message (defined by `origin` and `extras`).
     """
+
     def __init__(
         self,
         function: Callable = None,
@@ -48,7 +49,10 @@ class Mapper:
 
     def __call__(self, message: Dict[str, Any]) -> Any:
         """Execute the mapping based on the fields within message"""
-        extras = [message[field] if self._required else message.get(field) for field in self._extras]
+        extras = [
+            message[field] if self._required else message.get(field)
+            for field in self._extras
+        ]
         if self._origin is None:
             return self._function(*extras)
         origin = message[self._origin] if self._required else message.get(self._origin)

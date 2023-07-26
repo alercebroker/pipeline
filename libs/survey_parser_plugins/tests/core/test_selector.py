@@ -14,14 +14,20 @@ def get_content(file_path, is_atlas=False):
     with open(file_path, "rb") as f:
         for content in reader(f):
             if is_atlas:
-                content["candidate"]["filter"] = 'o'
+                content["candidate"]["filter"] = "o"
             return content
 
 
 class TestParserSelector(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True) for f in os.listdir(ATLAS_DATA_PATH)]
-        self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
+        self._atlas_sample = [
+            get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True)
+            for f in os.listdir(ATLAS_DATA_PATH)
+        ]
+        self._ztf_sample = [
+            get_content(os.path.join(ZTF_DATA_PATH, f))
+            for f in os.listdir(ZTF_DATA_PATH)
+        ]
 
     def test_empty_parser(self):
         parser = ParserSelector()
@@ -53,18 +59,21 @@ class TestParserSelector(unittest.TestCase):
         self.assertEqual(len(response_2), len(self._atlas_sample))
 
         with self.assertRaises(Exception) as context:
-            parser.parse([
-                {"bad": "title"},
-                {"oo": "asdasda"}
-            ])
+            parser.parse([{"bad": "title"}, {"oo": "asdasda"}])
 
         self.assertIsInstance(context.exception, Exception)
 
 
 class TestALeRCEParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True) for f in os.listdir(ATLAS_DATA_PATH)]
-        self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
+        self._atlas_sample = [
+            get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True)
+            for f in os.listdir(ATLAS_DATA_PATH)
+        ]
+        self._ztf_sample = [
+            get_content(os.path.join(ZTF_DATA_PATH, f))
+            for f in os.listdir(ZTF_DATA_PATH)
+        ]
 
     def test_init(self):
         parser = ALeRCEParser()

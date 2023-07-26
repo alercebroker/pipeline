@@ -60,16 +60,25 @@ class SurveyParser(abc.ABC):
     In addition to the fields described above, the parser automatically ignores all the `origin` fields from the
     `Mapper` objects described in `_mapping`.
     """
+
     _source: str
     _mapping: Dict[str, Mapper]
-    _ignore_in_extra_fields: Sequence[str] = ["cutoutScience", "cutoutTemplate", "cutoutDifference"]
+    _ignore_in_extra_fields: Sequence[str] = [
+        "cutoutScience",
+        "cutoutTemplate",
+        "cutoutDifference",
+    ]
     _Model = GenericAlert
 
     @classmethod
     @functools.lru_cache(1)
     def _exclude_from_extra_fields(cls) -> Set[str]:
         """Returns a set of fields that should not be present in `extra_fields` for `GenericAlert`"""
-        ignore = {mapper.origin for mapper in cls._mapping.values() if mapper.origin is not None}
+        ignore = {
+            mapper.origin
+            for mapper in cls._mapping.values()
+            if mapper.origin is not None
+        }
         ignore.update(cls._ignore_in_extra_fields)
         return ignore
 
@@ -89,7 +98,11 @@ class SurveyParser(abc.ABC):
         generic = {name: mapper(message) for name, mapper in cls._mapping.items()}
 
         stamps = cls._extract_stamps(message)
-        extra_fields = {k: v for k, v in message.items() if k not in cls._exclude_from_extra_fields()}
+        extra_fields = {
+            k: v
+            for k, v in message.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
         return cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
 
     @classmethod

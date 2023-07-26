@@ -25,7 +25,12 @@ class ATLASParser(SurveyParser):
         "fid": Mapper(origin="filter"),
         "mjd": Mapper(origin="mjd"),
         "ra": Mapper(origin="RA"),
-        "e_ra": Mapper(lambda x, y: x if x else _e_ra(y), origin="sigmara", extras=["Dec"], required=False),
+        "e_ra": Mapper(
+            lambda x, y: x if x else _e_ra(y),
+            origin="sigmara",
+            extras=["Dec"],
+            required=False,
+        ),
         "dec": Mapper(origin="Dec"),
         "e_dec": Mapper(lambda x: x if x else ERROR, origin="sigmadec", required=False),
         "mag": Mapper(origin="Mag"),
@@ -46,7 +51,13 @@ class ATLASParser(SurveyParser):
         # the alert data is actually in candidate
         candidate = message["candidate"].copy()
         # additional fields from top-level message are included here
-        fields_from_top = ["objectId", "publisher", "cutoutScience", "cutoutTemplate", "cutoutDifference"]
+        fields_from_top = [
+            "objectId",
+            "publisher",
+            "cutoutScience",
+            "cutoutTemplate",
+            "cutoutDifference",
+        ]
         candidate.update({k: v for k, v in message.items() if k in fields_from_top})
         return super(ATLASParser, cls).parse_message(candidate)
 

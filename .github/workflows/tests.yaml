@@ -656,19 +656,26 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  survey_parser_plugins:
+  libs_survey_parser_plugins_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.survey_parser_plugins == 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'libs/survey_parser_plugins'
+      sources-folder: 'survey_parser_plugins'
+
+  libs_survey_parser_plugins_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.survey_parser_plugins== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'survey_parser_plugins'
+      base-folder: 'libs/survey_parser_plugins'
       python-version: '3.7'
       sources-folder: 'survey_parser_plugins'
       requirements-file: 'requirements.txt'
       apt-get_install: 'sudo apt-get -y install libsnappy-dev'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/ --cov survey_parser_plugins --cov-report xml'
-
 
   libs_apf_lint:
     needs: detect_changes

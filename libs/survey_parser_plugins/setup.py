@@ -14,7 +14,13 @@ setup(
     packages=find_packages(),
     install_requires=required_packages,
     extras_require={
-        "dev": ["pytest", "coverage", "black", "python-snappy", "fastavro>=0.22.0,<=1.6.1"]
+        "dev": [
+            "pytest",
+            "coverage",
+            "black",
+            "python-snappy",
+            "fastavro>=0.22.0,<=1.6.1",
+        ]
     },
     build_requires=required_packages,
     project_urls={

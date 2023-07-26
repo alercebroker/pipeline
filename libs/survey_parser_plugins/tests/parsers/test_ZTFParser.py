@@ -18,8 +18,14 @@ def get_content(file_path):
 
 class TestZTFParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content(os.path.join(ATLAS_DATA_PATH, f)) for f in os.listdir(ATLAS_DATA_PATH)]
-        self._ztf_sample = [get_content(os.path.join(ZTF_DATA_PATH, f)) for f in os.listdir(ZTF_DATA_PATH)]
+        self._atlas_sample = [
+            get_content(os.path.join(ATLAS_DATA_PATH, f))
+            for f in os.listdir(ATLAS_DATA_PATH)
+        ]
+        self._ztf_sample = [
+            get_content(os.path.join(ZTF_DATA_PATH, f))
+            for f in os.listdir(ZTF_DATA_PATH)
+        ]
 
     def test_can_parse(self):
         ztf_message = self._ztf_sample[0]

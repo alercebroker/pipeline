@@ -28,8 +28,12 @@ class LSSTParser(SurveyParser):
         "e_ra": Mapper(lambda y: _e_ra(y), extras=["decl"]),  # UPDATE ME
         "dec": Mapper(origin="decl"),
         "e_dec": Mapper(lambda: ERROR),  # UPDATE ME
-        "mag": Mapper(origin="psFlux"),  # TODO: Are these really magnitudes and not flux?
-        "e_mag": Mapper(origin="psFluxErr"),  # TODO: Are these really magnitudes and not flux?
+        "mag": Mapper(
+            origin="psFlux"
+        ),  # TODO: Are these really magnitudes and not flux?
+        "e_mag": Mapper(
+            origin="psFluxErr"
+        ),  # TODO: Are these really magnitudes and not flux?
         "isdiffpos": Mapper(lambda x: 1 if x >= 0 else -1, extras=["psFlux"]),
     }
 
@@ -53,4 +57,4 @@ class LSSTParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return 'diaSource' in message.keys()
+        return "diaSource" in message.keys()
