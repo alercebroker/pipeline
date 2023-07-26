@@ -11,10 +11,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKeyConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 from .. import generic
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
