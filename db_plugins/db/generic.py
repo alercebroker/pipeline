@@ -2,6 +2,7 @@ import abc
 from math import ceil
 from typing import Type
 
+
 class DatabaseCreator(abc.ABC):
     """Abstract DatabaseConnection creator class.
 
@@ -58,6 +59,7 @@ def new_DBConnection(creator: Type[DatabaseCreator]) -> DatabaseConnection:
     """
     return creator.create_database()
 
+
 class BaseQuery(abc.ABC):
     """Abstract Query class."""
 
@@ -101,6 +103,7 @@ class BaseQuery(abc.ABC):
         Returns None if result is empty.
         """
         raise NotImplementedError()
+
 
 class Pagination:
     """Paginate responses from the database."""
