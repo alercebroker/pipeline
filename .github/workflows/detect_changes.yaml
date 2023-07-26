@@ -34,8 +34,12 @@ on:
                 value: ${{ jobs.detect_changes.outputs.xmatch_step }}      
             libs_alerce_classifiers:
                 value: ${{ jobs.detect_changes.outputs.libs_alerce_classifiers}}    
+            survey_parser_plugins:
+                value: ${{ jobs.detect_changes.outputs.survey_parser_plugins}}  
+            libs_apf:
+                value: ${{ jobs.detect_changes.outputs.libs_apf }}   
             scribe:
-                value: ${{ jobs.detect_changes.outputs.scribe}}    
+                value: ${{ jobs.detect_changes.outputs.scribe }}    
 
 jobs:
   detect_changes:
@@ -57,6 +61,8 @@ jobs:
         watchlist_step: ${{ steps.changes.outputs.watchlist_step }}
         xmatch_step: ${{ steps.changes.outputs.xmatch_step }}
         libs_alerce_classifiers: ${{ steps.changes.outputs.libs_alerce_classifiers }}
+        survey_parser_plugins: ${{ steps.changes.outputs.survey_parser_plugins }}
+        libs_apf: ${{ steps.changes.outputs.libs_apf }}
         scribe: ${{ steps.changes.outputs.scribe }}
 
     steps:
@@ -99,6 +105,10 @@ jobs:
                 - 'xmatch_step/**'
             libs_alerce_classifiers:
                 - 'libs/alerce_classifiers/**'
+            survey_parser_plugins:
+                - 'libs/survey_parser_plugins/**'
+            libs_apf:
+                - 'libs/apf/**'
             scribe:
                - 'scribe/**'
 

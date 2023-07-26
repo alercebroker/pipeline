@@ -1,18 +1,18 @@
 [tool.poetry]
 name = "prv-candidates-step"
-version = "0.1.1a25"
+version = "0.1.1a29"
 description = "Previous Detections Step"
 authors = []
 readme = "README.md"
 packages = [{include = "prv_candidates_step"}]
 
 [tool.poetry.scripts]
-step = { callable = "scripts.run_step:step" }
+step = { callable = "scripts.run_step:step_creator()" }
 
 [tool.poetry.dependencies]
 python = "^3.8"
 confluent-kafka = "2.0.2"
-apf-base = "2.4.2"
+apf-base = { path = "../libs/apf", develop = true }
 survey-parser-plugins = {git = "https://github.com/alercebroker/survey-parser-plugins", rev = "2.3.7"}
 
 [tool.poetry.group.test.dependencies]

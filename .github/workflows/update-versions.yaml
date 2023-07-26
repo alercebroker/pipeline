@@ -49,4 +49,4 @@ jobs:
               git add $i
           done
           git commit -m "chore: update version"
-          git push
+          git push origin ${{ inputs.git-ref }}

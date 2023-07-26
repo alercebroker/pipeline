@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sorting-hat-step"
-version = "1.0.1a15"
+version = "1.0.1a19"
 description = "Sorting hat step"
 authors = []
 readme = "README.md"
@@ -10,14 +10,14 @@ packages = [{include = "sorting_hat_step"}]
 step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
-apf_base = "2.5.1"
+apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
 confluent_kafka = "2.0.2"
 db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.5"}
 numpy = "^1.24.3"
 python = ">=3.8,<3.9"
 scipy = "1.10.1"
-survey-parser-plugins = {git = "https://github.com/alercebroker/survey-parser-plugins", rev = "2.3.6"}
+survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
