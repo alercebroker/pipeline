@@ -1508,7 +1508,7 @@ description = "ALeRCE Survey Parser Plugins"
 optional = false
 python-versions = "*"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 fastavro = ">=0.22.0,<=1.6.1"
@@ -1519,7 +1519,7 @@ dev = ["black", "coverage", "fastavro (>=0.22.0,<=1.6.1)", "pytest", "python-sna
 
 [package.source]
 type = "directory"
-url = "../survey_parser_plugins"
+url = "../libs/survey_parser_plugins"
 
 [[package]]
 name = "tomli"
@@ -1627,4 +1627,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.9"
-content-hash = "a2753dd7ee0ef3bd3f0b015f07dee268f962aaf813347a03f166cc863e81a706"
+content-hash = "7e91ed3e9560fce182ddb57aa32112070620f0150601096c511b4db2f1463293"
