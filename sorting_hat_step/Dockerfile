@@ -13,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 FROM python-base as builder
 
 RUN pip install poetry
-
+COPY libs/survey_parser_plugins libs/survey_parser_plugins
 COPY sorting_hat_step/poetry.lock sorting_hat_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 

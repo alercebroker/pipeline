@@ -17,7 +17,7 @@ db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.5"}
 numpy = "^1.24.3"
 python = ">=3.8,<3.9"
 scipy = "1.10.1"
-survey-parser-plugins = {git = "https://github.com/alercebroker/survey-parser-plugins", rev = "2.3.6"}
+survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
