@@ -11,8 +11,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKeyConstraint,
 )
-from sqlalchemy.orm import relationship
-from .. import generic
 
 from sqlalchemy.orm import declarative_base
 
