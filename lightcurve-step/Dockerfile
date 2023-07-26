@@ -21,6 +21,7 @@ RUN pip install poetry
 
 COPY lightcurve-step/poetry.lock lightcurve-step/pyproject.toml /app/
 COPY libs/apf libs/apf
+COPY libs/db-plugins libs/db-plugins
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
