@@ -11,7 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKeyConstraint,
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import relationship
 from .. import generic
 
 from sqlalchemy.orm import declarative_base
@@ -24,7 +24,7 @@ class Commons:
         return self.__dict__[field]
 
 
-class Step(Base, generic.AbstractStep):
+class Step(Base):
     __tablename__ = "step"
 
     step_id = Column(String, primary_key=True)
@@ -34,7 +34,7 @@ class Step(Base, generic.AbstractStep):
     date = Column(DateTime, nullable=False)
 
 
-class Object(Base, generic.AbstractObject):
+class Object(Base):
     __tablename__ = "object"
 
     oid = Column(String, primary_key=True)
@@ -68,22 +68,6 @@ class Object(Base, generic.AbstractObject):
         Index("ix_object_meanra", "meanra", postgresql_using="btree"),
         Index("ix_object_meandec", "meandec", postgresql_using="btree"),
     )
-
-    # xmatches = relationship("Xmatch")
-    magstats = relationship("MagStats", uselist=True)
-    non_detections = relationship("NonDetection", order_by="NonDetection.mjd")
-    detections = relationship("Detection", order_by="Detection.mjd")
-    features = relationship("Feature")
-    probabilities = relationship(
-        "Probability", uselist=True, order_by="Probability.classifier_name"
-    )
-
-    def get_lightcurve(self):
-        """Get the lightcurve of the object."""
-        return {
-            "detections": self.detections,
-            "non_detections": self.non_detections,
-        }
 
     def __repr__(self):
         return "<Object(oid='%s')>" % (self.oid)
@@ -181,7 +165,7 @@ class Allwise(Base):
     )
 
 
-class MagStats(Base, generic.AbstractMagnitudeStatistics):
+class MagStats(Base):
     __tablename__ = "magstat"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -226,7 +210,7 @@ class MagStats(Base, generic.AbstractMagnitudeStatistics):
     )
 
 
-class NonDetection(Base, generic.AbstractNonDetection, Commons):
+class NonDetection(Base, Commons):
     __tablename__ = "non_detection"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -236,7 +220,7 @@ class NonDetection(Base, generic.AbstractNonDetection, Commons):
     __table_args__ = (Index("ix_non_detection_oid", "oid", postgresql_using="hash"),)
 
 
-class Detection(Base, generic.AbstractDetection, Commons):
+class Detection(Base, Commons):
     __tablename__ = "detection"
 
     candid = Column(BigInteger, primary_key=True)
@@ -272,8 +256,6 @@ class Detection(Base, generic.AbstractDetection, Commons):
 
     __table_args__ = (Index("ix_ndetection_oid", "oid", postgresql_using="hash"),)
 
-    dataquality = relationship("Dataquality")
-
     def __repr__(self):
         return "<Detection(candid='%i', fid='%i', oid='%s')>" % (
             self.candid,
@@ -282,7 +264,7 @@ class Detection(Base, generic.AbstractDetection, Commons):
         )
 
 
-class Dataquality(Base, generic.AbstractDataquality):
+class Dataquality(Base):
     __tablename__ = "dataquality"
 
     candid = Column(BigInteger, primary_key=True)
@@ -324,7 +306,7 @@ class Dataquality(Base, generic.AbstractDataquality):
     )
 
 
-class Gaia_ztf(Base, generic.AbstractGaia_ztf):
+class Gaia_ztf(Base):
     __tablename__ = "gaia_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -336,7 +318,7 @@ class Gaia_ztf(Base, generic.AbstractGaia_ztf):
     unique1 = Column(Boolean, nullable=False)
 
 
-class Ss_ztf(Base, generic.AbstractSs_ztf):
+class Ss_ztf(Base):
     __tablename__ = "ss_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -351,7 +333,7 @@ class Ss_ztf(Base, generic.AbstractSs_ztf):
     )
 
 
-class Ps1_ztf(Base, generic.AbstractPs1_ztf):
+class Ps1_ztf(Base):
     __tablename__ = "ps1_ztf"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -383,7 +365,7 @@ class Ps1_ztf(Base, generic.AbstractPs1_ztf):
     unique3 = Column(Boolean, nullable=False)
 
 
-class Reference(Base, generic.AbstractReference):
+class Reference(Base):
     __tablename__ = "reference"
 
     oid = Column(String, ForeignKey("object.oid"), primary_key=True)
@@ -405,7 +387,7 @@ class Reference(Base, generic.AbstractReference):
     __table_args__ = (Index("ix_reference_fid", "fid", postgresql_using="btree"),)
 
 
-class Pipeline(Base, generic.AbstractPipeline):
+class Pipeline(Base):
     __tablename__ = "pipeline"
 
     pipeline_id = Column(String, primary_key=True)
