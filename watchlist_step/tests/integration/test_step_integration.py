@@ -3,7 +3,7 @@ from watchlist_step.step import WatchlistStep
 from unittest import mock
 import datetime
 from apf.consumers import KafkaConsumer
-from db_plugins.db.sql import SQLConnection
+from db_plugins.db.sql.connection import SQLConnection
 
 
 @pytest.fixture

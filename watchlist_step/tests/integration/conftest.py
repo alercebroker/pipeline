@@ -1,7 +1,7 @@
 import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
 from confluent_kafka import Producer, Consumer
-from db_plugins.db.sql import SQLConnection
+from db_plugins.db.sql.connection import SQLConnection
 from db_plugins.db.sql.models import Detection, Object, Probability
 from apf.consumers import KafkaConsumer
 from confluent_kafka import KafkaError, KafkaException, Consumer
