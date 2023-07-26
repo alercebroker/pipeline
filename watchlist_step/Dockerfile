@@ -19,20 +19,26 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
-WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
+COPY watchlist_step/poetry.lock watchlist_step/pyproject.toml /app/
 COPY libs/db-plugins libs/db-plugins
+
+WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.8-slim as production
 RUN pip install poetry
 
-COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY watchlist_step/watchlist_step /app/watchlist_step
+COPY watchlist_step/scripts /app/scripts
+COPY watchlist_step/README.md \
+  watchlist_step/settings.py \
+  /app/
 
 WORKDIR /app
-COPY ./ ./
-
 RUN poetry install --only-root
 
 CMD ["poetry", "run", "step"]

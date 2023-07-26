@@ -493,13 +493,15 @@ jobs:
       test-dependencies: 'pytest==7.2.0 pytest-docker'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   watchlist_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "watchlist_step"
-      build-context: "watchlist_step"
+      build-context: "."
       step-name: "watchlist_step"
 
   xmatch_step_lint:
