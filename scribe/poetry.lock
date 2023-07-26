@@ -41,24 +41,26 @@ trio = ["trio (<0.22)"]
 
 [[package]]
 name = "apf-base"
-version = "2.5.1"
-description = "ALeRCE Alert Processing Framework."
+version = "2.5.2"
+description = "Alert Processing Framework"
 optional = false
-python-versions = "*"
-files = [
-    {file = "apf_base-2.5.1-py3-none-any.whl", hash = "sha256:91ee6c3a970d0008fea071353e57f58ddaed0f45bc95c46dcfff2105c35aa6f7"},
-    {file = "apf_base-2.5.1.tar.gz", hash = "sha256:af2b65eb68dade92a83354f589ce64883b2d86f0f92a9c9aa9382be29fd20f9b"},
-]
+python-versions = ">=3.8"
+files = []
+develop = true
 
 [package.dependencies]
 boto3 = "1.26.69"
 click = ">=7.1.1"
 confluent-kafka = ">=1.4.0,<2.1.0"
 fastavro = ">=0.22.0,<=1.6.1"
-Jinja2 = ">=2.10.0"
+jinja2 = ">=2.10.0"
 pandas = ">=0.24,<=2.0.1"
 prometheus-client = "0.16.0"
 pyroscope-io = "0.8.4"
+
+[package.source]
+type = "directory"
+url = "../libs/apf"
 
 [[package]]
 name = "attrs"
@@ -386,12 +388,12 @@ toml = ["tomli"]
 
 [[package]]
 name = "db-plugins"
-version = "4.2.7"
+version = "4.2.5"
 description = "ALeRCE database plugins."
 optional = false
-python-versions = ">=3.7, <3.12"
+python-versions = "<3.11,>=3.7"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 alembic = "1.8.1"
@@ -400,9 +402,15 @@ marshmallow_sqlalchemy = "0.28.1"
 pymongo = "4.3.3"
 SQLAlchemy = "1.3.24"
 
+[package.extras]
+dev = ["coverage", "mock_alchemy", "mongomock", "psycopg2-binary", "pytest", "pytest-docker"]
+doc = ["numpydoc (>=0.9.1)", "recommonmark"]
+
 [package.source]
-type = "directory"
-url = "../libs/db-plugins"
+type = "git"
+url = "https://github.com/alercebroker/db-plugins"
+reference = "4.2.5"
+resolved_reference = "bc545b4414937360f6c9a76a7c23a8e7b8b7b516"
 
 [[package]]
 name = "dnspython"
@@ -1171,4 +1179,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.10"
-content-hash = "581d815d7c271c037cbe8386309bdbc91058c618aa832be8159ca53851f5b977"
+content-hash = "ad42151836571967bf360f53aef56aa97690bb0cceaf41f79f1f067d257063e4"

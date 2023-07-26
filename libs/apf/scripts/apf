@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+"""apf command-line utility for administrative tasks."""
+import os
+import sys
+
+
+def main():
+    try:
+        from apf.core.management import cli
+    except ImportError as exc:
+        raise ImportError from exc
+    cli()
+
+
+if __name__ == '__main__':
+    main()

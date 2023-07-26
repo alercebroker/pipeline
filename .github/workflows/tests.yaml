@@ -42,6 +42,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "reflector_step"
+      build-context: "reflector_step"
       step-name: "reflector_step"
 
 
@@ -91,6 +92,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "alert_archiving_step"
+      build-context: "alert_archiving_step"
       step-name: "alert_archiving_step"
 
   correction_step_lint:
@@ -108,6 +110,8 @@ jobs:
       base-folder: 'correction_step'
       sources-folder: 'correction'
       test-folder: 'tests/unittests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
@@ -117,12 +121,15 @@ jobs:
       sources-folder: 'correction'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "correction_step"
+      build-context: "."
       step-name: "correction_step"
 
   feature_step_lint:
@@ -158,6 +165,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "feature_step"
+      build-context: "feature_step"
       step-name: "feature_step"
 
   lc_classification_step_lint:
@@ -211,6 +219,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_ztf"
       file: "Dockerfile-ztf"
     secrets:
@@ -221,6 +230,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_balto"
       file: "Dockerfile-balto"
     secrets:
@@ -231,6 +241,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step_messi"
       file: "Dockerfile-messi"
     secrets:
@@ -241,6 +252,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step-barney"
       file: "Dockerfile-barney"
     secrets:
@@ -251,6 +263,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
+      build-context: "lc_classification_step"
       step-name: "lc_classification_step-toretto"
       file: "Dockerfile-toretto"
     secrets:
@@ -290,6 +303,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lightcurve-step"
+      build-context: "."
       step-name: "lightcurve-step"
 
   magstats_step_lint:
@@ -308,6 +322,8 @@ jobs:
       python-version: '3.9'
       sources-folder: 'magstats_step'
       test-folder: 'tests/unittests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
@@ -318,12 +334,15 @@ jobs:
       sources-folder: 'magstats_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "magstats_step"
+      build-context: "."
       step-name: "magstats_step"
 
   prv_candidates_step_lint:
@@ -360,6 +379,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "prv_candidates_step"
+      build-context: "."
       step-name: "prv_candidates_step"
 
   s3_step_lint:
@@ -399,6 +419,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "s3_step"
+      build-context: "s3_step"
       step-name: "s3_step"
 
   sorting_hat_step_lint:
@@ -439,6 +460,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "sorting_hat_step"
+      build-context: "."
       step-name: "sorting_hat_step"
 
   watchlist_step_lint:
@@ -477,6 +499,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "watchlist_step"
+      build-context: "watchlist_step"
       step-name: "watchlist_step"
 
   xmatch_step_lint:
@@ -515,6 +538,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "xmatch_step"
+      build-context: "xmatch_step"
       step-name: "xmatch_step"
 
   early_classification_step_lint:
@@ -583,7 +607,6 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
   scribe_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe== 'true'
@@ -595,13 +618,13 @@ jobs:
       test-folder: 'tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
   scribe_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "scribe"
+      build-context: "."
       step-name: "scribe"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
@@ -635,6 +658,24 @@ jobs:
       test-command: 'python -m pytest -x tests/integration'
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  libs_apf_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.libs_apf == 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'libs/apf'
+      sources-folder: 'apf'
+  libs_apf_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.libs_apf == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: 'libs/apf'
+      sources-folder: 'apf'
+      test-folder: 'tests'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   db_plugins_lint:
     needs: detect_changes

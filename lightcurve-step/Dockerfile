@@ -1,5 +1,6 @@
 FROM python:3.9-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONFAULTHANDLER=1 \
@@ -17,21 +18,29 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry
+
+COPY lightcurve-step/poetry.lock lightcurve-step/pyproject.toml /app/
+COPY libs/apf libs/apf
+
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
-COPY ../libs/db-plugins ../libs/db-plugins
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.9-slim as production
 RUN pip install poetry
+
 COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY lightcurve-step/lightcurve_step /app/lightcurve_step
+COPY lightcurve-step/scripts /app/scripts
+COPY lightcurve-step/README.md \
+  lightcurve-step/settings.py \
+  lightcurve-step/schema.avsc \
+  lightcurve-step/credentials.py \
+  /app/
+
 WORKDIR /app
-COPY ./lightcurve_step /app/lightcurve_step
-COPY ./scripts /app/scripts
-COPY ./README.md /app/README.md
-COPY ./settings.py /app/settings.py
-COPY ./schema.avsc /app/schema.avsc
-COPY ./credentials.py /app/credentials.py
 RUN poetry install --only-root
-CMD ["poetry", "run", "python", "scripts/run_step.py"]
+
+CMD ["poetry", "run", "step"]

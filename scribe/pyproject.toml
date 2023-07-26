@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scribe"
-version = "1.0.1a13"
+version = "1.0.1a17"
 description = "Mongo scribe"
 authors = []
 readme = "README.md"
@@ -8,7 +8,7 @@ packages = [{include = "mongo_scribe"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-apf-base = "2.5.1"
+apf-base = { path = "../libs/apf", develop = true }
 db-plugins = {path = "../libs/db-plugins", develop = true}
 pandas = "1.5.3"
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "magstats-step"
-version = "0.1.1a52"
+version = "0.1.1a56"
 description = ""
 authors = ["ASHuenchuleo <arsepulh@gmail.com>"]
 readme = "README.md"
@@ -8,7 +8,7 @@ packages = [{include = "magstats_step"}]
 
 [tool.poetry.dependencies]
 python = "~3.9.0"
-apf-base = "2.4.0"
+apf-base = { path = "../libs/apf", develop = true }
 methodtools = "^0.4.7"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
@@ -20,13 +20,18 @@ confluent-kafka = { version = "~2.0.2", optional = true }
 apf = ["fastavro", "prometheus-client", "confluent-kafka", "apf_base"]
 
 [tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
-black = "^22.12.0"
 
 [tool.black]
 line-length = 120
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step_factory()", extras = ["apf"] }
 
 [build-system]
 requires = ["poetry-core"]
