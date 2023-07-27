@@ -19,28 +19,19 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
-COPY xmatch_step/poetry.lock xmatch_step/pyproject.toml /app/
-COPY libs/apf /libs/apf
-
 WORKDIR /app
+COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.7-slim as production
 RUN pip install poetry
 
-COPY --from=builder /app /app
-COPY --from=builder /libs /libs
-
-COPY xmatch_step/xmatch_step /app/xmatch_step
-COPY xmatch_step/scripts /app/scripts
-COPY xmatch_step/README.md \
-  xmatch_step/schema.py \
-  xmatch_step/scribe_schema.avsc \
-  xmatch_step/settings.py \
-  /app/
+COPY --from=builder /app/.venv /app/.venv
 
 WORKDIR /app
+COPY ./ ./
+
 RUN poetry install --only-root
 
 CMD ["poetry", "run", "step"]
