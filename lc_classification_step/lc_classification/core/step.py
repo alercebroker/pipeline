@@ -28,10 +28,7 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        self.isztf = False
-        if config["PREDICTOR_CONFIG"]["CLASS"] == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor":
-            self.isztf = True
-            
+        self.isztf = config["PREDICTOR_CONFIG"]["CLASS"] == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
         if (self.isztf):
             scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
