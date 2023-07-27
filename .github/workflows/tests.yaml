@@ -65,6 +65,7 @@ jobs:
       sources-folder: 'alert_archiving_step'
       test-folder: 'tests/unittest'
       base-folder: 'alert_archiving_step'
+      codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_unittest_cli:
@@ -76,6 +77,7 @@ jobs:
       sources-folder: 'alert_archiving_step'
       test-folder: 'tests/cli'
       base-folder: 'alert_archiving_step'
+      codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_integration:
