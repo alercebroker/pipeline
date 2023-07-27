@@ -55,36 +55,31 @@ jobs:
   alert_archiving_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.7'
-      base-folder: 'alert_archiving_step'
-      sources-folder: 'alert_archiving_step'
-      test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
-      test-command: 'python -m pytest -x tests/unittest --cov alert_archiving_step --cov-report xml'
+        python-version: '3.7'
+        sources-folder: 'alert_archiving_step'
+        test-folder: 'tests/unittest'
+        base-folder: 'alert_archiving_step'
   alert_archiving_step_unittest_cli:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.7'
-      base-folder: 'alert_archiving_step'
-      test-dependencies: 'pytest pytest-docker pytest-cov'
-      requirements-file: 'requirements_cli.txt'
-      test-command: 'python -m pytest -x tests/cli --cov cli --cov-report xml'
+        python-version: '3.7'
+        sources-folder: 'alert_archiving_step'
+        test-folder: 'tests/cli'
+        base-folder: 'alert_archiving_step'
   alert_archiving_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == 'true'    
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
-      base-folder: 'alert_archiving_step'
       sources-folder: 'alert_archiving_step'
+      base-folder: 'alert_archiving_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker numpy Cython'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
   alert_archiving_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
@@ -354,24 +349,26 @@ jobs:
   prv_candidates_step_unittest:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'prv_candidates_step' 
-      sources-folder: "prv_candidates_step"
-      test-folder: "tests/unit"
-      test-dependencies: "pytest pytest-cov pytest-mock"
-      test-command: "python -m pytest -x tests/unit --cov prv_candidates_step --cov-report xml"
+      base-folder: 'prv_candidates_step'
+      python-version: '3.8'
+      sources-folder: 'prv_candidates_step'
+      test-folder: 'tests/unittest'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step' 
-      sources-folder: "prv_candidates_step"
-      test-folder: "tests/integration"
-      test-dependencies: "pytest pytest-docker pytest-mock"
-      codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x tests/integration"
+      python-version: '3.8'
+      sources-folder: 'prv_candidates_step'
+      test-folder: 'tests/integration'
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
@@ -508,34 +505,34 @@ jobs:
       sources-folder: 'xmatch_step'
   xmatch_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.xmatch_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
       sources-folder: 'xmatch_step'
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov xmatch_step --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.xmatch_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
       sources-folder: 'xmatch_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker numpy Cython psycopg2'
       codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step == 'true'
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "xmatch_step"
-      build-context: "xmatch_step"
+      build-context: "."
       step-name: "xmatch_step"
 
   early_classification_step_lint:
@@ -547,28 +544,27 @@ jobs:
       sources-folder: 'earlyclassifier'         
   early_classification_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.early_classification_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.early_classification_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'early_classification_step'
       python-version: '3.7'
-      sources-folder: 'earlyclassifier'
-      requirements-file: 'requirements.txt -r model/requirements.txt'
+      sources-folder: 'early_classification_step'
       test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   early_classification_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.early_classification_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
+    if: needs.detect_changes.outputs.early_classification_step == 'true'
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'early_classification_step'
       python-version: '3.7'
-      sources-folder: 'earlyclassifier'
-      requirements-file: 'requirements.txt -r model/requirements.txt'
+      sources-folder: 'early_classification_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker'
-      test-command: 'python -m pytest -x tests/integration'
+      codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   stamp_classifier_step_lint:
     needs: detect_changes
