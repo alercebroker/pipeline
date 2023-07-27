@@ -12,7 +12,6 @@ concurrency:
 jobs:
   update_versions:
     uses: ./.github/workflows/update-versions.yaml
-    needs: update_versions
     with:
       build-type: production
 
