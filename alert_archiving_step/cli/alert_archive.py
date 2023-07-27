@@ -21,7 +21,6 @@ def cli(
     partition_size,
     bucket_name,
 ):
-
     if ctx.invoked_subcommand is None:
         tar_file = ctx.invoke(download_archive, date=date, download_dir=avro_path)
         avro_files = ctx.invoke(extract_file, tar_file=tar_file)

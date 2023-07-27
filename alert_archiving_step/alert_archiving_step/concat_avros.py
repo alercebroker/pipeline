@@ -3,8 +3,8 @@ import logging
 import numpy as np
 import shutil
 
-def concat_avros(input_directory, output_directory):
 
+def concat_avros(input_directory, output_directory):
     names = os.listdir(input_directory)
     logger = logging.getLogger("concat_avros")
     logger.info(f"{len(names)} avro files on {input_directory}")
