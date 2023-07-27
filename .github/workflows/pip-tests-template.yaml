@@ -37,6 +37,10 @@ on:
         required: false
         type: string
         default: 'pytest -x ${{ inputs.test-folder }} --cov ${{ inputs.sources-folder }} --cov-report xml'
+      apt-get_install:
+        required: false
+        type: string
+        default: ''
     secrets:
       GH_TOKEN:
         required: false
@@ -69,6 +73,7 @@ jobs:
       - name: Install test dependencies
         run: |
           cd ${{ inputs.base-folder }}
+          ${{ inputs.apt-get_install }}
           pip install --upgrade pip
           pip install ${{ inputs.test-dependencies }}
       - name: Tests
