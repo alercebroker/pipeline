@@ -28,11 +28,12 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        if (
-            scribe_producer_class
-            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-        ):
+        self.isztf = False
+        if config["PREDICTOR_CONFIG"]["CLASS"] == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor":
+            self.isztf = True
+            
+        if (self.isztf):
+            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
             )
@@ -45,6 +46,7 @@ class LateClassifier(GenericStep):
             self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
             self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
         else:
+            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
             )
@@ -81,10 +83,7 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        if (
-            self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
-            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-        ):
+        if (self.isztf):
 
             predictor_input = self.predictor_parser.parse_input(messages)
             self.logger.info("Doing inference")
