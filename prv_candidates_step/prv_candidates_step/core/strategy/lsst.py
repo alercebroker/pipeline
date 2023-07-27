@@ -48,20 +48,39 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     ra, dec = alert["ra"], alert["dec"]
 
     prv_candidates = alert["extra_fields"].pop("prvDiaSources")
+    prv_forced = alert["extra_fields"].pop("prvDiaForcedSources")
+
+    if "parent_candid" in alert["extra_fields"]:
+        alert["extra_fields"].pop("parent_candid")
+
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
     for candidate in prv_candidates:
         candidate = LSSTPreviousDetectionsParser.parse(candidate)
-        candidate.update({"aid": aid, "has_stamp": False, "forced": False, "parent_candid": parent})
+        candidate.update(
+            {
+                "aid": aid,
+                "has_stamp": False,
+                "forced": False,
+                "parent_candid": parent,
+                "extra_fields": {**alert["extra_fields"], **candidate["extra_fields"]},
+            }
+        )
         candidate.pop("stamps", None)
         detections.append(candidate)
 
-    prv_forced = alert["extra_fields"].pop("prvDiaForcedSources")
     prv_forced = pickle.loads(prv_forced) if prv_forced else []
     for candidate in prv_forced:
         candidate = LSSTForcedPhotometryParser.parse(candidate, ra, dec)
-        candidate.update({"aid": aid, "has_stamp": False, "forced": True, "parent_candid": parent})
+        candidate.update(
+            {
+                "aid": aid,
+                "has_stamp": False,
+                "forced": True,
+                "parent_candid": parent,
+                "extra_fields": {**alert["extra_fields"], **candidate["extra_fields"]},
+            }
+        )
         candidate.pop("stamps", None)
         detections.append(candidate)
 
-    alert["extra_fields"]["parent_candid"] = None
     return {"aid": alert["aid"], "detections": detections, "non_detections": []}

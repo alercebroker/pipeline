@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "scribe"
+version = "1.0.1a19"
+description = "Mongo scribe"
+authors = []
+readme = "README.md"
+packages = [{include = "mongo_scribe"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.10"
+apf-base = { path = "../libs/apf", develop = true }
+db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.5"}
+pandas = "1.5.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+pytest-docker = "^1.0.1"
+pytest-cov = "^4.1.0"
+
+[tool.black]
+line-length = 79
+
+[tool.pytest.ini_options]
+addopts = "-x --cov mongo_scribe --cov-report xml"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

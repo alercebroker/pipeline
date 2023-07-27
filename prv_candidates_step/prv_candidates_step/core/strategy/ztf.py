@@ -58,14 +58,25 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     detections = [alert]
     non_detections = []
 
-    prv_candidates = alert["extra_fields"]["prv_candidates"]
+    prv_candidates = alert["extra_fields"].pop("prv_candidates")
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
     aid, oid, parent = alert["aid"], alert["oid"], alert["candid"]
     for candidate in prv_candidates:
         if candidate["candid"]:
             candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
-            candidate.update({"aid": aid, "has_stamp": False, "forced": False, "parent_candid": parent})
+            candidate.update(
+                {
+                    "aid": aid,
+                    "has_stamp": False,
+                    "forced": False,
+                    "parent_candid": parent,
+                    "extra_fields": {
+                        **alert["extra_fields"],
+                        **candidate["extra_fields"],
+                    },
+                }
+            )
             candidate.pop("stamps", None)
             detections.append(candidate)
         else:
@@ -75,7 +86,10 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
             candidate.pop("extra_fields", None)
             non_detections.append(candidate)
 
-    alert["extra_fields"].pop("prv_candidates")
     alert["extra_fields"]["parent_candid"] = None
 
-    return {"aid": alert["aid"], "detections": detections, "non_detections": non_detections}
+    return {
+        "aid": alert["aid"],
+        "detections": detections,
+        "non_detections": non_detections,
+    }

@@ -27,13 +27,15 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
 }
 
-if os.getenv("TOPIC_STRATEGY_FORMAT"):
+if os.getenv("TOPIC_STRATEGY_TOPIC_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
-            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
-            "date_format": "%Y%m%d",
-            "change_hour": 23,
+            "topic_format": os.environ["TOPIC_STRATEGY_TOPIC_FORMAT"]
+            .strip()
+            .split(","),
+            "date_format": os.getenv("TOPIC_STRATEGY_DATE_FORMAT", "%Y%m%d"),
+            "change_hour": int(os.getenv("TOPIC_STRATEGY_CHANGE_HOUR", 23)),
         },
     }
 elif os.getenv("CONSUMER_TOPICS"):
@@ -122,6 +124,7 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
+RUN_CONESEARCH = os.getenv("RUN_CONESEARCH", "True")
 
 # Step Configuration
 STEP_CONFIG = {
@@ -130,4 +133,5 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "RUN_CONESEARCH": RUN_CONESEARCH,
 }

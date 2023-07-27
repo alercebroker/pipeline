@@ -1,4 +1,5 @@
 from __future__ import annotations
+import pickle
 import json
 import logging
 
@@ -106,12 +107,16 @@ class CorrectionStep(GenericStep):
             is_forced = detection.pop("forced")
             candid = detection.pop("candid")
             set_on_insert = not detection.get("has_stamp", False)
-
+            extra_fields = detection["extra_fields"].copy()
             # remove possible elasticc extrafields
-            for to_remove in ["diaObject", "prvDiaSources", "prvDiaForcedSources"]:
-                if to_remove in detection["extra_fields"]:
-                    detection["extra_fields"].pop(to_remove)
+            for to_remove in ["prvDiaSources", "prvDiaForcedSources"]:
+                if to_remove in extra_fields:
+                    extra_fields.pop(to_remove)
 
+            if "diaObject" in extra_fields:
+                extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
+
+            detection["extra_fields"] = extra_fields
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",

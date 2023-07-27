@@ -18,6 +18,7 @@ class SortingHatStep(GenericStep):
         super().__init__(config=config, **kwargs)
         self.driver = db_connection
         self.driver.connect(config["DB_CONFIG"])
+        self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
 
     def pre_produce(self, result: pd.DataFrame):
@@ -74,6 +75,15 @@ class SortingHatStep(GenericStep):
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
         self._add_metrics(alerts)
+
+        return alerts
+
+    def post_execute(self, alerts: pd.DataFrame):
+        """
+        Writes entries to the database with _id and oid only.
+        :param alerts: Dataframe of alerts
+        """
+        wizard.insert_empty_objects(self.driver, alerts)
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
@@ -87,7 +97,8 @@ class SortingHatStep(GenericStep):
         alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
         alerts = wizard.find_existing_id(self.driver, alerts)
-        alerts = wizard.find_id_by_conesearch(self.driver, alerts)
+        if self.run_conesearch:
+            alerts = wizard.find_id_by_conesearch(self.driver, alerts)
         alerts = wizard.generate_new_id(alerts)
         alerts.drop(columns=["tmp_id"], inplace=True)
         return alerts

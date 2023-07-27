@@ -1,19 +1,25 @@
-FROM python:3.8 as builder
+FROM python:3.8 as poetry
 ENV NUMEXPR_MAX_THREADS=1
 MAINTAINER ALeRCE
 ARG GH_TOKEN
 WORKDIR /app/
 RUN pip install poetry
-COPY ./poetry.lock ./pyproject.toml /app/
-RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project true
 RUN poetry config http-basic.git alerceadmin ${GH_TOKEN}
-RUN poetry install --no-interaction --without=dev --with=ztf --no-root
 
-FROM builder
-COPY ./lc_classification /app/lc_classification
-COPY ./scripts /app/scripts
+FROM poetry as source
+COPY ./poetry.lock ./pyproject.toml /app/
+RUN poetry install --no-interaction --without=dev --with=ztf --no-root
 COPY ./README.md /app/
-COPY ./settings.py /app/settings.py
 COPY ./schemas.py /app/schemas.py
+COPY ./settings.py /app/settings.py
+COPY ./predictor_settings.py /app/predictor_settings.py
+COPY ./scripts /app/scripts
+COPY ./lc_classification /app/lc_classification
 RUN poetry install --no-interaction --only-root
+
+FROM python:3.8-slim
+RUN pip install poetry
+WORKDIR /app/
+COPY --from=source /app /app
 CMD ["poetry", "run", "python", "scripts/run_step.py"]

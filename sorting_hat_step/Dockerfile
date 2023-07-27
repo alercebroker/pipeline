@@ -1,12 +1,41 @@
-FROM python:3.8
+FROM python:3.8-slim as python-base
+LABEL org.opencontainers.image.authors="ALeRCE"
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install numpy
-RUN pip install -r /app/requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONFAULTHANDLER=1 \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100 \
+  POETRY_VIRTUALENVS_IN_PROJECT=true \
+  POETRY_NO_INTERACTION=1
+
+FROM python-base as builder
+
+RUN pip install poetry
+COPY libs/survey_parser_plugins libs/survey_parser_plugins
+COPY sorting_hat_step/poetry.lock sorting_hat_step/pyproject.toml /app/
+COPY libs/apf libs/apf
 
 WORKDIR /app
-COPY . /app
+RUN poetry install --no-root --without=dev --without=test
 
-WORKDIR /app/scripts
 
-CMD ["python", "run_step.py"]
+FROM python:3.8-slim as production
+RUN pip install poetry
+
+COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY sorting_hat_step/sorting_hat_step /app/sorting_hat_step
+COPY sorting_hat_step/schemas /app/schemas
+COPY sorting_hat_step/scripts /app/scripts
+COPY sorting_hat_step/credentials.py \
+  sorting_hat_step/settings.py \
+  sorting_hat_step/README.md \
+  /app/
+
+WORKDIR /app
+RUN poetry install --only-root
+
+CMD ["poetry", "run", "step"]

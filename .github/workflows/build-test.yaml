@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: 'Dockerfile'
+      build-context:
+        required: false
+        type: string
+        default: '.'
       step-name:
         required: true
         type: string
@@ -24,9 +28,6 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -34,7 +35,7 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v4
         with:
-          context: ./${{ inputs.base-folder }}
+          context: ./${{ inputs.build-context }}
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
           push: false
           tags: "ghcr.io/alercebroker/test_${{ inputs.step-name }}:test"
