@@ -21,10 +21,12 @@ jobs:
     if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-        python-version: '3.7'
-        sources-folder: 'reflector_step'
-        test-folder: 'tests/unittest'
-        base-folder: 'reflector_step'
+      python-version: '3.7'
+      sources-folder: 'reflector_step'
+      test-folder: 'tests/unittest'
+      base-folder: 'reflector_step'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.reflector_step == 'true'
@@ -35,6 +37,8 @@ jobs:
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.reflector_step == 'true'
@@ -61,6 +65,8 @@ jobs:
         sources-folder: 'alert_archiving_step'
         test-folder: 'tests/unittest'
         base-folder: 'alert_archiving_step'
+      secrets:
+        GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_unittest_cli:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
@@ -80,6 +86,8 @@ jobs:
       base-folder: 'alert_archiving_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
