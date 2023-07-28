@@ -28,8 +28,11 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
-        self.isztf = config["PREDICTOR_CONFIG"]["CLASS"] == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-        if (self.isztf):
+        self.isztf = (
+            config["PREDICTOR_CONFIG"]["CLASS"]
+            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
+        )
+        if self.isztf:
             scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
@@ -80,7 +83,7 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        if (self.isztf):
+        if self.isztf:
 
             predictor_input = self.predictor_parser.parse_input(messages)
             self.logger.info("Doing inference")
