@@ -6,9 +6,6 @@ authors = []
 readme = "README.md"
 packages = [{include = "prv_candidates_step"}]
 
-[tool.poetry.scripts]
-step = { callable = "scripts.run_step:step_creator()" }
-
 [tool.poetry.dependencies]
 python = "^3.8"
 confluent-kafka = "2.0.2"
