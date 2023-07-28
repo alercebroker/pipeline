@@ -184,7 +184,7 @@ jobs:
       poetry-install: "--with ztf --with elasticc"
       test-folder: "tests/unit"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
