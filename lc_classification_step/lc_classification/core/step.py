@@ -84,7 +84,6 @@ class LateClassifier(GenericStep):
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
         if self.isztf:
-
             predictor_input = self.predictor_parser.parse_input(messages)
             self.logger.info("Doing inference")
             probabilities = self.predictor.predict(predictor_input)
