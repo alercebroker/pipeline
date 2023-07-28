@@ -2,15 +2,15 @@ import logging
 import os
 import sys
 
-# from prometheus_client import start_http_server
-# from apf.metrics.prometheus import PrometheusMetrics
+from prometheus_client import start_http_server
+from apf.metrics.prometheus import PrometheusMetrics
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
 
-from prv_candidates_step import PrvCandidatesStep
+from prv_candidates_step.step import PrvCandidatesStep
 
 
 def step_creator():
@@ -34,9 +34,9 @@ def step_creator():
 
     logger.addHandler(handler)
 
-    # prometheus_metrics = PrometheusMetrics()
-    # if settings["USE_PROMETHEUS"]:
-    #    start_http_server(8000)
+    prometheus_metrics = PrometheusMetrics()
+    if settings["USE_PROMETHEUS"]:
+        start_http_server(8000)
     return PrvCandidatesStep(config=settings)
 
 
