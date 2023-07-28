@@ -16,7 +16,10 @@ messages = [
     },
     {
         "aid": "AID2",
-        "detections": [ztf_alert(aid="AID2", candid="c", new=True), ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True)],
+        "detections": [
+            ztf_alert(aid="AID2", candid="c", new=True),
+            ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
+        ],
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
     {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
@@ -35,7 +38,10 @@ message4produce = [
         "aid": "AID2",
         "meanra": 1,
         "meandec": 1,
-        "detections": [ztf_alert(aid="AID2", candid="c", new=True), ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True)],
+        "detections": [
+            ztf_alert(aid="AID2", candid="c", new=True),
+            ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
+        ],
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
     {
@@ -50,8 +56,8 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
-        "non_detections": []
-    }
+        "non_detections": [],
+    },
 ]
 
 message4execute = {
@@ -129,8 +135,10 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
     for det in message4execute_copy["detections"]:
         if not det["new"]:  # does not write
             continue
-        det["extra_fields"] = {k: v for k, v in det["extra_fields"].items() if k not in ["prvDiaSources", "prvDiaForcedSources"]}
-        
+        det["extra_fields"] = {
+            k: v for k, v in det["extra_fields"].items() if k not in ["prvDiaSources", "prvDiaForcedSources"]
+        }
+
         if "diaObject" in det["extra_fields"]:
             det["extra_fields"]["diaObject"] = pickle.loads(det["extra_fields"]["diaObject"])
 
