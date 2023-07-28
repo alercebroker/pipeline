@@ -52,7 +52,7 @@ alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers
 alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers",  extras = ["toretto"] }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi", "balto"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi"] }
 
 [tool.poetry.group.balto.dependencies]
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"]}
@@ -61,7 +61,7 @@ alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers"
 alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney"] }
 
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney", "messi", "toretto", "balto"] }
+alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["elasticc"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
