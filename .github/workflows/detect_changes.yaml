@@ -69,7 +69,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
-            submodules: 'recursive'
+            submodules: true
+            token: ${{secrets.ADMIN_TOKEN}}
       - name: Detect changes
         uses: dorny/paths-filter@v2
         id: changes
