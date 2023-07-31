@@ -59,7 +59,7 @@ After defining `DB_CONFIG` you can now initialize your database. To do so, run t
    dbp initdb
 
 
-3. Migrations (SQL only)
+2. Migrations (SQL only)
 ------------------------
 When changes to models are made you would want to update the database without creating it all again, or maybe you want to undo some changes and return to a previous state.
 
