@@ -186,6 +186,7 @@ jobs:
       build-type: production
       step-name: xmatch_step
       base-folder: xmatch_step
+      build-context: .
 
   scribe_production:
     uses: ./.github/workflows/build-template.yaml

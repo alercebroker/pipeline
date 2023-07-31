@@ -189,7 +189,7 @@ jobs:
       step-name: xmatch_step
       step-name-prefix: ""
       base-folder: xmatch_step
-      build-context: xmatch_step
+      build-context: .
 
   scribe_staging:
     uses: ./.github/workflows/build-template.yaml
