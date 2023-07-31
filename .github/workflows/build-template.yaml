@@ -117,6 +117,8 @@ jobs:
             GH_TOKEN=${{secrets.GH_TOKEN}}
 
   pypi_push:
+    env:
+      POETRY_HOME: /opt/poetry
     if: ${{ inputs.publish-pypi }} == 'true'
     name: Publish Python distribution to PyPI
     runs-on: ubuntu-latest
