@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, Query
 
-from .query import SQLQuery
 from ..generic import DatabaseConnection, DatabaseCreator
 from .models import Base
 
@@ -85,7 +84,7 @@ class SQLConnection(DatabaseConnection):
         )
         self.Base = base or Base
         session_options = session_options or {}
-        session_options["query_cls"] = SQLQuery
+        session_options["query_cls"] = Query
         if self.Session is None:
             self.Session = sessionmaker(bind=self.engine, **session_options)
         if create_session:
@@ -110,7 +109,7 @@ class SQLConnection(DatabaseConnection):
 
     def _create_scoped_session(self, scope_func):
         self.session = scoped_session(self.Session, scopefunc=scope_func)
-        self.Base.query = self.session.query_property(query_cls=SQLQuery)
+        self.Base.query = self.session.query_property(query_cls=Query)
         self.use_scoped = True
 
     def _create_unscoped_session(self):
