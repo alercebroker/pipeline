@@ -154,7 +154,7 @@ jobs:
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
   feature_step_build:
-    uses: ./.github/workflows/build-template.yaml
+    uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "feature_step"
       build-context: "feature_step"
