@@ -3,7 +3,7 @@ import datetime
 from apf.core.step import GenericStep
 from typing import Any, List, Tuple
 from db_plugins.db.sql.models import Detection
-from db_plugins.db.sql import SQLConnection
+from db_plugins.db.sql.connection import SQLConnection
 from .db.match import (
     format_values_for_query,
     create_insertion_query,

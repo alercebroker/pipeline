@@ -497,7 +497,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "watchlist_step"
-      build-context: "watchlist_step"
+      build-context: "."
       step-name: "watchlist_step"
 
   xmatch_step_lint:
@@ -694,3 +694,40 @@ jobs:
       test-folder: 'tests'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+
+  db_plugins_lint:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.db_plugins_step== 'true'
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      base-folder: 'db-plugins'
+      sources-folder: 'db_plugins'
+
+  db_plugins_unittest:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.db_plugins == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'db-plugins'
+      sources-folder: 'db_plugins'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  db_plugins_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.db_plugins == 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'db-plugins'
+      sources-folder: 'db_plugins'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

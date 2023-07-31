@@ -23,7 +23,7 @@ services:
       - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
       - KAFKA_JMX_PORT=9101
     ports:
-      - 9094:9094
+      - "9094:9094"
 
   alerts_db:
     image: postgres
@@ -32,14 +32,14 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
 
   users_db:
     build: docker/postgres
     environment:
       - POSTGRES_PASSWORD=password
     ports:
-      - 5433:5432
+      - "5433:5432"
     volumes:
       - ./samples/targets/scripts:/docker-entrypoint-initdb.d
       - ./samples/targets/data:/data

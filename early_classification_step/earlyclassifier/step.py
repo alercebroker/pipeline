@@ -7,14 +7,12 @@ import pandas as pd
 from apf.core.step import GenericStep
 from apf.producers import KafkaProducer
 from db_plugins.db.sql.models import Object, Probability, Step
-from db_plugins.db.sql import SQLConnection
-
+from db_plugins.db.sql.connection import SQLConnection
+from model.deployment import StampClassifier
 
 DIRNAME = os.path.dirname(__file__)
 MODEL = os.path.join(DIRNAME, "../model")
 sys.path.append(MODEL)
-
-from deployment import StampClassifier
 
 FULL_ASTEROID_PROBABILITY = {
     "AGN": 0,
@@ -253,7 +251,6 @@ class EarlyClassifier(GenericStep):
         return data
 
     def produce(self, objectId, candid, probabilities):
-
         output = {}
         output["objectId"] = objectId
         output["candid"] = candid

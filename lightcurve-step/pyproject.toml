@@ -9,7 +9,7 @@ packages = [{include = "lightcurve_step"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 apf-base = { path = "../libs/apf", develop = true }
-db-plugins = {git = "https://github.com/alercebroker/db-plugins", rev = "4.2.0"}
+db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

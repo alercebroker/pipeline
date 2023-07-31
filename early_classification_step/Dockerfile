@@ -1,5 +1,6 @@
 FROM python:3.7-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONFAULTHANDLER=1 \
@@ -15,20 +16,30 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends git libpq-dev gcc && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
+
 RUN pip install poetry
+
+COPY early_classification_step/poetry.lock early_classification_step/pyproject.toml /app/
+COPY libs/db-plugins libs/db-plugins
+
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 
 FROM python:3.7-slim as production
 RUN pip install poetry
+
 COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY early_classification_step/earlyclassifier /app/earlyclassifier
+COPY early_classification_step/scripts /app/scripts
+COPY early_classification_step/model /app/model
+COPY early_classification_step/README.md \
+  early_classification_step/settings.py \
+  /app/
+
 WORKDIR /app
-COPY ./earlyclassifier /app/earlyclassifier
-COPY ./model /app/model
-COPY ./scripts /app/scripts
-COPY ./settings.py /app/settings.py
-COPY ./README.md /app/README.md
 RUN poetry install --only-root
-CMD ["poetry", "run", "python", "scripts/run_step.py"]
+
+CMD ["poetry", "run", "step"]

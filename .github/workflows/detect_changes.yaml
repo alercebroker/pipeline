@@ -37,9 +37,11 @@ on:
             survey_parser_plugins:
                 value: ${{ jobs.detect_changes.outputs.survey_parser_plugins}}  
             libs_apf:
-                value: ${{ jobs.detect_changes.outputs.libs_apf }}   
+                value: ${{ jobs.detect_changes.outputs.libs_apf }}
             scribe:
-                value: ${{ jobs.detect_changes.outputs.scribe }}    
+                value: ${{ jobs.detect_changes.outputs.scribe }}
+            libs_db_plugins:
+              value: ${{ jobs.detect_changes.outputs.libs_db_plugins}}
 
 jobs:
   detect_changes:
@@ -64,6 +66,7 @@ jobs:
         survey_parser_plugins: ${{ steps.changes.outputs.survey_parser_plugins }}
         libs_apf: ${{ steps.changes.outputs.libs_apf }}
         scribe: ${{ steps.changes.outputs.scribe }}
+        libs_db_plugins: ${{ steps.changes.outputs.libs_db_plugins }}
 
     steps:
       - name: Checkout repo
@@ -111,5 +114,7 @@ jobs:
                 - 'libs/apf/**'
             scribe:
                - 'scribe/**'
+            libs_db_plugins:
+                - 'libs/db-plugins/**'
 
 

@@ -16,6 +16,7 @@ RUN pip install poetry
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 COPY sorting_hat_step/poetry.lock sorting_hat_step/pyproject.toml /app/
 COPY libs/apf libs/apf
+COPY libs/db-plugins libs/db-plugins
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
