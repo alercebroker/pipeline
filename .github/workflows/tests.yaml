@@ -218,7 +218,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_ztf"
       file: "Dockerfile-ztf"
     secrets:
@@ -229,7 +229,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_balto"
       file: "Dockerfile-balto"
     secrets:
@@ -240,7 +240,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_messi"
       file: "Dockerfile-messi"
     secrets:
@@ -251,7 +251,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step-barney"
       file: "Dockerfile-barney"
     secrets:
@@ -262,7 +262,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step-toretto"
       file: "Dockerfile-toretto"
     secrets:

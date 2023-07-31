@@ -1,25 +1,48 @@
-FROM python:3.8 as poetry
-ENV NUMEXPR_MAX_THREADS=1
-MAINTAINER ALeRCE
-ARG GH_TOKEN
-WORKDIR /app/
-RUN pip install poetry
-RUN poetry config virtualenvs.in-project true
-RUN poetry config http-basic.git alerceadmin ${GH_TOKEN}
+FROM python:3.8-slim as python-base
+LABEL org.opencontainers.image.authors="ALeRCE"
 
-FROM poetry as source
-COPY ./poetry.lock ./pyproject.toml /app/
-RUN poetry install --no-interaction --without=dev --with=messi --no-root
-COPY ./README.md /app/
-COPY ./schemas.py /app/schemas.py
-COPY ./settings.py /app/settings.py
-COPY ./predictor_settings.py /app/predictor_settings.py
-COPY ./scripts /app/scripts
-COPY ./lc_classification /app/lc_classification
-RUN poetry install --no-interaction --only-root
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1
 
-FROM python:3.8-slim
+
+FROM python-base as builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN pip install poetry
+
+COPY lc_classification_step/poetry.lock \
+    lc_classification_step/pyproject.toml \
+    /app/
+COPY libs/alerce_classifiers /libs/alerce_classifiers
+
+WORKDIR /app
+RUN poetry install --no-root --without=dev --without=test --with=messi
+
+
+FROM python:3.8-slim as production
+RUN pip install poetry
+
+COPY --from=builder /app /app
+COPY --from=builder /libs /libs
+
+COPY lc_classification_step/lc_classification /app/lc_classification
+COPY lc_classification_step/scripts /app/scripts
+COPY lc_classification_step/README.md \
+    lc_classification_step/schemas.py \
+    lc_classification_step/settings.py \
+    lc_classification_step/predictor_settings.py \
+    /app/
+
 WORKDIR /app/
-COPY --from=source /app /app
-CMD ["poetry", "run", "python", "scripts/run_step.py"]
+RUN poetry install --only-root
+
+CMD ["poetry", "run", "step"]
