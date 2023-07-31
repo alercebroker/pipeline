@@ -22,8 +22,9 @@ on:
         type: string
         default: "monorepo_"
       build-type:
-        required: true
+        required: false
         type: string
+        default: "develop"
       git-ref:
         required: false
         type: string
@@ -41,6 +42,7 @@ jobs:
     name: get tags
     outputs:
       tags: ${{ steps.prep.outputs.tags }}
+      push: ${{ steps.prep.outputs.push }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -64,14 +66,19 @@ jobs:
         run: |
           if [[ $BUILD_TYPE == production* ]]; then
             BUILD_TYPE=latest
-          else
+            PUSH=true
+          elif [[ $BUILD_TYPE == staging* ]]; then
             BUILD_TYPE=rc
+            PUSH=true
+          else
+            PUSH=false
           fi
           cd ${{ inputs.base-folder }}
           DOCKER_IMAGE=ghcr.io/alercebroker/${STEP_NAME}
           VERSION=$($POETRY_HOME/bin/poetry version --short)
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${BUILD_TYPE}"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "push=${PUSH}" >> "$GITHUB_OUTPUT"
 
   build_and_push:
     name: Push Docker image to GitHub Packages
@@ -98,7 +105,7 @@ jobs:
         with:
           context: ./${{ inputs.build-context }}
           file: ./${{ inputs.base-folder }}/${{ inputs.file }}
-          push: true
+          push: ${{needs.get_tags.outputs.push}}
           tags: ${{needs.get_tags.outputs.tags}}
           build-args: |
             GH_TOKEN=${{secrets.GH_TOKEN}}
