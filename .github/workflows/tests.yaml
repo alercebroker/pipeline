@@ -535,7 +535,7 @@ jobs:
     uses: ./.github/workflows/build-test.yaml
     with:
       base-folder: "xmatch_step"
-      build-context: "xmatch_step"
+      build-context: "."
       step-name: "xmatch_step"
 
   early_classification_step_lint:
