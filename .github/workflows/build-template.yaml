@@ -86,7 +86,7 @@ jobs:
           echo "push=${PUSH}" >> "$GITHUB_OUTPUT"
 
   github_push:
-    if: ${{ inputs.publish-github }} == 'true'
+    if: inputs.publish-github == 'true'
     name: Push Docker image to GitHub Packages
     needs: get_tags
     runs-on: ubuntu-latest
@@ -112,36 +112,3 @@ jobs:
           tags: ${{needs.get_tags.outputs.tags}}
           build-args: |
             GH_TOKEN=${{secrets.GH_TOKEN}}
-
-  pypi_push:
-    env:
-      POETRY_HOME: /opt/poetry
-    if: ${{ inputs.publish-pypi }} == 'true'
-    name: Publish Python distribution to PyPI
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-          cache: 'pip'
-      - name: Install poetry
-        run: |
-          pip install --upgrade pip
-          python3 -m venv $POETRY_HOME
-          $POETRY_HOME/bin/pip install poetry
-          $POETRY_HOME/bin/poetry --version
-      - name: Install dependencies
-        run: |
-          cd ${{ inputs.base-folder }}
-          $POETRY_HOME/bin/poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
-          $POETRY_HOME/bin/poetry install
-      - name: Build a binary wheel and a source tarball
-        run: |
-          $POETRY_HOME/bin/poetry build
-      - name: Publish Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
