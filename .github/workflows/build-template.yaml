@@ -29,6 +29,14 @@ on:
         required: false
         type: string
         default: "main"
+      publish-github:
+        required: false
+        type: string
+        default: 'true'
+      publish-pypi:
+        required: false
+        type: string
+        default: 'false'
     secrets:
       GH_TOKEN:
         required: false
@@ -47,9 +55,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.git-ref }}
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -80,7 +85,8 @@ jobs:
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
           echo "push=${PUSH}" >> "$GITHUB_OUTPUT"
 
-  build_and_push:
+  github_push:
+    if: ${{ inputs.publish-github }} == 'true'
     name: Push Docker image to GitHub Packages
     needs: get_tags
     runs-on: ubuntu-latest
@@ -109,3 +115,38 @@ jobs:
           tags: ${{needs.get_tags.outputs.tags}}
           build-args: |
             GH_TOKEN=${{secrets.GH_TOKEN}}
+
+  pypi_push:
+    if: ${{ inputs.publish-pypi }} == 'true'
+    name: Publish Python distribution to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: 'pip'
+      - name: Install poetry
+        run: |
+          pip install --upgrade pip
+          python3 -m venv $POETRY_HOME
+          $POETRY_HOME/bin/pip install poetry
+          $POETRY_HOME/bin/poetry --version
+      - name: Install dependencies
+        run: |
+          cd ${{ inputs.base-folder }}
+          poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
+          poetry install
+      - name: Build a binary wheel and a source tarball
+        run: |
+          cd ${{ inputs.base-folder }}
+          poetry build
+      - name: Publish Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
