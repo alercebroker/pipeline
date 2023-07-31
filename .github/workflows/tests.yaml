@@ -38,7 +38,7 @@ jobs:
   reflector_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.reflector_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "reflector_step"
       build-context: "reflector_step"
@@ -88,7 +88,7 @@ jobs:
   alert_archiving_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.alert_archiving_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "alert_archiving_step"
       build-context: "alert_archiving_step"
@@ -125,7 +125,7 @@ jobs:
   correction_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.correction_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "correction_step"
       build-context: "."
@@ -161,7 +161,7 @@ jobs:
   feature_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.feature_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "feature_step"
       build-context: "feature_step"
@@ -215,7 +215,7 @@ jobs:
   lc_classification_step_build_ztf:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "lc_classification_step"
@@ -226,7 +226,7 @@ jobs:
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "lc_classification_step"
@@ -237,7 +237,7 @@ jobs:
   lc_classification_step_build_messi:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "lc_classification_step"
@@ -248,7 +248,7 @@ jobs:
   lc_classification_step_build_barney:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "lc_classification_step"
@@ -259,7 +259,7 @@ jobs:
   lc_classification_step_build_toretto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "lc_classification_step"
@@ -299,7 +299,7 @@ jobs:
   lightcurve_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.lightcurve_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lightcurve-step"
       build-context: "."
@@ -338,7 +338,7 @@ jobs:
   magstats_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.magstats_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "magstats_step"
       build-context: "."
@@ -375,7 +375,7 @@ jobs:
   prv_candidates_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.prv_candidates_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "prv_candidates_step"
       build-context: "."
@@ -415,7 +415,7 @@ jobs:
   s3_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.s3_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "s3_step"
       build-context: "s3_step"
@@ -454,7 +454,7 @@ jobs:
   sorting_hat_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.sorting_hat_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "sorting_hat_step"
       build-context: "."
@@ -493,7 +493,7 @@ jobs:
   watchlist_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "watchlist_step"
       build-context: "."
@@ -532,7 +532,7 @@ jobs:
   xmatch_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.xmatch_step == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "xmatch_step"
       build-context: "xmatch_step"
@@ -618,7 +618,7 @@ jobs:
   scribe_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.scribe == 'true'
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "scribe"
       build-context: "."
