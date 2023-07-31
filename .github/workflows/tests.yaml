@@ -37,8 +37,6 @@ jobs:
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
   reflector_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "reflector_step"
@@ -87,8 +85,6 @@ jobs:
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
   alert_archiving_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "alert_archiving_step"
@@ -124,8 +120,6 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "correction_step"
@@ -160,8 +154,6 @@ jobs:
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
   feature_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "feature_step"
@@ -214,8 +206,6 @@ jobs:
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
 
   lc_classification_step_build_ztf:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -225,8 +215,6 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -236,8 +224,6 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -247,8 +233,6 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -258,8 +242,6 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -298,8 +280,6 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lightcurve-step"
@@ -337,8 +317,6 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "magstats_step"
@@ -374,8 +352,6 @@ jobs:
       codecov-flags: "" # Do not upload
       test-command: "python -m pytest -x tests/integration"
   prv_candidates_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "prv_candidates_step"
@@ -414,8 +390,6 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   s3_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.s3_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "s3_step"
@@ -453,8 +427,6 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.sorting_hat_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "sorting_hat_step"
@@ -492,8 +464,6 @@ jobs:
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
   watchlist_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.watchlist_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "watchlist_step"
@@ -531,8 +501,6 @@ jobs:
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
   xmatch_step_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "xmatch_step"
@@ -617,8 +585,6 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   scribe_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.scribe == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "scribe"
