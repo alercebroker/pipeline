@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
           submodules: true
           ref: ${{ inputs.git-ref }}
-          token: ${{secrets.ADMIN_TOKEN}}
+          token: ${{secrets.GITHUB_TOKEN}}
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -85,7 +85,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-          token: ${{secrets.ADMIN_TOKEN}}
+          token: ${{secrets.GITHUB_TOKEN}}
           ref: main
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1

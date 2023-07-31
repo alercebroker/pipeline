@@ -72,7 +72,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
-          token: ${{secrets.ADMIN_TOKEN}}
+          token: ${{secrets.GH_TOKEN}}
           submodules: true
       - name: Install poetry
         run: pipx install poetry==${{ inputs.poetry-version }}
