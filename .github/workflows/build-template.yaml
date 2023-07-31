@@ -93,9 +93,6 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -125,9 +122,6 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -142,12 +136,11 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
-          poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
-          poetry install
+          $POETRY_HOME/bin/poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
+          $POETRY_HOME/bin/poetry install
       - name: Build a binary wheel and a source tarball
         run: |
-          cd ${{ inputs.base-folder }}
-          poetry build
+          $POETRY_HOME/bin/poetry build
       - name: Publish Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
