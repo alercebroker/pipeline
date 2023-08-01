@@ -43,14 +43,29 @@ def test_create_features_dto():
             },
             {
                 'aid': 'aid3',
+                'features': {'feat1': None, 'feat2': None}
             },
             {
                 'aid': 'aid4',
-                'features': {'feat1': 4}
+                'features': {'feat1': 4, 'feat2': None}
             },
         ]
     features = create_features_dto(messages)
     assert features.loc['aid1', 'feat1'] == 2
-    assert features.loc['aid1', 'feat2'] == 3
-    assert np.isnan(features.loc['aid4', 'feat2'])
+    assert features.loc['aid4', 'feat2'] is None
     assert features.index.tolist() == ["aid1", "aid2", "aid4"]
+
+def test_create_features_dto_nofeats():
+    messages = [
+            {
+                'aid': 'aid1',
+            },
+            {
+                'aid': 'aid1',
+            },
+            {
+                'aid': 'aid2',
+            },
+        ]
+    features = create_features_dto(messages)
+    assert features.size == 0
