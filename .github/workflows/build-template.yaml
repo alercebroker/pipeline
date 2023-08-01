@@ -128,21 +128,10 @@ jobs:
           python-version: "3.9"
           cache: 'pip'
       - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Publish
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          pip install --upgrade pip
-          python3 -m venv $POETRY_HOME
-          $POETRY_HOME/bin/pip install poetry
-          $POETRY_HOME/bin/poetry --version
-      - name: Install dependencies
-        run: |
-          cd ${{ inputs.base-folder }}
-          $POETRY_HOME/bin/poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
-          $POETRY_HOME/bin/poetry install
-      - name: Build a binary wheel and a source tarball
-        run: |
-          cd ${{ inputs.base-folder }}
-          $POETRY_HOME/bin/poetry build
-      - name: Publish Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish --build
