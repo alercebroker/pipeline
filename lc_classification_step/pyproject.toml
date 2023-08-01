@@ -4,20 +4,19 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "1.0.100a71"
+version = "1.0.100a72"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
 packages = [{include = "lc_classification"}]
 
-[[tool.poetry.source]]
-name = "git"
-url = "https://github.com/alercebroker/alerce_classifiers"
-priority = "primary"
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9"
-apf-base = { version = "2.1.5" }
+apf-base = { path = "../libs/apf", develop = true }
 numexpr = { version = "*" }
 numpy = { version = "*" }
 scipy = { version = ">=1.5.2,<1.6" }
@@ -46,22 +45,22 @@ optional = true
 
 [tool.poetry.group.ztf.dependencies]
 lc_classifier = {git = "https://github.com/alercebroker/lc_classifier", branch = "main" }
-alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers" }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true }
 
 [tool.poetry.group.toretto.dependencies]
-alerce_classifiers = { git = "https://github.com/alercebroker/alerce_classifiers",  extras = ["toretto"] }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true,  extras = ["toretto"] }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["messi", "balto"] }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["messi", "balto"] }
 
 [tool.poetry.group.balto.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["balto"]}
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["balto"]}
 
 [tool.poetry.group.barney.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney"] }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney"] }
 
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = {git = "https://github.com/alercebroker/alerce_classifiers", extras = ["barney","messi","toretto","balto"] }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
