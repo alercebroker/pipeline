@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "stamp_classifier_step"
-version = "1.0.1a14"
+version = "1.0.1a28"
 description = "Stamp Classifier Step"
 authors = []
 readme = "README.md"

@@ -135,3 +135,5 @@ src/
 .idea/
 
 __SUCCESS__
+
+.projectile
