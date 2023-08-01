@@ -706,3 +706,5 @@ jobs:
       step-name: "db-plugins"
       publish-github: "false"
       publish-pypi: "true"
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

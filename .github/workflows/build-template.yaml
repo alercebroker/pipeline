@@ -40,6 +40,8 @@ on:
     secrets:
       GH_TOKEN:
         required: false
+      PYPI_TOKEN:
+        required: false
 
 jobs:
   get_tags:
