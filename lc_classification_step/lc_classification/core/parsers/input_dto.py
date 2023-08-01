@@ -110,7 +110,7 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
         if not "features" in message:
             continue
         entry = {feat: message["features"][feat] for feat in message["features"]}
-        entry["aid"] = message['aid']
+        entry["aid"] = message["aid"]
         entries.append(entry)
     features = pd.DataFrame.from_records(entries)
     features.drop_duplicates("aid", inplace=True, keep="last")
