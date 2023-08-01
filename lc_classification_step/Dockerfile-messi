@@ -23,6 +23,7 @@ COPY lc_classification_step/poetry.lock \
     lc_classification_step/pyproject.toml \
     /app/
 COPY libs/alerce_classifiers /libs/alerce_classifiers
+COPY libs/apf /libs/apf
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test --with=messi
