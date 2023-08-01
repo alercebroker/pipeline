@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
 
 jobs:
   detect_changes:
@@ -154,7 +153,7 @@ jobs:
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
   feature_step_build:
-    uses: ./.github/workflows/build-test.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "feature_step"
       build-context: "feature_step"
