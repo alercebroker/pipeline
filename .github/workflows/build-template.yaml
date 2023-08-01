@@ -140,6 +140,7 @@ jobs:
           $POETRY_HOME/bin/poetry install
       - name: Build a binary wheel and a source tarball
         run: |
+          cd ${{ inputs.base-folder }}
           $POETRY_HOME/bin/poetry build
       - name: Publish Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
