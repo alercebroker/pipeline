@@ -56,7 +56,7 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_ztf
       step-name-prefix: ""
-      build-context: lc_classification_step
+      build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-ztf
     secrets:
@@ -69,7 +69,7 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_balto
       step-name-prefix: ""
-      build-context: lc_classification_step
+      build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-balto
     secrets:
@@ -82,7 +82,7 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_messi
       step-name-prefix: ""
-      build-context: lc_classification_step
+      build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-messi
     secrets:
@@ -95,7 +95,7 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_barney
       step-name-prefix: ""
-      build-context: lc_classification_step
+      build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-barney
     secrets:
@@ -108,7 +108,7 @@ jobs:
       build-type: staging
       step-name: lc_classification_step_toretto
       step-name-prefix: ""
-      build-context: lc_classification_step
+      build-context: .
       base-folder: lc_classification_step
       file: Dockerfile-toretto
     secrets:
@@ -189,7 +189,7 @@ jobs:
       step-name: xmatch_step
       step-name-prefix: ""
       base-folder: xmatch_step
-      build-context: xmatch_step
+      build-context: .
 
   scribe_staging:
     uses: ./.github/workflows/build-template.yaml
