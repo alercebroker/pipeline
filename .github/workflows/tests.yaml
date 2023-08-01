@@ -8,6 +8,8 @@ on:
 jobs:
   detect_changes:
     uses: ./.github/workflows/detect_changes.yaml
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   reflector_step_lint:
     needs: detect_changes
@@ -184,7 +186,7 @@ jobs:
       poetry-install: "--with ztf --with elasticc"
       test-folder: "tests/unit"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
@@ -203,7 +205,7 @@ jobs:
       poetry-install: "--with ztf --with elasticc"
       test-folder: "tests/integration"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       TEST_BALTO_MODEL_PATH: "${{ secrets.TEST_BALTO_MODEL_PATH }}"
       TEST_BALTO_QUANTILES_PATH: "${{ secrets.TEST_BALTO_QUANTILES_PATH }}"
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
@@ -218,55 +220,55 @@ jobs:
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_ztf"
       file: "Dockerfile-ztf"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_balto"
       file: "Dockerfile-balto"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step_messi"
       file: "Dockerfile-messi"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step-barney"
       file: "Dockerfile-barney"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
     needs: detect_changes
     if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
-      build-context: "lc_classification_step"
+      build-context: "."
       step-name: "lc_classification_step-toretto"
       file: "Dockerfile-toretto"
     secrets:
-      GH_TOKEN: ${{ secrets.ALERCE_ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_lint:
     needs: detect_changes
