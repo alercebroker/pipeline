@@ -1,14 +1,15 @@
-from abc import abstractmethod
 import abc
+import datetime
+import logging
+from abc import abstractmethod
 from typing import Any, Dict, Iterable, List, Type, Union
+
 from apf.consumers import GenericConsumer
+from apf.core import get_class
 from apf.metrics.generic import GenericMetricsProducer
 from apf.metrics.prometheus import DefaultPrometheusMetrics, PrometheusMetrics
 from apf.metrics.pyroscope import profile
 from apf.producers import GenericProducer
-from apf.core import get_class
-import logging
-import datetime
 
 
 class DefaultConsumer(GenericConsumer):
@@ -52,10 +53,11 @@ class GenericStep(abc.ABC):
         consumer: Type[GenericConsumer] = DefaultConsumer,
         producer: Type[GenericProducer] = DefaultProducer,
         metrics_sender: Type[GenericMetricsProducer] = DefaultMetricsProducer,
+        level: int = logging.NOTSET,
         config: dict = {},
         prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
     ):
-        self._set_logger()
+        self._set_logger(level)
         self.config = config
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
@@ -87,8 +89,10 @@ class GenericStep(abc.ABC):
             return self.metrics_config["PARAMS"]
         return {}
 
-    def _set_logger(self):
+    def _set_logger(self, level):
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
+        if level != logging.NOTSET:
+            self.logger.setLevel(level)
         self.logger.info(f"Creating {self.__class__.__name__}")
 
     def _get_consumer(self, default: Type[GenericConsumer]) -> Type[GenericConsumer]:

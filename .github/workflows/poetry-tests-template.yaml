@@ -71,6 +71,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
+        with:
+          token: ${{secrets.GH_TOKEN}}
+          submodules: 'recursive'
       - name: Install poetry
         run: pipx install poetry==${{ inputs.poetry-version }}
       - name: Set up Python
@@ -81,7 +84,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
-          poetry config http-basic.git alerceadmin ${{ secrets.GH_TOKEN }}
+          git config --global url."https://${{secrets.GH_TOKEN}}@github.com/".insteadOf "https://github.com/"
           poetry install ${{ inputs.poetry-install }}
       - name: Tests with pytest
         run: |

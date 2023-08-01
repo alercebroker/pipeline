@@ -1,6 +1,9 @@
 name: Detect_changes
 on:
     workflow_call:
+        secrets:
+            GH_TOKEN:
+              required: false
         outputs:
             reflector_step:
                 value: ${{ jobs.detect_changes.outputs.reflector_step }}
@@ -71,6 +74,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+            submodules: true
+            token: ${{secrets.GH_TOKEN}}
       - name: Detect changes
         uses: dorny/paths-filter@v2
         id: changes
