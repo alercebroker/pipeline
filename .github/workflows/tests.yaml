@@ -697,15 +697,3 @@ jobs:
       test-command: 'python -m pytest -x tests/integration'
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  db_plugins_build:
-    uses: ./.github/workflows/build-template.yaml
-    with:
-      base-folder: 'libs/db-plugins'
-      build-context: "."
-      step-name: "db-plugins"
-      publish-github: "false"
-      publish-pypi: "true"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
