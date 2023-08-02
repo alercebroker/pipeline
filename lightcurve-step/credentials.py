@@ -42,6 +42,5 @@ def get_mongodb_credentials(mongo_secret_name):
     # check if config is valid
     # _MongoConfig will raise error if the config has missing parameters
     secret = _MongoConfig(secret)
-    print("SECRET", secret)
     secret["port"] = int(secret["port"])
     return secret
