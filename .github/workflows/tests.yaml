@@ -383,6 +383,8 @@ jobs:
       base-folder: "prv_candidates_step"
       build-context: "."
       step-name: "prv_candidates_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   s3_step_lint:
     needs: detect_changes
@@ -462,6 +464,8 @@ jobs:
       base-folder: "sorting_hat_step"
       build-context: "."
       step-name: "sorting_hat_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   watchlist_step_lint:
     needs: detect_changes
