@@ -28,12 +28,12 @@ def toretto_params():
     }
 
 
-def configurator(predictor_class: str):
-    if predictor_class.endswith("BaltoPredictor"):
+def configurator(model_class: str):
+    if model_class.endswith("Balto"):
         return balto_params()
-    if predictor_class.endswith("MessiPredictor"):
+    if model_class.endswith("Messi"):
         return messi_params()
-    if predictor_class.endswith("TorettoPredictor"):
+    if model_class.endswith("Toretto"):
         return toretto_params()
-    if predictor_class.endswith("BarneyPredictor"):
+    if model_class.endswith("Barney"):
         return barney_params()

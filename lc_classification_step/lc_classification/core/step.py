@@ -5,8 +5,9 @@ from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
 import json
 import numexpr
-from lc_classification.predictors.predictor.predictor import Predictor
-from lc_classification.predictors.predictor.predictor_parser import PredictorParser
+from alerce_classifiers.base.model import AlerceModel
+from alerce_classifiers.base.dto import OutputDTO
+from lc_classification.core.parsers.input_dto import create_input_dto
 
 
 class LateClassifier(GenericStep):
@@ -29,35 +30,22 @@ class LateClassifier(GenericStep):
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
         self.isztf = (
-            config["PREDICTOR_CONFIG"]["CLASS"]
-            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
+            config["MODEL_CONFIG"]["CLASS"]
+            == "lc_classifier.classifier.models.HierarchicalRandomForest" # hay que cambiar el archivo
         )
+        scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.model: AlerceModel = get_class(config["MODEL_CONFIG"]["CLASS"])(
+            **config["MODEL_CONFIG"]["PARAMS"]
+        )
+        self.scribe_producer = scribe_producer_class(
+            config["SCRIBE_PRODUCER_CONFIG"]
+        )
+        self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
+        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+        
         if self.isztf:
-            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-            self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
-                **config["PREDICTOR_CONFIG"]["PARAMS"]
-            )
-            self.scribe_producer = scribe_producer_class(
-                config["SCRIBE_PRODUCER_CONFIG"]
-            )
-            self.predictor_parser: PredictorParser = get_class(
-                config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
-            )()
-            self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-            self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
-        else:
-            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-            self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
-                **config["PREDICTOR_CONFIG"]["PARAMS"]
-            )
-            self.scribe_producer = scribe_producer_class(
-                config["SCRIBE_PRODUCER_CONFIG"]
-            )
-            self.predictor_parser: PredictorParser = get_class(
-                config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
-            )()
-            self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-            self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+            self.model.download_model()
+            self.model.load_model(self.model.MODEL_PICKLE_PATH)
 
     def pre_produce(self, result: tuple):
         return self.step_parser.parse(
@@ -83,25 +71,30 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
+        model_input = create_input_dto(messages)
+
         if self.isztf:
-            predictor_input = self.predictor_parser.parse_input(messages)
+            model_input = model_input.features            
             self.logger.info("Doing inference")
-            probabilities = self.predictor.predict(predictor_input)
-            self.logger.info("Processing results")
-            predictor_output = self.predictor_parser.parse_output(probabilities)
-            return {
-                "public_info": (predictor_output, messages, predictor_input.value),
-                "db_results": self.scribe_parser.parse(
-                    predictor_output, classifier_version=self.config["MODEL_VERSION"]
-                ),
-            }
-        predictor_input = self.predictor_parser.parse_input(messages)
-        self.logger.info("Doing inference")
-        probabilities = self.predictor.predict(predictor_input)
+            probabilities = self.model.predict_in_pipeline(model_input)
+        
+        else:                
+            self.logger.info("Doing inference")
+            probabilities = self.model.predict(model_input)
+        
         self.logger.info("Processing results")
-        predictor_output = self.predictor_parser.parse_output(probabilities)
+        if isinstance(probabilities, OutputDTO):
+            # legacy untill the output parsing is refactored
+            model_output_to_parse {
+                "probabilities": to_parse.probabilities,
+                "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
+            }
+            model_output = PredictorOutput(model_output_to_parse)
+        else:
+            model_output = PredictorOutput(probabilities)
+        
         return {
-            "public_info": (predictor_output, messages, predictor_input.value),
+            "public_info": (predictor_output, messages, model_input.features),
             "db_results": self.scribe_parser.parse(
                 predictor_output, classifier_version=self.config["MODEL_VERSION"]
             ),
