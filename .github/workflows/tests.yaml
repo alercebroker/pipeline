@@ -23,6 +23,8 @@ jobs:
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -31,6 +33,8 @@ jobs:
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_build:
     uses: ./.github/workflows/build-template.yaml
     with:
@@ -54,6 +58,8 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-docker pytest-cov numpy fastavro'
       test-command: 'python -m pytest -x tests/unittest --cov alert_archiving_step --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_unittest_cli:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
@@ -62,6 +68,8 @@ jobs:
       test-dependencies: 'pytest pytest-docker pytest-cov'
       requirements-file: 'requirements_cli.txt'
       test-command: 'python -m pytest -x tests/cli --cov cli --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_integration:   
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
@@ -72,6 +80,8 @@ jobs:
       test-dependencies: 'pytest pytest-docker numpy Cython'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_build:
     uses: ./.github/workflows/build-template.yaml
     with:
@@ -125,6 +135,8 @@ jobs:
       sources-folder: 'features'
       test-folder: 'tests/unittest'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -133,6 +145,8 @@ jobs:
       sources-folder: 'features/'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_build:
     uses: ./.github/workflows/build-template.yaml
     with:
@@ -404,6 +418,8 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   watchlist_step_integration:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
@@ -414,6 +430,8 @@ jobs:
       test-dependencies: 'pytest==7.2.0 pytest-docker'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   watchlist_step_build:
     uses: ./.github/workflows/build-template.yaml
     with:
@@ -470,6 +488,8 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   early_classification_step_integration:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
@@ -570,6 +590,8 @@ jobs:
       apt-get_install: 'sudo apt-get -y install libsnappy-dev'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/ --cov survey_parser_plugins --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   libs_apf_lint:
     uses: ./.github/workflows/lint-template.yaml
