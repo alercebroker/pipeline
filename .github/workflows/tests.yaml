@@ -600,6 +600,7 @@ jobs:
     with:
       base-folder: 'stamp_classifier_step'
       sources-folder: 'stamp_classifier_step'         
+
   stamp_classifier_step_unittest_atlas:
     needs: detect_changes
     if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
@@ -614,6 +615,36 @@ jobs:
       test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+
+  stamp_classifier_step_unittest_ztf:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.7'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt -r model/requirements.txt'
+      test-folder: 'tests/unittest'
+      test-dependencies: 'pytest pytest-cov'
+      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  stamp_classifiier_step_integration:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
+    uses: ./.github/workflows/pip-tests-template.yaml
+    with:
+      base-folder: 'stamp_classifier_step'
+      python-version: '3.8'
+      sources-folder: 'stamp_classifier_step'
+      requirements-file: 'requirements.txt'
+      test-folder: 'tests/integration'
+      test-dependencies: 'pytest pytest-docker'
+      test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   scribe_unittest:
     needs: detect_changes
@@ -648,36 +679,6 @@ jobs:
       step-name: "scribe"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
-  stamp_classifier_step_unittest_ztf:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'stamp_classifier_step'
-      python-version: '3.7'
-      sources-folder: 'stamp_classifier_step'
-      requirements-file: 'requirements.txt -r model/requirements.txt'
-      test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittests --cov stamp_classifier_step --cov-report xml'
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  stamp_classifiier_step_integration:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
-    uses: ./.github/workflows/pip-tests-template.yaml
-    with:
-      base-folder: 'stamp_classifier_step'
-      python-version: '3.8'
-      sources-folder: 'stamp_classifier_step'
-      requirements-file: 'requirements.txt'
-      test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker'
-      test-command: 'python -m pytest -x tests/integration'
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   libs_survey_parser_plugins_lint:
     needs: detect_changes
