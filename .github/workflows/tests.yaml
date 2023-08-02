@@ -45,7 +45,8 @@ jobs:
       base-folder: "reflector_step"
       build-context: "reflector_step"
       step-name: "reflector_step"
-
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   alert_archiving_step_lint:
     needs: detect_changes
@@ -95,6 +96,8 @@ jobs:
       base-folder: "alert_archiving_step"
       build-context: "alert_archiving_step"
       step-name: "alert_archiving_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   correction_step_lint:
     needs: detect_changes
@@ -132,6 +135,8 @@ jobs:
       base-folder: "correction_step"
       build-context: "."
       step-name: "correction_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   feature_step_lint:
     needs: detect_changes
@@ -168,6 +173,8 @@ jobs:
       base-folder: "feature_step"
       build-context: "feature_step"
       step-name: "feature_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_lint:
     needs: detect_changes
@@ -306,6 +313,8 @@ jobs:
       base-folder: "lightcurve-step"
       build-context: "."
       step-name: "lightcurve-step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   magstats_step_lint:
     needs: detect_changes
@@ -345,6 +354,8 @@ jobs:
       base-folder: "magstats_step"
       build-context: "."
       step-name: "magstats_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   prv_candidates_step_lint:
     needs: detect_changes
@@ -383,6 +394,8 @@ jobs:
       base-folder: "prv_candidates_step"
       build-context: "."
       step-name: "prv_candidates_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   s3_step_lint:
     needs: detect_changes
@@ -423,6 +436,8 @@ jobs:
       base-folder: "s3_step"
       build-context: "s3_step"
       step-name: "s3_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   sorting_hat_step_lint:
     needs: detect_changes
@@ -462,6 +477,8 @@ jobs:
       base-folder: "sorting_hat_step"
       build-context: "."
       step-name: "sorting_hat_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   watchlist_step_lint:
     needs: detect_changes
@@ -501,6 +518,8 @@ jobs:
       base-folder: "watchlist_step"
       build-context: "."
       step-name: "watchlist_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   xmatch_step_lint:
     needs: detect_changes
@@ -539,6 +558,8 @@ jobs:
       base-folder: "xmatch_step"
       build-context: "."
       step-name: "xmatch_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   early_classification_step_lint:
     needs: detect_changes
