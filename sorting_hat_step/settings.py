@@ -67,7 +67,6 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.getenv("METRICS_HOST"),
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
         "SCHEMA": {

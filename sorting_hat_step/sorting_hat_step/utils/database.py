@@ -1,9 +1,7 @@
 import math
 from typing import Union, List
-from pymongo.errors import BulkWriteError
 
-from db_plugins.db.mongo.connection import DatabaseConnection
-from db_plugins.db.mongo.models import Object
+from ..database import DatabaseConnection
 
 
 def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
@@ -15,8 +13,7 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
 
     :return: existing aid if exists else is None
     """
-    mongo_query = db.query(Object)
-    found = mongo_query.collection.find_one({"oid": {"$in": oid}}, {"_id": 1})
+    found = db.database["object"].find_one({"oid": {"$in": oid}}, {"_id": 1})
     if found:
         return found["_id"]
     return None
@@ -36,8 +33,7 @@ def conesearch_query(
 
     :return: existing aid if exists else is None
     """
-    mongo_query = db.query(Object)
-    found = mongo_query.collection.find_one(
+    found = db.database["object"].find_one(
         {
             "loc": {
                 "$nearSphere": {
@@ -64,12 +60,11 @@ def update_query(db: DatabaseConnection, records: List[dict]):
     :param db: Database connection
     :param records: Records containing _id and oid fields to insert or update
     """
-    mongo_query = db.query(Object)
     for record in records:
         query = {"_id": record["_id"]}
         new_value = {
             "$addToSet": {"oid": {"$each": record["oid"]}},
         }
-        updated = mongo_query.collection.find_one_and_update(
+        db.database["object"].find_one_and_update(
             query, new_value, upsert=True, return_document=True
         )

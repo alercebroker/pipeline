@@ -1,14 +1,11 @@
-import logging
 from apf.metrics.prometheus import PrometheusMetrics
 import requests
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
-from db_plugins.db.mongo.models import Object
+from db_plugins.db.mongo._connection import MongoConnection
 import pytest
 import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
-from sorting_hat_step import SortingHatStep
+from ...sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
 from tests.unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
@@ -54,7 +51,6 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": "localhost:9092",
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": "metrics",
         "SCHEMA": {
@@ -95,8 +91,11 @@ METRICS_CONFIG = {
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
 class MongoIntegrationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.database = MongoConnection(DB_CONFIG)
+
     def setUp(self):
-        self.database = new_DBConnection(MongoDatabaseCreator)
         self.step_config = {
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -106,9 +105,7 @@ class MongoIntegrationTest(unittest.TestCase):
         }
 
     def tearDown(self):
-        mongo_query = self.database.query(Object)
-        mongo_query.collection.delete_many({})
-
+        self.database.database["object"].delete_many({})
 
     def test_step(self):
         """
@@ -135,8 +132,7 @@ class MongoIntegrationTest(unittest.TestCase):
             self.assert_message_stamps(message)
 
         # Check that there are no duplicates inserted
-        mongo_query = self.database.query(Object)
-        cursor = mongo_query.collection.find()
+        cursor = self.database.database["object"].find()
         inserted_objects = list(cursor)
         unique_count = pd.DataFrame(messages).aid.nunique()
         assert len(inserted_objects) == unique_count
@@ -174,24 +170,28 @@ class MongoIntegrationTest(unittest.TestCase):
         )
 
         # Insert a preexisting entry
-        mongo_query = self.database.query(Object)
-        mongo_query.collection.insert_one({'_id': 2, 'oid': [50, 100]})
+        self.database.database["object"].insert_one({"_id": 2, "oid": [50, 100]})
 
-        alerts = pd.DataFrame([
-            {'oid': 10, 'aid': 0, 'extra': 'extra1'},
-            {'oid': 20, 'aid': 1, 'extra': 'extra2'},
-            {'oid': 30, 'aid': 0, 'extra': 'extra3'},
-            {'oid': 40, 'aid': 2, 'extra': 'extra4'},
-            {'oid': 50, 'aid': 2, 'extra': 'extra4'},
-                        ])
+        alerts = pd.DataFrame(
+            [
+                {"oid": 10, "aid": 0, "extra": "extra1"},
+                {"oid": 20, "aid": 1, "extra": "extra2"},
+                {"oid": 30, "aid": 0, "extra": "extra3"},
+                {"oid": 40, "aid": 2, "extra": "extra4"},
+                {"oid": 50, "aid": 2, "extra": "extra4"},
+            ]
+        )
         step.post_execute(alerts)
 
-        cursor = mongo_query.collection.find()
+        cursor = self.database.database["object"].find()
         result = list(cursor)
         expected = [
-                {'_id': 2, 'oid': [50, 100, 40]}, {'_id': 0, 'oid': [10, 30]}, {'_id': 1, 'oid': [20]}
-                ]
+            {"_id": 2, "oid": [50, 100, 40]},
+            {"_id": 0, "oid": [10, 30]},
+            {"_id": 1, "oid": [20]},
+        ]
         assert len(result) == len(expected) and all(x in result for x in expected)
+
 
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
@@ -200,9 +200,9 @@ class PrometheusIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         cls.prometheus_metrics = PrometheusMetrics()
         start_http_server(8000)
+        cls.database = MongoConnection(DB_CONFIG)
 
     def setUp(self):
-        self.database = new_DBConnection(MongoDatabaseCreator)
         self.step_config = {
             "PROMETHEUS": True,
             "DB_CONFIG": DB_CONFIG,
@@ -211,6 +211,9 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
         }
+
+    def tearDown(self):
+        self.database.database["object"].delete_many({})
 
     def test_step(self):
         """

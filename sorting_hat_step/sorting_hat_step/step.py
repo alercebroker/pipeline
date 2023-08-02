@@ -1,10 +1,10 @@
 from apf.core.step import GenericStep
-from db_plugins.db.mongo.connection import DatabaseConnection
 from survey_parser_plugins import ALeRCEParser
 from datetime import datetime
 from typing import List
 
 from .utils import wizard, parser
+from .database import DatabaseConnection
 import pandas as pd
 
 
@@ -17,7 +17,6 @@ class SortingHatStep(GenericStep):
     ):
         super().__init__(config=config, **kwargs)
         self.driver = db_connection
-        self.driver.connect(config["DB_CONFIG"])
         self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
 
