@@ -618,6 +618,8 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   scribe_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.scribe == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "scribe"
