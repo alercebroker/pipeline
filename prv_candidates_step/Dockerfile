@@ -21,6 +21,7 @@ RUN pip install poetry
 
 COPY prv_candidates_step/poetry.lock prv_candidates_step/pyproject.toml /app/
 COPY libs/apf libs/apf
+COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test

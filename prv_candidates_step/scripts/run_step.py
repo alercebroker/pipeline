@@ -12,6 +12,8 @@ sys.path.append(PACKAGE_PATH)
 
 from prv_candidates_step.step import PrvCandidatesStep
 
+prometheus_metrics = PrometheusMetrics()
+
 
 def step_creator():
     from settings import settings_creator
@@ -34,10 +36,12 @@ def step_creator():
 
     logger.addHandler(handler)
 
-    prometheus_metrics = PrometheusMetrics()
     if settings["USE_PROMETHEUS"]:
         start_http_server(8000)
-    return PrvCandidatesStep(config=settings)
+    return PrvCandidatesStep(
+        config=settings,
+        prometheus_metrics=prometheus_metrics,
+    )
 
 
 if __name__ == "__main__":
