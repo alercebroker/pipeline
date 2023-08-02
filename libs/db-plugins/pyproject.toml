@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "db-plugins"
-version = "4.2.7"
+version = "5.1.0"
 description = "ALeRCE database plugins."
 authors = []
 readme = "README.rst"
@@ -22,9 +22,7 @@ pymongo="4.4.1"
 psycopg2-binary="*"
 pytest="*"
 pytest-docker="*"
-coverage="*"
-mock_alchemy="*"
-mongomock="*"
+pytest-cov="*"
 
 [tool.poetry.group.doc.dependencies]
 numpydoc="*"

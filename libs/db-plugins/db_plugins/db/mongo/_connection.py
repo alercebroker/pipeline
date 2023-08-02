@@ -1,9 +1,5 @@
 from collections import UserDict
-
 from pymongo import MongoClient
-
-from .query import MongoQuery
-from ..generic import DatabaseConnection, DatabaseCreator
 from .orm import ModelMetaClass
 
 
@@ -42,23 +38,10 @@ class _MongoConfig(UserDict):
         super().__setitem__("".join(klist), value)
 
 
-class MongoConnection(DatabaseConnection):
-    def __init__(self, config=None):
-        self.config = config
-        self.client = None
-        self.database = None
-
-    @property
-    def config(self):
-        return self.__config
-
-    @config.setter
-    def config(self, config):
-        self.__config = config if config is None else _MongoConfig(config)
-
-    def connect(self, config=None):
+class MongoConnection:
+    def __init__(self, config):
         """
-        Establishes connection to a database and initializes a session.
+        Establishes connection to a database.
 
         Parameters
         ----------
@@ -77,47 +60,21 @@ class MongoConnection(DatabaseConnection):
                     "AUTH_SOURCE": "admin" # could be admin or the same as DATABASE
                 }
         """
-        if config is not None:
-            self.config = config
-        self.client = self.client or MongoClient(**self.config)
+        self.config = config
+        self.client = MongoClient(**self.config)
         self.database = self.client[self.config.db_name]
         ModelMetaClass.set_database(self.config.db_name)
+
+    @property
+    def config(self):
+        return self.__config
+
+    @config.setter
+    def config(self, config):
+        self.__config = config if config is None else _MongoConfig(config)
 
     def create_db(self):
         ModelMetaClass.metadata.create_all(self.client, self.config.db_name)
 
     def drop_db(self):
         ModelMetaClass.metadata.drop_all(self.client, self.config.db_name)
-
-    def query(self, model=None, name=None):
-        """Create a BaseQuery object that allows you to query the database using
-        the PyMongo Collection API, or using the BaseQuery methods
-        like ``get_or_create``.
-
-        Parameters
-        ----------
-        model : Type[BaseModel]
-            Model class to create the query for
-        name : str
-            Name of collection to use
-
-        Examples
-        --------
-        .. code-block:: python
-
-            # Using PyMongo API through collection attribute
-            db_conn.query(
-                name='my_collection',
-            ).collection.find({'hello': 'world'})
-            # Using db-plugins
-            # These two statements are equivalent
-            db_conn.query(model=Object).get_or_create(filter_by=filters)
-            db_conn.query().get_or_create(model=Object, filter_by=filters)
-        """
-        return MongoQuery(self.database, model=model, name=name)
-
-
-class MongoDatabaseCreator(DatabaseCreator):
-    @classmethod
-    def create_database(cls) -> MongoConnection:
-        return MongoConnection()
