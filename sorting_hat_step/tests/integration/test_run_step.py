@@ -1,14 +1,14 @@
 from apf.metrics.prometheus import PrometheusMetrics
 import requests
-from db_plugins.db.mongo._connection import MongoConnection
 import pytest
 import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
-from ...sorting_hat_step.step import SortingHatStep
+from sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
-from tests.unittest.data.batch import generate_alerts_batch
+from ..unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
+from db_plugins.db.mongo._connection import MongoConnection
 import pandas as pd
 
 DB_CONFIG = {
