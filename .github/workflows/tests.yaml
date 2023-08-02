@@ -13,14 +13,14 @@ jobs:
 
   reflector_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.reflector_step == '1'
+    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
         sources-folder: 'reflector_step'
         base-folder: 'reflector_step'
   reflector_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.reflector_step == '1'
+    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
         python-version: '3.7'
@@ -29,7 +29,7 @@ jobs:
         base-folder: 'reflector_step'
   reflector_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.reflector_step == '1'
+    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
@@ -39,7 +39,7 @@ jobs:
       codecov-flags: ''  # Do not upload
   reflector_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.reflector_step == '1'
+    if: needs.detect_changes.outputs.reflector_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "reflector_step"
@@ -50,14 +50,14 @@ jobs:
 
   alert_archiving_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == '1'
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
         sources-folder: 'alert_archiving_step'
         base-folder: 'alert_archiving_step'
   alert_archiving_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == '1'
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       python-version: '3.7'
@@ -68,7 +68,7 @@ jobs:
       test-command: 'python -m pytest -x tests/unittest --cov alert_archiving_step --cov-report xml'
   alert_archiving_step_unittest_cli:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == '1'
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       python-version: '3.7'
@@ -78,7 +78,7 @@ jobs:
       test-command: 'python -m pytest -x tests/cli --cov cli --cov-report xml'
   alert_archiving_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == '1'    
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'    
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       python-version: '3.7'
@@ -90,7 +90,7 @@ jobs:
       test-command: 'python -m pytest -x tests/integration'
   alert_archiving_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.alert_archiving_step == '1'
+    if: needs.detect_changes.outputs.alert_archiving_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "alert_archiving_step"
@@ -101,14 +101,14 @@ jobs:
 
   correction_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.correction_step == '1'
+    if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'correction'
       base-folder: 'correction_step'
   correction_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.correction_step == '1'
+    if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'correction_step'
@@ -118,7 +118,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.correction_step == '1'
+    if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'correction_step'
@@ -129,7 +129,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.correction_step == '1'
+    if: needs.detect_changes.outputs.correction_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "correction_step"
@@ -140,14 +140,14 @@ jobs:
 
   feature_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.feature_step == '1'
+    if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'features'
       base-folder: 'feature_step'
   feature_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.feature_step == '1'
+    if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
@@ -157,7 +157,7 @@ jobs:
       codecov-flags: ''  # Do not upload
   feature_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.feature_step == '1'
+    if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
@@ -167,7 +167,7 @@ jobs:
       codecov-flags: ''  # Do not upload
   feature_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.feature_step == '1'
+    if: needs.detect_changes.outputs.feature_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "feature_step"
@@ -178,14 +178,14 @@ jobs:
 
   lc_classification_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'lc_classification_step'
       sources-folder: 'lc_classification'
   lc_classification_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
@@ -203,7 +203,7 @@ jobs:
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
   lc_classification_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
@@ -223,7 +223,7 @@ jobs:
 
   lc_classification_step_build_ztf:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -234,7 +234,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -245,7 +245,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -256,7 +256,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -267,7 +267,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lc_classification_step == '1'
+    if: needs.detect_changes.outputs.lc_classification_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
@@ -279,14 +279,14 @@ jobs:
 
   lightcurve_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lightcurve_step == '1'
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'lightcurve-step' 
       sources-folder: 'lightcurve_step'
   lightcurve_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lightcurve_step == '1'
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step' 
@@ -296,7 +296,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lightcurve_step == '1'
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step'
@@ -307,7 +307,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.lightcurve_step == '1'
+    if: needs.detect_changes.outputs.lightcurve_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lightcurve-step"
@@ -318,14 +318,14 @@ jobs:
 
   magstats_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.magstats_step == '1'
+    if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'magstats_step'
       base-folder: 'magstats_step' 
   magstats_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.magstats_step == '1'
+    if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'magstats_step' 
@@ -336,7 +336,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.magstats_step == '1'
+    if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'magstats_step' 
@@ -348,7 +348,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   magstats_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.magstats_step == '1'
+    if: needs.detect_changes.outputs.magstats_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "magstats_step"
@@ -359,14 +359,14 @@ jobs:
 
   prv_candidates_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.prv_candidates_step == '1'
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'prv_candidates_step' 
       sources-folder: "prv_candidates_step"
   prv_candidates_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.prv_candidates_step == '1'
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step' 
@@ -376,7 +376,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.prv_candidates_step == '1'
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step' 
@@ -388,7 +388,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.prv_candidates_step == '1'
+    if: needs.detect_changes.outputs.prv_candidates_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "prv_candidates_step"
@@ -399,14 +399,14 @@ jobs:
 
   s3_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.s3_step== '1'
+    if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 's3_step'
       base-folder: 's3_step'
   s3_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.s3_step== '1'
+    if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 's3_step'
@@ -417,7 +417,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   s3_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.s3_step== '1'
+    if: needs.detect_changes.outputs.s3_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 's3_step'
@@ -430,7 +430,7 @@ jobs:
 
   s3_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.s3_step == '1'
+    if: needs.detect_changes.outputs.s3_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "s3_step"
@@ -441,14 +441,14 @@ jobs:
 
   sorting_hat_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.sorting_hat_step== '1'
+    if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       sources-folder: 'sorting_hat_step'
   sorting_hat_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.sorting_hat_step== '1'
+    if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
@@ -459,7 +459,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.sorting_hat_step== '1'
+    if: needs.detect_changes.outputs.sorting_hat_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
@@ -471,7 +471,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.sorting_hat_step == '1'
+    if: needs.detect_changes.outputs.sorting_hat_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "sorting_hat_step"
@@ -482,14 +482,14 @@ jobs:
 
   watchlist_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.watchlist_step== '1'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'watchlist_step'
       base-folder: 'watchlist_step'
   watchlist_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.watchlist_step== '1'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
@@ -500,7 +500,7 @@ jobs:
       test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
   watchlist_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.watchlist_step== '1'
+    if: needs.detect_changes.outputs.watchlist_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'watchlist_step'
@@ -512,7 +512,7 @@ jobs:
       test-command: 'python -m pytest -x tests/integration'
   watchlist_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.watchlist_step == '1'
+    if: needs.detect_changes.outputs.watchlist_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "watchlist_step"
@@ -523,14 +523,14 @@ jobs:
 
   xmatch_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step== '1'
+    if: needs.detect_changes.outputs.xmatch_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'xmatch_step'
       sources-folder: 'xmatch_step'
   xmatch_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step== '1'
+    if: needs.detect_changes.outputs.xmatch_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step' 
@@ -540,7 +540,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step== '1'
+    if: needs.detect_changes.outputs.xmatch_step== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step' 
@@ -552,7 +552,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.xmatch_step == '1'
+    if: needs.detect_changes.outputs.xmatch_step == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "xmatch_step"
@@ -563,14 +563,14 @@ jobs:
 
   early_classification_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.early_classification_step== '1'
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'early_classification_step'
       sources-folder: 'earlyclassifier'         
   early_classification_step_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.early_classification_step== '1'
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'early_classification_step'
@@ -582,7 +582,7 @@ jobs:
       test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
   early_classification_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.early_classification_step== '1'
+    if: needs.detect_changes.outputs.early_classification_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'early_classification_step'
@@ -595,7 +595,7 @@ jobs:
 
   stamp_classifier_step_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== '1'
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'stamp_classifier_step'
@@ -603,7 +603,7 @@ jobs:
 
   stamp_classifier_step_unittest_atlas:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== '1'
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'stamp_classifier_step'
@@ -618,7 +618,7 @@ jobs:
 
   stamp_classifier_step_unittest_ztf:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== '1'
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'stamp_classifier_step'
@@ -633,7 +633,7 @@ jobs:
 
   stamp_classifiier_step_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.stamp_classifier_step== '1'
+    if: needs.detect_changes.outputs.stamp_classifier_step== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'stamp_classifier_step'
@@ -648,7 +648,7 @@ jobs:
 
   scribe_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.scribe== '1'
+    if: needs.detect_changes.outputs.scribe== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.9'
@@ -660,7 +660,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   scribe_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.scribe== '1'
+    if: needs.detect_changes.outputs.scribe== 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.9'
@@ -671,7 +671,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   scribe_build:
     needs: detect_changes
-    if: needs.detect_changes.outputs.scribe == '1'
+    if: needs.detect_changes.outputs.scribe == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "scribe"
@@ -682,7 +682,7 @@ jobs:
 
   libs_survey_parser_plugins_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.survey_parser_plugins == '1'
+    if: needs.detect_changes.outputs.survey_parser_plugins == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'libs/survey_parser_plugins'
@@ -690,7 +690,7 @@ jobs:
 
   libs_survey_parser_plugins_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.survey_parser_plugins== '1'
+    if: needs.detect_changes.outputs.survey_parser_plugins== 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'libs/survey_parser_plugins'
@@ -703,14 +703,14 @@ jobs:
 
   libs_apf_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.libs_apf == '1'
+    if: needs.detect_changes.outputs.libs_apf == 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
   libs_apf_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.libs_apf == '1'
+    if: needs.detect_changes.outputs.libs_apf == 'true'
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'libs/apf'
@@ -722,7 +722,7 @@ jobs:
 
   db_plugins_lint:
     needs: detect_changes
-    if: needs.detect_changes.outputs.db_plugins_step== '1'
+    if: needs.detect_changes.outputs.db_plugins_step== 'true'
     uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'db-plugins'
@@ -730,7 +730,7 @@ jobs:
 
   db_plugins_unittest:
     needs: detect_changes
-    if: needs.detect_changes.outputs.db_plugins == '1'
+    if: needs.detect_changes.outputs.db_plugins == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'db-plugins'
@@ -744,7 +744,7 @@ jobs:
 
   db_plugins_integration:
     needs: detect_changes
-    if: needs.detect_changes.outputs.db_plugins == '1'
+    if: needs.detect_changes.outputs.db_plugins == 'true'
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: 'db-plugins'
