@@ -68,15 +68,12 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_integration:   
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
       base-folder: 'alert_archiving_step'
       sources-folder: 'alert_archiving_step'
       test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker numpy Cython'
-      codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   alert_archiving_step_build:
