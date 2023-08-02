@@ -613,7 +613,7 @@ jobs:
   db_plugins_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      base-folder: 'db-plugins'
+      base-folder: 'libs/db-plugins'
       sources-folder: 'db_plugins'
 
   db_plugins_unittest:
