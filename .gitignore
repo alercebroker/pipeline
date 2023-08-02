@@ -129,3 +129,5 @@ dmypy.json
 
 .idea
 __SUCCESS__
+
+flycheck*
