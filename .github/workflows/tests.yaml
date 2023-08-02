@@ -360,7 +360,7 @@ jobs:
     with:
       base-folder: 'prv_candidates_step' 
       python-version: "3.8"
-      test-folder: "tests/unittest"
+      test-folder: "tests/unit"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_integration:
