@@ -30,7 +30,7 @@ base_config = {
 
 def ztf_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {"model": mock.MagicMock()},
             "CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor",
             "PARSER_CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser",
@@ -41,7 +41,7 @@ def ztf_config():
 
 def toretto_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
             "CLASS": "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
             "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
@@ -52,7 +52,7 @@ def toretto_config():
 
 def barney_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
             "CLASS": "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
             "PARSER_CLASS": "lc_classification.predictors.barney.barney_parser.BarneyParser",
@@ -63,7 +63,7 @@ def barney_config():
 
 def balto_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {
                 "model_path": mock.MagicMock(),
                 "model": mock.MagicMock(),
@@ -78,7 +78,7 @@ def balto_config():
 
 def messi_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {
                 "model_path": mock.MagicMock(),
                 "model": mock.MagicMock(),
@@ -151,7 +151,7 @@ def step_factory_ztf(ztf_model_output):
     def factory(messages_ztf):
         config = base_config.copy()
         config.update(ztf_config())
-        ztf_model_output(messages_ztf, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        ztf_model_output(messages_ztf, config["MODEL_CONFIG"]["PARAMS"]["model"])
         return step_factory(messages_ztf, config)
 
     return factory
@@ -162,7 +162,7 @@ def step_factory_toretto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(toretto_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        elasticc_model_output(messages, config["MODEL_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
@@ -175,7 +175,7 @@ def step_factory_barney(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(barney_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        elasticc_model_output(messages, config["MODEL_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
@@ -188,7 +188,7 @@ def step_factory_balto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(balto_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        elasticc_model_output(messages, config["MODEL_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
@@ -201,7 +201,7 @@ def step_factory_messi(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(messi_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
+        elasticc_model_output(messages, config["MODEL_CONFIG"]["PARAMS"]["model"])
         step = step_factory(messages, config)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step

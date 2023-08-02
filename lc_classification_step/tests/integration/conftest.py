@@ -110,7 +110,7 @@ def env_variables_ztf():
 def env_variables_elasticc():
     def set_env_variables(
         model: str,
-        predictor_class: str,
+        model_class: str,
         predictor_parser_class: str,
         extra_env_vars: dict,
     ):
@@ -131,7 +131,7 @@ def env_variables_elasticc():
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "elasticc",
-            "PREDICTOR_CLASS": predictor_class,
+            "MODEL_CLASS": model_class,
             "PREDICTOR_PARSER_CLASS": predictor_parser_class,
             "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",

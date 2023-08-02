@@ -31,7 +31,7 @@ class LateClassifier(GenericStep):
         self.logger.info("Loading Models")
         self.isztf = (
             config["MODEL_CONFIG"]["CLASS"]
-            == "lc_classifier.classifier.models.HierarchicalRandomForest" # hay que cambiar el archivo
+            == "lc_classifier.classifier.models.HierarchicalRandomForest" 
         )
         scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.model: AlerceModel = get_class(config["MODEL_CONFIG"]["CLASS"])(
@@ -85,7 +85,7 @@ class LateClassifier(GenericStep):
         self.logger.info("Processing results")
         if isinstance(probabilities, OutputDTO):
             # legacy untill the output parsing is refactored
-            model_output_to_parse {
+            model_output_to_parse = {
                 "probabilities": to_parse.probabilities,
                 "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
             }

@@ -24,10 +24,10 @@ def test_step_ztf_result(
     kconsumer = kafka_consumer("ztf")
     sconsumer = scribe_consumer()
 
-    STEP_CONFIG["PREDICTOR_CONFIG"][
+    STEP_CONFIG["MODEL_CONFIG"][
         "CLASS"
-    ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
-    STEP_CONFIG["PREDICTOR_CONFIG"][
+    ] = "lc_classifier.classifier.models.HierarchicalRandomForest"
+    STEP_CONFIG["MODEL_CONFIG"][
         "PARSER_CLASS"
     ] = "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser"
     STEP_CONFIG[
@@ -36,7 +36,7 @@ def test_step_ztf_result(
     STEP_CONFIG[
         "STEP_PARSER_CLASS"
     ] = "lc_classification.core.parsers.alerce_parser.AlerceParser"
-    STEP_CONFIG["PREDICTOR_CONFIG"]["PARAMS"] = {}
+    STEP_CONFIG["MODEL_CONFIG"]["PARAMS"] = {}
 
     step = LateClassifier(config=STEP_CONFIG)
     step.start()
