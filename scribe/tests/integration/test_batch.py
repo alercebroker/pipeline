@@ -5,11 +5,11 @@ from _generator import CommandGenerator
 
 DB_CONFIG = {
     "MONGO": {
-        "HOST": "localhost",
-        "USERNAME": "mongo",
-        "PASSWORD": "mongo",
-        "PORT": 27017,
-        "DATABASE": "test",
+        "host": "localhost",
+        "username": "mongo",
+        "password": "mongo",
+        "port": 27017,
+        "database": "test",
     }
 }
 
@@ -23,7 +23,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "NUM_MESSAGES": 25,
-    "TIMEOUT": 15
+    "TIMEOUT": 15,
 }
 
 PRODUCER_CONFIG = {

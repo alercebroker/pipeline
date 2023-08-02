@@ -9,11 +9,11 @@ class TestExecutor(unittest.TestCase):
     def setUp(self):
         db_config = {
             "MONGO": {
-                "DATABASE": "test",
-                "PORT": 27017,
-                "HOST": "localhost",
-                "USERNAME": "user",
-                "PASSWORD": "pass",
+                "database": "test",
+                "port": 27017,
+                "host": "localhost",
+                "username": "user",
+                "password": "pass",
             }
         }
         executor = ScribeCommandExecutor(db_config)
