@@ -500,6 +500,8 @@ jobs:
       test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker'
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   stamp_classifier_step_lint:
     uses: ./.github/workflows/lint-template.yaml
