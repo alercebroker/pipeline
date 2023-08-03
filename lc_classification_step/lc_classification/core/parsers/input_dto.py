@@ -105,7 +105,7 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     aid2      4      5
     aid1      2      3
     """
-    if len(messages) == 0 or not 'features' in messages[0]:
+    if len(messages) == 0 or not "features" in messages[0]:
         return pd.DataFrame()
     entries = []
     for message in messages:
