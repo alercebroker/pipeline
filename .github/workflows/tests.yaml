@@ -306,6 +306,8 @@ jobs:
       base-folder: "lightcurve-step"
       build-context: "."
       step-name: "lightcurve-step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   magstats_step_lint:
     needs: detect_changes
@@ -485,6 +487,8 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   watchlist_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step== 'true'
@@ -497,6 +501,8 @@ jobs:
       test-dependencies: 'pytest==7.2.0 pytest-docker'
       codecov-flags: ''  # Do not upload
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   watchlist_step_build:
     needs: detect_changes
     if: needs.detect_changes.outputs.watchlist_step == 'true'
@@ -505,6 +511,8 @@ jobs:
       base-folder: "watchlist_step"
       build-context: "."
       step-name: "watchlist_step"
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   xmatch_step_lint:
     needs: detect_changes
@@ -563,6 +571,8 @@ jobs:
       test-folder: 'tests/unittest'
       test-dependencies: 'pytest pytest-cov'
       test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   early_classification_step_integration:
     needs: detect_changes
     if: needs.detect_changes.outputs.early_classification_step== 'true'
@@ -575,6 +585,8 @@ jobs:
       test-folder: 'tests/integration'
       test-dependencies: 'pytest pytest-docker'
       test-command: 'python -m pytest -x tests/integration'
+    secrets:
+      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   stamp_classifier_step_lint:
     needs: detect_changes
