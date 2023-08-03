@@ -94,7 +94,7 @@ class LateClassifier(GenericStep):
         probabilities = self.predictor.predict(predictor_input)
         self.logger.info("Processing results")
         return {
-            "public_info": (probabilities, messages, predictor_input.value),
+            "public_info": (probabilities, messages, predictor_input),
             "db_results": self.scribe_parser.parse(
                 probabilities, classifier_version=self.config["MODEL_VERSION"]
             ),
