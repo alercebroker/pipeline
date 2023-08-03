@@ -44,7 +44,7 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
                 candid
         aid
         aid1    cand1
-        aid2    cand3
+        aid2    cand3youtube in katakana
     """
     detections = [pd.DataFrame.from_records(msg["detections"]) for msg in messages]
     detections = pd.concat(detections)
@@ -105,12 +105,15 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     aid2      4      5
     aid1      2      3
     """
-    df = pd.DataFrame([{"aid": message.get("aid")} for message in messages])
-    features = pd.DataFrame(
-        [message["features"] for message in messages if message["features"]]
-    )
-    features["aid"] = df.aid
-    features.drop_duplicates("aid", inplace=True)
+    if len(messages) == 0 or not "features" in messages[0]:
+        return pd.DataFrame()
+    entries = []
+    for message in messages:
+        entry = {feat: message["features"][feat] for feat in message["features"]}
+        entry["aid"] = message["aid"]
+        entries.append(entry)
+    features = pd.DataFrame.from_records(entries)
+    features.drop_duplicates("aid", inplace=True, keep="last")
     features = features.set_index("aid")
     if features is not None:
         return features
