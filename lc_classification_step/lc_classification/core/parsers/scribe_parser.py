@@ -11,7 +11,7 @@ class ScribeParser(KafkaParser):
     def __init__(self):
         super().__init__(self)
 
-    def parse(self, to_parse: PredictorOutput, **kwargs) -> KafkaOutput[List[dict]]:
+    def parse(self, to_parse, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
         Parameters
         ----------
@@ -48,11 +48,11 @@ class ScribeParser(KafkaParser):
                                     vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
-        if len(to_parse.classifications["probabilities"]) == 0:
+        if len(to_parse["probabilities"]) == 0:
             return KafkaOutput([])
-        probabilities = to_parse.classifications["probabilities"]
-        top = to_parse.classifications["hierarchical"]["top"]
-        children = to_parse.classifications["hierarchical"]["children"]
+        probabilities = to_parse["probabilities"]
+        top = to_parse["hierarchical"]["top"]
+        children = to_parse["hierarchical"]["children"]
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
 
