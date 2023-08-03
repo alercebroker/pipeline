@@ -52,7 +52,7 @@ def test_step_braney_model_input_is_correct(step_factory_barney):
 def test_step_elasticc_without_features(step_factory_barney):
     empty_features = []
     for msg in messages_elasticc:
-        msg["features"] = None
+        msg.pop("features")
         empty_features.append(msg)
     step = step_factory_barney(empty_features)
     step.start()
