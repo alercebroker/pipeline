@@ -40,7 +40,7 @@ def test_step_toretto_model_input_is_correct(step_factory_toretto):
 def test_step_elasticc_without_features(step_factory_toretto):
     empty_features = []
     for msg in messages_elasticc:
-        msg["features"] = None
+        msg.pop("features")
         empty_features.append(msg)
     step = step_factory_toretto(empty_features)
     step.start()
