@@ -44,7 +44,7 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
                 candid
         aid
         aid1    cand1
-        aid2    cand3youtube in katakana
+        aid2    cand3
     """
     detections = [pd.DataFrame.from_records(msg["detections"]) for msg in messages]
     detections = pd.concat(detections)
