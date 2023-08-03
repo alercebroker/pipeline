@@ -133,7 +133,7 @@ def env_variables_elasticc():
             "STREAM": "elasticc",
             "PREDICTOR_CLASS": predictor_class,
             "PREDICTOR_PARSER_CLASS": predictor_parser_class,
-            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         }
         env_variables_dict.update(extra_env_vars)
