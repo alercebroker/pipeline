@@ -7,6 +7,8 @@ import json
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
+from alerce_classifiers.base.dto import InputDTO
+from lc_classification.core.parsers.input_dto import create_input_dto
 
 
 class LateClassifier(GenericStep):
@@ -83,19 +85,11 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
+        predictor_input = create_input_dto(messages)
+
         if self.isztf:
-            predictor_input = self.predictor_parser.parse_input(messages)
-            self.logger.info("Doing inference")
-            probabilities = self.predictor.predict(predictor_input)
-            self.logger.info("Processing results")
-            predictor_output = self.predictor_parser.parse_output(probabilities)
-            return {
-                "public_info": (predictor_output, messages, predictor_input.value),
-                "db_results": self.scribe_parser.parse(
-                    predictor_output, classifier_version=self.config["MODEL_VERSION"]
-                ),
-            }
-        predictor_input = self.predictor_parser.parse_input(messages)
+            predictor_input = predictor_input.features
+
         self.logger.info("Doing inference")
         probabilities = self.predictor.predict(predictor_input)
         self.logger.info("Processing results")

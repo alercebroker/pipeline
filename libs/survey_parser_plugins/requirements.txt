@@ -1,2 +1,0 @@
-python-snappy
-fastavro>=0.22.0,<=1.6.1

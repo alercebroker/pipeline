@@ -14,8 +14,8 @@ class TorettoPredictor(Predictor):
         if not self.model:
             self.model = RandomForestFeaturesClassifier(model_path)
 
-    def _predict(self, model_input: PredictorInput[InputDTO]):
-        return self.model.predict(model_input.value)
+    def _predict(self, model_input: InputDTO):
+        return self.model.predict(model_input)
 
     def get_feature_list(self):
         return self.model.feature_list
