@@ -1,5 +1,6 @@
 import os
 from fastavro import schema
+from fastavro.repository.base import SchemaRepositoryError
 
 ##################################################
 #       prv_candidates_step   Settings File
@@ -26,22 +27,30 @@ def settings_creator():
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
     }
 
+    try:
+        the_schema = schema.load_schema("schema.avsc")
+    except SchemaRepositoryError:
+        the_schema = schema.load_schema("prv_candidates_step/schema.avsc")
     producer_config = {
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("schema.avsc"),
+        "SCHEMA": the_schema,
     }
 
+    try:
+        the_schema = schema.load_schema("scribe_schema.avsc")
+    except SchemaRepositoryError:
+        the_schema = schema.load_schema("prv_candidates_step/scribe_schema.avsc")
     scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+        "SCHEMA": the_schema,
     }
 
     metrics_config = {

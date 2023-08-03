@@ -108,7 +108,7 @@ def ztf_model_output():
         aids = [
             message["aid"]
             for message in messages_ztf
-            if message["features"] is not None
+            if message.get("features") is not None
         ]
         model.predict_in_pipeline.return_value = {
             "hierarchical": {
