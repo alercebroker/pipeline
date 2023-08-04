@@ -4,13 +4,13 @@ import os
 from setuptools import setup
 from setuptools.extension import Extension
 
-# try:
-#     import numpy as np
-# except ImportError:
-#     raise ImportError("Please install Numpy before installing P4J")
+try:
+    import numpy as np
+except ImportError:
+    raise ImportError("Please install Numpy before installing P4J")
 
 
-include_dirs = ["."]  # , np.get_include()]
+include_dirs = [".", np.get_include()]
 library_dirs = []
 if os.name == "nt":  # Windows, assuming MSVC compiler
     libraries = []
