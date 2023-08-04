@@ -16,10 +16,12 @@ RUN apt-get update && \
 
 FROM python-base as builder
 WORKDIR /app/
-RUN pip install poetry numpy Cython
 COPY ./poetry.lock ./pyproject.toml /app/
 COPY ./README.md /app/README.md
-RUN poetry install --no-interaction --without=dev --without=test --no-root
+COPY libs/P4J /libs/P4J
+COPY libs/mhps /libs/mhps
+COPY libs/turbo-fats /libs/turbo-fats
+RUN poetry install --without=dev,test --no-root
 COPY ./scripts /app/scripts
 COPY ./settings.py /app/settings.py
 COPY ./schema.py /app/schema.py
@@ -27,8 +29,9 @@ COPY ./scribe_schema.avsc /app/scribe_schema.avsc
 COPY ./features /app/features
 
 FROM python:3.10-slim
-WORKDIR /app/
-RUN pip install poetry
 COPY --from=builder /app /app
-RUN poetry install --no-interaction --only-root
+COPY --from=builder /libs /libs
+RUN pip install poetry
+WORKDIR /app/
+RUN poetry install --only-root
 CMD ["poetry", "run", "python", "scripts/run_step.py"]
