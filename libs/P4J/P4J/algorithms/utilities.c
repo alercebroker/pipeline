@@ -13,7 +13,7 @@
         ],
         "include_dirs": [
             ".",
-            "/var/folders/ph/4c2k7cs57kg52vms0nsqmy600000gn/T/tmpar5aq72_/.venv/lib/python3.10/site-packages/numpy/core/include"
+            "/var/folders/ph/4c2k7cs57kg52vms0nsqmy600000gn/T/tmp_ps045hm/.venv/lib/python3.10/site-packages/numpy/core/include"
         ],
         "libraries": [
             "m"
