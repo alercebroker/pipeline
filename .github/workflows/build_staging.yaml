@@ -6,6 +6,9 @@ on:
       - main
 
 jobs:
+  detect_changes:
+    uses: ./.github/workflows/detect_changes.yaml
+
   update_versions:
     uses: ./.github/workflows/update-versions.yaml
     with:
@@ -47,7 +50,7 @@ jobs:
       step-name: feature_step
       step-name-prefix: ""
       base-folder: feature_step
-      build-context: feature_step
+      build-context: "."
 
   lc_classification_step_ztf_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -200,3 +203,15 @@ jobs:
       step-name-prefix: ""
       base-folder: scribe
       build-context: .
+
+  db_plugins_build:
+    needs: detect_changes
+    if: needs.detect_changes.outputs.libs_db_plugins == 'true'
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      base-folder: 'libs/db-plugins'
+      step-name: "db-plugins"
+      publish-github: "false"
+      publish-pypi: "true"
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

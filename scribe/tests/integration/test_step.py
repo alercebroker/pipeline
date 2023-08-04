@@ -27,7 +27,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "NUM_MESSAGES": 2,
-    "TIMEOUT": 10
+    "TIMEOUT": 10,
 }
 
 PRODUCER_CONFIG = {
@@ -88,7 +88,7 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "inserted_id1"})
@@ -112,7 +112,7 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         detection_coll = self.step.db_client.connection.database["detection"]
@@ -135,7 +135,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "upserted_id"})
@@ -164,7 +164,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "upserted_only_id"})
@@ -203,7 +203,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "insert_probabilities_id"})
@@ -256,7 +256,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_probabilities_id"})
@@ -287,8 +287,8 @@ class MongoIntegrationTest(unittest.TestCase):
                     "features_version": "v1",
                     "features_group": "elasticc",
                     "features": [
-                        {"name": "feat1", "value": 123, "fid": 'g'},
-                        {"name": "feat2", "value": 456, "fid": 'Y'},
+                        {"name": "feat1", "value": 123, "fid": "g"},
+                        {"name": "feat2", "value": 456, "fid": "Y"},
                     ],
                 },
                 "options": {"upsert": True},
@@ -304,8 +304,8 @@ class MongoIntegrationTest(unittest.TestCase):
                     "features_version": "v1",
                     "features_group": "elasticc",
                     "features": [
-                        {"name": "feat1", "value": 741, "fid": 'g'},
-                        {"name": "feat2", "value": 369, "fid": 'Y'},
+                        {"name": "feat1", "value": 741, "fid": "g"},
+                        {"name": "feat2", "value": 369, "fid": "Y"},
                     ],
                 },
                 "options": {"upsert": True},
@@ -314,32 +314,36 @@ class MongoIntegrationTest(unittest.TestCase):
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
 
-        command = json.dumps({
-            "collection": "object",
-            "type": "update_features",
-            "criteria": {"_id": "update_features_id"},
-            "data": {
-                "features_version": "v1",
-                "features_group": "elasticc",
-                "features": [
-                    {"name": "feat1", "value": 741, "fid": 'g'},
-                    {"name": "feat2", "value": 369, "fid": 'Y'},
-                ],
-            },
-            "options": {"upsert": True},
-        })
+        command = json.dumps(
+            {
+                "collection": "object",
+                "type": "update_features",
+                "criteria": {"_id": "update_features_id"},
+                "data": {
+                    "features_version": "v1",
+                    "features_group": "elasticc",
+                    "features": [
+                        {"name": "feat1", "value": 741, "fid": "g"},
+                        {"name": "feat2", "value": 369, "fid": "Y"},
+                    ],
+                },
+                "options": {"upsert": True},
+            }
+        )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_features_id"})
         assert result is not None
         assert "elasticc" in result["features"]
         assert {
-                   "name": "feat1",
-                   "value": 741,
-                   "fid": "g",
-               } in result["features"]["elasticc"]["features"]
+            "name": "feat1",
+            "value": 741,
+            "fid": "g",
+        } in result[
+            "features"
+        ]["elasticc"]["features"]
 
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
@@ -362,6 +366,7 @@ class MongoIntegrationTest(unittest.TestCase):
         ]
         self.producer.produce({"payload": commands[0]})
         self.producer.produce({"payload": commands[1]})
+        self.producer.producer.flush(1)
         self.step.start()
 
         os.environ["MOCK_DB_COLLECTION"] = ""
