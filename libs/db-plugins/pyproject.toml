@@ -23,6 +23,7 @@ psycopg2-binary="*"
 pytest="*"
 pytest-docker="*"
 pytest-cov="*"
+mongomock = "^4.1.2"
 
 [tool.poetry.group.doc.dependencies]
 numpydoc="*"
