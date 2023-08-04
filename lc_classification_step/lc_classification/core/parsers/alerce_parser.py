@@ -8,8 +8,8 @@ class AlerceParser(KafkaParser):
     def __init__(self):
         super().__init__(None)
 
-    def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
-        if len(model_output.classifications["probabilities"]) == 0:
+    def parse(self, model_output, **kwargs) -> KafkaOutput[list]:
+        if len(model_output["probabilities"]) == 0:
             return KafkaOutput([])
         messages = kwargs.get("messages", [])
         features = kwargs.get("features", pd.DataFrame())
@@ -26,7 +26,7 @@ class AlerceParser(KafkaParser):
             except KeyError:
                 continue
 
-            tree_aid = self._get_aid_tree(model_output.classifications, aid)
+            tree_aid = self._get_aid_tree(model_output, aid)
             write = {
                 "aid": aid,
                 "features": features_aid,

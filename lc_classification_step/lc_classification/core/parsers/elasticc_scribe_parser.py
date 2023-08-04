@@ -1,17 +1,19 @@
 from typing import List
 
 from pandas.core.dtypes.common import is_all_strings
+from pandas import DataFrame
 from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
+from alerce_classifiers.base.dto import OutputDTO
 import pandas as pd
 
 from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
 
 
-class ScribeParser(KafkaParser):
+class ElasticcScribeParser(KafkaParser):
     def __init__(self):
         super().__init__(self)
 
-    def parse(self, to_parse, **kwargs) -> KafkaOutput[List[dict]]:
+    def parse(self, to_parse: OutputDTO, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
         Parameters
         ----------
@@ -48,18 +50,15 @@ class ScribeParser(KafkaParser):
                                     vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
-        if len(to_parse["probabilities"]) == 0:
+        if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
-        probabilities = to_parse["probabilities"]
-        top = to_parse["hierarchical"]["top"]
-        children = to_parse["hierarchical"]["children"]
+        probabilities = to_parse.probabilities
+        top = DataFrame()
+        children = DataFrame()
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
 
         results = [top, probabilities]
-        for key in children:
-            children[key]["classifier_name"] = self._get_classifier_name(key.lower())
-            results.append(children[key])
 
         results = pd.concat(results)
         if not results.index.name == "aid":
