@@ -17,8 +17,8 @@ class BaltoPredictor(Predictor):
                 model_path, quantiles_path, mapper=BaltoMapper()
             )
 
-    def _predict(self, model_input: PredictorInput[InputDTO]):
-        return self.model.predict(model_input.value)
+    def _predict(self, model_input: InputDTO):
+        return self.model.predict(model_input)
 
     def get_feature_list(self):
         return FEAT_DICT.values()

@@ -21,6 +21,7 @@ pymongo="4.4.1"
 [tool.poetry.group.dev.dependencies]
 psycopg2-binary="*"
 pytest="*"
+pytest-cov="*"
 pytest-docker="*"
 pytest-cov="*"
 

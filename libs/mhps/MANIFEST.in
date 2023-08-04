@@ -1,0 +1,3 @@
+recursive-include mhps/lib *
+include *.pxd
+include *.pyx
