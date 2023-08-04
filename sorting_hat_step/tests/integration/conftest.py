@@ -46,6 +46,8 @@ def is_responsive_mongo():
             "AUTH_SOURCE": "test_db",
         }
         init_mongo_database(settings)
+        cols = [col for col in db.list_collections()]
+        print(cols)
         return True
     except Exception as e:
         print(e)

@@ -6,17 +6,31 @@ import pymongo
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
-    compose_version = os.getenv("COMPOSE_VERSION", "v1")
-    if compose_version == "v1":
-        return "docker-compose"
+    # compose_version = os.getenv("COMPOSE_VERSION", "v1")
+    # if compose_version == "v1":
+    #     return "docker-compose"
     return "docker compose"
 
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return os.path.join(
-        str(pytestconfig.rootdir), "tests", "integration", "docker-compose.yml"
-    )
+    try:
+        print(str(pytestconfig.rootdir))
+        path = os.path.join(
+            str(pytestconfig.rootdir), "tests", "integration", "docker-compose.yml"
+        )
+        assert os.path.exists(path)
+    except Exception:
+        path = os.path.join(
+            str(pytestconfig.rootdir),
+            "libs",
+            "db-plugins",
+            "tests",
+            "integration",
+            "docker-compose.yml",
+        )
+
+    return path
 
 
 def is_responsive_psql(url):
@@ -49,7 +63,7 @@ def is_responsive_mongo(url):
 
 @pytest.fixture(scope="session")
 def psql_service(docker_ip, docker_services):
-    """Ensure that Kafka service is up and responsive."""
+    """Ensure that PSQL service is up and responsive."""
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("postgres", 5432)
     server = "{}:{}".format(docker_ip, port)

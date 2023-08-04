@@ -1,15 +1,16 @@
 import unittest
 import pandas as pd
 from unittest import mock
-
-from db_plugins.db.mongo.connection import MongoConnection
 from sorting_hat_step.utils import wizard
-from data.batch import generate_batch_ra_dec
+from .data.batch import generate_batch_ra_dec
+from sorting_hat_step.database import DatabaseConnection
+from pymongo.database import Database
 
 
 class SortingHatTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(MongoConnection)
+        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db.database = mock.create_autospec(Database)
 
     def tearDown(self):
         del self.mock_db
@@ -34,7 +35,9 @@ class SortingHatTestCase(unittest.TestCase):
         # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
         example_batch = generate_batch_ra_dec(500)
         batch = wizard.internal_cross_match(example_batch)
-        self.assertSetEqual(set(batch.index), set(batch["tmp_id"]))  # The index must be equal to tmp_id
+        self.assertSetEqual(
+            set(batch.index), set(batch["tmp_id"])
+        )  # The index must be equal to tmp_id
         self.assertEqual(len(batch["oid"].unique()), 500)
 
     def test_internal_cross_match_closest_objects(self):
@@ -145,18 +148,20 @@ class SortingHatTestCase(unittest.TestCase):
 
     @mock.patch("sorting_hat_step.utils.wizard.update_query")
     def test_write_object(self, insert_mock):
-        alerts = pd.DataFrame([
-            {'oid': 10, 'aid': 0, 'extra': 'extra1'},
-            {'oid': 20, 'aid': 1, 'extra': 'extra2'},
-            {'oid': 30, 'aid': 0, 'extra': 'extra3'},
-            {'oid': 40, 'aid': 2, 'extra': 'extra4'}
-                        ])
+        alerts = pd.DataFrame(
+            [
+                {"oid": 10, "aid": 0, "extra": "extra1"},
+                {"oid": 20, "aid": 1, "extra": "extra2"},
+                {"oid": 30, "aid": 0, "extra": "extra3"},
+                {"oid": 40, "aid": 2, "extra": "extra4"},
+            ]
+        )
 
         wizard.insert_empty_objects(self.mock_db, alerts)
 
         updated_records = [
-            {'oid': [10, 30], '_id': 0},
-            {'oid': [20], '_id': 1},
-            {'oid': [40], '_id': 2},
-                        ]
+            {"oid": [10, 30], "_id": 0},
+            {"oid": [20], "_id": 1},
+            {"oid": [40], "_id": 2},
+        ]
         insert_mock.assert_called_with(self.mock_db, updated_records)

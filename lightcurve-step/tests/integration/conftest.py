@@ -5,6 +5,7 @@ from apf.producers import KafkaProducer
 import uuid
 from fastavro.utils import generate_many
 from fastavro.schema import load_schema
+from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
@@ -91,7 +92,10 @@ def env_variables():
 
 
 def produce_messages(topic):
-    schema = load_schema("tests/integration/input_schema.avsc")
+    try:
+        schema = load_schema("tests/integration/input_schema.avsc")
+    except SchemaRepositoryError:
+        schema = load_schema("lightcurve-step/tests/integration/input_schema.avsc")
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},

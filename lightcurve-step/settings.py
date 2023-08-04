@@ -1,6 +1,6 @@
 import os
 from fastavro import schema
-
+from fastavro.repository.base import SchemaRepositoryError
 from credentials import get_mongodb_credentials
 
 ##################################################
@@ -28,8 +28,14 @@ def settings_creator():
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     }
+
+    try:
+        the_schema = schema.load_schema("schema.avsc")
+    except SchemaRepositoryError:
+        # in case it is running from the root of the repository
+        the_schema = schema.load_schema("lightcurve-step/schema.avsc")
 
     producer_config = {
         "CLASS": "apf.producers.KafkaProducer",
@@ -37,7 +43,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("schema.avsc"),
+        "SCHEMA": the_schema,
     }
 
     metrics_config = {
@@ -48,7 +54,6 @@ def settings_creator():
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.environ["METRICS_SERVER"],
-                "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
             "SCHEMA": {
@@ -126,6 +131,6 @@ def settings_creator():
         "DB_CONFIG": db_config,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROFILING": use_profiling,
-        "PYROSCOPE_SERVER": pyroscope_server
+        "PYROSCOPE_SERVER": pyroscope_server,
     }
     return step_config

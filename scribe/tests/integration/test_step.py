@@ -2,18 +2,17 @@ import json
 import os
 import pytest
 import unittest
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
 from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
+from db_plugins.db.mongo._connection import MongoConnection
 
 DB_CONFIG = {
     "MONGO": {
-        "HOST": "localhost",
-        "USERNAME": "mongo",
-        "PASSWORD": "mongo",
-        "PORT": 27017,
-        "DATABASE": "test",
+        "host": "localhost",
+        "username": "mongo",
+        "password": "mongo",
+        "port": 27017,
+        "database": "test",
     }
 }
 
@@ -49,7 +48,7 @@ PRODUCER_CONFIG = {
 class MongoIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.db = new_DBConnection(MongoDatabaseCreator)
+        cls.db = MongoConnection(DB_CONFIG["MONGO"])
         step_config = {
             "DB_CONFIG": DB_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -60,7 +59,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "STEP_COMMENTS": "test ver.",
             },
         }
-        cls.db.connect(DB_CONFIG["MONGO"])
         cls.db.create_db()
         cls.step = MongoScribe(config=step_config)
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)

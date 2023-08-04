@@ -36,7 +36,7 @@ jobs:
         run: |
           git config --global user.name "@alerceadmin"
           git config --global user.email "alerceadmin@users.noreply.github.com"
-          for i in $(find . -maxdepth 2 -name pyproject.toml)
+          for i in $(find . -maxdepth 3 -name pyproject.toml)
           do
               cd "$(dirname $i)"
               if [[ $BUILD_TYPE == production* ]]; then
