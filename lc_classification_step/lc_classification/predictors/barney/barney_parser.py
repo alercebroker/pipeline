@@ -10,9 +10,9 @@ from lc_classification.predictors.predictor.predictor_parser import (
 
 
 class BarneyParser(PredictorParser):
-    def parse_input(self, to_parse, **kwargs) -> PredictorInput[InputDTO]:
+    def parse_input(self, to_parse, **kwargs) -> InputDTO:
         dto = create_input_dto(to_parse, **kwargs)
-        return PredictorInput(dto)
+        return dto
 
     def parse_output(self, to_parse: OutputDTO, **kwargs) -> PredictorOutput:
         result = {

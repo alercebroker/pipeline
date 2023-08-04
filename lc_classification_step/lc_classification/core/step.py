@@ -4,6 +4,7 @@ from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
 import json
+import pandas as pd
 import numexpr
 from alerce_classifiers.base.model import AlerceModel
 from alerce_classifiers.base.dto import OutputDTO
@@ -86,17 +87,17 @@ class LateClassifier(GenericStep):
         if isinstance(probabilities, OutputDTO):
             # legacy untill the output parsing is refactored
             model_output_to_parse = {
-                "probabilities": to_parse.probabilities,
+                "probabilities": probabilities,
                 "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
             }
-            model_output = PredictorOutput(model_output_to_parse)
+            model_output = model_output_to_parse
         else:
-            model_output = PredictorOutput(probabilities)
+            model_output = probabilities
         
         return {
-            "public_info": (predictor_output, messages, model_input.features),
+            "public_info": (model_output, messages, model_input.features),
             "db_results": self.scribe_parser.parse(
-                predictor_output, classifier_version=self.config["MODEL_VERSION"]
+                model_output, classifier_version=self.config["MODEL_VERSION"]
             ),
         }
 

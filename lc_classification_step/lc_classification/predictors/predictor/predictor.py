@@ -27,20 +27,20 @@ class Predictor(abc.ABC):
         self.model = kwargs.get("model", None)
 
     @abc.abstractmethod
-    def _predict(self, model_input: PredictorInput):
+    def _predict(self, model_input: InputDTO):
         """Wrapper for self.model's prediction method.
 
         The idea is that this wrapper only replaces the actual model prediction call.
         """
         raise NotImplementedError()
 
-    def predict(self, model_input: PredictorInput):
+    def predict(self, model_input: InputDTO):
         if self.can_predict(model_input):
             return self._predict(model_input)
         return OutputDTO(DataFrame())
 
-    def can_predict(self, model_input: PredictorInput[InputDTO]):
-        return model_input.value.features.any().any()
+    def can_predict(self, model_input: InputDTO):
+        return model_input.features.any().any()
 
     def get_feature_list(self):
         return []
