@@ -22,6 +22,7 @@ apf-base = "2.4.4"
 matplotlib = "3.7.1"
 GPy = { git = "https://github.com/SheffieldML/GPy.git", rev = "v1.10.0" } # Poetry requires scipy<1.5  if installed from PyPI # Requirement for turbo-fats, even though it is unused
 P4J = { path = "../libs/P4J", develop = true }
+turbofats = { path = "../libs/turbo-fats", develop=true }
 pyroscope-io = "^0.8.4"
 
 [tool.poetry.group.dev.dependencies]
