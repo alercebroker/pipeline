@@ -1,8 +1,0 @@
-numpy >= 1.16.5
-scipy
-matplotlib
-GPy
--e git+https://github.com/alercebroker/P4J.git@1.1.0#egg=P4J
-numba
-statsmodels
-setuptools
