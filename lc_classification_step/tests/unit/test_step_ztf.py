@@ -42,7 +42,7 @@ def test_step(step_factory_ztf):
 def test_step_empty_features(step_factory_ztf):
     empty_features = []
     for msg in messages_ztf:
-        msg["features"] = None
+        msg.pop("features")
         empty_features.append(msg)
     step = step_factory_ztf(empty_features)
     step.start()

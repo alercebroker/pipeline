@@ -1,4 +1,5 @@
 from typing import List
+import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
@@ -7,6 +8,8 @@ import json
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
+from lc_classification.core.parsers.input_dto import create_input_dto
 
 
 class LateClassifier(GenericStep):
@@ -83,27 +86,27 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
+        predictor_input = create_input_dto(messages)
+
         if self.isztf:
-            predictor_input = self.predictor_parser.parse_input(messages)
-            self.logger.info("Doing inference")
-            probabilities = self.predictor.predict(predictor_input)
-            self.logger.info("Processing results")
-            predictor_output = self.predictor_parser.parse_output(probabilities)
-            return {
-                "public_info": (predictor_output, messages, predictor_input.value),
-                "db_results": self.scribe_parser.parse(
-                    predictor_output, classifier_version=self.config["MODEL_VERSION"]
-                ),
-            }
-        predictor_input = self.predictor_parser.parse_input(messages)
+            predictor_input = predictor_input.features
+
         self.logger.info("Doing inference")
         probabilities = self.predictor.predict(predictor_input)
+
+        if self.isztf:
+            # some test need this
+            if isinstance(probabilities, OutputDTO):
+                probabilities = {
+                    "probabilities": probabilities.probabilities,
+                    "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
+                }
+
         self.logger.info("Processing results")
-        predictor_output = self.predictor_parser.parse_output(probabilities)
         return {
-            "public_info": (predictor_output, messages, predictor_input.value),
+            "public_info": (probabilities, messages, predictor_input),
             "db_results": self.scribe_parser.parse(
-                predictor_output, classifier_version=self.config["MODEL_VERSION"]
+                probabilities, classifier_version=self.config["MODEL_VERSION"]
             ),
         }
 
