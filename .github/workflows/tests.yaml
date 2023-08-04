@@ -126,9 +126,11 @@ jobs:
   feature_step_build:
     uses: ./.github/workflows/build-template.yaml
     with:
-      base-folder: "feature_step"
-      build-context: "feature_step"
-      step-name: "feature_step"
+      step-name: feature_step
+      step-name-prefix: ""
+      base-folder: feature_step
+      build-context: "."
+      git-ref: {{ github.ref }}
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
