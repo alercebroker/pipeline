@@ -24,7 +24,7 @@ base_config = {
     "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
-    "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
+    "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
 }
 
 
@@ -36,6 +36,7 @@ def ztf_config():
             "PARSER_CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
+        "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
     }
 
 
@@ -107,7 +108,7 @@ def ztf_model_output():
         aids = [
             message["aid"]
             for message in messages_ztf
-            if message["features"] is not None
+            if message.get("features") is not None
         ]
         model.predict_in_pipeline.return_value = {
             "hierarchical": {

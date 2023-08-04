@@ -1,4 +1,5 @@
 from typing import List
+import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
@@ -7,7 +8,9 @@ import json
 import pandas as pd
 import numexpr
 from alerce_classifiers.base.model import AlerceModel
-from alerce_classifiers.base.dto import OutputDTO
+from lc_classification.predictors.predictor.predictor import Predictor
+from lc_classification.predictors.predictor.predictor_parser import PredictorParser
+from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
 
 
@@ -72,32 +75,27 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        model_input = create_input_dto(messages)
+        predictor_input = create_input_dto(messages)
 
         if self.isztf:
-            model_input = model_input.features            
-            self.logger.info("Doing inference")
-            probabilities = self.model.predict_in_pipeline(model_input)
-        
-        else:                
-            self.logger.info("Doing inference")
-            probabilities = self.model.predict(model_input)
-        
+            predictor_input = predictor_input.features
+
+        self.logger.info("Doing inference")
+        probabilities = self.predictor.predict(predictor_input)
+
+        if self.isztf:
+            # some test need this
+            if isinstance(probabilities, OutputDTO):
+                probabilities = {
+                    "probabilities": probabilities.probabilities,
+                    "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
+                }
+
         self.logger.info("Processing results")
-        if isinstance(probabilities, OutputDTO):
-            # legacy untill the output parsing is refactored
-            model_output_to_parse = {
-                "probabilities": probabilities,
-                "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
-            }
-            model_output = model_output_to_parse
-        else:
-            model_output = probabilities
-        
         return {
-            "public_info": (model_output, messages, model_input.features),
+            "public_info": (probabilities, messages, predictor_input),
             "db_results": self.scribe_parser.parse(
-                model_output, classifier_version=self.config["MODEL_VERSION"]
+                probabilities, classifier_version=self.config["MODEL_VERSION"]
             ),
         }
 

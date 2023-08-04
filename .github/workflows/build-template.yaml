@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
           ref: ${{ inputs.git-ref }}
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{ secrets.GH_TOKEN }}
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -85,7 +85,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'recursive'
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{ secrets.GH_TOKEN }}
           ref: main
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -96,7 +96,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v4
         with:
@@ -105,4 +105,4 @@ jobs:
           push: true
           tags: ${{needs.get_tags.outputs.tags}}
           build-args: |
-            GH_TOKEN=${{secrets.GH_TOKEN}}
+            GH_TOKEN=${{ secrets.GH_TOKEN }}
