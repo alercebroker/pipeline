@@ -86,7 +86,7 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "inserted_id1"})
@@ -110,7 +110,7 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         detection_coll = self.step.db_client.connection.database["detection"]
@@ -133,7 +133,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "upserted_id"})
@@ -162,7 +162,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "upserted_only_id"})
@@ -201,7 +201,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "insert_probabilities_id"})
@@ -254,7 +254,7 @@ class MongoIntegrationTest(unittest.TestCase):
         )
         self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_probabilities_id"})
@@ -329,7 +329,7 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
-
+        self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_features_id"})
@@ -364,6 +364,7 @@ class MongoIntegrationTest(unittest.TestCase):
         ]
         self.producer.produce({"payload": commands[0]})
         self.producer.produce({"payload": commands[1]})
+        self.producer.producer.flush(1)
         self.step.start()
 
         os.environ["MOCK_DB_COLLECTION"] = ""

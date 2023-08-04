@@ -1,0 +1,20 @@
+language: python
+python:
+  - "3.6"      # current default Python on Travis CI
+  - "3.7"
+  - "3.8"
+  - "3.9"
+
+install:
+  - pip install -r requirements.txt
+  - pip install pyarrow
+  - pip install -U importlib_metadata
+  - pip install -e .
+  - pip install coverage
+
+script:
+  - coverage run --source mhps -m unittest test/run_tests.py
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  - coverage xml | bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
