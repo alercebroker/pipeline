@@ -130,7 +130,7 @@ jobs:
       step-name-prefix: ""
       base-folder: feature_step
       build-context: "."
-      git-ref: {{ github.ref }}
+      git-ref: ${{ github.ref }}
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
