@@ -86,6 +86,7 @@ def test_bulk(kafka_service, mongo_service):
     for i, command in enumerate(commands):
         producer.produce(command)
 
+    producer.producer.flush()
     step.start()
     collection = step.db_client.connection.database["object"]
 
