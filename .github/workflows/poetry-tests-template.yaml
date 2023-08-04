@@ -73,13 +73,13 @@ jobs:
         with:
           token: ${{secrets.GH_TOKEN}}
           submodules: 'recursive'
+      - name: Install poetry
+        run: pip install poetry==${{ inputs.poetry-version }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.python-version }}
           cache: 'poetry'
-      - name: Install poetry
-        run: pip install poetry==${{ inputs.poetry-version }}
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
