@@ -36,6 +36,7 @@ jobs:
         run: |
           git config --global user.name "@alerceadmin"
           git config --global user.email "alerceadmin@users.noreply.github.com"
+          INITIAL_DIR=$(pwd)
           for i in $(find . -maxdepth 3 -name pyproject.toml)
           do
               if [[ $(dirname $i) == *libs/mhps || $(dirname $i) == *libs/P4J ]]; then
@@ -48,7 +49,7 @@ jobs:
               else
                   $POETRY_HOME/bin/poetry version prerelease
               fi
-              cd ..
+              cd $INITIAL_DIR
               git add $i
           done
           git commit -m "chore: update version"
