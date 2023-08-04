@@ -74,7 +74,9 @@ jobs:
           token: ${{secrets.GH_TOKEN}}
           submodules: 'recursive'
       - name: Install poetry
-        run: pip install poetry==${{ inputs.poetry-version }}
+        run: |
+          pipx install poetry==${{ inputs.poetry-version }}
+          poetry --version
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
