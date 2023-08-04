@@ -50,7 +50,7 @@ jobs:
       step-name: feature_step
       step-name-prefix: ""
       base-folder: feature_step
-      build-context: feature_step
+      build-context: "."
 
   lc_classification_step_ztf_staging:
     uses: ./.github/workflows/build-template.yaml
