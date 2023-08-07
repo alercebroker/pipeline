@@ -9,6 +9,7 @@ from datetime import datetime
 import pytest
 from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
+from apf.core import get_class
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
 
@@ -49,6 +50,7 @@ def is_responsive_kafka(url):
             NewTopic("w_object", num_partitions=1),
             NewTopic(get_lc_classifier_topic("ztf"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("balto"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("balto_schemaless"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
@@ -137,7 +139,6 @@ def env_variables_elasticc():
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         }
         env_variables_dict.update(extra_env_vars)
-        print(env_variables_dict)
         for key, value in env_variables_dict.items():
             os.environ[key] = value
 
@@ -167,21 +168,26 @@ def produce_messages(topic, SCHEMA):
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
-    def factory(stream: str):
-        consumer = KafkaConsumer(
-            {
-                "PARAMS": {
-                    "bootstrap.servers": "localhost:9092",
-                    "group.id": f"test_steppu{time.time()}",
-                    "auto.offset.reset": "beginning",
-                    "enable.partition.eof": True,
-                },
-                "TOPICS": [
-                    get_lc_classifier_topic(stream),
-                ],
-                "TIMEOUT": 0,
-            }
-        )
+    def factory(
+        stream: str,
+        consumer_class="apf.consumers.kafka.KafkaConsumer",
+        consumer_params={},
+    ):
+        Consumer = get_class(consumer_class)
+        params = {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": f"test_steppu{time.time()}",
+                "auto.offset.reset": "beginning",
+                "enable.partition.eof": True,
+            },
+            "TOPICS": [
+                get_lc_classifier_topic(stream),
+            ],
+            "TIMEOUT": 0,
+        }
+        params.update(consumer_params)
+        consumer = Consumer(params)
         return consumer
 
     return factory
