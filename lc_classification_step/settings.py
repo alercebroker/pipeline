@@ -2,8 +2,10 @@
 #       Late Classifier Settings File
 ##################################################
 import os
-from schemas import SCHEMA, ELASTICC_SCHEMA, SCRIBE_SCHEMA
+from schemas import SCHEMA, SCRIBE_SCHEMA
 from predictor_settings import configurator
+from fastavro.schema import load_schema
+from fastavro.repository.base import SchemaRepositoryError
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -18,6 +20,10 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
+try:
+    ELASTICC_SCHEMA = load_schema("schemas/output_elasticc.avsc")
+except SchemaRepositoryError:
+    ELASTICC_SCHEMA = load_schema("lc_classification_step/schemas/output_elasticc.avsc")
 PRODUCER_CONFIG = {
     "TOPIC_STRATEGY": {
         "PARAMS": {
@@ -34,7 +40,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "CLASS": os.getenv("KAFKA_PRODUCER_CLASS"),
+    "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.kafka.KafkaProducer"),
     "SCHEMA": SCHEMA if os.getenv("STREAM", "ztf") == "ztf" else ELASTICC_SCHEMA,
 }
 

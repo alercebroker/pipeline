@@ -2,7 +2,6 @@ from ..utils.no_class_post_processor import (
     NoClassifiedPostProcessor,
 )
 from .kafka_parser import KafkaOutput, KafkaParser
-from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
 from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
 from alerce_classifiers.base.dto import OutputDTO
 import pandas as pd
@@ -35,8 +34,8 @@ class ElasticcParser(KafkaParser):
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
                     "timestamp"
                 ),
-                "brokerIngestTimestamp": new_detection["extra_fields"].get(
-                    "brokerIngestTimestamp"
+                "brokerIngestTimestamp": int(
+                    new_detection["extra_fields"].get("brokerIngestTimestamp")
                 ),
             }
         predictions = model_output.probabilities
@@ -81,9 +80,6 @@ class ElasticcParser(KafkaParser):
                 "classifierName": classifier_name,
                 "classifierParams": classifier_version,
                 "brokerName": "ALeRCE",
-                "brokerPublishTimestamp": int(
-                    datetime.datetime.now().timestamp() * 1000
-                ),
             }
             output.append(response)
         return KafkaOutput(output)
