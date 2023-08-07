@@ -34,7 +34,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("KAFKA_PRODUCER_CLASS"),
     "SCHEMA": SCHEMA if os.getenv("STREAM", "ztf") == "ztf" else ELASTICC_SCHEMA,
 }
 
