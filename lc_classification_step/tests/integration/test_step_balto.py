@@ -49,14 +49,14 @@ def test_step_elasticc_result(
 
 
 @pytest.mark.elasticc
-def test_step_schemaless_from_correction(
+def test_step_schemaless(
     kafka_service,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc(
-        "balto",
+        "balto_schemaless",
         "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
         "lc_classification.predictors.balto.balto_parser.BaltoParser",
         {
@@ -70,13 +70,13 @@ def test_step_schemaless_from_correction(
 
     try:
         kconsumer = kafka_consumer(
-            "balto",
+            "balto_schemaless",
             "apf.consumers.kafka.KafkaSchemalessConsumer",
             {"SCHEMA_PATH": "schemas/output_elasticc.avsc"},
         )
     except SchemaRepositoryError:
         kconsumer = kafka_consumer(
-            "balto",
+            "balto_schemaless",
             "apf.consumers.kafka.KafkaSchemalessConsumer",
             {"SCHEMA_PATH": "lc_classification_step/schemas/output_elasticc.avsc"},
         )

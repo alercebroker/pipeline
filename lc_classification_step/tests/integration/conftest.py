@@ -50,6 +50,7 @@ def is_responsive_kafka(url):
             NewTopic("w_object", num_partitions=1),
             NewTopic(get_lc_classifier_topic("ztf"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("balto"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("balto_schemaless"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
