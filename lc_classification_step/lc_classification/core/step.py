@@ -10,6 +10,7 @@ from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
 from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
+from lc_classifier.classifier.models import HierarchicalRandomForest
 
 
 class LateClassifier(GenericStep):
@@ -31,6 +32,7 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
         self.logger.info("Loading Models")
+
         self.isztf = (
             config["PREDICTOR_CONFIG"]["CLASS"]
             == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
@@ -49,6 +51,7 @@ class LateClassifier(GenericStep):
             self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
             self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
         else:
+            self.model = get_class(config["PREDICTOR_CONFIG"])(**config["config"])
             scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
             self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
                 **config["PREDICTOR_CONFIG"]["PARAMS"]
@@ -86,13 +89,13 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
-        predictor_input = create_input_dto(messages)
+        model_input = create_input_dto(messages)
 
         if self.isztf:
-            predictor_input = predictor_input.features
+            model_input = model_input.features
 
         self.logger.info("Doing inference")
-        probabilities = self.predictor.predict(predictor_input)
+        probabilities = self.predictor.predict(model_input)
 
         if self.isztf:
             # some test need this
@@ -104,7 +107,7 @@ class LateClassifier(GenericStep):
 
         self.logger.info("Processing results")
         return {
-            "public_info": (probabilities, messages, predictor_input),
+            "public_info": (probabilities, messages, model_input),
             "db_results": self.scribe_parser.parse(
                 probabilities, classifier_version=self.config["MODEL_VERSION"]
             ),
