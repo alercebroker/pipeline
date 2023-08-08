@@ -5,7 +5,6 @@ from .kafka_parser import KafkaOutput, KafkaParser
 from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
 from alerce_classifiers.base.dto import OutputDTO
 import pandas as pd
-import datetime
 
 
 class ElasticcParser(KafkaParser):
@@ -34,7 +33,7 @@ class ElasticcParser(KafkaParser):
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
                     "timestamp"
                 ),
-                "brokerIngestTimestamp": int(
+                "brokerIngestTimestamp": self.broker_ingest_timestamp_to_millis(
                     new_detection["extra_fields"].get("brokerIngestTimestamp")
                 ),
             }
@@ -83,3 +82,6 @@ class ElasticcParser(KafkaParser):
             }
             output.append(response)
         return KafkaOutput(output)
+
+    def broker_ingest_timestamp_to_millis(timestamp: float):
+        return int(timestamp) * 1000
