@@ -30,10 +30,10 @@ base_config = {
 
 def ztf_config():
     return {
-        "PREDICTOR_CONFIG": {
-            "PARAMS": {"model": mock.MagicMock()},
-            "CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor",
-            "PARSER_CLASS": "lc_classification.predictors.ztf_random_forest.ztf_random_forest_parser.ZtfRandomForestParser",
+        "MODEL_CONFIG": {
+            "PARAMS": {},
+            "CLASS": "lc_classifier.classifier.models.HierarchicalRandomForest",
+            "NAME": "ZTF",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
         "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
@@ -42,10 +42,10 @@ def ztf_config():
 
 def toretto_config():
     return {
-        "PREDICTOR_CONFIG": {
-            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
-            "CLASS": "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
-            "PARSER_CLASS": "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+        "MODEL_CONFIG": {
+            "PARAMS": {"model_path": mock.MagicMock(),},
+            "CLASS": "alerce_classifiers.rf_features_classifier.model.RandomForestFeaturesClassifier",
+            "NAME": "toreto",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
     }
@@ -53,10 +53,10 @@ def toretto_config():
 
 def barney_config():
     return {
-        "PREDICTOR_CONFIG": {
-            "PARAMS": {"model_path": mock.MagicMock(), "model": mock.MagicMock()},
-            "CLASS": "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
-            "PARSER_CLASS": "lc_classification.predictors.barney.barney_parser.BarneyParser",
+        "MODEL_CONFIG": {
+            "PARAMS": {"model_path": mock.MagicMock(),},
+            "CLASS": "alerce_classifiers.rf_features_header_classifier.model.RandomForestFeaturesHeaderClassifier",
+            "NAME": "barney",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
     }
@@ -64,14 +64,14 @@ def barney_config():
 
 def balto_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {
                 "model_path": mock.MagicMock(),
-                "model": mock.MagicMock(),
                 "quantiles_path": mock.MagicMock(),
             },
-            "CLASS": "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
-            "PARSER_CLASS": "lc_classification.predictors.balto.balto_parser.BaltoParser",
+            "CLASS": "alerce_classifiers.balto.model.BaltoClassifier",
+            "MAPPER_CLASS": "alerce_classifiers.balto.mapper.BaltoMapper",
+            "NAME": "balto",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
     }
@@ -79,22 +79,22 @@ def balto_config():
 
 def messi_config():
     return {
-        "PREDICTOR_CONFIG": {
+        "MODEL_CONFIG": {
             "PARAMS": {
                 "model_path": mock.MagicMock(),
-                "model": mock.MagicMock(),
                 "header_quantiles_path": mock.MagicMock(),
                 "feature_quantiles_path": mock.MagicMock(),
             },
-            "CLASS": "lc_classification.predictors.messi.messi_predictor.MessiPredictor",
-            "PARSER_CLASS": "lc_classification.predictors.messi.messi_parser.MessiParser",
+            "CLASS": "alerce_classifiers.messi.model.MessiClassifier",
+            "MAPPER_CLASS": "alerce_classifiers.messi.mapper.MessiMapper",
+            "NAME": "messi",
         },
         "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
     }
 
 
-def step_factory(messages, config):
-    step = LateClassifier(config=config)
+def step_factory(messages, config, model):
+    step = LateClassifier(config=config, model=model)
     step.consumer = mock.MagicMock(KafkaConsumer)
     step.consumer.consume.return_value = messages
     step.producer = mock.MagicMock(KafkaProducer)
@@ -152,8 +152,9 @@ def step_factory_ztf(ztf_model_output):
     def factory(messages_ztf):
         config = base_config.copy()
         config.update(ztf_config())
-        ztf_model_output(messages_ztf, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        return step_factory(messages_ztf, config)
+        model_mock = mock.MagicMock()
+        ztf_model_output(messages_ztf, model_mock)
+        return step_factory(messages_ztf, config, model=model_mock)
 
     return factory
 
@@ -163,8 +164,9 @@ def step_factory_toretto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(toretto_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        step = step_factory(messages, config)
+        model_mock = mock.MagicMock()
+        elasticc_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
 
@@ -176,8 +178,9 @@ def step_factory_barney(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(barney_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        step = step_factory(messages, config)
+        model_mock = mock.MagicMock()
+        elasticc_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
 
@@ -189,8 +192,9 @@ def step_factory_balto(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(balto_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        step = step_factory(messages, config)
+        model_mock = mock.MagicMock()
+        elasticc_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
 
@@ -202,8 +206,9 @@ def step_factory_messi(elasticc_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(messi_config())
-        elasticc_model_output(messages, config["PREDICTOR_CONFIG"]["PARAMS"]["model"])
-        step = step_factory(messages, config)
+        model_mock = mock.MagicMock()
+        elasticc_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
         return step
 
@@ -215,7 +220,7 @@ def test_elasticc_model():
     def test_model(factory, messages_elasticc):
         step = factory(messages_elasticc)
         step.start()
-        predictor_calls = step.predictor.model.predict.mock_calls
+        predictor_calls = step.model.predict.mock_calls
         assert len(predictor_calls) > 0
         # Tests scribe produces correct commands
         scribe_calls = step.scribe_producer.mock_calls

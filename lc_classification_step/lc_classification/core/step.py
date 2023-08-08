@@ -28,50 +28,50 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(self, config={}, level=logging.INFO, **step_args):
+    def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
-        self.logger.info("Loading Models")
 
         self.isztf = (
-            config["PREDICTOR_CONFIG"]["CLASS"]
-            == "lc_classification.predictors.ztf_random_forest.ztf_random_forest_predictor.ZtfRandomForestPredictor"
+            config["MODEL_CONFIG"]["CLASS"]
+            == "lc_classifier.classifier.models.HierarchicalRandomForest"
         )
-        if self.isztf:
-            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-            self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
-                **config["PREDICTOR_CONFIG"]["PARAMS"]
-            )
-            self.scribe_producer = scribe_producer_class(
-                config["SCRIBE_PRODUCER_CONFIG"]
-            )
-            self.predictor_parser: PredictorParser = get_class(
-                config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
-            )()
-            self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-            self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+
+        self.logger.info("Loading Models")
+
+        if model:
+            self.model = model
+
         else:
-            self.model = get_class(config["PREDICTOR_CONFIG"])(**config["config"])
-            scribe_producer_class = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-            self.predictor: Predictor = get_class(config["PREDICTOR_CONFIG"]["CLASS"])(
-                **config["PREDICTOR_CONFIG"]["PARAMS"]
-            )
-            self.scribe_producer = scribe_producer_class(
-                config["SCRIBE_PRODUCER_CONFIG"]
-            )
-            self.predictor_parser: PredictorParser = get_class(
-                config["PREDICTOR_CONFIG"]["PARSER_CLASS"]
-            )()
-            self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-            self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+            if self.isztf:
+                self.model = get_class(config["MODEL_CONFIG"]["CLASS"])()
+                self.model.download_model()
+                self.model.load_model(self.model.MODEL_PICKLE_PATH)
+            else:
+                # inicializar mapper
+                mapper_class = config["MODEL_CONFIG"].get("MAPPER_CLASS")
+                if mapper_class:
+                    mapper = get_class(mapper_class)()
+                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(**config["MODEL_CONFIG"]["PARAMS"], mapper=mapper)
+                else:
+                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(**config["MODEL_CONFIG"]["PARAMS"])
+
+        self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
+            config["SCRIBE_PRODUCER_CONFIG"]
+        )
+        self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
+        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+
+        self.classifier_name=self.config["MODEL_CONFIG"]["NAME"]
+        self.classifier_version=self.config["MODEL_VERSION"],
 
     def pre_produce(self, result: tuple):
         return self.step_parser.parse(
             result[0],
             messages=result[1],
             features=result[2],
-            classifier_name=self.predictor.__class__.__name__,
-            classifier_version=self.config["MODEL_VERSION"],
+            classifier_name=self.classifier_name,
+            classifier_version=self.classifier_version,
         ).value
 
     def produce_scribe(self, commands: List[dict]):
@@ -95,7 +95,10 @@ class LateClassifier(GenericStep):
             model_input = model_input.features
 
         self.logger.info("Doing inference")
-        probabilities = self.predictor.predict(model_input)
+        if self.isztf:
+            probabilities = self.model.predict_in_pipeline(model_input)
+        else:
+            probabilities = self.model.predict(model_input)
 
         if self.isztf:
             # some test need this

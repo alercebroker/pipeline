@@ -2,7 +2,6 @@ from alerce_classifiers.base.dto import InputDTO
 from alerce_classifiers.rf_features_classifier.model import (
     RandomForestFeaturesClassifier,
 )
-
 from lc_classification.predictors.predictor.predictor_parser import PredictorInput
 from ..predictor.predictor import Predictor
 
