@@ -83,5 +83,5 @@ class ElasticcParser(KafkaParser):
             output.append(response)
         return KafkaOutput(output)
 
-    def broker_ingest_timestamp_to_millis(timestamp: float):
+    def broker_ingest_timestamp_to_millis(self, timestamp: float):
         return int(timestamp) * 1000
