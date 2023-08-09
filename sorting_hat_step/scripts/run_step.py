@@ -31,7 +31,7 @@ handler.setLevel(level)
 
 logger.addHandler(handler)
 
-from sorting_hat_step import SortingHatStep
+from sorting_hat_step.step import SortingHatStep
 
 database = DatabaseConnection(STEP_CONFIG["DB_CONFIG"])
 
