@@ -76,6 +76,6 @@ def generate_extra_fields():
         diaobject[key] = random.random()
     return {
         "diaObject": pickle.dumps([diaobject]),
-        "timestamp": datetime.datetime.now().timestamp(),
-        "brokerIngestTimestamp": datetime.datetime.now().timestamp(),
+        "surveyIngestTimestamp": int(datetime.datetime.now().timestamp()),
+        "brokerIngestTimestamp": int(datetime.datetime.now().timestamp()),
     }
