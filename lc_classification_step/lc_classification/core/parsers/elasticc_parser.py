@@ -31,10 +31,10 @@ class ElasticcParser(KafkaParser):
                 "candid": new_detection["candid"],
                 "oid": new_detection["oid"],
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
-                    "timestamp"
+                    "surveyPublishTimestamp"
                 ),
-                "brokerIngestTimestamp": self.broker_ingest_timestamp_to_millis(
-                    new_detection["extra_fields"].get("brokerIngestTimestamp")
+                "brokerIngestTimestamp": new_detection["extra_fields"].get(
+                    "brokerIngestTimestamp"
                 ),
             }
         predictions = model_output.probabilities
@@ -68,12 +68,10 @@ class ElasticcParser(KafkaParser):
                 "diaSourceId": int(detection_extra_info[aid]["oid"]),
                 "elasticcPublishTimestamp": detection_extra_info[aid][
                     "elasticcPublishTimestamp"
-                ]
-                * 1000,
+                ],
                 "brokerIngestTimestamp": detection_extra_info[aid][
                     "brokerIngestTimestamp"
-                ]
-                * 1000,
+                ],
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
@@ -82,6 +80,3 @@ class ElasticcParser(KafkaParser):
             }
             output.append(response)
         return KafkaOutput(output)
-
-    def broker_ingest_timestamp_to_millis(self, timestamp: float):
-        return int(timestamp) * 1000

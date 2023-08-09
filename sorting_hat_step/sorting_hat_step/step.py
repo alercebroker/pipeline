@@ -56,9 +56,16 @@ class SortingHatStep(GenericStep):
         self.metrics["aid"] = alerts["aid"].tolist()
 
     def pre_execute(self, messages: List[dict]):
-        ingestion_timestamp = datetime.now().timestamp()
+        ingestion_timestamp = int(datetime.now().timestamp())
         messages_with_timestamp = list(
-            map(lambda m: {**m, "brokerIngestTimestamp": ingestion_timestamp}, messages)
+            map(
+                lambda m: {
+                    **m,
+                    "brokerIngestTimestamp": ingestion_timestamp,
+                    "surveyPublishTimestamp": m["timestamp"],
+                },
+                messages,
+            )
         )
         return messages_with_timestamp
 
