@@ -6,7 +6,7 @@ import pyroscope
 
 from prometheus_client import start_http_server
 from apf.metrics.prometheus import PrometheusMetrics
-from ..sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import DatabaseConnection
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
