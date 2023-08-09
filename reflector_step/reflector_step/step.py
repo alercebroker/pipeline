@@ -54,9 +54,9 @@ class CustomMirrormaker(GenericStep):
             self.producer.topic = [message.topic()]
         if self.config["keep_original_timestamp"]:
             timestamp = message.timestamp()[1]
+            self.producer.produce(message, timestamp=timestamp)
         else:
-            timestamp = None
-        self.producer.produce(message, timestamp=timestamp)
+            self.producer.produce(message)
 
     def execute(self, message):
         self.produce(message)
