@@ -30,3 +30,6 @@ mongomock="*"
 [tool.poetry.group.doc.dependencies]
 numpydoc="*"
 recommonmark="*"
+
+[tool.poetry.scripts]
+dbp = "db_plugins.cli.manage:cli"
