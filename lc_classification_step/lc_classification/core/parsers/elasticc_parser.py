@@ -66,12 +66,12 @@ class ElasticcParser(KafkaParser):
             response = {
                 "alertId": int(detection_extra_info[aid]["candid"]),
                 "diaSourceId": int(detection_extra_info[aid]["oid"]),
-                "elasticcPublishTimestamp": detection_extra_info[aid][
-                    "elasticcPublishTimestamp"
-                ],
-                "brokerIngestTimestamp": detection_extra_info[aid][
-                    "brokerIngestTimestamp"
-                ],
+                "elasticcPublishTimestamp": int(
+                    detection_extra_info[aid]["elasticcPublishTimestamp"]
+                ),
+                "brokerIngestTimestamp": int(
+                    detection_extra_info[aid]["brokerIngestTimestamp"]
+                ),
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,
                 "classifierName": classifier_name,
