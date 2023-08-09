@@ -1,12 +1,11 @@
 import logging
 import os
-
 from apf.metrics.prometheus import PrometheusMetrics
-from db_plugins.db.mongo.connection import MongoConnection
 from prometheus_client import start_http_server
 
 try:
-    from lightcurve_step import LightcurveStep
+    from lightcurve_step.step import LightcurveStep
+    from lightcurve_step.database import DatabaseConnection
 except ImportError:
     import sys
 
@@ -14,6 +13,7 @@ except ImportError:
     PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
     sys.path.append(PACKAGE_PATH)
     from lightcurve_step import LightcurveStep
+    from lightcurve_step.database import DatabaseConnection
 
 
 def step_creator():
@@ -36,7 +36,7 @@ def step_creator():
     handler.setLevel(level)
 
     logger.addHandler(handler)
-    db = MongoConnection()
+    db = DatabaseConnection(settings["DB_CONFIG"])
 
     step_params = {
         "config": settings,

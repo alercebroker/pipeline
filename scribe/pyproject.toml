@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "scribe"
-version = "1.0.1a40"
+version = "1.0.1a47"
 description = "Mongo scribe"
 authors = []
 readme = "README.md"
 packages = [{include = "mongo_scribe"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.10"
+python = ">=3.9,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
 db-plugins = {path = "../libs/db-plugins", develop = true}
 pandas = "1.5.3"
@@ -24,7 +24,7 @@ pytest-cov = "^4.1.0"
 line-length = 79
 
 [tool.pytest.ini_options]
-addopts = "-x --cov mongo_scribe --cov-report xml"
+addopts = "-x"
 
 [build-system]
 requires = ["poetry-core"]

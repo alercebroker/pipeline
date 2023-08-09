@@ -1,13 +1,12 @@
 import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
-from apf.core.step import logging
-
 import pandas as pd
 from apf.producers import KafkaProducer
-from db_plugins.db.mongo.connection import MongoConnection
-from sorting_hat_step import SortingHatStep
-from data.batch import generate_alerts_batch
+from sorting_hat_step.step import SortingHatStep
+from .data.batch import generate_alerts_batch
+from sorting_hat_step.database import DatabaseConnection
+from pymongo.database import Database
 
 
 class SortingHatStepTestCase(unittest.TestCase):
@@ -24,16 +23,17 @@ class SortingHatStepTestCase(unittest.TestCase):
             },
             "RUN_CONESEARCH": "True",
         }
-        self.mock_database_connection = mock.create_autospec(MongoConnection)
+        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db.database = mock.create_autospec(Database)
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_consumer = mock.create_autospec(KafkaConsumer)
         self.step = SortingHatStep(
             config=self.step_config,
-            db_connection=self.mock_database_connection,
+            db_connection=self.mock_db,
         )
 
     def tearDown(self):
-        del self.mock_database_connection
+        del self.mock_db
         del self.mock_producer
         del self.step
 
@@ -71,9 +71,9 @@ class SortingHatStepTestCase(unittest.TestCase):
 
 
 class RunConesearchTestCase(unittest.TestCase):
-    
     def setUp(self):
-        self.mock_database_connection = mock.create_autospec(MongoConnection)
+        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db.database = mock.create_autospec(Database)
         self.dataframe = pd.DataFrame(
             [[1, 2, 3, 4, 5]], columns=["ra", "dec", "oid", "tid", "aid"]
         )
@@ -87,11 +87,8 @@ class RunConesearchTestCase(unittest.TestCase):
             "RUN_CONESEARCH": "True",
         }
 
-        step = SortingHatStep(
-            config=step_config,
-            db_connection=self.mock_database_connection
-        )
-        step.add_aid(self.dataframe) # the wizzard is mocked
+        step = SortingHatStep(config=step_config, db_connection=self.mock_db)
+        step.add_aid(self.dataframe)  # the wizzard is mocked
 
         mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
@@ -107,11 +104,8 @@ class RunConesearchTestCase(unittest.TestCase):
             "RUN_CONESEARCH": "ASDF",
         }
 
-        step = SortingHatStep(
-            config=step_config,
-            db_connection=self.mock_database_connection
-        )
-        step.add_aid(self.dataframe) # the wizzard is mocked
+        step = SortingHatStep(config=step_config, db_connection=self.mock_db)
+        step.add_aid(self.dataframe)  # the wizzard is mocked
 
         mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
@@ -126,11 +120,8 @@ class RunConesearchTestCase(unittest.TestCase):
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "False",
         }
-        step = SortingHatStep(
-            config=step_config,
-            db_connection=self.mock_database_connection
-        )
-        step.add_aid(self.dataframe) # the wizzard is mocked
+        step = SortingHatStep(config=step_config, db_connection=self.mock_db)
+        step.add_aid(self.dataframe)  # the wizzard is mocked
 
         mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
@@ -145,10 +136,7 @@ class RunConesearchTestCase(unittest.TestCase):
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "False",
         }
-        step = SortingHatStep(
-            config=step_config,
-            db_connection=self.mock_database_connection
-        )
-        step.post_execute(self.dataframe) # the wizzard is mocked
+        step = SortingHatStep(config=step_config, db_connection=self.mock_db)
+        step.post_execute(self.dataframe)  # the wizzard is mocked
 
         mock_wizzard.insert_empty_objects.assert_called_once()

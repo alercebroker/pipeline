@@ -1,13 +1,13 @@
-from db_plugins.db.mongo.connection import MongoConnection
 from pymongo import UpdateOne
+from pymongo.database import Database
 
 """
 Helper function to create or update the probabilities for an object
 """
 
 
-def get_probabilities(connection: MongoConnection, aids: list):
-    probabilities = connection.database["object"].find(
+def get_probabilities(database: Database, aids: list):
+    probabilities = database["object"].find(
         {"_id": {"$in": aids}}, {"probabilities": True}
     )
     return {item["_id"]: item["probabilities"] for item in probabilities}
@@ -57,22 +57,22 @@ def get_db_operations(
 
 
 def create_or_update_probabilities(
-    connection: MongoConnection,
+    database: Database,
     classifier: str,
     version: str,
     aid: str,
     probabilities: dict,
 ):
-    object_probs = get_probabilities(connection, [aid])
+    object_probs = get_probabilities(database, [aid])
 
-    connection.database["object"].bulk_write(
+    database["object"].bulk_write(
         [get_db_operations(classifier, version, aid, object_probs[aid], probabilities)],
         ordered=False,
     )
 
 
 def create_or_update_probabilities_bulk(
-    connection: MongoConnection,
+    database: Database,
     classifier: str,
     version: str,
     aids: list,
@@ -84,7 +84,7 @@ def create_or_update_probabilities_bulk(
     db_operations = []
 
     # no warrants that probs will have the same aid order
-    object_probabilities = get_probabilities(connection, aids)
+    object_probabilities = get_probabilities(database, aids)
 
     for aid, probs in zip(aids, probabilities):
         db_operations.append(
@@ -93,4 +93,4 @@ def create_or_update_probabilities_bulk(
             )
         )
 
-    connection.database["object"].bulk_write(db_operations, ordered=False)
+    database["object"].bulk_write(db_operations, ordered=False)

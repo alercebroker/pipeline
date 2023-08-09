@@ -4,15 +4,17 @@ import pandas as pd
 import pickle
 from typing import List
 from apf.core.step import GenericStep
-from db_plugins.db.mongo.connection import MongoConnection
-from db_plugins.db.mongo.models import Detection, NonDetection, ForcedPhotometry
+from .database import DatabaseConnection
+
+DETECTION = "detection"
+NON_DETECTION = "non_detection"
+FORCED_PHOTOMETRY = "phorced_photometry"
 
 
 class LightcurveStep(GenericStep):
-    def __init__(self, config: dict, db_client: MongoConnection, **kwargs):
+    def __init__(self, config: dict, db_client: DatabaseConnection, **kwargs):
         super().__init__(config=config, **kwargs)
         self.db_client = db_client
-        self.db_client.connect(config["DB_CONFIG"])
         self.logger = logging.getLogger("alerce.LightcurveStep")
 
     @classmethod
@@ -32,11 +34,7 @@ class LightcurveStep(GenericStep):
 
     def execute(self, messages: dict) -> dict:
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
-        query_detections = self.db_client.query(Detection)
-        query_non_detections = self.db_client.query(NonDetection)
-        query_forced_photometries = self.db_client.query(ForcedPhotometry)
-
-        db_detections = query_detections.collection.aggregate(
+        db_detections = self.db_client.database[DETECTION].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {
@@ -49,12 +47,12 @@ class LightcurveStep(GenericStep):
                 {"$project": {"_id": False, "evilDocDbHack": False}},
             ]
         )
-        db_non_detections = query_non_detections.collection.find(
+        db_non_detections = self.db_client.database[NON_DETECTION].find(
             {"aid": {"$in": list(messages["aids"])}},
             {"_id": False, "evilDocDbHack": False},
         )
 
-        db_forced_photometries = query_forced_photometries.collection.aggregate(
+        db_forced_photometries = self.db_client.database[FORCED_PHOTOMETRY].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {

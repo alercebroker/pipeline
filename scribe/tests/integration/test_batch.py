@@ -5,11 +5,11 @@ from _generator import CommandGenerator
 
 DB_CONFIG = {
     "MONGO": {
-        "HOST": "localhost",
-        "USERNAME": "mongo",
-        "PASSWORD": "mongo",
-        "PORT": 27017,
-        "DATABASE": "test",
+        "host": "localhost",
+        "username": "mongo",
+        "password": "mongo",
+        "port": 27017,
+        "database": "test",
     }
 }
 
@@ -23,7 +23,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
     },
     "NUM_MESSAGES": 25,
-    "TIMEOUT": 15
+    "TIMEOUT": 15,
 }
 
 PRODUCER_CONFIG = {
@@ -86,6 +86,7 @@ def test_bulk(kafka_service, mongo_service):
     for i, command in enumerate(commands):
         producer.produce(command)
 
+    producer.producer.flush()
     step.start()
     collection = step.db_client.connection.database["object"]
 

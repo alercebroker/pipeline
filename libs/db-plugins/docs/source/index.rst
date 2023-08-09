@@ -3,25 +3,41 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Database Plugins for ALeRCE documentation
-=============================================================
+Database Models for ALeRCE
+==========================
 
-*db_plugins* is an ORM style library created to interact with different databases. The main feature of these plugins is to provide an interface for database querying, reducing the amount of code and helping to decouple components.
+This lib offers database initialization procedures for MongoDB and PostgreSQL, using the ALeRCE core models.
 
 Installing *db_plugins*
 =======================
 
-*db_plugins* installation can be done with *pip*. You can clone the repository and then
+For local development:
 
-.. code-block:: bash
+*db_plugins* installation is recommended with *poetry*. You can clone the repository and then
 
-      pip install .
+.. code-block:: console
 
-or you can install it from Python Package Index
+   cd libs/db-plugins
+   poetry install
 
-.. code-block:: bash
+Alternatively, you can use pip
 
-    pip install db-plugins
+.. code-block:: console
+
+   cd libs/db-plugins
+   pip install -e .
+
+As a local dependency:
+
+.. code-block:: console
+
+   cd some_package
+   poetry add ../libs/db-plugins
+
+As a remote dependency
+.. code-block:: console
+
+   poetry add "https://github.com/alercebroker/db-plugins.git#subdirectory=libs/db-plugins"
 
 Documentation
 =============

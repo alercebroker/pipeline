@@ -60,7 +60,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      POETRY_HOME: /opt/poetry
       TEST_BALTO_MODEL_PATH: ${{ secrets.TEST_BALTO_MODEL_PATH }}
       TEST_BALTO_QUANTILES_PATH: ${{ secrets.TEST_BALTO_QUANTILES_PATH }}
       TEST_MESSI_MODEL_PATH: ${{ secrets.TEST_MESSI_MODEL_PATH }}
@@ -75,7 +74,9 @@ jobs:
           token: ${{secrets.GH_TOKEN}}
           submodules: 'recursive'
       - name: Install poetry
-        run: pipx install poetry==${{ inputs.poetry-version }}
+        run: |
+          pipx install poetry==${{ inputs.poetry-version }}
+          poetry --version
       - name: Set up Python
         uses: actions/setup-python@v4
         with:

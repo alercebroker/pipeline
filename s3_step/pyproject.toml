@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "s3-step"
-version = "1.0.1a31"
+version = "1.0.1a38"
 description = "S3 step"
 authors = []
 readme = "README.md"
@@ -22,7 +22,7 @@ moto = {extras = ["secretsmanager"], version = "4.1.12"}
 line-length = 88
 
 [tool.pytest.ini_options]
-addopts = "-x --cov sorting_hat_step --cov-report xml"
+addopts = "-x"
 
 [build-system]
 requires = ["poetry-core"]

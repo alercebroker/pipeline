@@ -19,6 +19,8 @@ jobs:
       step-name: alert_archiving_step
       base-folder: alert_archiving_step
       build-context: alert_archiving_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   correction_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -29,6 +31,8 @@ jobs:
       step-name-prefix: ""
       base-folder: correction_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   early_classification_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -38,6 +42,8 @@ jobs:
       step-name: early_classification_step
       base-folder: early_classification_step
       build-context: early_classification_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   feature_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -47,7 +53,9 @@ jobs:
       step-name: feature_step
       step-name-prefix: ""
       base-folder: feature_step
-      build-context: feature_step
+      build-context: "."
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_ztf_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -123,6 +131,8 @@ jobs:
       step-name-prefix: ""
       base-folder: lightcurve-step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   magstats_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -132,6 +142,8 @@ jobs:
       step-name: magstats_step
       base-folder: magstats_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   prv_candidates_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -142,6 +154,8 @@ jobs:
       step-name-prefix: ""
       base-folder: prv_candidates_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   reflector_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -151,6 +165,8 @@ jobs:
       build-context: reflector_step
       step-name: reflector_step
       build-type: staging
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   s3_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -161,6 +177,8 @@ jobs:
       step-name-prefix: ""
       base-folder: s3_step
       build-context: s3_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   sorting_hat_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -171,6 +189,8 @@ jobs:
       step-name-prefix: ""
       base-folder: sorting_hat_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   watchlist_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -180,6 +200,8 @@ jobs:
       step-name: watchlist_step
       base-folder: watchlist_step
       build-context: watchlist_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   xmatch_step_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -190,6 +212,8 @@ jobs:
       step-name-prefix: ""
       base-folder: xmatch_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   scribe_staging:
     uses: ./.github/workflows/build-template.yaml
@@ -200,3 +224,17 @@ jobs:
       step-name-prefix: ""
       base-folder: scribe
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  db_plugins_build:
+    needs: update_versions
+    uses: ./.github/workflows/build-template.yaml
+    with:
+      base-folder: 'libs/db-plugins'
+      step-name: "db-plugins"
+      publish-github: "false"
+      publish-pypi: "true"
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

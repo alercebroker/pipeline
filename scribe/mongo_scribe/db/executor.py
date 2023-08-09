@@ -1,8 +1,6 @@
 import logging
 import os
 from typing import List, Dict
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
 from db_plugins.db.mongo.models import (
     Object,
     Detection,
@@ -11,6 +9,7 @@ from db_plugins.db.mongo.models import (
 )
 from ..command.commands import Command
 from ..command.exceptions import NonExistentCollectionException
+from .connection import DatabaseConnection
 
 
 class ScribeCommandExecutor:
@@ -26,9 +25,7 @@ class ScribeCommandExecutor:
     )
 
     def __init__(self, config):
-        connection = new_DBConnection(MongoDatabaseCreator)
-        connection.connect(config["MONGO"])
-        self.connection = connection
+        self.connection = DatabaseConnection(config["MONGO"])
 
     def _bulk_execute(self, collection_name: str, commands: List[Command]):
         """
