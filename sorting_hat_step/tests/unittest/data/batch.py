@@ -2,6 +2,7 @@ import random
 import string
 import pandas as pd
 from typing import List
+from datetime import datetime
 
 random.seed(1313)
 
@@ -294,6 +295,10 @@ def generate_alerts_batch(n: int, nearest: int = 0) -> List[dict]:
     batch = []
     for generator, m, near in zip(generators, sub_samples, sub_nearest):
         b = generator(m, nearest=near)
+        b = list(
+            map(lambda el: {**el, "timestamp": int(datetime.now().timestamp())}, b)
+        )
+        print("BBBBBBB", b[0]["timestamp"])
         batch.append(b)
     batch = sum(batch, [])
     return batch

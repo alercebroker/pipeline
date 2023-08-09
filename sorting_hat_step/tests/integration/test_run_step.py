@@ -128,8 +128,8 @@ class MongoIntegrationTest(unittest.TestCase):
         messages = self.consume_messages()
         assert len(messages) == 110
         for message in messages:
-            # TODO add other assertions
             self.assert_message_stamps(message)
+            self.assert_message_timestamps(message)
 
         # Check that there are no duplicates inserted
         cursor = self.database.database["object"].find()
@@ -162,6 +162,14 @@ class MongoIntegrationTest(unittest.TestCase):
         if message["tid"] == "ATLAS":
             assert message["stamps"]["template"] == None
         assert message["stamps"]["difference"] == b"difference"
+
+    def assert_message_timestamps(self, message: dict):
+        assert message.get("extra_fields").get("brokerIngestTimestamp") is not None
+        assert message.get("extra_fields").get("surveyPublishTimestamp") is not None
+        assert (
+            message["extra_fields"]["surveyPublishTimestamp"]
+            <= message["extra_fields"]["brokerIngestTimestamp"]
+        )
 
     def test_write_object(self):
         step = SortingHatStep(
