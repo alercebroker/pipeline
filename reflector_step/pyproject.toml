@@ -10,7 +10,7 @@ packages = [{include = "reflector_step"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-apf-base = "1.0.14"
+apf-base = "1.0.10"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
