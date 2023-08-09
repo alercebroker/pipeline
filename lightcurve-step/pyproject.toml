@@ -1,15 +1,14 @@
 [tool.poetry]
 name = "lightcurve-step"
-version = "1.0.1a36"
+version = "1.0.1a49"
 description = "Lightcurve Step"
 authors = []
 readme = "README.md"
 packages = [{include = "lightcurve_step"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.10"
+python = ">=3.9,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
-db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
@@ -18,6 +17,7 @@ black = "^23.3.0"
 pytest = "^7.3.1"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
+db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.black]
 line-length = 88

@@ -4,6 +4,7 @@
 import os
 from credentials import get_mongodb_credentials
 from schemas.output_schema import SCHEMA
+from fastavro.repository.base import SchemaRepositoryError
 
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
@@ -44,9 +45,15 @@ else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
 if os.getenv("CONSUMER_CLASS") == "apf.consumers.KafkaSchemalessConsumer":
-    CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
-        os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
-    )
+    try:
+        CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
+            os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+        )
+    except SchemaRepositoryError:
+        CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
+            os.path.dirname(__file__),
+            "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avsc",
+        )
 
 # Producer configuration
 PRODUCER_CONFIG = {
@@ -67,7 +74,6 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.getenv("METRICS_HOST"),
-            "auto.offset.reset": "smallest",
         },
         "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
         "SCHEMA": {

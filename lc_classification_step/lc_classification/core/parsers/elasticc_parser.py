@@ -2,22 +2,22 @@ from ..utils.no_class_post_processor import (
     NoClassifiedPostProcessor,
 )
 from .kafka_parser import KafkaOutput, KafkaParser
-from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
 from lc_classification.core.parsers.classes.elasticc_mapper import ClassMapper
+from alerce_classifiers.base.dto import OutputDTO
 import pandas as pd
-import datetime
 
 
 class ElasticcParser(KafkaParser):
     def __init__(self):
         super().__init__(ClassMapper)
 
-    def parse(self, model_output: PredictorOutput, **kwargs) -> KafkaOutput[list]:
+    def parse(self, model_output: OutputDTO, **kwargs) -> KafkaOutput[list]:
         # create a hashmap that contains the new info (candid, oid and timestamps)
         detection_extra_info = {}
 
         messages = kwargs["messages"]
         for message in messages:
+            # for iteration con continue deberia ser mas simple
             new_detection = [
                 det for det in message["detections"] if det["new"] and det["has_stamp"]
             ]
@@ -33,11 +33,11 @@ class ElasticcParser(KafkaParser):
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
                     "timestamp"
                 ),
-                "brokerIngestTimestamp": new_detection["extra_fields"].get(
-                    "brokerIngestTimestamp"
+                "brokerIngestTimestamp": self.broker_ingest_timestamp_to_millis(
+                    new_detection["extra_fields"].get("brokerIngestTimestamp")
                 ),
             }
-        predictions = model_output.classifications["probabilities"]
+        predictions = model_output.probabilities
         messages = kwargs.get("messages", pd.DataFrame())
         messages = pd.DataFrame().from_records(messages)
         predictions = NoClassifiedPostProcessor(
@@ -79,9 +79,9 @@ class ElasticcParser(KafkaParser):
                 "classifierName": classifier_name,
                 "classifierParams": classifier_version,
                 "brokerName": "ALeRCE",
-                "brokerPublishTimestamp": int(
-                    datetime.datetime.now().timestamp() * 1000
-                ),
             }
             output.append(response)
         return KafkaOutput(output)
+
+    def broker_ingest_timestamp_to_millis(self, timestamp: float):
+        return int(timestamp) * 1000

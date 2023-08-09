@@ -11,13 +11,12 @@ def assert_elasticc_object_is_correct(obj):
     valid_fields = [
         "alertId",
         "diaSourceId",
-        # "elasticcPublishTimestamp",
-        # "brokerIngestTimestamp",
+        "elasticcPublishTimestamp",
+        "brokerIngestTimestamp",
         "classifications",
         "brokerVersion",
         "classifierName",
         "classifierParams",
-        # "brokerPublishTimestamp",
         "brokerName",
     ]
     for field in valid_fields:

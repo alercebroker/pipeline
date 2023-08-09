@@ -1,16 +1,13 @@
-from apf.metrics.prometheus import PrometheusMetrics
-import requests
-from db_plugins.db.generic import new_DBConnection
-from db_plugins.db.mongo.connection import MongoDatabaseCreator
-from db_plugins.db.mongo.models import Object
 from apf.consumers import KafkaConsumer
 from confluent_kafka import Producer
-from data.messages import generate_schemaless_batch
+from .data.messages import generate_schemaless_batch
 import pytest
 import unittest
 from unittest import mock
-from sorting_hat_step import SortingHatStep
+from sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
+from db_plugins.db.mongo._connection import MongoConnection
+from fastavro.repository.base import SchemaRepositoryError
 
 DB_CONFIG = {
     "HOST": "localhost",
@@ -42,7 +39,7 @@ CONSUMER_CONFIG = {
     "consume.timeout": 10,
     "consume.messages": 1,
     "TOPICS": ["survey_stream_schemaless"],
-    "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+    "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avscs",
 }
 
 METRICS_CONFIG = {
@@ -90,11 +87,15 @@ METRICS_CONFIG = {
     },
 }
 
+
 @pytest.mark.usefixtures("mongo_service")
 @pytest.mark.usefixtures("kafka_service")
 class SchemalessConsumeIntegrationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.database = MongoConnection(DB_CONFIG)
+
     def setUp(self):
-        self.database = new_DBConnection(MongoDatabaseCreator)
         self.step_config = {
             "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -104,24 +105,28 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
         }
 
     def tearDown(self):
-        mongo_query = self.database.query(Object)
-        mongo_query.collection.delete_many({})
+        self.database.database["object"].delete_many({})
 
     def test_step(self):
         # publicar los mensajes generados a kafka consumer topic
-        test_producer_confg = PRODUCER_CONFIG['PARAMS']
-        #test_producer_confg = {"bootstrap.servers": "localhost:9092"}
+        test_producer_confg = PRODUCER_CONFIG["PARAMS"]
+        # test_producer_confg = {"bootstrap.servers": "localhost:9092"}
         producer = Producer(test_producer_confg)
         for message in generate_schemaless_batch(5):
-            producer.produce('survey_stream_schemaless', value=message, key=None)
-
+            producer.produce("survey_stream_schemaless", value=message, key=None)
 
         # ejecutar start_step
         with mock.patch.object(SortingHatStep, "_write_success"):
-            step = SortingHatStep(
-                db_connection=self.database,
-                config=self.step_config
-            )
+            try:
+                step = SortingHatStep(
+                    db_connection=self.database, config=self.step_config
+                )
+            except SchemaRepositoryError:
+                config = self.step_config.copy()
+                config["CONSUMER_CONFIG"][
+                    "SCHEMA_PATH"
+                ] = "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avscs"
+                step = SortingHatStep(db_connection=self.database, config=config)
             step.start()
             step.producer.producer.flush()
 

@@ -5,9 +5,9 @@ import logging
 import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
-from db_plugins.db.mongo.connection import DatabaseConnection
 
 from .database import oid_query, conesearch_query, update_query
+from ..database import DatabaseConnection
 
 
 CHARACTERS = string.ascii_lowercase

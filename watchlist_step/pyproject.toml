@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "watchlist-step"
-version = "0.1.1a44"
+version = "0.1.1a57"
 description = "Watchlist Step"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ step = { callable = "scripts.run_step:step" }
 python = ">=3.8,<3.12"
 apf-base = "1.0.9"
 psycopg2-binary="*"
-db-plugins = {path = "../libs/db-plugins", develop = true}
+db-plugins = "4.2.7"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"

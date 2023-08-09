@@ -4,19 +4,19 @@ from db_plugins.db.mongo.helpers.update_probs import (
     create_or_update_probabilities,
     create_or_update_probabilities_bulk,
 )
-from db_plugins.db.mongo.connection import MongoConnection
+from db_plugins.db.mongo._connection import MongoConnection
 import unittest
 import mongomock
 
 """
 This test the object creation (not the main objetive)
-and explain how to query and update the objects with 
+and explain how to query and update the objects with
 probabilities (main focus of the tests)
 """
 
 
 class TestMongoProbabilities(unittest.TestCase):
-    @mock.patch('db_plugins.db.mongo.connection.MongoClient')
+    @mock.patch("db_plugins.db.mongo._connection.MongoClient")
     def setUp(self, mock_mongo):
         mock_mongo.return_value = mongomock.MongoClient()
         self.config = {
@@ -26,8 +26,7 @@ class TestMongoProbabilities(unittest.TestCase):
             "PORT": 27017,
             "DATABASE": "database",
         }
-        self.mongo_connection = MongoConnection()
-        self.mongo_connection.connect(config=self.config)
+        self.mongo_connection = MongoConnection(config=self.config)
         self.mongo_connection.create_db()
         self.database = self.mongo_connection.database
         self.obj_collection = self.database["object"]
@@ -43,9 +42,9 @@ class TestMongoProbabilities(unittest.TestCase):
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
-            sigmara=.1,
+            sigmara=0.1,
             meandec=50.0,
-            sigmadec=.2,
+            sigmadec=0.2,
             ndet=2,
             probabilities=[
                 {
@@ -85,8 +84,8 @@ class TestMongoProbabilities(unittest.TestCase):
             tid="tid2",
             corrected=False,
             stellar=False,
-            sigmara=.2,
-            sigmadec=.1,
+            sigmara=0.2,
+            sigmadec=0.1,
             lastmjd="lastmjd",
             firstmjd="firstmjd",
             meanra=100.0,
@@ -115,7 +114,7 @@ class TestMongoProbabilities(unittest.TestCase):
         self.create_2_objects()
 
         create_or_update_probabilities(
-            self.mongo_connection,
+            self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
             "aid2",
@@ -164,7 +163,7 @@ class TestMongoProbabilities(unittest.TestCase):
         self.create_2_objects()
 
         create_or_update_probabilities(
-            self.mongo_connection,
+            self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
             "aid1",
@@ -214,7 +213,7 @@ class TestMongoProbabilities(unittest.TestCase):
         self.create_2_objects()
 
         create_or_update_probabilities_bulk(
-            self.mongo_connection,
+            self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
             ["aid1", "aid2"],
