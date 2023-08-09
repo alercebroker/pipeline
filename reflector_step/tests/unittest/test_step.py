@@ -90,13 +90,21 @@ class TestStep(TestCase):
     def test_step_produces_message_batch(self):
         data_batch = create_messages(10)
         self.step.execute(data_batch)
-        self.mock_producer.produce.assert_called_with(
-            data_batch[-1], timestamp=None
-        )
+        self.mock_producer.produce.assert_called_with(data_batch[-1])
 
     def test_step_produces_single_message(self):
         (data_batch,) = create_messages(1)
         self.step.execute(data_batch)
+        self.mock_producer.produce.assert_called_with(data_batch)
+
+    def test_step_with_timestamp(self):
+        step = CustomMirrormaker(
+            consumer=self.mock_consumer,
+            producer=self.mock_producer,
+            config={"keep_original_timestamp": True},
+        )
+        data_batch = create_messages(10)
+        step.execute(data_batch)
         self.mock_producer.produce.assert_called_with(
-            data_batch, timestamp=None
+            data_batch[-1], timestamp=123
         )
