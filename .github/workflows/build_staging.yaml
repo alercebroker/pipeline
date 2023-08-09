@@ -229,6 +229,7 @@ jobs:
 
   db_plugins_build:
     needs: detect_changes
+    if: needs.detect_changes.outputs.libs_db_plugins == 'true'
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: 'libs/db-plugins'
