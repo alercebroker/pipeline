@@ -134,6 +134,7 @@ def env_variables_elasticc():
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "elasticc",
             "MODEL_CONFIG": model_config,
+            "MODER_CLASS" : model_config,
             "PREDICTOR_PARSER_CLASS": predictor_parser_class,
             "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
