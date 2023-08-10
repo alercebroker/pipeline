@@ -52,9 +52,13 @@ class LateClassifier(GenericStep):
                 mapper_class = config["MODEL_CONFIG"].get("MAPPER_CLASS")
                 if mapper_class:
                     mapper = get_class(mapper_class)()
-                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(**config["MODEL_CONFIG"]["PARAMS"], mapper=mapper)
+                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
+                        **config["MODEL_CONFIG"]["PARAMS"], mapper=mapper
+                    )
                 else:
-                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(**config["MODEL_CONFIG"]["PARAMS"])
+                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
+                        **config["MODEL_CONFIG"]["PARAMS"]
+                    )
 
         self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
             config["SCRIBE_PRODUCER_CONFIG"]
@@ -62,8 +66,8 @@ class LateClassifier(GenericStep):
         self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
         self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
 
-        self.classifier_name=self.config["MODEL_CONFIG"]["NAME"]
-        self.classifier_version=self.config["MODEL_VERSION"],
+        self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
+        self.classifier_version = (self.config["MODEL_VERSION"],)
 
     def pre_produce(self, result: tuple):
         return self.step_parser.parse(

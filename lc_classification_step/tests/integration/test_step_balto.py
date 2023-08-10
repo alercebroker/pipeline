@@ -22,13 +22,14 @@ def test_step_elasticc_result(
 ):
     env_variables_elasticc(
         "balto",
-        "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
+        "alerce_classifiers.balto.model.BaltoClassifier",
         "lc_classification.predictors.balto.balto_parser.BaltoParser",
         {
             "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
             "QUANTILES_PATH": os.getenv("TEST_BALTO_QUANTILES_PATH"),
         },
     )
+
 
     from settings import STEP_CONFIG
 
