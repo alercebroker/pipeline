@@ -23,10 +23,14 @@ def test_step_elasticc_result(
     env_variables_elasticc(
         "balto",
         "alerce_classifiers.balto.model.BaltoClassifier",
-        "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         {
-            "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
-            "QUANTILES_PATH": os.getenv("TEST_BALTO_QUANTILES_PATH"),
+            "PARAMS": {
+                "model_path": os.getenv("TEST_BALTO_MODEL_PATH"),
+                "quantiles_path": os.getenv("TEST_BALTO_QUANTILES_PATH"),
+            },
+            "CLASS": "alerce_classifiers.balto.model.BaltoClassifier",
+            "MAPPER_CLASS": "alerce_classifiers.balto.mapper.BaltoMapper",
+            "NAME": "balto",
         },
     )
 
