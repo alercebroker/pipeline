@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
 
 jobs:
   detect_changes:
@@ -608,17 +607,4 @@ jobs:
       sources-folder: 'db_plugins'
       test-folder: 'tests/integration'
     secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  db_plugins_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.libs_db_plugins == 'true'
-    uses: ./.github/workflows/build-template.yaml
-    with:
-      base-folder: 'libs/db-plugins'
-      step-name: "db-plugins"
-      publish-github: "false"
-      publish-pypi: "true"
-    secrets:
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
