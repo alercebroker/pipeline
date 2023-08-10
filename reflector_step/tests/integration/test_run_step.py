@@ -6,13 +6,6 @@ from reflector_step.utils import RawKafkaConsumer
 from tests.unittest.data.datagen import create_messages
 
 
-STEP_METADATA = {
-    "STEP_VERSION": "test",
-    "STEP_ID": "reflector_step",
-    "STEP_NAME": "reflector_step",
-    "STEP_COMMENTS": "test version",
-}
-
 PRODUCER_CONFIG = {
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
@@ -38,7 +31,7 @@ class MyTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "STEP_METADATA": STEP_METADATA,
+            "keep_original_timestamp": False,
         }
 
     def test_step_runs(self):
@@ -51,5 +44,36 @@ class MyTestCase(unittest.TestCase):
         for msg in messages:
             external.produce(topic=msg.topic(), value=msg.value())
         external.flush()
-
         step.start()
+
+    def test_keep_timestamp(self):
+        n_messages = 10
+        external = Producer({"bootstrap.servers": "localhost:9092"})
+        rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
+        self.step_config["keep_original_timestamp"] = True
+        step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
+
+        messages = create_messages(n_messages, "test_topic")
+        for msg in messages:
+            external.produce(
+                topic=msg.topic(), value=msg.value(), timestamp=123
+            )
+        external.flush()
+        step.start()
+        del rkconsumer
+        consumer = RawKafkaConsumer(
+            {
+                "CLASS": "reflector_step.utils.RawKafkaConsumer",
+                "TOPICS": ["test"],
+                "PARAMS": {
+                    "bootstrap.servers": "localhost:9093",
+                    "group.id": "test_consumer",
+                    "auto.offset.reset": "beginning",
+                    "enable.partition.eof": True,
+                },
+                "consume.timeout": 0,
+                "consume.messages": 1,
+            }
+        )
+        for msg in consumer.consume():
+            assert msg.timestamp()[1] == 123

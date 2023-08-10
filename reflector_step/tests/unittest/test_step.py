@@ -61,6 +61,7 @@ class TestStep(TestCase):
         self.step = CustomMirrormaker(
             consumer=self.mock_consumer,
             producer=self.mock_producer,
+            config={"keep_original_timestamp": False},
         )
 
     def tearDown(self):
@@ -77,7 +78,10 @@ class TestStep(TestCase):
         step = CustomMirrormaker(
             consumer=self.mock_consumer,
             producer=self.mock_producer,
-            config={"PRODUCER_CONFIG": {"TOPIC": None}},
+            config={
+                "PRODUCER_CONFIG": {"TOPIC": None},
+                "keep_original_timestamp": False,
+            },
         )
         self.assertEqual(
             mock_class_getter.return_value.return_value, step.producer
@@ -92,3 +96,15 @@ class TestStep(TestCase):
         (data_batch,) = create_messages(1)
         self.step.execute(data_batch)
         self.mock_producer.produce.assert_called_with(data_batch)
+
+    def test_step_with_timestamp(self):
+        step = CustomMirrormaker(
+            consumer=self.mock_consumer,
+            producer=self.mock_producer,
+            config={"keep_original_timestamp": True},
+        )
+        data_batch = create_messages(10)
+        step.execute(data_batch)
+        self.mock_producer.produce.assert_called_with(
+            data_batch[-1], timestamp=123
+        )

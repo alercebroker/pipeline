@@ -45,6 +45,10 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         "acks": "all",
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "SCRAM-SHA-512",
+        "sasl.username": os.environ["PRODUCER_USERNAME"],
+        "sasl.password": os.environ["PRODUCER_PASSWORD"],
     },
 }
 
@@ -54,6 +58,10 @@ METRICS_CONFIG = {
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanism": "SCRAM-SHA-512",
+            "sasl.username": os.environ["METRICS_USERNAME"],
+            "sasl.password": os.environ["METRICS_PASSWORD"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA": {
@@ -92,18 +100,10 @@ METRICS_CONFIG = {
     },
 }
 
-STEP_METADATA = {
-    "STEP_VERSION": os.getenv("STEP_VERSION", "dev"),
-    "STEP_ID": os.getenv("STEP_ID", "reflector_step"),
-    "STEP_NAME": os.getenv("STEP_NAME", "reflector_step"),
-    "STEP_COMMENTS": os.getenv("STEP_COMMENTS", ""),
-}
-
 # Step Configuration
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "N_PROCESS": os.getenv("N_PROCESS"),
-    "STEP_METADATA": STEP_METADATA,
+    "keep_original_timestamp": os.getenv("KEEP_ORIGINAL_TIMESTAMP", False),
 }
