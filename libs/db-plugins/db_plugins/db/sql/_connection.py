@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base
-from contextlib import contextmanager, AbstractContextManager
-from typing import Callable
+from contextlib import contextmanager
+from typing import Callable, ContextManager
 import logging
 
 
@@ -28,7 +28,7 @@ class PsqlDatabase:
         Base.metadata.drop_all(self._engine)
 
     @contextmanager
-    def session(self) -> Callable[..., AbstractContextManager[Session]]:
+    def session(self) -> Callable[..., ContextManager[Session]]:
         session: Session = self._session_factory()
         try:
             yield session

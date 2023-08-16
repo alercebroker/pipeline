@@ -39,7 +39,7 @@ jobs:
           INITIAL_DIR=$(pwd)
           for i in $(find . -maxdepth 3 -name pyproject.toml)
           do
-              if [[ $(dirname $i) == *libs/mhps || $(dirname $i) == *libs/P4J ]]; then
+              if [[ $(dirname $i) == *libs/* ]]; then
                   continue
               fi
               cd "$(dirname $i)"
