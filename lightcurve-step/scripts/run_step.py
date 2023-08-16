@@ -3,17 +3,8 @@ import os
 from apf.metrics.prometheus import PrometheusMetrics
 from prometheus_client import start_http_server
 
-try:
-    from lightcurve_step.step import LightcurveStep
-    from lightcurve_step.database import DatabaseConnection
-except ImportError:
-    import sys
-
-    SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-    PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
-    sys.path.append(PACKAGE_PATH)
-    from lightcurve_step import LightcurveStep
-    from lightcurve_step.database import DatabaseConnection
+from lightcurve_step.step import LightcurveStep
+from lightcurve_step.database import DatabaseConnection
 
 
 def step_creator():

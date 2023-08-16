@@ -20,7 +20,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-from reflector_step import CustomMirrormaker
+from reflector_step.step import CustomMirrormaker
 from apf.core import get_class
 
 if "CLASS" in CONSUMER_CONFIG:

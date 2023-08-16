@@ -5,9 +5,16 @@ from confluent_kafka.admin import AdminClient, NewTopic
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return os.path.join(
-        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
-    )
+    try:
+        compose = pytestconfig.rootdir / "tests/integration/docker-compose.yml"
+        assert compose.exists()
+    except AssertionError:
+        compose = (
+            pytestconfig.rootdir
+            / "reflector_step/tests/integration/docker-compose.yml"
+        )
+        assert compose.exists()
+    return compose
 
 
 def is_responsive_kafka(url):
