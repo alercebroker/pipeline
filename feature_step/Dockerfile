@@ -19,9 +19,8 @@ WORKDIR /app/
 RUN pip install poetry
 COPY feature_step/poetry.lock feature_step/pyproject.toml /app/
 COPY feature_step/README.md /app/README.md
-COPY libs/P4J /libs/P4J
-COPY libs/mhps /libs/mhps
 COPY libs/turbo-fats /libs/turbo-fats
+COPY libs/lc_classifier /libs/lc_classifier
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
