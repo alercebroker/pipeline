@@ -12,6 +12,8 @@ from alerce_classifiers.base.dto import InputDTO, OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
 from lc_classifier.classifier.models import HierarchicalRandomForest
 
+ZTF_CLASSIFIER_CLASS = "lc_classifier.classifier.models.HierarchicalRandomForest"
+
 
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used
@@ -32,10 +34,7 @@ class LateClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
 
-        self.isztf = (
-            config["MODEL_CONFIG"]["CLASS"]
-            == "lc_classifier.classifier.models.HierarchicalRandomForest"
-        )
+        self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
 
         self.logger.info("Loading Models")
 
@@ -49,16 +48,11 @@ class LateClassifier(GenericStep):
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
             else:
                 # inicializar mapper
-                mapper_class = config["MODEL_CONFIG"].get("MAPPER_CLASS")
-                if mapper_class:
-                    mapper = get_class(mapper_class)()
-                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
-                        **config["MODEL_CONFIG"]["PARAMS"], mapper=mapper
-                    )
-                else:
-                    self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
-                        **config["MODEL_CONFIG"]["PARAMS"]
-                    )
+                mapper_class = config["MODEL_CONFIG"]["MAPPER_CLASS"]
+                mapper = get_class(mapper_class)()
+                self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
+                    **config["MODEL_CONFIG"]["PARAMS"], mapper=mapper
+                )
 
         self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
             config["SCRIBE_PRODUCER_CONFIG"]
