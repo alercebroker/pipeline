@@ -228,8 +228,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   db_plugins_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.libs_db_plugins == 'true'
+    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: 'libs/db-plugins'
