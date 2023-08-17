@@ -24,7 +24,7 @@ base_config = {
     "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
-    "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
+    "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
 }
 
 
@@ -43,7 +43,9 @@ def ztf_config():
 def toretto_config():
     return {
         "MODEL_CONFIG": {
-            "PARAMS": {"model_path": mock.MagicMock(),},
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+            },
             "CLASS": "alerce_classifiers.rf_features_classifier.model.RandomForestFeaturesClassifier",
             "NAME": "toreto",
         },
@@ -54,7 +56,9 @@ def toretto_config():
 def barney_config():
     return {
         "MODEL_CONFIG": {
-            "PARAMS": {"model_path": mock.MagicMock(),},
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+            },
             "CLASS": "alerce_classifiers.rf_features_header_classifier.model.RandomForestFeaturesHeaderClassifier",
             "NAME": "barney",
         },
@@ -142,7 +146,7 @@ def elasticc_model_output():
     def factory(_, model):
         aids = ["aid1", "aid2"]
         df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=aids)
-        model.predict.return_value = OutputDTO(df)
+        model.predict.return_value = OutputDTO(df, {"top": DataFrame(), "children": {}})
 
     return factory
 

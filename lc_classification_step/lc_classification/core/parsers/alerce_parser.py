@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from alerce_classifiers.base.dto import OutputDTO
-from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
 
 from .kafka_parser import KafkaOutput, KafkaParser
 
@@ -11,11 +10,11 @@ class AlerceParser(KafkaParser):
     def __init__(self):
         super().__init__(None)
 
-    def parse(self, model_output: OutputDTO, **kwargs) -> KafkaOutput[list]:
+    def parse(
+        self, model_output: OutputDTO, *, messages, features, **kwargs
+    ) -> KafkaOutput[list]:
         if len(model_output.probabilities) == 0:
             return KafkaOutput([])
-        messages = kwargs.get("messages", [])
-        features = kwargs.get("features", pd.DataFrame())
         parsed = []
         features.replace({np.nan: None}, inplace=True)
         messages_df = pd.DataFrame(
@@ -25,7 +24,7 @@ class AlerceParser(KafkaParser):
         # maybe this won't be enough
         tree_output = {
             "probabilities": model_output.probabilities,
-            "hierarchical": model_output.hierarchical
+            "hierarchical": model_output.hierarchical,
         }
 
         messages_df.drop_duplicates("aid", inplace=True)

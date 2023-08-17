@@ -1,17 +1,13 @@
-from typing import List, Union
-import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
 import json
 import numexpr
-from lc_classification.predictors.predictor.predictor import Predictor
-from lc_classification.predictors.predictor.predictor_parser import PredictorParser
 from alerce_classifiers.base.dto import OutputDTO
-from alerce_classifiers.base.model import AlerceModel
 from lc_classification.core.parsers.input_dto import create_input_dto
-from lc_classifier.classifier.models import HierarchicalRandomForest
+from typing import List, Tuple
+from pandas import DataFrame
 
 ZTF_CLASSIFIER_CLASS = "lc_classifier.classifier.models.HierarchicalRandomForest"
 
@@ -31,20 +27,13 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(
-        self,
-        config={},
-        level=logging.INFO,
-        model: Union[Union[AlerceModel, HierarchicalRandomForest], None] = None,
-        **step_args
-    ):
+    def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
         self.logger.info("Loading Models")
 
-        self.model: Union[AlerceModel, HierarchicalRandomForest]
         if model:
             self.model = model
 
@@ -71,7 +60,7 @@ class LateClassifier(GenericStep):
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = (self.config["MODEL_VERSION"],)
 
-    def pre_produce(self, result: tuple):
+    def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
             result[0],
             messages=result[1],
@@ -97,12 +86,11 @@ class LateClassifier(GenericStep):
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
 
-        if self.isztf:
-            model_input = model_input.features
-
         self.logger.info("Doing inference")
         if self.isztf:
-            probabilities = self.model.predict_in_pipeline(model_input)
+            probabilities = self.model.predict_in_pipeline(
+                model_input.features,
+            )
             probabilities = OutputDTO(
                 probabilities["probabilities"], probabilities["hierarchical"]
             )
@@ -111,14 +99,11 @@ class LateClassifier(GenericStep):
         # after the former line, probabilities must be an OutputDTO
 
         self.logger.info("Processing results")
-        return {
-            "public_info": (probabilities, messages, model_input),
-            "db_results": self.scribe_parser.parse(
-                probabilities, classifier_version=self.config["MODEL_VERSION"]
-            ),
-        }
+        return probabilities, messages, model_input.features
 
-    def post_execute(self, result: dict):
-        db_results = result.pop("db_results")
-        self.produce_scribe(db_results.value)
-        return result["public_info"]
+    def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
+        parsed_result = self.scribe_parser.parse(
+            result[0], classifier_version=self.classifier_version
+        )
+        self.produce_scribe(parsed_result.value)
+        return result

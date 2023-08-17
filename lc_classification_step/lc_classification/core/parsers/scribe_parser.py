@@ -15,18 +15,18 @@ class ScribeParser(KafkaParser):
         """Parse data output from the Random Forest to scribe commands.
         Parameters
         ----------
-        to_parse : PredictorOutput
-            Classifications inside PredictorOutput are a dictionary
-            as returned by the Random Forest with the following data
+        to_parse : OutputDTO
+            Output from the model. Has two attributes:
+            probabilities and hierarchical.
 
-            .. code-block::
-
-                "hierarchical": {"top": pd.DataFrame "children": dict}
-                "probabilities": pd.DataFrame,
+            OutputDTO.probabilities is a dataframe
+            OutputDTO.hierarchical is a Dict[str,pd.DataFrame]
+            with two keys: "top" and "children" where children is a Dict[str, pd.DataFrame]
 
         Examples
         --------
-        {'hierarchical':
+        to_parse.hierarchical
+
             {
                 'top':                     Periodic  Stochastic  Transient
                             aid
@@ -38,28 +38,26 @@ class ScribeParser(KafkaParser):
                     'Stochastic':                   AGN  Blazar  CV/Nova   QSO    YSO
                                         aid
                                         vbKsodtqMI  0.032   0.056    0.746  0.01  0.156,
-                    'Periodic':                     CEP   DSCT      E    LPV  Periodic-Other    RRL
+                    'Periodic':                     CEP    DSCT   E      LPV    Periodic-Other    RRL
                                         aid
-                                        vbKsodtqMI  0.218  0.082  0.158  0.028            0.12  0.394
+                                        vbKsodtqMI  0.218  0.082  0.158  0.028  0.12            0.394
                 }
-            },
-        'probabilities':                    SLSN      SNII      SNIa     SNIbc  ...         E       LPV  Periodic-Other       RRL
-                                    aid                                                 ...
-                                    vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
+            }
+
+        to_parse.probabilities
+                            SLSN      SNII      SNIa     SNIbc  ...         E       LPV  Periodic-Other       RRL
+              aid                                                 ...
+              vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
-        top = to_parse.hierarchical["top"]
-        children = to_parse.hierarchical["children"]
+        top = pd.DataFrame()
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
 
         results = [top, probabilities]
-        for key in children:
-            children[key]["classifier_name"] = self._get_classifier_name(key.lower())
-            results.append(children[key])
 
         results = pd.concat(results)
         if not results.index.name == "aid":
@@ -71,9 +69,8 @@ class ScribeParser(KafkaParser):
 
         commands = []
 
-        # results have:  aid class_name  probability  ranking classifier_name
         def get_scribe_messages(classifications_by_classifier: pd.DataFrame):
-            class_names = classifications_by_classifier.columns[:-1]
+            class_names = classifications_by_classifier.columns
             for idx, row in classifications_by_classifier.iterrows():
                 command = {
                     "collection": "object",
@@ -96,16 +93,6 @@ class ScribeParser(KafkaParser):
             )
 
         return KafkaOutput(commands)
-
-    def _stack_df(self, df, ranking):
-        df = df.stack()
-        ranking = ranking.stack()
-        df.rename("probability", inplace=True)
-        ranking.rename("ranking", inplace=True)
-        result = pd.concat([df, ranking], axis=1)
-        result.index.names = ["aid", "class_name"]
-        result.reset_index(inplace=True)
-        return result
 
     def _get_classifier_name(self, suffix=None):
         return "lc_classifier" if suffix is None else f"lc_classifier_{suffix}"
