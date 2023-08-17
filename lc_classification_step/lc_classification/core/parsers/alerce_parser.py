@@ -1,15 +1,18 @@
-from .kafka_parser import KafkaOutput, KafkaParser
-from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
 import numpy as np
 import pandas as pd
+
+from alerce_classifiers.base.dto import OutputDTO
+from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
+
+from .kafka_parser import KafkaOutput, KafkaParser
 
 
 class AlerceParser(KafkaParser):
     def __init__(self):
         super().__init__(None)
 
-    def parse(self, model_output, **kwargs) -> KafkaOutput[list]:
-        if len(model_output["probabilities"]) == 0:
+    def parse(self, model_output: OutputDTO, **kwargs) -> KafkaOutput[list]:
+        if len(model_output.probabilities) == 0:
             return KafkaOutput([])
         messages = kwargs.get("messages", [])
         features = kwargs.get("features", pd.DataFrame())
@@ -18,6 +21,13 @@ class AlerceParser(KafkaParser):
         messages_df = pd.DataFrame(
             [{"aid": message.get("aid")} for message in messages]
         )
+
+        # maybe this won't be enough
+        tree_output = {
+            "probabilities": model_output.probabilities,
+            "hierarchical": model_output.hierarchical
+        }
+
         messages_df.drop_duplicates("aid", inplace=True)
         for _, row in messages_df.iterrows():
             aid = row.aid
@@ -26,7 +36,7 @@ class AlerceParser(KafkaParser):
             except KeyError:
                 continue
 
-            tree_aid = self._get_aid_tree(model_output, aid)
+            tree_aid = self._get_aid_tree(tree_output, aid)
             write = {
                 "aid": aid,
                 "features": features_aid,

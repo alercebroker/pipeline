@@ -119,7 +119,7 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     )
 
 
-def Model_config_factory():
+def model_config_factory():
     modelclass = os.getenv("MODEL_CLASS")
     config = configurator(modelclass)
     return config
@@ -132,7 +132,7 @@ STEP_CONFIG = {
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "MODEL_VERSION": os.getenv("MODEL_VERSION", "dev"),
-    "MODEL_CONFIG": Model_config_factory(),
+    "MODEL_CONFIG": model_config_factory(),
     "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
     "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
 }

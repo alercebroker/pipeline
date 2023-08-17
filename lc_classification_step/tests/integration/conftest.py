@@ -100,7 +100,10 @@ def env_variables_ztf():
             "SCRIBE_TOPIC": "w_object",
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
+            "MODEL_CLASS": "lc_classifier.classifier.models.HierarchicalRandomForest",
             "STREAM": "ztf",
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
+            "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
         }
         for key, value in env_variables_dict.items():
             os.environ[key] = value
@@ -113,8 +116,7 @@ def env_variables_elasticc():
     def set_env_variables(
         model: str,
         model_config: str,
-        predictor_parser_class: str,
-        extra_env_vars: dict,
+        extra_env_vars: dict = {},
     ):
         random_string = uuid.uuid4().hex
         env_variables_dict = {
@@ -135,7 +137,6 @@ def env_variables_elasticc():
             "STREAM": "elasticc",
             "MODEL_CONFIG": model_config,
             "MODEL_CLASS" : model_config,
-            "PREDICTOR_PARSER_CLASS": predictor_parser_class,
             "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         }

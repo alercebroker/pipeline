@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
@@ -8,7 +8,8 @@ import json
 import numexpr
 from lc_classification.predictors.predictor.predictor import Predictor
 from lc_classification.predictors.predictor.predictor_parser import PredictorParser
-from alerce_classifiers.base.dto import InputDTO, OutputDTO
+from alerce_classifiers.base.dto import OutputDTO
+from alerce_classifiers.base.model import AlerceModel
 from lc_classification.core.parsers.input_dto import create_input_dto
 from lc_classifier.classifier.models import HierarchicalRandomForest
 
@@ -30,14 +31,20 @@ class LateClassifier(GenericStep):
 
     base_name = "lc_classifier"
 
-    def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
+    def __init__(
+        self,
+        config={},
+        level=logging.INFO,
+        model: Union[Union[AlerceModel, HierarchicalRandomForest], None] = None,
+        **step_args
+    ):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
-
         self.logger.info("Loading Models")
 
+        self.model: Union[AlerceModel, HierarchicalRandomForest]
         if model:
             self.model = model
 
@@ -48,6 +55,7 @@ class LateClassifier(GenericStep):
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
             else:
                 # inicializar mapper
+                # mapper class is mandatory
                 mapper_class = config["MODEL_CONFIG"]["MAPPER_CLASS"]
                 mapper = get_class(mapper_class)()
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
@@ -95,16 +103,12 @@ class LateClassifier(GenericStep):
         self.logger.info("Doing inference")
         if self.isztf:
             probabilities = self.model.predict_in_pipeline(model_input)
+            probabilities = OutputDTO(
+                probabilities["probabilities"], probabilities["hierarchical"]
+            )
         else:
             probabilities = self.model.predict(model_input)
-
-        if self.isztf:
-            # some test need this
-            if isinstance(probabilities, OutputDTO):
-                probabilities = {
-                    "probabilities": probabilities.probabilities,
-                    "hierarchical": {"top": pd.DataFrame(), "children": pd.DataFrame()},
-                }
+        # after the former line, probabilities must be an OutputDTO
 
         self.logger.info("Processing results")
         return {
