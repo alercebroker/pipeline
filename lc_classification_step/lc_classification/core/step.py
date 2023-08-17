@@ -58,7 +58,7 @@ class LateClassifier(GenericStep):
         self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
 
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
-        self.classifier_version = (self.config["MODEL_VERSION"],)
+        self.classifier_version = self.config["MODEL_VERSION"]
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(

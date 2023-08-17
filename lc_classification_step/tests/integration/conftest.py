@@ -115,7 +115,7 @@ def env_variables_ztf():
 def env_variables_elasticc():
     def set_env_variables(
         model: str,
-        model_config: str,
+        model_class: str,
         extra_env_vars: dict = {},
     ):
         random_string = uuid.uuid4().hex
@@ -135,9 +135,8 @@ def env_variables_elasticc():
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "elasticc",
-            "MODEL_CONFIG": model_config,
-            "MODEL_CLASS" : model_config,
-            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
+            "MODEL_CLASS": model_class,
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         }
         env_variables_dict.update(extra_env_vars)

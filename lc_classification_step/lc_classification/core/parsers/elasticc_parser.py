@@ -18,7 +18,8 @@ class ElasticcParser(KafkaParser):
         *,
         messages: List[dict],
         classifier_name: str,
-        classifier_version: str
+        classifier_version: str,
+        **kwargs,
     ) -> KafkaOutput[list]:
         # create a hashmap that contains the new info (candid, oid and timestamps)
         detection_extra_info = {}

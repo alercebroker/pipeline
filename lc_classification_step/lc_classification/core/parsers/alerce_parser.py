@@ -22,9 +22,12 @@ class AlerceParser(KafkaParser):
         )
 
         # maybe this won't be enough
+        probs_copy = model_output.probabilities.copy()
+        probs_copy.pop("classifier_name")
         tree_output = {
             "probabilities": model_output.probabilities,
             "hierarchical": model_output.hierarchical,
+            "class": probs_copy.idxmax(axis=1),
         }
 
         messages_df.drop_duplicates("aid", inplace=True)
