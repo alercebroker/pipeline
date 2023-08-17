@@ -1,4 +1,5 @@
 import os
+from apf.core import get_class
 
 
 def balto_params(model_class: str):
@@ -8,8 +9,8 @@ def balto_params(model_class: str):
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),
             "header_quantiles_path": os.getenv("QUANTILES_PATH"),
+            "mapper": get_class(os.getenv("MAPPER_CLASS"))(),
         },
-        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 
@@ -19,10 +20,11 @@ def messi_params(model_class: str):
         "NAME": model_class.split(".")[-1],
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),
+            "balto_model_path": os.getenv("BALTO_MODEL_PATH"),
             "header_quantiles_path": os.getenv("HEADER_QUANTILES_PATH"),
             "feature_quantiles_path": os.getenv("FEATURE_QUANTILES_PATH"),
+            "mapper": get_class(os.getenv("MAPPER_CLASS"))(),
         },
-        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 
@@ -32,8 +34,8 @@ def barney_params(model_class: str):
         "NAME": model_class.split(".")[-1],
         "PARAMS": {
             "path_to_model": os.getenv("MODEL_PATH"),
+            "mapper": get_class(os.getenv("MAPPER_CLASS"))(),
         },
-        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 
@@ -42,9 +44,9 @@ def toretto_params(model_class: str):
         "CLASS": model_class,
         "NAME": model_class.split(".")[-1],
         "PARAMS": {
-            "model_path": os.getenv("MODEL_PATH"),
+            "path_to_model": os.getenv("MODEL_PATH"),
+            "mapper": get_class(os.getenv("MAPPER_CLASS"))(),
         },
-        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 

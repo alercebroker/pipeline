@@ -43,12 +43,8 @@ class LateClassifier(GenericStep):
                 self.model.download_model()
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
             else:
-                # inicializar mapper
-                # mapper class is mandatory
-                mapper_class = config["MODEL_CONFIG"]["MAPPER_CLASS"]
-                mapper = get_class(mapper_class)()
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
-                    **config["MODEL_CONFIG"]["PARAMS"], mapper=mapper
+                    **config["MODEL_CONFIG"]["PARAMS"]
                 )
 
         self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
