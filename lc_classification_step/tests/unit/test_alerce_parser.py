@@ -5,10 +5,11 @@ from lc_classification.core.parsers.input_dto import create_features_dto
 
 probabilities = DataFrame(
     {
-        "Ia": ["0.5", "0.5", "0.5"],
-        "AGN": ["0.4", "0.4", "0.4"],
-        "Meta/Other": ["0.1", "0.1", "0.1"],
+        "Ia": [0.5, 0.5, 0.5],
+        "AGN": [0.4, 0.4, 0.4],
+        "Meta/Other": [0.1, 0.1, 0.1],
         "aid": ["aid1", "aid2", "aid3"],
+        "classifier_name": ["test", "test", "test"],
     }
 )
 probabilities.set_index("aid", inplace=True)
@@ -25,19 +26,19 @@ hierarchical = {
         "Transient": DataFrame(
             {
                 "aid": ["aid1", "aid2", "aid3"],
-                "Ia": ["0.5", "0.5", "0.5"],
+                "Ia": [0.5, 0.5, 0.5],
             }
         ),
         "Stochastic": DataFrame(
             {
                 "aid": ["aid1", "aid2", "aid3"],
-                "AGN": ["0.4", "0.4", "0.4"],
+                "AGN": [0.4, 0.4, 0.4],
             }
         ),
         "Periodic": DataFrame(
             {
                 "aid": ["aid1", "aid2", "aid3"],
-                "Meta/Other": ["0.1", "0.1", "0.1"],
+                "Meta/Other": [0.1, 0.1, 0.1],
             }
         ),
     },
