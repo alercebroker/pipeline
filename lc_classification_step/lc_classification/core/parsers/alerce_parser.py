@@ -24,6 +24,10 @@ class AlerceParser(KafkaParser):
         # maybe this won't be enough
         probs_copy = model_output.probabilities.copy()
         probs_copy.pop("classifier_name")
+        try:
+            probs_copy.set_index("aid", inplace=True)
+        except KeyError:
+            pass
         tree_output = {
             "probabilities": model_output.probabilities,
             "hierarchical": model_output.hierarchical,

@@ -31,8 +31,9 @@ def barney_params(model_class: str):
         "CLASS": model_class,
         "NAME": model_class.split(".")[-1],
         "PARAMS": {
-            "model_path": os.getenv("MODEL_PATH"),
+            "path_to_model": os.getenv("MODEL_PATH"),
         },
+        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 
@@ -43,6 +44,7 @@ def toretto_params(model_class: str):
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),
         },
+        "MAPPER_CLASS": os.getenv("MAPPER_CLASS"),
     }
 
 
@@ -60,7 +62,7 @@ def configurator(model_class: str):
         return messi_params(model_class)
     if model_class.endswith("RandomForestFeaturesClassifier"):
         return toretto_params(model_class)
-    if model_class.endswith("MLPElasticcClassifier"):
+    if model_class.endswith("RandomForestFeaturesHeaderClassifier"):
         return barney_params(model_class)
     if model_class.endswith("HierarchicalRandomForest"):
         return ztf_params(model_class)
