@@ -4,6 +4,8 @@ import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
+
+from features.core.strategy import Strategy, ElasticcStrategy, ZTFStrategy
 from features.utils.parsers import parse_scribe_payload, parse_output
 from features.utils.metrics import get_sid
 
@@ -28,6 +30,14 @@ class FeaturesComputer(GenericStep):
     ):
         super().__init__(config=config, **step_args)
         self.features_extractor = extractor
+
+        self.strategy: Strategy
+        if config["SURVEY"] == "ztf":
+            self.strategy = ZTFStrategy()
+        elif config["SURVEY"] == "elasticc":
+            self.strategy = ElasticcStrategy()
+        else:
+            raise ValueError("Survey must me ztf or elasticc")
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
