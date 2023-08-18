@@ -42,6 +42,7 @@ SCRIBE_PRODUCER_CONFIG = {
 class TestZTFStep(unittest.TestCase):
     def setUp(self):
         self.step_config = {
+            "SURVEY": "ztf",
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
