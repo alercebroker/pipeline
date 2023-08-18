@@ -43,6 +43,7 @@ class StepTestCase(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
         self.step_config = {
+            "SURVEY": "ztf",
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,

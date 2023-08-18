@@ -110,6 +110,7 @@ use_profiling = bool(os.getenv("USE_PROFILING", True))
 pyroscope_server = os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
 
 STEP_CONFIG = {
+    "SURVEY": os.getenv("SURVEY"),
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
