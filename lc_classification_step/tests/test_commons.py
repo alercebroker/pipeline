@@ -5,6 +5,7 @@ def assert_ztf_object_is_correct(obj):
     assert "aid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
+    assert "class" in obj["lc_classification"]
 
 
 def assert_elasticc_object_is_correct(obj):

@@ -21,10 +21,10 @@ def test_step_elasticc_result(
 ):
     env_variables_elasticc(
         "toretto",
-        "lc_classification.predictors.toretto.toretto_predictor.TorettoPredictor",
-        "lc_classification.predictors.toretto.toretto_parser.TorettoParser",
+        "alerce_classifiers.rf_features_classifier.model.RandomForestFeaturesClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_TORETTO_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.rf_features_classifier.mapper.TorettoMapper",
         },
     )
 

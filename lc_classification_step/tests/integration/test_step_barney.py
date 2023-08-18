@@ -21,10 +21,10 @@ def test_step_elasticc_result(
 ):
     env_variables_elasticc(
         "barney",
-        "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
-        "lc_classification.predictors.barney.barney_parser.BarneyParser",
+        "alerce_classifiers.rf_features_header_classifier.model.RandomForestFeaturesHeaderClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_BARNEY_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.rf_features_header_classifier.mapper.BarneyMapper",
         },
     )
 

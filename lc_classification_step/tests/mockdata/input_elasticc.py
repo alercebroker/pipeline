@@ -17,6 +17,8 @@ DETECTIONS = {
             {"name": "mjd", "type": "double"},
             {"name": "mag", "type": "float"},
             {"name": "e_mag", "type": "float"},
+            {"name": "mag_corr", "type": "float"},
+            {"name": "e_mag_corr", "type": "float"},
             {"name": "has_stamp", "type": "boolean"},
             {"name": "forced", "type": "boolean"},
             {"name": "new", "type": "boolean"},

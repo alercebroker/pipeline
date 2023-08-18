@@ -21,12 +21,13 @@ def test_step_elasticc_result(
 ):
     env_variables_elasticc(
         "messi",
-        "lc_classification.predictors.messi.messi_predictor.MessiPredictor",
-        "lc_classification.predictors.messi.messi_parser.MessiParser",
+        "alerce_classifiers.messi.model.MessiClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
+            "MODEL_PATH": os.getenv("TEST_MESSI_MODEL_PATH"),
+            "BALTO_MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
             "HEADER_QUANTILES_PATH": os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH"),
             "FEATURE_QUANTILES_PATH": os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.messi.mapper.MessiMapper",
         },
     )
 

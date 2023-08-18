@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TypeVar, Generic
-from lc_classification.predictors.predictor.predictor_parser import PredictorOutput
+from alerce_classifiers.base.dto import OutputDTO
 
 T = TypeVar("T")
 
@@ -16,5 +16,5 @@ class KafkaParser(ABC):
         self.ClassMapper = class_mapper
 
     @abstractmethod
-    def parse(self, output: PredictorOutput, **kwargs) -> KafkaOutput:
+    def parse(self, output: OutputDTO, **kwargs) -> KafkaOutput:
         pass

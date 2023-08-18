@@ -10,7 +10,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1
 
-
 FROM python-base as builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git build-essential && \
