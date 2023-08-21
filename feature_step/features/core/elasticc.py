@@ -7,20 +7,27 @@ from lc_classifier.features.preprocess.preprocess_elasticc import (
 from typing import List
 import pandas as pd
 import pickle
+import os
 
 
 class ELAsTiCCFeatureExtractor:
     NAME = "elasticc_lc_features"
+    VERSION = os.getenv("EXTRACTOR_VERSION", "0.0.0")
+    SURVEYS = ("LSST",)
+    BANDS = ("u", "g", "r", "i", "z", "Y")
+    BANDS_MAPPING = {}
 
     def __init__(
         self,
-        preprocessor: ElasticcPreprocessor,
-        extractor: ElasticcFeatureExtractor,
         detections: List[dict],
+        non_detections: List[dict],
+        xmatch: List[dict],
         **kwargs,
     ):
-        self.preprocessor = preprocessor
-        self.extractor = extractor
+        self.preprocessor = kwargs.get("preprocessor", ElasticcPreprocessor())
+        self.extractor = kwargs.get(
+            "extractor", ElasticcFeatureExtractor(round=2)
+        )
         self.detections = detections
 
     def generate_features(self):

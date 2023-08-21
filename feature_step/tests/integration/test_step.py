@@ -6,10 +6,13 @@ from features.step import FeaturesComputer
 from schema import SCHEMA
 from tests.data.message_factory import (
     generate_input_batch,
-    generate_non_ztf_batch,
+)
+from tests.data.elasticc_message_factory import (
+    generate_input_batch as generate_elasticc_batch,
+    ELASTICC_BANDS,
 )
 from features.core.ztf import ZTFFeatureExtractor
-from features.utils.selector import extractor_factory
+from features.utils.selector import selector
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -99,7 +102,7 @@ class TestElasticcStep(unittest.TestCase):
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
         }
-        extractor = extractor_factory("elasticc")
+        extractor = selector("elasticc")
         self.step = FeaturesComputer(
             extractor,
             config=self.step_config,
@@ -108,7 +111,7 @@ class TestElasticcStep(unittest.TestCase):
         self.step.scribe_producer.produce = mock.MagicMock()
 
     def test_execute(self):
-        input_messages = generate_non_ztf_batch(5)
+        input_messages = generate_elasticc_batch(5, ELASTICC_BANDS)
         result = self.step.execute(input_messages)
         self.assertEqual(len(result), 5)
         for output_message in result:
@@ -119,7 +122,7 @@ class TestElasticcStep(unittest.TestCase):
             self.assertIn("non_detections", output_message)
             self.assertIn("xmatches", output_message)
             self.assertIn("features", output_message)
-            self.assertEqual(len(output_message["features"]), 178)
+            self.assertEqual(len(output_message["features"]), 498)
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = (
             self.step.scribe_producer.produce.call_count
@@ -127,7 +130,7 @@ class TestElasticcStep(unittest.TestCase):
         self.assertEqual(scribe_producer_call_count, 5)
 
     def test_step(self):
-        input_messages = generate_non_ztf_batch(5)
+        input_messages = generate_elasticc_batch(5, ELASTICC_BANDS)
         consumer: mock.MagicMock = self.step.consumer
         producer: mock.MagicMock = self.step.producer
         consumer.mock_add_spec(KafkaConsumer)
@@ -139,4 +142,4 @@ class TestElasticcStep(unittest.TestCase):
             self.step.scribe_producer.produce.call_count
         )
         self.assertEqual(scribe_producer_call_count, 5)
-        assert self.step.metrics["sid"] == ["ZTF"]
+        assert self.step.metrics["sid"] == ["LSST"]

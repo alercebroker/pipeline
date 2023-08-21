@@ -25,7 +25,7 @@ handler.setLevel(level)
 logger.addHandler(handler)
 
 from features import FeaturesComputer
-from features.utils.selector import extractor_factory
+from features.utils.selector import selector
 
 if STEP_CONFIG["USE_PROFILING"]:
     from pyroscope import configure
@@ -36,6 +36,6 @@ if STEP_CONFIG["USE_PROFILING"]:
     )
 
 
-extractor = extractor_factory(EXTRACTOR)
+extractor = selector(EXTRACTOR)
 step = FeaturesComputer(extractor, config=STEP_CONFIG)
 step.start()
