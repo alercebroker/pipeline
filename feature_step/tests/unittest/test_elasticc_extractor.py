@@ -29,6 +29,8 @@ class TestElasticcExtractor(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -57,6 +59,8 @@ class TestElasticcExtractor(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -82,6 +86,8 @@ class TestElasticcExtractor(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -102,6 +108,8 @@ class TestElasticcExtractor(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -124,6 +132,8 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -144,6 +154,8 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -164,6 +176,8 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -184,6 +198,8 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
             detections=detections,
+            non_detections=[],
+            xmatch=[],
         )
         result = extractor.generate_features()
 
@@ -201,9 +217,11 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         preprocessor = ElasticcPreprocessor()
         lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
+            detections=detections,
+            non_detections=[],
+            xmatch=[],
             preprocessor=preprocessor,
             extractor=lc_classifier_extractor,
-            detections=detections,
         )
         result = extractor.generate_features()
 
