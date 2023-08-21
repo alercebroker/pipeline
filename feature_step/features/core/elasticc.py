@@ -8,11 +8,12 @@ from typing import List
 import pandas as pd
 import pickle
 import os
+from importlib import metadata
 
 
 class ELAsTiCCFeatureExtractor:
     NAME = "elasticc_lc_features"
-    VERSION = os.getenv("EXTRACTOR_VERSION", "0.0.0")
+    VERSION = metadata.version("feature-step")
     SURVEYS = ("LSST",)
     BANDS = ("u", "g", "r", "i", "z", "Y")
     BANDS_MAPPING = {}

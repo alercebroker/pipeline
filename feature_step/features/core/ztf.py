@@ -3,6 +3,7 @@ import pandas as pd
 from ._base import BaseFeatureExtractor
 from .utils import decorators, functions, extras
 import os
+from importlib import metadata
 
 
 class ZTFFeatureExtractor(BaseFeatureExtractor):
@@ -33,7 +34,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     """
 
     NAME = "ztf_lc_features"
-    VERSION = os.getenv("EXTRACTOR_VERSION", "0.0.0")
+    VERSION = metadata.version("feature-step")
     SURVEYS = ("ZTF",)
     BANDS = ("g", "r")
     BANDS_MAPPING = {"g": 1, "r": 2}
