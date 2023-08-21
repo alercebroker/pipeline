@@ -85,9 +85,9 @@ class LateClassifier(GenericStep):
         forced = DataFrame()
         prv_candidates = DataFrame()
         for det in model_input.detections:
-            if det.forced:
+            if det["forced"]:
                 forced.append(det)
-            if det.prv_candidate:
+            if det["prv_candidate"]:
                 prv_candidates.append(det)
         self.logger.debug(
             "The number of detections is: %i", len(model_input.detections)
