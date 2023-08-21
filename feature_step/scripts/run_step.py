@@ -6,7 +6,7 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import *
+from settings import STEP_CONFIG, EXTRACTOR
 
 level = logging.INFO
 if os.getenv("LOGGING_DEBUG"):
@@ -25,13 +25,17 @@ handler.setLevel(level)
 logger.addHandler(handler)
 
 from features import FeaturesComputer
-from features.utils.selector import selector
+from features.utils.selector import extractor_factory
 
 if STEP_CONFIG["USE_PROFILING"]:
     from pyroscope import configure
-    configure(application_name="step.Feature", server_address=STEP_CONFIG["PYROSCOPE_SERVER"])
+
+    configure(
+        application_name="step.Feature",
+        server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
+    )
 
 
-extractor = selector(EXTRACTOR)
+extractor = extractor_factory(EXTRACTOR)
 step = FeaturesComputer(extractor, config=STEP_CONFIG)
 step.start()
