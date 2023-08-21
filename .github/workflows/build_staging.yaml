@@ -41,7 +41,8 @@ jobs:
       build-type: staging
       step-name: early_classification_step
       base-folder: early_classification_step
-      build-context: early_classification_step
+      step-name-prefix: ""
+      build-context: "."
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
