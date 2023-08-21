@@ -64,7 +64,9 @@ def configurator(model_class: str):
         return messi_params(model_class)
     if model_class.endswith("RandomForestFeaturesClassifier"):
         return toretto_params(model_class)
-    if model_class.endswith("RandomForestFeaturesHeaderClassifier"):
+    if model_class.endswith(
+        "RandomForestFeaturesHeaderClassifier"
+    ) or model_class.endswith("MLPElasticcClassifier"):
         return barney_params(model_class)
     if model_class.endswith("HierarchicalRandomForest"):
         return ztf_params(model_class)
