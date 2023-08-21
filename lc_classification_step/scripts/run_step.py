@@ -18,6 +18,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 from lc_classification.core import LateClassifier
 
 prometheus_metrics = None
