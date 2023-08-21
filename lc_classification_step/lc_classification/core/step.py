@@ -79,9 +79,20 @@ class LateClassifier(GenericStep):
 
         """
         self.logger.info("Processing %i messages.", len(messages))
+        self.logger.debug("Messages received:\n", messages)
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
-
+        forced = DataFrame()
+        prv_candidates = DataFrame()
+        for det in model_input.detections:
+            if det.forced:
+                forced.append(det)
+            if det.prv_candidate:
+                prv_candidates.append(det) 
+        self.logger.debug("The number of detections is: %i", len(model_input.detections))
+        self.logger.debug("The forced photometry detections are:",forced)
+        self.logger.debug("The prv candidates detections are:",prv_candidates)
+        self.logger.debug("The number of features is: %i", len(model_input.features))
         self.logger.info("Doing inference")
         if self.isztf:
             probabilities = self.model.predict_in_pipeline(
@@ -95,6 +106,11 @@ class LateClassifier(GenericStep):
         # after the former line, probabilities must be an OutputDTO
 
         self.logger.info("Processing results")
+        #entrar a probabilities.probabilities
+        df = probabilities.probabilities
+        classes = (df.T == df.T.max()).T.astype(int)
+        distribution = classes.sum(axis=0)
+        self.logger.debug("Class distribution:\n",distribution)
         return probabilities, messages, model_input.features
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
