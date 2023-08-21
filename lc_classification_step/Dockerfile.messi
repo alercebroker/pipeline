@@ -41,7 +41,7 @@ COPY lc_classification_step/schemas /app/schemas
 COPY lc_classification_step/README.md \
     lc_classification_step/schemas.py \
     lc_classification_step/settings.py \
-    lc_classification_step/predictor_settings.py \
+    lc_classification_step/models_settings.py \
     /app/
 
 WORKDIR /app/

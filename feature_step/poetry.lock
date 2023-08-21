@@ -2645,6 +2645,19 @@ files = [
 tests = ["pytest", "pytest-cov"]
 
 [[package]]
+name = "test-utils"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = ">=3.10"
+files = []
+develop = true
+
+[package.source]
+type = "directory"
+url = "../libs/test_utils"
+
+[[package]]
 name = "threadpoolctl"
 version = "3.2.0"
 description = "threadpoolctl"
@@ -2871,4 +2884,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "d3b326a6610b87539d600281b4c5acbbec0b17263729c857dcdfe636d1a94118"
+content-hash = "1ce74d120a0f1789d4941d9aeadfd2b01186f13aa66dd2ace4705545218e953f"

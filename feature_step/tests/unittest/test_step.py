@@ -5,7 +5,10 @@ from features.step import (
     FeaturesComputer,
 )
 from schema import SCHEMA
-from tests.data.data_for_unittest import features_df_for_execute, messages_for_execute
+from tests.data.data_for_unittest import (
+    features_df_for_execute,
+    messages_for_execute,
+)
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -56,9 +59,11 @@ class StepTestCase(unittest.TestCase):
             },
         }
         self.mock_extractor = mock.MagicMock()
-        self.mock_extractor.generate_features.return_value = features_df_for_execute
+        self.mock_extractor.generate_features.return_value = (
+            features_df_for_execute
+        )
         self.mock_extractor_class = mock.MagicMock()
-        self.mock_extractor_class.NAME = "group"
+        self.mock_extractor_class.NAME = "ztf_lc_features"
         self.mock_extractor_class.VERSION = "v1"
         self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
         self.mock_extractor_class.return_value = self.mock_extractor
@@ -346,5 +351,7 @@ class StepTestCase(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
         self.step.scribe_producer.produce.assert_called()
-        scribe_producer_call_count = self.step.scribe_producer.produce.call_count
+        scribe_producer_call_count = (
+            self.step.scribe_producer.produce.call_count
+        )
         self.assertEqual(scribe_producer_call_count, 2)

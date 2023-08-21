@@ -1,6 +1,9 @@
 import unittest
 import pandas as pd
-from features.utils.selector import selector, ExtractorNotFoundException
+from features.utils.selector import (
+    selector,
+    ExtractorNotFoundException,
+)
 
 
 class ExtractorSelectorTestCase(unittest.TestCase):
