@@ -5,7 +5,7 @@ from pymongo.operations import InsertOne, UpdateOne
 from mongo_scribe.command.exceptions import (
     NoFeatureProvidedException,
     NoFeatureVersionProvidedException,
-    NoFeatureGroupProvidedException
+    NoFeatureGroupProvidedException,
 )
 
 from mongo_scribe.command.commands import (
@@ -51,9 +51,7 @@ class CommandTests(unittest.TestCase):
     def test_create_dbcommand_update_without_criteria(self):
         self.assertRaises(
             UpdateWithNoCriteriaException,
-            lambda: UpdateCommand(
-                "object", "update", None, valid_data_dict["data"]
-            ),
+            lambda: UpdateCommand("object", "update", None, valid_data_dict["data"]),
         )
 
     def test_insert_dbcommand_get_operation(self):
@@ -108,9 +106,7 @@ class CommandTests(unittest.TestCase):
         )
         operations = update_command.get_operations()
         self.assertEqual(operations[0]._filter, valid_data_dict["criteria"])
-        self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": valid_data_dict["data"]}
-        )
+        self.assertEqual(operations[0]._doc, {"$setOnInsert": valid_data_dict["data"]})
 
     def test_update_db_command_options(self):
         update_command = UpdateCommand(
@@ -122,55 +118,6 @@ class CommandTests(unittest.TestCase):
         operations = update_command.get_operations()
         self.assertTrue(operations[0]._upsert)
 
-    def test_update_probabilities_with_set_on_insert_get_operation(self):
-        update_command = UpdateProbabilitiesCommand(
-            valid_probabilities_dict["collection"],
-            valid_probabilities_dict["data"].copy(),
-            valid_probabilities_dict["criteria"],
-            {"set_on_insert": True},
-        )
-        operations = update_command.get_operations()
-        self.assertEqual(len(operations), 2)
-        self.assertTrue(all(isinstance(op, UpdateOne) for op in operations))
-        self.assertFalse(any(op._upsert for op in operations))
-
-    def test_update_probabilities_with_set_on_insert_get_operation_has_data_with_push_as_document(
-        self,
-    ):
-        update_command = UpdateProbabilitiesCommand(
-            valid_probabilities_dict["collection"],
-            valid_probabilities_dict["data"].copy(),
-            valid_probabilities_dict["criteria"],
-            {"set_on_insert": True},
-        )
-        operations = update_command.get_operations()
-        for op in operations:  # All include AID as criteria
-            self.assertTrue(
-                all(
-                    pair in op._filter.items()
-                    for pair in valid_probabilities_dict["criteria"].items()
-                )
-            )
-
-        self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"probabilities": []}}
-        )
-        insert = (
-            operations[1]._doc.pop("$push").pop("probabilities").pop("$each")
-        )
-        for element in insert:
-            self.assertEqual(
-                {
-                    "probability",
-                    "ranking",
-                    "classifier_name",
-                    "classifier_version",
-                    "class_name",
-                },
-                set(element),
-            )
-        self.assertEqual(operations[1]._doc, {})
-
     def test_insert_probabilities_with_set_on_insert_options(self):
         update_command = UpdateProbabilitiesCommand(
             valid_probabilities_dict["collection"],
@@ -180,7 +127,6 @@ class CommandTests(unittest.TestCase):
         )
         operations = update_command.get_operations()
         self.assertTrue(operations[0]._upsert)
-        self.assertFalse(operations[1]._upsert)
 
     def test_update_probabilities_get_operation(self):
         update_command = UpdateProbabilitiesCommand(
@@ -189,8 +135,8 @@ class CommandTests(unittest.TestCase):
             valid_probabilities_dict["criteria"],
         )
         operations = update_command.get_operations()
-        self.assertEqual(len(operations), 4)
-        self.assertTrue(all(isinstance(op, UpdateOne) for op in operations))
+        self.assertEqual(len(operations), 1)
+        self.assertTrue(isinstance(operations[0], UpdateOne))
         self.assertFalse(any(op._upsert for op in operations))
 
     def test_update_probabilities_get_operation_has_data_with_set_as_document(
@@ -210,40 +156,12 @@ class CommandTests(unittest.TestCase):
                 )
             )
 
-        self.assertEqual(
-            operations[0]._doc, {"$setOnInsert": {"probabilities": []}}
-        )
-        insert = (
-            operations[1]._doc.pop("$push").pop("probabilities").pop("$each")
-        )
-        for element in insert:
-            self.assertEqual(
-                {
-                    "probability",
-                    "ranking",
-                    "classifier_name",
-                    "classifier_version",
-                    "class_name",
-                },
-                set(element),
-            )
-        self.assertEqual(operations[1]._doc, {})
-        for op in operations[2:]:
-            self.assertTrue(
-                all(
-                    pair in op._filter.items()
-                    for pair in valid_probabilities_dict["criteria"].items()
-                )
-            )
-            update = op._doc.pop("$set")
-            self.assertEqual(
-                {
-                    "probabilities.$[el].probability",
-                    "probabilities.$[el].ranking",
-                },
-                set(update),
-            )
-            self.assertEqual(op._doc, {})
+        insert = operations[0]._doc.pop("$set")
+
+        assert "probabilities.classifier" in insert
+        assert "class_rank_1" in insert["probabilities.classifier"]
+        assert "probability_rank_1" in insert["probabilities.classifier"]
+        assert "values" in insert["probabilities.classifier"]
 
     def test_update_probabilities_options(self):
         update_command = UpdateProbabilitiesCommand(
@@ -275,7 +193,7 @@ class CommandTests(unittest.TestCase):
         operations = update_command.get_operations()
         self.assertFalse(operations[0]._upsert)
 
-# test for update features
+    # test for update features
 
     def test_update_features_check_input_wrong_input(self):
         # no features_version
@@ -339,17 +257,15 @@ class CommandTests(unittest.TestCase):
             operations[0]._doc,
             {
                 "$set": {
-                    "features": {
-                        "group": {
-                            "features": [
-                                { "name": "feature1", "value": 12.34, "fid": "g" },
-                                { "name": "feature2", "value": None, "fid": "Y" }
-                            ],
-                            "version": "v1"
-                        }
+                    "features.group": {
+                        "features": [
+                            {"name": "feature1", "value": 12.34, "fid": "g"},
+                            {"name": "feature2", "value": None, "fid": "Y"},
+                        ],
+                        "version": "v1",
                     }
                 }
-            }
+            },
         )
 
     def test_update_features_with_set_on_insert_with_upsert(self):
@@ -384,14 +300,12 @@ class CommandTests(unittest.TestCase):
             operations[0]._doc,
             {
                 "$set": {
-                    "features": {
-                        "group": {
-                            "features": [
-                                { "name": "feature1", "value": 12.34, "fid": "g" },
-                                { "name": "feature2", "value": None, "fid": "Y" }
-                            ],
-                            "version": "v1"
-                        }
+                    "features.group": {
+                        "features": [
+                            {"name": "feature1", "value": 12.34, "fid": "g"},
+                            {"name": "feature2", "value": None, "fid": "Y"},
+                        ],
+                        "version": "v1",
                     }
                 }
             },

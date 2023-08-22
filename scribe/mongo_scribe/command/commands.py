@@ -88,11 +88,7 @@ class UpdateCommand(Command):
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
-        return [
-            UpdateOne(
-                self.criteria, {op: self.data}, upsert=self.options.upsert
-            )
-        ]
+        return [UpdateOne(self.criteria, {op: self.data}, upsert=self.options.upsert)]
 
 
 class UpdateProbabilitiesCommand(UpdateCommand):
@@ -138,6 +134,58 @@ class UpdateProbabilitiesCommand(UpdateCommand):
             "probabilities.classifier_name": {"$ne": self.classifier_name},
             **self.criteria,
         }
+
+        # from now on we'll be assuming that the first element is the rank one class
+        probabilities = [
+            {
+                "class_name": class_name,
+                "probability": p,
+                "ranking": i + 1,
+            }
+            for i, (class_name, p) in enumerate(self._sort())
+        ]
+
+        operation = {
+            "$set": {
+                f"probabilities.{self.classifier_name}": {
+                    "version": self.classifier_version,
+                    "class_rank_1": probabilities[0]["class_name"],
+                    "probability_rank_1": probabilities[0]["probability"],
+                    "values": probabilities,
+                }
+            }
+        }
+
+        return [UpdateOne(self.criteria, operation, upsert=self.options.upsert)]
+
+        """
+        Old probability schema:
+        {
+            probabilities: [
+                {
+                    "classifier_name": "name1",
+                    "classifier_version": "1.0.0",
+                    "class_name": "AGN",
+                    "probability": 0.99,
+                    "ranking": 1, 
+                },
+                ...
+            ]
+        }
+
+        New probability schema:
+        {
+            probabilities: {
+                "name1": {
+                    "version": "1.0.0",
+                    "class_rank_1": "AGN",
+                    "probability_rank_1": 0.99,
+                    "values": [{ "class_name": "AGN", "probability": 0.99, "ranking": 1 }, ...]
+                }
+            }
+        }
+        """
+
         probabilities = [
             {
                 "classifier_name": self.classifier_name,
@@ -235,7 +283,7 @@ class UpdateFeaturesCommand(UpdateCommand):
         #    ),
         # ]
 
-        operation = {"$set": {"features": {self.features_group: features}}}
+        operation = {"$set": {f"features.{self.features_group}": features}}
         ops = [UpdateOne(self.criteria, operation, upsert=self.options.upsert)]
 
         return ops

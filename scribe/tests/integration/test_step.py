@@ -181,46 +181,20 @@ class MongoIntegrationTest(unittest.TestCase):
                     "classifier_name": "classifier",
                     "classifier_version": "1",
                 },
-                "options": {"upsert": True, "set_on_insert": True},
+                "options": {"upsert": True},
             }
         )
-        self.producer.produce({"payload": command})
-        command = json.dumps(
-            {
-                "collection": "object",
-                "type": "update_probabilities",
-                "criteria": {"_id": "insert_probabilities_id"},
-                "data": {
-                    "class1": 0.5,
-                    "class2": 0.3,
-                    "classifier_name": "classifier",
-                    "classifier_version": "1",
-                },
-                "options": {"upsert": True, "set_on_insert": True},
-            }
-        )
-        self.producer.produce({"payload": command})
         self.producer.produce({"payload": command})
         self.producer.producer.flush(1)
+        self.producer.produce({"payload": command})
         self.step.start()
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "insert_probabilities_id"})
         assert result is not None
-        assert {
-            "classifier_name": "classifier",
-            "classifier_version": "1",
-            "probability": 0.1,
-            "class_name": "class1",
-            "ranking": 2,
-        } in result["probabilities"]
-
-        assert {
-            "classifier_name": "classifier",
-            "classifier_version": "1",
-            "probability": 0.9,
-            "class_name": "class2",
-            "ranking": 1,
-        } in result["probabilities"]
+        assert "classifier" in result["probabilities"]
+        assert result["probabilities"]["classifier"]["version"] == "1"
+        assert result["probabilities"]["classifier"]["class_rank_1"] == "class2"
+        assert result["probabilities"]["classifier"]["probability_rank_1"] == 0.9
 
     def test_update_probabilities_into_database(self):
         command = json.dumps(
@@ -259,21 +233,10 @@ class MongoIntegrationTest(unittest.TestCase):
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_probabilities_id"})
         assert result is not None
-        assert {
-            "classifier_name": "classifier",
-            "classifier_version": "1",
-            "probability": 0.5,
-            "class_name": "class1",
-            "ranking": 1,
-        } in result["probabilities"]
-
-        assert {
-            "classifier_name": "classifier",
-            "classifier_version": "1",
-            "probability": 0.3,
-            "class_name": "class2",
-            "ranking": 2,
-        } in result["probabilities"]
+        assert "classifier" in result["probabilities"]
+        assert result["probabilities"]["classifier"]["version"] == "1"
+        assert result["probabilities"]["classifier"]["class_rank_1"] == "class1"
+        assert result["probabilities"]["classifier"]["probability_rank_1"] == 0.5
 
     def test_update_features_into_database(self):
         command = json.dumps(

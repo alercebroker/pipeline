@@ -48,7 +48,7 @@ class CommandGenerator:
         }
         self._command_hash["insert"][self._generated_inserts] = command["data"]
         self._command_hash["update"][self._generated_inserts] = {}
-        self._command_hash["update_probability"][self._generated_inserts] = []
+        self._command_hash["update_probability"][self._generated_inserts] = {}
         self._command_hash["update_feature"][self._generated_inserts] = {}
         self._generated_inserts += 1
         return {"payload": json.dumps(command)}
@@ -68,29 +68,30 @@ class CommandGenerator:
 
     def _add_probability(self, aid: int, prob: dict):
         local_prob = prob.copy()
-        parsed_probabilities = []
         classifier_name = local_prob.pop("classifier_name")
         classifier_version = local_prob.pop("classifier_version")
+        parsed_probabilities = []
+        new_classifier_probability = {
+            "version": classifier_version
+        }
         for class_name, probability in local_prob.items():
+            rank = 1 if probability > 0.5 else 2
+            if rank == 1:
+                new_classifier_probability["class_rank_1"] = class_name
+                new_classifier_probability["probability_rank_1"] = probability
+            
             parsed_probabilities.append(
                 {
-                    "classifier_name": classifier_name,
-                    "classifier_version": classifier_version,
                     "probability": probability,
                     "class_name": class_name,
-                    "ranking": 1
-                    if probability > 0.5
-                    else 2,  # because probs are fixed
+                    "ranking": rank
                 }
             )
-        buffer: list = self._command_hash["update_probability"][aid]
-        buffer = [
-            prob
-            for prob in buffer
-            if prob["classifier_name"] != classifier_name
-            and prob["classifier_version"] != classifier_version
-        ]
-        buffer.extend(parsed_probabilities)
+        new_classifier_probability["values"] = parsed_probabilities
+        buffer: dict = self._command_hash["update_probability"][aid]
+        buffer.update({
+            classifier_name: new_classifier_probability
+        })
         self._command_hash["update_probability"][aid] = buffer
 
     def _generate_update(self, options={}, offset=0):
