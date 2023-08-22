@@ -143,6 +143,7 @@ jobs:
       step-name: magstats_step
       base-folder: magstats_step
       build-context: .
+      step-name-prefix: ""
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
