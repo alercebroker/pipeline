@@ -70,3 +70,4 @@ def configurator(model_class: str):
         return barney_params(model_class)
     if model_class.endswith("HierarchicalRandomForest"):
         return ztf_params(model_class)
+    raise Exception("Model class not found")
