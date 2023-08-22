@@ -54,6 +54,7 @@ def is_responsive_kafka(url):
             NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("barney_new"), num_partitions=1),
             NewTopic("metrics", num_partitions=1),
         ]
     )
@@ -100,7 +101,10 @@ def env_variables_ztf():
             "SCRIBE_TOPIC": "w_object",
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
+            "MODEL_CLASS": "lc_classifier.classifier.models.HierarchicalRandomForest",
             "STREAM": "ztf",
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
+            "STEP_PARSER_CLASS": "lc_classification.core.parsers.alerce_parser.AlerceParser",
         }
         for key, value in env_variables_dict.items():
             os.environ[key] = value
@@ -112,9 +116,8 @@ def env_variables_ztf():
 def env_variables_elasticc():
     def set_env_variables(
         model: str,
-        predictor_class: str,
-        predictor_parser_class: str,
-        extra_env_vars: dict,
+        model_class: str,
+        extra_env_vars: dict = {},
     ):
         random_string = uuid.uuid4().hex
         env_variables_dict = {
@@ -133,9 +136,8 @@ def env_variables_elasticc():
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "elasticc",
-            "PREDICTOR_CLASS": predictor_class,
-            "PREDICTOR_PARSER_CLASS": predictor_parser_class,
-            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.elasticc_scribe_parser.ElasticcScribeParser",
+            "MODEL_CLASS": model_class,
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
         }
         env_variables_dict.update(extra_env_vars)

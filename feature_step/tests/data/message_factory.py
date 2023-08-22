@@ -156,7 +156,7 @@ def generate_non_ztf_batch(n: int) -> list[dict]:
             "xmatches": xmatch,
         }
         batch.append(msg)
-    random.samble(batch, len(batch))
+    random.sample(batch, len(batch))
     return batch
 
 
@@ -209,4 +209,6 @@ def get_fake_xmatch(aid, meanra, meandec) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: list[dict]) -> pd.DataFrame:
-    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
+    return pd.DataFrame(
+        columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"]
+    )

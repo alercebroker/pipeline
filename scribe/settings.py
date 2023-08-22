@@ -12,12 +12,12 @@ CONSUMER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
-        "auto.offset.reset": "beginning"
+        "auto.offset.reset": "beginning",
     },
     # "TOPICS": ["w_Object", "w_Detections", "w_Non_Detections"],
     "TOPICS": os.environ["TOPICS"].strip().split(","),
     "NUM_MESSAGES": int(os.getenv("NUM_MESSAGES", "50")),
-    "TIMEOUT": int(os.getenv("TIMEOUT", "10"))
+    "TIMEOUT": int(os.getenv("TIMEOUT", "10")),
 }
 
 if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
@@ -27,7 +27,7 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
 DB_CONFIG = {
-    "MONGO": get_mongodb_credentials()
+    "MONGO": get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
 }
 
 METRICS_CONFIG = {
@@ -82,7 +82,7 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     )
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
         "METRICS_KAFKA_PASSWORD"
-    )    
+    )
 
 ## Step Configuration
 STEP_CONFIG = {
@@ -93,5 +93,7 @@ STEP_CONFIG = {
     "RETRIES": int(os.getenv("RETRIES", "3")),
     "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", "1")),
     "USE_PROFILING": bool(os.getenv("USE_PROFILING", True)),
-    "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
+    "PYROSCOPE_SERVER": os.getenv(
+        "PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040"
+    ),
 }

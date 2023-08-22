@@ -339,3 +339,5 @@ class EarlyClassifierWithoutProducerTest(unittest.TestCase):
         )
         self.step.execute(message)
         producer_mock.assert_not_called()
+
+

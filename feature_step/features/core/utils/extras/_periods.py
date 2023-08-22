@@ -68,8 +68,8 @@ def periods(
             output.append(empty_power_rates(factors, fids))
         return pd.concat(output)
 
-    (frequency, *_), _ = periodogram.get_best_frequencies()
-    period = 1 / frequency
+    frequency, _ = periodogram.get_best_frequencies()
+    period = 1 / (frequency.any() or -999)
 
     n_best = 100
     freq, per = periodogram.get_periodogram()

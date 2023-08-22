@@ -41,7 +41,8 @@ jobs:
       build-type: staging
       step-name: early_classification_step
       base-folder: early_classification_step
-      build-context: early_classification_step
+      step-name-prefix: ""
+      build-context: "."
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -66,7 +67,7 @@ jobs:
       step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
-      file: Dockerfile-ztf
+      file: Dockerfile.ztf
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -79,7 +80,7 @@ jobs:
       step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
-      file: Dockerfile-balto
+      file: Dockerfile.balto
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -92,7 +93,7 @@ jobs:
       step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
-      file: Dockerfile-messi
+      file: Dockerfile.messi
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -105,7 +106,7 @@ jobs:
       step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
-      file: Dockerfile-barney
+      file: Dockerfile.barney
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -118,7 +119,7 @@ jobs:
       step-name-prefix: ""
       build-context: .
       base-folder: lc_classification_step
-      file: Dockerfile-toretto
+      file: Dockerfile.toretto
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -142,6 +143,7 @@ jobs:
       step-name: magstats_step
       base-folder: magstats_step
       build-context: .
+      step-name-prefix: ""
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 

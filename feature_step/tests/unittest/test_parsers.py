@@ -1,15 +1,19 @@
 import unittest
 from unittest import mock
 import pandas as pd
-from tests.data.data_for_unittest import messages_for_parsing, features_df_for_parse
+from tests.data.data_for_unittest import (
+    messages_for_parsing,
+    features_df_for_parse,
+)
 from features.utils.parsers import parse_output, parse_scribe_payload
+from importlib import metadata
 
 
 class ParsersTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.mock_extractor_class = mock.MagicMock
-        self.mock_extractor_class.NAME = "group"
-        self.mock_extractor_class.VERSION = "v1"
+        self.mock_extractor_class.NAME = "ztf_lc_features"
+        self.mock_extractor_class.VERSION = metadata.version("feature-step")
         self.mock_extractor_class.BANDS_MAPPING = {"g": 1, "r": 2}
 
     def test_parse_output(self):
@@ -59,8 +63,8 @@ class ParsersTestCase(unittest.TestCase):
                 "type": "update_features",
                 "criteria": {"_id": "aid1"},
                 "data": {
-                    "features_version": "v1",
-                    "features_group": "group",
+                    "features_version": metadata.version("feature-step"),
+                    "features_group": "ztf_lc_features",
                     "features": [
                         {"name": "feat1", "fid": "g", "value": 123},
                         {"name": "feat1", "fid": "r", "value": 456},
@@ -76,8 +80,8 @@ class ParsersTestCase(unittest.TestCase):
                 "type": "update_features",
                 "criteria": {"_id": "aid2"},
                 "data": {
-                    "features_version": "v1",
-                    "features_group": "group",
+                    "features_version": metadata.version("feature-step"),
+                    "features_group": "ztf_lc_features",
                     "features": [
                         {"name": "feat1", "fid": "g", "value": 321},
                         {"name": "feat1", "fid": "r", "value": 654},

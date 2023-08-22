@@ -13,18 +13,18 @@ from tests.test_commons import (
 
 
 @pytest.mark.elasticc
-def test_step_elasticc_result(
+def test_step_elasticc_result_new_model(
     kafka_service,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc(
-        "barney",
-        "lc_classification.predictors.barney.barney_predictor.BarneyPredictor",
-        "lc_classification.predictors.barney.barney_parser.BarneyParser",
+        "barney_new",
+        "alerce_classifiers.mlp_elasticc.model.MLPElasticcClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_BARNEY_MODEL_PATH"),
+            "MODEL_PATH": os.getenv("TEST_NEW_BARNEY_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
         },
     )
 

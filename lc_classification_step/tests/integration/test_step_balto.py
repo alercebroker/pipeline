@@ -22,11 +22,11 @@ def test_step_elasticc_result(
 ):
     env_variables_elasticc(
         "balto",
-        "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
-        "lc_classification.predictors.balto.balto_parser.BaltoParser",
+        "alerce_classifiers.balto.model.BaltoClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
             "QUANTILES_PATH": os.getenv("TEST_BALTO_QUANTILES_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.balto.mapper.BaltoMapper",
         },
     )
 
@@ -57,11 +57,11 @@ def test_step_schemaless(
 ):
     env_variables_elasticc(
         "balto_schemaless",
-        "lc_classification.predictors.balto.balto_predictor.BaltoPredictor",
-        "lc_classification.predictors.balto.balto_parser.BaltoParser",
+        "alerce_classifiers.balto.model.BaltoClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
             "QUANTILES_PATH": os.getenv("TEST_BALTO_QUANTILES_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.balto.mapper.BaltoMapper",
             "PRODUCER_CLASS": "apf.producers.kafka.KafkaSchemalessProducer",
         },
     )
