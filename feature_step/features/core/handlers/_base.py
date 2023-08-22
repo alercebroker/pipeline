@@ -68,17 +68,29 @@ class BaseHandler(abc.ABC):
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self.logger.info(f"Creating {self.__class__.__name__}")
         try:
-            self._alerts = pd.DataFrame.from_records(alerts, exclude=["extra_fields"])
+            self._alerts = pd.DataFrame.from_records(
+                alerts, exclude=["extra_fields"]
+            )
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
         self._alerts = self._alerts.rename(columns={"aid": "id"})
         if self._alerts.size == 0:
-            index = {self.INDEX} if isinstance(self.INDEX, str) else set(self.INDEX)
-            unique = {self.UNIQUE} if isinstance(self.UNIQUE, str) else set(self.UNIQUE)
+            index = (
+                {self.INDEX}
+                if isinstance(self.INDEX, str)
+                else set(self.INDEX)
+            )
+            unique = (
+                {self.UNIQUE}
+                if isinstance(self.UNIQUE, str)
+                else set(self.UNIQUE)
+            )
 
             columns = set(self.COLUMNS) | index | unique
             self._alerts = pd.DataFrame(columns=list(columns))
-        self.logger.info(f"Total {self._NAME} before clearing: {len(self._alerts)}")
+        self.logger.info(
+            f"Total {self._NAME} before clearing: {len(self._alerts)}"
+        )
 
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
@@ -93,7 +105,9 @@ class BaseHandler(abc.ABC):
         extras = kwargs.get("extras", [])
         self._post_process(alerts=alerts, surveys=surveys, **kwargs)
         self._clear(surveys=surveys, bands=bands, extras=extras)
-        self.logger.info(f"Total {self._NAME} after clearing: {len(self._alerts)}")
+        self.logger.info(
+            f"Total {self._NAME} after clearing: {len(self._alerts)}"
+        )
         self._alerts = self._alerts.sort_values(["id", "mjd"])
 
     def not_enough(self, minimum: int, *, by_fid: bool = False):
@@ -232,7 +246,9 @@ class BaseHandler(abc.ABC):
             self._alerts = self._alerts[
                 self._alerts[self.COLUMNS].notna().all(axis="columns")
             ]
-        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
+        self.logger.debug(
+            f"{len(self._alerts)} {self._NAME} remain after selection"
+        )
 
         index = (self.INDEX,) if isinstance(self.INDEX, str) else self.INDEX
         self._alerts = self._alerts[
@@ -249,7 +265,9 @@ class BaseHandler(abc.ABC):
             f"Selecting {self._NAME} from survey(s): {surveys if surveys else 'all'}"
         )
         self._alerts = self._alerts[self._surveys_mask(surveys)]
-        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
+        self.logger.debug(
+            f"{len(self._alerts)} {self._NAME} remain after selection"
+        )
 
     def __discard_not_in_bands(self, bands: str | tuple[str]):
         """Keep only alerts in given band(s). Based on field `fid`.
@@ -261,7 +279,9 @@ class BaseHandler(abc.ABC):
             f"Selecting {self._NAME} from band(s): {bands if bands else 'all'}"
         )
         self._alerts = self._alerts[self._bands_mask(bands)]
-        self.logger.debug(f"{len(self._alerts)} {self._NAME} remain after selection")
+        self.logger.debug(
+            f"{len(self._alerts)} {self._NAME} remain after selection"
+        )
 
     def __add_extra_fields(self, alerts: list[dict], extras: list[str]):
         """Include additional fields in the data kept from the alerts.
@@ -281,8 +301,12 @@ class BaseHandler(abc.ABC):
             if extra not in self.COLUMNS and extra not in self._alerts.columns
         ]
         if extras and self._alerts.size:
-            records = {alert[self.INDEX]: alert["extra_fields"] for alert in alerts}
-            df = pd.DataFrame.from_dict(records, orient="index", columns=extras)
+            records = {
+                alert[self.INDEX]: alert["extra_fields"] for alert in alerts
+            }
+            df = pd.DataFrame.from_dict(
+                records, orient="index", columns=extras
+            )
             df = (
                 df.reset_index(names=[self.INDEX])
                 .drop_duplicates(self.INDEX)
@@ -304,7 +328,10 @@ class BaseHandler(abc.ABC):
         """
         if not values:
             return pd.Series(True, index=self._alerts.index)
-        masks = (self._alerts[column].str.lower() == value.lower() for value in values)
+        masks = (
+            self._alerts[column].str.lower() == value.lower()
+            for value in values
+        )
         return functools.reduce(lambda l, r: l.__or__(r), masks)
 
     def _surveys_mask(self, surveys: str | tuple[str, ...] = ()) -> pd.Series:
@@ -425,7 +452,12 @@ class BaseHandler(abc.ABC):
             )
         function = "idxmin" if which == "first" else "idxmax"
         return self.agg(
-            "mjd", function, by_fid=by_fid, surveys=surveys, bands=bands, flag=flag
+            "mjd",
+            function,
+            by_fid=by_fid,
+            surveys=surveys,
+            bands=bands,
+            flag=flag,
         )
 
     def which_value(
@@ -483,9 +515,9 @@ class BaseHandler(abc.ABC):
         Returns:
             pd.Series: Aggregate field value. Indexed by `id` (and `fid` if `by_fid`).
         """
-        return self.grouped(by_fid=by_fid, surveys=surveys, bands=bands, flag=flag)[
-            column
-        ].agg(func, **kwargs)
+        return self.grouped(
+            by_fid=by_fid, surveys=surveys, bands=bands, flag=flag
+        )[column].agg(func, **kwargs)
 
     @methodtools.lru_cache()
     def get_delta(
@@ -510,10 +542,20 @@ class BaseHandler(abc.ABC):
             pd.Series: Field value difference. Indexed by `id` (and `fid` if `by_fid`).
         """
         vmax = self.agg(
-            column, "max", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag
+            column,
+            "max",
+            by_fid=by_fid,
+            surveys=surveys,
+            bands=bands,
+            flag=flag,
         )
         vmin = self.agg(
-            column, "min", by_fid=by_fid, surveys=surveys, bands=bands, flag=flag
+            column,
+            "min",
+            by_fid=by_fid,
+            surveys=surveys,
+            bands=bands,
+            flag=flag,
         )
         return vmax - vmin
 

@@ -130,12 +130,19 @@ class BaseFeatureExtractor(abc.ABC):
         if isinstance(detections, pd.DataFrame):
             detections = detections.reset_index().to_dict("records")
         self.detections = DetectionsHandler(
-            detections, extras=self.EXTRA_COLUMNS, corr=self.CORRECTED, **common
+            detections,
+            extras=self.EXTRA_COLUMNS,
+            corr=self.CORRECTED,
+            **common,
         )
 
-        self.logger.info(f"Total objects before clearing: {self.detections.ids().size}")
+        self.logger.info(
+            f"Total objects before clearing: {self.detections.ids().size}"
+        )
         self._discard_detections()
-        self.logger.info(f"Total objects after clearing: {self.detections.ids().size}")
+        self.logger.info(
+            f"Total objects after clearing: {self.detections.ids().size}"
+        )
 
         first_mjd = functions.fill_index(
             self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS
@@ -151,7 +158,9 @@ class BaseFeatureExtractor(abc.ABC):
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index().to_dict("records")
-        self.xmatches = self._create_xmatches(xmatches or [])  # If None, use empty list
+        self.xmatches = self._create_xmatches(
+            xmatches or []
+        )  # If None, use empty list
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
         self.logger.info("Finished initialization")
@@ -168,16 +177,28 @@ class BaseFeatureExtractor(abc.ABC):
 
         def expand_catalogues(xm):
             return {
-                k: v for cat in self.XMATCH_COLUMNS for k, v in xm.get(cat, {}).items()
+                k: v
+                for cat in self.XMATCH_COLUMNS
+                for k, v in xm.get(cat, {}).items()
             }
 
         def get_required_columns():
-            return [col for cols in self.XMATCH_COLUMNS.values() for col in cols]
+            return [
+                col for cols in self.XMATCH_COLUMNS.values() for col in cols
+            ]
 
-        xmatches = [{"aid": xm["aid"]} | expand_catalogues(xm) for xm in xmatches]
-        xmatches = pd.DataFrame(xmatches, columns=["aid"] + get_required_columns())
-        xmatches = xmatches.rename(columns={"aid": "id"}).drop_duplicates(subset=["id"])
-        return xmatches[xmatches["id"].isin(self.detections.ids())].set_index("id")
+        xmatches = [
+            {"aid": xm["aid"]} | expand_catalogues(xm) for xm in xmatches
+        ]
+        xmatches = pd.DataFrame(
+            xmatches, columns=["aid"] + get_required_columns()
+        )
+        xmatches = xmatches.rename(columns={"aid": "id"}).drop_duplicates(
+            subset=["id"]
+        )
+        return xmatches[xmatches["id"].isin(self.detections.ids())].set_index(
+            "id"
+        )
 
     def clear_caches(self):
         """Clears the cache from detections and non-detections."""
@@ -227,7 +248,9 @@ class BaseFeatureExtractor(abc.ABC):
             {"iqr": self.detections.agg("mag_ml", stats.iqr, by_fid=True)}
         )
 
-    def generate_features(self, exclude: set[str] | None = None) -> pd.DataFrame:
+    def generate_features(
+        self, exclude: set[str] | None = None
+    ) -> pd.DataFrame:
         """Create a data frame with all required features.
 
         Args:
@@ -258,5 +281,7 @@ class BaseFeatureExtractor(abc.ABC):
 
         # Compute all features and join into single dataframe
         return pd.concat(
-            (getattr(self, method)() for method in methods), axis="columns", copy=False
+            (getattr(self, method)() for method in methods),
+            axis="columns",
+            copy=False,
         )

@@ -50,14 +50,20 @@ def periods(
     periodogram = _get_multiband_periodogram()
 
     # Periods are only computed for bands with more than 5, but phase-folded and harmonics features use all, always
-    filtered_df = df.groupby("fid").filter(lambda x: len(x) > 5).sort_values("mjd")
+    filtered_df = (
+        df.groupby("fid").filter(lambda x: len(x) > 5).sort_values("mjd")
+    )
 
     fid = filtered_df["fid"].values
     mag, e_mag, mjd = filtered_df[["mag_ml", "e_mag_ml", "mjd"]].T.values
     periodogram.set_data(mjd, mag, e_mag, fid)
     try:
-        periodogram.frequency_grid_evaluation(fmin=1e-3, fmax=20.0, fresolution=1e-3)
-        periodogram.finetune_best_frequencies(n_local_optima=10, fresolution=1e-4)
+        periodogram.frequency_grid_evaluation(
+            fmin=1e-3, fmax=20.0, fresolution=1e-3
+        )
+        periodogram.finetune_best_frequencies(
+            n_local_optima=10, fresolution=1e-4
+        )
     except TypeError:
         output = [pd.Series(np.nan, index=_indices(fids))]
         if kim:
@@ -86,7 +92,9 @@ def periods(
         per_band[i] = period_band
         per_band[i + len(fids)] = abs(period - period_band)
 
-    output = [pd.Series([period, significance, *per_band], index=_indices(fids))]
+    output = [
+        pd.Series([period, significance, *per_band], index=_indices(fids))
+    ]
     if kim:
         output.append(apply_kim(df, period, fids))
     if n_harmonics:

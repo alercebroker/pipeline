@@ -39,7 +39,7 @@ def generate_alert(
         extra_fields = get_extra_fields()
         extra_fields["diaObject"] = diaObject
         alert = {
-            "candid": random.randint(1000000, 9000000),
+            "candid": str(random.randint(1000000, 9000000)),
             "oid": f"oid{identifier}",
             "aid": aid,
             "tid": "LSST",

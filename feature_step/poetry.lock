@@ -13,24 +13,26 @@ files = [
 
 [[package]]
 name = "apf-base"
-version = "2.4.4"
-description = "ALeRCE Alert Processing Framework."
+version = "2.5.3a24"
+description = "Alert Processing Framework"
 optional = false
-python-versions = "*"
-files = [
-    {file = "apf_base-2.4.4-py3-none-any.whl", hash = "sha256:c8a64cec48eaa97650e0ec493e91dd1b6f443d552300f602d5e33e0ce6e04e0b"},
-    {file = "apf_base-2.4.4.tar.gz", hash = "sha256:e05d0fedf6e626b028fea56ebebb02887a3b3fb65dfe0d8274ff95088e62d801"},
-]
+python-versions = ">=3.7"
+files = []
+develop = true
 
 [package.dependencies]
 boto3 = "1.26.69"
 click = ">=7.1.1"
 confluent-kafka = ">=1.4.0,<2.1.0"
 fastavro = ">=0.22.0,<=1.6.1"
-Jinja2 = ">=2.10.0"
+jinja2 = ">=2.10.0"
 pandas = ">=0.24,<=2.0.1"
 prometheus-client = "0.16.0"
 pyroscope-io = "0.8.4"
+
+[package.source]
+type = "directory"
+url = "../libs/apf"
 
 [[package]]
 name = "astropy"
@@ -1297,7 +1299,7 @@ files = [
 
 [[package]]
 name = "lc-classifier"
-version = "2.1.0"
+version = "2.1.1a1"
 description = "Lightcurve classifiers and feature computation"
 optional = false
 python-versions = ">=3.8"
@@ -2646,7 +2648,7 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "test-utils"
-version = "0.1.0"
+version = "0.1.1a1"
 description = ""
 optional = false
 python-versions = ">=3.10"
@@ -2681,7 +2683,7 @@ files = [
 
 [[package]]
 name = "turbofats"
-version = "2.0.1a22"
+version = "2.0.1a24"
 description = "Library with some features for astronomical time series"
 optional = false
 python-versions = ">=3.10, <3.13"
@@ -2884,4 +2886,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "1ce74d120a0f1789d4941d9aeadfd2b01186f13aa66dd2ace4705545218e953f"
+content-hash = "3f9684878d2a4fc0f6bd6e24e1f4e9b1a8dae7a24b1e345e6a00a18f39f789dd"
