@@ -2,7 +2,9 @@ import pandas as pd
 from mhps import statistics, flux_statistics
 
 
-def mhps(df: pd.DataFrame, t1: float, t2: float, flux: bool = False) -> pd.Series:
+def mhps(
+    df: pd.DataFrame, t1: float, t2: float, flux: bool = False
+) -> pd.Series:
     """Mexican hat power spectrum features.
 
     Args:

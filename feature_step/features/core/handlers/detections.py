@@ -56,7 +56,9 @@ class DetectionsHandler(BaseHandler):
             .reindex(self._alerts["id"])
         )
 
-        mag = np.where(corrected, self._alerts["mag_corr"], self._alerts["mag"])
+        mag = np.where(
+            corrected, self._alerts["mag_corr"], self._alerts["mag"]
+        )
         e_mag = np.where(
             corrected, self._alerts["e_mag_corr_ext"], self._alerts["e_mag"]
         )
@@ -94,5 +96,7 @@ class DetectionsHandler(BaseHandler):
         mags = functions.fill_index(mags, fid=bands)
 
         if flux:  # + 1 in denominator to avoid division errors
-            return mags.xs(first, level="fid") / (mags.xs(second, level="fid") + 1)
+            return mags.xs(first, level="fid") / (
+                mags.xs(second, level="fid") + 1
+            )
         return mags.xs(first, level="fid") - mags.xs(second, level="fid")

@@ -8,7 +8,11 @@ def _distmod(z):
 
 
 def lsst(
-    flux: np.ndarray, error: np.ndarray, band: np.ndarray, mwebv: float, zhost: float
+    flux: np.ndarray,
+    error: np.ndarray,
+    band: np.ndarray,
+    mwebv: float,
+    zhost: float,
 ):
     """Modifies flux and error inplace"""
     zhost = zhost if zhost >= 0.003 else 0

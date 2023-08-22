@@ -26,7 +26,9 @@ def gp_drw(df: pd.DataFrame) -> pd.Series:
         _nlogp, guess, method="L-BFGS-B", args=(gp, time, mag, err)
     )
     theta0, theta1 = np.exp(result.x)
-    return pd.Series([theta0, 1 / theta1], index=["GP_DRW_sigma", "GP_DRW_tau"])
+    return pd.Series(
+        [theta0, 1 / theta1], index=["GP_DRW_sigma", "GP_DRW_tau"]
+    )
 
 
 def _set_params(

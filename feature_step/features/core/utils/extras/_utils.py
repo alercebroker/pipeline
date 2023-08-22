@@ -14,5 +14,7 @@ def empty(indices: Sequence[str], fids: tuple[str, ...]) -> pd.Series:
 
 
 @functools.lru_cache()
-def multiindex(indices: tuple[str, ...], fids: tuple[str, ...]) -> pd.MultiIndex:
+def multiindex(
+    indices: tuple[str, ...], fids: tuple[str, ...]
+) -> pd.MultiIndex:
     return pd.MultiIndex.from_product([indices, fids], names=(None, "fid"))

@@ -13,5 +13,7 @@ def turbofats(df: pd.DataFrame, features: tuple[str, ...]) -> pd.Series:
     space = _get_feature_space(features)
 
     df = df.set_index("id")[["mag_ml", "e_mag_ml", "mjd"]]
-    df = df.rename(columns={"mag_ml": "magnitude", "e_mag_ml": "error", "mjd": "time"})
+    df = df.rename(
+        columns={"mag_ml": "magnitude", "e_mag_ml": "error", "mjd": "time"}
+    )
     return space.calculate_features(df)

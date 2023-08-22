@@ -18,7 +18,9 @@ def v1(params, time, flux, error, band, fids, smooth, weight):
 
         sq_err += jnp.dot(sq_err_i * (band == i), weight)
 
-    var = jnp.var(params, axis=0) + jnp.array([1, 5e-2, 5e-2, 5e-3, 5e-2, 5e-2])
+    var = jnp.var(params, axis=0) + jnp.array(
+        [1, 5e-2, 5e-2, 5e-3, 5e-2, 5e-2]
+    )
     lambdas = jnp.array([0, 1, 0.1, 20, 0.7, 0.01])
 
     regularization = jnp.dot(lambdas, jnp.sqrt(var))
@@ -41,7 +43,9 @@ def v2(params, time, flux, error, band, fids, smooth, weight):
 
         sq_err += jnp.dot(sq_err_i * (band == i), weight)
 
-    var = jnp.var(params, axis=0) + jnp.array([1, 5e-2, 5e-2, 5e-3, 5e-2, 5e-2])
+    var = jnp.var(params, axis=0) + jnp.array(
+        [1, 5e-2, 5e-2, 5e-3, 5e-2, 5e-2]
+    )
     lambdas = jnp.array([0, 1, 0.1, 20, 0.7, 0.01])
 
     regularization = jnp.dot(lambdas, jnp.sqrt(var))
