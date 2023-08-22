@@ -88,7 +88,40 @@ class UpdateCommand(Command):
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
-        return [UpdateOne(self.criteria, {op: self.data}, upsert=self.options.upsert)]
+        return [
+            UpdateOne(
+                self.criteria, {op: self.data}, upsert=self.options.upsert
+            )
+        ]
+
+
+""" Note:
+Old probability schema:
+{
+    probabilities: [
+        {
+            "classifier_name": "name1",
+            "classifier_version": "1.0.0",
+            "class_name": "AGN",
+            "probability": 0.99,
+            "ranking": 1, 
+        },
+        ...
+    ]
+}
+
+New probability schema:
+{
+    probabilities: {
+        "name1": {
+            "version": "1.0.0",
+            "class_rank_1": "AGN",
+            "probability_rank_1": 0.99,
+            "values": [{ "class_name": "AGN", "probability": 0.99, "ranking": 1 }, ...]
+        }
+    }
+}
+"""
 
 
 class UpdateProbabilitiesCommand(UpdateCommand):
@@ -156,78 +189,9 @@ class UpdateProbabilitiesCommand(UpdateCommand):
             }
         }
 
-        return [UpdateOne(self.criteria, operation, upsert=self.options.upsert)]
-
-        """
-        Old probability schema:
-        {
-            probabilities: [
-                {
-                    "classifier_name": "name1",
-                    "classifier_version": "1.0.0",
-                    "class_name": "AGN",
-                    "probability": 0.99,
-                    "ranking": 1, 
-                },
-                ...
-            ]
-        }
-
-        New probability schema:
-        {
-            probabilities: {
-                "name1": {
-                    "version": "1.0.0",
-                    "class_rank_1": "AGN",
-                    "probability_rank_1": 0.99,
-                    "values": [{ "class_name": "AGN", "probability": 0.99, "ranking": 1 }, ...]
-                }
-            }
-        }
-        """
-
-        probabilities = [
-            {
-                "classifier_name": self.classifier_name,
-                "classifier_version": self.classifier_version,
-                "class_name": cls,
-                "probability": p,
-                "ranking": i + 1,
-            }
-            for i, (cls, p) in enumerate(self._sort())
+        return [
+            UpdateOne(self.criteria, operation, upsert=self.options.upsert)
         ]
-        insert = {"$push": {"probabilities": {"$each": probabilities}}}
-
-        # Insert empty probabilities if AID doesn't exist
-        upsert = {"$setOnInsert": {"probabilities": []}}
-        ops = [
-            UpdateOne(self.criteria, upsert, upsert=self.options.upsert),
-            UpdateOne(criteria, insert),
-        ]
-
-        if self.options.set_on_insert:
-            return ops
-
-        for i, (cls, p) in enumerate(self._sort()):
-            filters = {
-                "el.classifier_name": self.classifier_name,
-                "el.classifier_version": self.classifier_version,
-                "el.class_name": cls,
-            }
-            update = {
-                "$set": {
-                    "probabilities.$[el].probability": p,
-                    "probabilities.$[el].ranking": i + 1,
-                }
-            }
-            ops.append(
-                UpdateOne(
-                    self.criteria,
-                    update,
-                    array_filters=[filters],
-                )
-            )
-        return ops
 
 
 class UpdateFeaturesCommand(UpdateCommand):
