@@ -8,6 +8,7 @@ from typing import List
 import pandas as pd
 import pickle
 import os
+import copy
 from importlib import metadata
 
 
@@ -32,8 +33,12 @@ class ELAsTiCCFeatureExtractor:
         self.detections = detections
 
     def generate_features(self):
-        lightcurves = self._create_lightcurve_dataframe(self.detections)
-        metadata = self._create_metadata_dataframe(self.detections)
+        lightcurves = self._create_lightcurve_dataframe(
+            copy.deepcopy(self.detections)
+        )
+        metadata = self._create_metadata_dataframe(
+            copy.deepcopy(self.detections)
+        )
         input_snids = lightcurves.index.unique().values
 
         lightcurves = self.preprocessor.preprocess(lightcurves)

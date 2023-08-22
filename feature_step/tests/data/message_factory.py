@@ -44,7 +44,7 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> list[dict]:
             "e_mag": random.random(),
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.random(),
-            "rbversion": f"v7379812",
+            "rbversion": "v7379812",
             "aid": f"AL2X{random.randint(1000, 9990)}",
             "extra_fields": get_extra_fields("ATLAS"),
         }
@@ -58,7 +58,7 @@ def generate_alert_ztf(
     alerts = []
     for i in range(num_messages):
         alert = {
-            "candid": random.randint(1000000, 9000000),
+            "candid": str(random.randint(1000000, 9000000)),
             "oid": f"ZTFoid{identifier}",
             "aid": aid,
             "tid": "ZTF",
@@ -120,38 +120,12 @@ def generate_input_batch(n: int) -> list[dict]:
         detections_g = generate_alert_ztf(aid, "g", random.randint(5, 10), m)
         detections_r = generate_alert_ztf(aid, "r", random.randint(5, 10), m)
         non_det = generate_non_det(aid, random.randint(1, 5), m)
-        # candid = int(str(m + 1).ljust(8, "0"))
-        # detections[-1]["candid"] = candid
         xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,
             "meanra": meanra,
             "meandec": meandec,
             "detections": detections_g + detections_r,
-            "non_detections": non_det,
-            "xmatches": xmatch,
-        }
-        batch.append(msg)
-    random.sample(batch, len(batch))
-    return batch
-
-
-def generate_non_ztf_batch(n: int) -> list[dict]:
-    batch = []
-    for m in range(1, n + 1):
-        aid = f"AL2X{str(m).zfill(5)}"
-        meanra = random.uniform(0, 360)
-        meandec = random.uniform(-90, 90)
-        detections = generate_alert_atlas(random.randint(1, 100), m)
-        non_det = generate_non_det(aid, random.randint(1, 20), m)
-        candid = int(str(m + 1).ljust(8, "0"))
-        detections[-1]["candid"] = candid
-        xmatch = get_fake_xmatch(aid, meanra, meandec)
-        msg = {
-            "aid": aid,
-            "meanra": meanra,
-            "meandec": meandec,
-            "detections": detections,
             "non_detections": non_det,
             "xmatches": xmatch,
         }
@@ -182,28 +156,30 @@ def get_default_object_values(identifier: int) -> dict:
 
 def get_fake_xmatch(aid, meanra, meandec) -> pd.DataFrame:
     fake = {
-        "angDist": round(random.uniform(0, 1), 6),
-        "col1": random.randint(7, 10),
-        "aid_in": aid,
-        "ra_in": round(meanra, 6),
-        "dec_in": round(meandec, 6),
-        "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
-        "RAJ2000": round(meanra, 6),
-        "DEJ2000": round(meandec, 6),
-        "W1mag": round(random.uniform(10, 15), 3),
-        "W2mag": round(random.uniform(10, 15), 3),
-        "W3mag": round(random.uniform(10, 15), 3),
-        "W4mag": round(random.uniform(10, 15), 3),
-        "Jmag": round(random.uniform(10, 15), 3),
-        "Hmag": round(random.uniform(10, 15), 3),
-        "Kmag": round(random.uniform(10, 15), 3),
-        "e_W1mag": round(random.uniform(0, 1), 3),
-        "e_W2mag": round(random.uniform(0, 1), 3),
-        "e_W3mag": round(random.uniform(0, 1), 3),
-        "e_W4mag": round(random.uniform(0, 1), 3),
-        "e_Jmag": round(random.uniform(0, 1), 3),
-        "e_Hmag": round(random.uniform(0, 1), 3),
-        "e_Kmag": round(random.uniform(0, 1), 3),
+        "allwise": {
+            "angDist": round(random.uniform(0, 1), 6),
+            "col1": random.randint(7, 10),
+            "aid_in": aid,
+            "ra_in": round(meanra, 6),
+            "dec_in": round(meandec, 6),
+            "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
+            "RAJ2000": round(meanra, 6),
+            "DEJ2000": round(meandec, 6),
+            "W1mag": round(random.uniform(10, 15), 3),
+            "W2mag": round(random.uniform(10, 15), 3),
+            "W3mag": round(random.uniform(10, 15), 3),
+            "W4mag": round(random.uniform(10, 15), 3),
+            "Jmag": round(random.uniform(10, 15), 3),
+            "Hmag": round(random.uniform(10, 15), 3),
+            "Kmag": round(random.uniform(10, 15), 3),
+            "e_W1mag": round(random.uniform(0, 1), 3),
+            "e_W2mag": round(random.uniform(0, 1), 3),
+            "e_W3mag": round(random.uniform(0, 1), 3),
+            "e_W4mag": round(random.uniform(0, 1), 3),
+            "e_Jmag": round(random.uniform(0, 1), 3),
+            "e_Hmag": round(random.uniform(0, 1), 3),
+            "e_Kmag": round(random.uniform(0, 1), 3),
+        }
     }
     return fake
 
