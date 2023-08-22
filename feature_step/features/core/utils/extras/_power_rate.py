@@ -39,7 +39,11 @@ def power_rates(
 
 
 def _power_rate(
-    freq: np.ndarray, per: np.ndarray, frequency: float, power: float, factor: float
+    freq: np.ndarray,
+    per: np.ndarray,
+    frequency: float,
+    power: float,
+    factor: float,
 ) -> pd.Series:
     desired = frequency / factor
 
@@ -51,12 +55,17 @@ def _power_rate(
 
 
 def apply_power_rates(
-    freq: np.ndarray, per: np.ndarray, factors: tuple[str, ...], fids: tuple[str, ...]
+    freq: np.ndarray,
+    per: np.ndarray,
+    factors: tuple[str, ...],
+    fids: tuple[str, ...],
 ) -> pd.Series:
     return power_rates(freq, per, factors).set_axis(
         multiindex(tuple(_indices(factors)), ("".join(fids),))
     )
 
 
-def empty_power_rates(factors: tuple[str, ...], fids: tuple[str, ...]) -> pd.Series:
+def empty_power_rates(
+    factors: tuple[str, ...], fids: tuple[str, ...]
+) -> pd.Series:
     return empty(_indices(factors), ("".join(fids),))

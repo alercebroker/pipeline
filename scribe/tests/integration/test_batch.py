@@ -63,19 +63,14 @@ commands.extend([generator.generate_random_command() for _ in range(125)])
 generator.set_offset(125)
 commands.append(generator.generate_insert())
 commands.extend(
-    [
-        generator.generate_random_command({"upsert": True}, 125)
-        for _ in range(125)
-    ]
+    [generator.generate_random_command({"upsert": True}, 125) for _ in range(125)]
 )
 # 1000 - 1000 + X (upsert and set_on_insert)
 generator.set_offset(250)
 commands.append(generator.generate_insert())
 commands.extend(
     [
-        generator.generate_random_command(
-            {"upsert": True, "set_on_insert": True}, 250
-        )
+        generator.generate_random_command({"upsert": True, "set_on_insert": True}, 250)
         for _ in range(125)
     ]
 )
@@ -92,9 +87,7 @@ def test_bulk(kafka_service, mongo_service):
 
     # get any element that have features (obtained from the tracker)
     updated_feats = {
-        key: val
-        for key, val in generator.get_updated_features().items()
-        if val != []
+        key: val for key, val in generator.get_updated_features().items() if val != {}
     }
     sample_id = choice(list(updated_feats.keys()))
     result = collection.find_one({"_id": f"ID{sample_id}"})
@@ -105,17 +98,28 @@ def test_bulk(kafka_service, mongo_service):
     updated_probs = {
         key: val
         for key, val in generator.get_updated_probabilities().items()
-        if val != []
+        if val != {}
     }
     sample_id_2 = choice(list(updated_probs.keys()))
     result = collection.find_one({"_id": f"ID{sample_id_2}"})
     tracked = updated_probs[sample_id_2]
-    diff = [
-        prob
-        for prob in result["probabilities"] + tracked
-        if prob not in result["probabilities"] or prob not in tracked
-    ]
-    assert len(diff) == 0
+
+    classifiers = list(result["probabilities"].keys())
+    assert set(classifiers) == set(tracked.keys())
+    for classifier in classifiers:
+        classifier_vals = result["probabilities"][classifier]
+        assert classifier_vals["version"] == tracked[classifier]["version"]
+        assert classifier_vals["class_rank_1"] == tracked[classifier]["class_rank_1"]
+        assert (
+            classifier_vals["probability_rank_1"]
+            == tracked[classifier]["probability_rank_1"]
+        )
+        classifier_vals["values"].sort(key=lambda x: x["ranking"])
+        tracked[classifier]["values"].sort(key=lambda x: x["ranking"])
+        assert (
+           classifier_vals["values"] == tracked[classifier]["values"]
+        )
+
     # assertIsNotNone(result)
 
     # check edge cases

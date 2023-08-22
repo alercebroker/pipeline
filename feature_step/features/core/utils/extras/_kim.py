@@ -31,7 +31,9 @@ def kim(df: pd.DataFrame, period: float) -> pd.Series:
     return pd.Series([psi_cs, psi_eta], index=INDICES)
 
 
-def apply_kim(df: pd.DataFrame, period: float, fids: tuple[str, ...]) -> pd.Series:
+def apply_kim(
+    df: pd.DataFrame, period: float, fids: tuple[str, ...]
+) -> pd.Series:
     r"""Compute phase-folded light-curve parameters.
 
     Computes the cumulative sum and :math:`\eta_e`.

@@ -16,7 +16,9 @@ def logger(method):
 
         details = df.columns.to_frame().groupby(level=0)["fid"].unique()
         for idx in details.index:
-            self.logger.debug(f"  Feature {idx} for band(s): {details.loc[idx]}")
+            self.logger.debug(
+                f"  Feature {idx} for band(s): {details.loc[idx]}"
+            )
         return df
 
     return wrapper
@@ -39,7 +41,9 @@ def add_fid(fid: Any):
         @functools.wraps(method)
         def wrapper(self, *args, **kwargs):
             df = method(self, *args, **kwargs)
-            return df.assign(fid=fid).set_index("fid", append=True).unstack("fid")
+            return (
+                df.assign(fid=fid).set_index("fid", append=True).unstack("fid")
+            )
 
         return wrapper
 

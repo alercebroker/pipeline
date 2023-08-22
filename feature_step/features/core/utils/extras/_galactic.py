@@ -10,5 +10,6 @@ def galactic_coordinates(
     if np.any(ra.index != dec.index):
         raise ValueError("RA and Dec should have the same indices")
     return pd.DataFrame(
-        {"gal_b": galactic.b.degree, "gal_l": galactic.l.degree}, index=ra.index
+        {"gal_b": galactic.b.degree, "gal_l": galactic.l.degree},
+        index=ra.index,
     )
