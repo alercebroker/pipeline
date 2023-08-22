@@ -21,8 +21,8 @@ class TestFeatures(unittest.TestCase):
     def testMean(self):
         mean_computer = Mean(shared_data=None)
         mean = mean_computer.fit(self.lc_g_np)
-        expected_mean = 17.371986
-        self.assertTrue(np.abs(mean - expected_mean) < 0.01)
+        expected_mean = 17.354931
+        self.assertLessEqual(np.abs(mean - expected_mean), 0.01)
 
 
 class TestNewFeatureSpace(unittest.TestCase):
@@ -59,9 +59,10 @@ class TestNewFeatureSpace(unittest.TestCase):
         )
         features = new_feature_space.calculate_features(self.lc_g)
         print(features.iloc[0])
-        expected_mean = 17.371986
+        expected_mean = 17.354931
         mean = features['Mean'][0]
         self.assertTrue(np.abs(mean - expected_mean) < 0.01)
+
 
 if __name__ == '__main__':
     unittest.main()

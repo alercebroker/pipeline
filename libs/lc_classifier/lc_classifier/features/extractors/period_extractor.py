@@ -54,21 +54,40 @@ class PeriodExtractor(FeatureExtractor):
         
         times = lightcurve['time'].values
 
+        # indexes of the best subsequence so far
         best_starting = 0
-        best_ending = 0
+        best_ending = 0  # index of the last obs (included)
 
+        # subsequence being examined
+        # invariant: subsequence timespan under max allowed
         starting = 0
-        ending = 0
+        ending = 0  # included
+
         while True:
-            current_n = ending - starting
-            if current_n > (best_ending - best_starting):
+            # subsequence len
+            current_n = ending - starting + 1
+
+            # best subsequence len
+            len_best_subsequence = best_ending - best_starting + 1
+
+            if current_n > len_best_subsequence:
                 best_starting = starting
                 best_ending = ending
+
             current_timespan = times[ending] - times[starting]
             if current_timespan < self.trim_lightcurve_to_n_days:
+                # try to extend the subsequence
                 ending += 1
+
+                # nothing else to do
                 if ending >= len(times):
                     break
+
+                # restore invariant
+                current_timespan = times[ending] - times[starting]
+                while current_timespan > self.trim_lightcurve_to_n_days:
+                    starting += 1
+                    current_timespan = times[ending] - times[starting]
             else:
                 starting += 1
 
@@ -117,8 +136,9 @@ class PeriodExtractor(FeatureExtractor):
                         n_local_optima=10, fresolution=1e-4)
                 best_freq, best_per = self.periodogram_computer.get_best_frequencies()
                 if len(best_freq) == 0:
-                    logging.error(f'[PeriodExtractor] best frequencies has len 0: '
-                                f'oid {oid}')
+                    logging.error(
+                        f'[PeriodExtractor] best frequencies has len 0: '
+                        f'oid {oid}')
                     object_features = self.nan_series()
                     kwargs['periodograms'][oid] = {
                         'freq': None,
