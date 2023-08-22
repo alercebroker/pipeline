@@ -14,7 +14,7 @@ class PeriodExtractor(FeatureExtractor):
             bands: List[str], 
             smallest_period: float, 
             largest_period: float, 
-            optimal_grid : bool,
+            optimal_grid: bool,
             trim_lightcurve_to_n_days: Optional[float],
             min_length: int):
         
