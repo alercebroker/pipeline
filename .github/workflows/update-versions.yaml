@@ -42,7 +42,7 @@ jobs:
               if [[ $(dirname $i) == ./libs/P4J ]]; then
                 continue
               fi
-              if [[ $(dirname $i) == ./libs/P4J ]]; then
+              if [[ $(dirname $i) == ./libs/mhps ]]; then
                 continue
               fi
               echo "$(dirname $i)"
