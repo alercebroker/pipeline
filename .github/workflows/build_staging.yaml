@@ -110,6 +110,19 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+  lc_classification_step_mlp_staging:
+    uses: ./.github/workflows/build-template.yaml
+    needs: update_versions
+    with:
+      build-type: staging
+      step-name: lc_classification_step_mlp
+      step-name-prefix: ""
+      build-context: .
+      base-folder: lc_classification_step
+      file: Dockerfile.mlp
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   lc_classification_step_toretto_staging:
     uses: ./.github/workflows/build-template.yaml
     needs: update_versions
