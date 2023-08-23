@@ -135,7 +135,7 @@ class CommandTests(unittest.TestCase):
             valid_probabilities_dict["criteria"],
         )
         operations = update_command.get_operations()
-        self.assertEqual(len(operations), 2)
+        self.assertEqual(len(operations), 3)
         self.assertTrue(isinstance(operations[0], UpdateOne))
         self.assertFalse(any(op._upsert for op in operations))
 
@@ -156,7 +156,7 @@ class CommandTests(unittest.TestCase):
                 )
             )
 
-        update = operations[1]._doc.pop("$set")
+        update = operations[2]._doc.pop("$set")
         pprint(update)
 
         assert "probabilities.$[el].class_rank_1" in update
@@ -255,7 +255,7 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
+        self.assertEqual(len(operations), 3)
 
     def test_update_features_data_operations(self):
         update_features_command = UpdateFeaturesCommand(
@@ -267,18 +267,24 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 2)
-        self.assertEqual(operations[0]._filter, {"features.survey": {"$ne": "group"}})
-        self.assertEqual(operations[1]._filter, {"_id": "AID51423"})
+        self.assertEqual(len(operations), 3)
+        self.assertEqual(
+            operations[1]._filter,
+            {"features.survey": {"$ne": "group"}, "_id": "AID51423"},
+        )
+        self.assertEqual(operations[2]._filter, {"_id": "AID51423"})
         self.assertEqual(
             operations[1]._doc,
             {
-                "$set": {
-                    "features.$[el].features": [
-                        {"fid": "g", "name": "feature1", "value": 12.34},
-                        {"fid": "Y", "name": "feature2", "value": None},
-                    ],
-                    "features.$[el].version": "v1",
+                "$push": {
+                    "features": {
+                        "survey": "group",
+                        "version": "v1",
+                        "features": [
+                            {"fid": "g", "name": "feature1", "value": 12.34},
+                            {"fid": "Y", "name": "feature2", "value": None},
+                        ],
+                    }
                 }
             },
         )
