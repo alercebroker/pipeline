@@ -9,7 +9,9 @@ from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
 
-ZTF_CLASSIFIER_CLASS = "lc_classifier.classifier.models.HierarchicalRandomForest"
+ZTF_CLASSIFIER_CLASS = (
+    "lc_classifier.classifier.models.HierarchicalRandomForest"
+)
 
 
 class LateClassifier(GenericStep):
@@ -47,11 +49,15 @@ class LateClassifier(GenericStep):
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
 
-        self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
-            config["SCRIBE_PRODUCER_CONFIG"]
-        )
-        self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+        self.scribe_producer = get_class(
+            config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
+        )(config["SCRIBE_PRODUCER_CONFIG"])
+        self.scribe_parser: KafkaParser = get_class(
+            config["SCRIBE_PARSER_CLASS"]
+        )()
+        self.step_parser: KafkaParser = get_class(
+            config["STEP_PARSER_CLASS"]
+        )()
 
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = self.config["MODEL_VERSION"]

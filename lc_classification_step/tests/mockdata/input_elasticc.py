@@ -12,7 +12,11 @@ DETECTIONS = {
             },
             {"name": "tid", "type": "string"},
             {"name": "aid", "type": "string"},
-            {"name": "oid", "type": "int", "description": "int just for test purposes"},
+            {
+                "name": "oid",
+                "type": "int",
+                "description": "int just for test purposes",
+            },
             {"name": "fid", "type": "string"},
             {"name": "mjd", "type": "double"},
             {"name": "mag", "type": "float"},
@@ -563,8 +567,6 @@ FEATURES_SCHEMA = {
         {"name": "r-i", "type": ["float", "null"]},
         {"name": "u-g", "type": ["float", "null"]},
         {"name": "z-Y", "type": ["float", "null"]},
-        {"name": "mwebv", "type": ["float", "null"]},
-        {"name": "redshift_helio", "type": ["float", "null"]},
     ],
 }
 

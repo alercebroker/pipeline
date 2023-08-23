@@ -20,20 +20,25 @@ from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
-    config.addinivalue_line("markers", "elasticc: mark a test as a elasticc test.")
+    config.addinivalue_line(
+        "markers", "elasticc: mark a test as a elasticc test."
+    )
 
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
     return (
-        "docker compose" if not os.getenv("COMPOSE", "v1") == "v1" else "docker-compose"
+        "docker compose"
+        if not os.getenv("COMPOSE", "v1") == "v1"
+        else "docker-compose"
     )
 
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return (
-        pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"
+        pathlib.Path(pytestconfig.rootdir)
+        / "tests/integration/docker-compose.yml"
     ).absolute()
 
 
@@ -50,11 +55,13 @@ def is_responsive_kafka(url):
             NewTopic("w_object", num_partitions=1),
             NewTopic(get_lc_classifier_topic("ztf"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("balto"), num_partitions=1),
-            NewTopic(get_lc_classifier_topic("balto_schemaless"), num_partitions=1),
+            NewTopic(
+                get_lc_classifier_topic("balto_schemaless"), num_partitions=1
+            ),
             NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
-            NewTopic(get_lc_classifier_topic("barney_new"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("mlp"), num_partitions=1),
             NewTopic("metrics", num_partitions=1),
         ]
     )
