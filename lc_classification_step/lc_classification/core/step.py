@@ -84,11 +84,11 @@ class LateClassifier(GenericStep):
         model_input = create_input_dto(messages)
         forced = DataFrame()
         prv_candidates = DataFrame()
-        for det in model_input.detections:
-            if det["forced"]:
-                forced.append(det)
-            if det["prv_candidate"]:
-                prv_candidates.append(det)
+        for det in model_input._detections._value.iterrows():
+            if det[1]["forced"]:
+                forced[det[0]] = det[1]
+            if det[1]["parent_candid"] is not None:
+                prv_candidates[det[0]] = det[1]
         self.logger.debug(
             "The number of detections is: %i", len(model_input.detections)
         )
@@ -109,8 +109,13 @@ class LateClassifier(GenericStep):
 
         self.logger.info("Processing results")
         df = probabilities.probabilities
-        classes = (df.T == df.T.max()).T.astype(int)
-        distribution = classes.sum(axis=0)
+        if "aid" in df.columns:
+            df.set_index("aid", inplace=True)
+        if "classifier_name" in df.columns:
+            df = df.drop(["classifier_name"], axis=1)
+
+        distribution = df.eq(df.where(df != 0).max(1), axis=0).astype(int)
+        distribution = distribution.sum(axis=0)
         self.logger.debug("Class distribution:\n", distribution)
         return probabilities, messages, model_input.features
 
