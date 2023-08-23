@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "test-utils"
-version = "0.1.1a9"
+version = "0.1.1a10"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
