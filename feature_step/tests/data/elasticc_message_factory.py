@@ -1,6 +1,5 @@
 import random
 from test_utils.mockdata.extra_fields.elasticc import generate_extra_fields
-import pandas as pd
 
 random.seed(8798, version=2)
 
