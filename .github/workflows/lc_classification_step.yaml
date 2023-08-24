@@ -10,12 +10,12 @@ on:
 
 jobs:
   lc_classification_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'lc_classification_step'
       sources-folder: 'lc_classification'
   lc_classification_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
@@ -32,7 +32,7 @@ jobs:
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
   lc_classification_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
@@ -51,7 +51,7 @@ jobs:
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
 
   lc_classification_step_build_ztf:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -60,7 +60,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -69,7 +69,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -78,7 +78,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -87,7 +87,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_mlp:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -96,7 +96,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."

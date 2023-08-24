@@ -10,7 +10,7 @@ on:
 
 jobs:
   stamp_classifier_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'stamp_classifier_step'
       sources-folder: 'stamp_classifier_step'

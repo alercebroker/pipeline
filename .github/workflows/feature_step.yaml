@@ -10,12 +10,12 @@ on:
 
 jobs:
   feature_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       sources-folder: 'features'
       base-folder: 'feature_step'
   feature_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
       base-folder: 'feature_step'
@@ -25,7 +25,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
       base-folder: 'feature_step'
@@ -35,7 +35,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       step-name: feature_step
       step-name-prefix: ""

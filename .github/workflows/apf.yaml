@@ -11,12 +11,12 @@ on:
 
 jobs:
   libs_apf_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
   libs_apf_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
@@ -25,7 +25,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   reflector_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
         python-version: '3.7'
         sources-folder: 'reflector_step'
@@ -34,7 +34,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
       sources-folder: 'reflector_step'
@@ -44,7 +44,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   reflector_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "reflector_step"
       build-context: "reflector_step"
@@ -53,7 +53,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   sorting_hat_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
@@ -62,7 +62,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
@@ -72,7 +72,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "sorting_hat_step"
       build-context: "."
@@ -81,7 +81,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   prv_candidates_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step'
       python-version: "3.8"
@@ -89,7 +89,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step'
       python-version: '3.8'
@@ -99,7 +99,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "prv_candidates_step"
       build-context: "."
@@ -108,7 +108,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lightcurve_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step'
       python-version: "3.9"
@@ -116,7 +116,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step'
       python-version: "3.9"
@@ -125,7 +125,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   lightcurve_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lightcurve-step"
       build-context: "."
@@ -134,7 +134,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   correction_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'correction_step'
       sources-folder: 'correction'
@@ -142,7 +142,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'correction_step'
       sources-folder: 'correction'
@@ -151,7 +151,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "correction_step"
       build-context: "."
@@ -160,7 +160,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   xmatch_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: "3.7"
@@ -168,7 +168,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'xmatch_step'
       python-version: '3.7'
@@ -178,7 +178,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   xmatch_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "xmatch_step"
       build-context: "."
@@ -187,7 +187,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   lc_classification_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
@@ -204,7 +204,7 @@ jobs:
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
   lc_classification_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
@@ -223,7 +223,7 @@ jobs:
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
 
   lc_classification_step_build_ztf:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -232,7 +232,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_balto:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -241,7 +241,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_messi:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -250,7 +250,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_barney:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -259,7 +259,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_mlp:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -268,7 +268,7 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
   lc_classification_step_build_toretto:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "lc_classification_step"
       build-context: "."
@@ -278,7 +278,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   feature_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
       base-folder: 'feature_step'
@@ -288,7 +288,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.10'
       base-folder: 'feature_step'
@@ -298,7 +298,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   feature_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       step-name: feature_step
       step-name-prefix: ""

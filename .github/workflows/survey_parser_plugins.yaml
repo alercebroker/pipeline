@@ -10,13 +10,13 @@ on:
 
 jobs:
   libs_survey_parser_plugins_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'libs/survey_parser_plugins'
       sources-folder: 'survey_parser_plugins'
 
   libs_survey_parser_plugins_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'libs/survey_parser_plugins'
       python-version: '3.10'
@@ -25,12 +25,12 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       sources-folder: 'sorting_hat_step'
   sorting_hat_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
@@ -39,7 +39,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
       python-version: '3.8'
@@ -49,7 +49,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   sorting_hat_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "sorting_hat_step"
       build-context: "."
@@ -57,12 +57,12 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'prv_candidates_step'
       sources-folder: "prv_candidates_step"
   prv_candidates_step_unittest:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step'
       python-version: "3.8"
@@ -70,7 +70,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_integration:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'prv_candidates_step'
       python-version: '3.8'
@@ -80,7 +80,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   prv_candidates_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "prv_candidates_step"
       build-context: "."

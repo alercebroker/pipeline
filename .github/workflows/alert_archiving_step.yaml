@@ -10,13 +10,13 @@ on:
 
 jobs:
   alert_archiving_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
         sources-folder: 'alert_archiving_step'
         base-folder: 'alert_archiving_step'
 
   alert_archiving_step_unittest_cli:
-    uses: ./.github/workflows/utils/poetry-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       python-version: '3.7'
       base-folder: 'alert_archiving_step'
@@ -26,7 +26,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   alert_archiving_step_build:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: "alert_archiving_step"
       build-context: "alert_archiving_step"
