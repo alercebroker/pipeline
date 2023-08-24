@@ -1,4 +1,7 @@
-from lc_classification.core.parsers.input_dto import create_detections_dto, create_features_dto
+from lc_classification.core.parsers.input_dto import (
+    create_detections_dto,
+    create_features_dto,
+)
 import pickle
 import numpy as np
 
@@ -27,46 +30,33 @@ def test_create_detections_dto():
         {},
     ]
 
+
 def test_create_features_dto():
     messages = [
-            {
-                'aid': 'aid1',
-                'features': {'feat1': 1, 'feat2': 2}
-            },
-            {
-                'aid': 'aid1',
-                'features': {'feat1': 2, 'feat2': 3}
-            },
-            {
-                'aid': 'aid2',
-                'features': {'feat1': 4, 'feat2': 5}
-            },
-            {
-                'aid': 'aid3',
-                'features': {'feat1': None, 'feat2': None}
-            },
-            {
-                'aid': 'aid4',
-                'features': {'feat1': 4, 'feat2': None}
-            },
-        ]
+        {"aid": "aid1", "features": {"feat1": 1, "feat2": 2}},
+        {"aid": "aid1", "features": {"feat1": 2, "feat2": 3}},
+        {"aid": "aid2", "features": {"feat1": 4, "feat2": 5}},
+        {"aid": "aid3", "features": {"feat1": None, "feat2": None}},
+        {"aid": "aid4", "features": {"feat1": 4, "feat2": None}},
+    ]
     features = create_features_dto(messages)
     print(features)
-    assert features.loc['aid1', 'feat1'] == 2
-    assert np.isnan(features.loc['aid4', 'feat2'])
+    assert features.loc["aid1", "feat1"] == 2
+    assert np.isnan(features.loc["aid4", "feat2"])
     assert features.index.tolist() == ["aid1", "aid2", "aid3", "aid4"]
+
 
 def test_create_features_dto_nofeats():
     messages = [
-            {
-                'aid': 'aid1',
-            },
-            {
-                'aid': 'aid1',
-            },
-            {
-                'aid': 'aid2',
-            },
-        ]
+        {
+            "aid": "aid1",
+        },
+        {
+            "aid": "aid1",
+        },
+        {
+            "aid": "aid2",
+        },
+    ]
     features = create_features_dto(messages)
     assert features.size == 0
