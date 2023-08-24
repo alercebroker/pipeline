@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sorting-hat-step"
-version = "1.0.1a88"
+version = "6.0.0"
 description = "Sorting hat step"
 authors = []
 readme = "README.md"
