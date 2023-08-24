@@ -87,6 +87,13 @@ class LateClassifier(GenericStep):
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
+        if not self.model.can_predict(model_input):
+            self.logger.info("No data to process")
+            return (
+                OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
+                messages,
+                model_input.features,
+            )
 
         self.logger.info("Doing inference")
         if self.isztf:

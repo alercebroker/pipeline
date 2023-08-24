@@ -18,7 +18,9 @@ def create_input_dto(messages: List[dict]):
     non_detections = pd.DataFrame()
     xmatch = pd.DataFrame()
     stamps = pd.DataFrame()
-    input_dto = input_dto_factory(detections, non_detections, features, xmatch, stamps)
+    input_dto = input_dto_factory(
+        detections, non_detections, features, xmatch, stamps
+    )
     return input_dto
 
 
@@ -46,7 +48,9 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
         aid1    cand1
         aid2    cand3
     """
-    detections = [pd.DataFrame.from_records(msg["detections"]) for msg in messages]
+    detections = [
+        pd.DataFrame.from_records(msg["detections"]) for msg in messages
+    ]
     detections = pd.concat(detections)
     detections.drop_duplicates("aid", inplace=True)
     detections = detections.set_index("aid")
@@ -105,13 +109,20 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     aid2      4      5
     aid1      2      3
     """
-    if len(messages) == 0 or not "features" in messages[0]:
+    if len(messages) == 0 or "features" not in messages[0]:
         return pd.DataFrame()
     entries = []
     for message in messages:
-        entry = {feat: message["features"][feat] for feat in message["features"]}
+        if message["features"] is None:
+            continue
+        entry = {
+            feat: message["features"][feat] for feat in message["features"]
+        }
         entry["aid"] = message["aid"]
         entries.append(entry)
+    if len(entries) == 0:
+        return pd.DataFrame()
+
     features = pd.DataFrame.from_records(entries)
     features.drop_duplicates("aid", inplace=True, keep="last")
     features = features.set_index("aid")
