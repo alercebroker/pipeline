@@ -13,7 +13,7 @@ from lc_classification.core.parsers.kafka_parser import (
 class ScribeParser(KafkaParser):
     def __init__(self, *, classifier_name: str):
         super().__init__(self)
-        self.classifier_nome = classifier_name
+        self.classifier_name = classifier_name
 
     def parse(self, to_parse: OutputDTO, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
