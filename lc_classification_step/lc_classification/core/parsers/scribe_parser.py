@@ -4,12 +4,16 @@ from pandas.core.dtypes.common import is_all_strings
 from typing import List
 
 from alerce_classifiers.base.dto import OutputDTO
-from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
+from lc_classification.core.parsers.kafka_parser import (
+    KafkaOutput,
+    KafkaParser,
+)
 
 
 class ScribeParser(KafkaParser):
-    def __init__(self):
+    def __init__(self, *, classifier_name: str):
         super().__init__(self)
+        self.classifier_nome = classifier_name
 
     def parse(self, to_parse: OutputDTO, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
@@ -88,11 +92,15 @@ class ScribeParser(KafkaParser):
             return classifications_by_classifier
 
         for aid in results.index.unique():
-            results.loc[[aid], :].groupby("classifier_name", group_keys=False).apply(
-                get_scribe_messages
-            )
+            results.loc[[aid], :].groupby(
+                "classifier_name", group_keys=False
+            ).apply(get_scribe_messages)
 
         return KafkaOutput(commands)
 
     def _get_classifier_name(self, suffix=None):
-        return "lc_classifier" if suffix is None else f"lc_classifier_{suffix}"
+        return (
+            self.classifier_name
+            if suffix is None
+            else f"{self.classifier_name}_{suffix}"
+        )

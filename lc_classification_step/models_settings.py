@@ -53,7 +53,7 @@ def toretto_params(model_class: str):
 def ztf_params(model_class: str):
     return {
         "CLASS": model_class,
-        "NAME": model_class.split(".")[-1],
+        "NAME": "lc_classifier",
     }
 
 
