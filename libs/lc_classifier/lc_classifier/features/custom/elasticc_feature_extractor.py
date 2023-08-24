@@ -120,7 +120,6 @@ class ElasticcFeatureExtractor(FeatureExtractor):
             detections, **kwargs)
 
         df = pd.concat(
-            # [flux_features],
             [magnitude_features, flux_features],
             axis=1, join="outer", sort=True)
         

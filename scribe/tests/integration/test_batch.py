@@ -2,6 +2,9 @@ from random import choice
 from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
 from _generator import CommandGenerator
+from db_plugins.db.mongo._connection import MongoConnection
+
+from pprint import pprint
 
 DB_CONFIG = {
     "MONGO": {
@@ -51,6 +54,7 @@ step_config = {
     },
 }
 
+db = MongoConnection(DB_CONFIG["MONGO"])
 step = MongoScribe(config=step_config)
 producer = KafkaProducer(config=PRODUCER_CONFIG)
 generator = CommandGenerator()
@@ -63,19 +67,14 @@ commands.extend([generator.generate_random_command() for _ in range(125)])
 generator.set_offset(125)
 commands.append(generator.generate_insert())
 commands.extend(
-    [
-        generator.generate_random_command({"upsert": True}, 125)
-        for _ in range(125)
-    ]
+    [generator.generate_random_command({"upsert": True}, 125) for _ in range(125)]
 )
 # 1000 - 1000 + X (upsert and set_on_insert)
 generator.set_offset(250)
 commands.append(generator.generate_insert())
 commands.extend(
     [
-        generator.generate_random_command(
-            {"upsert": True, "set_on_insert": True}, 250
-        )
+        generator.generate_random_command({"upsert": True, "set_on_insert": True}, 250)
         for _ in range(125)
     ]
 )
@@ -83,6 +82,8 @@ commands.extend(
 
 
 def test_bulk(kafka_service, mongo_service):
+    db.create_db()
+
     for i, command in enumerate(commands):
         producer.produce(command)
 
@@ -92,9 +93,7 @@ def test_bulk(kafka_service, mongo_service):
 
     # get any element that have features (obtained from the tracker)
     updated_feats = {
-        key: val
-        for key, val in generator.get_updated_features().items()
-        if val != []
+        key: val for key, val in generator.get_updated_features().items() if val != []
     }
     sample_id = choice(list(updated_feats.keys()))
     result = collection.find_one({"_id": f"ID{sample_id}"})
@@ -110,12 +109,16 @@ def test_bulk(kafka_service, mongo_service):
     sample_id_2 = choice(list(updated_probs.keys()))
     result = collection.find_one({"_id": f"ID{sample_id_2}"})
     tracked = updated_probs[sample_id_2]
-    diff = [
-        prob
-        for prob in result["probabilities"] + tracked
-        if prob not in result["probabilities"] or prob not in tracked
-    ]
-    assert len(diff) == 0
+
+    assert len(result["probabilities"]) == len(tracked)
+    for probs in result["probabilities"]:
+        probs["values"].sort(key=lambda x: x["ranking"])
+
+    for probs in tracked:
+        probs["values"].sort(key=lambda x: x["ranking"])
+
+    assert result["probabilities"] == tracked
+
     # assertIsNotNone(result)
 
     # check edge cases

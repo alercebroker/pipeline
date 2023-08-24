@@ -1,35 +1,44 @@
 import random
-
-import pandas as pd
+from test_utils.mockdata.extra_fields.elasticc import generate_extra_fields
 
 random.seed(8798, version=2)
 
 ELASTICC_BANDS = ["u", "g", "r", "i", "z", "Y"]
 
+
 def get_extra_fields():
-    return {
-        "distnr": random.random(),
-        "magnr": random.random(),
-        "sigmagnr": random.random(),
-        "pid": random.randint(1, 999999),
-        "diffmaglim": random.uniform(15, 21),
-        "nid": random.randint(1, 999999),
-        "magpsf": random.random(),  #
-        "sigmapsf": random.random(),  #
-        "magap": random.random(),
-        "sigmagap": random.random(),
-        "magapbig": random.random(),
-        "sigmagapbig": random.random(),
-        "rb": random.uniform(0.55, 1),
-        "sgscore1": random.uniform(0, 1),
-    }
+    extra_fields = generate_extra_fields()
+    extra_fields.update(
+        {
+            "distnr": random.random(),
+            "magnr": random.random(),
+            "sigmagnr": random.random(),
+            "pid": random.randint(1, 999999),
+            "diffmaglim": random.uniform(15, 21),
+            "nid": random.randint(1, 999999),
+            "magpsf": random.random(),  #
+            "sigmapsf": random.random(),  #
+            "magap": random.random(),
+            "sigmagap": random.random(),
+            "magapbig": random.random(),
+            "sigmagapbig": random.random(),
+            "rb": random.uniform(0.55, 1),
+            "sgscore1": random.uniform(0, 1),
+        }
+    )
+    return extra_fields
 
 
-def generate_alert(aid: str, band: str, num_messages: int, identifier: int, **kwargs ) -> list[dict]:
+def generate_alert(
+    aid: str, band: str, num_messages: int, identifier: int, **kwargs
+) -> list[dict]:
     alerts = []
+    diaObject = get_extra_fields()["diaObject"]
     for i in range(num_messages):
+        extra_fields = get_extra_fields()
+        extra_fields["diaObject"] = diaObject
         alert = {
-            "candid": random.randint(1000000, 9000000),
+            "candid": str(random.randint(1000000, 9000000)),
             "oid": f"oid{identifier}",
             "aid": aid,
             "tid": "LSST",
@@ -43,18 +52,24 @@ def generate_alert(aid: str, band: str, num_messages: int, identifier: int, **kw
             "e_dec": random.uniform(-90, 90),
             "mag": random.uniform(15, 20),
             "e_mag": random.uniform(0, 1),
-            "mag_corr": kwargs.get("mag_corr") if "mag_corr" in kwargs.keys() else random.uniform(15, 20),
+            "mag_corr": kwargs.get("mag_corr")
+            if "mag_corr" in kwargs.keys()
+            else random.uniform(15, 20),
             "e_mag_corr": random.uniform(0, 1),
-            "e_mag_corr_ext": kwargs.get("e_mag_corr_ext") if "e_mag_corr_ext" in kwargs else random.uniform(0, 1),
+            "e_mag_corr_ext": kwargs.get("e_mag_corr_ext")
+            if "e_mag_corr_ext" in kwargs
+            else random.uniform(0, 1),
             "isdiffpos": random.choice([-1, 1]),
-            "corrected": kwargs.get("corrected") if "corrected" in kwargs else random.choice([True, False]),
+            "corrected": kwargs.get("corrected")
+            if "corrected" in kwargs
+            else random.choice([True, False]),
             "dubious": random.choice([True, False]),
             "has_stamp": random.choice([True, False]),
             "stellar": random.choice([True, False]),
             "new": random.choice([True, False]),
             "forced": random.choice([True, False]),
             "parent_candid": random.randint(1000000, 9000000),
-            "extra_fields": get_extra_fields(),
+            "extra_fields": extra_fields,
         }
         alerts.append(alert)
     return alerts
@@ -91,10 +106,10 @@ def generate_input_batch(n: int, bands: list[str], offset=0) -> list[dict]:
         meandec = random.uniform(-90, 90)
         detections = []
         for band in bands:
-            detections.extend(generate_alert(aid, band, random.randint(6, 10), m))
+            detections.extend(
+                generate_alert(aid, band, random.randint(6, 10), m)
+            )
         non_det = generate_non_det(aid, random.randint(0, 1), m)
-        #candid = int(str(m + 1).ljust(8, "0"))
-        #detections[-1]["candid"] = candid
         xmatch = {}
         msg = {
             "aid": aid,
@@ -107,6 +122,7 @@ def generate_input_batch(n: int, bands: list[str], offset=0) -> list[dict]:
         batch.append(msg)
     random.sample(batch, len(batch))
     return batch
+
 
 def generate_bad_emag_ratio(n: int, bands: list[str], offset=0) -> list[dict]:
     """
@@ -133,12 +149,12 @@ def generate_bad_emag_ratio(n: int, bands: list[str], offset=0) -> list[dict]:
                     m,
                     mag_corr=random.uniform(15, 20),
                     e_mag_corr_ext=random.uniform(10, 15),
-                    corrected=True
+                    corrected=True,
                 )
             )
         non_det = generate_non_det(aid, random.randint(0, 1), m)
-        #candid = int(str(m + 1).ljust(8, "0"))
-        #detections[-1]["candid"] = candid
+        # candid = int(str(m + 1).ljust(8, "0"))
+        # detections[-1]["candid"] = candid
         xmatch = {}
         msg = {
             "aid": aid,

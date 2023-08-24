@@ -1,4 +1,6 @@
-from features.core._base import BaseFeatureExtractor
+from features.core.elasticc import ELAsTiCCFeatureExtractor
+from features.core.ztf import ZTFFeatureExtractor
+from typing import Callable
 
 
 class ExtractorNotFoundException(Exception):
@@ -7,13 +9,11 @@ class ExtractorNotFoundException(Exception):
         super().__init__(message)
 
 
-def selector(name: str) -> type[BaseFeatureExtractor]:
+def selector(
+    name: str,
+) -> type[ZTFFeatureExtractor] | type[ELAsTiCCFeatureExtractor]:
     if name.lower() == "ztf":
-        from features.core.ztf import ZTFFeatureExtractor
-
         return ZTFFeatureExtractor
     if name.lower() == "elasticc":
-        from features.core.elasticc import ELAsTiCCFeatureExtractor
-
         return ELAsTiCCFeatureExtractor
     raise ExtractorNotFoundException(name)

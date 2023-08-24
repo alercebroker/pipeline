@@ -36,7 +36,9 @@ def harmonics(df: pd.DataFrame, n: int, period: float) -> pd.Series:
     mag, e_mag, mjd = df[["mag_ml", "e_mag_ml", "mjd"]].T.values
 
     time_freq = 2 * np.pi * (np.arange(n) + 1) / period * mjd[:, None]
-    omega = np.hstack([np.ones((mjd.size, 1)), np.cos(time_freq), np.sin(time_freq)])
+    omega = np.hstack(
+        [np.ones((mjd.size, 1)), np.cos(time_freq), np.sin(time_freq)]
+    )
 
     weight = 1 / (e_mag + 1e-2)
     w_a = weight[:, None] * omega
@@ -71,7 +73,9 @@ def apply_harmonics(
     Returns:
         pd.Series: `n` harmonic magnitudes, `n-1` phases and mean square error per band
     """
-    return reformat(df.groupby("fid").apply(harmonics, n=n, period=period), fids)
+    return reformat(
+        df.groupby("fid").apply(harmonics, n=n, period=period), fids
+    )
 
 
 def empty_harmonics(n: int, fids: tuple[str, ...]) -> pd.Series:

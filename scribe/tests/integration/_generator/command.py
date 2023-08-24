@@ -41,6 +41,8 @@ class CommandGenerator:
             "type": "insert",
             "data": {
                 "_id": f"ID{self._generated_inserts}",
+                "features": [],
+                "probabilities": [],
                 "field1": "original",
                 "field2": "original",
             },
@@ -49,7 +51,7 @@ class CommandGenerator:
         self._command_hash["insert"][self._generated_inserts] = command["data"]
         self._command_hash["update"][self._generated_inserts] = {}
         self._command_hash["update_probability"][self._generated_inserts] = []
-        self._command_hash["update_feature"][self._generated_inserts] = {}
+        self._command_hash["update_feature"][self._generated_inserts] = []
         self._generated_inserts += 1
         return {"payload": json.dumps(command)}
 
@@ -59,38 +61,47 @@ class CommandGenerator:
         version = feature.pop("features_version")
         feature["version"] = version
         parsed_features = {
-            survey: feature
+            "survey": survey,
+            "version": version,
+            "features": feature["features"],
         }
-        
+
         buffer = self._command_hash["update_feature"][aid]
-        buffer.update(parsed_features)
+        buffer = [
+            survey_features
+            for survey_features in buffer
+            if survey_features["survey"] != survey
+        ]
+        buffer.append(parsed_features)
         self._command_hash["update_feature"][aid] = buffer
 
     def _add_probability(self, aid: int, prob: dict):
         local_prob = prob.copy()
-        parsed_probabilities = []
         classifier_name = local_prob.pop("classifier_name")
         classifier_version = local_prob.pop("classifier_version")
+        parsed_probabilities = []
+        new_classifier_probability = {
+            "classifier_name": classifier_name,
+            "version": classifier_version,
+        }
         for class_name, probability in local_prob.items():
+            rank = 1 if probability > 0.5 else 2
+            if rank == 1:
+                new_classifier_probability["class_rank_1"] = class_name
+                new_classifier_probability["probability_rank_1"] = probability
+
             parsed_probabilities.append(
-                {
-                    "classifier_name": classifier_name,
-                    "classifier_version": classifier_version,
-                    "probability": probability,
-                    "class_name": class_name,
-                    "ranking": 1
-                    if probability > 0.5
-                    else 2,  # because probs are fixed
-                }
+                {"probability": probability, "class_name": class_name, "ranking": rank}
             )
+        new_classifier_probability["values"] = parsed_probabilities
         buffer: list = self._command_hash["update_probability"][aid]
         buffer = [
-            prob
-            for prob in buffer
-            if prob["classifier_name"] != classifier_name
-            and prob["classifier_version"] != classifier_version
+            probabilities
+            for probabilities in buffer
+            if probabilities["classifier_name"] == classifier_name
+            and probabilities["version"] == classifier_version
         ]
-        buffer.extend(parsed_probabilities)
+        buffer.append(new_classifier_probability)
         self._command_hash["update_probability"][aid] = buffer
 
     def _generate_update(self, options={}, offset=0):
@@ -132,8 +143,8 @@ class CommandGenerator:
                 "features_group": choice(feature_groups),
                 "features_version": "v1",
                 "features": [
-                    {"name": "feature1", "value": 123, "fid": 'r'},
-                    {"name": "feature2", "value": 456, "fid": 'g'},
+                    {"name": "feature1", "value": 123, "fid": "r"},
+                    {"name": "feature2", "value": 456, "fid": "g"},
                 ],
             },
             "options": options,

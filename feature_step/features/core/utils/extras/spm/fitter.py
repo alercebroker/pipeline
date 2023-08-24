@@ -44,7 +44,9 @@ def single_band(
     time = time - np.min(time)
 
     initial, bounds = guess.single_band(time, flux, alt=alt, bug=bug)
-    kwargs = dict(ftol=1e-8, sigma=error + 5) if alt else dict(ftol=initial[0] / 20)
+    kwargs = (
+        dict(ftol=1e-8, sigma=error + 5) if alt else dict(ftol=initial[0] / 20)
+    )
     func = _get_model(version)
 
     try:
@@ -90,10 +92,14 @@ def multi_band(
     missing_fids = list(set(ELASTICC_FIDS) - set(fids))
     smooth = np.percentile(error, 10) * 0.5
 
-    weight = np.exp(-(((flux + error) * ((flux + error) < 0) / (error + 1)) ** 2))
+    weight = np.exp(
+        -(((flux + error) * ((flux + error) < 0) / (error + 1)) ** 2)
+    )
 
     # Padding is needed to minimize recompilations of jax jit functions
-    time, flux, error, band, weight = _pad(time, flux, error, band, weight, mult)
+    time, flux, error, band, weight = _pad(
+        time, flux, error, band, weight, mult
+    )
 
     func = _get_model(version)
     obj, grad = _get_objective(version)
@@ -128,10 +134,14 @@ def multi_band(
             chi = (
                 np.nan
                 if dof < 1
-                else np.sum((prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2)
+                else np.sum(
+                    (prediction - flux[mask]) ** 2 / (error[mask] + 5) ** 2
+                )
                 / dof
             )
-            final.append(pd.Series([*params[i], chi], index=_indices_with_fid(fid)))
+            final.append(
+                pd.Series([*params[i], chi], index=_indices_with_fid(fid))
+            )
 
         else:
             final.append(pd.Series([np.nan] * 7, index=_indices_with_fid(fid)))

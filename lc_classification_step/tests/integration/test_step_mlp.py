@@ -13,24 +13,24 @@ from tests.test_commons import (
 
 
 @pytest.mark.elasticc
-def test_step_elasticc_result(
+def test_step_elasticc_result_mlp(
     kafka_service,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc(
-        "barney",
-        "alerce_classifiers.rf_features_header_classifier.model.RandomForestFeaturesHeaderClassifier",
+        "mlp",
+        "alerce_classifiers.mlp_elasticc.model.MLPElasticcClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_BARNEY_MODEL_PATH"),
-            "MAPPER_CLASS": "alerce_classifiers.rf_features_header_classifier.mapper.BarneyMapper",
+            "MODEL_PATH": os.getenv("TEST_MLP_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
         },
     )
 
     from settings import STEP_CONFIG
 
-    kconsumer = kafka_consumer("barney")
+    kconsumer = kafka_consumer("mlp")
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=STEP_CONFIG)

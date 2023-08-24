@@ -39,9 +39,13 @@ jobs:
           INITIAL_DIR=$(pwd)
           for i in $(find . -maxdepth 3 -name pyproject.toml)
           do
-              if [[ $(dirname $i) == *libs/* ]]; then
-                  continue
+              if [[ $(dirname $i) == ./libs/P4J ]]; then
+                continue
               fi
+              if [[ $(dirname $i) == ./libs/mhps ]]; then
+                continue
+              fi
+              echo "$(dirname $i)"
               cd "$(dirname $i)"
               if [[ $BUILD_TYPE == production* ]]; then
                   VERSION=${GITHUB_REF#refs/tags/}

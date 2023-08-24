@@ -63,7 +63,9 @@ class NonDetectionsHandler(BaseHandler):
         if mask.any():
             return self._alerts[mask]
         columns = [
-            c for c in self._alerts.columns if c not in self.__first_mjd.index.names
+            c
+            for c in self._alerts.columns
+            if c not in self.__first_mjd.index.names
         ]
         return pd.DataFrame(
             np.nan, columns=columns, index=self.__first_mjd.index
@@ -90,7 +92,9 @@ class NonDetectionsHandler(BaseHandler):
             DataFrameGroupBy: Grouped alerts
         """
         group = ["id", "fid"] if by_fid else "id"
-        return self.alerts_when(when=when, surveys=surveys, bands=bands).groupby(group)
+        return self.alerts_when(
+            when=when, surveys=surveys, bands=bands
+        ).groupby(group)
 
     @methodtools.lru_cache()
     def which_index_when(
@@ -120,7 +124,12 @@ class NonDetectionsHandler(BaseHandler):
             )
         function = "idxmin" if which == "first" else "idxmax"
         return self.agg_when(
-            "mjd", function, when=when, by_fid=by_fid, surveys=surveys, bands=bands
+            "mjd",
+            function,
+            when=when,
+            by_fid=by_fid,
+            surveys=surveys,
+            bands=bands,
         )
 
     @methodtools.lru_cache()

@@ -23,6 +23,7 @@ COPY libs/turbo-fats /libs/turbo-fats
 COPY libs/P4J /libs/P4J
 COPY libs/mhps /libs/mhps
 COPY libs/lc_classifier /libs/lc_classifier
+COPY libs/apf /libs/apf
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py

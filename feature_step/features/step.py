@@ -4,8 +4,14 @@ import pandas as pd
 
 from apf.core import get_class
 from apf.core.step import GenericStep
+
 from features.utils.parsers import parse_scribe_payload, parse_output
 from features.utils.metrics import get_sid
+
+from features.core.ztf import ZTFFeatureExtractor
+from features.core.elasticc import ELAsTiCCFeatureExtractor
+
+from typing import Callable
 
 
 class FeaturesComputer(GenericStep):
@@ -22,15 +28,20 @@ class FeaturesComputer(GenericStep):
 
     def __init__(
         self,
-        extractor,
+        extractor: type[ZTFFeatureExtractor]
+        | Callable[..., ELAsTiCCFeatureExtractor],
         config=None,
         **step_args,
     ):
         super().__init__(config=config, **step_args)
         self.features_extractor = extractor
 
-        scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
+        scribe_class = get_class(
+            self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
+        )
+        self.scribe_producer = scribe_class(
+            self.config["SCRIBE_PRODUCER_CONFIG"]
+        )
 
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(features, self.features_extractor)
@@ -48,7 +59,9 @@ class FeaturesComputer(GenericStep):
                 {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
             )
 
-        features_extractor = self.features_extractor(detections, non_detections, xmatch)
+        features_extractor = self.features_extractor(
+            detections, non_detections, xmatch
+        )
         features = features_extractor.generate_features()
 
         if len(features) > 0:
