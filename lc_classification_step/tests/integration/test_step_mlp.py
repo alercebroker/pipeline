@@ -21,7 +21,7 @@ def test_step_elasticc_result_mlp(
 ):
     env_variables_elasticc(
         "mlp",
-        "alerce_classifiers.mlp_elasticc.model.MLPElasticcClassifier",
+        "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MLP_MODEL_PATH"),
             "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
@@ -57,7 +57,7 @@ def test_step_elasticc_result_mlp_without_features(
     produce_messages("features_elasticc", force_empty_features=True)
     env_variables_elasticc(
         "mlp",
-        "alerce_classifiers.mlp_elasticc.model.MLPElasticcClassifier",
+        "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MLP_MODEL_PATH"),
             "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
