@@ -2,6 +2,8 @@ name: Build Production
 
 on:
   release:
+    types:
+      - published
 
 jobs:
   update_versions:
