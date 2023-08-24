@@ -201,7 +201,6 @@ class UpdateProbabilitiesCommand(UpdateCommand):
 
         filters = {
             "el.classifier_name": self.classifier_name,
-            "el.version": self.classifier_version,
         }
 
         update = {
