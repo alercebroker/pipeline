@@ -4,7 +4,10 @@ from pandas.core.dtypes.common import is_all_strings
 from typing import List
 
 from alerce_classifiers.base.dto import OutputDTO
-from lc_classification.core.parsers.kafka_parser import KafkaOutput, KafkaParser
+from lc_classification.core.parsers.kafka_parser import (
+    KafkaOutput,
+    KafkaParser,
+)
 
 
 class ScribeParser(KafkaParser):
@@ -88,9 +91,9 @@ class ScribeParser(KafkaParser):
             return classifications_by_classifier
 
         for aid in results.index.unique():
-            results.loc[[aid], :].groupby("classifier_name", group_keys=False).apply(
-                get_scribe_messages
-            )
+            results.loc[[aid], :].groupby(
+                "classifier_name", group_keys=False
+            ).apply(get_scribe_messages)
 
         return KafkaOutput(commands)
 

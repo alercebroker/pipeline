@@ -27,7 +27,9 @@ class ElasticcParser(KafkaParser):
         for message in messages:
             # for iteration con continue deberia ser mas simple
             new_detection = [
-                det for det in message["detections"] if det["new"] and det["has_stamp"]
+                det
+                for det in message["detections"]
+                if det["new"] and det["has_stamp"]
             ]
 
             if len(new_detection) == 0:

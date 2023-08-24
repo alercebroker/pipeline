@@ -94,20 +94,26 @@ class LateClassifier(GenericStep):
         for det in model_input._detections._value.iterrows():
             if det[1]["forced"]:
                 forced.append(det[0])
-                if 'diaObjet' in det[1].index:
+                if "diaObjet" in det[1].index:
                     dia_objet.append(det[0])
 
             if det[1]["parent_candid"] is not None:
                 prv_candidates.append(det[0])
-                if 'diaObjet' in det[1].index:
+                if "diaObjet" in det[1].index:
                     dia_objet.append(det[0])
         self.logger.info(
             "The number of detections is: %i", len(model_input.detections)
         )
         self.logger.debug(f"The forced photometry detections are: {forced}")
-        self.logger.debug(f"The prv candidates detections are: {prv_candidates}")
-        self.logger.debug(f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}")
-        self.logger.info("The number of features is: %i", len(model_input.features))
+        self.logger.debug(
+            f"The prv candidates detections are: {prv_candidates}"
+        )
+        self.logger.debug(
+            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}"
+        )
+        self.logger.info(
+            "The number of features is: %i", len(model_input.features)
+        )
         self.logger.info("Doing inference")
         if self.isztf:
             probabilities = self.model.predict_in_pipeline(
