@@ -47,23 +47,22 @@ class GPDRWExtractor(FeatureExtractorSingleBand):
             kernel = terms.RealTerm(a=1.0, c=10.0)
             gp = celerite2.GaussianProcess(kernel, mean=0.0)
 
-            def set_params(params, gp, time, sq_error):
+            def neg_log_like(params, gp, time, mag, sq_error):
                 gp.mean = 0.0
                 theta = np.exp(params)
                 gp.kernel = terms.RealTerm(a=theta[0], c=theta[1])
                 gp.compute(time, diag=sq_error, quiet=True)
-                return gp
-
-            def neg_log_like(params, gp, time, mag, sq_error):
-                gp = set_params(params, gp, time, sq_error)
                 return -gp.log_likelihood(mag)
 
             initial_params = np.zeros((2,), dtype=float)
             sol = minimize(
                 neg_log_like,
                 initial_params,
+                bounds=[[-10.0, 19.0], [-6.0, 6.0]],
                 method="L-BFGS-B",
-                args=(gp, time, mag, sq_error))
+                args=(gp, time, mag, sq_error),
+                # options={'iprint': 99}
+            )
 
             optimal_params = np.exp(sol.x)
             out_data = [
