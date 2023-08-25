@@ -70,13 +70,13 @@ class Object(BaseModel):
         IndexModel(
             [
                 ("probabilities.classifier_name", ASCENDING),
-                ("probabilities.ranking", DESCENDING),
-                ("probabilities.classifier_version", DESCENDING),
-                ("probabilities.class_name", DESCENDING),
-                ("probabilities.probability", DESCENDING),
+                ("probabilities.version", DESCENDING),
+                ("probabilities.class_rank_1", DESCENDING),
+                ("probabilities.probability_rank_1", DESCENDING),
             ],
             name="probabilities",
         ),
+        IndexModel([("features.survey", ASCENDING)], name="features"),
     ]
     __tablename__ = "object"
 

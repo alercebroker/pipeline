@@ -9,7 +9,9 @@ from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
 
-ZTF_CLASSIFIER_CLASS = "lc_classifier.classifier.models.HierarchicalRandomForest"
+ZTF_CLASSIFIER_CLASS = (
+    "lc_classifier.classifier.models.HierarchicalRandomForest"
+)
 
 
 class LateClassifier(GenericStep):
@@ -29,6 +31,8 @@ class LateClassifier(GenericStep):
 
     def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
+        self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
+        self.classifier_version = self.config["MODEL_VERSION"]
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
@@ -47,14 +51,15 @@ class LateClassifier(GenericStep):
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
 
-        self.scribe_producer = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])(
-            config["SCRIBE_PRODUCER_CONFIG"]
-        )
-        self.scribe_parser: KafkaParser = get_class(config["SCRIBE_PARSER_CLASS"])()
-        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
-
-        self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
-        self.classifier_version = self.config["MODEL_VERSION"]
+        self.scribe_producer = get_class(
+            config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
+        )(config["SCRIBE_PRODUCER_CONFIG"])
+        self.scribe_parser: KafkaParser = get_class(
+            config["SCRIBE_PARSER_CLASS"]
+        )(classifier_name=self.classifier_name)
+        self.step_parser: KafkaParser = get_class(
+            config["STEP_PARSER_CLASS"]
+        )()
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
@@ -81,6 +86,13 @@ class LateClassifier(GenericStep):
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
+        if not self.model.can_predict(model_input):
+            self.logger.info("No data to process")
+            return (
+                OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
+                messages,
+                model_input.features,
+            )
 
         self.logger.info("Doing inference")
         if self.isztf:

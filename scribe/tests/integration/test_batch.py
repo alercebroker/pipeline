@@ -2,6 +2,9 @@ from random import choice
 from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
 from _generator import CommandGenerator
+from db_plugins.db.mongo._connection import MongoConnection
+
+from pprint import pprint
 
 DB_CONFIG = {
     "MONGO": {
@@ -51,6 +54,7 @@ step_config = {
     },
 }
 
+db = MongoConnection(DB_CONFIG["MONGO"])
 step = MongoScribe(config=step_config)
 producer = KafkaProducer(config=PRODUCER_CONFIG)
 generator = CommandGenerator()
@@ -78,6 +82,8 @@ commands.extend(
 
 
 def test_bulk(kafka_service, mongo_service):
+    db.create_db()
+
     for i, command in enumerate(commands):
         producer.produce(command)
 
@@ -87,7 +93,7 @@ def test_bulk(kafka_service, mongo_service):
 
     # get any element that have features (obtained from the tracker)
     updated_feats = {
-        key: val for key, val in generator.get_updated_features().items() if val != {}
+        key: val for key, val in generator.get_updated_features().items() if val != []
     }
     sample_id = choice(list(updated_feats.keys()))
     result = collection.find_one({"_id": f"ID{sample_id}"})
@@ -98,27 +104,20 @@ def test_bulk(kafka_service, mongo_service):
     updated_probs = {
         key: val
         for key, val in generator.get_updated_probabilities().items()
-        if val != {}
+        if val != []
     }
     sample_id_2 = choice(list(updated_probs.keys()))
     result = collection.find_one({"_id": f"ID{sample_id_2}"})
     tracked = updated_probs[sample_id_2]
 
-    classifiers = list(result["probabilities"].keys())
-    assert set(classifiers) == set(tracked.keys())
-    for classifier in classifiers:
-        classifier_vals = result["probabilities"][classifier]
-        assert classifier_vals["version"] == tracked[classifier]["version"]
-        assert classifier_vals["class_rank_1"] == tracked[classifier]["class_rank_1"]
-        assert (
-            classifier_vals["probability_rank_1"]
-            == tracked[classifier]["probability_rank_1"]
-        )
-        classifier_vals["values"].sort(key=lambda x: x["ranking"])
-        tracked[classifier]["values"].sort(key=lambda x: x["ranking"])
-        assert (
-           classifier_vals["values"] == tracked[classifier]["values"]
-        )
+    assert len(result["probabilities"]) == len(tracked)
+    for probs in result["probabilities"]:
+        probs["values"].sort(key=lambda x: x["ranking"])
+
+    for probs in tracked:
+        probs["values"].sort(key=lambda x: x["ranking"])
+
+    assert result["probabilities"] == tracked
 
     # assertIsNotNone(result)
 

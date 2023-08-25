@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "1.0.100a119"
+version = "6.1.1a3"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
@@ -40,6 +40,9 @@ optional = true
 [tool.poetry.group.barney]
 optional = true
 
+[tool.poetry.group.mlp]
+optional = true
+
 [tool.poetry.group.elasticc]
 optional = true
 
@@ -59,8 +62,11 @@ alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extr
 [tool.poetry.group.barney.dependencies]
 alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney"] }
 
+[tool.poetry.group.mlp.dependencies]
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["mlp"] }
+
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto"] }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
@@ -71,7 +77,7 @@ pytest-cov = "^4.1.0"
 pytest-docker = "^1.0.1"
 
 [tool.black]
-line-length = 88
+line-length = 79
 
 [tool.pytest.ini_options]
 addopts = "-x"

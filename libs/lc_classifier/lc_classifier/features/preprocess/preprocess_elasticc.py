@@ -1,14 +1,15 @@
 from .base import GenericPreprocessor
 import numpy as np
 import pandas as pd
+import pickle
 
 
 def probs_to_normal_form(probs):
     list_of_df = []
     for alerce_class in probs.columns:
         class_probs = probs[[alerce_class]].copy()
-        class_probs.rename(columns={alerce_class: 'probability'}, inplace=True)
-        class_probs['classALeRCE'] = alerce_class
+        class_probs.rename(columns={alerce_class: "probability"}, inplace=True)
+        class_probs["classALeRCE"] = alerce_class
         list_of_df.append(class_probs)
     final_table = pd.concat(list_of_df, axis=0)
     return final_table
@@ -24,36 +25,31 @@ def short_lightcurve_mask(times, photflags, n_days):
     last_detection_time = times[detected_mask & valid_time_mask][-1]
     before_last_detection_mask = times <= last_detection_time
 
-    final_mask = (detected_mask & valid_time_mask) | ((~detected_mask) & before_last_detection_mask & valid_time_mask)
+    final_mask = (detected_mask & valid_time_mask) | (
+        (~detected_mask) & before_last_detection_mask & valid_time_mask
+    )
     return final_mask, time_limit
 
 
 def shorten_lightcurve(df, n_days):
-    mask, _ = short_lightcurve_mask(
-        df['MJD'].values,
-        df['PHOTFLAG'].values,
-        n_days)
+    mask, _ = short_lightcurve_mask(df["MJD"].values, df["PHOTFLAG"].values, n_days)
     return df[mask]
 
 
 class ElasticcPreprocessor(GenericPreprocessor):
     """Preprocessing for lightcurves from ZTF forced photometry service."""
+
     def __init__(self, stream=False):
         super().__init__()
         self.stream = stream
 
-        self.required_columns = [
-            'MJD',
-            'FLUXCAL',
-            'FLUXCALERR',
-            'BAND'
-        ]
+        self.required_columns = ["MJD", "FLUXCAL", "FLUXCALERR", "BAND"]
 
         self.column_translation = {
-            'MJD': 'time',
-            'BAND': 'band',
-            'FLUXCAL': 'difference_flux',
-            'FLUXCALERR': 'difference_flux_error',
+            "MJD": "time",
+            "BAND": "band",
+            "FLUXCAL": "difference_flux",
+            "FLUXCALERR": "difference_flux_error",
         }
 
         self.metadata_column_map = {
@@ -146,8 +142,11 @@ class ElasticcPreprocessor(GenericPreprocessor):
         :return:
         """
         detections = detections[
-            ((detections['difference_flux_error'] < 300)
-             & (np.abs(detections['difference_flux']) < 50e3))]
+            (
+                (detections["difference_flux_error"] < 300)
+                & (np.abs(detections["difference_flux"]) < 50e3)
+            )
+        ]
         return detections
 
     def preprocess(self, dataframe):
@@ -158,15 +157,19 @@ class ElasticcPreprocessor(GenericPreprocessor):
         self.verify_dataframe(dataframe)
         if not self.has_necessary_columns(dataframe):
             raise Exception(
-                'Lightcurve dataframe does not have all the necessary columns')
+                "Lightcurve dataframe does not have all the necessary columns"
+            )
 
         dataframe = self.rename_columns_detections(dataframe)
         dataframe = self.discard_noisy_detections(dataframe)
 
         # A little hack ;)
-        dataframe['magnitude'] = dataframe['difference_flux']
-        dataframe['error'] = dataframe['difference_flux_error']
-        
+        dataframe["magnitude"] = dataframe["difference_flux"]
+        dataframe["error"] = dataframe["difference_flux_error"]
+
+        if self.stream:
+            self.deserialize_dia_object(dataframe, rename=True)
+
         return dataframe
 
     def preprocess_metadata(self, metadata: pd.DataFrame) -> pd.DataFrame:
@@ -175,6 +178,17 @@ class ElasticcPreprocessor(GenericPreprocessor):
 
         return metadata.rename(columns=self.metadata_column_map)
 
-    def rename_columns_detections(self, detections):
+    def rename_columns_detections(self, detections: pd.DataFrame):
         return detections.rename(
-            columns=self.column_translation, errors='ignore')
+            columns=self.column_translation, errors="ignore", inplace=False
+        )
+
+    def deserialize_dia_object(self, detections: pd.DataFrame, rename=False):
+        for ef in detections.extra_fields:
+            ef["diaObject"] = pickle.loads(ef["diaObject"])[0]
+            if rename:
+                self.rename_dia_object(ef["diaObject"])
+
+    def rename_dia_object(self, dia_object: dict):
+        for key, value in self.metadata_column_map.items():
+            dia_object[value] = dia_object.pop(key)

@@ -1,5 +1,5 @@
 import unittest
-
+from pprint import pprint
 from pymongo.operations import InsertOne, UpdateOne
 
 from mongo_scribe.command.exceptions import (
@@ -135,7 +135,7 @@ class CommandTests(unittest.TestCase):
             valid_probabilities_dict["criteria"],
         )
         operations = update_command.get_operations()
-        self.assertEqual(len(operations), 1)
+        self.assertEqual(len(operations), 3)
         self.assertTrue(isinstance(operations[0], UpdateOne))
         self.assertFalse(any(op._upsert for op in operations))
 
@@ -156,12 +156,12 @@ class CommandTests(unittest.TestCase):
                 )
             )
 
-        insert = operations[0]._doc.pop("$set")
+        update = operations[2]._doc.pop("$set")
+        pprint(update)
 
-        assert "probabilities.classifier" in insert
-        assert "class_rank_1" in insert["probabilities.classifier"]
-        assert "probability_rank_1" in insert["probabilities.classifier"]
-        assert "values" in insert["probabilities.classifier"]
+        assert "probabilities.$[el].class_rank_1" in update
+        assert "probabilities.$[el].probability_rank_1" in update
+        assert "probabilities.$[el].values" in update
 
     def test_update_probabilities_options(self):
         update_command = UpdateProbabilitiesCommand(
@@ -241,33 +241,6 @@ class CommandTests(unittest.TestCase):
                 options=valid_features_dict["options"],
             )
 
-    def test_update_features_with_set_on_insert(self):
-        update_features_options = {"set_on_insert": True}
-        update_features_command = UpdateFeaturesCommand(
-            collection=valid_features_dict["collection"],
-            data=valid_features_dict["data"].copy(),
-            criteria=valid_features_dict["criteria"],
-            options=update_features_options,
-        )
-
-        operations = update_features_command.get_operations()
-
-        self.assertEqual(len(operations), 1)
-        self.assertEqual(
-            operations[0]._doc,
-            {
-                "$set": {
-                    "features.group": {
-                        "features": [
-                            {"name": "feature1", "value": 12.34, "fid": "g"},
-                            {"name": "feature2", "value": None, "fid": "Y"},
-                        ],
-                        "version": "v1",
-                    }
-                }
-            },
-        )
-
     def test_update_features_with_set_on_insert_with_upsert(self):
         update_features_options = {
             "set_on_insert": True,
@@ -282,7 +255,7 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 1)
+        self.assertEqual(len(operations), 3)
 
     def test_update_features_data_operations(self):
         update_features_command = UpdateFeaturesCommand(
@@ -294,18 +267,23 @@ class CommandTests(unittest.TestCase):
 
         operations = update_features_command.get_operations()
 
-        self.assertEqual(len(operations), 1)
-        self.assertEqual(operations[0]._filter, {"_id": "AID51423"})
+        self.assertEqual(len(operations), 3)
         self.assertEqual(
-            operations[0]._doc,
+            operations[1]._filter,
+            {"features.survey": {"$ne": "group"}, "_id": "AID51423"},
+        )
+        self.assertEqual(operations[2]._filter, {"_id": "AID51423"})
+        self.assertEqual(
+            operations[1]._doc,
             {
-                "$set": {
-                    "features.group": {
-                        "features": [
-                            {"name": "feature1", "value": 12.34, "fid": "g"},
-                            {"name": "feature2", "value": None, "fid": "Y"},
-                        ],
+                "$push": {
+                    "features": {
+                        "survey": "group",
                         "version": "v1",
+                        "features": [
+                            {"fid": "g", "name": "feature1", "value": 12.34},
+                            {"fid": "Y", "name": "feature2", "value": None},
+                        ],
                     }
                 }
             },

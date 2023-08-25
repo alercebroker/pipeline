@@ -15,18 +15,24 @@ from tests.test_commons import (
 @pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
+    produce_messages,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    produce_messages("features_elasticc")
     env_variables_elasticc(
         "messi",
         "alerce_classifiers.messi.model.MessiClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MESSI_MODEL_PATH"),
             "BALTO_MODEL_PATH": os.getenv("TEST_BALTO_MODEL_PATH"),
-            "HEADER_QUANTILES_PATH": os.getenv("TEST_MESSI_HEADER_QUANTILES_PATH"),
-            "FEATURE_QUANTILES_PATH": os.getenv("TEST_MESSI_FEATURE_QUANTILES_PATH"),
+            "HEADER_QUANTILES_PATH": os.getenv(
+                "TEST_MESSI_HEADER_QUANTILES_PATH"
+            ),
+            "FEATURE_QUANTILES_PATH": os.getenv(
+                "TEST_MESSI_FEATURE_QUANTILES_PATH"
+            ),
             "MAPPER_CLASS": "alerce_classifiers.messi.mapper.MessiMapper",
         },
     )

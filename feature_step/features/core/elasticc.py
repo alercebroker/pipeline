@@ -6,8 +6,6 @@ from lc_classifier.features.preprocess.preprocess_elasticc import (
 )
 from typing import List
 import pandas as pd
-import pickle
-import os
 import copy
 from importlib import metadata
 
@@ -26,7 +24,9 @@ class ELAsTiCCFeatureExtractor:
         xmatch: List[dict],
         **kwargs,
     ):
-        self.preprocessor = kwargs.get("preprocessor", ElasticcPreprocessor())
+        self.preprocessor = kwargs.get(
+            "preprocessor", ElasticcPreprocessor(stream=True)
+        )
         self.extractor = kwargs.get(
             "extractor", ElasticcFeatureExtractor(round=2)
         )
@@ -36,12 +36,10 @@ class ELAsTiCCFeatureExtractor:
         lightcurves = self._create_lightcurve_dataframe(
             copy.deepcopy(self.detections)
         )
-        metadata = self._create_metadata_dataframe(
-            copy.deepcopy(self.detections)
-        )
+        lightcurves = self.preprocessor.preprocess(lightcurves)
+        metadata = self._create_metadata_dataframe(lightcurves)
         input_snids = lightcurves.index.unique().values
 
-        lightcurves = self.preprocessor.preprocess(lightcurves)
         features = self.extractor.compute_features(
             lightcurves, metadata=metadata, force_snids=input_snids
         )
@@ -58,41 +56,11 @@ class ELAsTiCCFeatureExtractor:
             det["FLUXCALERR"] = det.pop("e_mag")
             det["BAND"] = det.pop("fid")
 
-    def _create_metadata_dataframe(self, detections: List[dict]):
+    def _create_metadata_dataframe(self, detections: pd.DataFrame):
         metadata = []
-        aids = []
-        for det in detections:
-            det["extra_fields"]["diaObject"] = pickle.loads(
-                det["extra_fields"]["diaObject"]
-            )[0]
-            det["extra_fields"]["diaObject"] = self._map_metadata_column_names(
-                det["extra_fields"]["diaObject"]
-            )
-            metadata.append(det["extra_fields"]["diaObject"])
-            aids.append(det["aid"])
-
-        dataframe = pd.DataFrame.from_records(metadata)
-        dataframe["aid"] = aids
-        dataframe.drop_duplicates("aid", inplace=True)
-        dataframe.set_index("aid", inplace=True)
-        return dataframe
-
-    def _map_metadata_column_names(self, diaObject: dict):
-        mapping = {
-            "z_final": "REDSHIFT_HELIO",
-            "z_final_err": "REDSHIFT_HELIO_ERR",
-            "hostgal_zphot": "HOSTGAL_PHOTOZ",
-            "hostgal_zphot_err": "HOSTGAL_PHOTOZ_ERR",
-            "hostgal2_zphot": "HOSTGAL2_PHOTOZ",
-            "hostgal2_zphot_err": "HOSTGAL2_PHOTOZ_ERR",
-            "hostgal2_zspec": "HOSTGAL2_SPECZ",
-            "hostgal2_zspec_err": "HOSTGAL2_SPECZ_ERR",
-            "hostgal_zspec": "HOSTGAL_SPECZ",
-            "hostgal_zspec_err": "HOSTGAL_SPECZ_ERR",
-        }
-        for key in diaObject.copy():
-            if key in mapping:
-                diaObject[mapping[key]] = diaObject.pop(key)
-                continue
-            diaObject[key.upper()] = diaObject.pop(key)
-        return diaObject
+        for ef in detections.extra_fields:
+            metadata.append(ef["diaObject"])
+        metadata = pd.DataFrame.from_records(metadata)
+        metadata.set_index(detections.index, inplace=True)
+        metadata = metadata[~metadata.index.duplicated(keep="first")]
+        return metadata

@@ -191,10 +191,13 @@ class MongoIntegrationTest(unittest.TestCase):
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "insert_probabilities_id"})
         assert result is not None
-        assert "classifier" in result["probabilities"]
-        assert result["probabilities"]["classifier"]["version"] == "1"
-        assert result["probabilities"]["classifier"]["class_rank_1"] == "class2"
-        assert result["probabilities"]["classifier"]["probability_rank_1"] == 0.9
+        assert len(result["probabilities"]) == 1
+        probabilities = result["probabilities"][0]
+        assert probabilities["classifier_name"] == "classifier"
+        assert probabilities["version"] == "1"
+        assert probabilities["class_rank_1"] == "class2"
+        assert probabilities["probability_rank_1"] == 0.9
+        assert len(probabilities["values"]) == 2
 
     def test_update_probabilities_into_database(self):
         command = json.dumps(
@@ -233,10 +236,12 @@ class MongoIntegrationTest(unittest.TestCase):
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_probabilities_id"})
         assert result is not None
-        assert "classifier" in result["probabilities"]
-        assert result["probabilities"]["classifier"]["version"] == "1"
-        assert result["probabilities"]["classifier"]["class_rank_1"] == "class1"
-        assert result["probabilities"]["classifier"]["probability_rank_1"] == 0.5
+        assert len(result["probabilities"]) == 1
+        probabilities = result["probabilities"][0]
+        assert probabilities["classifier_name"] == "classifier" 
+        assert probabilities["version"] == "1"
+        assert probabilities["class_rank_1"] == "class1"
+        assert probabilities["probability_rank_1"] == 0.5
 
     def test_update_features_into_database(self):
         command = json.dumps(
@@ -297,14 +302,15 @@ class MongoIntegrationTest(unittest.TestCase):
         collection = self.step.db_client.connection.database["object"]
         result = collection.find_one({"_id": "update_features_id"})
         assert result is not None
-        assert "elasticc" in result["features"]
+        assert len(result["features"]) == 1
+        features = result["features"][0]
+        assert features["survey"] == "elasticc"
+        assert features["version"] == "v1"
         assert {
             "name": "feat1",
             "value": 741,
             "fid": "g",
-        } in result[
-            "features"
-        ]["elasticc"]["features"]
+        } in features["features"]
 
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"

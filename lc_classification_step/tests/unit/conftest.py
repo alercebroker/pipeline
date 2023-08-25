@@ -16,11 +16,16 @@ from tests.test_commons import (
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
-    config.addinivalue_line("markers", "elasticc: mark a test as a elasticc test.")
+    config.addinivalue_line(
+        "markers", "elasticc: mark a test as a elasticc test."
+    )
 
 
 base_config = {
-    "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test"},
+    "SCRIBE_PRODUCER_CONFIG": {
+        "CLASS": "unittest.mock.MagicMock",
+        "TOPIC": "test",
+    },
     "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test2"},
     "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock", "TOPIC": "test3"},
     "MODEL_VERSION": "test",
@@ -97,6 +102,24 @@ def messi_config():
     }
 
 
+def mlp_config():
+    return {
+        "MODEL_CONFIG": {
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+                "header_quantiles_path": mock.MagicMock(),
+                "feature_quantiles_path": mock.MagicMock(),
+            },
+            "CLASS": "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
+            "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
+            "NAME": "mlp",
+        },
+        "STEP_PARSER_CLASS": (
+            "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
+        ),
+    }
+
+
 def step_factory(messages, config, model):
     step = LateClassifier(config=config, model=model)
     step.consumer = mock.MagicMock(KafkaConsumer)
@@ -124,9 +147,15 @@ def ztf_model_output():
                     }
                 ),
                 "children": {
-                    "Transient": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
-                    "Stochastic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
-                    "Periodic": DataFrame({"aid": aids, "CLASS": [1] * len(aids)}),
+                    "Transient": DataFrame(
+                        {"aid": aids, "CLASS": [1] * len(aids)}
+                    ),
+                    "Stochastic": DataFrame(
+                        {"aid": aids, "CLASS": [1] * len(aids)}
+                    ),
+                    "Periodic": DataFrame(
+                        {"aid": aids, "CLASS": [1] * len(aids)}
+                    ),
                 },
             },
             "probabilities": DataFrame(
@@ -146,7 +175,9 @@ def elasticc_model_output():
     def factory(_, model):
         aids = ["aid1", "aid2"]
         df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=aids)
-        model.predict.return_value = OutputDTO(df, {"top": DataFrame(), "children": {}})
+        model.predict.return_value = OutputDTO(
+            df, {"top": DataFrame(), "children": {}}
+        )
 
     return factory
 
@@ -171,7 +202,9 @@ def step_factory_toretto(elasticc_model_output):
         model_mock = mock.MagicMock()
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
-        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        step.step_parser.ClassMapper.set_mapping(
+            {"C1": 1, "C2": 2, "NotClassified": 3}
+        )
         return step
 
     return factory
@@ -185,7 +218,9 @@ def step_factory_barney(elasticc_model_output):
         model_mock = mock.MagicMock()
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
-        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        step.step_parser.ClassMapper.set_mapping(
+            {"C1": 1, "C2": 2, "NotClassified": 3}
+        )
         return step
 
     return factory
@@ -199,7 +234,9 @@ def step_factory_balto(elasticc_model_output):
         model_mock = mock.MagicMock()
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
-        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        step.step_parser.ClassMapper.set_mapping(
+            {"C1": 1, "C2": 2, "NotClassified": 3}
+        )
         return step
 
     return factory
@@ -213,7 +250,25 @@ def step_factory_messi(elasticc_model_output):
         model_mock = mock.MagicMock()
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
-        step.step_parser.ClassMapper.set_mapping({"C1": 1, "C2": 2, "NotClassified": 3})
+        step.step_parser.ClassMapper.set_mapping(
+            {"C1": 1, "C2": 2, "NotClassified": 3}
+        )
+        return step
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_mlp(elasticc_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(mlp_config())
+        model_mock = mock.MagicMock()
+        elasticc_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
+        step.step_parser.ClassMapper.set_mapping(
+            {"C1": 1, "C2": 2, "NotClassified": 3}
+        )
         return step
 
     return factory

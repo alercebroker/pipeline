@@ -33,10 +33,11 @@ validators = "0.20.0"
 wget = "3.2"
 
 [package.extras]
-balto = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "pandas (==2.0.1)", "scikit-learn", "torch (==1.11.0)"]
-barney = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)", "pandas (==2.0.1)"]
-messi = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "pandas (==2.0.1)", "scikit-learn", "torch (==1.11.0)"]
-toretto = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)", "pandas (==2.0.1)"]
+balto = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "scikit-learn", "torch (==1.11.0)"]
+barney = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)"]
+messi = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "scikit-learn", "torch (==1.11.0)"]
+mlp = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)"]
+toretto = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ git+https://github.com/alercebroker/lc_classifier@main", "numpy (>=1.16)"]
 
 [package.source]
 type = "directory"
@@ -44,7 +45,7 @@ url = "../libs/alerce_classifiers"
 
 [[package]]
 name = "apf-base"
-version = "2.5.3a22"
+version = "2.5.3a28"
 description = "Alert Processing Framework"
 optional = false
 python-versions = ">=3.7"
@@ -2850,4 +2851,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.9"
-content-hash = "6d3333e9fb803e9e47b9160d0b9f6955649bd89e50452ed92487b7c3c1d29308"
+content-hash = "26824006bc7e801a72ec6be2fd43603f324478b552d5d64f703f1325ad09b4e0"

@@ -1,17 +1,5 @@
-import unittest
-from unittest import mock
-from apf.producers import GenericProducer
-from apf.consumers import KafkaConsumer
 from features.step import FeaturesComputer
 from schema import SCHEMA
-from tests.data.message_factory import (
-    generate_input_batch,
-)
-from tests.data.elasticc_message_factory import (
-    generate_input_batch as generate_elasticc_batch,
-    ELASTICC_BANDS,
-)
-from features.core.ztf import ZTFFeatureExtractor
 from features.utils.selector import selector
 from fastavro.schema import load_schema
 import pathlib
@@ -41,7 +29,7 @@ PRODUCER_CONFIG = {
 try:
     schema_path = pathlib.Path("scribe_schema.avsc")
     assert schema_path.exists()
-except Exception as e:
+except Exception:
     schema_path = pathlib.Path("feature_step/scribe_schema.avsc")
     assert schema_path.exists()
 SCRIBE_PRODUCER_CONFIG = {

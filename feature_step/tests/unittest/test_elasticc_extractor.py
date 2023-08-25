@@ -1,16 +1,9 @@
 import unittest
-import json
 from features.core.elasticc import ELAsTiCCFeatureExtractor
 from tests.data.elasticc_message_factory import (
     generate_input_batch,
     generate_bad_emag_ratio,
     ELASTICC_BANDS,
-)
-from lc_classifier.features.preprocess.preprocess_elasticc import (
-    ElasticcPreprocessor,
-)
-from lc_classifier.features.custom.elasticc_feature_extractor import (
-    ElasticcFeatureExtractor,
 )
 
 
@@ -23,11 +16,7 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -53,11 +42,7 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -80,11 +65,7 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -102,11 +83,7 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -126,11 +103,7 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -148,11 +121,7 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -170,11 +139,7 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -192,11 +157,7 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
             detections=detections,
             non_detections=[],
             xmatch=[],
@@ -214,14 +175,10 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        preprocessor = ElasticcPreprocessor()
-        lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
         extractor = ELAsTiCCFeatureExtractor(
             detections=detections,
             non_detections=[],
             xmatch=[],
-            preprocessor=preprocessor,
-            extractor=lc_classifier_extractor,
         )
         result = extractor.generate_features()
 

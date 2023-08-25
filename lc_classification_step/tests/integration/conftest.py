@@ -20,20 +20,25 @@ from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
-    config.addinivalue_line("markers", "elasticc: mark a test as a elasticc test.")
+    config.addinivalue_line(
+        "markers", "elasticc: mark a test as a elasticc test."
+    )
 
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
     return (
-        "docker compose" if not os.getenv("COMPOSE", "v1") == "v1" else "docker-compose"
+        "docker compose"
+        if not os.getenv("COMPOSE", "v1") == "v1"
+        else "docker-compose"
     )
 
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return (
-        pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"
+        pathlib.Path(pytestconfig.rootdir)
+        / "tests/integration/docker-compose.yml"
     ).absolute()
 
 
@@ -50,21 +55,19 @@ def is_responsive_kafka(url):
             NewTopic("w_object", num_partitions=1),
             NewTopic(get_lc_classifier_topic("ztf"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("balto"), num_partitions=1),
-            NewTopic(get_lc_classifier_topic("balto_schemaless"), num_partitions=1),
+            NewTopic(
+                get_lc_classifier_topic("balto_schemaless"), num_partitions=1
+            ),
             NewTopic(get_lc_classifier_topic("messi"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("toretto"), num_partitions=1),
             NewTopic(get_lc_classifier_topic("barney"), num_partitions=1),
-            NewTopic(get_lc_classifier_topic("barney_new"), num_partitions=1),
+            NewTopic(get_lc_classifier_topic("mlp"), num_partitions=1),
             NewTopic("metrics", num_partitions=1),
         ]
     )
     for topic, future in futures.items():
         try:
             future.result()
-            if topic == "features_ztf":
-                produce_messages("features_ztf", SCHEMA_ZTF)
-            elif topic == "features_elasticc":
-                produce_messages("features_elasticc", SCHEMA_ELASTICC)
         except Exception as e:
             logging.error(f"Can't create topic {topic}: {e}")
             return False
@@ -147,7 +150,21 @@ def env_variables_elasticc():
     return set_env_variables
 
 
-def produce_messages(topic, SCHEMA):
+@pytest.fixture
+def produce_messages():
+    def func(topic, force_empty_features=False):
+        if topic == "features_ztf":
+            schema = SCHEMA_ZTF
+        elif topic == "features_elasticc":
+            schema = SCHEMA_ELASTICC
+        if force_empty_features:
+            schema["fields"][-1]["type"] = "null"
+        _produce_messages(topic, schema)
+
+    return func
+
+
+def _produce_messages(topic, SCHEMA):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},

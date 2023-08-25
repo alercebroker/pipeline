@@ -10,7 +10,7 @@ from pandas import DataFrame
 
 
 def test_create_lightcurve_dataframe():
-    preprocessor = ElasticcPreprocessor()
+    preprocessor = ElasticcPreprocessor(stream=True)
     lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
     detections = generate_alert(
         aid="aid1", band="u", num_messages=1, identifier="1"
@@ -33,21 +33,7 @@ def test_create_lightcurve_dataframe():
 
 
 def test_create_metadata_dataframe():
-    preprocessor = ElasticcPreprocessor()
-    lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
-    detections = generate_alert(
-        aid="aid1", band="u", num_messages=1, identifier="1"
-    )
-    step_extractor = ELAsTiCCFeatureExtractor(
-        preprocessor, lc_classifier_extractor, detections
-    )
-    metadata_dataframe = step_extractor._create_metadata_dataframe(detections)
-    # there are 64 metadata columns
-    assert metadata_dataframe.shape == (1, 64)
-
-
-def test_preprocessor_can_run_with_parsed_data():
-    preprocessor = ElasticcPreprocessor()
+    preprocessor = ElasticcPreprocessor(stream=True)
     lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
     detections = generate_alert(
         aid="aid1", band="u", num_messages=1, identifier="1"
@@ -59,4 +45,23 @@ def test_preprocessor_can_run_with_parsed_data():
         detections
     )
     result = preprocessor.preprocess(lightcurve_dataframe)
+    metadata_dataframe = step_extractor._create_metadata_dataframe(result)
+    # there are 64 metadata columns
+    assert metadata_dataframe.shape == (1, 64)
+
+
+def test_preprocessor_can_run_with_parsed_data():
+    preprocessor = ElasticcPreprocessor(stream=True)
+    lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
+    detections = generate_alert(
+        aid="aid1", band="u", num_messages=1, identifier="1"
+    )
+    step_extractor = ELAsTiCCFeatureExtractor(
+        preprocessor, lc_classifier_extractor, detections
+    )
+    lightcurve_dataframe = step_extractor._create_lightcurve_dataframe(
+        detections
+    )
+    result = preprocessor.preprocess(lightcurve_dataframe)
+    print(result)
     assert isinstance(result, DataFrame)
