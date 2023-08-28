@@ -73,12 +73,9 @@ class LateClassifier(GenericStep):
     def produce_scribe(self, commands: List[dict]):
         ids_list = []
         for command in commands:
-            ids_list.append(command['criteria']['_id'])
+            ids_list.append(command["criteria"]["_id"])
             self.scribe_producer.produce({"payload": json.dumps(command)})
-        self.logger.debug(
-            f"The list of objets from scribe are: {ids_list}"
-        )
-        
+        self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
     def execute(self, messages):
         """Run the classification.
