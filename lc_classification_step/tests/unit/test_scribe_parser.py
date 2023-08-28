@@ -1,5 +1,5 @@
-from alerce_classifiers.base.dto import OutputDTO
 from pandas import DataFrame
+from alerce_classifiers.base.dto import OutputDTO
 from lc_classification.core.parsers.scribe_parser import ScribeParser
 from lc_classification.core.parsers.kafka_parser import KafkaOutput
 
