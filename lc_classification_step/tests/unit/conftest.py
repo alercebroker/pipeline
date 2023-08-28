@@ -110,7 +110,7 @@ def mlp_config():
                 "header_quantiles_path": mock.MagicMock(),
                 "feature_quantiles_path": mock.MagicMock(),
             },
-            "CLASS": "alerce_classifiers.mlp_elasticc.model.MLPElasticcClassifier",
+            "CLASS": "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
             "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
             "NAME": "mlp",
         },

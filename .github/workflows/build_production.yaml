@@ -5,14 +5,7 @@ on:
     types:
       - published
 
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  detect_changes:
-    uses: ./.github/workflows/detect_changes.yaml
-
   update_versions:
     uses: ./.github/workflows/update-versions.yaml
     with:
@@ -25,6 +18,9 @@ jobs:
       build-type: production
       step-name: alert_archiving_step
       base-folder: alert_archiving_step
+      build-context: alert_archiving_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   correction_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -32,8 +28,11 @@ jobs:
     with:
       build-type: production
       step-name: correction_step
+      step-name-prefix: ""
       base-folder: correction_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   early_classification_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -42,6 +41,10 @@ jobs:
       build-type: production
       step-name: early_classification_step
       base-folder: early_classification_step
+      step-name-prefix: ""
+      build-context: "."
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   feature_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -52,6 +55,8 @@ jobs:
       step-name-prefix: ""
       base-folder: feature_step
       build-context: "."
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_ztf_production:
     uses: ./.github/workflows/build-template.yaml
@@ -140,6 +145,8 @@ jobs:
       step-name-prefix: ""
       base-folder: lightcurve-step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   magstats_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -149,6 +156,9 @@ jobs:
       step-name: magstats_step
       base-folder: magstats_step
       build-context: .
+      step-name-prefix: ""
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   prv_candidates_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -159,14 +169,19 @@ jobs:
       step-name-prefix: ""
       base-folder: prv_candidates_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   reflector_step_production:
     uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       base-folder: reflector_step
+      build-context: reflector_step
       step-name: reflector_step
       build-type: production
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   s3_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -177,6 +192,8 @@ jobs:
       step-name-prefix: ""
       base-folder: s3_step
       build-context: s3_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   sorting_hat_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -187,6 +204,8 @@ jobs:
       step-name-prefix: ""
       base-folder: sorting_hat_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   watchlist_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -195,6 +214,9 @@ jobs:
       build-type: production
       step-name: watchlist_step
       base-folder: watchlist_step
+      build-context: watchlist_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   xmatch_step_production:
     uses: ./.github/workflows/build-template.yaml
@@ -202,8 +224,11 @@ jobs:
     with:
       build-type: production
       step-name: xmatch_step
+      step-name-prefix: ""
       base-folder: xmatch_step
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   scribe_production:
     uses: ./.github/workflows/build-template.yaml
@@ -211,12 +236,14 @@ jobs:
     with:
       build-type: production
       step-name: scribe
+      step-name-prefix: ""
       base-folder: scribe
       build-context: .
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   db_plugins_build:
-    needs: detect_changes
-    if: needs.detect_changes.outputs.libs_db_plugins == 'true'
+    needs: update_versions
     uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: 'libs/db-plugins'

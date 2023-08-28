@@ -16,10 +16,12 @@ from fastavro.repository.base import SchemaRepositoryError
 @pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
+    produce_messages,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    produce_messages("features_elasticc")
     env_variables_elasticc(
         "balto",
         "alerce_classifiers.balto.model.BaltoClassifier",
@@ -78,7 +80,9 @@ def test_step_schemaless(
         kconsumer = kafka_consumer(
             "balto_schemaless",
             "apf.consumers.kafka.KafkaSchemalessConsumer",
-            {"SCHEMA_PATH": "lc_classification_step/schemas/output_elasticc.avsc"},
+            {
+                "SCHEMA_PATH": "lc_classification_step/schemas/output_elasticc.avsc"
+            },
         )
     sconsumer = scribe_consumer()
 

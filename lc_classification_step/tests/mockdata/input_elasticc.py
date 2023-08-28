@@ -581,6 +581,6 @@ INPUT_SCHEMA = {
         {"name": "detections", "type": DETECTIONS},
         {"name": "non_detections", "type": NON_DETECTIONS},
         {"name": "xmatches", "type": [XMATCH, "null"]},
-        {"name": "features", "type": FEATURES_SCHEMA},
+        {"name": "features", "type": [FEATURES_SCHEMA, "null"]},
     ],
 }

@@ -15,10 +15,12 @@ from tests.test_commons import (
 @pytest.mark.elasticc
 def test_step_elasticc_result(
     kafka_service,
+    produce_messages,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    produce_messages("features_elasticc")
     env_variables_elasticc(
         "toretto",
         "alerce_classifiers.rf_features_classifier.model.RandomForestFeaturesClassifier",

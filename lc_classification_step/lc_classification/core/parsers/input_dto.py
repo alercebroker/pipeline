@@ -19,7 +19,9 @@ def create_input_dto(messages: List[dict]):
     xmatch = pd.DataFrame()
     stamps = pd.DataFrame()
     input_dto = input_dto_factory(
+        
         detections, non_detections, features, xmatch, stamps
+    
     )
     return input_dto
 
@@ -109,15 +111,20 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     aid2      4      5
     aid1      2      3
     """
-    if len(messages) == 0 or not "features" in messages[0]:
+    if len(messages) == 0 or "features" not in messages[0]:
         return pd.DataFrame()
     entries = []
     for message in messages:
+        if message["features"] is None:
+            continue
         entry = {
             feat: message["features"][feat] for feat in message["features"]
         }
         entry["aid"] = message["aid"]
         entries.append(entry)
+    if len(entries) == 0:
+        return pd.DataFrame()
+
     features = pd.DataFrame.from_records(entries)
     features.drop_duplicates("aid", inplace=True, keep="last")
     features = features.set_index("aid")

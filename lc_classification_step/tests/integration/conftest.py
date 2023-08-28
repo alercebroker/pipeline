@@ -68,10 +68,6 @@ def is_responsive_kafka(url):
     for topic, future in futures.items():
         try:
             future.result()
-            if topic == "features_ztf":
-                produce_messages("features_ztf", SCHEMA_ZTF)
-            elif topic == "features_elasticc":
-                produce_messages("features_elasticc", SCHEMA_ELASTICC)
         except Exception as e:
             logging.error(f"Can't create topic {topic}: {e}")
             return False
@@ -154,7 +150,21 @@ def env_variables_elasticc():
     return set_env_variables
 
 
-def produce_messages(topic, SCHEMA):
+@pytest.fixture
+def produce_messages():
+    def func(topic, force_empty_features=False):
+        if topic == "features_ztf":
+            schema = SCHEMA_ZTF
+        elif topic == "features_elasticc":
+            schema = SCHEMA_ELASTICC
+        if force_empty_features:
+            schema["fields"][-1]["type"] = "null"
+        _produce_messages(topic, schema)
+
+    return func
+
+
+def _produce_messages(topic, SCHEMA):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},

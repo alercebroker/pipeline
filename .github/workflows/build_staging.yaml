@@ -4,17 +4,15 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '!.github/workflows/tests/**'
 
 jobs:
   update_versions:
-    uses: ./.github/workflows/utils/update-versions.yaml
+    uses: ./.github/workflows/update-versions.yaml
     with:
       build-type: staging
 
   alert_archiving_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -25,7 +23,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   correction_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -37,7 +35,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   early_classification_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -49,7 +47,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   feature_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -61,7 +59,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_ztf_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -74,7 +72,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_balto_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -87,7 +85,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_messi_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -100,7 +98,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_barney_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -113,7 +111,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_mlp_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -126,7 +124,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lc_classification_step_toretto_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -139,7 +137,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -151,7 +149,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   magstats_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -163,7 +161,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   prv_candidates_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -175,7 +173,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   reflector_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       base-folder: reflector_step
@@ -186,7 +184,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   s3_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -198,7 +196,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   sorting_hat_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -210,7 +208,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   watchlist_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -221,7 +219,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   xmatch_step_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -233,7 +231,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   scribe_staging:
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     needs: update_versions
     with:
       build-type: staging
@@ -246,7 +244,7 @@ jobs:
 
   db_plugins_build:
     needs: update_versions
-    uses: ./.github/workflows/utils/build-template.yaml
+    uses: ./.github/workflows/build-template.yaml
     with:
       base-folder: 'libs/db-plugins'
       step-name: "db-plugins"

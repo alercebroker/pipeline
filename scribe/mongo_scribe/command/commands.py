@@ -201,11 +201,11 @@ class UpdateProbabilitiesCommand(UpdateCommand):
 
         filters = {
             "el.classifier_name": self.classifier_name,
-            "el.version": self.classifier_version,
         }
 
         update = {
             "$set": {
+                "probabilities.$[el].version": self.classifier_version,
                 "probabilities.$[el].class_rank_1": probabilities[0]["class_name"],
                 "probabilities.$[el].probability_rank_1": probabilities[0][
                     "probability"

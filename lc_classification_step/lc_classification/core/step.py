@@ -31,6 +31,8 @@ class LateClassifier(GenericStep):
 
     def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
+        self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
+        self.classifier_version = self.config["MODEL_VERSION"]
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
@@ -54,13 +56,10 @@ class LateClassifier(GenericStep):
         )(config["SCRIBE_PRODUCER_CONFIG"])
         self.scribe_parser: KafkaParser = get_class(
             config["SCRIBE_PARSER_CLASS"]
-        )()
+        )(classifier_name=self.classifier_name)
         self.step_parser: KafkaParser = get_class(
             config["STEP_PARSER_CLASS"]
         )()
-
-        self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
-        self.classifier_version = self.config["MODEL_VERSION"]
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
@@ -96,11 +95,17 @@ class LateClassifier(GenericStep):
                 forced.append(det[0])
                 if "diaObjet" in det[1].index:
                     dia_objet.append(det[0])
-
-            if det[1]["parent_candid"] is not None:
-                prv_candidates.append(det[0])
+                if det[1]["parent_candid"] is not None:
+                    prv_candidates.append(det[0])
                 if "diaObjet" in det[1].index:
                     dia_objet.append(det[0])
+        if not self.model.can_predict(model_input):
+            self.logger.info("No data to process")
+            return (
+                OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
+                messages,
+                model_input.features,
+            )
         self.logger.info(
             "The number of detections is: %i", len(model_input.detections)
         )

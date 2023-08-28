@@ -23,9 +23,10 @@ list_of_classes = [
 
 
 def run_extractor_per_class(chosen_class, lightcurves, metadata):
-    class_snids = labels[labels['label'] == chosen_class].index.values
-    np.random.seed(0)
-    input_snids = np.random.choice(class_snids, 15, replace=False)
+    class_snids = labels.index.values
+    # class_snids = labels[labels['label'] == chosen_class].index.values
+    np.random.seed(1)
+    input_snids = np.random.choice(class_snids, 50, replace=False)
 
     class_lightcurves = lightcurves.loc[input_snids]
     class_metadata = metadata.loc[input_snids]
@@ -60,7 +61,8 @@ def run_extractor_per_class(chosen_class, lightcurves, metadata):
     return tf / len(input_snids)
 
 
-run_extractor_per_class('AGN', lightcurves, metadata)
+agn_time = run_extractor_per_class('all_classes', lightcurves, metadata)
+print(agn_time)
 exit()
 
 avg_times = {}

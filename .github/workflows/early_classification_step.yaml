@@ -10,7 +10,7 @@ on:
 
 jobs:
   early_classification_step_lint:
-    uses: ./.github/workflows/utils/lint-template.yaml
+    uses: ./.github/workflows/lint-template.yaml
     with:
       base-folder: 'early_classification_step'
       sources-folder: 'earlyclassifier'
