@@ -31,7 +31,9 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
         )
         expected_df.index.name = "aid"
 
-        procesor = NoClassifiedPostProcessor(messages_df, complete_classifications_df)
+        procesor = NoClassifiedPostProcessor(
+            messages_df, complete_classifications_df
+        )
         result_df = procesor.get_modified_classifications()
 
         pd.testing.assert_frame_equal(result_df, expected_df)
@@ -56,7 +58,9 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
         )
         expected_df.index.name = "aid"
 
-        procesor = NoClassifiedPostProcessor(messages_df, incomplete_classifications_df)
+        procesor = NoClassifiedPostProcessor(
+            messages_df, incomplete_classifications_df
+        )
         result_df = procesor.get_modified_classifications()
 
         pd.testing.assert_frame_equal(result_df, expected_df)

@@ -13,8 +13,16 @@ def test_create_detections_dto():
     messages = [
         {
             "detections": [
-                {"aid": "aid1", "candid": "cand1", "extra_fields": extra_fields()},
-                {"aid": "aid1", "candid": "cand2", "extra_fields": extra_fields()},
+                {
+                    "aid": "aid1",
+                    "candid": "cand1",
+                    "extra_fields": extra_fields(),
+                },
+                {
+                    "aid": "aid1",
+                    "candid": "cand2",
+                    "extra_fields": extra_fields(),
+                },
             ]
         },
         {

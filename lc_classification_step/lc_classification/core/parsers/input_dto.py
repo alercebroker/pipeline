@@ -19,9 +19,7 @@ def create_input_dto(messages: List[dict]):
     xmatch = pd.DataFrame()
     stamps = pd.DataFrame()
     input_dto = input_dto_factory(
-        
         detections, non_detections, features, xmatch, stamps
-    
     )
     return input_dto
 
