@@ -6,7 +6,10 @@ from fastavro import utils
 
 from lc_classification.core.step import LateClassifier
 from tests.mockdata.input_ztf import INPUT_SCHEMA as INPUT_ZTF
-from tests.test_commons import assert_command_is_correct, assert_ztf_object_is_correct
+from tests.test_commons import (
+    assert_command_is_correct,
+    assert_ztf_object_is_correct,
+)
 
 messages_ztf = list(utils.generate_many(INPUT_ZTF, 2))
 
