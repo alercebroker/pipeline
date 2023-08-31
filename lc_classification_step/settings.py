@@ -23,7 +23,9 @@ CONSUMER_CONFIG = {
 try:
     ELASTICC_SCHEMA = load_schema("schemas/output_elasticc.avsc")
 except SchemaRepositoryError:
-    ELASTICC_SCHEMA = load_schema("lc_classification_step/schemas/output_elasticc.avsc")
+    ELASTICC_SCHEMA = load_schema(
+        "lc_classification_step/schemas/output_elasticc.avsc"
+    )
 PRODUCER_CONFIG = {
     "TOPIC_STRATEGY": {
         "PARAMS": {
@@ -41,7 +43,9 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.kafka.KafkaProducer"),
-    "SCHEMA": SCHEMA if os.getenv("STREAM", "ztf") == "ztf" else ELASTICC_SCHEMA,
+    "SCHEMA": SCHEMA
+    if os.getenv("STREAM", "ztf") == "ztf"
+    else ELASTICC_SCHEMA,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -85,20 +89,32 @@ METRICS_CONFIG = {
     },
 }
 
-if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv(
+    "CONSUMER_KAFKA_PASSWORD"
+):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
-    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
-if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "CONSUMER_KAFKA_USERNAME"
+    )
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "CONSUMER_KAFKA_PASSWORD"
+    )
+if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv(
+    "PRODUCER_KAFKA_PASSWORD"
+):
     PRODUCER_CONFIG["PARAMS"]["security.protocol"] = os.getenv(
         "PRODUCER_SECURITY_PROTOCOL", "SASL_PLAINTEXT"
     )
     PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = os.getenv(
         "PRODUCER_SASL_MECHANISM", "SCRAM-SHA-256"
     )
-    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
-    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
+    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "PRODUCER_KAFKA_USERNAME"
+    )
+    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "PRODUCER_KAFKA_PASSWORD"
+    )
 if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"

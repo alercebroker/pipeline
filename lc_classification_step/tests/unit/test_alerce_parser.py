@@ -122,6 +122,13 @@ def test_parse():
         assert "Periodic" in res["lc_classification"]["hierarchical"]["top"]
         assert "Stochastic" in res["lc_classification"]["hierarchical"]["top"]
         assert "Transient" in res["lc_classification"]["hierarchical"]["top"]
-        assert "Periodic" in res["lc_classification"]["hierarchical"]["children"]
-        assert "Stochastic" in res["lc_classification"]["hierarchical"]["children"]
-        assert "Transient" in res["lc_classification"]["hierarchical"]["children"]
+        assert (
+            "Periodic" in res["lc_classification"]["hierarchical"]["children"]
+        )
+        assert (
+            "Stochastic"
+            in res["lc_classification"]["hierarchical"]["children"]
+        )
+        assert (
+            "Transient" in res["lc_classification"]["hierarchical"]["children"]
+        )

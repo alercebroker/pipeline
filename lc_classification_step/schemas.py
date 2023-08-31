@@ -247,7 +247,10 @@ SCHEMA = {
                                 {"type": "map", "values": "float"},
                                 {
                                     "type": "map",
-                                    "values": {"type": "map", "values": "float"},
+                                    "values": {
+                                        "type": "map",
+                                        "values": "float",
+                                    },
                                 },
                             ],
                         },

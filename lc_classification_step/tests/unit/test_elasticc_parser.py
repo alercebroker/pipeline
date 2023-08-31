@@ -110,7 +110,9 @@ def test_parse_no_class_probability_is_1():
         classifier_name="test",
     )
     noclass = list(
-        filter(lambda x: x["classId"] == 300, result.value[-1]["classifications"])
+        filter(
+            lambda x: x["classId"] == 300, result.value[-1]["classifications"]
+        )
     )
     assert len(noclass) == 1
     assert noclass[0]["probability"] == 1
