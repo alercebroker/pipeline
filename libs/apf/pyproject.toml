@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apf-base"
-version = "6.1.1a6"
+version = "6.1.1a7"
 description = "Alert Processing Framework"
 authors = []
 license = "MIT"
