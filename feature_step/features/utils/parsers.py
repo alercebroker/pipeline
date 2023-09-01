@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 from features.core.utils.functions import collapse_fid_columns
@@ -118,6 +119,8 @@ def _parse_output_elasticc(features, alert_data, extractor_class):
         try:
             features_dict = features.loc[aid].to_dict()
         except KeyError:  # No feature for the object
+            logger = logging.getLogger("alerce")
+            logger.info("Could not calculate features of object %s", aid)
             features_dict = None
         out_message = {
             "aid": aid,
@@ -149,6 +152,8 @@ def _parse_output_ztf(features, alert_data, extractor_class):
         try:
             features_dict = features.loc[aid].to_dict()
         except KeyError:  # No feature for the object
+            logger = logging.getLogger("alerce")
+            logger.info("Could not calculate features of object %s", aid)
             features_dict = None
         out_message = {
             "aid": aid,
