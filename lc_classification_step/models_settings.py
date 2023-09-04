@@ -20,7 +20,6 @@ def messi_params(model_class: str):
         "NAME": model_class.split(".")[-1],
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),
-            "balto_model_path": os.getenv("BALTO_MODEL_PATH"),
             "header_quantiles_path": os.getenv("HEADER_QUANTILES_PATH"),
             "feature_quantiles_path": os.getenv("FEATURE_QUANTILES_PATH"),
             "mapper": get_class(os.getenv("MAPPER_CLASS"))(),

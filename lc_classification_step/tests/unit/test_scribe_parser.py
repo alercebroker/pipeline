@@ -17,10 +17,10 @@ output_dto = OutputDTO(probabilities, hierarchical)
 
 
 def test_parse():
-    parser = ScribeParser(classifier_name="classifier_name")
-    result: KafkaOutput = parser.parse(output_dto, classifier_version="test")
+    parser = ScribeParser(classifier_name="test_classifier")
+    result: KafkaOutput = parser.parse(output_dto, classifier_version="test_v1")
     for res in result.value:
-        assert res["data"]["classifier_version"] == "test"
+        assert res["data"]["classifier_version"] == "test_v1"
         assert res["collection"] == "object"
         assert res["type"] == "update_probabilities"
         assert "_id" in res["criteria"]
