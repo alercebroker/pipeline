@@ -71,8 +71,11 @@ class LateClassifier(GenericStep):
         ).value
 
     def produce_scribe(self, commands: List[dict]):
+        ids_list = []
         for command in commands:
+            ids_list.append(command["criteria"]["_id"])
             self.scribe_producer.produce({"payload": json.dumps(command)})
+        self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
     def execute(self, messages):
         """Run the classification.
@@ -84,8 +87,21 @@ class LateClassifier(GenericStep):
 
         """
         self.logger.info("Processing %i messages.", len(messages))
+        self.logger.debug("Messages received:\n", messages)
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
+        forced = []
+        prv_candidates = []
+        dia_objet = []
+        for det in model_input._detections._value.iterrows():
+            if det[1]["forced"]:
+                forced.append(det[0])
+                if "diaObjet" in det[1].index:
+                    dia_objet.append(det[0])
+                if det[1]["parent_candid"] is not None:
+                    prv_candidates.append(det[0])
+                if "diaObjet" in det[1].index:
+                    dia_objet.append(det[0])
         if not self.model.can_predict(model_input):
             self.logger.info("No data to process")
             return (
@@ -93,7 +109,19 @@ class LateClassifier(GenericStep):
                 messages,
                 model_input.features,
             )
-
+        self.logger.info(
+            "The number of detections is: %i", len(model_input.detections)
+        )
+        self.logger.debug(f"The forced photometry detections are: {forced}")
+        self.logger.debug(
+            f"The prv candidates detections are: {prv_candidates}"
+        )
+        self.logger.debug(
+            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}"
+        )
+        self.logger.info(
+            "The number of features is: %i", len(model_input.features)
+        )
         self.logger.info("Doing inference")
         if self.isztf:
             probabilities = self.model.predict_in_pipeline(
@@ -107,6 +135,15 @@ class LateClassifier(GenericStep):
         # after the former line, probabilities must be an OutputDTO
 
         self.logger.info("Processing results")
+        df = probabilities.probabilities
+        if "aid" in df.columns:
+            df.set_index("aid", inplace=True)
+        if "classifier_name" in df.columns:
+            df = df.drop(["classifier_name"], axis=1)
+
+        distribution = df.eq(df.where(df != 0).max(1), axis=0).astype(int)
+        distribution = distribution.sum(axis=0)
+        self.logger.debug("Class distribution:\n", distribution)
         return probabilities, messages, model_input.features
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
