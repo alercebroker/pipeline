@@ -36,9 +36,9 @@ class ELAsTiCCFeatureExtractor:
         lightcurves = self._create_lightcurve_dataframe(
             copy.deepcopy(self.detections)
         )
+        input_snids = lightcurves.index.unique().values
         lightcurves = self.preprocessor.preprocess(lightcurves)
         metadata = self._create_metadata_dataframe(lightcurves)
-        input_snids = lightcurves.index.unique().values
 
         features = self.extractor.compute_features(
             lightcurves, metadata=metadata, force_snids=input_snids
@@ -52,8 +52,8 @@ class ELAsTiCCFeatureExtractor:
     def _rename_detections_columns(self, detections: List[dict]):
         for det in detections:
             det["MJD"] = det.pop("mjd")
-            det["FLUXCAL"] = det.pop("mag")
-            det["FLUXCALERR"] = det.pop("e_mag")
+            det["FLUXCAL"] = det.pop("mag_corr")
+            det["FLUXCALERR"] = det.pop("e_mag_corr")
             det["BAND"] = det.pop("fid")
 
     def _create_metadata_dataframe(self, detections: pd.DataFrame):
