@@ -37,8 +37,8 @@ class ELAsTiCCFeatureExtractor:
             copy.deepcopy(self.detections)
         )
         input_snids = lightcurves.index.unique().values
-        lightcurves = self.preprocessor.preprocess(lightcurves)
         metadata = self._create_metadata_dataframe(lightcurves)
+        lightcurves = self.preprocessor.preprocess(lightcurves)
 
         features = self.extractor.compute_features(
             lightcurves, metadata=metadata, force_snids=input_snids
