@@ -42,25 +42,36 @@ class CorrectionStep(GenericStep):
         logger = logging.getLogger("alerce")
         logger.setLevel(level)
 
-        fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+        fmt = logging.Formatter(
+            "%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S"
+        )
         handler = logging.StreamHandler()
         handler.setFormatter(fmt)
         handler.setLevel(level)
 
         logger.addHandler(handler)
 
-        prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
+        prefix = os.getenv("CLASS_PREFIX", "")
+        prometheus_metrics = (
+            PrometheusMetrics()
+            if settings["PROMETHEUS"]
+            else DefaultPrometheusMetrics()
+        )
         if settings["PROMETHEUS"]:
             start_http_server(8000)
 
-        return CorrectionStep(config=settings, prometheus_metrics=prometheus_metrics)
+        return CorrectionStep(
+            config=settings, prometheus_metrics=prometheus_metrics, prefix=prefix
+        )
 
     @classmethod
     def pre_produce(cls, result: dict):
         detections = pd.DataFrame(result["detections"]).groupby("aid")
         try:  # At least one non-detection
             non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
-        except KeyError:  # to reproduce expected error for missing non-detections in loop
+        except (
+            KeyError
+        ):  # to reproduce expected error for missing non-detections in loop
             non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
         output = []
         for aid, dets in detections:
@@ -91,9 +102,15 @@ class CorrectionStep(GenericStep):
     def execute(cls, message: dict) -> dict:
         corrector = Corrector(message["detections"])
         detections = corrector.corrected_as_records()
-        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(
+            ["oid", "fid", "mjd"]
+        )
         coords = corrector.coordinates_as_records()
-        return {"detections": detections, "non_detections": non_detections.to_dict("records"), "coords": coords}
+        return {
+            "detections": detections,
+            "non_detections": non_detections.to_dict("records"),
+            "coords": coords,
+        }
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["detections"])
