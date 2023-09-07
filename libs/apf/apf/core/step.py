@@ -56,6 +56,7 @@ class GenericStep(abc.ABC):
         level: int = logging.NOTSET,
         config: dict = {},
         prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
+        prefix: str = ""
     ):
         self._set_logger(level)
         self.config = config
@@ -65,6 +66,7 @@ class GenericStep(abc.ABC):
             self.metrics_producer_params
         )
         self.metrics = {}
+        self.prefix = prefix
         self.extra_metrics = []
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
@@ -159,7 +161,7 @@ class GenericStep(abc.ABC):
 
         """
         if self.metrics_sender:
-            metrics["source"] = self.__class__.__name__
+            metrics["source"] = f"{self.prefix}{self.__class__.__name__}"
             self.metrics_sender.send_metrics(metrics)
 
     def _pre_consume(self):
