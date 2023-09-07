@@ -1,7 +1,6 @@
 from .base import GenericPreprocessor
 import numpy as np
 import pandas as pd
-import pickle
 
 
 def probs_to_normal_form(probs):
@@ -167,9 +166,6 @@ class ElasticcPreprocessor(GenericPreprocessor):
         dataframe["magnitude"] = dataframe["difference_flux"]
         dataframe["error"] = dataframe["difference_flux_error"]
 
-        if self.stream:
-            self.deserialize_dia_object(dataframe, rename=True)
-
         return dataframe
 
     def preprocess_metadata(self, metadata: pd.DataFrame) -> pd.DataFrame:
@@ -182,13 +178,3 @@ class ElasticcPreprocessor(GenericPreprocessor):
         return detections.rename(
             columns=self.column_translation, errors="ignore", inplace=False
         )
-
-    def deserialize_dia_object(self, detections: pd.DataFrame, rename=False):
-        for ef in detections.extra_fields:
-            ef["diaObject"] = pickle.loads(ef["diaObject"])[0]
-            if rename:
-                self.rename_dia_object(ef["diaObject"])
-
-    def rename_dia_object(self, dia_object: dict):
-        for key, value in self.metadata_column_map.items():
-            dia_object[value] = dia_object.pop(key)
