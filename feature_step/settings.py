@@ -27,6 +27,7 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
+        "message.max.bytes": os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456),
     },
     "SCHEMA": SCHEMA,
 }
@@ -59,7 +60,10 @@ METRICS_CONFIG = {
             "description": "The root schema comprises the entire JSON document.",
             "default": {},
             "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+                {
+                    "timestamp_sent": "2020-09-01",
+                    "timestamp_received": "2020-09-01",
+                }
             ],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
@@ -97,17 +101,27 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
 
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "KAFKA_USERNAME"
+    )
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "KAFKA_PASSWORD"
+    )
 
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
+        "KAFKA_USERNAME"
+    )
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
+        "KAFKA_PASSWORD"
+    )
 
 
 use_profiling = bool(os.getenv("USE_PROFILING", True))
-pyroscope_server = os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
+pyroscope_server = os.getenv(
+    "PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040"
+)
 
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
