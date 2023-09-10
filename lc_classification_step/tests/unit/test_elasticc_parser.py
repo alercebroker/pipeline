@@ -19,15 +19,28 @@ messages = [
         "detections": [
             {
                 "aid": "aid1",
-                "oid": 1,
+                "oid": 11,
                 "candid": 1,
+                "mjd": 11,
                 "new": True,
                 "has_stamp": True,
                 "extra_fields": {
                     "surveyPublishTimestamp": 1,
                     "brokerIngestTimestamp": 1,
                 },
-            }
+            },
+            {
+                "aid": "aid1",
+                "oid": 1,
+                "candid": 22,
+                "mjd": 22,
+                "new": False,
+                "has_stamp": True,
+                "extra_fields": {
+                    "surveyPublishTimestamp": 1,
+                    "brokerIngestTimestamp": 1,
+                },
+            },
         ],
         "non_detections": [],
         "aid": "aid1",
@@ -38,6 +51,7 @@ messages = [
                 "aid": "aid2",
                 "oid": 2,
                 "candid": 2,
+                "mjd": 2,
                 "new": True,
                 "has_stamp": True,
                 "extra_fields": {
@@ -55,6 +69,7 @@ messages = [
                 "aid": "aid3",
                 "oid": 3,
                 "candid": 3,
+                "mjd": 3,
                 "new": True,
                 "has_stamp": True,
                 "extra_fields": {
@@ -72,6 +87,7 @@ messages = [
                 "aid": "aid4",
                 "oid": 4,
                 "candid": 4,
+                "mjd": 4,
                 "new": True,
                 "has_stamp": True,
                 "extra_fields": {
@@ -116,3 +132,17 @@ def test_parse_no_class_probability_is_1():
     )
     assert len(noclass) == 1
     assert noclass[0]["probability"] == 1
+
+
+def test_parse_without_new_detections():
+    parser = ElasticcParser()
+    for msg in messages:
+        msg["detections"][0]["new"] = False
+    result = parser.parse(
+        output_dto,
+        messages=messages,
+        classifier_version="test",
+        classifier_name="test",
+    )
+    assert len(result.value) == len(messages)
+    assert result.value[0]["alertId"] == 22

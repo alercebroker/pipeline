@@ -25,7 +25,6 @@ class ElasticcParser(KafkaParser):
         detection_extra_info = {}
 
         for message in messages:
-            # for iteration con continue deberia ser mas simple
             new_detection = [
                 det
                 for det in message["detections"]
@@ -33,7 +32,18 @@ class ElasticcParser(KafkaParser):
             ]
 
             if len(new_detection) == 0:
-                continue
+                ## case when no new detections
+                new_detection = [
+                    det for det in message["detections"] if det["has_stamp"]
+                ]
+                # sort by mjd so the first one is the most recent
+                new_detection = sorted(
+                    new_detection, key=lambda x: x["mjd"], reverse=True
+                )
+                if len(new_detection) == 0:
+                    raise Exception(
+                        "No new detections and no detections with stamps"
+                    )
 
             new_detection = new_detection[0]
 
