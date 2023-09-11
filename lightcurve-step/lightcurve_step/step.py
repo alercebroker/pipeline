@@ -122,7 +122,7 @@ class LightcurveStep(GenericStep):
             except KeyError:
                 nd = []
             dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
-            dets = dets[dets["mjd"] < result["last_mjds"][aid]]
+            dets = dets[dets["mjd"] <= result["last_mjds"][aid]]
             output.append(
                 {
                     "aid": aid,
