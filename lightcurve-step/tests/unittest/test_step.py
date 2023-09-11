@@ -11,24 +11,24 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         {
             "aid": "aid1",
             "detections": [
-                {"candid": "b", "has_stamp": True, "extra_fields": {}},
-                {"candid": "a", "has_stamp": False, "extra_fields": {}},
+                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "extra_fields": {}},
+                {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": False, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
         {
             "aid": "aid1",
             "detections": [
-                {"candid": "c", "has_stamp": True, "extra_fields": {}},
-                {"candid": "b", "has_stamp": False, "extra_fields": {}},
+                {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "extra_fields": {}},
+                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": False, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
         {
             "aid": "aid2",
             "detections": [
-                {"candid": "c", "has_stamp": True, "extra_fields": {}},
-                {"candid": "b", "has_stamp": False, "extra_fields": {}},
+                {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "extra_fields": {}},
+                {"aid": "aid2", "candid": "b", "mjd": 6, "has_stamp": False, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
@@ -39,12 +39,12 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
     expected = {
         "aids": {"aid1", "aid2"},
         "detections": [
-            {"candid": "b", "has_stamp": True, "new": True, "extra_fields": {}},
-            {"candid": "a", "has_stamp": False, "new": True, "extra_fields": {}},
-            {"candid": "c", "has_stamp": True, "new": True, "extra_fields": {}},
-            {"candid": "b", "has_stamp": False, "new": True, "extra_fields": {}},
-            {"candid": "c", "has_stamp": True, "new": True, "extra_fields": {}},
-            {"candid": "b", "has_stamp": False, "new": True, "extra_fields": {}},
+            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
+            {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": False, "new": True, "extra_fields": {}},
+            {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "new": True, "extra_fields": {}},
+            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": False, "new": True, "extra_fields": {}},
+            {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "new": True, "extra_fields": {}},
+            {"aid": "aid2", "candid": "b", "mjd": 6, "has_stamp": False, "new": True, "extra_fields": {}},
         ],
         "non_detections": [
             {"mjd": 1, "oid": "i", "fid": "g"},
@@ -89,6 +89,8 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         "detections": [
             {
                 "candid": 97923792234,
+                "mjd": 1,
+                "aid": "aid1",
                 "parent_candid": "p_a",
                 "has_stamp": True,
                 "sid": "SURVEY",
@@ -98,6 +100,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "b",
+                "mjd": 1,
                 "parent_candid": "p_b",
                 "has_stamp": False,
                 "sid": "SURVEY",
@@ -107,6 +110,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "c",
+                "mjd": 1,
                 "parent_candid": "p_c",
                 "has_stamp": True,
                 "sid": "SURVEY",
@@ -116,6 +120,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "d",
+                "mjd": 1,
                 "parent_candid": "p_d",
                 "has_stamp": False,
                 "sid": "SURVEY",
@@ -137,6 +142,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         "detections": [
             {
                 "candid": "97923792234",
+                "mjd": 1,
                 "parent_candid": "p_a",
                 "has_stamp": True,
                 "sid": "SURVEY",
@@ -146,6 +152,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "c",
+                "mjd": 1,
                 "parent_candid": "p_c",
                 "has_stamp": True,
                 "sid": "SURVEY",
@@ -155,6 +162,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "b",
+                "mjd": 1,
                 "parent_candid": "p_b",
                 "has_stamp": False,
                 "sid": "SURVEY",
@@ -164,6 +172,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "d",
+                "mjd": 1,
                 "parent_candid": "p_d",
                 "has_stamp": True,
                 "sid": "SURVEY",
@@ -199,18 +208,20 @@ def test_pre_produce_restores_messages():
             [
                 {
                     "candid": "a",
+                    "mjd": 1,
                     "has_stamp": True,
                     "aid": "AID1",
                     "extra_fields": {"diaObject": b"bainari"},
                 },
-                {"candid": "c", "has_stamp": True, "aid": "AID2", "extra_fields": {}},
+                {"candid": "c", "mjd": 1, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
                 {
                     "candid": "d",
+                    "mjd": 1,
                     "has_stamp": True,
                     "aid": "AID1",
                     "extra_fields": {"diaObject": [{"a": "b"}]},
                 },
-                {"candid": "b", "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {"candid": "b", "mjd": 1, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
             ]
         ),
         "non_detections": pd.DataFrame(
@@ -230,12 +241,14 @@ def test_pre_produce_restores_messages():
                 {
                     "candid": "a",
                     "has_stamp": True,
+                    "mjd": 1,
                     "aid": "AID1",
                     "extra_fields": {"diaObject": b"bainari"},
                 },
                 {
                     "candid": "d",
                     "has_stamp": True,
+                    "mjd": 1,
                     "aid": "AID1",
                     "extra_fields": {"diaObject": pickle.dumps([{"a": "b"}])},
                 },
@@ -245,8 +258,8 @@ def test_pre_produce_restores_messages():
         {
             "aid": "AID2",
             "detections": [
-                {"candid": "c", "has_stamp": True, "aid": "AID2", "extra_fields": {}},
-                {"candid": "b", "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {"candid": "c", "mjd": 1, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
+                {"candid": "b", "mjd": 1, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"}],
         },
