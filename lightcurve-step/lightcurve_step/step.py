@@ -25,11 +25,11 @@ class LightcurveStep(GenericStep):
             aids.add(msg["aid"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
-        
+
         for detection in detections:
             aid = detection["aid"]
             last_mjds[aid] = max(last_mjds.get(aid, 0), detection["mjd"])
-        
+
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
@@ -96,7 +96,7 @@ class LightcurveStep(GenericStep):
         return {
             "detections": detections,
             "non_detections": non_detections,
-            "last_mjds": messages["last_mjds"]
+            "last_mjds": messages["last_mjds"],
         }
 
     @classmethod
