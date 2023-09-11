@@ -121,8 +121,8 @@ class CorrectionStep(GenericStep):
             detection = detection.copy()  # Prevent further modification for next step
             if not detection.pop("new"):
                 continue
-            is_forced = detection.pop("forced")
             candid = detection.pop("candid")
+            is_forced = detection.pop("forced")
             set_on_insert = not detection.get("has_stamp", False)
             extra_fields = detection["extra_fields"].copy()
             # remove possible elasticc extrafields
