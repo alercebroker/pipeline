@@ -38,7 +38,6 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
 
     expected = {
         "aids": {"aid1", "aid2"},
-        "last_mjds": { "aid1": 4, "aid2": 6 },
         "detections": [
             {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
             {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": False, "new": True, "extra_fields": {}},
@@ -141,8 +140,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-        ],
-        "last_mjds": { "aid1": 1.0, "aid2": 1.0 }
+        ]
     }
 
     output = step.execute(message)
@@ -197,8 +195,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         "non_detections": [
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-        ],
-        "last_mjds": { "aid1": 1, "aid2": 1 }
+        ]
     }
 
     exp_dets = pd.DataFrame(expected["detections"])
@@ -225,17 +222,19 @@ def test_pre_produce_restores_messages():
                     "mjd": 1,
                     "has_stamp": True,
                     "aid": "AID1",
+                    "new": True,
                     "extra_fields": {"diaObject": b"bainari"},
                 },
-                {"candid": "c", "mjd": 1, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
+                {"candid": "c", "mjd": 1, "new": True, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
                 {
                     "candid": "MOST_RECENT",
                     "mjd": 2,
                     "has_stamp": True,
                     "aid": "AID1",
+                    "new": False,
                     "extra_fields": {"diaObject": [{"a": "b"}]},
                 },
-                {"candid": "b", "mjd": 1, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {"candid": "b", "mjd": 1, "new": False, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
             ]
         ),
         "non_detections": pd.DataFrame(
@@ -243,8 +242,7 @@ def test_pre_produce_restores_messages():
                 {"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"},
                 {"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"},
             ]
-        ),
-        "last_mjds": { "AID1": 1, "AID2": 1 }
+        )
     }
 
     output = LightcurveStep.pre_produce(message)
@@ -258,6 +256,7 @@ def test_pre_produce_restores_messages():
                     "candid": "a",
                     "has_stamp": True,
                     "mjd": 1,
+                    "new": True,
                     "aid": "AID1",
                     "extra_fields": {"diaObject": b"bainari"},
                 },
@@ -267,8 +266,8 @@ def test_pre_produce_restores_messages():
         {
             "aid": "AID2",
             "detections": [
-                {"candid": "c", "mjd": 1, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
-                {"candid": "b", "mjd": 1, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {"candid": "c", "mjd": 1, "new": True, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
+                {"candid": "b", "mjd": 1, "new": False, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"}],
         },

@@ -20,21 +20,15 @@ class LightcurveStep(GenericStep):
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
         aids, detections, non_detections = set(), [], []
-        last_mjds = {}
         for msg in messages:
             aids.add(msg["aid"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
 
-        for detection in detections:
-            aid = detection["aid"]
-            last_mjds[aid] = max(last_mjds.get(aid, 0), detection["mjd"])
-
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
             "aids": aids,
-            "last_mjds": last_mjds,
             "detections": detections,
             "non_detections": non_detections,
         }
@@ -95,8 +89,7 @@ class LightcurveStep(GenericStep):
 
         return {
             "detections": detections,
-            "non_detections": non_detections,
-            "last_mjds": messages["last_mjds"],
+            "non_detections": non_detections
         }
 
     @classmethod
@@ -122,7 +115,8 @@ class LightcurveStep(GenericStep):
             except KeyError:
                 nd = []
             dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
-            dets = dets[dets["mjd"] <= result["last_mjds"][aid]]
+            mjds_from_new = dets[dets["new"]]["mjd"]
+            dets = dets[dets["mjd"] <= mjds_from_new.max()]
             output.append(
                 {
                     "aid": aid,
