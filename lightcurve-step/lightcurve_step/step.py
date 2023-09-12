@@ -87,10 +87,7 @@ class LightcurveStep(GenericStep):
             f"Obtained {len(detections[detections['new']])} new detections"
         )
 
-        return {
-            "detections": detections,
-            "non_detections": non_detections
-        }
+        return {"detections": detections, "non_detections": non_detections}
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:
