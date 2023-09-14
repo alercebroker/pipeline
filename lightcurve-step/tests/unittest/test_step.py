@@ -11,8 +11,8 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         {
             "aid": "aid1",
             "detections": [
+                {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": True, "extra_fields": {}},
                 {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": False, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
@@ -20,7 +20,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
             "aid": "aid1",
             "detections": [
                 {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": False, "extra_fields": {}},
+                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
@@ -28,7 +28,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
             "aid": "aid2",
             "detections": [
                 {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid2", "candid": "b", "mjd": 6, "has_stamp": False, "extra_fields": {}},
+                {"aid": "aid2", "candid": "b", "mjd": 4, "has_stamp": True, "extra_fields": {}},
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
@@ -39,18 +39,19 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
     expected = {
         "aids": {"aid1", "aid2"},
         "detections": [
+            {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": True, "new": True, "extra_fields": {}},
             {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": False, "new": True, "extra_fields": {}},
             {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": False, "new": True, "extra_fields": {}},
+            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
             {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid2", "candid": "b", "mjd": 6, "has_stamp": False, "new": True, "extra_fields": {}},
+            {"aid": "aid2", "candid": "b", "mjd": 4, "has_stamp": True, "new": True, "extra_fields": {}},
         ],
         "non_detections": [
             {"mjd": 1, "oid": "i", "fid": "g"},
             {"mjd": 1, "oid": "i", "fid": "g"},
             {"mjd": 1, "oid": "i", "fid": "g"},
         ],
+        "last_mjds": { "aid1": 4, "aid2": 5 }
     }
 
     assert output == expected
@@ -140,7 +141,8 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-        ]
+        ],
+        "last_mjds": { "aid1": 1.0, "aid2": 1.0 }
     }
 
     output = step.execute(message)
@@ -195,7 +197,8 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         "non_detections": [
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-        ]
+        ],
+        "last_mjds": { "aid1": 1.0, "aid2": 1.0 },
     }
 
     exp_dets = pd.DataFrame(expected["detections"])
@@ -242,7 +245,8 @@ def test_pre_produce_restores_messages():
                 {"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"},
                 {"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"},
             ]
-        )
+        ),
+        "last_mjds": { "AID1": 1, "AID2": 1 }
     }
 
     output = LightcurveStep.pre_produce(message)
