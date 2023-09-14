@@ -35,7 +35,7 @@ def settings_creator():
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-            "message.max.bytes": os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456),
+            "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
         "SCHEMA": the_schema,
