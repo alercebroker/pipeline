@@ -1,7 +1,7 @@
 import logging
 from apf.core.step import GenericStep
-from .command.decode import db_command_factory
-from .db.executor import ScribeCommandExecutor
+from .mongo.command.decode import db_command_factory
+from .mongo.db.executor import ScribeCommandExecutor
 
 
 class MongoScribe(GenericStep):
