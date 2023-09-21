@@ -21,7 +21,6 @@ class MongoScribe(GenericStep):
         """
         Transforms a batch of messages from a topic into Scribe
         DB Commands and executes them when they're valid.
-        NOTE: WE'RE ASSUMING THAT EVERY MESSAGE FROM THE BATCH GOES INTO THE SAME COLLECTION
         """
         logging.info("Processing messages...")
         valid_commands, n_invalid_commands = [], 0
