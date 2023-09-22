@@ -36,7 +36,7 @@ class Command(ABC):
 
     @staticmethod
     @abstractmethod
-    def db_operation(cls, session: Session, data: List):
+    def db_operation(session: Session, data: List):
         pass
 
 
@@ -44,18 +44,20 @@ class InsertObjectCommand(Command):
     type = ValidCommands.insert_object
 
     @staticmethod
-    @abstractmethod
-    def db_operation(cls, session: Session, data: List):
-        return session.connection().execute(insert(Object).values(data))
+    def db_operation(session: Session, data: List):
+        return session.connection().execute(
+            insert(Object).values(data).on_conflict_do_nothing()
+        )
 
 
 class InsertDetectionsCommand(Command):
     type = ValidCommands.insert_detections
 
     @staticmethod
-    @abstractmethod
-    def db_operation(cls, session: Session, data: List):
-        return session.connection().execute(insert(Detection).values(data))
+    def db_operation(session: Session, data: List):
+        return session.connection().execute(
+            insert(Detection).values(data).on_conflict_do_nothing()
+        )
 
 
 class UpsertFeaturesCommand(Command):
@@ -76,8 +78,7 @@ class UpsertFeaturesCommand(Command):
         ]
 
     @staticmethod
-    @abstractmethod
-    def db_operation(cls, session: Session, data: List):
+    def db_operation(session: Session, data: List):
         insert_stmt = insert(Feature).values(data)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint=Feature.primary_key, set_=insert_stmt.excluded.value
