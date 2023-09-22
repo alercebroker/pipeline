@@ -23,13 +23,16 @@ class Command(ABC):
 
     def __init__(self, data, criteria=None, options=None):
         self._check_inputs(data, criteria)
-        self.data = data
+        self.data = self._format_data(data)
         self.criteria = criteria or {}
         self.options = options
 
+    def _format_data(self, data):
+        return data
+
     def _check_inputs(self, data, criteria):
         if not data:
-            raise
+            raise ValueError("Not data provided in command")
 
     @staticmethod
     @abstractmethod
@@ -47,7 +50,7 @@ class InsertObjectCommand(Command):
 
 
 class InsertDetectionsCommand(Command):
-    type: ValidCommands.insert_detections
+    type = ValidCommands.insert_detections
 
     @staticmethod
     @abstractmethod
@@ -56,7 +59,21 @@ class InsertDetectionsCommand(Command):
 
 
 class UpsertFeaturesCommand(Command):
-    type: ValidCommands.upsert_features
+    type = ValidCommands.upsert_features
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+        if "features" not in data:
+            raise ValueError("No features provided in command")
+        if "features_version" not in data:
+            raise ValueError("No feature version provided in command")
+        if "features_group" not in data:
+            raise ValueError("No feature group provided in command")
+
+    def _format_data(self, data):
+        return [
+            {**feat, "version": data["features_version"]} for feat in data["features"]
+        ]
 
     @staticmethod
     @abstractmethod

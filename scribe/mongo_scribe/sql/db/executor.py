@@ -1,43 +1,57 @@
-from typing import Callable, List
+from typing import Callable, Dict, List
 
-from db_plugins.db.sql.models import (
-    Object,
-    Detection,
-    NonDetection,
-    Feature,
-    MagStats,
-    Probability,
-    Base
-)
+from db_plugins.db.sql.models import Base
 
 from .connection import PSQLConnection, Session
-from mongo_scribe.sql.command.commands import Command
+from mongo_scribe.sql.command.commands import (
+    Command,
+    InsertObjectCommand,
+    InsertDetectionsCommand,
+    UpsertFeaturesCommand,
+)
+
 
 class CommandHandler:
-    def __init__(self, table, query_function: Callable[[Session, Base, List], None]):
+    def __init__(self, query_function: Callable[[Session, List], None]):
         self.query = query_function
         self.data = []
-        self.table = table
 
     def add_command(self, command: Command):
-        self.data.append(command.get_operations())
+        if isinstance(command.data, list):
+            self.data.extend(command.data)
+            return
+
+        self.data.append(command.data)
 
     def execute(self, connection: PSQLConnection):
         if self.data == []:
             return
-        
+
         with connection.session() as session:
-            self.query(session, self.table, self.data)
+            self.query(session, self.data)
+
 
 class SQLCommandExecutor:
     def __init__(self, config: dict) -> None:
         self.connection = PSQLConnection(config["PSQL"])
+        commands = (
+            InsertObjectCommand,
+            InsertDetectionsCommand,
+            UpsertFeaturesCommand,
+        )
+        self.handlers: Dict[str, CommandHandler] = {
+            c.type: CommandHandler(c.db_operation) for c in commands
+        }
 
-    def _add_command(self):
-        pass
+    def _add_command(self, command: Command):
+        self.handlers[command.type].add_command(command)
 
     def _execute_commands(self):
-        pass
+        for handler in self.handlers.values():
+            handler.execute(self.connection)
 
     def bulk_execute(self, commands: List[Command]):
-        pass
+        for command in commands:
+            self._add_command(command)
+
+        self._execute_commands()

@@ -2,10 +2,15 @@
 # and move on with that 
 
 class ValidCommands:
-    insert_object = "insert_object" # insert + object
-    insert_detections = "insert_detections" # update + detections
-    upsert_probabilities = "upsert_probabilities" # update + probabilities
-    upsert_features = "update_features" # update + features
-    upsert_non_detections = "upsert_non_detections" # update + non_detections
+    # insert + object
+    insert_object = "insert_object"
+    # update + detections
+    insert_detections = "insert_detections"
+    # update_probabilities + probabilities in data
+    upsert_probabilities = "upsert_probabilities"
+    # update_features + features in data
+    upsert_features = "upsert_features"
+    # update + non_detections
+    upsert_non_detections = "upsert_non_detections"
 
 

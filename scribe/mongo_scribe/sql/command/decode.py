@@ -1,14 +1,19 @@
 from json import loads
 from .exceptions import WrongFormatCommandException
+from .commands import (
+    Command,
+    InsertObjectCommand,
+    InsertDetectionsCommand,
+    UpsertFeaturesCommand,
+)
+
 
 def validate(message: dict) -> dict:
     """Checks if a dictionary has a valid command format. Returns the dictionary if valid.
 
     It raises MisformattedCommand if the JSON string isn't a valid command.
     """
-    if any(
-        required not in message for required in ["type", "data", "collection"]
-    ):
+    if any(required not in message for required in ["type", "data", "collection"]):
         raise WrongFormatCommandException
 
     if "criteria" not in message:
@@ -19,10 +24,26 @@ def validate(message: dict) -> dict:
 
     return message
 
-def decode_message():
-    # TODO
-    pass
 
-def command_factory():
-    # TODO
-    pass
+def decode_message(encoded_message: str) -> dict:
+    """
+    Get the JSON string and transforms it into a Python dictionary.
+    """
+    decoded = loads(encoded_message)
+    valid_message = validate(decoded)
+    return valid_message
+
+
+def command_factory(msg: str) -> Command:
+    message = decode_message(msg)
+    type_ = message.pop("type")
+    table = message.pop("collection")
+
+    # here it comes
+    if type_ == "insert" and table == "object":
+        return InsertObjectCommand(**message)
+    if type_ == "update" and table == "detection":
+        return InsertDetectionsCommand(**message)
+    if type_ == "update_features" and table == "object":
+        return UpsertFeaturesCommand(**message)
+    raise ValueError(f"Unrecognized command type {type_} in table {table}.")
