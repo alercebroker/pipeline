@@ -59,11 +59,22 @@ class MongoIntegrationTest(unittest.TestCase):
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
         cls.db.create_db()
+        with cls.db.session() as session:
+            session.execute(
+                text(
+                    """
+                    INSERT INTO step(step_id, name, version, comments, date) 
+                    VALUES ('v1', 'version 1', '1', '', current_timestamp)
+                    """
+                )
+            )
+            session.commit()
         cls.step = MongoScribe(config=step_config, db="sql")
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
-    def tearDown(self):
-        self.db.drop_db()
+    @classmethod
+    def tearDownClass(cls):
+        cls.db.drop_db()
 
     def test_insert_objects_into_database(self):
         command = json.dumps(
@@ -113,7 +124,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "data": {
                     "candid": 932472823,
-                    "oid": "ZTF02ululeea",
+                    "oid": "ZTF04ululeea",
                     "mjd": 55000,
                     "fid": 1,
                     "pid": 4.3,
@@ -130,15 +141,101 @@ class MongoIntegrationTest(unittest.TestCase):
             }
         )
         self.producer.produce({"payload": command})
+        self.producer.produce({"payload": command})
 
         with self.db.session() as session:
             session.execute(
                 text(
                     """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF02ululeea', 1, 50001, 1.0, 0.9, 45, 45)"""
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
 
         self.step.start()
-        assert True
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """ SELECT candid, oid FROM detection WHERE oid = 'ZTF04ululeea' """
+                )
+            )
+            result = list(result)[0]
+            assert result[0] == 932472823
+            assert result[1] == "ZTF04ululeea"
+
+    def test_upsert_detections(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """
+                    INSERT INTO feature_version(version, step_id_feature, step_id_preprocess)
+                    VALUES ('1.0.0', 'v1', 'v1')
+                    """
+                )
+            )
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        command_data = [
+            {
+                "oid": "ZTF04ululeea",
+                "name": "feature1",
+                "value": 55.0,
+                "fid": 1,
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "name": "feature2",
+                "value": 22.0,
+                "fid": 2,
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "name": "feature3",
+                "value": 130.0,
+                "fid": 1,
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "name": "feature1",
+                "value": 694211.0,
+                "fid": 1,
+            },
+        ]
+
+        commands = [
+            {
+                "payload": json.dumps(
+                    {
+                        "collection": "object",
+                        "type": "update_features",
+                        "data": {
+                            "features_version": "1.0.0",
+                            "features_group": "ztf",
+                            "features": [data],
+                        },
+                    }
+                )
+            }
+            for data in command_data
+        ]
+
+        for command in commands:
+            self.producer.produce(command)
+        self.producer.producer.flush(4)
+        self.step.start()
+        with self.db.session() as session:
+            result = session.execute(
+                text("""
+                    SELECT name, value FROM feature WHERE oid = 'ZTF04ululeea' AND name = 'feature1'
+                """)
+            )
+            result = list(result)[0]
+            assert result[0] == "feature1"
+            assert result[1] == 694211.0

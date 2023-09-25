@@ -26,11 +26,10 @@ class CommandHandler:
     def execute(self, connection: PSQLConnection):
         if self.data == []:
             return
-        print("Executing with")
-        print(self.data)
         with connection.session() as session:
             self.query(session, self.data)
             session.commit()
+        self.data = []
 
 
 class SQLCommandExecutor:

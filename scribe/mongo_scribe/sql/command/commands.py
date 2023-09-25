@@ -80,8 +80,9 @@ class UpsertFeaturesCommand(Command):
     @staticmethod
     def db_operation(session: Session, data: List):
         insert_stmt = insert(Feature).values(data)
+
         insert_stmt = insert_stmt.on_conflict_do_update(
-            constraint=Feature.primary_key, set_=insert_stmt.excluded.value
+            constraint="feature_pkey", set_=dict(value=insert_stmt.excluded.value)
         )
 
         return session.connection().execute(insert_stmt)
