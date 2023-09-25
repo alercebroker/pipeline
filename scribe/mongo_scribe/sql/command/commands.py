@@ -12,7 +12,6 @@ from db_plugins.db.sql.models import (
     Feature,
     MagStats,
     Probability,
-    Base,
 )
 
 from .commons import ValidCommands
@@ -60,6 +59,27 @@ class InsertDetectionsCommand(Command):
         )
 
 
+class UpsertNonDetections(Command):
+    type = ValidCommands.upsert_non_detections
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+        if any([field not in criteria for field in ["oid", "fid", "mjd"]]):
+            raise ValueError("Needed 'oid', 'mjd' and 'fid' as criteria")
+
+    def _format_data(self, data):
+        return [{**self.criteria, "diffmaglim": d["diffmaglim"]} for d in data]
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        insert_stmt = insert(NonDetection).values(data)
+        insert_stmt = insert_stmt.on_conflict_do_update(
+            constraint="non_detection_pkey",
+            set_=dict(diffmaglim=insert_stmt.excluded.diffmaglim),
+        )
+        return session.connection().execute(insert(NonDetection))
+
+
 class UpsertFeaturesCommand(Command):
     type = ValidCommands.upsert_features
 
@@ -83,6 +103,19 @@ class UpsertFeaturesCommand(Command):
 
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="feature_pkey", set_=dict(value=insert_stmt.excluded.value)
+        )
+
+        return session.connection().execute(insert_stmt)
+
+
+class UpsertProbabilitiesCommand(Command):
+    type = ValidCommands.upsert_probabilities
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        insert_stmt = insert(Probability).values(data)
+        insert_stmt = insert_stmt.on_conflict_do_update(
+            constraint="probability_pkey", set_=dict()
         )
 
         return session.connection().execute(insert_stmt)

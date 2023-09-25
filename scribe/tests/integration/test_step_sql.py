@@ -164,7 +164,48 @@ class MongoIntegrationTest(unittest.TestCase):
             assert result[0] == 932472823
             assert result[1] == "ZTF04ululeea"
 
-    def test_upsert_detections(self):
+    def test_upsert_non_detections(self):
+        command = {
+            "collection": "non_detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF04ululeea", "mjd": 55000, "fid": 1},
+            "data": {
+                "candid": 932472823,
+                "pid": 4.3,
+                "isdiffpos": 1,
+                "ra": 99.0,
+                "dec": 55.0,
+                "magpsf": 220.0,
+                "sigmapsf": 33.0,
+                "step_id_corr": "steppu",
+            },
+        }
+
+        self.producer.produce({"payload": command})
+        self.producer.produce({"payload": command})
+
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        self.step.start()
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """ SELECT candid, oid FROM detection WHERE oid = 'ZTF04ululeea' """
+                )
+            )
+            result = list(result)[0]
+            assert result[0] == 932472823
+            assert result[1] == "ZTF04ululeea"
+
+    def test_upsert_features(self):
         with self.db.session() as session:
             session.execute(
                 text(
@@ -232,9 +273,11 @@ class MongoIntegrationTest(unittest.TestCase):
         self.step.start()
         with self.db.session() as session:
             result = session.execute(
-                text("""
+                text(
+                    """
                     SELECT name, value FROM feature WHERE oid = 'ZTF04ululeea' AND name = 'feature1'
-                """)
+                """
+                )
             )
             result = list(result)[0]
             assert result[0] == "feature1"

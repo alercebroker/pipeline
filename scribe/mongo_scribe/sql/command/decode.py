@@ -5,6 +5,7 @@ from .commands import (
     InsertObjectCommand,
     InsertDetectionsCommand,
     UpsertFeaturesCommand,
+    UpsertNonDetections,
 )
 
 
@@ -21,6 +22,13 @@ def validate(message: dict) -> dict:
 
     if "options" not in message:
         message["options"] = {}
+
+    # Removing multistream keys
+    if "aid" in message["criteria"]:
+        message["criteria"].pop("aid")
+
+    if "_id" in message["criteria"]:
+        message["criteria"].pop("_id")
 
     return message
 
@@ -44,6 +52,8 @@ def command_factory(msg: str) -> Command:
         return InsertObjectCommand(**message)
     if type_ == "update" and table == "detection":
         return InsertDetectionsCommand(**message)
+    if type_ == "update" and table == "non_detection":
+        return UpsertNonDetections(**message)
     if type_ == "update_features" and table == "object":
         return UpsertFeaturesCommand(**message)
     raise ValueError(f"Unrecognized command type {type_} in table {table}.")
