@@ -170,7 +170,7 @@ class MongoIntegrationTest(unittest.TestCase):
             "type": "update",
             "criteria": {"oid": "ZTF04ululeea", "mjd": 55000, "fid": 1},
             "data": {
-                "candid": 932472823,
+                "diffmaglim": 0.1,
                 "pid": 4.3,
                 "isdiffpos": 1,
                 "ra": 99.0,
@@ -181,8 +181,9 @@ class MongoIntegrationTest(unittest.TestCase):
             },
         }
 
-        self.producer.produce({"payload": command})
-        self.producer.produce({"payload": command})
+        self.producer.produce({"payload": json.dumps(command)})
+        command["criteria"]["fid"] = 2
+        self.producer.produce({"payload": json.dumps(command)})
 
         with self.db.session() as session:
             session.execute(
@@ -198,12 +199,14 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             result = session.execute(
                 text(
-                    """ SELECT candid, oid FROM detection WHERE oid = 'ZTF04ululeea' """
+                    """ SELECT fid, mjd, diffmaglim FROM non_detection WHERE oid = 'ZTF04ululeea' """
                 )
             )
-            result = list(result)[0]
-            assert result[0] == 932472823
-            assert result[1] == "ZTF04ululeea"
+            result = list(result)
+            assert len(result) == 2
+            assert result[0][0] == 1
+            assert result[0][1] == 55000
+            assert result[0][2] == 0.1
 
     def test_upsert_features(self):
         with self.db.session() as session:
@@ -282,3 +285,15 @@ class MongoIntegrationTest(unittest.TestCase):
             result = list(result)[0]
             assert result[0] == "feature1"
             assert result[1] == 694211.0
+
+    def test_upsert_probabilities(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        command_data = []

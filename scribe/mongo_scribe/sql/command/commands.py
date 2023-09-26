@@ -66,9 +66,10 @@ class UpsertNonDetections(Command):
         super()._check_inputs(data, criteria)
         if any([field not in criteria for field in ["oid", "fid", "mjd"]]):
             raise ValueError("Needed 'oid', 'mjd' and 'fid' as criteria")
+        self.criteria = criteria
 
     def _format_data(self, data):
-        return [{**self.criteria, "diffmaglim": d["diffmaglim"]} for d in data]
+        return [{**self.criteria, "diffmaglim": data["diffmaglim"]}]
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -77,7 +78,7 @@ class UpsertNonDetections(Command):
             constraint="non_detection_pkey",
             set_=dict(diffmaglim=insert_stmt.excluded.diffmaglim),
         )
-        return session.connection().execute(insert(NonDetection))
+        return session.connection().execute(insert_stmt)
 
 
 class UpsertFeaturesCommand(Command):
@@ -115,7 +116,11 @@ class UpsertProbabilitiesCommand(Command):
     def db_operation(session: Session, data: List):
         insert_stmt = insert(Probability).values(data)
         insert_stmt = insert_stmt.on_conflict_do_update(
-            constraint="probability_pkey", set_=dict()
+            constraint="probability_pkey",
+            set_=dict(
+                ranking=insert_stmt.excluded.ranking,
+                probability=insert_stmt.excluded.probability,
+            ),
         )
 
         return session.connection().execute(insert_stmt)
