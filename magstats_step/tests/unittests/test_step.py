@@ -4,6 +4,7 @@ from unittest import mock
 from .data.messages import data
 from scripts.run_step import step_factory
 
+from pprint import pprint
 
 def test_execute(env_variables):
     step = step_factory()
@@ -34,6 +35,7 @@ def test_scribe_message(env_variables):
     for d in data:
         to_write = result[d["aid"]]
         to_write.update({"loc": {"type": "Point", "coordinates": [to_write["meanra"] - 180, to_write["meandec"]]}})
+        pprint(to_write)
         command = {
             "collection": "object",
             "type": "update",

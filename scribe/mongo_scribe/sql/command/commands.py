@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from sqlalchemy import update
+from sqlalchemy import update, bindparam
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 
@@ -57,6 +57,26 @@ class InsertDetectionsCommand(Command):
         return session.connection().execute(
             insert(Detection).values(data).on_conflict_do_nothing()
         )
+
+
+class UpdateObjectStats(Command):
+    type = ValidCommands.update_object_stats
+
+    def _format_data(self, data):
+        # we have to check...
+        return (data, data)
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        # data should be a tuple where idx 0 is objstats and 1 is magstats
+        update_stmt = update(Object).where(Object.oid == bindparam("oid")).values(data[0])
+        upsert_stmt = insert(MagStats).values(data[1])
+        upsert_stmt = upsert_stmt.on_conflict_do_update(
+            constraint="magstat_pkey",
+            set_=dict(**upsert_stmt.excluded._all_columns)
+        )
+        session.connection().execute(update_stmt)
+        return session.connection().execute(upsert_stmt)
 
 
 class UpsertNonDetections(Command):

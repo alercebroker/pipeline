@@ -12,5 +12,7 @@ class ValidCommands:
     upsert_features = "upsert_features"
     # update + non_detections
     upsert_non_detections = "upsert_non_detections"
+    # update + object + magstats in data
+    update_object_stats = "update_object_stats"
 
 
