@@ -296,4 +296,64 @@ class MongoIntegrationTest(unittest.TestCase):
             )
             session.commit()
 
-        command_data = []
+        command_data = [
+            {
+                "oid": "ZTF04ululeea",
+                "class_name": "class1",
+                "classifier_name": "lc_classifier",
+                "classifier_version": "1.0.0",
+                "probability": 0.6,
+                "ranking": 1
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "class_name": "class2",
+                "classifier_name": "lc_classifier",
+                "classifier_version": "1.0.0",
+                "probability": 0.4,
+                "ranking": 2
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "class_name": "class2",
+                "classifier_name": "lc_classifier",
+                "classifier_version": "1.0.0",
+                "probability": 0.65,
+                "ranking": 1
+            },
+            {
+                "oid": "ZTF04ululeea",
+                "class_name": "class1",
+                "classifier_name": "lc_classifier",
+                "classifier_version": "1.0.0",
+                "probability": 0.35,
+                "ranking": 2
+            },
+        ]
+
+        commands = [
+            {
+                "payload": json.dumps({
+                    "collection": "object",
+                    "type": "update_probabilities",
+                    "data": data
+                })
+            } for data in command_data
+        ]
+
+        for command in commands:
+            self.producer.produce(command)
+
+        self.producer.producer.flush(4)
+        self.step.start()
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT * FROM probability WHERE oid = 'ZTF04ululeea'
+                    """
+                )
+            )
+            result = list(result)
+            assert len(result) == 2
