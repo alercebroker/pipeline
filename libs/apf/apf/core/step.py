@@ -330,7 +330,8 @@ class GenericStep(abc.ABC):
 
             val = message.get(params["key"])
             if val is None or "value" in params:
-                val = params["value"]
+                # returns None, so val will remain None or take the value of params["value"]
+                val = params.get("value")
 
             if "format" in params:
                 if not callable(params["format"]):
