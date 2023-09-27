@@ -4,7 +4,8 @@ import pandas as pd
 import pickle
 from typing import List
 from apf.core.step import GenericStep
-from .database import DatabaseConnection
+from .database_mongo import DatabaseConnection
+from .database_sql import PSQLConnection
 
 DETECTION = "detection"
 NON_DETECTION = "non_detection"
@@ -12,9 +13,10 @@ FORCED_PHOTOMETRY = "phorced_photometry"
 
 
 class LightcurveStep(GenericStep):
-    def __init__(self, config: dict, db_client: DatabaseConnection, **kwargs):
+    def __init__(self, config: dict, db_mongo: DatabaseConnection, db_sql: PSQLConnection , **kwargs):
         super().__init__(config=config, **kwargs)
-        self.db_client = db_client
+        self.db_mongo = db_mongo
+        self.db_sql = db_sql   # ahora que existe la db_sql falta agregar en los metodos las consultas sql y hacer join.
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.last_mjd = {}
 
@@ -40,7 +42,7 @@ class LightcurveStep(GenericStep):
 
     def execute(self, messages: dict) -> dict:
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
-        db_detections = self.db_client.database[DETECTION].aggregate(
+        db_detections = self.db_mongo.database[DETECTION].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {
@@ -53,12 +55,12 @@ class LightcurveStep(GenericStep):
                 {"$project": {"_id": False, "evilDocDbHack": False}},
             ]
         )
-        db_non_detections = self.db_client.database[NON_DETECTION].find(
+        db_non_detections = self.db_mongo.database[NON_DETECTION].find(
             {"aid": {"$in": list(messages["aids"])}},
             {"_id": False, "evilDocDbHack": False},
         )
 
-        db_forced_photometries = self.db_client.database[FORCED_PHOTOMETRY].aggregate(
+        db_forced_photometries = self.db_mongo.database[FORCED_PHOTOMETRY].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
                 {
