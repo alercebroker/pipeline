@@ -4,6 +4,8 @@ from typing import List
 from apf.core.step import GenericStep, get_class
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
+from pprint import pprint
+
 
 class MagstatsStep(GenericStep):
     def __init__(
@@ -24,9 +26,11 @@ class MagstatsStep(GenericStep):
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections}
 
-    def execute(self, messages: dict):
+    def _execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
+        stats = obj_calculator.generate_statistics(self.excluded).replace(
+            {np.nan: None}
+        )
 
         stats = stats.to_dict("index")
 
@@ -41,17 +45,55 @@ class MagstatsStep(GenericStep):
 
         return stats
 
+    def _execute_ztf(self, messages: dict):
+        ztf_dets = filter(lambda det: det["sid"] == "ZTF", messages["detections"])
+        ztf_dets = list(ztf_dets)
+
+        obj_calculator = ObjectStatistics(ztf_dets)
+        stats = obj_calculator.generate_statistics(self.excluded).replace(
+            {np.nan: None}
+        )
+        print(stats)
+        stats = stats.to_dict("index")
+        magstats_calculator = MagnitudeStatistics(
+            detections=ztf_dets, non_detections=messages["non_detections"],
+            filter="ZTF"
+        )
+        magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
+        magstats = magstats.set_index("oid").replace({np.nan: None})
+        print(magstats)
+        for oid in stats:
+            try:
+                stats[oid]["magstats"] = magstats.loc[oid].to_dict("records")
+            except TypeError:
+                stats[oid]["magstats"] = [magstats.loc[oid].to_dict()]
+
+        return stats
+
+    def execute(self, messages: dict):
+        results = {}
+        results["ztf"] = self._execute_ztf(messages)
+        results["multistream"] = self._execute(messages)
+
+        return results
+
     def produce_scribe(self, result: dict):
-        for aid, stats in result.items():
+        for aid, stats in result["multistream"].items():
             command = {
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": aid},
-                "data": stats | {"loc": {"type": "Point", "coordinates": [stats["meanra"] - 180, stats["meandec"]]}},
+                "data": stats
+                | {
+                    "loc": {
+                        "type": "Point",
+                        "coordinates": [stats["meanra"] - 180, stats["meandec"]],
+                    }
+                },
                 "options": {"upsert": True},
             }
             self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def post_execute(self, result: dict):
         self.produce_scribe(result)
-        return result
+        return {}

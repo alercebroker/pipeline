@@ -13,7 +13,7 @@ class BaseStatistics(abc.ABC):
     _CORRECTED = ("ZTF",)
     _STELLAR = ("ZTF",)
 
-    def __init__(self, detections: List[dict]):
+    def __init__(self, detections: List[dict], filter: Union[str, None]=None):
         try:
             self._detections = pd.DataFrame.from_records(detections, exclude=["extra_fields"])
         except KeyError:  # extra_fields is not present
@@ -21,6 +21,8 @@ class BaseStatistics(abc.ABC):
         self._detections = self._detections.drop_duplicates("candid").set_index("candid")
         # Select only non-forced detections
         self._detections = self._detections[~self._detections["forced"]]
+        if filter:
+            self._detections = self._detections[self._detections["sid"] == filter]
 
     @classmethod
     def _group(cls, df: Union[pd.DataFrame, pd.Series]) -> Union[DataFrameGroupBy, SeriesGroupBy]:

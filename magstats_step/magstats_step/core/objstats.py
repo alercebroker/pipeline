@@ -9,8 +9,10 @@ from ._base import BaseStatistics
 class ObjectStatistics(BaseStatistics):
     _JOIN = "aid"
 
-    def __init__(self, detections: List[dict]):
-        super().__init__(detections)
+    def __init__(self, detections: List[dict], filter: Union[str, None]=None):
+        super().__init__(detections, filter=filter)
+        if filter == "ZTF":
+            self._JOIN = "oid"
 
     @staticmethod
     def _arcsec2deg(values: Union[pd.Series, float]) -> Union[pd.Series, float]:

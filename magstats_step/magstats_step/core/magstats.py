@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -11,10 +11,19 @@ class MagnitudeStatistics(BaseStatistics):
     # Saturation threshold for each survey (only applies to corrected magnitudes)
     _THRESHOLD = {"ZTF": 13.2}
 
-    def __init__(self, detections: List[dict], non_detections: List[dict] = None):
-        super().__init__(detections)
+    def __init__(
+        self,
+        detections: List[dict],
+        non_detections: List[dict] = None,
+        filter: Union[str, None] = None,
+    ):
+        super().__init__(detections, filter=filter)
+        if filter == "ZTF":
+            self._JOIN = ["oid", "sid", "fid"]
         if non_detections:
-            self._non_detections = pd.DataFrame.from_records(non_detections).drop_duplicates(["oid", "fid", "mjd"])
+            self._non_detections = pd.DataFrame.from_records(
+                non_detections
+            ).drop_duplicates(["oid", "fid", "mjd"])
         else:
             self._non_detections = pd.DataFrame()
 
@@ -39,11 +48,15 @@ class MagnitudeStatistics(BaseStatistics):
 
         first = self._grouped_value(in_label, which="first", corrected=corrected)
         last = self._grouped_value(in_label, which="last", corrected=corrected)
-        return pd.DataFrame({out_label.format("first"): first, out_label.format("last"): last})
+        return pd.DataFrame(
+            {out_label.format("first"): first, out_label.format("last"): last}
+        )
 
     def calculate_statistics(self) -> pd.DataFrame:
         stats = self._calculate_stats(corrected=False)
-        stats = stats.join(self._calculate_stats_over_time(corrected=False), how="outer")
+        stats = stats.join(
+            self._calculate_stats_over_time(corrected=False), how="outer"
+        )
         stats = stats.join(self._calculate_stats(corrected=True), how="outer")
         return stats.join(self._calculate_stats_over_time(corrected=True), how="outer")
 
@@ -54,7 +67,9 @@ class MagnitudeStatistics(BaseStatistics):
         return pd.DataFrame({"lastmjd": self._grouped_value("mjd", which="last")})
 
     def calculate_corrected(self) -> pd.DataFrame:
-        return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first")})
+        return pd.DataFrame(
+            {"corrected": self._grouped_value("corrected", which="first")}
+        )
 
     def calculate_stellar(self) -> pd.DataFrame:
         return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first")})
@@ -66,7 +81,9 @@ class MagnitudeStatistics(BaseStatistics):
         total = self._grouped_detections()["corrected"].sum()
         saturated = pd.Series(index=total.index, dtype=float)
         for survey, threshold in self._THRESHOLD.items():
-            sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(lambda x: (x < threshold).sum())
+            sat = self._grouped_detections(surveys=(survey,))["mag_corr"].agg(
+                lambda x: (x < threshold).sum()
+            )
             saturated.loc[sat.index] = sat
 
         rate = np.where(total.ne(0), saturated.astype(float) / total, np.nan)
@@ -76,13 +93,17 @@ class MagnitudeStatistics(BaseStatistics):
         dt_min = 0.5
 
         if self._non_detections.size == 0:  # Handle no non-detection case
-            return pd.DataFrame(columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"])
+            return pd.DataFrame(
+                columns=["dt_first", "dm_first", "sigmadm_first", "dmdt_first"]
+            )
 
         first_mag = self._grouped_value("mag", which="first")
         first_e_mag = self._grouped_value("e_mag", which="first")
         first_mjd = self._grouped_value("mjd", which="first")
 
-        nd = self._non_detections.set_index(self._JOIN)  # Index by join to compute based on it
+        nd = self._non_detections.set_index(
+            self._JOIN
+        )  # Index by join to compute based on it
 
         dt = first_mjd - nd["mjd"]
         dm = first_mag - nd["diffmaglim"]
@@ -90,7 +111,9 @@ class MagnitudeStatistics(BaseStatistics):
         dmdt = (first_mag + first_e_mag - nd["diffmaglim"]) / dt
 
         # Include back fid for grouping and unique identification
-        results = pd.DataFrame({"dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt}).reset_index()
+        results = pd.DataFrame(
+            {"dt": dt, "dm": dm, "sigmadm": sigmadm, "dmdt": dmdt}
+        ).reset_index()
         # Only include non-detections before dt_min
         idx = self._group(results[results["dt"] > dt_min])["dmdt"].idxmin().dropna()
 
