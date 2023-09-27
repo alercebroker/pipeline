@@ -10,6 +10,7 @@ packages = [{include = "lightcurve_step"}]
 python = ">=3.9,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
 pymongo = "^4.4.1"
+sqlalchemy = "2.0.19"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
