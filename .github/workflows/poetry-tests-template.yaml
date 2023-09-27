@@ -55,6 +55,9 @@ on:
       TEST_BARNEY_MODEL_PATH:
         required: false
         description: 'A path to a .pkl file'
+      TEST_NEW_BARNEY_MODEL_PATH:
+        required: false
+        description: 'A path to a .pkl file'
       TEST_MLP_MODEL_PATH:
         required: false
         description: 'A path to a .pkl file'
