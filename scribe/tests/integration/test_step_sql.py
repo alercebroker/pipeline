@@ -357,3 +357,8 @@ class MongoIntegrationTest(unittest.TestCase):
             )
             result = list(result)
             assert len(result) == 2
+            for row in result:
+                if row[1] == "class2":
+                    assert row[4] == 0.65 and row[5] == 1
+                else:
+                    assert row[4] == 0.35 and row[5] == 2 
