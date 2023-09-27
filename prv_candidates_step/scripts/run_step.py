@@ -39,12 +39,9 @@ def step_creator():
     if settings["USE_PROMETHEUS"]:
         start_http_server(8000)
 
-    prefix = os.getenv("CLASS_PREFIX", "")
-
     return PrvCandidatesStep(
         config=settings,
         prometheus_metrics=prometheus_metrics,
-        prefix=prefix,
     )
 
 

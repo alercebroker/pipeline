@@ -203,6 +203,7 @@ jobs:
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
+      TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -221,6 +222,7 @@ jobs:
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
+      TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
 
   lc_classification_step_build_ztf:
     uses: ./.github/workflows/build-template.yaml

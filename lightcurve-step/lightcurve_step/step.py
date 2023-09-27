@@ -95,7 +95,7 @@ class LightcurveStep(GenericStep):
         return {
             "detections": detections,
             "non_detections": non_detections,
-            "last_mjds": messages["last_mjds"]
+            "last_mjds": messages["last_mjds"],
         }
 
     @classmethod
