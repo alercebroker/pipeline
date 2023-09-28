@@ -1,7 +1,10 @@
 import pytest
 import os
+
+import psycopg2
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+
 
 from confluent_kafka.admin import AdminClient, NewTopic
 
@@ -31,6 +34,28 @@ def mongo_service(docker_ip, docker_services):
         check=lambda: is_mongo_responsive(docker_ip, port),
     )
     return (docker_ip, port)
+
+
+def is_psql_responsive(ip, port):
+    try:
+        conn = psycopg2.connect(
+            "dbname='postgres' user='postgres' host=localhost password='postgres'"
+        )
+        conn.close()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+@pytest.fixture(scope="session")
+def psql_service(docker_ip, docker_services):
+    port = docker_services.port_for("postgres", 5432)
+    server = f"{docker_ip}:{port}"
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_psql_responsive(server, port)
+    )
+    return server
 
 
 def is_kafka_responsive(url="localhost:9092"):
