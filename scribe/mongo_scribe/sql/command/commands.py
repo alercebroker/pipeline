@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from sqlalchemy import update, bindparam
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 
@@ -22,9 +22,9 @@ class Command(ABC):
 
     def __init__(self, data, criteria=None, options=None):
         self._check_inputs(data, criteria)
-        self.data = self._format_data(data)
         self.criteria = criteria or {}
         self.options = options
+        self.data = self._format_data(data)
 
     def _format_data(self, data):
         return data
@@ -59,27 +59,49 @@ class InsertDetectionsCommand(Command):
         )
 
 
-class UpdateObjectStats(Command):
+class UpdateObjectStatsCommand(Command):
     type = ValidCommands.update_object_stats
 
+    def _check_inputs(self, data, criteria):
+        if "oid" not in criteria:
+            raise ValueError("Not oid provided in command")
+        if "magstats" not in data:
+            raise ValueError("Magstats not provided in the commands data")
+
     def _format_data(self, data):
-        # we have to check...
-        return (data, data)
+        magstats = data.pop("magstats")
+        data["oid"] = self.criteria["oid"]
+        for magstat in magstats:
+            magstat.pop("sid")
+            fid_map = {"g": 1, "r": 2, "i": 3}
+
+            magstat["oid"] = self.criteria["oid"]
+            magstat["fid"] = fid_map[magstat["fid"]]
+            if "step_id_corr" not in magstat:
+                magstat["step_id_corr"] = "ALeRCE ZTF"
+
+        return (data, magstats)
 
     @staticmethod
     def db_operation(session: Session, data: List):
         # data should be a tuple where idx 0 is objstats and 1 is magstats
-        update_stmt = update(Object).where(Object.oid == bindparam("oid")).values(data[0])
-        upsert_stmt = insert(MagStats).values(data[1])
+        objstats, magstats = map(list, zip(*data))
+        # list flatten
+        magstats = sum(magstats, [])
+        print(objstats)
+        for stat in objstats:
+            oid = stat.pop("oid")
+            update_stmt = update(Object).where(Object.oid == oid).values(stat)
+            session.connection().execute(update_stmt)
+
+        upsert_stmt = insert(MagStats).values(magstats)
         upsert_stmt = upsert_stmt.on_conflict_do_update(
-            constraint="magstat_pkey",
-            set_=dict(**upsert_stmt.excluded._all_columns)
+            constraint="magstat_pkey", set_=upsert_stmt.excluded
         )
-        session.connection().execute(update_stmt)
         return session.connection().execute(upsert_stmt)
 
 
-class UpsertNonDetections(Command):
+class UpsertNonDetectionsCommand(Command):
     type = ValidCommands.upsert_non_detections
 
     def _check_inputs(self, data, criteria):
@@ -106,6 +128,8 @@ class UpsertFeaturesCommand(Command):
 
     def _check_inputs(self, data, criteria):
         super()._check_inputs(data, criteria)
+        if "oid" not in criteria:
+            raise ValueError("No oids were provided in command")
         if "features" not in data:
             raise ValueError("No features provided in command")
         if "features_version" not in data:
@@ -115,7 +139,9 @@ class UpsertFeaturesCommand(Command):
 
     def _format_data(self, data):
         return [
-            {**feat, "version": data["features_version"]} for feat in data["features"]
+            {**feat, "version": data["features_version"], "oid": i}
+            for feat in data["features"]
+            for i in self.criteria["oid"]
         ]
 
     @staticmethod
@@ -131,6 +157,15 @@ class UpsertFeaturesCommand(Command):
 
 class UpsertProbabilitiesCommand(Command):
     type = ValidCommands.upsert_probabilities
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+        if "oid" not in criteria:
+            raise ValueError("No oids were provided in command")
+
+
+    def _format_data(self, data):
+        return [{**data, "oid": i} for i in self.criteria["oid"]]
 
     @staticmethod
     def db_operation(session: Session, data: List):

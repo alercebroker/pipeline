@@ -102,6 +102,7 @@ class MagstatsStep(GenericStep):
             } for oid in oids]
 
             for command in commands:
+                pprint(command)
                 self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def post_execute(self, result: dict):

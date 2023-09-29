@@ -4,8 +4,9 @@ from .commands import (
     Command,
     InsertObjectCommand,
     InsertDetectionsCommand,
+    UpdateObjectStatsCommand,
     UpsertFeaturesCommand,
-    UpsertNonDetections,
+    UpsertNonDetectionsCommand,
     UpsertProbabilitiesCommand
 )
 
@@ -53,8 +54,10 @@ def command_factory(msg: str) -> Command:
         return InsertObjectCommand(**message)
     if type_ == "update" and table == "detection":
         return InsertDetectionsCommand(**message)
+    if type_ == "upsert" and table == "magstats":
+        return UpdateObjectStatsCommand(**message)
     if type_ == "update" and table == "non_detection":
-        return UpsertNonDetections(**message)
+        return UpsertNonDetectionsCommand(**message)
     if type_ == "update_features" and table == "object":
         return UpsertFeaturesCommand(**message)
     if type_ == "update_probabilities" and table == "object":

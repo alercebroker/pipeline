@@ -36,7 +36,7 @@ class MongoScribe(GenericStep):
                 new_command = self.command_factory(message["payload"])
                 valid_commands.append(new_command)
             except Exception as exc:
-                print(f"Error processing message: {exc}")
+                print(f"===========\nError processing message: {exc}")
                 n_invalid_commands += 1
 
         logging.info(

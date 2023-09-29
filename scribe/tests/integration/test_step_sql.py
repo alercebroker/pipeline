@@ -168,7 +168,12 @@ class MongoIntegrationTest(unittest.TestCase):
         command = {
             "collection": "non_detection",
             "type": "update",
-            "criteria": {"oid": "ZTF04ululeea", "mjd": 55000, "fid": 1},
+            "criteria": {
+                "aid": "AL21XXX",
+                "oid": "ZTF04ululeea",
+                "mjd": 55000,
+                "fid": 1,
+            },
             "data": {
                 "diffmaglim": 0.1,
                 "pid": 4.3,
@@ -228,25 +233,21 @@ class MongoIntegrationTest(unittest.TestCase):
 
         command_data = [
             {
-                "oid": "ZTF04ululeea",
                 "name": "feature1",
                 "value": 55.0,
                 "fid": 1,
             },
             {
-                "oid": "ZTF04ululeea",
                 "name": "feature2",
                 "value": 22.0,
                 "fid": 2,
             },
             {
-                "oid": "ZTF04ululeea",
                 "name": "feature3",
                 "value": 130.0,
                 "fid": 1,
             },
             {
-                "oid": "ZTF04ululeea",
                 "name": "feature1",
                 "value": 694211.0,
                 "fid": 1,
@@ -259,6 +260,10 @@ class MongoIntegrationTest(unittest.TestCase):
                     {
                         "collection": "object",
                         "type": "update_features",
+                        "criteria": {
+                            "_id": "AL21XXX",
+                            "oid": ["ZTF04ululeea"]
+                        },
                         "data": {
                             "features_version": "1.0.0",
                             "features_group": "ztf",
@@ -303,7 +308,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
                 "probability": 0.6,
-                "ranking": 1
+                "ranking": 1,
             },
             {
                 "oid": "ZTF04ululeea",
@@ -311,7 +316,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
                 "probability": 0.4,
-                "ranking": 2
+                "ranking": 2,
             },
             {
                 "oid": "ZTF04ululeea",
@@ -319,7 +324,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
                 "probability": 0.65,
-                "ranking": 1
+                "ranking": 1,
             },
             {
                 "oid": "ZTF04ululeea",
@@ -327,18 +332,25 @@ class MongoIntegrationTest(unittest.TestCase):
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
                 "probability": 0.35,
-                "ranking": 2
+                "ranking": 2,
             },
         ]
 
         commands = [
             {
-                "payload": json.dumps({
-                    "collection": "object",
-                    "type": "update_probabilities",
-                    "data": data
-                })
-            } for data in command_data
+                "payload": json.dumps(
+                    {
+                        "collection": "object",
+                        "type": "update_probabilities",
+                        "criteria": {
+                            "_id": "AL21XXX",
+                            "oid": ["ZTF04ululeea"]
+                        },
+                        "data": data,
+                    }
+                )
+            }
+            for data in command_data
         ]
 
         for command in commands:
@@ -361,4 +373,110 @@ class MongoIntegrationTest(unittest.TestCase):
                 if row[1] == "class2":
                     assert row[4] == 0.65 and row[5] == 1
                 else:
-                    assert row[4] == 0.35 and row[5] == 2 
+                    assert row[4] == 0.35 and row[5] == 2
+
+    def test_update_object_stats(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        command = {
+            "collection": "magstats",
+            "criteria": {"oid": "ZTF04ululeea"},
+            "data": {
+                "corrected": False,
+                "firstmjd": 0.04650036190916984,
+                "lastmjd": 0.9794581336685745,
+                "magstats": [
+                    {
+                        "corrected": False,
+                        "dm_first": None,
+                        "dmdt_first": None,
+                        "dt_first": None,
+                        "fid": "r",
+                        "firstmjd": 0.04650036190916984,
+                        "lastmjd": 0.9794581336685745,
+                        "magfirst": 0.45738787694615635,
+                        "magfirst_corr": None,
+                        "maglast": 0.8891703032055938,
+                        "maglast_corr": None,
+                        "magmax": 0.9954724098279284,
+                        "magmax_corr": None,
+                        "magmean": 0.6485098616306181,
+                        "magmean_corr": None,
+                        "magmedian": 0.6183493589106022,
+                        "magmedian_corr": None,
+                        "magmin": 0.29146111487295745,
+                        "magmin_corr": None,
+                        "magsigma": 0.24471928116997924,
+                        "magsigma_corr": None,
+                        "ndet": 9,
+                        "ndubious": 0,
+                        "saturation_rate": None,
+                        "sid": "ZTF",
+                        "sigmadm_first": None,
+                        "stellar": False,
+                    },
+                ],
+                "meandec": 0.4861642021396574,
+                "meanra": 0.5267988555440914,
+                "ndet": 20,
+                "sigmadec": 0.00568264450571807,
+                "sigmara": 0.0006830686562186637,
+                "stellar": False,
+            },
+            "type": "upsert",
+        }
+
+        self.producer.produce({"payload": json.dumps(command)})
+
+        command["data"]["magstats"] = [
+            {
+                "corrected": False,
+                "dm_first": None,
+                "dmdt_first": None,
+                "dt_first": None,
+                "fid": "g",
+                "firstmjd": 0.13577030206791907,
+                "lastmjd": 0.95383888383811,
+                "magfirst": 0.6249465481253661,
+                "magfirst_corr": None,
+                "maglast": 0.894922004401134,
+                "maglast_corr": None,
+                "magmax": 0.894922004401134,
+                "magmax_corr": None,
+                "magmean": 0.4860666136917287,
+                "magmean_corr": None,
+                "magmedian": 0.6062813119154207,
+                "magmedian_corr": None,
+                "magmin": 0.03844908454164819,
+                "magmin_corr": None,
+                "magsigma": 0.2650409061639637,
+                "magsigma_corr": None,
+                "ndet": 11,
+                "ndubious": 0,
+                "saturation_rate": None,
+                "sid": "ZTF",
+                "sigmadm_first": None,
+                "stellar": False,
+            }
+        ]
+        self.producer.produce({"payload": json.dumps(command)})
+        self.producer.producer.flush(1)
+        self.step.start()
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT object.oid as oid, fid, meanra, meandec, magstat.ndet as ndet
+                    FROM object JOIN magstat on object.oid = magstat.oid 
+                    """
+                )
+            )
+            print(list(result))

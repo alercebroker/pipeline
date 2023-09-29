@@ -12,7 +12,7 @@ class ValidCommands:
     upsert_features = "upsert_features"
     # update + non_detections
     upsert_non_detections = "upsert_non_detections"
-    # update + object + magstats in data
+    # upsert + magstats PSQL EXCLUSIVE
     update_object_stats = "update_object_stats"
 
 
