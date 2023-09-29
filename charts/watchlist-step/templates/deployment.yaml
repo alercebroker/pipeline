@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "watchlist-step.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "watchlist-step.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "watchlist-step.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "watchlist-step.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: ALERTS_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: alerts-database
+                  key: host
+            - name: ALERTS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: alerts-database
+                  key: name
+            - name: ALERTS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: alerts-database
+                  key: password
+            - name: ALERTS_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: alerts-database
+                  key: username
+            - name: USERS_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: users-database
+                  key: host
+            - name: USERS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: users-database
+                  key: name
+            - name: USERS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: users-database
+                  key: password
+            - name: USERS_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: users-database
+                  key: username
+            - name: CONSUMER_TOPICS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: consumer-topics
+            - name: CONSUMER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: internal-server
+            - name: CONSUMER_GROUP_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: consumer-group
+            - name: CONSUME_MESSAGES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: consume-messages
+            - name: METRICS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: internal-server
+            - name: METRICS_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: metrics-topic
+            {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
+            - name: CONSUMER_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-username
+            - name: CONSUMER_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
+            - name: METRICS_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-username
+            - name: METRICS_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-password
+            {{- end }}
+            {{- with .Values.extraEnvVariables }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end}}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

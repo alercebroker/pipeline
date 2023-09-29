@@ -1,0 +1,113 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: stamp-classifier
+
+image:
+  ztf:
+    repository: ghcr.io/alercebroker/ztf_stamp_classifier_step
+    tag: ""
+  atlas:
+    repository: ghcr.io/alercebroker/atlas_stamp_classifier_step
+    tag: ""
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+
+imagePullSecrets:
+  - name: image-pull-access
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+service:
+  atlas:
+    type: ClusterIP
+    port: 8000
+  ztf:
+    type: ClusterIP
+    port: 8000
+
+resources:
+  atlas: {}
+  ztf: {}
+
+autoscaling:
+  atlas:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+  ztf:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: eks.amazonaws.com/nodegroup
+              operator: In
+              values: []
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: false
+      username: ""
+      password: ""
+    producer:
+      enabled: false
+      username: ""
+      password: ""
+    scribe:
+      enabled: false
+      username: ""
+      password: ""
+    metrics:
+      enabled: false
+      username: ""
+      password: ""
+
+
+configmap:
+  atlas:
+    consumerTopics: "sorting-hat-atlas"
+    publicServer: ""
+    internalServer: ""
+    scribeTopic: "w_object"
+    modelName: "atlas-stamp-classifier"
+    modelVersion: ""
+    kafka:
+      producerSecurityProtocol: "SASL_SSL"
+      producerSaslMechanism: "SCRAM-SHA-512"
+  ztf:
+    consumerTopics: "sorting-hat-ztf"
+    publicServer: ""
+    internalServer: ""
+    scribeTopic: "w_object"
+    modelName: "ztf-stamp-classifier"
+    modelVersion: ""
+    kafka:
+      producerSecurityProtocol: "SASL_SSL"
+      producerSaslMechanism: "SCRAM-SHA-512"
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+extraEnvVariables:
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS

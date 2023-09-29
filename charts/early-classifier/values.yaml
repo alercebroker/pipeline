@@ -1,0 +1,89 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: early-classifier
+
+image:
+  repository: ghcr.io/alercebroker/early_classification_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8000
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+configmap:
+  consumerTopics: ""
+  consumerServer: ""
+  consumerGroup: ""
+  producerServer: ""
+  metricsServer: ""
+  metricsTopic: "metrics"
+  producerTopicFormat: "stamp_classifier_%s"
+  producerDateFormat: "%Y%m%d"
+  producerChangeHour: "23"
+  classifierVersion: ""
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: false
+      username: ""
+      password: ""
+    producer:
+      enabled: false
+      username: ""
+      password: ""
+    metrics:
+      enabled: false
+      username: ""
+      password: ""
+  db:
+    host: ""
+    user: ""
+    password: ""
+    port: ""
+    name: ""
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+extraEnvVariables:
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS
