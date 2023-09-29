@@ -4,8 +4,8 @@ from apf.consumers import KafkaConsumer
 
 
 def assert_message_schema(command):
-    assert command["collection"] == "object"
-    assert command["type"] == "update"
+    assert command["collection"] == "magstats"
+    assert command["type"] == "upsert"
     assert "_id" in command["criteria"]
     assert "data" in command
 

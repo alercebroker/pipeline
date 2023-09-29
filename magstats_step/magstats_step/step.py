@@ -6,6 +6,7 @@ from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
 from pprint import pprint
 
+
 class MagstatsStep(GenericStep):
     def __init__(
         self,
@@ -27,9 +28,7 @@ class MagstatsStep(GenericStep):
 
     def _execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded).replace(
-            {np.nan: None}
-        )
+        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
         stats = stats.to_dict("index")
 
         magstats_calculator = MagnitudeStatistics(**messages)
@@ -44,18 +43,12 @@ class MagstatsStep(GenericStep):
         return stats
 
     def _execute_ztf(self, messages: dict):
-        ztf_detections = list(
-            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
-        )
+        ztf_detections = list(filter(lambda d: d["sid"] == "ZTF", messages["detections"]))
         obj_calculator = ObjectStatistics(ztf_detections)
-        stats = obj_calculator.generate_statistics(self.excluded).replace(
-            {np.nan: None}
-        )
+        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
         stats = stats.to_dict("index")
 
-        magstats_calculator = MagnitudeStatistics(
-            detections=ztf_detections, non_detections=messages["non_detections"]
-        )
+        magstats_calculator = MagnitudeStatistics(detections=ztf_detections, non_detections=messages["non_detections"])
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
         magstats = magstats.set_index("aid").replace({np.nan: None})
         for aid in stats:
@@ -92,14 +85,17 @@ class MagstatsStep(GenericStep):
 
     def produce_scribe_ztf(self, result: dict):
         for stats in result.values():
-            stats = { k: v for k, v in stats.items() if k not in ["tid", "sid"]  }
+            stats = {k: v for k, v in stats.items() if k not in ["tid", "sid"]}
             oids = stats.pop("oid")
-            commands = [{
-                "collection": "magstats",
-                "type": "upsert",
-                "criteria": { "oid": oid },
-                "data": stats,
-            } for oid in oids]
+            commands = [
+                {
+                    "collection": "magstats",
+                    "type": "upsert",
+                    "criteria": {"oid": oid},
+                    "data": stats,
+                }
+                for oid in oids
+            ]
 
             for command in commands:
                 pprint(command)
