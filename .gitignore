@@ -131,3 +131,12 @@ dmypy.json
 __SUCCESS__
 
 flycheck*
+
+# Charts values and builds
+values*.override.yaml
+values*.override.yml
+values.staging.yaml
+values.production.yaml
+values.staging.yml
+values.production.yml
+*.tgz
