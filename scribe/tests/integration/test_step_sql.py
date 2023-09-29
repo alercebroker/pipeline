@@ -303,7 +303,6 @@ class MongoIntegrationTest(unittest.TestCase):
 
         command_data = [
             {
-                "oid": "ZTF04ululeea",
                 "class_name": "class1",
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
@@ -311,7 +310,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "ranking": 1,
             },
             {
-                "oid": "ZTF04ululeea",
                 "class_name": "class2",
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
@@ -319,7 +317,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "ranking": 2,
             },
             {
-                "oid": "ZTF04ululeea",
                 "class_name": "class2",
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
@@ -327,7 +324,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "ranking": 1,
             },
             {
-                "oid": "ZTF04ululeea",
                 "class_name": "class1",
                 "classifier_name": "lc_classifier",
                 "classifier_version": "1.0.0",
