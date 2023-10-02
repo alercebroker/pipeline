@@ -45,9 +45,9 @@ class LightcurveStep(GenericStep):
 
 
         aids = messages["aids"]
-        db_mongo_detections = self.get_mongo_detections(aids)
-        db_mongo_non_detections = self.get_mongo_non_detections(aids)
-        db_mongo_forced_photometries = self.get_mongo_forced_photometries(aids)
+        #db_mongo_detections = self.get_mongo_detections(aids)
+        #db_mongo_non_detections = self.get_mongo_non_detections(aids)
+        #db_mongo_forced_photometries = self.get_mongo_forced_photometries(aids)
         db_detections = self.db_mongo.database[DETECTION].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -106,22 +106,22 @@ class LightcurveStep(GenericStep):
             "last_mjds": messages["last_mjds"]
         }
 
-    def get_sql_detections():
+    def get_sql_detections(aids):
         return
     
-    def get_sql_non_detections():
+    def get_sql_non_detections(aids):
         return 
 
-    def get_sql_forced_photometries():
+    def get_sql_forced_photometries(aids):
         return
     
-    def get_mongo_detections():
+    def get_mongo_detections(aids):
         return
     
-    def get_mongo_non_detections():
+    def get_mongo_non_detections(aids):
         return 
 
-    def get_mongo_forced_photometries():
+    def get_mongo_forced_photometries(aids):
         return
 
 
