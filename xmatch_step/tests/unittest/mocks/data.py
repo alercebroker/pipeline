@@ -8,6 +8,7 @@ mock_lightcurve = [
                 "candid": "aaa",
                 "tid": "ZTF",
                 "oid": "oid",
+                "sid": "ZTF",
                 "aid": "aid",
                 "mag": 0.1,
                 "e_mag": 0.01,
@@ -28,6 +29,7 @@ mock_lightcurves_list = [
         "detections": [
             {
                 "candid": "aaa",
+                "sid": "ZTF",
                 "tid": "ZTF",
                 "oid": "oid1",
                 "aid": "aid1",
@@ -46,6 +48,7 @@ mock_lightcurves_list = [
         "detections": [
             {
                 "candid": "eee",
+                "sid": "ZTF",
                 "tid": "ZTF",
                 "oid": "oid2",
                 "aid": "aid2",
@@ -58,6 +61,7 @@ mock_lightcurves_list = [
         "non_detections": [
             {
                 "tid": "ZTF",
+                "sid": "ZTF",
                 "oid": "oid2",
                 "aid": "aid2",
                 "mjd": 599000,
