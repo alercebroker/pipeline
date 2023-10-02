@@ -8,6 +8,7 @@ from fastavro.schema import load_schema
 from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+import psycopg2
 
 
 @pytest.fixture(scope="session")
@@ -84,6 +85,7 @@ def env_variables():
         "PRODUCER_TOPIC": "lightcurve",
         "ENABLE_PARTITION_EOF": "True",
         "MONGODB_SECRET_NAME": "mongo_secret",
+        "SQL_SECRET_NAME": "sql_secret",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
@@ -108,3 +110,25 @@ def produce_messages(topic):
 
     for message in messages:
         producer.produce(message)
+
+
+def is_responsive_psql(url):
+    try:
+        conn = psycopg2.connect(
+            "dbname='postgres' user='postgres' host=localhost password='postgres'"
+        )
+        conn.close()
+        return True
+    except Exception:
+        return False
+    
+@pytest.fixture(scope="session")
+def psql_service(docker_ip, docker_services):
+    """Ensure that Kafka service is up and responsive."""
+    # `port_for` takes a container port and returns the corresponding host port
+    port = docker_services.port_for("postgres", 5432)
+    server = "{}:{}".format(docker_ip, port)
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
+    )
+    return server
