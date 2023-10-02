@@ -156,7 +156,9 @@ class LateClassifier(GenericStep):
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
         parsed_result = self.scribe_parser.parse(
-            result[0], classifier_version=self.classifier_version, oids=self.oids
+            result[0],
+            classifier_version=self.classifier_version,
+            oids=self.oids,
         )
         self.produce_scribe(parsed_result.value)
         return result
