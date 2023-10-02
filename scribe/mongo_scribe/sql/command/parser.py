@@ -29,8 +29,3 @@ def multistream_detection_to_ztf(command: dict):
     )
 
     return new_command
-
-def multistream_object_to_ztf(command: dict):
-    # check if has a ZTF oid in the oid list
-    # exclude some fields
-    return
