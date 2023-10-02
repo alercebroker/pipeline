@@ -60,7 +60,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
     mock_client = mock.MagicMock()
     LightcurveStep.__init__ = lambda self: None
     step = LightcurveStep()
-    step.db_client = mock_client
+    step.db_mongo = mock_client
     step.logger = mock.MagicMock()
     mock_client.database["detection"].aggregate.return_value = [
         {

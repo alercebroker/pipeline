@@ -28,3 +28,12 @@ services:
     ports:
       - "27017:27017"
     command: mongod --notablescan
+
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
