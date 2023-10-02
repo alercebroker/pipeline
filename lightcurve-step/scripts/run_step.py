@@ -29,7 +29,7 @@ def step_creator():
 
     logger.addHandler(handler)
     db_mongo = DatabaseConnection(settings["DB_CONFIG"])
-    db_sql = PSQLConnection(settings["DB_CONFIG"]) # al cambiar las settings va a cambiar esto.
+    db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
 
     step_params = {
         "config": settings,
