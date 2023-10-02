@@ -34,13 +34,23 @@ class _MongoConfig(UserDict):
         ]
         super().__setitem__("".join(klist), value)
 
+class _SqlConfig():
+    def __init__(self) -> None:
+        pass
 
-def get_mongodb_credentials(mongo_secret_name):
-    secret_name = mongo_secret_name
+def get_mongodb_credentials(secret_name,db_name):
     secret = get_secret(secret_name)
     secret = json.loads(secret)
     # check if config is valid
     # _MongoConfig will raise error if the config has missing parameters
-    secret = _MongoConfig(secret)
-    secret["port"] = int(secret["port"])
-    return secret
+    if db_name == "mongo":
+        secret = _MongoConfig(secret)
+        secret["port"] = int(secret["port"])
+        return secret
+    elif db_name == "sql":
+        secret = _SqlConfig(secret)
+        secret["port"] = int(secret["port"])
+        return secret
+
+
+

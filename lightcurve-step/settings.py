@@ -12,7 +12,7 @@ def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
-    db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
+    db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"],db_name="mongo")
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation

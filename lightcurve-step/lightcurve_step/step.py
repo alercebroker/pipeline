@@ -42,6 +42,12 @@ class LightcurveStep(GenericStep):
 
     def execute(self, messages: dict) -> dict:
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
+
+
+        aids = messages["aids"]
+        db_mongo_detections = self.get_mongo_detections(aids)
+        db_mongo_non_detections = self.get_mongo_non_detections(aids)
+        db_mongo_forced_photometries = self.get_mongo_forced_photometries(aids)
         db_detections = self.db_mongo.database[DETECTION].aggregate(
             [
                 {"$match": {"aid": {"$in": list(messages["aids"])}}},
@@ -99,6 +105,25 @@ class LightcurveStep(GenericStep):
             "non_detections": non_detections,
             "last_mjds": messages["last_mjds"]
         }
+
+    def get_sql_detections():
+        return
+    
+    def get_sql_non_detections():
+        return 
+
+    def get_sql_forced_photometries():
+        return
+    
+    def get_mongo_detections():
+        return
+    
+    def get_mongo_non_detections():
+        return 
+
+    def get_mongo_forced_photometries():
+        return
+
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:
