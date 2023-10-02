@@ -79,7 +79,7 @@ class ScribeParser(KafkaParser):
                 command = {
                     "collection": "object",
                     "type": "update_probabilities",
-                    "criteria": {"_id": idx},
+                    "criteria": {"_id": idx, "oid": kwargs["oids"].get(idx, [])},
                     "data": {
                         "classifier_name": row["classifier_name"],
                         "classifier_version": kwargs["classifier_version"],
@@ -88,6 +88,7 @@ class ScribeParser(KafkaParser):
                 }
                 for class_name in class_names:
                     command["data"].update({class_name: row[class_name]})
+                print(command)
                 commands.append(command)
             return classifications_by_classifier
 
