@@ -476,3 +476,51 @@ class MongoIntegrationTest(unittest.TestCase):
                 )
             )
             print(list(result))
+
+    def test_upsert_xmatch(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+        commands = [
+            {
+                "collection": "object",
+                "type": "update",
+                "criteria": { "_id": "ALX123", "oid": ["ZTF04ululeea"] },
+                "data": {"xmatch": {
+                    "catoid": "J239263.32+240338.4",
+                    "dist": 0.009726,
+                    "catid": "allwise"
+                }}
+            },
+            {
+                "collection": "object",
+                "type": "update",
+                "criteria": { "_id": "ALX134", "oid": ["ZTF05ululeea"] },
+                "data": {"xmatch": {
+                    "catoid": "J239263.32+240338.4",
+                    "dist": 0.615544,
+                    "catid": "allwise"
+                }}
+            }            
+        ]
+
+        for command in commands:
+            self.producer.produce({ "payload": json.dumps(command) })
+
+        self.step.start()
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT * FROM xmatch WHERE oid = 'ZTF04ululeea' 
+                    """
+                )
+            )
+            print(list(result))

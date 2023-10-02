@@ -12,6 +12,7 @@ from db_plugins.db.sql.models import (
     Feature,
     MagStats,
     Probability,
+    Xmatch
 )
 
 from .commons import ValidCommands
@@ -176,6 +177,31 @@ class UpsertProbabilitiesCommand(Command):
                 ranking=insert_stmt.excluded.ranking,
                 probability=insert_stmt.excluded.probability,
             ),
+        )
+
+        return session.connection().execute(insert_stmt)
+
+class UpsertXmatchCommand(Command):
+    type = ValidCommands.upsert_xmatch
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+        if "oid" not in criteria or criteria["oid"] == []:
+            raise ValueError("No oids were provided in command")
+
+    def _format_data(self, data):
+        data["xmatch"]["oid_catalog"] = data["xmatch"].pop("catoid")
+        return [ { **data["xmatch"], "oid": oid } for oid in self.criteria["oid"] ]
+    
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        insert_stmt = insert(Xmatch).values(data)
+        insert_stmt = insert_stmt.on_conflict_do_update(
+            constraint="xmatch_pkey",
+            set_=dict(
+                oid_catalog=insert_stmt.excluded.oid_catalog,
+                dist=insert_stmt.excluded.dist,
+            )
         )
 
         return session.connection().execute(insert_stmt)

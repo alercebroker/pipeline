@@ -7,7 +7,8 @@ from .commands import (
     UpdateObjectStatsCommand,
     UpsertFeaturesCommand,
     UpsertNonDetectionsCommand,
-    UpsertProbabilitiesCommand
+    UpsertProbabilitiesCommand,
+    UpsertXmatchCommand,
 )
 
 
@@ -62,4 +63,6 @@ def command_factory(msg: str) -> Command:
         return UpsertFeaturesCommand(**message)
     if type_ == "update_probabilities" and table == "object":
         return UpsertProbabilitiesCommand(**message)
+    if type_ == "update" and table == "object" and "xmatch" in message["data"]:
+        return UpsertXmatchCommand(**message)
     raise ValueError(f"Unrecognized command type {type_} in table {table}.")

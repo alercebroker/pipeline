@@ -85,15 +85,17 @@ class StepXmatchTest(unittest.TestCase):
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, mock_xmatch: mock.Mock):
         mock_xmatch.return_value = get_fake_xmatch(self.batch)
-        output_messages, xmatches = self.step.execute(self.batch)
-
+        output_messages, xmatches, oids = self.step.execute(self.batch)
+        for oid in oids.values():
+            assert isinstance(oid, list)
         assert len(output_messages) == 20
         assert xmatches.shape == (20, 22)
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
         mock_xmatch.return_value = get_fake_empty_xmatch(self.batch)
-        output_messages, xmatches = self.step.execute(self.batch)
-
+        output_messages, xmatches, oids = self.step.execute(self.batch)
+        for oid in oids.values():
+            assert isinstance(oid, list)
         assert len(output_messages) == 20
         assert xmatches.shape == (0, 5)

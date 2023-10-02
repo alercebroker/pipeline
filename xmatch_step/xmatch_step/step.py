@@ -1,6 +1,6 @@
 import json
 import time
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
@@ -43,7 +43,7 @@ class XmatchStep(GenericStep):
             "output_type": "pandas",
         }
 
-    def produce_scribe(self, xmatches: pd.DataFrame):
+    def produce_scribe(self, xmatches: pd.DataFrame, oid_hash: Dict):
         if len(xmatches) == 0:
             return
 
@@ -59,9 +59,10 @@ class XmatchStep(GenericStep):
             scribe_data = {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": aid},
+                "criteria": {"_id": aid, "oid": oid_hash[aid]},
                 "data": {"xmatch": obj},
             }
+            print(scribe_data)
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
     def pre_produce(self, result: List[dict]):
@@ -154,8 +155,8 @@ class XmatchStep(GenericStep):
         del messages
         del light_curves
         del input_catalog
-        return output_messages, xmatches
+        return output_messages, xmatches, {k: v["oid"] for k, v in lc_hash.items()}
 
-    def post_execute(self, result: Tuple[List[dict], pd.DataFrame]):
-        self.produce_scribe(result[1])
+    def post_execute(self, result: Tuple[List[dict], pd.DataFrame, Dict]):
+        self.produce_scribe(result[1], result[2])
         return result[0]

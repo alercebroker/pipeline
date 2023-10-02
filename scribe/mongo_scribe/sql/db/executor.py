@@ -10,7 +10,8 @@ from mongo_scribe.sql.command.commands import (
     UpdateObjectStatsCommand,
     UpsertFeaturesCommand,
     UpsertNonDetectionsCommand,
-    UpsertProbabilitiesCommand
+    UpsertProbabilitiesCommand,
+    UpsertXmatchCommand,
 )
 
 
@@ -44,7 +45,8 @@ class SQLCommandExecutor:
             UpdateObjectStatsCommand,
             UpsertFeaturesCommand,
             UpsertNonDetectionsCommand,
-            UpsertProbabilitiesCommand
+            UpsertProbabilitiesCommand,
+            UpsertXmatchCommand,
         )
         self.handlers: Dict[str, CommandHandler] = {
             c.type: CommandHandler(c.db_operation) for c in commands

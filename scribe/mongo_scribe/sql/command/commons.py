@@ -14,5 +14,7 @@ class ValidCommands:
     upsert_non_detections = "upsert_non_detections"
     # upsert + magstats PSQL EXCLUSIVE
     update_object_stats = "update_object_stats"
+    # update + object + xmatch in data
+    upsert_xmatch = "upsert_xmatch"
 
 
