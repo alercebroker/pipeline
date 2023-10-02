@@ -43,18 +43,40 @@ class FeaturesComputer(GenericStep):
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
 
-    def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(features, self.features_extractor)
+    def produce_to_scribe(self, features: pd.DataFrame, oids={}):
+        commands = parse_scribe_payload(features, self.features_extractor, oids=oids)
 
         for command in commands:
             self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def execute(self, messages):
         detections, non_detections, xmatch = [], [], []
-
+        oids = {}
         for message in messages:
-            detections.extend(message.get("detections", []))
-            non_detections.extend(message.get("non_detections", []))
+            # need to create a hash to store aid to oids relations
+            dets = message.get("detections", [])
+            for det in dets:
+                if det["sid"] != "ZTF":
+                    continue
+                _oids = oids.get(det["aid"], [])
+                if det["oid"] not in _oids:
+                    _oids.append(det["oid"])
+                    oids[det["aid"]] = _oids    
+
+            detections.extend(dets)
+
+            # same thing for detections
+            non_dets = message.get("non_detections", [])
+            for nd in non_dets:
+                if nd["sid"] != "ZTF":
+                    continue
+                
+                _oids = oids.get(nd["aid"], [])
+                if det["oid"] not in _oids:
+                    _oids.append(nd["oid"])
+                    oids[nd["aid"]] = _oids
+
+            non_detections.extend(non_dets)
             xmatch.append(
                 {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
             )
@@ -65,7 +87,7 @@ class FeaturesComputer(GenericStep):
         features = features_extractor.generate_features()
 
         if len(features) > 0:
-            self.produce_to_scribe(features)
+            self.produce_to_scribe(features, oids=oids)
 
         output = parse_output(features, messages, self.features_extractor)
         return output

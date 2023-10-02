@@ -92,16 +92,19 @@ class LateClassifier(GenericStep):
         model_input = create_input_dto(messages)
         forced = []
         prv_candidates = []
-        dia_objet = []
+        dia_object = []
+        oids = {}
+        # already iterates over so this is easier
         for det in model_input._detections._value.iterrows():
+            print(det[1]["oid"])
             if det[1]["forced"]:
                 forced.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
                 if det[1]["parent_candid"] is not None:
                     prv_candidates.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
         if not self.model.can_predict(model_input):
             self.logger.info("No data to process")
             return (
@@ -117,7 +120,7 @@ class LateClassifier(GenericStep):
             f"The prv candidates detections are: {prv_candidates}"
         )
         self.logger.debug(
-            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}"
+            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_object}"
         )
         self.logger.info(
             "The number of features is: %i", len(model_input.features)

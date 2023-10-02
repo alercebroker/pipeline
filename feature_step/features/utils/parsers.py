@@ -1,10 +1,11 @@
 import logging
 import numpy as np
 import pandas as pd
+from typing import List
 from features.core.utils.functions import collapse_fid_columns
 
 
-def parse_scribe_payload(features: pd.DataFrame, extractor_class):
+def parse_scribe_payload(features: pd.DataFrame, extractor_class, oids={}):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 
@@ -16,7 +17,7 @@ def parse_scribe_payload(features: pd.DataFrame, extractor_class):
 
     features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
     if extractor_class.NAME == "ztf_lc_features":
-        return _parse_scribe_payload_ztf(features, extractor_class)
+        return _parse_scribe_payload_ztf(features, extractor_class, oids)
     if extractor_class.NAME == "elasticc_lc_features":
         return _parse_scribe_payload_elasticc(features, extractor_class)
     else:
@@ -56,7 +57,7 @@ def _parse_scribe_payload_elasticc(features, extractor_class):
     return commands_list
 
 
-def _parse_scribe_payload_ztf(features, extractor_class):
+def _parse_scribe_payload_ztf(features, extractor_class, oids={}):
     commands_list = []
     for aid, features_df in features.iterrows():
         features_list = [
@@ -66,7 +67,7 @@ def _parse_scribe_payload_ztf(features, extractor_class):
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"_id": aid},
+            "criteria": {"_id": aid, "oid": oids.get(aid, [])},
             "data": {
                 "features_version": extractor_class.VERSION,
                 "features_group": extractor_class.NAME,
@@ -81,9 +82,9 @@ def _parse_scribe_payload_ztf(features, extractor_class):
 
 def parse_output(
     features: pd.DataFrame,
-    alert_data: list[dict],
+    alert_data: List[dict],
     extractor_class,
-) -> list[dict]:
+) -> List[dict]:
     """
     Parse output of the step. It uses the input data to extend the schema to
     add the features of each object, identified by its aid.

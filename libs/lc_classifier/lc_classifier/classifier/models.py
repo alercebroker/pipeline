@@ -34,6 +34,9 @@ class BaseClassifier(ABC):
         predicted_class_df.index.name = samples.index.name
         return predicted_class_df
 
+    def can_predict(self, data):
+        return True
+
     @abstractmethod
     def predict_proba(self, samples: pd.DataFrame) -> pd.DataFrame:
         pass
