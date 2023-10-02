@@ -14,7 +14,7 @@ mock_lightcurve = [
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa", "tid": "ATLAS-01a"},
+            {"candid": "aaa", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [],
         "magstats": [],
@@ -37,7 +37,7 @@ mock_lightcurves_list = [
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa", "tid": "ATLAS-01a"},
+            {"candid": "aaa", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [],
     },
@@ -56,7 +56,7 @@ mock_lightcurves_list = [
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa2", "tid": "ATLAS-01a"},
+            {"candid": "aaa2", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [
             {
