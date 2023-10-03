@@ -121,7 +121,8 @@ def is_responsive_psql(url):
         return True
     except Exception:
         return False
-    
+
+
 @pytest.fixture(scope="session")
 def psql_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""

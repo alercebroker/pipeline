@@ -22,19 +22,20 @@ class LightcurveStep(GenericStep):
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
-        aids, detections, non_detections = set(), [], []
+        aids, detections, non_detections, oids = set(), [], [], {}
         last_mjds = {}
         for msg in messages:
             aid = msg["aid"]
+            oids.update((det["oid"],aid) for det in msg["detections"] if det["sid"] == "ztf")
             aids.add(aid)
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
-
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
             "aids": aids,
+            "oids": oids,
             "last_mjds": last_mjds,
             "detections": detections,
             "non_detections": non_detections,
@@ -44,47 +45,19 @@ class LightcurveStep(GenericStep):
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
 
 
-        aids = messages["aids"]
-        #db_mongo_detections = self.get_mongo_detections(aids)
-        #db_mongo_non_detections = self.get_mongo_non_detections(aids)
-        #db_mongo_forced_photometries = self.get_mongo_forced_photometries(aids)
-        db_detections = self.db_mongo.database[DETECTION].aggregate(
-            [
-                {"$match": {"aid": {"$in": list(messages["aids"])}}},
-                {
-                    "$addFields": {
-                        "candid": "$_id",
-                        "forced": False,
-                        "new": False,
-                    }
-                },
-                {"$project": {"_id": False, "evilDocDbHack": False}},
-            ]
-        )
-        db_non_detections = self.db_mongo.database[NON_DETECTION].find(
-            {"aid": {"$in": list(messages["aids"])}},
-            {"_id": False, "evilDocDbHack": False},
-        )
-
-        db_forced_photometries = self.db_mongo.database[FORCED_PHOTOMETRY].aggregate(
-            [
-                {"$match": {"aid": {"$in": list(messages["aids"])}}},
-                {
-                    "$addFields": {
-                        "candid": "$_id",
-                        "forced": True,
-                        "new": False,
-                    }
-                },
-                {"$project": {"_id": False, "evilDocDbHack": False}},
-            ]
-        )
-
+        aids = list(messages["aids"])
+        oids = list(messages["oids"])
+        db_mongo_detections = self._get_mongo_detections(aids)
+        db_mongo_non_detections = self._get_mongo_non_detections(aids)
+        db_mongo_forced_photometries = self._get_mongo_forced_photometries(aids)
+        db_sql_detections = self._get_sql_detections(oids)
+        db_sql_non_detections = self._get_sql_non_detections(oids)
+        db_sql_forced_photometries = self._get_sql_forced_photometries(oids)        
         detections = pd.DataFrame(
-            messages["detections"] + list(db_detections) + list(db_forced_photometries)
+            messages["detections"] + list(db_mongo_detections) + list(db_mongo_forced_photometries)
         )
         non_detections = pd.DataFrame(
-            messages["non_detections"] + list(db_non_detections)
+            messages["non_detections"] + list(db_mongo_non_detections)
         )
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["candid"] = detections["candid"].astype(str)
@@ -106,23 +79,56 @@ class LightcurveStep(GenericStep):
             "last_mjds": messages["last_mjds"]
         }
 
-    def get_sql_detections(aids):
-        return
-    
-    def get_sql_non_detections(aids):
+    def _ztf_to_mst():
         return 
 
-    def get_sql_forced_photometries(aids):
+    def _get_sql_detections(self,aids):
         return
     
-    def get_mongo_detections(aids):
-        return
-    
-    def get_mongo_non_detections(aids):
+    def _get_sql_non_detections(self,aids):
         return 
 
-    def get_mongo_forced_photometries(aids):
+    def _get_sql_forced_photometries(self,aids):
         return
+    
+    def _get_mongo_detections(self,aids):
+        db_detections = self.db_mongo.database[DETECTION].aggregate(
+            [
+                {"$match": {"aid": {"$in": aids}}},
+                {
+                    "$addFields": {
+                        "candid": "$_id",
+                        "forced": False,
+                        "new": False,
+                    }
+                },
+                {"$project": {"_id": False, "evilDocDbHack": False}},
+            ]
+        )
+        return db_detections
+    
+    def _get_mongo_non_detections(self,aids):
+        db_non_detections = self.db_mongo.database[NON_DETECTION].find(
+            {"aid": {"$in": aids}},
+            {"_id": False, "evilDocDbHack": False},
+        )
+        return db_non_detections
+
+    def _get_mongo_forced_photometries(self,aids):
+        db_forced_photometries = self.db_mongo.database[FORCED_PHOTOMETRY].aggregate(
+            [
+                {"$match": {"aid": {"$in": aids}}},
+                {
+                    "$addFields": {
+                        "candid": "$_id",
+                        "forced": True,
+                        "new": False,
+                    }
+                },
+                {"$project": {"_id": False, "evilDocDbHack": False}},
+            ]
+        )
+        return db_forced_photometries
 
 
     @classmethod

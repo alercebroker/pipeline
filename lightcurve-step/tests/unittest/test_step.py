@@ -10,49 +10,155 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         {
             "aid": "aid1",
             "detections": [
-                {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "extra_fields": {}},
+                {
+                    "aid": "aid1",
+                    "oid": "oid1",
+                    "sid": "ztf",
+                    "candid": "a",
+                    "mjd": 3,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
+                {
+                    "aid": "aid1",
+                    "oid": "oid2",
+                    "sid": "ztf",
+                    "candid": "b",
+                    "mjd": 2,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
         {
             "aid": "aid1",
             "detections": [
-                {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "extra_fields": {}},
+                {
+                    "aid": "aid1",
+                    "oid": "oid3",
+                    "sid": "ztf",
+                    "candid": "c",
+                    "mjd": 4,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
+                {
+                    "aid": "aid1",
+                    "oid": "oid1",
+                    "sid": "ztf",
+                    "candid": "b",
+                    "mjd": 2,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
         {
             "aid": "aid2",
             "detections": [
-                {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "extra_fields": {}},
-                {"aid": "aid2", "candid": "b", "mjd": 4, "has_stamp": True, "extra_fields": {}},
+                {
+                    "aid": "aid2",
+                    "oid": "oid6",
+                    "sid": "ztf",
+                    "candid": "c",
+                    "mjd": 5,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
+                {
+                    "aid": "aid2",
+                    "oid": "oid5",
+                    "sid": "atlas",
+                    "candid": "b",
+                    "mjd": 4,
+                    "has_stamp": True,
+                    "extra_fields": {},
+                },
             ],
             "non_detections": [{"mjd": 1, "oid": "i", "fid": "g"}],
         },
     ]
 
     output = LightcurveStep.pre_execute(messages)
-
     expected = {
         "aids": {"aid1", "aid2"},
+        "oids": {
+            "oid1": "aid1",
+            "oid2": "aid1",
+            "oid3": "aid1",
+            "oid6": "aid2",
+        },
+        "last_mjds": {"aid1": 4, "aid2": 5},
         "detections": [
-            {"aid": "aid1", "candid": "a", "mjd": 3, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid1", "candid": "c", "mjd": 4, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid1", "candid": "b", "mjd": 2, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid2", "candid": "c", "mjd": 5, "has_stamp": True, "new": True, "extra_fields": {}},
-            {"aid": "aid2", "candid": "b", "mjd": 4, "has_stamp": True, "new": True, "extra_fields": {}},
+            {
+                "aid": "aid1",
+                "oid": "oid1",
+                "sid": "ztf",
+                "candid": "a",
+                "mjd": 3,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid1",
+                "oid": "oid2",
+                "sid": "ztf",
+                "candid": "b",
+                "mjd": 2,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid1",
+                "oid": "oid3",
+                "sid": "ztf",
+                "candid": "c",
+                "mjd": 4,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid1",
+                "oid": "oid1",
+                "sid": "ztf",
+                "candid": "b",
+                "mjd": 2,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid2",
+                "oid": "oid6",
+                "sid": "ztf",
+                "candid": "c",
+                "mjd": 5,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid2",
+                "oid": "oid5",
+                "sid": "atlas",
+                "candid": "b",
+                "mjd": 4,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
         ],
         "non_detections": [
             {"mjd": 1, "oid": "i", "fid": "g"},
             {"mjd": 1, "oid": "i", "fid": "g"},
             {"mjd": 1, "oid": "i", "fid": "g"},
         ],
-        "last_mjds": { "aid1": 4, "aid2": 5 }
     }
-
     assert output == expected
 
 
@@ -90,58 +196,80 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
 
     message = {
         "aids": {"aid1", "aid2"},
+        "oids": {
+            "oid1": "aid1",
+            "oid2": "aid1",
+            "oid3": "aid1",
+            "oid6": "aid2",
+        },
+        "last_mjds": {"aid1": 4, "aid2": 5},
         "detections": [
             {
-                "candid": 97923792234,
-                "mjd": 1.0,
                 "aid": "aid1",
-                "parent_candid": "p_a",
+                "oid": "oid1",
+                "sid": "ztf",
+                "candid": "a",
+                "mjd": 3,
                 "has_stamp": True,
-                "sid": "SURVEY",
-                "fid": "g",
-                "new": True,
                 "extra_fields": {},
+                "new": True,
             },
             {
+                "aid": "aid1",
+                "oid": "oid2",
+                "sid": "ztf",
                 "candid": "b",
-                "mjd": 1.0,
-                "aid": "aid1",
-                "parent_candid": "p_b",
-                "has_stamp": False,
-                "sid": "SURVEY",
-                "fid": "g",
-                "new": True,
-                "extra_fields": {},
-            },
-            {
-                "candid": "c",
-                "mjd": 1.0,
-                "aid": "aid2",
-                "parent_candid": "p_c",
+                "mjd": 2,
                 "has_stamp": True,
-                "sid": "SURVEY",
-                "fid": "g",
-                "new": True,
                 "extra_fields": {},
+                "new": True,
             },
             {
-                "candid": "d",
-                "mjd": 1.0,
-                "aid": "aid2",
-                "parent_candid": "p_d",
-                "has_stamp": False,
-                "sid": "SURVEY",
-                "fid": "g",
-                "new": True,
+                "aid": "aid1",
+                "oid": "oid3",
+                "sid": "ztf",
+                "candid": "c",
+                "mjd": 4,
+                "has_stamp": True,
                 "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid1",
+                "oid": "oid1",
+                "sid": "ztf",
+                "candid": "b",
+                "mjd": 2,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid2",
+                "oid": "oid6",
+                "sid": "ztf",
+                "candid": "c",
+                "mjd": 5,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
+            {
+                "aid": "aid2",
+                "oid": "oid5",
+                "sid": "atlas",
+                "candid": "b",
+                "mjd": 4,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
             },
         ],
         "non_detections": [
-            {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-            {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-            {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
+            {"mjd": 1, "oid": "i", "fid": "g"},
+            {"mjd": 1, "oid": "i", "fid": "g"},
+            {"mjd": 1, "oid": "i", "fid": "g"},
         ],
-        "last_mjds": { "aid1": 1.0, "aid2": 1.0 }
     }
 
     output = step.execute(message)
@@ -197,7 +325,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
             {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
         ],
-        "last_mjds": { "aid1": 1.0, "aid2": 1.0 },
+        "last_mjds": {"aid1": 1.0, "aid2": 1.0},
     }
 
     exp_dets = pd.DataFrame(expected["detections"])
@@ -227,7 +355,14 @@ def test_pre_produce_restores_messages():
                     "new": True,
                     "extra_fields": {"diaObject": b"bainari"},
                 },
-                {"candid": "c", "mjd": 1, "new": True, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
+                {
+                    "candid": "c",
+                    "mjd": 1,
+                    "new": True,
+                    "has_stamp": True,
+                    "aid": "AID2",
+                    "extra_fields": {},
+                },
                 {
                     "candid": "MOST_RECENT",
                     "mjd": 2,
@@ -236,7 +371,14 @@ def test_pre_produce_restores_messages():
                     "new": False,
                     "extra_fields": {"diaObject": [{"a": "b"}]},
                 },
-                {"candid": "b", "mjd": 1, "new": False, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {
+                    "candid": "b",
+                    "mjd": 1,
+                    "new": False,
+                    "has_stamp": False,
+                    "aid": "AID2",
+                    "extra_fields": {},
+                },
             ]
         ),
         "non_detections": pd.DataFrame(
@@ -245,7 +387,7 @@ def test_pre_produce_restores_messages():
                 {"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"},
             ]
         ),
-        "last_mjds": { "AID1": 1, "AID2": 1 }
+        "last_mjds": {"AID1": 1, "AID2": 1},
     }
 
     output = LightcurveStep.pre_produce(message)
@@ -269,8 +411,22 @@ def test_pre_produce_restores_messages():
         {
             "aid": "AID2",
             "detections": [
-                {"candid": "c", "mjd": 1, "new": True, "has_stamp": True, "aid": "AID2", "extra_fields": {}},
-                {"candid": "b", "mjd": 1, "new": False, "has_stamp": False, "aid": "AID2", "extra_fields": {}},
+                {
+                    "candid": "c",
+                    "mjd": 1,
+                    "new": True,
+                    "has_stamp": True,
+                    "aid": "AID2",
+                    "extra_fields": {},
+                },
+                {
+                    "candid": "b",
+                    "mjd": 1,
+                    "new": False,
+                    "has_stamp": False,
+                    "aid": "AID2",
+                    "extra_fields": {},
+                },
             ],
             "non_detections": [{"mjd": 1, "oid": "b", "fid": 1, "aid": "AID2"}],
         },
