@@ -1,0 +1,98 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: sorting-hat
+
+image:
+  repository: ghcr.io/alercebroker/sorting_hat_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    memory: 750M
+    cpu: 750m
+
+autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 90
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+loggingDebug: false
+configmap:
+  consumerTopics: ""
+  topicStrategy:
+    enabled: false
+    topicFormat: ""
+    dateFormat: ""
+    changeHour: ""
+  consumerGroupId: ""
+  consumerServer: ""
+  consumerClass: ""
+  producerServer: ""
+  producerTopic: ""
+  producerMessageMaxBytes: ""
+  metricsTopic: ""
+  metricsServer: ""
+  mongoSecretName: ""
+  runConesearch: ""
+  useProfiling: ""
+  classPrefix: ""
+  pyroscopeServer: "http://pyroscope.pyroscope:4040"
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: false
+      username: ""
+      password: ""
+    producer:
+      enabled: false
+      username: ""
+      password: ""
+    metrics:
+      enabled: false
+      username: ""
+      password: ""
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+# Variables to add to deployment template
+# These are yaml formatted as received by `env` field of the container spec
+extraEnvVariables:
+  ##
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS

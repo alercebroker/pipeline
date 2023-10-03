@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ include "s3-step.fullname" . }}-atlas'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "s3-step.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.atlas.type }}
+  ports:
+    - port: {{ .Values.service.atlas.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: '{{ include "s3-step.name" . }}-atlas'
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ include "s3-step.fullname" . }}-ztf'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "s3-step.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.ztf.type }}
+  ports:
+    - port: {{ .Values.service.ztf.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: '{{ include "s3-step.name" . }}-ztf'
+    app.kubernetes.io/instance: {{ .Release.Name }}

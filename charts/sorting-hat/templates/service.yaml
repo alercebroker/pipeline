@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ include "sorting-hat.fullname" . }}-ztf'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "sorting-hat.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sorting-hat.selectorLabels" . | nindent 4 }}
+---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ include "sorting-hat.fullname" . }}-atlas'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "sorting-hat.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sorting-hat.selectorLabels" . | nindent 4 }}
