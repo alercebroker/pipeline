@@ -90,18 +90,26 @@ class LateClassifier(GenericStep):
         self.logger.debug("Messages received:\n", messages)
         self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
+        self.oids = {}
         forced = []
         prv_candidates = []
-        dia_objet = []
+        dia_object = []
         for det in model_input._detections._value.iterrows():
             if det[1]["forced"]:
                 forced.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
                 if det[1]["parent_candid"] is not None:
                     prv_candidates.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
+            # oid hack for ztf
+            if self.isztf:
+                oids = self.oids.get(det[0], [])
+                if det[1]["oid"] not in oids:
+                    oids.append(det[1]["oid"])
+                    self.oids[det[0]] = oids
+
         if not self.model.can_predict(model_input):
             self.logger.info("No data to process")
             return (
@@ -117,7 +125,7 @@ class LateClassifier(GenericStep):
             f"The prv candidates detections are: {prv_candidates}"
         )
         self.logger.debug(
-            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}"
+            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_object}"
         )
         self.logger.info(
             "The number of features is: %i", len(model_input.features)
@@ -148,7 +156,9 @@ class LateClassifier(GenericStep):
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
         parsed_result = self.scribe_parser.parse(
-            result[0], classifier_version=self.classifier_version
+            result[0],
+            classifier_version=self.classifier_version,
+            oids=self.oids,
         )
         self.produce_scribe(parsed_result.value)
         return result

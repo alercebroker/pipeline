@@ -2,19 +2,19 @@ import unittest
 from pprint import pprint
 from pymongo.operations import InsertOne, UpdateOne
 
-from mongo_scribe.command.exceptions import (
+from mongo_scribe.mongo.command.exceptions import (
     NoFeatureProvidedException,
     NoFeatureVersionProvidedException,
     NoFeatureGroupProvidedException,
 )
 
-from mongo_scribe.command.commands import (
+from mongo_scribe.mongo.command.commands import (
     InsertCommand,
     UpdateCommand,
     UpdateProbabilitiesCommand,
     UpdateFeaturesCommand,
 )
-from mongo_scribe.command.exceptions import (
+from mongo_scribe.mongo.command.exceptions import (
     NoDataProvidedException,
     UpdateWithNoCriteriaException,
     NoCollectionProvidedException,
