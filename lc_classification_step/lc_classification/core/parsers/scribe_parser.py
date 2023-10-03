@@ -91,7 +91,6 @@ class ScribeParser(KafkaParser):
                 }
                 for class_name in class_names:
                     command["data"].update({class_name: row[class_name]})
-                print(command)
                 commands.append(command)
             return classifications_by_classifier
 
