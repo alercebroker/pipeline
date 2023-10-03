@@ -3,7 +3,6 @@
 import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers.kafka import KafkaProducer
-import glob
 import os
 import pathlib
 from tests.data.message_factory import (

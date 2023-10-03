@@ -18,25 +18,22 @@ class ELAsTiCCFeatureExtractor:
     BANDS = ("u", "g", "r", "i", "z", "Y")
     BANDS_MAPPING = {}
 
-    def __init__(
-        self,
-        detections: List[dict],
-        non_detections: List[dict],
-        xmatch: List[dict],
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         self.preprocessor = kwargs.get(
             "preprocessor", ElasticcPreprocessor(stream=True)
         )
         self.extractor = kwargs.get(
             "extractor", ElasticcFeatureExtractor(round=2)
         )
-        self.detections = detections
 
-    def generate_features(self):
+    def generate_features(
+            self,
+            detections,
+            non_detections,
+            xmatches):
+
         lightcurves = self._create_lightcurve_dataframe(
-            copy.deepcopy(self.detections)
-        )
+            copy.deepcopy(detections))
         input_snids = lightcurves.index.unique().values
         metadata = self._create_metadata_dataframe(lightcurves)
         metadata = self.preprocessor.preprocess_metadata(metadata)

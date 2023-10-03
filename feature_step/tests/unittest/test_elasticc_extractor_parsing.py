@@ -16,8 +16,8 @@ def test_create_lightcurve_dataframe():
         aid="aid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
-        preprocessor, lc_classifier_extractor, detections
-    )
+        preprocessor=preprocessor, extractor=lc_classifier_extractor)
+
     lightcurve_dataframe = step_extractor._create_lightcurve_dataframe(
         detections
     )
@@ -39,8 +39,8 @@ def test_create_metadata_dataframe():
         aid="aid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
-        preprocessor, lc_classifier_extractor, detections
-    )
+        preprocessor=preprocessor, extractor=lc_classifier_extractor)
+
     lightcurve_dataframe = step_extractor._create_lightcurve_dataframe(
         detections
     )
@@ -57,8 +57,8 @@ def test_preprocessor_can_run_with_parsed_data():
         aid="aid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
-        preprocessor, lc_classifier_extractor, detections
-    )
+        preprocessor=preprocessor, extractor=lc_classifier_extractor)
+
     lightcurve_dataframe = step_extractor._create_lightcurve_dataframe(
         detections
     )

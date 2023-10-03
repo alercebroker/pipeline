@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-import pandas as pd
 from tests.data.data_for_unittest import (
     messages_for_parsing,
     features_df_for_parse,

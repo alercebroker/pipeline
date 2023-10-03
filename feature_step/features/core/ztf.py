@@ -44,25 +44,39 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     MIN_REAL_BOGUS = 0.55
     MAX_ERROR = 1.0
 
-    def __init__(
-        self,
-        detections: list[dict] | pd.DataFrame,
-        non_detections: list[dict] | pd.DataFrame = None,
-        xmatches: list[dict] | pd.DataFrame = None,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         if kwargs.pop("legacy", False):
+            self.legacy = True
+        else:
+            self.legacy = False
+
+        super().__init__()
+
+    def generate_features(
+            self,
+            detections: list[dict] | pd.DataFrame,
+            non_detections: list[dict] | pd.DataFrame,
+            xmatches: list[dict] | pd.DataFrame,
+            exclude: set[str] | None = None,
+            **kwargs) -> pd.DataFrame:
+
+        if self.legacy:
             metadata = kwargs.pop("metadata", None)
             detections, non_detections, xmatches = self._legacy(
-                detections, non_detections, xmatches, metadata
-            )
+                detections, non_detections, xmatches, metadata)
 
-        super().__init__(detections, non_detections, xmatches)
-
+        self.detections = detections
+        self.non_detections = non_detections
+        self.xmatches = xmatches
         # Change isdiffpos from 1 or -1 to True or False
         self.detections.add_field(
             "isdiffpos", self.detections.alerts()["isdiffpos"] > 0
         )
+
+
+        features = super().generate_features(
+            self.detections, self.non_detections, self.xmatches, exclude)
+        return features
 
     @classmethod
     def _legacy(cls, detections, non_detections, xmatches, metadata):

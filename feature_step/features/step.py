@@ -27,14 +27,14 @@ class FeaturesComputer(GenericStep):
     """
 
     def __init__(
-        self,
-        extractor: type[ZTFFeatureExtractor]
-        | Callable[..., ELAsTiCCFeatureExtractor],
-        config=None,
-        **step_args,
+            self,
+            extractor: type[ZTFFeatureExtractor]
+            | Callable[..., ELAsTiCCFeatureExtractor],
+            config=None,
+            **step_args
     ):
         super().__init__(config=config, **step_args)
-        self.features_extractor = extractor
+        self.features_extractor = extractor()
 
         scribe_class = get_class(
             self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
@@ -59,10 +59,8 @@ class FeaturesComputer(GenericStep):
                 {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
             )
 
-        features_extractor = self.features_extractor(
-            detections, non_detections, xmatch
-        )
-        features = features_extractor.generate_features()
+        features = self.features_extractor.generate_features(
+            detections, non_detections, xmatch)
 
         if len(features) > 0:
             self.produce_to_scribe(features)

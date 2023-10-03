@@ -106,13 +106,7 @@ class BaseFeatureExtractor(abc.ABC):
         "LinearTrend",
     )
 
-    def __init__(
-        self,
-        detections: list[dict] | pd.DataFrame,
-        non_detections: list[dict] | pd.DataFrame = None,
-        xmatches: list[dict] | pd.DataFrame = None,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         """Initialize feature extractor.
 
         Detections, non-detections and cross-matches can come from multiple objects. Features are computed per object.
@@ -125,42 +119,6 @@ class BaseFeatureExtractor(abc.ABC):
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
 
         self.logger.info("Initializing feature extractor")
-        common = dict(surveys=self.SURVEYS, bands=self.BANDS)
-
-        if isinstance(detections, pd.DataFrame):
-            detections = detections.reset_index().to_dict("records")
-        self.detections = DetectionsHandler(
-            detections,
-            extras=self.EXTRA_COLUMNS,
-            corr=self.CORRECTED,
-            **common,
-        )
-
-        self.logger.info(
-            f"Total objects before clearing: {self.detections.ids().size}"
-        )
-        self._discard_detections()
-        self.logger.info(
-            f"Total objects after clearing: {self.detections.ids().size}"
-        )
-
-        first_mjd = functions.fill_index(
-            self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS
-        )
-
-        non_detections = non_detections if non_detections is not None else []
-        if isinstance(non_detections, pd.DataFrame):
-            non_detections = non_detections.reset_index().to_dict("records")
-        self.non_detections = NonDetectionsHandler(
-            non_detections, first_mjd=first_mjd, **common
-        )
-        self.non_detections.match(self.detections)
-
-        if isinstance(xmatches, pd.DataFrame):
-            xmatches = xmatches.reset_index().to_dict("records")
-        self.xmatches = self._create_xmatches(
-            xmatches or []
-        )  # If None, use empty list
         if kwargs:
             raise ValueError(f"Unrecognized kwargs: {', '.join(kwargs)}")
         self.logger.info("Finished initialization")
@@ -248,9 +206,50 @@ class BaseFeatureExtractor(abc.ABC):
             {"iqr": self.detections.agg("mag_ml", stats.iqr, by_fid=True)}
         )
 
+    def _input_validations(self, detections, non_detections, xmatches):
+        common = dict(surveys=self.SURVEYS, bands=self.BANDS)
+
+        if isinstance(detections, pd.DataFrame):
+            detections = detections.reset_index().to_dict("records")
+        self.detections = DetectionsHandler(
+            detections,
+            extras=self.EXTRA_COLUMNS,
+            corr=self.CORRECTED,
+            **common,
+        )
+
+        self.logger.info(
+            f"Total objects before clearing: {self.detections.ids().size}"
+        )
+        self._discard_detections()
+        self.logger.info(
+            f"Total objects after clearing: {self.detections.ids().size}"
+        )
+
+        first_mjd = functions.fill_index(
+            self.detections.agg("mjd", "min", by_fid=True), fid=self.BANDS
+        )
+
+        non_detections = non_detections if non_detections is not None else []
+        if isinstance(non_detections, pd.DataFrame):
+            non_detections = non_detections.reset_index().to_dict("records")
+        self.non_detections = NonDetectionsHandler(
+            non_detections, first_mjd=first_mjd, **common
+        )
+        self.non_detections.match(self.detections)
+
+        if isinstance(xmatches, pd.DataFrame):
+            xmatches = xmatches.reset_index().to_dict("records")
+        self.xmatches = self._create_xmatches(
+            xmatches or []
+        )  # If None, use empty list
+
     def generate_features(
-        self, exclude: set[str] | None = None
-    ) -> pd.DataFrame:
+            self,
+            detections: list[dict] | pd.DataFrame,
+            non_detections: list[dict] | pd.DataFrame,
+            xmatches: list[dict] | pd.DataFrame,
+            exclude: set[str] | None = None) -> pd.DataFrame:
         """Create a data frame with all required features.
 
         Args:
@@ -259,6 +258,8 @@ class BaseFeatureExtractor(abc.ABC):
         Returns:
             pd.DataFrame: Feature indexed by object with two-level columns (feature name and band)
         """
+
+        self._input_validations(detections, non_detections, xmatches)
         if not self.detections.ids().size:
             self.logger.debug(
                 "No objects present after filtering, skipping feature generation"

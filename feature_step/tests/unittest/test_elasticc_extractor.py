@@ -16,12 +16,11 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (5, 498))
 
@@ -42,12 +41,11 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (10, 498))
 
@@ -65,12 +63,11 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -83,12 +80,11 @@ class TestElasticcExtractor(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -103,12 +99,11 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -121,12 +116,11 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -139,12 +133,11 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -157,12 +150,11 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
 
@@ -175,11 +167,10 @@ class TestElasticcExtractorColorBordercases(unittest.TestCase):
         for message in messages:
             detections.extend(message.get("detections", []))
 
-        extractor = ELAsTiCCFeatureExtractor(
+        extractor = ELAsTiCCFeatureExtractor()
+        result = extractor.generate_features(
             detections=detections,
             non_detections=[],
-            xmatch=[],
-        )
-        result = extractor.generate_features()
+            xmatch=[])
 
         self.assertEquals(result.shape, (1, 498))
