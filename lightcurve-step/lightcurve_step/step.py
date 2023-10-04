@@ -6,6 +6,9 @@ from typing import List
 from apf.core.step import GenericStep
 from .database_mongo import DatabaseConnection
 from .database_sql import PSQLConnection
+from sqlalchemy import select, text
+from db_plugins.db.sql import Detection, NonDetection
+
 
 DETECTION = "detection"
 NON_DETECTION = "non_detection"
@@ -79,16 +82,40 @@ class LightcurveStep(GenericStep):
             "last_mjds": messages["last_mjds"]
         }
 
-    def _ztf_to_mst():
+    def _ztf_to_mst(ztf_model, format, aid):
+
+        if format == "Detection":
+            pass
+        elif format == "NonDetection":
+            pass
+        elif format == "Forced":
+            pass
+
         return 
 
-    def _get_sql_detections(self,aids):
-        return
+    def _get_sql_detections(self,oids):
+        results = []
+        for oid in oids:
+            with self.db_sql as session:
+                stmt = select(Detection, text("'ztf'")).filter(
+                    Detection.oid == oid
+                )
+                results.append(self._ztf_to_mst(session.execute(stmt)), format = "Detection", aid = oids[oid]) 
+
+        return results
     
-    def _get_sql_non_detections(self,aids):
-        return 
+    def _get_sql_non_detections(self,oids):
+        results = []
+        for oid in oids:
+            with self.db_sql as session:
+                stmt = select(NonDetection, text("'ztf'")).filter(
+                    NonDetection.oid == oid
+                )
+                results.append(session.execute(stmt)) 
 
-    def _get_sql_forced_photometries(self,aids):
+        return results
+
+    def _get_sql_forced_photometries(self,oids):
         return
     
     def _get_mongo_detections(self,aids):
