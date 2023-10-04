@@ -140,3 +140,4 @@ values.production.yaml
 values.staging.yml
 values.production.yml
 *.tgz
+.vscode/
