@@ -1,8 +1,8 @@
 import unittest
 
-from mongo_scribe.command.decode import decode_message, db_command_factory
-from mongo_scribe.command.exceptions import WrongFormatCommandException
-from mongo_scribe.command.commands import (
+from mongo_scribe.mongo.command.decode import decode_message, db_command_factory
+from mongo_scribe.mongo.command.exceptions import WrongFormatCommandException
+from mongo_scribe.mongo.command.commands import (
     InsertCommand,
     UpdateCommand,
     UpdateProbabilitiesCommand,

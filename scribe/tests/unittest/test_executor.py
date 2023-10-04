@@ -1,8 +1,8 @@
 import unittest
 from unittest import mock
 
-from mongo_scribe.db.executor import ScribeCommandExecutor
-from mongo_scribe.command.commands import InsertCommand
+from mongo_scribe.mongo.db.executor import ScribeCommandExecutor
+from mongo_scribe.mongo.command.commands import InsertCommand
 
 
 class TestExecutor(unittest.TestCase):
