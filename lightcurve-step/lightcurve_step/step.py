@@ -8,6 +8,7 @@ from .database_mongo import DatabaseConnection
 from .database_sql import PSQLConnection
 from sqlalchemy import select, text
 from db_plugins.db.sql import Detection, NonDetection
+from db_plugins.db.mongo import Detection as MongoDetection, NonDetection as MongoNonDetection
 
 
 DETECTION = "detection"
@@ -85,7 +86,46 @@ class LightcurveStep(GenericStep):
     def _ztf_to_mst(ztf_model, format, aid):
 
         if format == "Detection":
-            pass
+            fields = {
+                "tid",
+                "sid",
+                "aid",
+                "oid",
+                "mjd",
+                "fid",
+                "ra",
+                "e_ra",
+                "dec",
+                "e_dec",
+                "magpsf",
+                "sigmapsf",
+                "magpsf_corr",
+                "sigmapsf_corr",
+                "sigmapsf_corr_ext",
+                "isdiffpos",
+                "corrected",
+                "dubious",
+                "parent_candid",
+                "has_stamp",
+            }
+             # e_ra, e_dec tampoco estan en sql buscar en survey_parser como se calculan  
+            extra_fields = {}
+            for field, value in ztf_model.items():
+                if field not in fields:
+                    extra_fields[field] = value
+            return MongoDetection(
+                **ztf_model,
+                sid = "ztf",
+                tid = "ztf",
+                aid = aid,
+                mag = ztf_model["magpsf"],
+                e_mag = ztf_model["sigmapsf"],
+                mag_corr = ztf_model["magpsf_corr"],
+                e_mag_corr = ztf_model["sigmapsf_corr"],
+                e_mag_corr_ext = ztf_model["sigmapsf_corr_ext"],
+                extra_fields = extra_fields,
+
+            )
         elif format == "NonDetection":
             pass
         elif format == "Forced":
