@@ -1,0 +1,64 @@
+---
+{{- if .Values.autoscaling.atlas.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: '{{ include "s3-step.fullname" . }}-atlas'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "s3-step.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: '{{ include "s3-step.fullname" . }}-atlas'
+  minReplicas: {{ .Values.autoscaling.atlas.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.atlas.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.atlas.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.atlas.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.atlas.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.atlas.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+---
+{{- if .Values.autoscaling.ztf.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: '{{ include "s3-step.fullname" . }}-ztf'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "s3-step.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: '{{ include "s3-step.fullname" . }}-ztf'
+  minReplicas: {{ .Values.autoscaling.ztf.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.ztf.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.ztf.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.ztf.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.ztf.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.ztf.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
