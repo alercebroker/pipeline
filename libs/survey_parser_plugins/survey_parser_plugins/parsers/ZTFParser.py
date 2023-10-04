@@ -65,6 +65,7 @@ class ZTFParser(SurveyParser):
             "cutoutDifference",
             "brokerIngestTimestamp",
             "surveyPublishTimestamp",
+            "fp_hists",
         ]
         candidate.update({k: v for k, v in message.items() if k in fields_from_top})
         return super(ZTFParser, cls).parse_message(candidate)

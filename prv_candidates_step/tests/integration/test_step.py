@@ -27,7 +27,7 @@ def assert_result_has_prv_detections(message):
     if message["detections"][0]["sid"].lower() == "atlas":
         assert len(message["detections"]) == 1
     else:
-        assert len(message["detections"]) == 3
+        assert len(message["detections"]) == 4
 
 
 def assert_result_has_non_detections(message):

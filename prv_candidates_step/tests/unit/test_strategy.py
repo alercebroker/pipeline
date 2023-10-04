@@ -12,7 +12,7 @@ def test_compute_ztf():
     alert["sid"] = "ZTF"
     alert["extra_fields"] = ztf_extra_fields_generator()
     result = PreviousCandidatesExtractor([alert]).extract_all()
-    assert len(result[0]["detections"]) == 3
+    assert len(result[0]["detections"]) == 4
     assert len(result[0]["non_detections"]) == 2
     assert result[0]["detections"][1]["aid"] == alert["aid"]
     assert result[0]["detections"][2]["aid"] == alert["aid"]
