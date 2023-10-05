@@ -3,11 +3,11 @@
 
 # Light Curve Classifier Library
 
-## Installing late_classifier
+## Installation
 
 ```
-git clone https://github.com/alercebroker/lc_classifier.git
-python -m pip install -r requirements.txt
+git clone https://github.com/alercebroker/pipeline.git
+cd libs/lc_classifier
 python -m pip install -e .
 ```
 
@@ -113,9 +113,14 @@ The container comes with a jupyter notebook and some examples in `http://localho
 If you use this library, please cite our work:
 
 ```
-@inproceedings{sanchez2020alert,
-  title={Alert Classification for the ALeRCE Broker System: The Light Curve Classifier},
+@article{sanchez2021alert,
+  title={Alert classification for the alerce broker system: The light curve classifier},
   author={S{\'a}nchez-S{\'a}ez, P and Reyes, I and Valenzuela, C and F{\"o}rster, F and Eyheramendy, S and Elorrieta, F and Bauer, FE and Cabrera-Vives, G and Est{\'e}vez, PA and Catelan, M and others},
-  year={2020}
+  journal={The Astronomical Journal},
+  volume={161},
+  number={3},
+  pages={141},
+  year={2021},
+  publisher={IOP Publishing}
 }
 ```
