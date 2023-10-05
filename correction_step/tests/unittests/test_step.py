@@ -145,7 +145,7 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         data = {
             "collection": "detection" if not det["forced"] else "forced_photometry",
             "type": "update",
-            "criteria": {"_id": det["candid"]},
+            "criteria": {"_id": det["candid"], "candid": det["candid"]},
             "data": {k: v for k, v in det.items() if k not in ["candid", "forced", "new"]},
             "options": {"upsert": True, "set_on_insert": not det["has_stamp"]},
         }
