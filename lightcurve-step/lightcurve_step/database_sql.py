@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker, Session
+from db_plugins.db.sql.models import Detection, NonDetection
 
 
 class PSQLConnection:
@@ -26,3 +27,27 @@ class PSQLConnection:
             raise
         finally:
             session.close()
+
+
+def default_parser(data):
+    return data
+
+
+def _get_sql_detections(
+    oids: dict, db_sql: PSQLConnection, parser: Callable = default_parser
+):
+    with db_sql.session() as session:
+        stmt = select(Detection).where(Detection.oid.in_(oids))
+        detections = session.execute(stmt).all()
+        return parser(detections, oids=oids)
+
+
+def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
+    with db_sql.session() as session:
+        stmt = select(Detection).where(NonDetection.oid.in_(oids))
+        detections = session.execute(stmt).all()
+        return parser(detections, oids=oids)
+
+
+def _get_sql_forced_photometries(oids, db_sql, parser: Callable = default_parser):
+    return

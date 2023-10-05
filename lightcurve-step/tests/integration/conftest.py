@@ -9,6 +9,7 @@ from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import psycopg2
+from db_plugins.db.sql._connection import PsqlDatabase
 
 
 @pytest.fixture(scope="session")
@@ -133,3 +134,18 @@ def psql_service(docker_ip, docker_services):
         timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
     )
     return server
+
+
+@pytest.fixture()
+def psql_conn(psql_service):
+    config = {
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "HOST": "localhost",
+        "PORT": "5432",
+        "DB_NAME": "postgres",
+    }
+    psql_conn = PsqlDatabase(config)
+    psql_conn.create_db()
+    yield psql_conn
+    psql_conn.drop_db()

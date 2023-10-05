@@ -4,23 +4,35 @@ import pandas as pd
 import pickle
 from typing import List
 from apf.core.step import GenericStep
-from .database_mongo import DatabaseConnection
-from .database_sql import PSQLConnection
-from sqlalchemy import select, text
-from db_plugins.db.sql.models import Detection, NonDetection
-from db_plugins.db.mongo.models import Detection as MongoDetection, NonDetection as MongoNonDetection
-
-
-DETECTION = "detection"
-NON_DETECTION = "non_detection"
-FORCED_PHOTOMETRY = "phorced_photometry"
+from .database_mongo import (
+    DatabaseConnection,
+    _get_mongo_non_detections,
+    _get_mongo_detections,
+    _get_mongo_forced_photometries,
+)
+from .database_sql import (
+    PSQLConnection,
+    _get_sql_detections,
+    _get_sql_forced_photometries,
+    _get_sql_non_detections,
+)
+from db_plugins.db.mongo.models import (
+    Detection as MongoDetection,
+    NonDetection as MongoNonDetection,
+)
 
 
 class LightcurveStep(GenericStep):
-    def __init__(self, config: dict, db_mongo: DatabaseConnection, db_sql: PSQLConnection , **kwargs):
+    def __init__(
+        self,
+        config: dict,
+        db_mongo: DatabaseConnection,
+        db_sql: PSQLConnection,
+        **kwargs,
+    ):
         super().__init__(config=config, **kwargs)
         self.db_mongo = db_mongo
-        self.db_sql = db_sql   
+        self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.last_mjd = {}
 
@@ -30,7 +42,9 @@ class LightcurveStep(GenericStep):
         last_mjds = {}
         for msg in messages:
             aid = msg["aid"]
-            oids.update((det["oid"],aid) for det in msg["detections"] if det["sid"] == "ztf")
+            oids.update(
+                {det["oid"]: aid for det in msg["detections"] if det["sid"] == "ztf"}
+            )
             aids.add(aid)
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
@@ -38,7 +52,7 @@ class LightcurveStep(GenericStep):
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
-            "aids": aids,
+            "aids": list(aids),
             "oids": oids,
             "last_mjds": last_mjds,
             "detections": detections,
@@ -48,20 +62,32 @@ class LightcurveStep(GenericStep):
     def execute(self, messages: dict) -> dict:
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
 
-
-        aids = list(messages["aids"])
-        oids = list(messages["oids"])
-        db_mongo_detections = self._get_mongo_detections(aids)
-        db_mongo_non_detections = self._get_mongo_non_detections(aids)
-        db_mongo_forced_photometries = self._get_mongo_forced_photometries(aids)
-        db_sql_detections = self._get_sql_detections(oids)
-        db_sql_non_detections = self._get_sql_non_detections(oids)
-        #db_sql_forced_photometries = self._get_sql_forced_photometries(oids)        
+        db_mongo_detections = _get_mongo_detections(messages["aids"], self.db_mongo)
+        db_mongo_non_detections = _get_mongo_non_detections(
+            messages["aids"], self.db_mongo
+        )
+        db_mongo_forced_photometries = _get_mongo_forced_photometries(
+            messages["aids"], self.db_mongo
+        )
+        db_sql_detections = _get_sql_detections(
+            messages["oids"], self.db_sql, self._parse_ztf_detection
+        )
+        db_sql_non_detections = _get_sql_non_detections(
+            messages["oids"], self.db_sql, self._parse_ztf_non_detection
+        )
+        db_sql_forced_photometries = self._get_sql_forced_photometries(
+            messages["oids"], self.db_sql, self._parse_ztf_forced_photometry
+        )
         detections = pd.DataFrame(
-            messages["detections"] + list(db_mongo_detections) + list(db_sql_detections) + list(db_mongo_forced_photometries)
+            messages["detections"]
+            + list(db_mongo_detections)
+            + list(db_sql_detections)
+            + list(db_mongo_forced_photometries)
         )
         non_detections = pd.DataFrame(
-            messages["non_detections"] + list(db_mongo_non_detections) + list(db_sql_non_detections)
+            messages["non_detections"]
+            + list(db_mongo_non_detections)
+            + list(db_sql_non_detections)
         )
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["candid"] = detections["candid"].astype(str)
@@ -80,132 +106,68 @@ class LightcurveStep(GenericStep):
         return {
             "detections": detections,
             "non_detections": non_detections,
-            "last_mjds": messages["last_mjds"]
+            "last_mjds": messages["last_mjds"],
         }
 
-    def _ztf_to_mst(ztf_model, format, aid):
-
-        if format == "Detection":
-            fields = {
-                "tid",
-                "sid",
-                "aid",
-                "oid",
-                "mjd",
-                "fid",
-                "ra",
-                "sigmara",
-                "dec",
-                "sigmadec",
-                "magpsf",
-                "sigmapsf",
-                "magpsf_corr",
-                "sigmapsf_corr",
-                "sigmapsf_corr_ext",
-                "isdiffpos",
-                "corrected",
-                "dubious",
-                "parent_candid",
-                "has_stamp",
-            }
+    def _parse_ztf_detection(self, ztf_models: list, *, oids):
+        fields = {
+            "tid",
+            "sid",
+            "aid",
+            "oid",
+            "mjd",
+            "fid",
+            "ra",
+            "sigmara",
+            "dec",
+            "sigmadec",
+            "magpsf",
+            "sigmapsf",
+            "magpsf_corr",
+            "sigmapsf_corr",
+            "sigmapsf_corr_ext",
+            "isdiffpos",
+            "corrected",
+            "dubious",
+            "parent_candid",
+            "has_stamp",
+        }
+        parsed_result = []
+        for det in ztf_models:
             extra_fields = {}
-            for field, value in ztf_model.items():
+            for field, value in det.items():
                 if field not in fields and not field.startswith("_"):
                     extra_fields[field] = value
-            return MongoDetection(
-                **ztf_model,
-                sid = "ztf",
-                tid = "ztf",
-                aid = aid,
-                mag = ztf_model["magpsf"],
-                e_mag = ztf_model["sigmapsf"],
-                mag_corr = ztf_model["magpsf_corr"],
-                e_mag_corr = ztf_model["sigmapsf_corr"],
-                e_mag_corr_ext = ztf_model["sigmapsf_corr_ext"],
-                e_ra = ztf_model["sigmara"],
-                e_dec = ztf_model["sigmadec"],
-                extra_fields = extra_fields,
-
+            parsed = MongoDetection(
+                **det,
+                aid=oids[det["oid"]],
+                sid="ztf",
+                tid="ztf",
+                mag=det["magpsf"],
+                e_mag=det["sigmapsf"],
+                mag_corr=det["magpsf_corr"],
+                e_mag_corr=det["sigmapsf_corr"],
+                e_mag_corr_ext=det["sigmapsf_corr_ext"],
+                e_ra=det["sigmara"],
+                e_dec=det["sigmadec"],
+                extra_fields=extra_fields,
             )
-        elif format == "NonDetection":
-            return MongoNonDetection(
-                tid = "ztf",
-                sid = "ztf",
-                aid = aid,
-                oid = ztf_model["oid"],
-                mjd = ztf_model["mjd"],
-                fid = ztf_model["fid"],
-                diffmaglims=ztf_model.get("diffmaglim", None),
+            parsed_result.append(parsed)
+
+    def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
+        non_dets = []
+        for non_det in ztf_models:
+            non_dets.append(
+                MongoNonDetection(
+                    tid="ztf",
+                    sid="ztf",
+                    aid=oids[non_det["oid"]],
+                    oid=non_det["oid"],
+                    mjd=non_det["mjd"],
+                    fid=non_det["fid"],
+                    diffmaglims=non_det.get("diffmaglim", None),
+                )
             )
-        elif format == "Forced":
-            pass
-
-        return 
-
-    def _get_sql_detections(self,oids):
-        results = []
-        for oid in oids:
-            with self.db_sql.session() as session:
-                stmt = select(Detection, text("'ztf'")).filter(
-                    Detection.oid == oid
-                )
-                results.append(self._ztf_to_mst(session.execute(stmt), format = "Detection", aid = oids[oid])) 
-
-        return results
-    
-    def _get_sql_non_detections(self,oids):
-        results = []
-        for oid in oids:
-            with self.db_sql.session() as session:
-                stmt = select(NonDetection, text("'ztf'")).filter(
-                    NonDetection.oid == oid
-                )
-                results.append(self._ztf_to_mst(session.execute(stmt), format = "NonDetection", aid = oids[oid])) 
-
-        return results
-
-    def _get_sql_forced_photometries(self,oids):
-        return
-    
-    def _get_mongo_detections(self,aids):
-        db_detections = self.db_mongo.database[DETECTION].aggregate(
-            [
-                {"$match": {"aid": {"$in": aids}}},
-                {
-                    "$addFields": {
-                        "candid": "$_id",
-                        "forced": False,
-                        "new": False,
-                    }
-                },
-                {"$project": {"_id": False, "evilDocDbHack": False}},
-            ]
-        )
-        return db_detections
-    
-    def _get_mongo_non_detections(self,aids):
-        db_non_detections = self.db_mongo.database[NON_DETECTION].find(
-            {"aid": {"$in": aids}},
-            {"_id": False, "evilDocDbHack": False},
-        )
-        return db_non_detections
-
-    def _get_mongo_forced_photometries(self,aids):
-        db_forced_photometries = self.db_mongo.database[FORCED_PHOTOMETRY].aggregate(
-            [
-                {"$match": {"aid": {"$in": aids}}},
-                {
-                    "$addFields": {
-                        "candid": "$_id",
-                        "forced": True,
-                        "new": False,
-                    }
-                },
-                {"$project": {"_id": False, "evilDocDbHack": False}},
-            ]
-        )
-        return db_forced_photometries
-
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:
