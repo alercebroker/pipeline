@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Dict, List
 
 from sqlalchemy import update
 from sqlalchemy.orm import Session
@@ -7,12 +7,13 @@ from sqlalchemy.dialects.postgresql import insert
 
 from db_plugins.db.sql.models import (
     Object,
+    ForcedPhotometry,
     Detection,
     NonDetection,
     Feature,
     MagStats,
     Probability,
-    Xmatch
+    Xmatch,
 )
 
 from .commons import ValidCommands
@@ -53,10 +54,76 @@ class InsertObjectCommand(Command):
 class InsertDetectionsCommand(Command):
     type = ValidCommands.insert_detections
 
+    def _check_inputs(self, data, criteria):
+        return super()._check_inputs(data, criteria)
+
+    def _format_data(self, data: Dict):
+        exclude = ["aid", "sid", "tid", "extra_fields", "e_dec", "e_ra", "stellar"]
+        fid_map = {"g": 1, "r": 2, "i": 3}
+
+        field_mapping = {
+            "mag": "magpsf",
+            "e_mag": "sigmapsf",
+            "mag_corr": "magpsf_corr",
+            "e_mag_corr": "sigmapsf_corr",
+            "e_mag_corr_ext": "sigmapsf_corr_ext",
+        }
+        _extra_fields = [
+            "nid",
+            "magap",
+            "sigmagap",
+            "rfid",
+            "diffmaglim",
+            "distnr",
+            "magapbig",
+            "rb",
+            "rbversion",
+            "sigmagapbig",
+            "drb",
+            "drbversion",
+        ]
+        new_data = data.copy()
+        # rename some fields
+        for k, v in field_mapping.items():
+            new_data[v] = new_data.pop(k)
+
+        # add fields from extra_fields
+        for field in _extra_fields:
+            if field in data["extra_fields"]:
+                new_data[field] = data["extra_fields"][field]
+
+        new_data = {k: v for k, v in new_data.items() if k not in exclude}
+        new_data["step_id_corr"] = data.get("step_id_corr", "ALeRCE v3")
+        new_data["parent_candid"] = int(data["parent_candid"])
+        new_data["fid"] = fid_map[new_data["fid"]]
+
+        return {**new_data, "candid": int(self.criteria["candid"])}
+
     @staticmethod
     def db_operation(session: Session, data: List):
         return session.connection().execute(
             insert(Detection).values(data).on_conflict_do_nothing()
+        )
+
+
+class InsertForcedPhotometryCommand(Command):
+    type = ValidCommands.insert_forced_photo
+
+    def _format_data(self, data: Dict):
+        exclude = ["aid", "sid", "tid", "e_dec", "e_ra", "stellar"]
+        fid_map = {"g": 1, "r": 2, "i": 3}
+
+        new_data = data.copy()
+        new_data = {k: v for k, v in new_data.items() if k not in exclude}
+        new_data["parent_candid"] = int(data["parent_candid"])
+        new_data["fid"] = fid_map[new_data["fid"]]
+
+        return {**new_data, "candid": int(self.criteria["candid"])}
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        return session.connection().execute(
+            insert(ForcedPhotometry).values(data).on_conflict_do_nothing()
         )
 
 
@@ -164,7 +231,6 @@ class UpsertProbabilitiesCommand(Command):
         if "oid" not in criteria:
             raise ValueError("No oids were provided in command")
 
-
     def _format_data(self, data):
         return [{**data, "oid": i} for i in self.criteria["oid"]]
 
@@ -181,6 +247,7 @@ class UpsertProbabilitiesCommand(Command):
 
         return session.connection().execute(insert_stmt)
 
+
 class UpsertXmatchCommand(Command):
     type = ValidCommands.upsert_xmatch
 
@@ -191,8 +258,8 @@ class UpsertXmatchCommand(Command):
 
     def _format_data(self, data):
         data["xmatch"]["oid_catalog"] = data["xmatch"].pop("catoid")
-        return [ { **data["xmatch"], "oid": oid } for oid in self.criteria["oid"] ]
-    
+        return [{**data["xmatch"], "oid": oid} for oid in self.criteria["oid"]]
+
     @staticmethod
     def db_operation(session: Session, data: List):
         insert_stmt = insert(Xmatch).values(data)
@@ -201,7 +268,7 @@ class UpsertXmatchCommand(Command):
             set_=dict(
                 oid_catalog=insert_stmt.excluded.oid_catalog,
                 dist=insert_stmt.excluded.dist,
-            )
+            ),
         )
 
         return session.connection().execute(insert_stmt)

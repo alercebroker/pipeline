@@ -2,6 +2,7 @@ import json
 from apf.consumers import KafkaConsumer
 from correction._step import CorrectionStep
 
+from pprint import pprint
 
 def test_step_initialization(kafka_service, env_variables):
     assert isinstance(CorrectionStep.create_step(), CorrectionStep)
@@ -42,6 +43,7 @@ def test_scribe_has_detections(kafka_service, env_variables, scribe_consumer):
 
 def assert_scribe_has_detections(message):
     data = json.loads(message["payload"])
+    pprint(data)
     assert "collection" in data and data["collection"] == "detection"
     assert "type" in data and data["type"] == "update"
     assert "criteria" in data and "_id" in data["criteria"]

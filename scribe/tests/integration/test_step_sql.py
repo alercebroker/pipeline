@@ -122,21 +122,40 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "detection",
                 "type": "update",
+                "criteria": {"_id": "932472823", "candid": "932472823"},
                 "data": {
-                    "candid": 932472823,
-                    "oid": "ZTF04ululeea",
-                    "mjd": 55000,
-                    "fid": 1,
-                    "pid": 4.3,
-                    "isdiffpos": 1,
-                    "ra": 99.0,
-                    "dec": 55.0,
-                    "magpsf": 220.0,
-                    "sigmapsf": 33.0,
-                    "corrected": True,
-                    "dubious": True,
+                    "aid": "XChGbTDJWt",
+                    "corrected": False,
+                    "dec": 0.5753534762299036,
+                    "dubious": False,
+                    "e_dec": 0.10948950797319412,
+                    "e_mag": 0.5646288990974426,
+                    "e_mag_corr": None,
+                    "e_mag_corr_ext": None,
+                    "e_ra": 0.010245581157505512,
+                    "extra_fields": {
+                        "chinr": 1,
+                        "distnr": 1.0,
+                        "distpsnr1": 1.0,
+                        "magnr": 10.0,
+                        "sgscore1": 0.5,
+                        "sharpnr": 0.0,
+                        "sigmagnr": 1.0,
+                        "unused": None,
+                    },
+                    "fid": "i",
                     "has_stamp": True,
-                    "step_id_corr": "steppu",
+                    "isdiffpos": -224123822,
+                    "mag": 0.43753013014793396,
+                    "mag_corr": None,
+                    "mjd": 0.8421688401414276,
+                    "oid": "ZTF04ululeea",
+                    "parent_candid": "87654321",
+                    "pid": -285679341253738006,
+                    "ra": 0.10448978320949609,
+                    "sid": "lIklphisOV",
+                    "stellar": False,
+                    "tid": "ZTF",
                 },
             }
         )
@@ -260,10 +279,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     {
                         "collection": "object",
                         "type": "update_features",
-                        "criteria": {
-                            "_id": "AL21XXX",
-                            "oid": ["ZTF04ululeea"]
-                        },
+                        "criteria": {"_id": "AL21XXX", "oid": ["ZTF04ululeea"]},
                         "data": {
                             "features_version": "1.0.0",
                             "features_group": "ztf",
@@ -338,10 +354,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     {
                         "collection": "object",
                         "type": "update_probabilities",
-                        "criteria": {
-                            "_id": "AL21XXX",
-                            "oid": ["ZTF04ululeea"]
-                        },
+                        "criteria": {"_id": "AL21XXX", "oid": ["ZTF04ululeea"]},
                         "data": data,
                     }
                 )
@@ -492,27 +505,31 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": { "_id": "ALX123", "oid": ["ZTF04ululeea"] },
-                "data": {"xmatch": {
-                    "catoid": "J239263.32+240338.4",
-                    "dist": 0.009726,
-                    "catid": "allwise"
-                }}
+                "criteria": {"_id": "ALX123", "oid": ["ZTF04ululeea"]},
+                "data": {
+                    "xmatch": {
+                        "catoid": "J239263.32+240338.4",
+                        "dist": 0.009726,
+                        "catid": "allwise",
+                    }
+                },
             },
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": { "_id": "ALX134", "oid": ["ZTF05ululeea"] },
-                "data": {"xmatch": {
-                    "catoid": "J239263.32+240338.4",
-                    "dist": 0.615544,
-                    "catid": "allwise"
-                }}
-            }            
+                "criteria": {"_id": "ALX134", "oid": ["ZTF05ululeea"]},
+                "data": {
+                    "xmatch": {
+                        "catoid": "J239263.32+240338.4",
+                        "dist": 0.615544,
+                        "catid": "allwise",
+                    }
+                },
+            },
         ]
 
         for command in commands:
-            self.producer.produce({ "payload": json.dumps(command) })
+            self.producer.produce({"payload": json.dumps(command)})
 
         self.step.start()
         with self.db.session() as session:
@@ -523,4 +540,68 @@ class MongoIntegrationTest(unittest.TestCase):
                     """
                 )
             )
+        assert len(list(result)) > 0
+
+    def test_forced_photometry_insertion(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES
+                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45)
+                    ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+
+            command = {
+                "collection": "forced_photometry",
+                "type": "update",
+                "criteria": {
+                    "_id": "candid",
+                    "candid": "12345678-1",
+                },
+                "data": {
+                    "mag": 10.0,
+                    "oid": "ZTF04ululeea",
+                    "corrected": False,
+                    "dubious": False,
+                    "e_mag": 10.0,
+                    "ra": 1,
+                    "e_ra": 1,
+                    "dec": 1,
+                    "e_dec": 1,
+                    "isdiffpos": 1,
+                    "fid": "g",
+                    "mjd": 1.0,
+                    "has_stamp": True,
+                    "parent_candid": "12345678",
+                    "extra_fields": {
+                        "magnr": 10.0,
+                        "sigmagnr": 1.0,
+                        "distnr": 1.0,
+                        "distpsnr1": 1.0,
+                        "sgscore1": 0.5,
+                        "chinr": 1,
+                        "sharpnr": 0.0,
+                        "unused": None,
+                    },
+                },
+            }
+
+            self.producer.produce({"payload": json.dumps(command)})
+            self.producer.produce({"payload": json.dumps(command)})
+            self.producer.producer.flush(1)
+
+            self.step.start()
+            with self.db.session() as session:
+                result = session.execute(
+                    text(
+                        """
+                    SELECT * FROM forced_photometry WHERE oid = 'ZTF04ululeea' 
+                    """
+                    )
+                )
             print(list(result))
+            assert True

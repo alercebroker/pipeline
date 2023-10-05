@@ -284,7 +284,7 @@ class ForcedPhotometry(Base):
     isdiffpos = Column(Integer, nullable=False)
     corrected = Column(Boolean, nullable=False)
     dubious = Column(Boolean, nullable=False)
-    parent_candid = Column(BigInteger)
+    parent_candid = Column(String)
     has_stamp = Column(Boolean, nullable=False)
     extra_fields = Column(JSON, default={})
 
