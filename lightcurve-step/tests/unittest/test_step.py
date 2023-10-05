@@ -163,12 +163,18 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
 
 
 def test_execute_removes_duplicates_keeping_ones_with_stamps():
-    mock_client = mock.MagicMock()
+    mock_mongo= mock.MagicMock()
+    mock_sql = mock.MagicMock()
+    mock_get_sql_detections = mock.MagicMock()
+    mock_get_sql_non_detections = mock.MagicMock()
     LightcurveStep.__init__ = lambda self: None
     step = LightcurveStep()
-    step.db_mongo = mock_client
+    step.db_mongo = mock_mongo
+    step.db_sql = mock_sql
+    step._get_sql_detections = mock_get_sql_detections
+    step._get_sql_non_detections = mock_get_sql_non_detections
     step.logger = mock.MagicMock()
-    mock_client.database["detection"].aggregate.return_value = [
+    mock_mongo.database["detection"].aggregate.return_value = [
         {
             "aid": "aid2",
             "candid": "d",
@@ -192,7 +198,48 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             "extra_fields": {},
         },
     ]
-    mock_client.query.return_value.collection.find.return_value = []
+    mock_mongo.query.return_value.collection.find.return_value = []
+
+    mock_get_sql_detections.return_value = [
+        {
+            "aid": "aid2",
+            "oid": "oid2",
+            "candid": "d",
+            "parent_candid": "p_d",
+            "has_stamp": True,
+            "sid": "SURVEY",
+            "mjd": 1.0,
+            "fid": "g",
+            "new": False,
+            "extra_fields": {},
+        },
+        {
+            "aid": "aid1",
+            "oid": "oid1",
+            "candid": "f",
+            "parent_candid": "p_d",
+            "has_stamp": True,
+            "sid": "SURVEY",
+            "mjd": 1.0,
+            "fid": "g",
+            "new": False,
+            "extra_fields": {},
+        },
+    ]
+
+    mock_get_sql_non_detections.return_value = [
+        {
+            "aid": "aid2",
+            "fid": "g",
+            "mjd": 2.0,
+        },
+        {
+            "aid": "aid3",
+            "fid": "f",
+            "mjd": 3.0
+        },
+    ]    
+    
 
     message = {
         "aids": {"aid1", "aid2"},
@@ -200,7 +247,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             "oid1": "aid1",
             "oid2": "aid1",
             "oid3": "aid1",
-            "oid6": "aid2",
+            "oid2": "aid2",
         },
         "last_mjds": {"aid1": 4, "aid2": 5},
         "detections": [
@@ -246,7 +293,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "aid": "aid2",
-                "oid": "oid6",
+                "oid": "oid2",
                 "sid": "ztf",
                 "candid": "c",
                 "mjd": 5,
@@ -256,7 +303,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "aid": "aid2",
-                "oid": "oid5",
+                "oid": "oid2",
                 "sid": "atlas",
                 "candid": "b",
                 "mjd": 4,
@@ -273,7 +320,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
     }
 
     output = step.execute(message)
-
+    print(output)
     expected = {
         "detections": [
             {

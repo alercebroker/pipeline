@@ -7,8 +7,8 @@ from apf.core.step import GenericStep
 from .database_mongo import DatabaseConnection
 from .database_sql import PSQLConnection
 from sqlalchemy import select, text
-from db_plugins.db.sql import Detection, NonDetection
-from db_plugins.db.mongo import Detection as MongoDetection, NonDetection as MongoNonDetection
+from db_plugins.db.sql.models import Detection, NonDetection
+from db_plugins.db.mongo.models import Detection as MongoDetection, NonDetection as MongoNonDetection
 
 
 DETECTION = "detection"
@@ -20,7 +20,7 @@ class LightcurveStep(GenericStep):
     def __init__(self, config: dict, db_mongo: DatabaseConnection, db_sql: PSQLConnection , **kwargs):
         super().__init__(config=config, **kwargs)
         self.db_mongo = db_mongo
-        self.db_sql = db_sql   # ahora que existe la db_sql falta agregar en los metodos las consultas sql y hacer join.
+        self.db_sql = db_sql   
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.last_mjd = {}
 
@@ -56,12 +56,12 @@ class LightcurveStep(GenericStep):
         db_mongo_forced_photometries = self._get_mongo_forced_photometries(aids)
         db_sql_detections = self._get_sql_detections(oids)
         db_sql_non_detections = self._get_sql_non_detections(oids)
-        db_sql_forced_photometries = self._get_sql_forced_photometries(oids)        
+        #db_sql_forced_photometries = self._get_sql_forced_photometries(oids)        
         detections = pd.DataFrame(
-            messages["detections"] + list(db_mongo_detections) + list(db_mongo_forced_photometries)
+            messages["detections"] + list(db_mongo_detections) + list(db_sql_detections) + list(db_mongo_forced_photometries)
         )
         non_detections = pd.DataFrame(
-            messages["non_detections"] + list(db_mongo_non_detections)
+            messages["non_detections"] + list(db_mongo_non_detections) + list(db_sql_non_detections)
         )
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["candid"] = detections["candid"].astype(str)
@@ -94,9 +94,9 @@ class LightcurveStep(GenericStep):
                 "mjd",
                 "fid",
                 "ra",
-                "e_ra",
+                "sigmara",
                 "dec",
-                "e_dec",
+                "sigmadec",
                 "magpsf",
                 "sigmapsf",
                 "magpsf_corr",
@@ -108,10 +108,9 @@ class LightcurveStep(GenericStep):
                 "parent_candid",
                 "has_stamp",
             }
-             # e_ra, e_dec tampoco estan en sql buscar en survey_parser como se calculan  
             extra_fields = {}
             for field, value in ztf_model.items():
-                if field not in fields:
+                if field not in fields and not field.startswith("_"):
                     extra_fields[field] = value
             return MongoDetection(
                 **ztf_model,
@@ -123,11 +122,21 @@ class LightcurveStep(GenericStep):
                 mag_corr = ztf_model["magpsf_corr"],
                 e_mag_corr = ztf_model["sigmapsf_corr"],
                 e_mag_corr_ext = ztf_model["sigmapsf_corr_ext"],
+                e_ra = ztf_model["sigmara"],
+                e_dec = ztf_model["sigmadec"],
                 extra_fields = extra_fields,
 
             )
         elif format == "NonDetection":
-            pass
+            return MongoNonDetection(
+                tid = "ztf",
+                sid = "ztf",
+                aid = aid,
+                oid = ztf_model["oid"],
+                mjd = ztf_model["mjd"],
+                fid = ztf_model["fid"],
+                diffmaglims=ztf_model.get("diffmaglim", None),
+            )
         elif format == "Forced":
             pass
 
@@ -136,22 +145,22 @@ class LightcurveStep(GenericStep):
     def _get_sql_detections(self,oids):
         results = []
         for oid in oids:
-            with self.db_sql as session:
+            with self.db_sql.session() as session:
                 stmt = select(Detection, text("'ztf'")).filter(
                     Detection.oid == oid
                 )
-                results.append(self._ztf_to_mst(session.execute(stmt)), format = "Detection", aid = oids[oid]) 
+                results.append(self._ztf_to_mst(session.execute(stmt), format = "Detection", aid = oids[oid])) 
 
         return results
     
     def _get_sql_non_detections(self,oids):
         results = []
         for oid in oids:
-            with self.db_sql as session:
+            with self.db_sql.session() as session:
                 stmt = select(NonDetection, text("'ztf'")).filter(
                     NonDetection.oid == oid
                 )
-                results.append(session.execute(stmt)) 
+                results.append(self._ztf_to_mst(session.execute(stmt), format = "NonDetection", aid = oids[oid])) 
 
         return results
 
