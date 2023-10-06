@@ -78,29 +78,6 @@ jobs:
           cd ci
           poetry run python main.py build staging feature_step
 
-  build-feature-dagger:
-    needs: update-packages-dagger
-    runs-on: ubuntu-latest
-    env:
-      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-          cache: 'poetry'
-      - name: Install dependencies
-        run: |
-          cd ci
-          poetry install
-      - name: Run dagger pipeline
-        run: |
-          cd ci
-          poetry run python main.py build staging ingestion_step
 
   build-lightcurve-dagger:
     needs: update-packages-dagger
