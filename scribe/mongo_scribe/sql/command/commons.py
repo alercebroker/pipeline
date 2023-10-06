@@ -1,5 +1,6 @@
 # to make this work, we'll have to take the original Mongo Commands, assume they're Ok
-# and move on with that 
+# and move on with that
+
 
 class ValidCommands:
     # insert + object
@@ -16,5 +17,5 @@ class ValidCommands:
     update_object_stats = "update_object_stats"
     # update + object + xmatch in data
     upsert_xmatch = "upsert_xmatch"
-
-
+    # update + forced_photometry
+    insert_forced_photo = "insert_forced_photo"

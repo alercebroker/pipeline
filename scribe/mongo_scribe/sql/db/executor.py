@@ -7,6 +7,7 @@ from mongo_scribe.sql.command.commands import (
     Command,
     InsertObjectCommand,
     InsertDetectionsCommand,
+    InsertForcedPhotometryCommand,
     UpdateObjectStatsCommand,
     UpsertFeaturesCommand,
     UpsertNonDetectionsCommand,
@@ -42,6 +43,7 @@ class SQLCommandExecutor:
         commands = (
             InsertObjectCommand,
             InsertDetectionsCommand,
+            InsertForcedPhotometryCommand,
             UpdateObjectStatsCommand,
             UpsertFeaturesCommand,
             UpsertNonDetectionsCommand,

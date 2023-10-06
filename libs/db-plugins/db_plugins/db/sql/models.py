@@ -9,6 +9,7 @@ from sqlalchemy import (
     ARRAY,
     Index,
     DateTime,
+    JSON,
     ForeignKeyConstraint,
 )
 
@@ -262,6 +263,34 @@ class Detection(Base, Commons):
             self.fid,
             self.oid,
         )
+
+
+class ForcedPhotometry(Base):
+    __tablename__ = "forced_photometry"
+
+    candid = Column(String, primary_key=True)
+    oid = Column(String, primary_key=True)
+    mjd = Column(Float(precision=53), nullable=False)
+    fid = Column(Integer, nullable=False)
+    ra = Column(Float(precision=53), nullable=False)
+    dec = Column(Float(precision=53), nullable=False)
+    e_ra = Column(Float)
+    e_dec = Column(Float)
+    mag = Column(Float)
+    e_mag = Column(Float)
+    mag_corr = Column(Float)
+    e_mag_corr = Column(Float)
+    e_mag_corr_ext = Column(Float)
+    isdiffpos = Column(Integer, nullable=False)
+    corrected = Column(Boolean, nullable=False)
+    dubious = Column(Boolean, nullable=False)
+    parent_candid = Column(String)
+    has_stamp = Column(Boolean, nullable=False)
+    extra_fields = Column(JSON, default={})
+
+    __table_args__ = (
+        Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
+    )
 
 
 class Dataquality(Base):

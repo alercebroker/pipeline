@@ -124,7 +124,7 @@ class CorrectionStep(GenericStep):
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
-                "criteria": {"_id": candid},
+                "criteria": {"_id": candid, "candid": candid},
                 "data": detection,
                 "options": {"upsert": True, "set_on_insert": set_on_insert},
             }

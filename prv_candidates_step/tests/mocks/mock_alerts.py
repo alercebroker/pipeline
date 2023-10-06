@@ -270,5 +270,23 @@ def ztf_extra_fields_generator():
             "rbversion": "t17_f5_c3",
         },
     ]
-    extra_fields = {"prv_candidates": pickle.dumps(prv_candidates)}
+
+    fp_hists = [
+        {
+            "jd": 2459966.7402431,
+            "fid": 1,
+            "pid": 2212240240015,
+            "programpi": "Kulkarni",
+            "programid": 1,
+            "candid": "2212240240015015002",
+            "diffmaglim": 19.8356990814209,
+            "forcediffimflux": 1.0,
+            "forcediffimfluxunc": 1.0,
+            "magzpsci": 26.209199905395508,
+        }
+    ]
+    extra_fields = {
+        "prv_candidates": pickle.dumps(prv_candidates),
+        "fp_hists": pickle.dumps(fp_hists),
+    }
     return extra_fields
