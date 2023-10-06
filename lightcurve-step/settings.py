@@ -28,7 +28,7 @@ def settings_creator():
             else False,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
-        "consume.messages": int(os.getenv("CONSUME_MESSAGES", 10)),
+        "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 15)),
     }
 

@@ -154,7 +154,7 @@ class LightcurveStep(GenericStep):
                 extra_fields=extra_fields,
             )
             parsed_result.append(parsed)
-        
+
         return parsed_result
 
     def _parse_ztf_non_detection(self, ztf_models: list, *, oids):

@@ -3,14 +3,15 @@ import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 import uuid
-from fastavro.utils import generate_many
 from fastavro.schema import load_schema
 from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+from sqlalchemy import text
 import psycopg2
 from db_plugins.db.sql._connection import PsqlDatabase
 from .utils import generate_message
+
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
@@ -86,11 +87,13 @@ def env_variables():
         "ENABLE_PARTITION_EOF": "True",
         "MONGODB_SECRET_NAME": "mongo_secret",
         "SQL_SECRET_NAME": "sql_secret",
+        "CONSUME_MESSAGES": "10",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
 
     return env_variables_dict
+
 
 @pytest.fixture()
 def produce_messages(kafka_service):
@@ -112,6 +115,7 @@ def produce_messages(kafka_service):
         producer.produce(message)
     producer.producer.flush()
     return
+
 
 def is_responsive_psql(url):
     try:
@@ -136,6 +140,29 @@ def psql_service(docker_ip, docker_services):
     return server
 
 
+def populate_sql(conn: PsqlDatabase):
+    with conn.session() as session:
+        session.execute(
+            text(
+                """
+            INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF000llmn', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING
+        """
+            )
+        )
+        session.execute(
+            text(
+                """
+            INSERT INTO detection(candid, oid, mjd, fid, pid, diffmaglim, isdiffpos, \
+            ra, dec, magpsf, sigmapsf, corrected, dubious, has_stamp, step_id_corr) 
+            VALUES (987654321, 'ZTF000llmn', 1, 1, 1, 0.8, -1, 45, 45, 23.1, 0.9, \
+                    false, false, false, 'step')
+        """
+            )
+        )
+        session.commit()
+
+
 @pytest.fixture()
 def psql_conn(psql_service):
     config = {
@@ -147,5 +174,6 @@ def psql_conn(psql_service):
     }
     psql_conn = PsqlDatabase(config)
     psql_conn.create_db()
+    populate_sql(psql_conn)
     yield psql_conn
     psql_conn.drop_db()
