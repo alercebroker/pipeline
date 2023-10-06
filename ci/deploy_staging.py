@@ -81,7 +81,7 @@ async def helm_upgrade(package: str, dry_run: bool):
             "-f",
             "values.yaml",
             package,
-            f"web-services/{package}",
+            f"pipeline/{package}",
         ]
         if dry_run:
             helm_command.append("--dry-run")
@@ -93,7 +93,7 @@ async def helm_upgrade(package: str, dry_run: bool):
                     "helm",
                     "repo",
                     "add",
-                    "web-services",
+                    "pipeline",
                     "https://alercebroker.github.io/pipeline",
                 ]
             )
@@ -101,7 +101,7 @@ async def helm_upgrade(package: str, dry_run: bool):
                 get_values(
                     client,
                     str(pathlib.Path().cwd().parent.absolute()),
-                    f"{package}-service-helm-values",
+                    f"{package}-step-helm-values",
                 )
             )
             .with_exec(helm_command)
@@ -114,6 +114,20 @@ def deploy_package(package: str, dry_run: bool):
 
 
 def deploy_staging(dry_run: bool):
-    packages = [("lightcurve", dry_run), ("astroobject", dry_run)]
+    packages = [
+        #("correction_step", dry_run),
+        #("early_classification_step", dry_run),
+        #("feature_step", dry_run),
+        #("lc_classification_step", dry_run),
+        #("lightcurve-step", dry_run),
+        #("magstats_step", dry_run),
+        #("prv_candidates_step", dry_run),
+        #("s3_step", dry_run),
+        ("scribe", dry_run),
+        #("sorting_hat_step", dry_run),
+        #("stamp_classifier_step", dry_run),
+        #("watchlist_step", dry_run),
+        #("xmatch_step", dry_run),
+    ]
     for p in packages:
         deploy_package(*p)
