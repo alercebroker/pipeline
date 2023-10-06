@@ -28,7 +28,7 @@ def deploy(stage, dry_run):
 if __name__ == "__main__":
     command = sys.argv[1]
     stage = sys.argv[2]
-    dry_run = True
+    dry_run = False
     if len(sys.argv) > 3:
         dry_run = sys.argv[3]
         dry_run = dry_run == "--dry-run"

@@ -43,8 +43,7 @@ def build_staging(dry_run: bool):
         "libs/survey_parser_plugins",
         "libs/turbo-fats",
     ]
-    _update_package_version(packages, dry_run)
-    _update_package_version(libs, dry_run)
+    _update_package_version(packages + libs, dry_run)
     _update_chart_version(packages, dry_run)
     anyio.run(git_push, dry_run)
     for package in packages:
