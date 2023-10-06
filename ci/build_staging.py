@@ -38,8 +38,8 @@ def build_staging(dry_run: bool):
         "libs/apf",
         "libs/db-plugins",
         "libs/lc_classifier",
-        #"libs/mhps",
-        #"libs/P4j",
+        # "libs/mhps",
+        # "libs/P4j",
         "libs/survey_parser_plugins",
         "libs/turbo-fats",
     ]
@@ -47,5 +47,4 @@ def build_staging(dry_run: bool):
     _update_chart_version(packages, dry_run)
     anyio.run(git_push, dry_run)
     for package in packages:
-        p = Process(target=_build_package, args=[package, dry_run])
-        p.start()
+        _build_package(package, dry_run)
