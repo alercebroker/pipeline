@@ -11,6 +11,7 @@ def update_app_version(package: str, new_version: str, dry_run: bool):
             f"appVersion: {new_version}",
             original,
         )
+        print(f"Updating {package} appVersion to {new_version}")
         if not dry_run:
             f.write(chart)
 
@@ -32,6 +33,9 @@ def update_chart_version(
             r"version: (\d+).(\d+).(\d+.*)",
             f"version: { major }.{ minor }.{ int(patch) + 1 }",
             original,
+        )
+        print(
+            f"Updating chart {package} version to {major}.{minor}.{(int(patch) + 1)}"
         )
         if not dry_run:
             f.write(chart)
