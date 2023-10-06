@@ -101,7 +101,7 @@ async def helm_upgrade(package: str, dry_run: bool):
                 get_values(
                     client,
                     str(pathlib.Path().cwd().parent.absolute()),
-                    f"{package}-step-helm-values",
+                    f"{package}-helm-values",
                 )
             )
             .with_exec(helm_command)
