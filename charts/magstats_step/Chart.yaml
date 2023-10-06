@@ -3,4 +3,4 @@ appVersion: "6.0.0"
 description: A Helm chart for Kubernetes
 name: magstats-step
 type: application
-version: 1.2.4
+version: 1.2.5

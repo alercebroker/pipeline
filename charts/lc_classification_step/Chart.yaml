@@ -3,4 +3,4 @@ appVersion: "6.0.0"
 description: Lightcurve classifier step
 name: lc-classifier-step
 type: application
-version: 4.8.4
+version: 4.8.5
