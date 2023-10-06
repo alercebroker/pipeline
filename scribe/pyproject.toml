@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scribe"
-version = "6.1.1a41"
+version = "6.1.1a42"
 description = "Mongo scribe"
 authors = []
 readme = "README.md"
