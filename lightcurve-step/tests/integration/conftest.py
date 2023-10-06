@@ -10,7 +10,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import psycopg2
 from db_plugins.db.sql._connection import PsqlDatabase
-
+from .utils import generate_message
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
@@ -29,7 +29,7 @@ def docker_compose_command():
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    topics = ["test_topic"]
+    topics = ["correction", "lightcurve"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
     for topic, f in fs.items():
@@ -39,7 +39,6 @@ def is_responsive_kafka(url):
             print(f"Can't create topic {topic}")
             print(e)
             return False
-    produce_messages("correction")
     return True
 
 
@@ -93,8 +92,8 @@ def env_variables():
 
     return env_variables_dict
 
-
-def produce_messages(topic):
+@pytest.fixture()
+def produce_messages(kafka_service):
     try:
         schema = load_schema("tests/integration/input_schema.avsc")
     except SchemaRepositoryError:
@@ -102,16 +101,17 @@ def produce_messages(topic):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
-            "TOPIC": topic,
+            "TOPIC": "correction",
             "SCHEMA": schema,
         }
     )
-    messages = generate_many(schema, 10)
+    messages = generate_message(schema, 10)
     producer.set_key_field("aid")
 
     for message in messages:
         producer.produce(message)
-
+    producer.producer.flush()
+    return
 
 def is_responsive_psql(url):
     try:

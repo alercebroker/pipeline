@@ -34,8 +34,7 @@ def step_creator():
     step_params = {
         "config": settings,
         "db_mongo": db_mongo,
-        "db_sql": db_sql,
-        "prefix": os.getenv("CLASS_PREFIX", "")
+        "db_sql": db_sql
     }
 
     if settings["PROMETHEUS"]:

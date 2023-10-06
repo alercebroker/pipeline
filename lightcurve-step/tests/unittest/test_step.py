@@ -83,7 +83,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
 
     output = LightcurveStep.pre_execute(messages)
     expected = {
-        "aids": {"aid1", "aid2"},
+        "aids": ["aid1", "aid2"],
         "oids": {
             "oid1": "aid1",
             "oid2": "aid1",
@@ -159,28 +159,31 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
             {"mjd": 1, "oid": "i", "fid": "g"},
         ],
     }
+    expected_aids = expected.pop("aids")
+    output_aids = output.pop("aids")
+    assert set(expected_aids) == set(output_aids)
     assert output == expected
 
 
-def test_execute_removes_duplicates_keeping_ones_with_stamps():
-    mock_mongo= mock.MagicMock()
-    mock_sql = mock.MagicMock()
-    mock_get_sql_detections = mock.MagicMock()
-    mock_get_sql_non_detections = mock.MagicMock()
+@mock.patch("lightcurve_step.step._get_sql_non_detections")
+@mock.patch("lightcurve_step.step._get_sql_detections")
+def test_execute_removes_duplicates_keeping_ones_with_stamps(
+    _get_sql_det, _get_sql_non_det
+):
+    mock_mongo = mock.MagicMock()
     LightcurveStep.__init__ = lambda self: None
     step = LightcurveStep()
     step.db_mongo = mock_mongo
-    step.db_sql = mock_sql
-    step._get_sql_detections = mock_get_sql_detections
-    step._get_sql_non_detections = mock_get_sql_non_detections
+    step.db_sql = mock.MagicMock()
     step.logger = mock.MagicMock()
     mock_mongo.database["detection"].aggregate.return_value = [
         {
             "aid": "aid2",
             "candid": "d",
+            "oid": "ZTF123",
             "parent_candid": "p_d",
             "has_stamp": True,
-            "sid": "SURVEY",
+            "sid": "ZTF",
             "mjd": 1.0,
             "fid": "g",
             "new": False,
@@ -190,6 +193,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             "aid": "aid1",
             "candid": 97923792234,
             "parent_candid": "p_a",
+            "oid": "oidy",
             "has_stamp": True,
             "sid": "SURVEY",
             "mjd": 1.0,
@@ -200,10 +204,10 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
     ]
     mock_mongo.query.return_value.collection.find.return_value = []
 
-    mock_get_sql_detections.return_value = [
+    _get_sql_det.return_value = [
         {
             "aid": "aid2",
-            "oid": "oid2",
+            "oid": "ZTF123",
             "candid": "d",
             "parent_candid": "p_d",
             "has_stamp": True,
@@ -215,11 +219,11 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         },
         {
             "aid": "aid1",
-            "oid": "oid1",
+            "oid": "ZTF456",
             "candid": "f",
             "parent_candid": "p_d",
             "has_stamp": True,
-            "sid": "SURVEY",
+            "sid": "ZTF",
             "mjd": 1.0,
             "fid": "g",
             "new": False,
@@ -227,55 +231,55 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
         },
     ]
 
-    mock_get_sql_non_detections.return_value = [
+    _get_sql_non_det.return_value = [
         {
-            "aid": "aid2",
+            "aid": "aid1",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "oid": "ZTF123",
             "fid": "g",
             "mjd": 2.0,
+            "diffmaglim": 1,
         },
         {
-            "aid": "aid3",
             "fid": "f",
-            "mjd": 3.0
+            "aid": "aid2",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "mjd": 3.0,
+            "oid": "ZTF456",
+            "diffmaglim": 1,
         },
-    ]    
-    
+    ]
 
     message = {
         "aids": {"aid1", "aid2"},
         "oids": {
-            "oid1": "aid1",
-            "oid2": "aid1",
-            "oid3": "aid1",
-            "oid2": "aid2",
+            "ZTF456": "aid1",
+            "ZTF123": "aid2",
+            "oidy": "aid1",
         },
         "last_mjds": {"aid1": 4, "aid2": 5},
         "detections": [
             {
                 "aid": "aid1",
                 "oid": "oid1",
-                "sid": "ztf",
+                "sid": "ZTF",
+                "parent_candid": "p_a",
                 "candid": "a",
+                "fid": "g",
                 "mjd": 3,
                 "has_stamp": True,
                 "extra_fields": {},
                 "new": True,
             },
             {
-                "aid": "aid1",
-                "oid": "oid2",
-                "sid": "ztf",
-                "candid": "b",
-                "mjd": 2,
-                "has_stamp": True,
-                "extra_fields": {},
-                "new": True,
-            },
-            {
-                "aid": "aid1",
+                "aid": "aid2",
                 "oid": "oid3",
-                "sid": "ztf",
+                "sid": "ZTF",
                 "candid": "c",
+                "parent_candid": "p_c",
+                "fid": "g",
                 "mjd": 4,
                 "has_stamp": True,
                 "extra_fields": {},
@@ -284,7 +288,9 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {
                 "aid": "aid1",
                 "oid": "oid1",
-                "sid": "ztf",
+                "sid": "ZTF",
+                "parent_candid": "p_b",
+                "fid": "g",
                 "candid": "b",
                 "mjd": 2,
                 "has_stamp": True,
@@ -294,17 +300,8 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {
                 "aid": "aid2",
                 "oid": "oid2",
-                "sid": "ztf",
-                "candid": "c",
-                "mjd": 5,
-                "has_stamp": True,
-                "extra_fields": {},
-                "new": True,
-            },
-            {
-                "aid": "aid2",
-                "oid": "oid2",
-                "sid": "atlas",
+                "sid": "ATLAS",
+                "fid": "g",
                 "candid": "b",
                 "mjd": 4,
                 "has_stamp": True,
@@ -313,17 +310,23 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
         ],
         "non_detections": [
-            {"mjd": 1, "oid": "i", "fid": "g"},
-            {"mjd": 1, "oid": "i", "fid": "g"},
-            {"mjd": 1, "oid": "i", "fid": "g"},
+            {
+                "mjd": 1,
+                "oid": "oid1",
+                "fid": "c",
+                "aid": "aid1",
+                "diffmaglim": 0.8,
+                "sid": "ATLAS",
+                "tid": "ATLAS-01a",
+            },
         ],
     }
 
     output = step.execute(message)
-    print(output)
     expected = {
         "detections": [
             {
+                "oid": "oidy",
                 "candid": "97923792234",
                 "mjd": 1.0,
                 "aid": "aid1",
@@ -336,22 +339,24 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             },
             {
                 "candid": "c",
-                "mjd": 1.0,
+                "mjd": 4.0,
+                "oid": "oid3",
                 "aid": "aid2",
                 "parent_candid": "p_c",
                 "has_stamp": True,
-                "sid": "SURVEY",
+                "sid": "ZTF",
                 "fid": "g",
                 "new": True,
                 "extra_fields": {},
             },
             {
                 "candid": "b",
-                "mjd": 1.0,
+                "mjd": 2.0,
+                "oid": "oid1",
                 "aid": "aid1",
                 "parent_candid": "p_b",
-                "has_stamp": False,
-                "sid": "SURVEY",
+                "has_stamp": True,
+                "sid": "ZTF",
                 "fid": "g",
                 "new": True,
                 "extra_fields": {},
@@ -359,25 +364,74 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps():
             {
                 "candid": "d",
                 "mjd": 1.0,
+                "oid": "ZTF123",
                 "aid": "aid2",
                 "parent_candid": "p_d",
                 "has_stamp": True,
-                "sid": "SURVEY",
+                "sid": "ZTF",
                 "fid": "g",
                 "new": False,
                 "extra_fields": {},
             },
+            {
+                "aid": "aid1",
+                "oid": "ZTF456",
+                "candid": "f",
+                "parent_candid": "p_d",
+                "has_stamp": True,
+                "sid": "ZTF",
+                "mjd": 1.0,
+                "fid": "g",
+                "new": False,
+                "extra_fields": {},
+            },
+            {
+                "aid": "aid1",
+                "oid": "oid1",
+                "fid": "g",
+                "sid": "ZTF",
+                "parent_candid": "p_a",
+                "candid": "a",
+                "mjd": 3,
+                "has_stamp": True,
+                "extra_fields": {},
+                "new": True,
+            },
         ],
         "non_detections": [
-            {"mjd": 1.0, "aid": "aid1", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
-            {"mjd": 1.0, "aid": "aid2", "fid": "g", "sid": "SURVEY", "tid": "SURVEY1"},
+            {
+                "mjd": 1.0,
+                "aid": "aid1",
+                "oid": "oid1",
+                "diffmaglim": 0.8,
+                "fid": "c",
+                "sid": "ATLAS",
+                "tid": "ATLAS-01a",
+            },
+            {
+                "mjd": 2.0,
+                "aid": "aid1",
+                "oid": "ZTF123",
+                "diffmaglim": 1,
+                "fid": "g",
+                "sid": "ZTF",
+                "tid": "ZTF",
+            },
+            {
+                "mjd": 3.0,
+                "aid": "aid2",
+                "oid": "ZTF456",
+                "diffmaglim": 1,
+                "fid": "f",
+                "sid": "ZTF",
+                "tid": "ZTF",
+            },
         ],
         "last_mjds": {"aid1": 1.0, "aid2": 1.0},
     }
 
     exp_dets = pd.DataFrame(expected["detections"])
     exp_nd = pd.DataFrame(expected["non_detections"])
-
     assert_frame_equal(
         output["detections"].set_index("candid"),
         exp_dets.set_index("candid"),

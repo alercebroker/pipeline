@@ -19,6 +19,7 @@ from .database_sql import (
 from db_plugins.db.mongo.models import (
     Detection as MongoDetection,
     NonDetection as MongoNonDetection,
+    ForcedPhotometry as MongoForcedPhotometry,
 )
 
 
@@ -75,7 +76,7 @@ class LightcurveStep(GenericStep):
         db_sql_non_detections = _get_sql_non_detections(
             messages["oids"], self.db_sql, self._parse_ztf_non_detection
         )
-        db_sql_forced_photometries = self._get_sql_forced_photometries(
+        db_sql_forced_photometries = _get_sql_forced_photometries(
             messages["oids"], self.db_sql, self._parse_ztf_forced_photometry
         )
         detections = pd.DataFrame(
@@ -102,7 +103,7 @@ class LightcurveStep(GenericStep):
         self.logger.debug(
             f"Obtained {len(detections[detections['new']])} new detections"
         )
-
+        print(f'messages {len(messages["detections"])}')
         return {
             "detections": detections,
             "non_detections": non_detections,
@@ -153,14 +154,16 @@ class LightcurveStep(GenericStep):
                 extra_fields=extra_fields,
             )
             parsed_result.append(parsed)
+        
+        return parsed_result
 
     def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
         non_dets = []
         for non_det in ztf_models:
             non_dets.append(
                 MongoNonDetection(
-                    tid="ztf",
-                    sid="ztf",
+                    tid="ZTF",
+                    sid="ZTF",
                     aid=oids[non_det["oid"]],
                     oid=non_det["oid"],
                     mjd=non_det["mjd"],
@@ -168,6 +171,13 @@ class LightcurveStep(GenericStep):
                     diffmaglims=non_det.get("diffmaglim", None),
                 )
             )
+        return non_dets
+
+    def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
+        return [
+            MongoForcedPhotometry(**forced, aid=oids[forced["oid"]])
+            for forced in ztf_models
+        ]
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:

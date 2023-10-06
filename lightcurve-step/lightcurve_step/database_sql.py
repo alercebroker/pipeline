@@ -29,7 +29,7 @@ class PSQLConnection:
             session.close()
 
 
-def default_parser(data):
+def default_parser(data, **kwargs):
     return data
 
 
@@ -44,7 +44,7 @@ def _get_sql_detections(
 
 def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
     with db_sql.session() as session:
-        stmt = select(Detection).where(NonDetection.oid.in_(oids))
+        stmt = select(NonDetection).where(NonDetection.oid.in_(oids))
         detections = session.execute(stmt).all()
         return parser(detections, oids=oids)
 
