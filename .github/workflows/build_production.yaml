@@ -1,255 +1,255 @@
-name: Build Production
+# name: Build Production
 
-on:
-  release:
-    types:
-      - published
+# on:
+#   release:
+#     types:
+#       - published
 
-jobs:
-  update_versions:
-    uses: ./.github/workflows/update-versions.yaml
-    with:
-      build-type: production
+# jobs:
+#   update_versions:
+#     uses: ./.github/workflows/update-versions.yaml
+#     with:
+#       build-type: production
 
-  alert_archiving_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: alert_archiving_step
-      base-folder: alert_archiving_step
-      build-context: alert_archiving_step
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   alert_archiving_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: alert_archiving_step
+#       base-folder: alert_archiving_step
+#       build-context: alert_archiving_step
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  correction_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: correction_step
-      step-name-prefix: ""
-      base-folder: correction_step
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   correction_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: correction_step
+#       step-name-prefix: ""
+#       base-folder: correction_step
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  early_classification_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: early_classification_step
-      base-folder: early_classification_step
-      step-name-prefix: ""
-      build-context: "."
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   early_classification_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: early_classification_step
+#       base-folder: early_classification_step
+#       step-name-prefix: ""
+#       build-context: "."
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  feature_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: feature_step
-      step-name-prefix: ""
-      base-folder: feature_step
-      build-context: "."
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   feature_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: feature_step
+#       step-name-prefix: ""
+#       base-folder: feature_step
+#       build-context: "."
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_ztf_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_ztf
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.ztf
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_ztf_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_ztf
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.ztf
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_balto_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_balto
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.balto
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_balto_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_balto
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.balto
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_messi_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_messi
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.messi
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_messi_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_messi
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.messi
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_barney_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_barney
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.barney
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_barney_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_barney
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.barney
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_mlp_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_mlp
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.mlp
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_mlp_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_mlp
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.mlp
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lc_classification_step_toretto_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lc_classification_step_toretto
-      step-name-prefix: ""
-      build-context: .
-      base-folder: lc_classification_step
-      file: Dockerfile.toretto
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lc_classification_step_toretto_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lc_classification_step_toretto
+#       step-name-prefix: ""
+#       build-context: .
+#       base-folder: lc_classification_step
+#       file: Dockerfile.toretto
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  lightcurve_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: lightcurve_step
-      step-name-prefix: ""
-      base-folder: lightcurve-step
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   lightcurve_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: lightcurve_step
+#       step-name-prefix: ""
+#       base-folder: lightcurve-step
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  magstats_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: magstats_step
-      base-folder: magstats_step
-      build-context: .
-      step-name-prefix: ""
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   magstats_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: magstats_step
+#       base-folder: magstats_step
+#       build-context: .
+#       step-name-prefix: ""
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  prv_candidates_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: prv_candidates_step
-      step-name-prefix: ""
-      base-folder: prv_candidates_step
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   prv_candidates_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: prv_candidates_step
+#       step-name-prefix: ""
+#       base-folder: prv_candidates_step
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  reflector_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      base-folder: reflector_step
-      build-context: reflector_step
-      step-name: reflector_step
-      build-type: production
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   reflector_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       base-folder: reflector_step
+#       build-context: reflector_step
+#       step-name: reflector_step
+#       build-type: production
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  s3_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: s3_step
-      step-name-prefix: ""
-      base-folder: s3_step
-      build-context: s3_step
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   s3_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: s3_step
+#       step-name-prefix: ""
+#       base-folder: s3_step
+#       build-context: s3_step
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  sorting_hat_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: sorting_hat_step
-      step-name-prefix: ""
-      base-folder: sorting_hat_step
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   sorting_hat_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: sorting_hat_step
+#       step-name-prefix: ""
+#       base-folder: sorting_hat_step
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  watchlist_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: watchlist_step
-      base-folder: watchlist_step
-      build-context: watchlist_step
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   watchlist_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: watchlist_step
+#       base-folder: watchlist_step
+#       build-context: watchlist_step
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  xmatch_step_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: xmatch_step
-      step-name-prefix: ""
-      base-folder: xmatch_step
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   xmatch_step_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: xmatch_step
+#       step-name-prefix: ""
+#       base-folder: xmatch_step
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  scribe_production:
-    uses: ./.github/workflows/build-template.yaml
-    needs: update_versions
-    with:
-      build-type: production
-      step-name: scribe
-      step-name-prefix: ""
-      base-folder: scribe
-      build-context: .
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   scribe_production:
+#     uses: ./.github/workflows/build-template.yaml
+#     needs: update_versions
+#     with:
+#       build-type: production
+#       step-name: scribe
+#       step-name-prefix: ""
+#       base-folder: scribe
+#       build-context: .
+#     secrets:
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  db_plugins_build:
-    needs: update_versions
-    uses: ./.github/workflows/build-template.yaml
-    with:
-      base-folder: 'libs/db-plugins'
-      step-name: "db-plugins"
-      publish-github: "false"
-      publish-pypi: "true"
-    secrets:
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+#   db_plugins_build:
+#     needs: update_versions
+#     uses: ./.github/workflows/build-template.yaml
+#     with:
+#       base-folder: 'libs/db-plugins'
+#       step-name: "db-plugins"
+#       publish-github: "false"
+#       publish-pypi: "true"
+#     secrets:
+#       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+#       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
