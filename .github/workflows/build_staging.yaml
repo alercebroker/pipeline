@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-dagger:
+  update-packages-dagger:
     runs-on: ubuntu-latest
     env:
       GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -27,9 +27,227 @@ jobs:
       - name: Run dagger pipeline
         run: |
           cd ci
-          poetry run python main.py build staging
+          poetry run python main.py update-versions staging \
+          correction_step,feature_step,lightcurve-step,magstats_step,prv_candidates_step,scribe,sorting_hat_step,xmatch_step
+
+  build-correction-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging correction_step
+
+  build-feature-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging feature_step
+
+  build-feature-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging ingestion_step
+
+  build-lightcurve-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging lightcurve-step
+
+  build-magstats-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging magstats_step
+
+  build-prv-candidates-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging prv_candidates_step
+
+  build-scribe-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging scribe
+
+  build-sorting-hat-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging sorting_hat_step
+
+  build-xmatch-dagger:
+    needs: update-packages-dagger
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging xmatch_step
+
   release-chart:
-    needs: build-dagger
+    needs: update-packages-dagger
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
