@@ -27,7 +27,6 @@ def build_staging(dry_run: bool):
         "lightcurve-step",
         "magstats_step",
         "prv_candidates_step",
-        "s3_step",
         "scribe",
         "sorting_hat_step",
         "xmatch_step",
