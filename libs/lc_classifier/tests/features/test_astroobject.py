@@ -4,8 +4,8 @@ from lc_classifier.features.core.base import AstroObject
 
 
 class TestAstroObject(unittest.TestCase):
-    def test_aid_in_metadata(self):
-        detections = pd.DataFrame(
+    def setUp(self) -> None:
+        self.detections = pd.DataFrame(
             data=[
                 [
                     "candid_example",
@@ -51,17 +51,37 @@ class TestAstroObject(unittest.TestCase):
                 "e_dec",
                 "brightness",
                 "e_brightness",
-                "units"
+                "unit"
             ]
         )
-        metadata = pd.DataFrame(
+
+        self.metadata = pd.DataFrame(
+            [["aid", "aid_example"]],
+            columns=["field", "value"]
+        )
+
+    def test_aid_in_metadata(self):
+        astro_object = AstroObject(
+            detections=self.detections,
+            metadata=self.metadata
+        )
+
+        incomplete_metadata = pd.DataFrame(
             [
-                ["aid", "aid_example"]
+                ["oid", "oid_example"]
             ],
             columns=["field", "value"]
         )
 
-        astro_object = AstroObject(
-            detections=detections,
-            metadata=metadata
-        )
+        with self.assertRaises(ValueError) as cm:
+            astro_object = AstroObject(
+                detections=self.detections,
+                metadata=incomplete_metadata
+            )
+
+    def test_detections_missing_columns(self):
+        with self.assertRaises(ValueError) as cm:
+            astro_object = AstroObject(
+                detections=self.detections[['candid', 'mjd']],
+                metadata=self.metadata
+            )

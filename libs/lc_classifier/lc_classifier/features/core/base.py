@@ -19,6 +19,16 @@ class AstroObject:
     def __post_init__(self):
         if 'aid' not in self.metadata['field'].values:
             raise ValueError("'aid' is a mandatory field of metadata")
+
+        mandatory_detection_columns = {
+            'candid', 'tid', 'mjd', 'sid',
+            'fid', 'pid', 'ra', 'dec', 'brightness',
+            'e_brightness', 'unit'}
+
+        missing_detections_columns = mandatory_detection_columns - set(self.detections.columns)
+        if len(missing_detections_columns) > 0:
+            raise ValueError(f"detections has missing columns: {missing_detections_columns}")
+
         if self.features is None:
             self.features = pd.DataFrame(
                 columns=[
