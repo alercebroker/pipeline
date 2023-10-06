@@ -1,6 +1,5 @@
 import anyio
 from utils import build, get_tags, update_version, git_push, update_chart
-from multiprocessing import Process
 
 
 def _build_package(package_dir: str, dry_run: bool):
@@ -21,7 +20,6 @@ def _update_chart_version(packages: list, dry_run: bool):
 def build_staging(dry_run: bool):
     packages = [
         "correction_step",
-        "early_classification_step",
         "feature_step",
         "lc_classification_step",
         "lightcurve-step",
@@ -30,16 +28,12 @@ def build_staging(dry_run: bool):
         "s3_step",
         "scribe",
         "sorting_hat_step",
-        "stamp_classifier_step",
-        "watchlist_step",
         "xmatch_step",
     ]
     libs = [
         "libs/apf",
         "libs/db-plugins",
         "libs/lc_classifier",
-        # "libs/mhps",
-        # "libs/P4j",
         "libs/survey_parser_plugins",
         "libs/turbo-fats",
     ]
