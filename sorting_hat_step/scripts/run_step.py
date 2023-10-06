@@ -44,12 +44,10 @@ if bool(os.getenv("USE_PROFILING", True)):
 
 prometheus_metrics = PrometheusMetrics()
 start_http_server(8000)
-prefix = os.getenv("CLASS_PREFIX", "")
 
 step = SortingHatStep(
     db_connection=database,
     config=STEP_CONFIG,
     prometheus_metrics=prometheus_metrics,
-    prefix=prefix
 )
 step.start()

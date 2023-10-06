@@ -61,7 +61,9 @@ class ELAsTiCCFeatureExtractor:
     def _create_metadata_dataframe(self, detections: pd.DataFrame):
         # Keep one metadata row per object, as it should not change
         # between detections for a given object
-        one_detection_per_object = detections[["extra_fields"]][~detections.index.duplicated(keep="first")]
+        one_detection_per_object = detections[["extra_fields"]][
+            ~detections.index.duplicated(keep="first")
+        ]
         metadata = []
         for ef in one_detection_per_object["extra_fields"]:
             metadata.append(pickle.loads(ef["diaObject"])[0])

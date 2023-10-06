@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import os
 from apf.core.step import (
     DefaultMetricsProducer,
     GenericStep,
@@ -100,6 +101,28 @@ def test_get_value(basic_config):
     assert aliased_metric == "oid"
     assert value == "T"
 
+    aliased_metric, value = step.get_value(message, {"key": "new_metric", "value": 1})
+    assert aliased_metric == "new_metric"
+    assert value == 1
+
+    aliased_metric, value = step.get_value(
+        message, {"key": "new_metric", "value": 1, "alias": "new_metric_alias"}
+    )
+    assert aliased_metric == "new_metric_alias"
+    assert value == 1
+
+    aliased_metric, value = step.get_value(
+        message,
+        {
+            "key": "new_metric",
+            "value": 1,
+            "alias": "new_metric_alias",
+            "format": lambda x: x + 1,
+        },
+    )
+    assert aliased_metric == "new_metric_alias"
+    assert value == 2
+
     with pytest.raises(KeyError):
         step.get_value(message, {})
 
@@ -152,9 +175,12 @@ def test_post_execute(step, mocker):
     step.metrics["timestamp_received"] = datetime.now(timezone.utc)
     assert step.metrics.get("timestamp_sent") == None
     assert step.metrics.get("execution_time") == None
+    os.environ["METRICS_SURVEY"] = "test"
     step._post_execute(result)
     post_execute.assert_called_once_with(result)
     assert step.metrics.get("timestamp_sent")
+    assert step.metrics.get("source") == "MockStep"
+    assert step.metrics.get("survey") == "test"
     send_metrics.assert_called()
 
 

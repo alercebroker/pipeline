@@ -41,7 +41,7 @@ def conesearch_query(
                         "type": "Point",
                         "coordinates": [ra - 180, dec],
                     },
-                    "$maxDistance": math.radians(radius / 3600),
+                    "$maxDistance": math.radians(radius / 3600) * 6.3781e6,
                 },
             },
         },

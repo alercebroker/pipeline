@@ -44,7 +44,7 @@ class DatabaseTestCase(unittest.TestCase):
                 "loc": {
                     "$nearSphere": {
                         "$geometry": {"type": "Point", "coordinates": [0, 0]},
-                        "$maxDistance": 1,
+                        "$maxDistance": 6.3781e6,
                     },
                 },
             },

@@ -1,0 +1,29 @@
+{{- if .Values.autoscaling.atlas.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: '{{ include "chart.fullname" . }}-atlas'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: '{{ include "chart.fullname" . }}-atlas'
+  minReplicas: {{ .Values.autoscaling.atlas.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.atlas.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.atlas.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.autoscaling.atlas.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.atlas.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.atlas.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

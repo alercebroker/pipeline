@@ -3,6 +3,7 @@ import datetime
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, Iterable, List, Type, Union
+import os
 
 from apf.consumers import GenericConsumer
 from apf.core import get_class
@@ -56,7 +57,6 @@ class GenericStep(abc.ABC):
         level: int = logging.NOTSET,
         config: dict = {},
         prometheus_metrics: PrometheusMetrics = DefaultPrometheusMetrics(),
-        prefix: str = ""
     ):
         self._set_logger(level)
         self.config = config
@@ -66,7 +66,6 @@ class GenericStep(abc.ABC):
             self.metrics_producer_params
         )
         self.metrics = {}
-        self.prefix = prefix
         self.extra_metrics = []
         if self.metrics_config:
             self.extra_metrics = self.metrics_config.get("EXTRA_METRICS", ["candid"])
@@ -161,7 +160,6 @@ class GenericStep(abc.ABC):
 
         """
         if self.metrics_sender:
-            metrics["source"] = f"{self.prefix}{self.__class__.__name__}"
             self.metrics_sender.send_metrics(metrics)
 
     def _pre_consume(self):
@@ -184,16 +182,8 @@ class GenericStep(abc.ABC):
         self.message = message
         if isinstance(self.message, dict):
             self.prometheus_metrics.consumed_messages.observe(1)
-            # tid = self.message.get("tid")
-            # if tid:
-            #     tid = str(tid).upper()
-            #     self.prometheus_metrics.telescope_id.state(tid)
         if isinstance(self.message, list):
             self.prometheus_metrics.consumed_messages.observe(len(self.message))
-            # tid = self.message[0].get("tid")
-            # if tid:
-            #     tid = str(tid).upper()
-            #     self.prometheus_metrics.telescope_id.state(tid)
         try:
             preprocessed = self.pre_execute(self.message)
         except Exception as error:
@@ -242,6 +232,12 @@ class GenericStep(abc.ABC):
         if self.extra_metrics:
             extra_metrics = self.get_extra_metrics(self.message)
             self.metrics.update(extra_metrics)
+        if "source" not in self.metrics:
+            self.metrics["source"] = os.getenv(
+                "METRICS_SOURCE", f"{self.__class__.__name__}"
+            )
+        if "survey" not in self.metrics:
+            self.metrics["survey"] = os.getenv("METRICS_SURVEY")
         self.send_metrics(**self.metrics)
         if isinstance(self.message, dict):
             self.prometheus_metrics.processed_messages.observe(1)
@@ -333,6 +329,10 @@ class GenericStep(abc.ABC):
                 raise KeyError("'key' in parameteres not found")
 
             val = message.get(params["key"])
+            if val is None or "value" in params:
+                # returns None, so val will remain None or take the value of params["value"]
+                val = params.get("value")
+
             if "format" in params:
                 if not callable(params["format"]):
                     raise ValueError("'format' parameter must be a calleable.")

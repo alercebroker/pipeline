@@ -1,0 +1,47 @@
+---
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: '{{ include "sorting-hat.fullname" . }}'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "sorting-hat.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: '{{ include "sorting-hat.fullname" . }}'
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetConsumedMessages}}
+    - type: Object
+      object:
+        metric:
+          name: consumed_messages_sum
+        describedObject:
+          apiVersion: apps/v1
+          kind: Deployment
+          name: '{{ include "sorting-hat.fullname" . }}'
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.targetConsumedMessages  }}
+    {{- end}}
+{{- end }}

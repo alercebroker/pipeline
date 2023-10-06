@@ -35,8 +35,7 @@ if STEP_CONFIG["USE_PROFILING"]:
         server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
     )
 
-prefix = os.getenv("CLASS_PREFIX", "")
 
 extractor = selector(EXTRACTOR)
-step = FeaturesComputer(extractor, config=STEP_CONFIG, prefix=prefix)
+step = FeaturesComputer(extractor, config=STEP_CONFIG)
 step.start()

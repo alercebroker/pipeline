@@ -1,0 +1,163 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ include "chart.fullname" . }}-ztf'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: '{{ include "chart.name" . }}-ztf'
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  {{- if not .Values.autoscaling.ztf.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: '{{ include "chart.name" . }}-ztf'
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: '{{ include "chart.name" . }}-ztf'
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.ztf.repository }}:{{ .Values.image.ztf.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources.ztf | nindent 12 }}
+          env:
+            - name: CONSUMER_TOPICS
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: consumer-topics
+            - name: CONSUMER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: internal-server
+            - name: CONSUMER_GROUP_ID
+              value: '{{ include "chart.fullname" . }}-ztf'
+            - name: PRODUCER_TOPIC_FORMAT
+              value: stamp_classifier_ztf_%s
+            - name: PRODUCER_DATE_FORMAT
+              value: '%Y%m%d'
+            - name: PRODUCER_CHANGE_HOUR
+              value: "23"
+            - name: PRODUCER_RETENTION_DAYS
+              value: "1"
+            - name: PRODUCER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: public-server
+            - name: SCRIBE_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: internal-server
+            - name: SCRIBE_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: scribe-topic
+            - name: METRICS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: internal-server
+            - name: METRICS_TOPIC
+              value: "metrics"
+            - name: MODEL_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: model-name
+            - name: MODEL_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: model-version
+            - name: CLASSIFIER_STRATEGY
+              value: "ZTF"
+            {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
+            - name: CONSUMER_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-username
+            - name: CONSUMER_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.producer.enabled }}
+            - name: PRODUCER_SECURITY_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: producer-security-protocol
+            - name: PRODUCER_SASL_MECHANISM
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "chart.fullname" . }}-ztf'
+                  key: producer-sasl-mechanism
+            - name: PRODUCER_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: producer-username
+            - name: PRODUCER_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: producer-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.scribe.enabled }}
+            - name: SCRIBE_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: scribe-username
+            - name: SCRIBE_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: scribe-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
+            - name: METRICS_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-username
+            - name: METRICS_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-password
+            {{- end }}
+            - name: METRICS_SOURCE
+              value: {{ .Release.Name }}
+            - name: METRICS_SURVEY
+              value: ZTF
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

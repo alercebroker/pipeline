@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xmatch-step"
-version = "6.1.1a29"
+version = "6.1.1a38"
 description = "xmatch step"
 authors = []
 readme = "README.md"
@@ -21,7 +21,7 @@ pytest = "^7.3.1"
 pytest-docker = "^1.0.1"
 numpy = "^1.21.6"
 cython = "^0.29.36"
-psycopg2 = "^2.9.6"
+psycopg2-binary = "^2.9.6"
 pytest-cov = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]

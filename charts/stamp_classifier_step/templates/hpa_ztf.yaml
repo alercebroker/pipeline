@@ -1,0 +1,29 @@
+{{- if .Values.autoscaling.ztf.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: '{{ include "chart.fullname" . }}-ztf'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: '{{ include "chart.fullname" . }}-ztf'
+  minReplicas: {{ .Values.autoscaling.ztf.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.ztf.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.ztf.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.autoscaling.ztf.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.ztf.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.ztf.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
