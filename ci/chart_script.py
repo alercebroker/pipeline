@@ -6,11 +6,20 @@ def update_app_version(package: str, new_version: str, dry_run: bool):
     with open(f"../charts/{package}/Chart.yaml", "r+") as f:
         original = f.read()
         f.seek(0)
-        chart = re.sub(
-            r"appVersion: (\d+).(\d+).(\d+).*",
-            f"appVersion: {new_version}",
-            original,
-        )
+        match = re.match(r"appVersion: (\d+).(\d+).(\d+).*", original)
+        f.seek(0)
+        if not match:
+            chart = re.sub(
+                r"appVersion: \"(\d+).(\d+).(\d+).*\"",
+                f"appVersion: {new_version}",
+                original,
+            )
+        else:
+            chart = re.sub(
+                r"appVersion: (\d+).(\d+).(\d+).*",
+                f"appVersion: {new_version}",
+                original,
+            )
         print(f"Updating {package} appVersion to {new_version}")
         if not dry_run:
             f.write(chart)
