@@ -1,2 +1,0 @@
-model_checkpoint_path: "/home/rcarrasco/Projects/stamp_classifier/stamp_classifier/results/staging_model/DeepHits_EntropyRegBeta0.5000_batch64_lr0.00100_droprate0.5000_inputsize21_filtersize5_0_20200708-160759/checkpoints/model"
-all_model_checkpoint_paths: "/home/rcarrasco/Projects/stamp_classifier/stamp_classifier/results/staging_model/DeepHits_EntropyRegBeta0.5000_batch64_lr0.00100_droprate0.5000_inputsize21_filtersize5_0_20200708-160759/checkpoints/model"

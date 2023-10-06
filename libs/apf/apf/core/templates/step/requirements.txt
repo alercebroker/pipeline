@@ -1,1 +1,0 @@
-apf_base=={{apf_version}}

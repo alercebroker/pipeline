@@ -1,9 +1,0 @@
-.pytest_cache/
-__pycache__/
-*.pyc
-.env
-*.env
-.idea
-.python-version
-__SUCCESS__
-.projectile

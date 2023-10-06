@@ -1,7 +1,0 @@
-confluent_kafka==2.0.2
-apf_base==2.5.1b
-scipy
-boto3==1.26.69
-
-git+https://github.com/alercebroker/survey-parser-plugins@2.3.6
-git+https://github.com/alercebroker/db-plugins@4.2.5
