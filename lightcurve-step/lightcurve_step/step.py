@@ -84,6 +84,7 @@ class LightcurveStep(GenericStep):
             + list(db_mongo_detections)
             + list(db_sql_detections)
             + list(db_mongo_forced_photometries)
+            + list(db_sql_forced_photometries)
         )
         non_detections = pd.DataFrame(
             messages["non_detections"]

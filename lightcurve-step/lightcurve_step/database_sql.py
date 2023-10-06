@@ -50,4 +50,4 @@ def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
 
 
 def _get_sql_forced_photometries(oids, db_sql, parser: Callable = default_parser):
-    return
+    return []
