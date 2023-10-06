@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "turbofats"
-version = "6.1.1a39"
+version = "6.1.1a40"
 description = "Library with some features for astronomical time series"
 authors = ["ALeRCE Team"]
 license = "MIT licence"
