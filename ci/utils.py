@@ -96,7 +96,7 @@ async def update_version(package_dir: str, version: str, dry_run: bool):
         )
 
 
-async def build(package_dir: str, tags: list, dry_run: bool):
+async def build(package_dir: str, dry_run: bool):
     config = dagger.Config(log_output=sys.stdout)
 
     async with dagger.Connection(config) as client:
@@ -109,6 +109,7 @@ async def build(package_dir: str, tags: list, dry_run: bool):
         image_ref = await client.container().build(
             context=context_dir, dockerfile=f"{package_dir}/Dockerfile"
         )
+        tags = await get_tags(client, package_dir)
         print(f"Built image with tag: {tags}")
 
         if not dry_run:
@@ -118,30 +119,24 @@ async def build(package_dir: str, tags: list, dry_run: bool):
             await _publish_container(image_ref, package_dir, tags, secret)
 
 
-async def get_tags(package_dir: str) -> list:
-    config = dagger.Config(log_output=sys.stdout)
-
-    async with dagger.Connection(config) as client:
-        path = pathlib.Path().cwd().parent.absolute()
-        # get build context directory
-        source = (
-            client.container()
-            .from_("python:3.11-slim")
-            .with_exec(["pip", "install", "poetry"])
-            .with_directory(
-                "/pipeline",
-                client.host().directory(
-                    str(path), exclude=[".venv/", "**/.venv/"]
-                ),
-            )
+async def get_tags(client: dagger.Client, package_dir: str) -> list:
+    path = pathlib.Path().cwd().parent.absolute()
+    # get build context directory
+    source = (
+        client.container()
+        .from_("python:3.11-slim")
+        .with_exec(["pip", "install", "poetry"])
+        .with_directory(
+            "/pipeline",
+            client.host().directory(
+                str(path), exclude=[".venv/", "**/.venv/"]
+            ),
         )
-
-        runner = source.with_workdir(f"/pipeline/{package_dir}").with_exec(
-            ["poetry", "version", "--short"]
-        )
-
-        out = await runner.stdout()
-
+    )
+    runner = source.with_workdir(f"/pipeline/{package_dir}").with_exec(
+        ["poetry", "version", "--short"]
+    )
+    out = await runner.stdout()
     return ["rc", out.strip("\n")]
 
 
