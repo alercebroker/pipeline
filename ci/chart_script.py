@@ -69,15 +69,15 @@ def get_package_version(package: str):
         return version
 
 
-def main(package: str, dry_run: bool):
-    package_version = get_package_version(package)
+def main(package: str, package_version, dry_run: bool):
     update_app_version(package, package_version, dry_run)
     update_chart_version(package, dry_run=dry_run)
 
 
 if __name__ == "__main__":
     package = sys.argv[1]
+    package_version = sys.argv[2]
     dry_run = False
-    if len(sys.argv) > 2:
-        dry_run = sys.argv[2] == "--dry-run"
-    main(package, dry_run)
+    if len(sys.argv) > 3:
+        dry_run = sys.argv[3] == "--dry-run"
+    main(package, package_version, dry_run)

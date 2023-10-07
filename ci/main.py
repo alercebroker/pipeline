@@ -25,9 +25,9 @@ def build(stage, packages, dry_run):
         )
 
 
-def deploy(stage, dry_run):
+def deploy(stage, packages, dry_run):
     if stage == "staging":
-        deploy_staging(dry_run)
+        deploy_staging(packages, dry_run)
     elif stage == "production":
         print("Production deploy not implemented yet")
     else:
@@ -51,4 +51,4 @@ if __name__ == "__main__":
     if command == "build":
         build(stage, packages, dry_run)
     if command == "deploy":
-        deploy(stage, dry_run)
+        deploy(stage, packages, dry_run)
