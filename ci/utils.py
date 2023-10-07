@@ -2,7 +2,6 @@ import sys
 import dagger
 import os
 import pathlib
-import re
 import sys
 
 
@@ -27,16 +26,44 @@ async def _publish_container(
         print(f"published image at: {addr}")
 
 
-async def git_push(container: dagger.Container, dry_run: bool):
-    container.with_workdir("/pipeline").with_exec(["git", "status"])
-    if not dry_run:
-        await (
-            container.with_exec(["git", "add", "."])
-            .with_exec(["git", "commit", "-m", "chore: update version"])
-            .with_exec(["git", "push"])
+async def git_push(dry_run: bool):
+    config = dagger.Config(log_output=sys.stdout)
+
+    async with dagger.Connection(config) as client:
+        path = pathlib.Path().cwd().parent.absolute()
+        container = (
+            client.container()
+            .from_("alpine:latest")
+            .with_exec(["apk", "add", "--no-cache", "git"])
+            .with_exec(
+                ["git", "config", "--global", "user.name", '"@alerceadmin"']
+            )
+            .with_exec(
+                [
+                    "git",
+                    "config",
+                    "--global",
+                    "user.email",
+                    "alerceadmin@users.noreply.github.com",
+                ]
+            )
+            .with_directory(
+                "/pipeline",
+                client.host().directory(
+                    str(path), exclude=[".venv/", "**/.venv/"]
+                ),
+            )
+            .with_workdir("/pipeline")
+            .with_exec(["git", "status"])
         )
-    else:
-        await container
+        if not dry_run:
+            await (
+                container.with_exec(["git", "add", "."])
+                .with_exec(["git", "commit", "-m", "chore: update version"])
+                .with_exec(["git", "push"])
+            )
+        else:
+            await container
 
 
 async def update_version(package_dir: str, version: str, dry_run: bool):
@@ -82,7 +109,6 @@ async def update_version(package_dir: str, version: str, dry_run: bool):
         )
         new_version = new_version.strip()
         await update_chart(source, path, package_dir, new_version, dry_run)
-        await git_push(source, dry_run)
         await source.directory(f"/pipeline/{package_dir}").export(
             str(path / package_dir)
         )
