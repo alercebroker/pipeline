@@ -246,6 +246,16 @@ entries:
     version: 4.8.4
   lightcurve-step:
   - apiVersion: v2
+    appVersion: 6.1.1a46
+    created: "2023-10-07T16:19:34.313745808Z"
+    description: Full lightcurve provider step
+    digest: dc4e38a4d8e1a068002ce81b65bcf801b1ea8eda1b3ed041ca2bead7bff973c0
+    name: lightcurve-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/lightcurve-step-1.3.11/lightcurve-step-1.3.11.tgz
+    version: 1.3.11
+  - apiVersion: v2
     appVersion: 6.0.0
     created: "2023-10-06T20:52:07.187668646Z"
     description: Full lightcurve provider step
@@ -793,4 +803,4 @@ entries:
     urls:
     - https://github.com/alercebroker/pipeline/releases/download/xmatch-step-2.3.4/xmatch-step-2.3.4.tgz
     version: 2.3.4
-generated: "2023-10-06T20:52:08.082423574Z"
+generated: "2023-10-07T16:19:34.313980109Z"
