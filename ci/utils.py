@@ -56,14 +56,15 @@ async def git_push(dry_run: bool):
             .with_workdir("/pipeline")
             .with_exec(["git", "status"])
         )
-        if not dry_run:
-            await (
-                container.with_exec(["git", "add", "."])
-                .with_exec(["git", "commit", "-m", "chore: update version"])
-                .with_exec(["git", "push"])
-            )
-        else:
-            await container
+        await container
+        # if not dry_run:
+        #     await (
+        #         container.with_exec(["git", "add", "."])
+        #         .with_exec(["git", "commit", "-m", "chore: update version"])
+        #         .with_exec(["git", "push"])
+        #     )
+        # else:
+        #     await container
 
 
 async def update_version(package_dir: str, version: str, dry_run: bool):
@@ -101,18 +102,20 @@ async def update_version(package_dir: str, version: str, dry_run: bool):
         if dry_run:
             update_version_command.append("--dry-run")
 
-        new_version = await (
+        source = (
             source.with_workdir(f"/pipeline/{package_dir}")
             .with_exec(update_version_command)
             .with_exec(["poetry", "version", "--short"])
-            .stdout()
         )
+        new_version = await source.stdout()
         new_version = new_version.strip()
-        await update_chart(source, path, package_dir, new_version, dry_run)
-        await source.directory(f"/pipeline/{package_dir}").export(
+        updated = update_chart(source, package_dir, new_version, dry_run)
+        await updated.directory(f"/pipeline/{package_dir}").export(
             str(path / package_dir)
         )
-        await source.directory("/pipeline/charts").export(str(path / "charts"))
+        await updated.directory("/pipeline/charts").export(
+            str(path / "charts")
+        )
 
 
 async def build(package_dir: str, dry_run: bool):
@@ -159,8 +162,8 @@ async def get_tags(client: dagger.Client, package_dir: str) -> list:
     return ["rc", out.strip("\n")]
 
 
-async def update_chart(
-    container: dagger.Container, path, chart_name, app_version, dry_run: bool
+def update_chart(
+    container: dagger.Container, chart_name, app_version, dry_run: bool
 ):
     script = [
         "poetry",
@@ -172,4 +175,4 @@ async def update_chart(
     ]
     if dry_run:
         script.append("--dry-run")
-    await container.with_workdir("/pipeline/ci").with_exec(script)
+    return container.with_workdir("/pipeline/ci").with_exec(script)
