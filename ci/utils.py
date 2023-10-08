@@ -56,15 +56,14 @@ async def git_push(dry_run: bool):
             .with_workdir("/pipeline")
             .with_exec(["git", "status"])
         )
-        await container
-        # if not dry_run:
-        #     await (
-        #         container.with_exec(["git", "add", "."])
-        #         .with_exec(["git", "commit", "-m", "chore: update version"])
-        #         .with_exec(["git", "push"])
-        #     )
-        # else:
-        #     await container
+        if not dry_run:
+            await (
+                container.with_exec(["git", "add", "."])
+                .with_exec(["git", "commit", "-m", "chore: update version"])
+                .with_exec(["git", "push"])
+            )
+        else:
+            await container
 
 
 async def update_version(package_dir: str, version: str, dry_run: bool):
