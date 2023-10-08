@@ -18,16 +18,16 @@ RUN apt-get update && \
 
 RUN pip install poetry
 WORKDIR /app
-COPY ./poetry.lock ./pyproject.toml ./
+COPY ./s3_step/poetry.lock ./s3_step/pyproject.toml ./
 RUN poetry install --no-root --without=dev --without=test
 
 FROM python:3.9-slim as production
 RUN pip install poetry
 COPY --from=builder /app /app
 WORKDIR /app
-COPY ./README.md /app/README.md
-COPY ./settings.py /app/settings.py
-COPY ./scripts /app/scripts
-COPY ./s3_step /app/s3_step
+COPY ./s3_step/README.md /app/README.md
+COPY ./s3_step/settings.py /app/settings.py
+COPY ./s3_step/scripts /app/scripts
+COPY ./s3_step/s3_step /app/s3_step
 RUN poetry install --only-root
 CMD ["poetry", "run", "python", "scripts/run_step.py"]
