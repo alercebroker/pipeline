@@ -108,26 +108,11 @@ async def helm_upgrade(package: str, dry_run: bool):
         )
 
 
-def deploy_package(package: str, dry_run: bool):
-    print(f"Deploying {package}")
-    anyio.run(helm_upgrade, package, dry_run)
+async def deploy_package(packages: list, dry_run: bool):
+    for package in packages:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(helm_upgrade, package, dry_run)
 
 
-def deploy_staging(dry_run: bool):
-    packages = [
-        #("correction_step", dry_run),
-        #("early_classification_step", dry_run),
-        #("feature_step", dry_run),
-        #("lc_classification_step", dry_run),
-        #("lightcurve-step", dry_run),
-        #("magstats_step", dry_run),
-        #("prv_candidates_step", dry_run),
-        #("s3_step", dry_run),
-        ("scribe", dry_run),
-        #("sorting_hat_step", dry_run),
-        #("stamp_classifier_step", dry_run),
-        #("watchlist_step", dry_run),
-        #("xmatch_step", dry_run),
-    ]
-    for p in packages:
-        deploy_package(*p)
+def deploy_staging(packages: list, dry_run: bool):
+    anyio.run(deploy_package, packages, dry_run)
