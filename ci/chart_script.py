@@ -6,7 +6,7 @@ def update_app_version(package: str, new_version: str, dry_run: bool):
     with open(f"../charts/{package}/Chart.yaml", "r+") as f:
         original = f.read()
         f.seek(0)
-        match = re.match(r"appVersion: (\d+).(\d+).(\d+).*", original)
+        match = re.search(r"appVersion: (\d+).(\d+).(\d+).*", original)
         f.seek(0)
         if not match:
             chart = re.sub(
