@@ -112,8 +112,8 @@ async def update_version(package_dir: str, version: str, dry_run: bool):
         await updated.directory(f"/pipeline/{package_dir}").export(
             str(path / package_dir)
         )
-        await updated.directory("/pipeline/charts").export(
-            str(path / "charts")
+        await updated.directory(f"/pipeline/charts/{package_dir}").export(
+            str(path / f"charts/{package_dir}")
         )
 
 
