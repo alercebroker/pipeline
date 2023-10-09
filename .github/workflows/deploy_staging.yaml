@@ -36,4 +36,4 @@ jobs:
       - name: Run dagger pipeline
         run: |
           cd ci
-          poetry run python main.py deploy staging
+          poetry run python main.py deploy staging correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step
