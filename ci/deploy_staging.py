@@ -45,11 +45,49 @@ def _replace_underscore(package: str):
 
 
 async def helm_upgrade(
-    release_name: str, chart_name: str, values_file: str, dry_run: bool
+    client: dagger.Client,
+    k8s: dagger.Container,
+    release_name: str,
+    chart_name: str,
+    values_file: str,
+    dry_run: bool,
 ):
-    config = dagger.Config(log_output=sys.stdout)
+    helm_command = [
+        "helm",
+        "upgrade",
+        "-i",
+        "-f",
+        "values.yaml",
+        release_name,
+        f"pipeline/{chart_name}",
+    ]
+    if dry_run:
+        helm_command.append("--dry-run")
 
-    async with dagger.Connection(config) as client:
+    await (
+        k8s.with_exec(["kubectl", "config", "get-contexts"])
+        .with_exec(
+            [
+                "helm",
+                "repo",
+                "add",
+                "pipeline",
+                "https://alercebroker.github.io/pipeline",
+            ]
+        )
+        .with_(
+            get_values(
+                client,
+                str(pathlib.Path().cwd().parent.absolute()),
+                values_file,
+            )
+        )
+        .with_exec(helm_command)
+    )
+
+
+async def deploy_package(packages: dict, dry_run: bool):
+    async with dagger.Connection() as client:
         k8s = (
             client.container()
             .from_("alpine/k8s:1.27.5")
@@ -72,58 +110,26 @@ async def helm_upgrade(
                     "sh",
                     "-c",
                     """
-                    aws eks update-kubeconfig \
-                    --region us-east-1 \
-                    --name staging \
-                    --alias staging
-                    """,
+                        aws eks update-kubeconfig \
+                        --region us-east-1 \
+                        --name staging \
+                        --alias staging
+                        """,
                 ]
             )
         )
-        helm_command = [
-            "helm",
-            "upgrade",
-            "-i",
-            "-f",
-            "values.yaml",
-            release_name,
-            f"pipeline/{chart_name}",
-        ]
-        if dry_run:
-            helm_command.append("--dry-run")
-
-        await (
-            k8s.with_exec(["kubectl", "config", "get-contexts"])
-            .with_exec(
-                [
-                    "helm",
-                    "repo",
-                    "add",
-                    "pipeline",
-                    "https://alercebroker.github.io/pipeline",
-                ]
-            )
-            .with_(
-                get_values(
-                    client,
-                    str(pathlib.Path().cwd().parent.absolute()),
-                    values_file,
-                )
-            )
-            .with_exec(helm_command)
-        )
-
-
-async def deploy_package(packages: dict, dry_run: bool):
-    for package in packages:
         async with anyio.create_task_group() as tg:
-            tg.start_soon(
-                helm_upgrade,
-                package,
-                packages[package]["chart"],
-                packages[package]["values"],
-                dry_run,
-            )
+            for package in packages:
+                tg.start_soon(
+                    helm_upgrade,
+                    client,
+                    k8s,
+                    package,
+                    packages[package]["chart"],
+                    packages[package]["values"],
+                    dry_run,
+                )
+    print("Deployed packages successfully")
 
 
 def deploy_staging(packages: dict, dry_run: bool):

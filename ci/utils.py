@@ -66,85 +66,59 @@ async def git_push(dry_run: bool):
             await container
 
 
-async def update_version(package_dir: str, version: str, dry_run: bool):
-    config = dagger.Config(log_output=sys.stdout)
-
-    async with dagger.Connection(config) as client:
-        path = pathlib.Path().cwd().parent.absolute()
-        # get build context directory
-        source = (
-            client.container()
-            .from_("python:3.11-slim")
-            .with_exec(["apt", "update"])
-            .with_exec(["apt", "install", "git", "-y"])
-            .with_exec(
-                ["git", "config", "--global", "user.name", '"@alerceadmin"']
-            )
-            .with_exec(
-                [
-                    "git",
-                    "config",
-                    "--global",
-                    "user.email",
-                    "alerceadmin@users.noreply.github.com",
-                ]
-            )
-            .with_exec(["pip", "install", "poetry"])
-            .with_directory(
-                "/pipeline",
-                client.host().directory(
-                    str(path), exclude=[".venv/", "**/.venv/"]
-                ),
-            )
-        )
-        update_version_command = ["poetry", "version", version]
-        if dry_run:
-            update_version_command.append("--dry-run")
-
-        source = (
-            source.with_workdir(f"/pipeline/{package_dir}")
-            .with_exec(update_version_command)
-            .with_exec(["poetry", "version", "--short"])
-        )
-        new_version = await source.stdout()
-        new_version = new_version.strip()
-        updated = update_chart(source, package_dir, new_version, dry_run)
-        await updated.directory(f"/pipeline/{package_dir}").export(
-            str(path / package_dir)
-        )
-        await updated.directory(f"/pipeline/charts/{package_dir}").export(
-            str(path / f"charts/{package_dir}")
-        )
+async def update_version(
+    source: dagger.Container,
+    path: pathlib.Path,
+    package_dir: str,
+    version: str,
+    dry_run: bool,
+):
+    update_version_command = ["poetry", "version", version]
+    if dry_run:
+        update_version_command.append("--dry-run")
+    source = (
+        source.with_workdir(f"/pipeline/{package_dir}")
+        .with_exec(update_version_command)
+        .with_exec(["poetry", "version", "--short"])
+    )
+    new_version = await source.stdout()
+    new_version = new_version.strip()
+    updated = update_chart(source, package_dir, new_version, dry_run)
+    await updated.directory(f"/pipeline/{package_dir}").export(
+        str(path / package_dir)
+    )
+    await updated.directory(f"/pipeline/charts/{package_dir}").export(
+        str(path / f"charts/{package_dir}")
+    )
 
 
-async def build(package_dir: str, build_args: list, dry_run: bool):
-    config = dagger.Config(log_output=sys.stdout)
+async def build(
+    client: dagger.Client, package_dir: str, build_args: list, dry_run: bool
+):
+    path = pathlib.Path().cwd().parent.absolute()
+    # get build context directory
+    context_dir = client.host().directory(
+        str(path), exclude=[".venv/", "**/.venv/"]
+    )
+    # build using Dockerfile
+    bargs = []
+    for build_arg in build_args:
+        barg = dagger.BuildArg(build_arg[0], build_arg[1])
+        bargs.append(barg)
+    print(f"Building image with build-args: {bargs}")
+    image_ref = await client.container().build(
+        context=context_dir,
+        dockerfile=f"{package_dir}/Dockerfile",
+        build_args=bargs,
+    )
+    tags = await get_tags(client, package_dir)
+    print(f"Built image with tag: {tags}")
 
-    async with dagger.Connection(config) as client:
-        path = pathlib.Path().cwd().parent.absolute()
-        # get build context directory
-        context_dir = client.host().directory(
-            str(path), exclude=[".venv/", "**/.venv/"]
-        )
-        # build using Dockerfile
-        bargs = []
-        for build_arg in build_args:
-            barg = dagger.BuildArg(build_arg[0], build_arg[1])
-            bargs.append(barg)
-        print(f"Building image with build-args: {bargs}")
-        image_ref = await client.container().build(
-            context=context_dir,
-            dockerfile=f"{package_dir}/Dockerfile",
-            build_args=bargs,
-        )
-        tags = await get_tags(client, package_dir)
-        print(f"Built image with tag: {tags}")
-
-        if not dry_run:
-            print("Publishing image")
-            # publish the resulting container to a registry
-            secret = _get_publish_secret(client)
-            await _publish_container(image_ref, package_dir, tags, secret)
+    if not dry_run:
+        print("Publishing image")
+        # publish the resulting container to a registry
+        secret = _get_publish_secret(client)
+        await _publish_container(image_ref, package_dir, tags, secret)
 
 
 async def get_tags(client: dagger.Client, package_dir: str) -> list:

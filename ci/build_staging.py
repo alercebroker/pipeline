@@ -1,21 +1,68 @@
 import anyio
+import dagger
+import sys
+import pathlib
 from utils import build, update_version, git_push
 
 
 async def _build_package(packages: dict, dry_run: bool):
-    async with anyio.create_task_group() as tg:
-        for pkg in packages:
-            z = zip(packages[pkg]["build-arg"], packages[pkg]["value"])
-            build_args = []
-            for arg, value in z:
-                build_args.append((arg, value))
-            tg.start_soon(build, pkg, build_args, dry_run)
+    config = dagger.Config(log_output=sys.stdout)
+
+    async with dagger.Connection(config) as client:
+        async with anyio.create_task_group() as tg:
+            for pkg in packages:
+                z = zip(packages[pkg]["build-arg"], packages[pkg]["value"])
+                build_args = []
+                for arg, value in z:
+                    build_args.append((arg, value))
+                tg.start_soon(build, client, pkg, build_args, dry_run)
 
 
 async def _update_package_version(packages: list, dry_run: bool):
-    async with anyio.create_task_group() as tg:
-        for package in packages:
-            tg.start_soon(update_version, package, "prerelease", dry_run)
+    config = dagger.Config(log_output=sys.stdout)
+    path = pathlib.Path().cwd().parent.absolute()
+    async with dagger.Connection(config) as client:
+        source = (
+            client.container()
+            .from_("python:3.11-slim")
+            .with_exec(["apt", "update"])
+            .with_exec(["apt", "install", "git", "-y"])
+            .with_exec(
+                [
+                    "git",
+                    "config",
+                    "--global",
+                    "user.name",
+                    '"@alerceadmin"',
+                ]
+            )
+            .with_exec(
+                [
+                    "git",
+                    "config",
+                    "--global",
+                    "user.email",
+                    "alerceadmin@users.noreply.github.com",
+                ]
+            )
+            .with_exec(["pip", "install", "poetry"])
+            .with_directory(
+                "/pipeline",
+                client.host().directory(
+                    str(path), exclude=[".venv/", "**/.venv/"]
+                ),
+            )
+        )
+        async with anyio.create_task_group() as tg:
+            for package in packages:
+                tg.start_soon(
+                    update_version,
+                    source,
+                    path,
+                    package,
+                    "prerelease",
+                    dry_run,
+                )
 
 
 def update_packages(packages, libs, dry_run: bool):
