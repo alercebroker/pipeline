@@ -117,7 +117,7 @@ async def update_version(package_dir: str, version: str, dry_run: bool):
         )
 
 
-async def build(package_dir: str, dry_run: bool):
+async def build(package_dir: str, build_args: list, dry_run: bool):
     config = dagger.Config(log_output=sys.stdout)
 
     async with dagger.Connection(config) as client:
@@ -127,8 +127,15 @@ async def build(package_dir: str, dry_run: bool):
             str(path), exclude=[".venv/", "**/.venv/"]
         )
         # build using Dockerfile
+        bargs = []
+        for build_arg in build_args:
+            barg = dagger.BuildArg(build_arg[0], build_arg[1])
+            bargs.append(barg)
+        print(f"Building image with build-args: {bargs}")
         image_ref = await client.container().build(
-            context=context_dir, dockerfile=f"{package_dir}/Dockerfile"
+            context=context_dir,
+            dockerfile=f"{package_dir}/Dockerfile",
+            build_args=bargs,
         )
         tags = await get_tags(client, package_dir)
         print(f"Built image with tag: {tags}")

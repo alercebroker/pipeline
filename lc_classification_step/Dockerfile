@@ -1,6 +1,8 @@
 FROM python:3.8-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
+ARG model
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
@@ -26,7 +28,7 @@ COPY libs/alerce_classifiers /libs/alerce_classifiers
 COPY libs/apf /libs/apf
 
 WORKDIR /app
-RUN poetry install --no-root --without=dev --without=test --with=messi
+RUN poetry install --no-root --without=dev --without=test --with=${model}
 
 
 FROM python:3.8-slim as production
@@ -35,14 +37,13 @@ RUN pip install poetry
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 
-COPY lc_classification_step/lc_classification /app/lc_classification
 COPY lc_classification_step/scripts /app/scripts
 COPY lc_classification_step/schemas /app/schemas
-COPY lc_classification_step/README.md \
-    lc_classification_step/schemas.py \
-    lc_classification_step/settings.py \
-    lc_classification_step/models_settings.py \
-    /app/
+COPY lc_classification_step/README.md /app/README.md
+COPY lc_classification_step/schemas.py /app/schemas.py
+COPY lc_classification_step/settings.py /app/settings.py
+COPY lc_classification_step/models_settings.py /app/models_settings.py
+COPY lc_classification_step/lc_classification /app/lc_classification
 
 WORKDIR /app/
 RUN poetry install --only-root
