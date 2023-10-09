@@ -444,6 +444,7 @@ jobs:
       - build-scribe-dagger
       - build-sorting-hat-dagger
       - build-xmatch-dagger
+      - build-watchlist-dagger
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
