@@ -40,6 +40,10 @@ def get_values(client: dagger.Client, path: str, ssm_parameter_name: str):
     return get_values_inner
 
 
+def _replace_underscore(package: str):
+    return package.replace("_", "-")
+
+
 async def helm_upgrade(package: str, dry_run: bool):
     config = dagger.Config(log_output=sys.stdout)
 
@@ -80,8 +84,8 @@ async def helm_upgrade(package: str, dry_run: bool):
             "-i",
             "-f",
             "values.yaml",
-            package,
-            f"pipeline/{package}",
+            _replace_underscore(package),
+            f"pipeline/{_replace_underscore(package)}",
         ]
         if dry_run:
             helm_command.append("--dry-run")
