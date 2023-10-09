@@ -118,6 +118,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          submodules: true
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -144,6 +145,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          submodules: true
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -170,6 +172,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          submodules: true
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -196,6 +199,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          submodules: true
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -395,7 +399,21 @@ jobs:
           poetry run python main.py build staging xmatch_step
 
   release-chart:
-    needs: update-packages-dagger
+    needs:
+      - build-correction-dagger
+      - build-early-classification-dagger
+      - build-feature-dagger
+      - build-lc-classification-balto-dagger
+      - build-lc-classification-messi-dagger
+      - build-lc-classification-mlp-dagger
+      - build-lc-classification-ztf-dagger
+      - build-lightcurve-dagger
+      - build-magstats-dagger
+      - build-prv-candidates-dagger
+      - build-s3-step-dagger
+      - build-scribe-dagger
+      - build-sorting-hat-dagger
+      - build-xmatch-dagger
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
