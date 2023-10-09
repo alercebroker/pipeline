@@ -107,9 +107,9 @@ spec:
                   key: metrics-password
             {{- end }}
             - name: METRICS_SOURCE
-            value: {{ .Release.Name }}
+              value: {{ .Release.Name }}
             - name: METRICS_SURVEY
-            value: ZTF
+              value: ZTF
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
