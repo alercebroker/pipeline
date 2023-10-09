@@ -119,6 +119,7 @@ jobs:
         with:
           ref: main
           submodules: true
+          token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -146,6 +147,7 @@ jobs:
         with:
           ref: main
           submodules: true
+          token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -173,6 +175,7 @@ jobs:
         with:
           ref: main
           submodules: true
+          token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -200,6 +203,7 @@ jobs:
         with:
           ref: main
           submodules: true
+          token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
