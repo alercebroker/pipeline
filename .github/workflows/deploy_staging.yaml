@@ -36,4 +36,16 @@ jobs:
       - name: Run dagger pipeline
         run: |
           cd ci
-          poetry run python main.py deploy staging correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step
+          poetry run python main.py deploy staging \
+          correction-step --values=correction_step-helm-values \
+          early-classification-step --values=early_classification_step \
+          feature-step --values feature_step-helm-values \
+          lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values \
+          lightcurve-step --values=lightcurve-step-helm-values \
+          magstats-step --values=magstats_step-helm-values \
+          prv-candidates-step --values=prv_candidates_step-helm-values \
+          s3-step --values=s3_step-helm-values \
+          scribe-step --chart=scribe --values=scribe-helm-values \
+          sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step-helm-values \
+          watchlist-step --values=watchlist_step-helm-values \
+          xmatch-step --values=xmatch_step-helm-values

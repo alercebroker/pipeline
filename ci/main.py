@@ -36,7 +36,7 @@ def deploy(stage, packages, dry_run):
         )
 
 
-def parse_packages(packages):
+def parse_build_command(packages):
     """Parse packages and build-args from command line arguments
 
     Args:
@@ -64,6 +64,34 @@ def parse_packages(packages):
     return parsed_args
 
 
+def parse_deploy_command(releases):
+    """Parse packages and build-args from command line arguments
+
+    Args:
+        releases (list): List of chart releases, charts and values files
+            Example: "release1 --chart chart_name --values file"
+    Returns:
+        dict: Dictionary of packages and build-args
+            Example: { "release1": { "chart": "chart_name", "values": "file" } }
+    """
+    parsed_args = {}
+    current_arg = None
+    for rel in releases:
+        if rel.startswith("--chart"):
+            chart = rel.split("=")[1]
+            parsed_args[current_arg]["chart"] = chart
+        elif rel.startswith("--values"):
+            values = rel.split("=")[1]
+            parsed_args[current_arg]["values"] = values
+        else:
+            current_arg = rel
+            parsed_args[rel] = {
+                "chart": rel,
+                "values": f"{rel}-helm-values",
+            }
+    return parsed_args
+
+
 if __name__ == "__main__":
     command = sys.argv[1]
     stage = sys.argv[2]
@@ -71,11 +99,14 @@ if __name__ == "__main__":
     if dry_run:
         print("Running with --dry-run")
         sys.argv.pop(-1)
-    packages = parse_packages(sys.argv[3:])
+    packages = sys.argv[3:]
     print(packages)
     if command == "update-versions":
-        update_versions(stage, list(packages.keys()), [], dry_run)
+        update_versions(stage, packages, [], dry_run)
     if command == "build":
+        packages = parse_build_command(packages)
         build(stage, packages, dry_run)
     if command == "deploy":
+        packages = parse_deploy_command(packages)
+        print("Deploying", packages)
         deploy(stage, packages, dry_run)

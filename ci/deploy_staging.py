@@ -44,7 +44,9 @@ def _replace_underscore(package: str):
     return package.replace("_", "-")
 
 
-async def helm_upgrade(package: str, dry_run: bool):
+async def helm_upgrade(
+    release_name: str, chart_name: str, values_file: str, dry_run: bool
+):
     config = dagger.Config(log_output=sys.stdout)
 
     async with dagger.Connection(config) as client:
@@ -84,8 +86,8 @@ async def helm_upgrade(package: str, dry_run: bool):
             "-i",
             "-f",
             "values.yaml",
-            _replace_underscore(package),
-            f"pipeline/{_replace_underscore(package)}",
+            release_name,
+            f"pipeline/{chart_name}",
         ]
         if dry_run:
             helm_command.append("--dry-run")
@@ -105,18 +107,24 @@ async def helm_upgrade(package: str, dry_run: bool):
                 get_values(
                     client,
                     str(pathlib.Path().cwd().parent.absolute()),
-                    f"{package}-helm-values",
+                    values_file,
                 )
             )
             .with_exec(helm_command)
         )
 
 
-async def deploy_package(packages: list, dry_run: bool):
+async def deploy_package(packages: dict, dry_run: bool):
     for package in packages:
         async with anyio.create_task_group() as tg:
-            tg.start_soon(helm_upgrade, package, dry_run)
+            tg.start_soon(
+                helm_upgrade,
+                package,
+                packages[package]["chart"],
+                packages[package]["values"],
+                dry_run,
+            )
 
 
-def deploy_staging(packages: list, dry_run: bool):
+def deploy_staging(packages: dict, dry_run: bool):
     anyio.run(deploy_package, packages, dry_run)
