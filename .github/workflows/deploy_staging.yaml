@@ -39,7 +39,7 @@ jobs:
           poetry run python main.py deploy staging \
           correction-step --values=correction_step-helm-values \
           early-classification-step --values=early_classification_step \
-          feature-step --values feature_step-helm-values \
+          feature-step --values=feature_step-helm-values \
           lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values \
           lightcurve-step --values=lightcurve-step-helm-values \
           magstats-step --values=magstats_step-helm-values \
