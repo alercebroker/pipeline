@@ -1,7 +1,7 @@
 import os
 from fastavro import schema
 from fastavro.repository.base import SchemaRepositoryError
-from credentials import get_mongodb_credentials
+from credentials import get_credentials
 
 ##################################################
 #       lightcurve_step   Settings File
@@ -12,7 +12,8 @@ def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
-    db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
+    db_config_mongo = get_credentials(os.environ["MONGODB_SECRET_NAME"],db_name="mongo")
+    db_config_sql = get_credentials(os.environ["SQL_SECRET_NAME"],db_name="sql")
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -28,7 +29,7 @@ def settings_creator():
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 15)),
     }
 
     try:
@@ -129,7 +130,8 @@ def settings_creator():
         "PRODUCER_CONFIG": producer_config,
         "METRICS_CONFIG": metrics_config,
         "PROMETHEUS": prometheus,
-        "DB_CONFIG": db_config,
+        "DB_CONFIG": db_config_mongo,
+        "DB_CONFIG_SQL":db_config_sql,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROFILING": use_profiling,
         "PYROSCOPE_SERVER": pyroscope_server,

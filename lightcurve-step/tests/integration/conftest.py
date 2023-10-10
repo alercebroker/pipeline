@@ -3,11 +3,14 @@ import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 import uuid
-from fastavro.utils import generate_many
 from fastavro.schema import load_schema
 from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+from sqlalchemy import text
+import psycopg2
+from db_plugins.db.sql._connection import PsqlDatabase
+from .utils import generate_message
 
 
 @pytest.fixture(scope="session")
@@ -27,7 +30,7 @@ def docker_compose_command():
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    topics = ["test_topic"]
+    topics = ["correction", "lightcurve"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
     for topic, f in fs.items():
@@ -37,7 +40,6 @@ def is_responsive_kafka(url):
             print(f"Can't create topic {topic}")
             print(e)
             return False
-    produce_messages("correction")
     return True
 
 
@@ -84,6 +86,8 @@ def env_variables():
         "PRODUCER_TOPIC": "lightcurve",
         "ENABLE_PARTITION_EOF": "True",
         "MONGODB_SECRET_NAME": "mongo_secret",
+        "SQL_SECRET_NAME": "sql_secret",
+        "CONSUME_MESSAGES": "10",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
@@ -91,7 +95,8 @@ def env_variables():
     return env_variables_dict
 
 
-def produce_messages(topic):
+@pytest.fixture()
+def produce_messages(kafka_service):
     try:
         schema = load_schema("tests/integration/input_schema.avsc")
     except SchemaRepositoryError:
@@ -99,12 +104,76 @@ def produce_messages(topic):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
-            "TOPIC": topic,
+            "TOPIC": "correction",
             "SCHEMA": schema,
         }
     )
-    messages = generate_many(schema, 10)
+    messages = generate_message(schema, 10)
     producer.set_key_field("aid")
 
     for message in messages:
         producer.produce(message)
+    producer.producer.flush()
+    return
+
+
+def is_responsive_psql(url):
+    try:
+        conn = psycopg2.connect(
+            "dbname='postgres' user='postgres' host=localhost password='postgres'"
+        )
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="session")
+def psql_service(docker_ip, docker_services):
+    """Ensure that Kafka service is up and responsive."""
+    # `port_for` takes a container port and returns the corresponding host port
+    port = docker_services.port_for("postgres", 5432)
+    server = "{}:{}".format(docker_ip, port)
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
+    )
+    return server
+
+
+def populate_sql(conn: PsqlDatabase):
+    with conn.session() as session:
+        session.execute(
+            text(
+                """
+            INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES ('ZTF000llmn', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING
+        """
+            )
+        )
+        session.execute(
+            text(
+                """
+            INSERT INTO detection(candid, oid, mjd, fid, pid, diffmaglim, isdiffpos, \
+            ra, dec, magpsf, sigmapsf, corrected, dubious, has_stamp, step_id_corr) 
+            VALUES (987654321, 'ZTF000llmn', 1, 1, 1, 0.8, -1, 45, 45, 23.1, 0.9, \
+                    false, false, false, 'step')
+        """
+            )
+        )
+        session.commit()
+
+
+@pytest.fixture()
+def psql_conn(psql_service):
+    config = {
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "HOST": "localhost",
+        "PORT": "5432",
+        "DB_NAME": "postgres",
+    }
+    psql_conn = PsqlDatabase(config)
+    psql_conn.create_db()
+    populate_sql(psql_conn)
+    yield psql_conn
+    psql_conn.drop_db()

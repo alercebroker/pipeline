@@ -10,6 +10,9 @@ packages = [{include = "lightcurve_step"}]
 python = ">=3.9,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
 pymongo = "^4.4.1"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.19"}
+psycopg2-binary = "^2.9.6"
+db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
@@ -18,7 +21,6 @@ black = "^23.3.0"
 pytest = "^7.3.1"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
-db-plugins = {path = "../libs/db-plugins", develop = true}
 
 [tool.black]
 line-length = 88

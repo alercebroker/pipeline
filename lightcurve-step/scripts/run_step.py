@@ -4,7 +4,8 @@ from apf.metrics.prometheus import PrometheusMetrics
 from prometheus_client import start_http_server
 
 from lightcurve_step.step import LightcurveStep
-from lightcurve_step.database import DatabaseConnection
+from lightcurve_step.database_mongo import DatabaseConnection
+from lightcurve_step.database_sql import PSQLConnection
 
 
 def step_creator():
@@ -27,11 +28,13 @@ def step_creator():
     handler.setLevel(level)
 
     logger.addHandler(handler)
-    db = DatabaseConnection(settings["DB_CONFIG"])
+    db_mongo = DatabaseConnection(settings["DB_CONFIG"])
+    db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
 
     step_params = {
         "config": settings,
-        "db_client": db,
+        "db_mongo": db_mongo,
+        "db_sql": db_sql
     }
 
     if settings["PROMETHEUS"]:
