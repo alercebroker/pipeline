@@ -29,7 +29,13 @@ class DetectionsHandler(BaseHandler):
     _NAME = "detections"
     INDEX = "candid"
     UNIQUE = ["id", "fid", "mjd"]
-    COLUMNS = BaseHandler.COLUMNS + ["mag", "e_mag", "mag_ml", "e_mag_ml"]
+    COLUMNS = BaseHandler.COLUMNS + [
+        "mag",
+        "e_mag",
+        "mag_ml",
+        "e_mag_ml",
+        "forced",
+    ]
 
     def _post_process(self, **kwargs):
         """Handles legacy alerts (renames old field names to the new conventions) and sets the
