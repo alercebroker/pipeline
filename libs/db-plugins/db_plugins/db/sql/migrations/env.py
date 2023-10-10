@@ -1,4 +1,4 @@
-from db_plugins.db.sql.connection import Base, satisfy_keys, settings_map
+from db_plugins.db.sql._connection import Base, get_db_url
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -13,9 +13,7 @@ from settings import DB_CONFIG
 config = context.config
 if "SQL" in DB_CONFIG:
     db_config = DB_CONFIG["SQL"]
-    required_key = satisfy_keys(set(db_config.keys()))
-    if len(required_key) == 0:
-        db_config["SQLALCHEMY_DATABASE_URL"] = settings_map(db_config)
+    db_config["SQLALCHEMY_DATABASE_URL"] = get_db_url(db_config)
 else:
     raise Exception(f"Missing arguments in settings")
 
