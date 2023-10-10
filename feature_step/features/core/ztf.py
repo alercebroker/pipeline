@@ -57,6 +57,9 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
                 detections, non_detections, xmatches, metadata
             )
 
+        detections = list(
+            filter(lambda d: not d.get("forced", False), detections)
+        )
         super().__init__(detections, non_detections, xmatches)
 
         # Change isdiffpos from 1 or -1 to True or False

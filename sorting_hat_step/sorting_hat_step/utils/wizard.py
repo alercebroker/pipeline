@@ -6,8 +6,13 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 
-from .database import oid_query, conesearch_query, update_query
-from ..database import MongoConnection
+from ..database import MongoConnection, PsqlConnection
+from .database import (
+    oid_query,
+    conesearch_query,
+    update_query,
+    insert_empty_objects_to_sql,
+)
 
 
 CHARACTERS = string.ascii_lowercase
@@ -230,7 +235,9 @@ def generate_new_id(alerts: pd.DataFrame):
     return alerts
 
 
-def insert_empty_objects(db: MongoConnection, alerts: pd.DataFrame):
+def insert_empty_objects(
+    mongodb: MongoConnection, psql: PsqlConnection, alerts: pd.DataFrame
+):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
@@ -244,4 +251,5 @@ def insert_empty_objects(db: MongoConnection, alerts: pd.DataFrame):
     logger.debug(
         f"Inserting or updating {len(objects)} entries into the Objects collection"
     )
-    update_query(db, objects.to_dict("records"))
+    update_query(mongodb, objects.to_dict("records"))
+    insert_empty_objects_to_sql(psql, objects.to_dict("records"))
