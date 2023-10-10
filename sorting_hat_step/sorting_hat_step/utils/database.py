@@ -1,10 +1,10 @@
 import math
 from typing import Union, List
 
-from ..database import DatabaseConnection
+from ..database import MongoConnection
 
 
-def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
+def oid_query(db: MongoConnection, oid: list) -> Union[str, None]:
     """
     Query the database and check if any of the OIDs is already in database
 
@@ -20,7 +20,7 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
 
 
 def conesearch_query(
-    db: DatabaseConnection, ra: float, dec: float, radius: float
+    db: MongoConnection, ra: float, dec: float, radius: float
 ) -> Union[str, None]:
     """
     Query the database and check if there is an alerce_id
@@ -52,7 +52,7 @@ def conesearch_query(
     return None
 
 
-def update_query(db: DatabaseConnection, records: List[dict]):
+def update_query(db: MongoConnection, records: List[dict]):
     """
     Insert or update the records in a dictionary. Pushes the oid array to
     oid column.

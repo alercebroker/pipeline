@@ -5,7 +5,7 @@ import pandas as pd
 from apf.producers import KafkaProducer
 from sorting_hat_step.step import SortingHatStep
 from .data.batch import generate_alerts_batch
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection
 from pymongo.database import Database
 
 
@@ -23,7 +23,7 @@ class SortingHatStepTestCase(unittest.TestCase):
             },
             "RUN_CONESEARCH": "True",
         }
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_consumer = mock.create_autospec(KafkaConsumer)
@@ -72,7 +72,7 @@ class SortingHatStepTestCase(unittest.TestCase):
 
 class RunConesearchTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
         self.dataframe = pd.DataFrame(
             [[1, 2, 3, 4, 5]], columns=["ra", "dec", "oid", "tid", "aid"]

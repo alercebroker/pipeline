@@ -4,14 +4,14 @@ from datetime import datetime
 from typing import List
 
 from .utils import wizard, parser
-from .database import DatabaseConnection
+from .database import MongoConnection
 import pandas as pd
 
 
 class SortingHatStep(GenericStep):
     def __init__(
         self,
-        db_connection: DatabaseConnection,
+        db_connection: MongoConnection,
         config: dict,
         **kwargs,
     ):

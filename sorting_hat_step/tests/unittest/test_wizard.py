@@ -3,13 +3,13 @@ import pandas as pd
 from unittest import mock
 from sorting_hat_step.utils import wizard
 from .data.batch import generate_batch_ra_dec
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection
 from pymongo.database import Database
 
 
 class SortingHatTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
 
     def tearDown(self):

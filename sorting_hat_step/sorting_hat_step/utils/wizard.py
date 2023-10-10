@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial import cKDTree
 
 from .database import oid_query, conesearch_query, update_query
-from ..database import DatabaseConnection
+from ..database import MongoConnection
 
 
 CHARACTERS = string.ascii_lowercase
@@ -125,7 +125,7 @@ def internal_cross_match(
     return data
 
 
-def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
+def find_existing_id(db: MongoConnection, alerts: pd.DataFrame):
     """
     The aid column will be assigned the existing alerce id obtained from the database (if found).
 
@@ -160,7 +160,7 @@ def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     return alerts
 
 
-def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
+def find_id_by_conesearch(db: MongoConnection, alerts: pd.DataFrame):
     """Assigns aid based on a conesearch in the database.
 
     Input:
@@ -230,7 +230,7 @@ def generate_new_id(alerts: pd.DataFrame):
     return alerts
 
 
-def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
+def insert_empty_objects(db: MongoConnection, alerts: pd.DataFrame):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
