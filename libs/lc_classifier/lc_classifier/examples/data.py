@@ -78,13 +78,13 @@ def get_elasticc_example() -> AstroObject:
     detections = pd.read_csv(
         os.path.join(
             os.path.dirname(__file__),
-            'elasticc/elasticc_snid_15415799_detections.csv'
+            'elasticc/elasticc_snid_53125011_detections.csv'
         )
     )
     metadata = pd.read_csv(
         os.path.join(
             os.path.dirname(__file__),
-            'elasticc/elasticc_snid_15415799_metadata.csv'
+            'elasticc/elasticc_snid_53125011_metadata.csv'
         )
     )
 

@@ -1,6 +1,6 @@
 import unittest
 
-from features.core.base import AstroObject
+from lc_classifier.features.core.base import AstroObject
 from lc_classifier.features.core.base import FeatureExtractor
 
 
