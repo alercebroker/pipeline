@@ -235,21 +235,19 @@ def generate_new_id(alerts: pd.DataFrame):
     return alerts
 
 
-def insert_empty_objects(
-    mongodb: MongoConnection, psql: PsqlConnection, alerts: pd.DataFrame
-):
+def insert_empty_objects(mongodb: MongoConnection, alerts: pd.DataFrame, psql=None):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
     :param db: Connection to the database.
     :alerts: Dataframe with alerts.
     """
-    objects = alerts[["oid", "aid"]]
+    objects = alerts[["oid", "aid", "sid"]]
     objects = objects.rename(columns={"aid": "_id"})
-    objects = objects.groupby("_id").oid.apply(list).reset_index()
-
+    mongo_objects = objects.groupby("_id").oid.apply(list).reset_index()
     logger.debug(
         f"Inserting or updating {len(objects)} entries into the Objects collection"
     )
-    update_query(mongodb, objects.to_dict("records"))
-    insert_empty_objects_to_sql(psql, objects.to_dict("records"))
+    update_query(mongodb, mongo_objects.to_dict("records"))
+    if psql:
+        insert_empty_objects_to_sql(psql, objects.to_dict("records"))

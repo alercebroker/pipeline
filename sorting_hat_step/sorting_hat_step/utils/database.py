@@ -75,9 +75,11 @@ def update_query(db: MongoConnection, records: List[dict]):
 
 def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
     # insert into db values = records on conflict do nothing
-
+    oids = [r["oid"] for r in records if r["sid"].lower() == "ztf"]
+    oids = set(oids)
     with db.session() as session:
-        insert(Object).values(
-            [{"oid": r["oid"]} for r in records]
-        ).on_conflict_do_nothing()
+        to_insert = [{"oid": oid} for oid in oids]
+        print(to_insert)
+        statement = insert(Object).values(to_insert)
+        session.execute(statement)
         session.commit()

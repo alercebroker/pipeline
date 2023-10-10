@@ -16,5 +16,5 @@ def test_psql_connection(psql_service):
     with conn.session() as session:
         result = session.execute(text("SELECT 1"))
         result = result.fetchone()
-        assert result
-        assert result.fetchone()[0] == 1
+    assert result
+    assert result[0] == 1

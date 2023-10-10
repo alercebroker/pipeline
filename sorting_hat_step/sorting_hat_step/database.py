@@ -33,6 +33,6 @@ class PsqlConnection:
             yield session
         except Exception as e:
             session.rollback()
-            raise
+            raise Exception(e)
         finally:
             session.close()

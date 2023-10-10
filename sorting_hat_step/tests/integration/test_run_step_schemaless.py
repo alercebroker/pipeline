@@ -6,16 +6,26 @@ import unittest
 from unittest import mock
 from sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
-from db_plugins.db.mongo._connection import MongoConnection
+from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
+from db_plugins.db.sql._connection import PsqlDatabase as DBPPsqlConnection
 from fastavro.repository.base import SchemaRepositoryError
+from sorting_hat_step.database import MongoConnection, PsqlConnection
 
-DB_CONFIG = {
+MONGO_CONFIG = {
+    "host": "localhost",
+    "username": "test_user",
+    "password": "test_password",
+    "port": 27017,
+    "database": "test_db",
+    "authSource": "test_db",
+}
+
+PSQL_CONFIG = {
     "HOST": "localhost",
-    "USERNAME": "test_user",
-    "PASSWORD": "test_password",
-    "PORT": 27017,
-    "DATABASE": "test_db",
-    "AUTH_SOURCE": "test_db",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5432,
+    "DB_NAME": "postgres",
 }
 
 PRODUCER_CONFIG = {
@@ -93,19 +103,21 @@ METRICS_CONFIG = {
 class SchemalessConsumeIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.database = MongoConnection(DB_CONFIG)
+        cls.mongo_database = DBPMongoConnection(MONGO_CONFIG)
 
     def setUp(self):
         self.step_config = {
-            "DB_CONFIG": DB_CONFIG,
+            "MONGO_CONFIG": MONGO_CONFIG,
+            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
+            "USE_PSQL": "False",
         }
 
     def tearDown(self):
-        self.database.database["object"].delete_many({})
+        self.mongo_database.database["object"].delete_many({})
 
     def test_step(self):
         # publicar los mensajes generados a kafka consumer topic
@@ -116,17 +128,23 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             producer.produce("survey_stream_schemaless", value=message, key=None)
 
         # ejecutar start_step
+        mongo_db = MongoConnection(MONGO_CONFIG)
+        psql_db = PsqlConnection(PSQL_CONFIG)
         with mock.patch.object(SortingHatStep, "_write_success"):
             try:
                 step = SortingHatStep(
-                    db_connection=self.database, config=self.step_config
+                    mongo_connection=mongo_db,
+                    config=self.step_config,
                 )
             except SchemaRepositoryError:
                 config = self.step_config.copy()
                 config["CONSUMER_CONFIG"][
                     "SCHEMA_PATH"
                 ] = "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avscs"
-                step = SortingHatStep(db_connection=self.database, config=config)
+                step = SortingHatStep(
+                    mongo_connection=mongo_db,
+                    config=self.step_config,
+                )
             step.start()
             step.producer.producer.flush()
 
