@@ -57,6 +57,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
                 detections, non_detections, xmatches, metadata
             )
 
+        detections = list(filter(lambda d: not d.get("forced", False), detections))
         super().__init__(detections, non_detections, xmatches)
 
         # Change isdiffpos from 1 or -1 to True or False
@@ -134,9 +135,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.add_fid("gr")
     def calculate_colors(self) -> pd.DataFrame:
-        gr_max = self.detections.get_colors(
-            "min", ("g", "r"), ml=False, flux=self.FLUX
-        )
+        gr_max = self.detections.get_colors("min", ("g", "r"), ml=False, flux=self.FLUX)
         gr_max_corr = self.detections.get_colors(
             "min", ("g", "r"), ml=True, flux=self.FLUX
         )
@@ -183,9 +182,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.add_fid("")
     def calculate_sg_score(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {"sgscore1": self.detections.agg("sgscore1", "median")}
-        )
+        return pd.DataFrame({"sgscore1": self.detections.agg("sgscore1", "median")})
 
     @decorators.logger
     @decorators.columns_per_fid
@@ -221,9 +218,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
         delta_mag = self.detections.get_delta("mag_ml", by_fid=True)
         min_mag = self.detections.agg("mag_ml", "min", by_fid=True)
         mean_mag = self.detections.agg("mag_ml", "mean", by_fid=True)
-        first_mag = self.detections.which_value(
-            "mag_ml", which="first", by_fid=True
-        )
+        first_mag = self.detections.which_value("mag_ml", which="first", by_fid=True)
 
         max_upper_before = self.non_detections.agg_when(
             "diffmaglim", "max", when="before", by_fid=True
