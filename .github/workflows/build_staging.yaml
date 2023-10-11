@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+concurrency: build
+
 jobs:
   update-packages-dagger:
     runs-on: ubuntu-latest
