@@ -19,6 +19,7 @@ scipy = "1.10.1"
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 pymongo = "^4.4.1"
 db-plugins = {path = "../libs/db-plugins", develop = true}
+psycopg2-binary = "^2.9.9"
 
 
 
