@@ -2,7 +2,7 @@ name: Deploy Production
 
 on:
     workflow_run:
-      workflows: ["pages-build-deployment", "Build Production"]
+      workflows: ["pages-build-deployment"]
       types: [completed]
 
 jobs:
