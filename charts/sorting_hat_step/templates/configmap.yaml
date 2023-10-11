@@ -19,5 +19,16 @@ data:
   metrics-server: {{ .Values.configmap.metricsServer }}
   metrics-topic: {{ .Values.configmap.metricsTopic }}
   mongo-secret-name: {{ .Values.configmap.mongoSecretName }}
-  run-conesearch: '{{ .Values.configmap.runConesearch }}'
-  use-profiling: '{{ .Values.configmap.useProfiling }}'
+  {{- if .Values.featureFlags.usePsql }}
+  psql-secret-name: {{ .Values.configmap.psqlSecretName }}
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'feature-flags'
+  namespace: {{ .Values.namespace }}
+data:
+  run-conesearch: '{{ .Values.featureFlags.runConesearch }}'
+  use-profiling: '{{ .Values.featureFlags.useProfiling }}'
+  use-psql: '{{ .Values.featureFlags.usePsql }}'

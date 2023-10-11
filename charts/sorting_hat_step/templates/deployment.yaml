@@ -114,13 +114,18 @@ spec:
             - name: RUN_CONESEARCH
               valueFrom:
                 configMapKeyRef:
-                  name: '{{ include "sorting-hat.fullname" . }}'
+                  name: 'feature-flags'
                   key: run-conesearch
             - name: USE_PROFILING
               valueFrom:
                 configMapKeyRef:
-                  name: '{{ include "sorting-hat.fullname" . }}'
+                  name: 'feature-flags'
                   key: use-profiling
+            - name: USE_PSQL
+              valueFrom:
+                configMapKeyRef:
+                  name: 'feature-flags'
+                  key: use-psql
             - name: PYROSCOPE_SERVER
               valueFrom:
                 configMapKeyRef:
