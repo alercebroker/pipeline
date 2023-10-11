@@ -2,7 +2,7 @@
 #       sorting_hat_step   Settings File
 ##################################################
 import os
-from credentials import get_mongodb_credentials
+from credentials import get_credentials
 from schemas.output_schema import SCHEMA
 from fastavro.repository.base import SchemaRepositoryError
 
@@ -12,7 +12,8 @@ LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 # Export prometheus metrics
 PROMETHEUS = True
 
-DB_CONFIG = get_mongodb_credentials()
+MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
+PSQL_CONFIG = {}
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
@@ -49,11 +50,13 @@ if os.getenv("CONSUMER_CLASS") == "apf.consumers.KafkaSchemalessConsumer":
         CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
             os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
         )
-    except SchemaRepositoryError:
+        assert os.path.exists(CONSUMER_CONFIG["SCHEMA_PATH"])
+    except AssertionError:
         CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
             os.path.dirname(__file__),
             "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avsc",
         )
+        assert os.path.exists(CONSUMER_CONFIG["SCHEMA_PATH"])
 
 # Producer configuration
 PRODUCER_CONFIG = {
@@ -131,14 +134,20 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
+## Feature flags
 RUN_CONESEARCH = os.getenv("RUN_CONESEARCH", "True")
+USE_PSQL = os.getenv("USE_PSQL", "False")
 
+if USE_PSQL.lower() == "true":
+    PSQL_CONFIG = get_credentials(os.environ["PSQL_SECRET_NAME"], secret_type="psql")
 # Step Configuration
 STEP_CONFIG = {
     "PROMETHEUS": PROMETHEUS,
-    "DB_CONFIG": DB_CONFIG,
+    "MONGO_CONFIG": MONGO_CONFIG,
+    "PSQL_CONFIG": PSQL_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "RUN_CONESEARCH": RUN_CONESEARCH,
+    "USE_PSQL": USE_PSQL,
 }

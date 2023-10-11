@@ -3,14 +3,14 @@ import unittest
 from unittest import mock
 
 from db_plugins.db.mongo.models import Object
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection
 from sorting_hat_step.utils import database
 from pymongo.database import Database
 
 
 class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
 
     def test_oid_query(self):

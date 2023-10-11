@@ -6,8 +6,13 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 
-from .database import oid_query, conesearch_query, update_query
-from ..database import DatabaseConnection
+from ..database import MongoConnection, PsqlConnection
+from .database import (
+    oid_query,
+    conesearch_query,
+    update_query,
+    insert_empty_objects_to_sql,
+)
 
 
 CHARACTERS = string.ascii_lowercase
@@ -125,7 +130,7 @@ def internal_cross_match(
     return data
 
 
-def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
+def find_existing_id(db: MongoConnection, alerts: pd.DataFrame):
     """
     The aid column will be assigned the existing alerce id obtained from the database (if found).
 
@@ -160,7 +165,7 @@ def find_existing_id(db: DatabaseConnection, alerts: pd.DataFrame):
     return alerts
 
 
-def find_id_by_conesearch(db: DatabaseConnection, alerts: pd.DataFrame):
+def find_id_by_conesearch(db: MongoConnection, alerts: pd.DataFrame):
     """Assigns aid based on a conesearch in the database.
 
     Input:
@@ -230,18 +235,19 @@ def generate_new_id(alerts: pd.DataFrame):
     return alerts
 
 
-def insert_empty_objects(db: DatabaseConnection, alerts: pd.DataFrame):
+def insert_empty_objects(mongodb: MongoConnection, alerts: pd.DataFrame, psql=None):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
     :param db: Connection to the database.
     :alerts: Dataframe with alerts.
     """
-    objects = alerts[["oid", "aid"]]
+    objects = alerts[["oid", "aid", "sid"]]
     objects = objects.rename(columns={"aid": "_id"})
-    objects = objects.groupby("_id").oid.apply(list).reset_index()
-
+    mongo_objects = objects.groupby("_id").oid.apply(list).reset_index()
     logger.debug(
         f"Inserting or updating {len(objects)} entries into the Objects collection"
     )
-    update_query(db, objects.to_dict("records"))
+    update_query(mongodb, mongo_objects.to_dict("records"))
+    if psql:
+        insert_empty_objects_to_sql(psql, objects.to_dict("records"))

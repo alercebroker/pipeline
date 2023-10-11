@@ -173,7 +173,7 @@ def _generate_elasticc_batch(n: int, nearest: int = 0) -> List[dict]:
     def gen_elasticc_object():
         dia_source = {
             "diaSourceId": random.randint(1000000, 9000000),
-            "diaObjectId": random.choice([None, random.randint(1000000, 9000000)]),
+            "diaObjectId": random.randint(1000000, 9000000),
             "midPointTai": random.uniform(57000, 60000),
             "filterName": "fid",
             "ra": random.uniform(0, 360),
@@ -298,7 +298,6 @@ def generate_alerts_batch(n: int, nearest: int = 0) -> List[dict]:
         b = list(
             map(lambda el: {**el, "timestamp": int(datetime.now().timestamp())}, b)
         )
-        print("BBBBBBB", b[0]["timestamp"])
         batch.append(b)
     batch = sum(batch, [])
     return batch
