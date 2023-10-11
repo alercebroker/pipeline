@@ -1,4 +1,4 @@
-name: Deploy Staging
+name: Deploy Production
 
 on:
     workflow_run:
@@ -6,47 +6,8 @@ on:
       types: [completed]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Configure AWS credentials
-        id: creds
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
-          aws-region: us-east-1
-          output-credentials: true
-          unset-current-credentials: true
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-          cache: 'poetry'
-      - name: Install dependencies
-        run: |
-          cd ci
-          poetry install
-      - name: Run dagger pipeline
-        run: |
-          cd ci
-          poetry run python main.py deploy production \
-          correction-step --values=correction_step-helm-values \
-          early-classification-step --chart=early-classifier --values=early_classification_step-helm-values \
-          feature-step --values=feature_step-helm-values \
-          lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values \
-          lightcurve-step --values=lightcurve-step-helm-values \
-          magstats-step --values=magstats_step-helm-values \
-          prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values \
-          s3-step --values=s3_step-helm-values \
-          scribe --chart=scribe --values=scribe-helm-values \
-          sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values \
-          sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values \
-          watchlist-step --values=watchlist_step-helm-values \
-          xmatch-step --values=xmatch_step-helm-values
+  test_trigger:
+      runs-on: ubuntu-latest
+      steps:
+          - name: print something
+            run: "Deployed Production"

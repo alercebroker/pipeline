@@ -2,7 +2,7 @@ name: Deploy Staging
 
 on:
     workflow_run:
-      workflows: ["pages-build-deployment"]
+      workflows: ["pages-build-deployment", "Build Staging"]
       types: [completed]
 
 jobs:
