@@ -66,5 +66,3 @@ class FoldedKimExtractor(FeatureExtractor):
             [astro_object.features, features_df],
             axis=0
         )
-
-

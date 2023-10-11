@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject
@@ -127,3 +128,57 @@ def get_elasticc_example() -> AstroObject:
         metadata=metadata
     )
     return astro_object
+
+
+def get_elasticc_example_2() -> AstroObject:
+    detections = pd.read_pickle(
+        os.path.join(
+            os.path.dirname(__file__),
+            'elasticc_lc_38135580.pkl'
+        )
+    )
+
+    detections = detections[
+        [
+            'MJD',
+            'BAND',
+            'FLUXCAL',
+            'FLUXCALERR',
+            'PHOTFLAG'
+        ]
+    ].copy()
+    detections.rename(columns={
+        'MJD': 'mjd',
+        'BAND': 'fid',
+        'FLUXCAL': 'brightness',
+        'FLUXCALERR': 'e_brightness'
+    }, inplace=True)
+    detections['candid'] = None
+    detections['tid'] = 'elasticc_telescope'
+    detections['sid'] = 'elasticc_survey'
+    detections['pid'] = 'elasticc_program'
+    detections['unit'] = 'diff_flux'
+    detections['ra'] = np.nan
+    detections['dec'] = np.nan
+
+    is_detected = detections['PHOTFLAG'] > 0
+    detections.drop(columns=['PHOTFLAG'], inplace=True)
+    forced_photometry = detections[~is_detected]
+    detections = detections[is_detected]
+
+    metadata = pd.DataFrame(
+        data=[('aid', detections.index.values[0])],
+        columns=['field', 'value']
+    )
+
+    astro_object = AstroObject(
+        detections=detections,
+        forced_photometry=forced_photometry,
+        metadata=metadata
+    )
+    return astro_object
+
+
+if __name__ == '__main__':
+    astro_object = get_elasticc_example_2()
+    print(astro_object)
