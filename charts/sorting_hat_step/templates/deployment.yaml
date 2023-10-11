@@ -101,6 +101,13 @@ spec:
                 configMapKeyRef:
                   name: '{{ include "sorting-hat.fullname" . }}'
                   key: mongo-secret-name
+            {{- if .Values.featureFlags.usePsql }}
+            - name: PSQL_SECRET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "sorting-hat.fullname" . }}'
+                  key: psql-secret-name
+            {{- end }}
             - name: METRICS_HOST
               valueFrom:
                 configMapKeyRef:
@@ -114,13 +121,18 @@ spec:
             - name: RUN_CONESEARCH
               valueFrom:
                 configMapKeyRef:
-                  name: '{{ include "sorting-hat.fullname" . }}'
+                  name: 'feature-flags'
                   key: run-conesearch
             - name: USE_PROFILING
               valueFrom:
                 configMapKeyRef:
-                  name: '{{ include "sorting-hat.fullname" . }}'
+                  name: 'feature-flags'
                   key: use-profiling
+            - name: USE_PSQL
+              valueFrom:
+                configMapKeyRef:
+                  name: 'feature-flags'
+                  key: use-psql
             - name: PYROSCOPE_SERVER
               valueFrom:
                 configMapKeyRef:

@@ -5,6 +5,8 @@ on:
       workflows: ["pages-build-deployment"]
       types: [completed]
 
+concurrency: deploy
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
