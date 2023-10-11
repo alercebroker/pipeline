@@ -32,9 +32,10 @@ class PsqlDatabase:
         session: Session = self._session_factory()
         try:
             yield session
-        except Exception:
+        except Exception as e:
             logger.exception("Session rollback because of exception")
+            logger.exception(e)
             session.rollback()
-            raise
+            raise Exception(e)
         finally:
             session.close()

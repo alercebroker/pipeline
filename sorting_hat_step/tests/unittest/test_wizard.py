@@ -3,13 +3,13 @@ import pandas as pd
 from unittest import mock
 from sorting_hat_step.utils import wizard
 from .data.batch import generate_batch_ra_dec
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection
 from pymongo.database import Database
 
 
 class SortingHatTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
 
     def tearDown(self):
@@ -150,10 +150,10 @@ class SortingHatTestCase(unittest.TestCase):
     def test_write_object(self, insert_mock):
         alerts = pd.DataFrame(
             [
-                {"oid": 10, "aid": 0, "extra": "extra1"},
-                {"oid": 20, "aid": 1, "extra": "extra2"},
-                {"oid": 30, "aid": 0, "extra": "extra3"},
-                {"oid": 40, "aid": 2, "extra": "extra4"},
+                {"oid": 10, "aid": 0, "sid": "ZTF", "extra": "extra1"},
+                {"oid": 20, "aid": 1, "sid": "ZTF", "extra": "extra2"},
+                {"oid": 30, "aid": 0, "sid": "ZTF", "extra": "extra3"},
+                {"oid": 40, "aid": 2, "sid": "ZTF", "extra": "extra4"},
             ]
         )
 

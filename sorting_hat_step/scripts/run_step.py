@@ -6,7 +6,7 @@ import pyroscope
 
 from prometheus_client import start_http_server
 from apf.metrics.prometheus import PrometheusMetrics
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection, PsqlConnection
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +33,8 @@ logger.addHandler(handler)
 
 from sorting_hat_step.step import SortingHatStep
 
-database = DatabaseConnection(STEP_CONFIG["DB_CONFIG"])
+mongo_database = MongoConnection(STEP_CONFIG["MONGO_CONFIG"])
+psql_database = PsqlConnection(STEP_CONFIG["PSQL_CONFIG"])
 
 if bool(os.getenv("USE_PROFILING", True)):
     logger.info("Configuring Pyroscope profiling...")
@@ -46,8 +47,10 @@ prometheus_metrics = PrometheusMetrics()
 start_http_server(8000)
 
 step = SortingHatStep(
-    db_connection=database,
+    mongo_connection=mongo_database,
     config=STEP_CONFIG,
     prometheus_metrics=prometheus_metrics,
 )
+if STEP_CONFIG["USE_PSQL"].lower() == "true":
+    step.set_psql_driver(psql_database)
 step.start()

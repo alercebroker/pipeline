@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sorting-hat-step"
-version = "6.1.1a67"
+version = "6.1.1a69"
 description = "Sorting hat step"
 authors = []
 readme = "README.md"
@@ -14,7 +14,7 @@ apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
 confluent_kafka = "2.0.2"
 numpy = "^1.24.3"
-python = ">=3.8,<3.11"
+python = ">=3.10,<3.11"
 scipy = "1.10.1"
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 pymongo = "^4.4.1"
@@ -28,12 +28,12 @@ black = "^23.3.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
 requests = "^2.31.0"
-pymongo = "^4.3.3"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
 moto = {extras = ["secretsmanager"], version = "^4.1.11"}
 db-plugins = {path = "../libs/db-plugins", develop = true}
 psycopg2-binary = "*"
+test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.black]
 line-length = 88

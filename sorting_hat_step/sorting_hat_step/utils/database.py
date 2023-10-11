@@ -1,10 +1,13 @@
 import math
-from typing import Union, List
+from typing import Dict, Union, List
 
-from ..database import DatabaseConnection
+from sqlalchemy.dialects.postgresql import insert
+
+from db_plugins.db.sql.models import Object
+from ..database import MongoConnection, PsqlConnection
 
 
-def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
+def oid_query(db: MongoConnection, oid: list) -> Union[str, None]:
     """
     Query the database and check if any of the OIDs is already in database
 
@@ -20,7 +23,7 @@ def oid_query(db: DatabaseConnection, oid: list) -> Union[str, None]:
 
 
 def conesearch_query(
-    db: DatabaseConnection, ra: float, dec: float, radius: float
+    db: MongoConnection, ra: float, dec: float, radius: float
 ) -> Union[str, None]:
     """
     Query the database and check if there is an alerce_id
@@ -52,7 +55,7 @@ def conesearch_query(
     return None
 
 
-def update_query(db: DatabaseConnection, records: List[dict]):
+def update_query(db: MongoConnection, records: List[dict]):
     """
     Insert or update the records in a dictionary. Pushes the oid array to
     oid column.
@@ -68,3 +71,15 @@ def update_query(db: DatabaseConnection, records: List[dict]):
         db.database["object"].find_one_and_update(
             query, new_value, upsert=True, return_document=True
         )
+
+
+def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
+    # insert into db values = records on conflict do nothing
+    oids = [r["oid"] for r in records if r["sid"].lower() == "ztf"]
+    oids = set(oids)
+    with db.session() as session:
+        to_insert = [{"oid": oid} for oid in oids]
+        print(to_insert)
+        statement = insert(Object).values(to_insert)
+        session.execute(statement)
+        session.commit()

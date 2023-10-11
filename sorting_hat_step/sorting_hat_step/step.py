@@ -4,21 +4,27 @@ from datetime import datetime
 from typing import List
 
 from .utils import wizard, parser
-from .database import DatabaseConnection
+from .database import MongoConnection, PsqlConnection
 import pandas as pd
 
 
 class SortingHatStep(GenericStep):
     def __init__(
         self,
-        db_connection: DatabaseConnection,
+        mongo_connection: MongoConnection,
         config: dict,
         **kwargs,
     ):
         super().__init__(config=config, **kwargs)
-        self.driver = db_connection
+        self.mongo_driver = mongo_connection
         self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
+        self.use_psql = config["USE_PSQL"].lower() == "true"
+
+    def set_psql_driver(self, psql_connection: PsqlConnection):
+        if not self.use_psql:
+            raise ValueError("Cannot set psql driver when USE_PSQL is False")
+        self.psql_driver = psql_connection
 
     def pre_produce(self, result: pd.DataFrame):
         """
@@ -89,7 +95,10 @@ class SortingHatStep(GenericStep):
         Writes entries to the database with _id and oid only.
         :param alerts: Dataframe of alerts
         """
-        wizard.insert_empty_objects(self.driver, alerts)
+        psql_driver = None
+        if self.use_psql:
+            psql_driver = self.psql_driver
+        wizard.insert_empty_objects(self.mongo_driver, alerts, psql=psql_driver)
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
@@ -102,9 +111,9 @@ class SortingHatStep(GenericStep):
         self.logger.info(f"Assigning AID to {len(alerts)} alerts")
         alerts = wizard.internal_cross_match(alerts)
         # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
-        alerts = wizard.find_existing_id(self.driver, alerts)
+        alerts = wizard.find_existing_id(self.mongo_driver, alerts)
         if self.run_conesearch:
-            alerts = wizard.find_id_by_conesearch(self.driver, alerts)
+            alerts = wizard.find_id_by_conesearch(self.mongo_driver, alerts)
         alerts = wizard.generate_new_id(alerts)
         alerts.drop(columns=["tmp_id"], inplace=True)
         return alerts
