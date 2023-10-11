@@ -62,10 +62,13 @@ configmap:
   metricsTopic: ""
   metricsServer: ""
   mongoSecretName: ""
+  psqlSecretName: ""
+  pyroscopeServer: "http://pyroscope.pyroscope:4040"
+
+featureFlags:
   runConesearch: ""
   useProfiling: ""
-  classPrefix: ""
-  pyroscopeServer: "http://pyroscope.pyroscope:4040"
+  usePsql: "False"
 
 secrets:
   kafkaAuth:
