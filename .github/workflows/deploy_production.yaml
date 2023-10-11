@@ -1,0 +1,13 @@
+name: Deploy Production
+
+on:
+    workflow_run:
+      workflows: ["pages-build-deployment"]
+      types: [completed]
+
+jobs:
+  test_trigger:
+      runs-on: ubuntu-latest
+      steps:
+          - name: print something
+            run: "Deployed Production"
