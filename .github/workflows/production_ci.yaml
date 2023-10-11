@@ -1,0 +1,249 @@
+name: Production CI Pipeline
+
+on:
+    workflow_dispatch:
+        inputs:
+          tag:
+            description: 'The release version and tag.'
+            required: true
+            type: string
+
+jobs:
+    # cada job necesita el anterior
+    update_versions:
+        runs-on: ubuntu-latest
+        env:
+          GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        steps:
+          - name: Check out repository code
+            uses: actions/checkout@v4
+          - name: Install poetry
+            run: pipx install poetry
+          - name: Set up Python
+            uses: actions/setup-python@v4
+            with:
+                python-version: 3.11
+                cache: 'poetry'
+          - name: Install dependencies
+            run: |
+                cd ci
+                poetry install
+          - name: Run dagger pipeline
+            run: |
+                cd ci
+                poetry run python main.py update-versions production \
+                correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step \
+                --version=${{ inputs.tag }}
+    build-correction-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: correction_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-early-classification-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: early_classification_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-feature-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: feature_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-lc-classification-balto-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            submodules: true
+            package: lc_classification_step
+            build-args: model:balto
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-lc-classification-messi-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            submodules: true
+            package: lc_classification_step
+            build-args: model:messi
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-lc-classification-mlp-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            submodules: true
+            package: lc_classification_step
+            build-args: model:mlp
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-lc-classification-ztf-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            submodules: true
+            package: lc_classification_step
+            build-args: model:ztf
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-lightcurve-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: lightcurve-step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-magstats-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: magstats_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-prv-candidates-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: prv_candidates_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-s3-step-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: s3_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-scribe-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: scribe
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-sorting-hat-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: sorting_hat_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-watchlist-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: watchlist_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    build-xmatch-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            package: xmatch_step
+        secrets:
+            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    release-chart:
+        needs:
+            - build-correction-dagger
+            - build-early-classification-dagger
+            - build-feature-dagger
+            - build-lc-classification-balto-dagger
+            - build-lc-classification-messi-dagger
+            - build-lc-classification-mlp-dagger
+            - build-lc-classification-ztf-dagger
+            - build-lightcurve-dagger
+            - build-magstats-dagger
+            - build-prv-candidates-dagger
+            - build-s3-step-dagger
+            - build-scribe-dagger
+            - build-sorting-hat-dagger
+            - build-watchlist-dagger
+            - build-xmatch-dagger
+        runs-on: ubuntu-latest
+        steps:
+              - name: Checkout
+                uses: actions/checkout@v4
+                with:
+                    fetch-depth: 0
+                    ref: main    
+              - name: Configure Git
+                run: |
+                    git config user.name "alerceadmin"
+                    git config user.email "alerceadmin@users.noreply.github.com"
+              - name: Run chart-releaser
+                uses: helm/chart-releaser-action@v1.5.0
+                env:
+                    CR_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+                
+    deploy_production:
+        runs-on: ubuntu-latest
+        permissions:
+          id-token: write
+          contents: read
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+          - name: Configure AWS credentials
+            id: creds
+            uses: aws-actions/configure-aws-credentials@v3
+            with:
+              role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
+              aws-region: us-east-1
+              output-credentials: true
+              unset-current-credentials: true
+          - name: Install poetry
+            run: pipx install poetry
+          - name: Set up Python
+            uses: actions/setup-python@v4
+            with:
+              python-version: 3.11
+              cache: 'poetry'
+          - name: Install dependencies
+            run: |
+              cd ci
+              poetry install
+          - name: Run dagger pipeline
+            run: |
+              cd ci
+              poetry run python main.py deploy production \
+              correction-step --values=correction_step-helm-values \
+              early-classification-step --chart=early-classifier --values=early_classification_step-helm-values \
+              feature-step --values=feature_step-helm-values \
+              lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values \
+              lightcurve-step --values=lightcurve-step-helm-values \
+              magstats-step --values=magstats_step-helm-values \
+              prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values \
+              s3-step --values=s3_step-helm-values \
+              scribe --chart=scribe --values=scribe-helm-values \
+              sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values \
+              sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values \
+              watchlist-step --values=watchlist_step-helm-values \
+              xmatch-step --values=xmatch_step-helm-values
+    create_realease:
+        needs: deploy_production
+        runs-on: ubuntu-latest
+        env:
+          GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        steps:
+            - name: placeholder
+              run: echo "creado un release"

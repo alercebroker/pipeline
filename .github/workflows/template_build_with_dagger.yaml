@@ -1,0 +1,55 @@
+name: Build_with dagget template
+on:
+  workflow_call:
+    inputs:
+        stage:
+            required: true
+            type: string
+            default: 'staging'
+        package:
+            required: true
+            type: string
+        build-args:
+            required: false
+            type: string
+            default: ''
+        submodules:
+            required: false
+            type: boolean
+            default: false
+    secrets:
+        ADMIN_TOKEN:
+          required: true
+
+
+jobs:
+    build-package:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Check out repository code
+            uses: actions/checkout@v4
+            with:
+                ref: main
+                submodules: ${{ inputs.submodules}}
+                token: ${{ secrets.ADMIN_TOKEN }}
+          - name: Install poetry
+            run: pipx install poetry
+          - name: Set up Python
+            uses: actions/setup-python@v4
+            with:
+                python-version: 3.11
+                cache: 'poetry'
+          - name: Install dependencies
+            run: |
+                cd ci
+                poetry install
+          - name: Run dagger pipeline no args
+            if: ${{ inputs.build-args == '' }}
+            run: |
+                cd ci
+                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}}
+          - name: Run dagger pipeline with args
+            if: ${{ inputs.build-args != '' }}
+            run: |
+                cd ci
+                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}} --build-arg=${{ inputs.build-args }}

@@ -1,13 +1,15 @@
 import sys
-from build_staging import build_staging, update_packages
+from ci.build import build, update_packages
 from deploy_staging import deploy_staging
+from deploy_production import deploy_production
 
 
-def update_versions(stage, packages, libs, dry_run):
+def update_versions(stage, packages, libs, version, dry_run):
     if stage == "staging":
-        update_packages(packages, libs, dry_run)
+        version = "prerelease" # last check for the upgate version to be prerelease in staging
+        update_packages(packages, libs, version, dry_run)
     elif stage == "production":
-        print("Production update not implemented yet")
+        update_packages(packages, libs, version, dry_run)
     else:
         raise ValueError(
             f'Invalid stage "{stage}". Valid stages are: staging, production'
@@ -16,9 +18,9 @@ def update_versions(stage, packages, libs, dry_run):
 
 def build(stage, packages, dry_run):
     if stage == "staging":
-        build_staging(packages, dry_run)
+        build(packages, dry_run)
     elif stage == "production":
-        print("Production build not implemented yet")
+        build(packages, dry_run)
     else:
         raise ValueError(
             f'Invalid stage "{stage}". Valid stages are: staging, production'
@@ -29,7 +31,7 @@ def deploy(stage, packages, dry_run):
     if stage == "staging":
         deploy_staging(packages, dry_run)
     elif stage == "production":
-        print("Production deploy not implemented yet")
+        deploy_production(packages, dry_run)
     else:
         raise ValueError(
             f'Invalid stage "{stage}". Valid stages are: staging, production'
@@ -102,7 +104,12 @@ if __name__ == "__main__":
     packages = sys.argv[3:]
     print(packages)
     if command == "update-versions":
-        update_versions(stage, packages, [], dry_run)
+        if sys.argv[-1].startswith("--version"):
+            version = sys.argv[-1].split("=")[1]
+            sys.argv.pop(-1)
+        else:
+            version="prerelease"
+        update_versions(stage, packages, [], version, dry_run)
     if command == "build":
         packages = parse_build_command(packages)
         build(stage, packages, dry_run)
