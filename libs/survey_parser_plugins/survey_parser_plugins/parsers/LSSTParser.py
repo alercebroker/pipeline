@@ -8,7 +8,7 @@ ERROR = 0.1  # UPDATE ME: Dummy value for elasticc tests
 
 def _e_ra(dec):
     try:
-        return ERROR / abs(math.cos(dec))
+        return ERROR / abs(math.cos(math.radians(dec)))
     except ZeroDivisionError:
         return float("nan")
 
