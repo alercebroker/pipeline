@@ -69,5 +69,5 @@ def update_packages(packages, libs, version, dry_run: bool):
     anyio.run(_update_package_version, packages + libs, version, dry_run)
     anyio.run(git_push, dry_run)
 
-def build(packages: dict, dry_run: bool):
+def build_packages(packages: dict, dry_run: bool):
     anyio.run(_build_package, packages, dry_run)

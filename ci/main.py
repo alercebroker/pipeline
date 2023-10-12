@@ -1,5 +1,5 @@
 import sys
-from build import build, update_packages
+from build import build_packages, update_packages
 from deploy import deploy_staging, deploy_production
 
 
@@ -17,9 +17,9 @@ def update_versions(stage, packages, libs, version, dry_run=False):
 
 def build(stage, packages, dry_run=False):
     if stage == "staging":
-        build(packages, dry_run)
+        build_packages(packages, dry_run)
     elif stage == "production":
-        build(packages, dry_run)
+        build_packages(packages, dry_run)
     else:
         raise ValueError(
             f'Invalid stage "{stage}". Valid stages are: staging, production'
