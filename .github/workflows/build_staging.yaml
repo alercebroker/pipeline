@@ -11,7 +11,7 @@ jobs:
   update-packages-dagger:
     runs-on: ubuntu-latest
     env:
-      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
         stage: staging
         package: correction_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-early-classification-dagger:
     needs: update-packages-dagger
@@ -48,7 +48,7 @@ jobs:
         stage: staging
         package: early_classification_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-feature-dagger:
     needs: update-packages-dagger
@@ -57,7 +57,7 @@ jobs:
         stage: staging
         package: feature_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-balto-dagger:
     needs: update-packages-dagger
@@ -68,7 +68,7 @@ jobs:
         package: lc_classification_step
         build-args: model:balto
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-messi-dagger:
     needs: update-packages-dagger
@@ -79,7 +79,7 @@ jobs:
         package: lc_classification_step
         build-args: model:messi
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-mlp-dagger:
     needs: update-packages-dagger
@@ -90,7 +90,7 @@ jobs:
         package: lc_classification_step
         build-args: model:mlp
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-ztf-dagger:
     needs: update-packages-dagger
@@ -101,7 +101,7 @@ jobs:
         package: lc_classification_step
         build-args: model:ztf
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lightcurve-dagger:
     needs: update-packages-dagger
@@ -110,7 +110,7 @@ jobs:
         stage: staging
         package: lightcurve-step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-magstats-dagger:
     needs: update-packages-dagger
@@ -119,7 +119,7 @@ jobs:
         stage: staging
         package: magstats_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-prv-candidates-dagger:
     needs: update-packages-dagger
@@ -128,7 +128,7 @@ jobs:
         stage: staging
         package: prv_candidates_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-s3-step-dagger:
     needs: update-packages-dagger
@@ -137,7 +137,7 @@ jobs:
         stage: staging
         package: s3_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-scribe-dagger:
     needs: update-packages-dagger
@@ -146,7 +146,7 @@ jobs:
         stage: staging
         package: scribe
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-sorting-hat-dagger:
     needs: update-packages-dagger
@@ -155,7 +155,7 @@ jobs:
         stage: staging
         package: sorting_hat_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-watchlist-dagger:
     needs: update-packages-dagger
@@ -164,7 +164,7 @@ jobs:
         stage: staging
         package: watchlist_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-xmatch-dagger:
     needs: update-packages-dagger
@@ -173,7 +173,7 @@ jobs:
         stage: staging
         package: xmatch_step
     secrets:
-        ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   release-chart:
     needs:
