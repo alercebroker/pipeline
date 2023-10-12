@@ -1,9 +1,9 @@
 import sys
-from ci.build import build, update_packages
+from build import build, update_packages
 from deploy import deploy_staging, deploy_production
 
 
-def update_versions(stage, packages, libs, version, dry_run):
+def update_versions(stage, packages, libs, version, dry_run=False):
     if stage == "staging":
         version = "prerelease" # last check for the upgate version to be prerelease in staging
         update_packages(packages, libs, version, dry_run)
@@ -15,7 +15,7 @@ def update_versions(stage, packages, libs, version, dry_run):
         )
 
 
-def build(stage, packages, dry_run):
+def build(stage, packages, dry_run=False):
     if stage == "staging":
         build(packages, dry_run)
     elif stage == "production":
@@ -26,7 +26,7 @@ def build(stage, packages, dry_run):
         )
 
 
-def deploy(stage, packages, dry_run):
+def deploy(stage, packages, dry_run=False):
     if stage == "staging":
         deploy_staging(packages, dry_run)
     elif stage == "production":
@@ -72,7 +72,7 @@ def parse_deploy_command(releases):
         releases (list): List of chart releases, charts and values files
             Example: "release1 --chart chart_name --values file"
     Returns:
-        dict: Dictionary of packages and build-args
+        dict: Dictionary of packages sys.argv[-1and build-args
             Example: { "release1": { "chart": "chart_name", "values": "file" } }
     """
     parsed_args = {}
