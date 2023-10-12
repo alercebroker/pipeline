@@ -1,3 +1,4 @@
+import math
 from ..core import GenericAlert, SurveyParser
 from ..core.mapper import Mapper
 
