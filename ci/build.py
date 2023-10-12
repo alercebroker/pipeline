@@ -18,7 +18,7 @@ async def _build_package(packages: dict, dry_run: bool):
                 tg.start_soon(build, client, pkg, build_args, dry_run)
 
 
-async def _update_package_version(packages: list, dry_run: bool):
+async def _update_package_version(packages: list, version: str, dry_run: bool):
     config = dagger.Config(log_output=sys.stdout)
     path = pathlib.Path().cwd().parent.absolute()
     async with dagger.Connection(config) as client:
@@ -60,15 +60,14 @@ async def _update_package_version(packages: list, dry_run: bool):
                     source,
                     path,
                     package,
-                    "prerelease",
+                    version,
                     dry_run,
                 )
 
 
-def update_packages(packages, libs, dry_run: bool):
-    anyio.run(_update_package_version, packages + libs, dry_run)
+def update_packages(packages, libs, version, dry_run: bool):
+    anyio.run(_update_package_version, packages + libs, version, dry_run)
     anyio.run(git_push, dry_run)
 
-
-def build_staging(packages: dict, dry_run: bool):
+def build_packages(packages: dict, dry_run: bool):
     anyio.run(_build_package, packages, dry_run)
