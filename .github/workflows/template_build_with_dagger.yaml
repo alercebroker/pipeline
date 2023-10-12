@@ -18,20 +18,22 @@ on:
             type: boolean
             default: false
     secrets:
-        ADMIN_TOKEN:
+        GH_TOKEN:
           required: true
 
 
 jobs:
     build-package:
         runs-on: ubuntu-latest
+        env:
+            GHCR_TOKEN: ${{ secrets.GH_TOKEN }}
         steps:
           - name: Check out repository code
             uses: actions/checkout@v4
             with:
                 ref: main
                 submodules: ${{ inputs.submodules}}
-                token: ${{ secrets.ADMIN_TOKEN }}
+                token: ${{ secrets.GH_TOKEN }}
           - name: Install poetry
             run: pipx install poetry
           - name: Set up Python

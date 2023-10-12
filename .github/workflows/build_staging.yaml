@@ -11,7 +11,7 @@ jobs:
   update-packages-dagger:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
