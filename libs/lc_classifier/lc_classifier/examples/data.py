@@ -4,17 +4,26 @@ import pandas as pd
 from lc_classifier.features.core.base import AstroObject
 
 
-def get_ztf_example() -> AstroObject:
+def get_ztf_example(index: int) -> AstroObject:
+    folders = [
+        'ZTF18abombrp_20231006',
+        'ZTF18aasycma_20231012'
+    ]
+    assert index < len(folders)
+
+    folder = folders[index]
     detections = pd.read_csv(
         os.path.join(
             os.path.dirname(__file__),
-            'ZTF18abombrp_20231006/detections.csv'
+            folder,
+            'detections.csv'
         )
     )
     non_detections = pd.read_csv(
         os.path.join(
             os.path.dirname(__file__),
-            'ZTF18abombrp_20231006/non_detections.csv'
+            folder,
+            'non_detections.csv'
         )
     )
 
@@ -62,7 +71,7 @@ def get_ztf_example() -> AstroObject:
     metadata = pd.DataFrame(
         [
             ["aid", "aid_example"],
-            ["oid", "ZTF18abombrp"]
+            ["oid", folder.split('_')[0]]
         ],
         columns=["field", "value"]
     )

@@ -79,6 +79,7 @@ class PeriodExtractor(FeatureExtractor):
                     observations,
                     astro_object.forced_photometry], axis=0)
         observations = observations[observations['brightness'].notna()]
+        observations = observations.sort_values('mjd')
         observations = self._trim_lightcurve(observations)
         return observations
 

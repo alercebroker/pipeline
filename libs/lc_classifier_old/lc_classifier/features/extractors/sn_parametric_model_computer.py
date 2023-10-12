@@ -753,7 +753,7 @@ class SNModelScipyElasticc(object):
         # Parameter guess
         tol = 1e-2
 
-        prefered_order = [c for c in 'irzYgu']
+        prefered_order = list('irzYgu')
         for c in prefered_order:
             if c in available_bands:
                 best_available_band = c
