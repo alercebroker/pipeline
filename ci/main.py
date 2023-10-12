@@ -1,7 +1,6 @@
 import sys
 from ci.build import build, update_packages
-from deploy_staging import deploy_staging
-from deploy_production import deploy_production
+from deploy import deploy_staging, deploy_production
 
 
 def update_versions(stage, packages, libs, version, dry_run):

@@ -86,8 +86,16 @@ async def helm_upgrade(
     )
 
 
-async def deploy_package(packages: dict, dry_run: bool):
+async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool):
     async with dagger.Connection() as client:
+        # list of bash command to be executed in the dager container
+        # with the purpose of conecting to the cluster
+        configure_aws_eks_command_list = [
+            "sh",
+            "-c",
+            f"aws eks update-kubeconfig --region us-east-1 --name {cluster_name} --alias {cluster_alias}",
+        ]
+
         k8s = (
             client.container()
             .from_("alpine/k8s:1.27.5")
@@ -106,16 +114,7 @@ async def deploy_package(packages: dict, dry_run: bool):
                 "AWS_DEFAULT_REGION", os.environ["AWS_DEFAULT_REGION"]
             )
             .with_exec(
-                [
-                    "sh",
-                    "-c",
-                    """
-                        aws eks update-kubeconfig \
-                        --region us-east-1 \
-                        --name production \
-                        --alias production
-                        """,
-                ]
+                configure_aws_eks_command_list
             )
         )
         async with anyio.create_task_group() as tg:
@@ -132,5 +131,8 @@ async def deploy_package(packages: dict, dry_run: bool):
     print("Deployed packages successfully")
 
 
+def deploy_staging(packages: dict, dry_run: bool):
+    anyio.run(deploy_package, packages, "staging", "staging", dry_run)
+
 def deploy_production(packages: dict, dry_run: bool):
-    anyio.run(deploy_package, packages, dry_run)
+    anyio.run(deploy_package, packages, "staging", "staging", dry_run)
