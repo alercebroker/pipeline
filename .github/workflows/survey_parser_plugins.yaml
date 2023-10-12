@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'libs/survey_parrser_plugins/**'
-      - '!libs/survey_parrser_plugins/README.md'
+      - 'libs/survey_parser_plugins/**'
+      - '!libs/survey_parser_plugins/README.md'
 
 jobs:
   libs_survey_parser_plugins_lint:
