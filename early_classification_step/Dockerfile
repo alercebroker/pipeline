@@ -18,14 +18,10 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry
-
 COPY early_classification_step/poetry.lock early_classification_step/pyproject.toml /app/
 COPY early_classification_step/model /app/model
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
-WORKDIR /app/model
-RUN pip install -r requirements.txt
-
 
 FROM python:3.7-slim as production
 RUN pip install poetry
