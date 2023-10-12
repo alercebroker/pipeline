@@ -41,6 +41,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "lightcurve-step.fullname" . }}
                   key: mongo-secret
+            - name: SQL_SECRET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "lightcurve-step.fullname" . }}
+                  key: sql-secret-name
             - name: CONSUMER_TOPICS
               valueFrom:
                 configMapKeyRef:

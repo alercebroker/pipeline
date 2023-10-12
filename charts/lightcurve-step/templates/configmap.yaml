@@ -18,5 +18,6 @@ data:
   metrics-topic: {{ .Values.configmap.metricsTopic }}
   use-prometheus: "{{ .Values.configmap.usePrometheus }}"
   use-profiling: "{{ .Values.configmap.useProfiling }}"
+  sql-secret-name: {{ .Values.configmap.psqlSecretName }}
   mongo-secret: {{ .Values.configmap.mongoSecret }}
   logging-debug: "{{ .Values.configmap.loggingDebug }}"
