@@ -14,9 +14,9 @@ FILTER = {
 }
 
 
-def _e_ra(dec):
+def _e_ra(dec, fid):
     try:
-        return ERROR / abs(math.cos(math.radians(dec)))
+        return ERRORS[fid] / abs(math.cos(math.radians(dec)))
     except ZeroDivisionError:
         return float("nan")
 
@@ -35,7 +35,7 @@ class ZTFParser(SurveyParser):
         "e_ra": Mapper(
             lambda x, y: x if x else _e_ra(y),
             origin="sigmara",
-            extras=["fid"],
+            extras=["Dec", "fid"],
             required=False,
         ),
         "dec": Mapper(origin="dec"),
