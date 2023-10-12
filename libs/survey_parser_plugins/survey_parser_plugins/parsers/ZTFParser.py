@@ -36,7 +36,7 @@ class ZTFParser(SurveyParser):
         "e_ra": Mapper(
             lambda x, y, z: x if x else _e_ra(y, z),
             origin="sigmara",
-            extras=["Dec", "fid"],
+            extras=["dec", "fid"],
             required=False,
         ),
         "dec": Mapper(origin="dec"),
