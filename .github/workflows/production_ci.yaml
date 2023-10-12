@@ -34,6 +34,7 @@ jobs:
                 poetry run python main.py update-versions production \
                 correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step \
                 --version=${{ inputs.tag }}
+
     build-correction-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -42,6 +43,7 @@ jobs:
             package: correction_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-early-classification-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -50,6 +52,7 @@ jobs:
             package: early_classification_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-feature-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -58,6 +61,7 @@ jobs:
             package: feature_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-lc-classification-balto-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -68,6 +72,7 @@ jobs:
             build-args: model:balto
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-lc-classification-messi-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -78,6 +83,7 @@ jobs:
             build-args: model:messi
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-lc-classification-mlp-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -88,6 +94,7 @@ jobs:
             build-args: model:mlp
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-lc-classification-ztf-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -98,6 +105,7 @@ jobs:
             build-args: model:ztf
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-lightcurve-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -106,6 +114,7 @@ jobs:
             package: lightcurve-step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-magstats-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -114,6 +123,7 @@ jobs:
             package: magstats_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-prv-candidates-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -122,6 +132,7 @@ jobs:
             package: prv_candidates_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-s3-step-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -130,6 +141,7 @@ jobs:
             package: s3_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-scribe-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -138,6 +150,7 @@ jobs:
             package: scribe
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-sorting-hat-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -146,6 +159,7 @@ jobs:
             package: sorting_hat_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-watchlist-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -154,6 +168,7 @@ jobs:
             package: watchlist_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-xmatch-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -162,6 +177,7 @@ jobs:
             package: xmatch_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     release-chart:
         needs:
             - build-correction-dagger
@@ -207,7 +223,7 @@ jobs:
             id: creds
             uses: aws-actions/configure-aws-credentials@v3
             with:
-              role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
+              role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
               aws-region: us-east-1
               output-credentials: true
               unset-current-credentials: true
@@ -239,11 +255,22 @@ jobs:
               sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values \
               watchlist-step --values=watchlist_step-helm-values \
               xmatch-step --values=xmatch_step-helm-values
+
     create_realease:
         needs: deploy_production
         runs-on: ubuntu-latest
-        env:
-          GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         steps:
-            - name: placeholder
-              run: echo "creado un release"
+          - name: Checkout code
+            uses: actions/checkout@v3
+          - name: Create Release
+            id: create_release
+            uses: actions/create-release@v1
+            env:
+                GITHUB_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            with:
+                tag_name: ${{ inputs.tag }}
+                release_name: Release ${{ inputs.tag }}
+                body: |
+                    Changes in this Release
+                draft: true
+                prerelease: true
