@@ -48,7 +48,8 @@ jobs:
           magstats-step --values=magstats_step-helm-values \
           prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values \
           s3-step --values=s3_step-helm-values \
-          scribe --chart=scribe --values=scribe-helm-values \
+          scribe-mongo --chart=scribe --values=scribe-helm-values \
+          scribe-psql --chart=scribe --values=scribe-psql-helm-values \
           sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values \
           sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values \
           watchlist-step --values=watchlist_step-helm-values \
