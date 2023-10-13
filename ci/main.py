@@ -73,7 +73,7 @@ def parse_deploy_command(releases):
             Example: "release1 --chart chart_name --values file"
     Returns:
         dict: Dictionary of packages sys.argv[-1and build-args
-            Example: { "release1": { "chart": "chart_name", "values": "file" } }
+            Example: { "release1": { "chart": "chart_name", "values": "file", "chart-folder": "file" } }
     """
     parsed_args = {}
     current_arg = None
@@ -84,11 +84,15 @@ def parse_deploy_command(releases):
         elif rel.startswith("--values"):
             values = rel.split("=")[1]
             parsed_args[current_arg]["values"] = values
+        elif rel.startswith("--folder"):
+            chart_folder = rel.split("=")[1]
+            parsed_args[current_arg]["chart-folder"] = chart_folder
         else:
             current_arg = rel
             parsed_args[rel] = {
                 "chart": rel,
                 "values": f"{rel}-helm-values",
+                "chart-folder": rel,
             }
     return parsed_args
 
