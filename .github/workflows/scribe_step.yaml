@@ -28,11 +28,12 @@ jobs:
       test-folder: 'tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  scribe_build:
-    uses: ./.github/workflows/build-template.yaml
+
+  build-scribe-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "scribe"
-      build-context: "."
-      step-name: "scribe"
+        stage: staging
+        extra-args: scribe --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

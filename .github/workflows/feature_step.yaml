@@ -34,13 +34,11 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  feature_step_build:
-    uses: ./.github/workflows/build-template.yaml
+  build-feature-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      step-name: feature_step
-      step-name-prefix: ""
-      base-folder: feature_step
-      build-context: "."
-      git-ref: ${{ github.ref }}
+        stage: staging
+        extra-args: feature_step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

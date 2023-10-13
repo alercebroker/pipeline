@@ -38,3 +38,11 @@ jobs:
       test-command: 'python -m pytest -x tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+  build-early-classification-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+        stage: staging
+        extra-args: early_classification_step --dry-run
+    secrets:
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

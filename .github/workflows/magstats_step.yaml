@@ -33,11 +33,11 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  magstats_step_build:
-    uses: ./.github/workflows/build-template.yaml
+  build-magstats-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "magstats_step"
-      build-context: "."
-      step-name: "magstats_step"
+        stage: staging
+        extra-args: magstats_step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

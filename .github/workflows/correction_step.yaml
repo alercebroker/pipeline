@@ -32,10 +32,9 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   correction_step_build:
-    uses: ./.github/workflows/build-template.yaml
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "correction_step"
-      build-context: "."
-      step-name: "correction_step"
+      stage: staging
+      extra-args: correction_step --dry-run
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
