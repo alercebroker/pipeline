@@ -26,7 +26,7 @@ class FoldedKimExtractor(FeatureExtractor):
         features = []
         for band in self.bands:
             band_detections = detections[detections['fid'] == band]
-            if len(band_detections) <= 2:
+            if len(band_detections) <= 2 or np.isnan(period):
                 features.append((f'Psi_CS_{band}', np.nan, band))
                 features.append((f'Psi_eta_{band}', np.nan, band))
             else:

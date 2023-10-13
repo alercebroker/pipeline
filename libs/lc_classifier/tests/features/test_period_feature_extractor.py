@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-class TestMHPSFeatureExtractor(unittest.TestCase):
+class TestPeriodFeatureExtractor(unittest.TestCase):
     def test_ztf_object(self):
         ztf_astro_object = get_ztf_example(1)
         feature_extractor = PeriodExtractor(
