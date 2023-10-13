@@ -8,6 +8,8 @@ on:
             required: true
             type: string
 
+concurrency: production
+
 jobs:
     # cada job necesita el anterior
     update_versions:

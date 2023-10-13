@@ -59,7 +59,7 @@ async def helm_upgrade(
     helm_package_command = [
         "helm",
         "package",
-        f"charts/{chart_folder}/"
+        f"/pipeline/charts/{chart_folder}/"
     ]
     helm_upgrade_command = [
         "helm",
@@ -75,15 +75,15 @@ async def helm_upgrade(
 
     await (
         k8s.with_exec(["kubectl", "config", "get-contexts"])
-        .with_exec(
-            helm_package_command
-        )
         .with_(
             get_values(
                 client,
                 str(pathlib.Path().cwd().parent.absolute()),
                 values_file,
             )
+        )
+        .with_exec(
+            helm_package_command
         )
         .with_exec(helm_upgrade_command)
     )
@@ -119,10 +119,6 @@ async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, 
             )
             .with_exec(
                 configure_aws_eks_command_list
-            )
-            .with_directory(
-                "charts",
-                client.host().directory(f"{os.getcwd()}/../charts")
             )
         )
         async with anyio.create_task_group() as tg:
