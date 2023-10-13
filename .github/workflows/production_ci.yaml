@@ -212,6 +212,7 @@ jobs:
                     CR_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
                 
     deploy_production:
+        needs: release-chart
         runs-on: ubuntu-latest
         permissions:
           id-token: write
@@ -242,19 +243,19 @@ jobs:
             run: |
               cd ci
               poetry run python main.py deploy production \
-              correction-step --values=correction_step-helm-values \
-              early-classification-step --chart=early-classifier --values=early_classification_step-helm-values \
-              feature-step --values=feature_step-helm-values \
-              lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values \
+              correction-step --values=correction_step-helm-values --folder=correction_step \
+              early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --folder=early_classification_step \
+              feature-step --values=feature_step-helm-values --folder=feature_step \
+              lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
               lightcurve-step --values=lightcurve-step-helm-values \
-              magstats-step --values=magstats_step-helm-values \
-              prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values \
-              s3-step --values=s3_step-helm-values \
+              magstats-step --values=magstats_step-helm-values --folder=magstats_step \
+              prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
+              s3-step --values=s3_step-helm-values --folder=s3_step \
               scribe --chart=scribe --values=scribe-helm-values \
-              sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values \
-              sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values \
-              watchlist-step --values=watchlist_step-helm-values \
-              xmatch-step --values=xmatch_step-helm-values
+              sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
+              sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step\
+              watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
+              xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
 
     create_realease:
         needs: deploy_production
