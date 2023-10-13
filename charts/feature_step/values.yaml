@@ -53,7 +53,6 @@ configmap:
   consumeMessages: "50"
   metricsTopic: ""
   scribeTopic: ""
-  classPrefix: ""
   producerMessageMaxBytes: ""
 
 secrets:

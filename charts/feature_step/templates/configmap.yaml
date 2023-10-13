@@ -4,7 +4,6 @@ metadata:
   name: {{ include "feature-step.fullname" . }}
   namespace: {{ .Values.namespace }}
 data:
-  class-prefix: {{ .Values.configmap.classPrefix }}
   consumer-topics: {{ .Values.configmap.consumerTopics }}
   group-id: {{ .Values.configmap.groupId | default (printf "%s" (include "feature-step.fullname" .)) }}
   internal-server: {{ .Values.configmap.internalServer }}

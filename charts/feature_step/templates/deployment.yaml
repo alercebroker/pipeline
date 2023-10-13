@@ -96,11 +96,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "feature-step.fullname" . }}
                   key: internal-server
-            - name: CLASS_PREFIX
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "feature-step.fullname" . }}
-                  key: class-prefix                 
             - name: METRICS_TOPIC
               valueFrom:
                 configMapKeyRef:
