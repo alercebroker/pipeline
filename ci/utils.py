@@ -121,12 +121,20 @@ async def build(
     print(f"Built image with tag: {tags}")
 
     if not dry_run:
-        print("Publishing image")
+        for tag in tags:
+            print(
+                f"Publishing image to ghcr.io/alercebroker/{output_package_name}:{tag}"
+            )
         # publish the resulting container to a registry
         secret = _get_publish_secret(client)
         await _publish_container(
             image_ref, package_dir, tags, secret, output_package_name
         )
+    else:
+        for tag in tags:
+            print(
+                f"Running with dry run: Skipping publish to ghcr.io/alercebroker/{output_package_name}:{tag}"
+            )
 
 
 async def get_tags(client: dagger.Client, package_dir: str) -> list:

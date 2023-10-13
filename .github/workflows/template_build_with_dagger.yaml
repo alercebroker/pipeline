@@ -6,10 +6,7 @@ on:
             required: true
             type: string
             default: 'staging'
-        package:
-            required: true
-            type: string
-        build-args:
+        extra-args:
             required: false
             type: string
             default: ''
@@ -45,13 +42,7 @@ jobs:
             run: |
                 cd ci
                 poetry install
-          - name: Run dagger pipeline no args
-            if: ${{ inputs.build-args == '' }}
+          - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}}
-          - name: Run dagger pipeline with args
-            if: ${{ inputs.build-args != '' }}
-            run: |
-                cd ci
-                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}} --build-arg=${{ inputs.build-args }}
+                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}} ${{ inputs.extra-args }}

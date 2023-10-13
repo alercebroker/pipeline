@@ -59,7 +59,7 @@ def parse_build_command(packages):
         elif pkg.startswith("--output-package-name"):
             output_package_name = pkg.split("=")[1]
             parsed_args[current_arg][
-                "output_package_name"
+                "output-package-name"
             ] = output_package_name
         else:
             current_arg = pkg
