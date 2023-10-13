@@ -5,7 +5,7 @@ from deploy import deploy_staging, deploy_production
 
 def update_versions(stage, packages, libs, version, dry_run=False):
     if stage == "staging":
-        version = "prerelease" # last check for the upgate version to be prerelease in staging
+        version = "prerelease"  # last check for the upgate version to be prerelease in staging
         update_packages(packages, libs, version, dry_run)
     elif stage == "production":
         update_packages(packages, libs, version, dry_run)
@@ -56,11 +56,17 @@ def parse_build_command(packages):
                 build_arg.split(":")[0]
             )
             parsed_args[current_arg]["value"].append(build_arg.split(":")[1])
+        elif pkg.startswith("--output-package-name"):
+            output_package_name = pkg.split("=")[1]
+            parsed_args[current_arg][
+                "output_package_name"
+            ] = output_package_name
         else:
             current_arg = pkg
             parsed_args[pkg] = {
                 "build-arg": [],
                 "value": [],
+                "output-package-name": pkg,
             }
     return parsed_args
 
@@ -107,7 +113,7 @@ if __name__ == "__main__":
             version = sys.argv[-1].split("=")[1]
             sys.argv.pop(-1)
         else:
-            version="prerelease"
+            version = "prerelease"
         update_versions(stage, packages, [], version, dry_run)
     if command == "build":
         packages = parse_build_command(packages)

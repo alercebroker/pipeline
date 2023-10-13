@@ -15,7 +15,14 @@ async def _build_package(packages: dict, dry_run: bool):
                 build_args = []
                 for arg, value in z:
                     build_args.append((arg, value))
-                tg.start_soon(build, client, pkg, build_args, dry_run)
+                tg.start_soon(
+                    build,
+                    client,
+                    pkg,
+                    build_args,
+                    dry_run,
+                    packages[pkg]["output-package-name"],
+                )
 
 
 async def _update_package_version(packages: list, version: str, dry_run: bool):
@@ -68,6 +75,7 @@ async def _update_package_version(packages: list, version: str, dry_run: bool):
 def update_packages(packages, libs, version, dry_run: bool):
     anyio.run(_update_package_version, packages + libs, version, dry_run)
     anyio.run(git_push, dry_run)
+
 
 def build_packages(packages: dict, dry_run: bool):
     anyio.run(_build_package, packages, dry_run)

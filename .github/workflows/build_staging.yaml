@@ -61,47 +61,115 @@ jobs:
 
   build-lc-classification-balto-dagger:
     needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        submodules: true
-        package: lc_classification_step
-        build-args: model:balto
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          token: ${{ secrets.ADMIN_TOKEN }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging lc_classification_step --build-arg=model:balto --output-package-name=lc_classification_step_balto
 
   build-lc-classification-messi-dagger:
     needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        submodules: true
-        package: lc_classification_step
-        build-args: model:messi
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          token: ${{ secrets.ADMIN_TOKEN }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging lc_classification_step --build-arg=model:messi --output-package-name=lc_classification_step_messi
 
   build-lc-classification-mlp-dagger:
     needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        submodules: true
-        package: lc_classification_step
-        build-args: model:mlp
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          token: ${{ secrets.ADMIN_TOKEN }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging lc_classification_step --build-arg=model:mlp --output-package-name=lc_classification_step_mlp
 
   build-lc-classification-ztf-dagger:
     needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        submodules: true
-        package: lc_classification_step
-        build-args: model:ztf
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          token: ${{ secrets.ADMIN_TOKEN }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build staging lc_classification_step --build-arg=model:ztf --output-package-name=lc_classification_step_ztf
 
   build-lightcurve-dagger:
     needs: update-packages-dagger
