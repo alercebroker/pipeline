@@ -43,7 +43,6 @@ affinity:
               values: []
 
 configmap:
-  classPrefix: ""
   consumerTopics: ""
   consumeTimeout: ""
   consumeMessages: ""

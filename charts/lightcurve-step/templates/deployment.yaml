@@ -51,11 +51,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "lightcurve-step.fullname" . }}
                   key: consumer-topics
-            - name: CLASS_PREFIX
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lightcurve-step.fullname" . }}
-                  key: class-prefix                  
             - name: CONSUMER_SERVER
               valueFrom:
                 configMapKeyRef:
