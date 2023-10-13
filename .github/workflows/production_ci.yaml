@@ -42,7 +42,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: correction_step
+            extra-args: correction_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -51,7 +51,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: early_classification_step
+            extra-args: early_classification_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -60,7 +60,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: feature_step
+            extra-args: feature_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -69,9 +69,8 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
+            extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
             submodules: true
-            package: lc_classification_step
-            build-args: model:balto
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -80,9 +79,8 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
+            extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
             submodules: true
-            package: lc_classification_step
-            build-args: model:messi
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -91,9 +89,8 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
+            extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
             submodules: true
-            package: lc_classification_step
-            build-args: model:mlp
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -102,9 +99,8 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
+            extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
             submodules: true
-            package: lc_classification_step
-            build-args: model:ztf
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -113,7 +109,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: lightcurve-step
+            extra-args: lightcurve-step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -122,7 +118,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: magstats_step
+            extra-args: magstats_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -131,7 +127,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: prv_candidates_step
+            extra-args: prv_candidates_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -140,7 +136,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: s3_step
+            extra-args: s3_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -149,7 +145,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: scribe
+            extra-args: scribe
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -158,7 +154,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: sorting_hat_step
+            extra-args: sorting_hat_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -167,7 +163,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: watchlist_step
+            extra-args: watchlist_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -176,7 +172,7 @@ jobs:
         uses: ./.github/workflows/template_build_with_dagger.yaml
         with:
             stage: production
-            package: xmatch_step
+            extra-args: xmatch_step
         secrets:
             ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
