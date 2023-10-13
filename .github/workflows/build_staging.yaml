@@ -154,9 +154,7 @@ jobs:
       - build-correction-dagger
       - build-early-classification-dagger
       - build-feature-dagger
-      - build-lc-classification-balto-dagger
-      - build-lc-classification-messi-dagger
-      - build-lc-classification-mlp-dagger
+      - build-lc-classification-elasticc-dagger
       - build-lc-classification-ztf-dagger
       - build-lightcurve-dagger
       - build-magstats-dagger
