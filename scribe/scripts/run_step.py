@@ -27,6 +27,7 @@ from prometheus_client import start_http_server
 # Pyroscope config
 use_profiling = STEP_CONFIG.pop("USE_PROFILING")
 pyroscope_server = STEP_CONFIG.pop("PYROSCOPE_SERVER")
+db_type = STEP_CONFIG.pop("DB_TYPE")
 if use_profiling:
     from pyroscope import configure
     configure(application_name="step.ScribeStep", server_address=pyroscope_server)
@@ -34,5 +35,5 @@ if use_profiling:
 prometheus_metrics = PrometheusMetrics()
 start_http_server(8000)
 
-step = MongoScribe(config=STEP_CONFIG, prometheus_metrics=prometheus_metrics)
+step = MongoScribe(config=STEP_CONFIG, db=db_type, prometheus_metrics=prometheus_metrics)
 step.start()

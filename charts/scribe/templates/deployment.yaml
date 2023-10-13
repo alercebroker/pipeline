@@ -50,6 +50,8 @@ spec:
               value: "{{ .Values.secrets.metricsTopic }}"
             - name: USE_PROFILING
               value: "{{ .Values.secrets.useProfiling }}"
+            - name: DB_ENGINE
+              value: "{{ .Values.secrets.dbEngine }}"
             - name: PYROSCOPE_SERVER
               value: "http://pyroscope.pyroscope:4040"
             {{- if .Values.secrets.kafkaAuth.enabled }}
