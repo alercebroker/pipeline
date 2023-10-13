@@ -4,6 +4,8 @@ import sys
 import anyio
 import pathlib
 from multiprocessing import Process, Pool
+import yaml
+from yaml.loader import SafeLoader
 
 
 def env_variables(envs: dict[str, str]):
@@ -49,32 +51,30 @@ async def helm_upgrade(
     k8s: dagger.Container,
     release_name: str,
     chart_name: str,
+    chart_folder: str,
+    chart_version: str,
     values_file: str,
     dry_run: bool,
 ):
-    helm_command = [
+    helm_package_command = [
+        "helm",
+        "package",
+        f"/pipeline/charts/{chart_folder}/"
+    ]
+    helm_upgrade_command = [
         "helm",
         "upgrade",
         "-i",
         "-f",
         "values.yaml",
         release_name,
-        f"pipeline/{chart_name}",
+        f"./{chart_name}-{chart_version}.tgz",
     ]
     if dry_run:
-        helm_command.append("--dry-run")
+        helm_upgrade_command.append("--dry-run")
 
     await (
         k8s.with_exec(["kubectl", "config", "get-contexts"])
-        .with_exec(
-            [
-                "helm",
-                "repo",
-                "add",
-                "pipeline",
-                "https://alercebroker.github.io/pipeline",
-            ]
-        )
         .with_(
             get_values(
                 client,
@@ -82,11 +82,13 @@ async def helm_upgrade(
                 values_file,
             )
         )
-        .with_exec(helm_command)
+        .with_exec(helm_package_command)
+        .with_exec(helm_upgrade_command)
     )
 
 
 async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool):
+
     async with dagger.Connection() as client:
         # list of bash command to be executed in the dager container
         # with the purpose of conecting to the cluster
@@ -119,12 +121,18 @@ async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, 
         )
         async with anyio.create_task_group() as tg:
             for package in packages:
+
+                chart_content = yaml.load(open(f"../charts/{packages[package]['chart-folder']}/Chart.yaml"), Loader=SafeLoader)
+                chart_version = chart_content['version']
+
                 tg.start_soon(
                     helm_upgrade,
                     client,
                     k8s,
                     package,
                     packages[package]["chart"],
+                    packages[package]["chart-folder"],
+                    chart_version,
                     packages[package]["values"],
                     dry_run,
                 )
