@@ -21,6 +21,7 @@ def _e_ra(dec, fid):
     except ZeroDivisionError:
         return float("nan")
 
+
 class ZTFParser(SurveyParser):
     _source = "ZTF"
 
