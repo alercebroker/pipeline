@@ -6,6 +6,7 @@ from .mongo.db.executor import ScribeCommandExecutor
 from .sql.command.decode import command_factory as sql_command_factory
 from .sql.db.executor import SQLCommandExecutor
 
+
 class MongoScribe(GenericStep):
     """MongoScribe Description
 
@@ -35,8 +36,8 @@ class MongoScribe(GenericStep):
             try:
                 new_command = self.command_factory(message["payload"])
                 valid_commands.append(new_command)
-            except Exception as exc:
-                print(f"===========\nError processing message: {exc}")
+            except ValueError as e:
+                self.logger.debug(e)
                 n_invalid_commands += 1
 
         logging.info(
