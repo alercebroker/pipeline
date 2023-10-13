@@ -37,7 +37,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: correction_step
+        extra-args: correction_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -46,7 +46,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: early_classification_step
+        extra-args: early_classification_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: feature_step
+        extra-args: feature_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -82,7 +82,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: lightcurve-step
+        extra-args: lightcurve-step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -91,7 +91,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: magstats_step
+        extra-args: magstats_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -100,7 +100,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: prv_candidates_step
+        extra-args: prv_candidates_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -109,7 +109,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: s3_step
+        extra-args: s3_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -118,7 +118,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: scribe
+        extra-args: scribe
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -127,7 +127,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: sorting_hat_step
+        extra-args: sorting_hat_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -136,7 +136,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: watchlist_step
+        extra-args: watchlist_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -145,7 +145,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        extra_args: xmatch_step
+        extra-args: xmatch_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
