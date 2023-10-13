@@ -6,6 +6,9 @@ on:
             required: true
             type: string
             default: 'staging'
+        package:
+            required: true
+            type: string
         extra-args:
             required: false
             type: string
@@ -45,4 +48,4 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package}} ${{ inputs.extra-args }}
+                poetry run python main.py build ${{ inputs.stage }} ${{ inputs.package }} ${{ inputs.extra-args }}
