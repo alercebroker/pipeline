@@ -36,13 +36,12 @@ class _MongoConfig(UserDict):
         ]
         super().__setitem__("".join(klist), value)
 
-
-def get_mongodb_credentials(mongo_secret_name):
-    secret_name = mongo_secret_name
+def get_credentials(secret_name, db_type="mongo"):
     secret = get_secret(secret_name)
     secret = json.loads(secret)
     # check if config is valid
     # _MongoConfig will raise error if the config has missing parameters
-    secret = _MongoConfig(secret)
-    secret["port"] = int(secret["port"])
+    if db_type == "mongo":
+        secret = _MongoConfig(secret)
+        secret["port"] = int(secret["port"])
     return secret
