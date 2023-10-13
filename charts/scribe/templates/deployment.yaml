@@ -40,7 +40,7 @@ spec:
               value: {{ .Values.secrets.bootstrapServers }}
             - name: MOCK_DB_COLLECTION
               value: "{{ .Values.secrets.mockDb }}"
-            - name: MONGODB_SECRET_NAME
+            - name: DB_SECRET_NAME
               value: "{{ .Values.secrets.secretName }}"
             - name: CONSUMER_GROUP_ID
               value: "{{ .Values.secrets.consumerGroupId }}"

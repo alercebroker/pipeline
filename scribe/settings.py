@@ -30,7 +30,7 @@ db_type = os.getenv("DB_ENGINE", "mongo")
 
 DB_CONFIG = {}
 if db_type == "mongo":
-    DB_CONFIG["MONGO"] = get_credentials(os.environ["MONGODB_SECRET_NAME"], db_type)
+    DB_CONFIG["MONGO"] = get_credentials(os.environ["DB_SECRET_NAME"], db_type)
     
 elif db_type == "sql":
     DB_CONFIG["PSQL"] = get_credentials(os.environ["DB_SECRET_NAME"], db_type)
