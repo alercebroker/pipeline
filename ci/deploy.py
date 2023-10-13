@@ -82,9 +82,7 @@ async def helm_upgrade(
                 values_file,
             )
         )
-        .with_exec(
-            helm_package_command
-        )
+        .with_exec(helm_package_command)
         .with_exec(helm_upgrade_command)
     )
 
