@@ -4,7 +4,6 @@ metadata:
   name: {{ include "correction-step.fullname" . }}
   namespace: {{ .Values.namespace }}
 data:
-  class-prefix: {{ .Values.configmap.classPrefix }}
   consumer-topics: {{ .Values.configmap.consumerTopics }}
   consumer-server: {{ .Values.configmap.consumerServer }}
   consumer-group-id: {{ .Values.configmap.consumerGroupId | default (printf "%s" (include "correction-step.fullname" .)) }}

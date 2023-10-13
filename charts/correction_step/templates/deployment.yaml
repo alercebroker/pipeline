@@ -41,11 +41,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "correction-step.fullname" . }}
                   key: consumer-topics
-            - name: CLASS_PREFIX
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "correction-step.fullname" . }}
-                  key: class-prefix                 
             - name: CONSUMER_SERVER
               valueFrom:
                 configMapKeyRef:

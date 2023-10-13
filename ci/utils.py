@@ -13,16 +13,16 @@ def _get_publish_secret(client):
 
 async def _publish_container(
     container: dagger.Container,
-    package_name: str,
+    output_package_name,
     tags: list,
     secret: dagger.Secret,
 ):
     for tag in tags:
         addr = await container.with_registry_auth(
-            f"ghcr.io/alercebroker/{package_name}:{tag}",
+            f"ghcr.io/alercebroker/{output_package_name}:{tag}",
             "alerceadmin",
             secret,
-        ).publish(f"ghcr.io/alercebroker/{package_name}:{tag}")
+        ).publish(f"ghcr.io/alercebroker/{output_package_name}:{tag}")
         print(f"published image at: {addr}")
 
 
@@ -93,7 +93,11 @@ async def update_version(
 
 
 async def build(
-    client: dagger.Client, package_dir: str, build_args: list, dry_run: bool
+    client: dagger.Client,
+    package_dir: str,
+    build_args: list,
+    output_package_name,
+    dry_run: bool,
 ):
     path = pathlib.Path().cwd().parent.absolute()
     # get build context directory
@@ -115,10 +119,18 @@ async def build(
     print(f"Built image with tag: {tags}")
 
     if not dry_run:
-        print("Publishing image")
+        for tag in tags:
+            print(
+                f"Publishing image to ghcr.io/alercebroker/{output_package_name}:{tag}"
+            )
         # publish the resulting container to a registry
         secret = _get_publish_secret(client)
-        await _publish_container(image_ref, package_dir, tags, secret)
+        await _publish_container(image_ref, output_package_name, tags, secret)
+    else:
+        for tag in tags:
+            print(
+                f"Running with dry run: Skipping publish to ghcr.io/alercebroker/{output_package_name}:{tag}"
+            )
 
 
 async def get_tags(client: dagger.Client, package_dir: str) -> list:

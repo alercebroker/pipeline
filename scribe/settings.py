@@ -1,5 +1,5 @@
 import os
-from credentials import get_mongodb_credentials
+from credentials import get_credentials
 
 ##################################################
 #       mongo_scribe   Settings File
@@ -26,9 +26,14 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
     CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
-DB_CONFIG = {
-    "MONGO": get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
-}
+db_type = os.getenv("DB_ENGINE", "mongo")
+
+DB_CONFIG = {}
+if db_type == "mongo":
+    DB_CONFIG["MONGO"] = get_credentials(os.environ["MONGODB_SECRET_NAME"], db_type)
+    
+elif db_type == "sql":
+    DB_CONFIG["PSQL"] = get_credentials(os.environ["DB_SECRET_NAME"], db_type)
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
@@ -87,6 +92,7 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
 ## Step Configuration
 STEP_CONFIG = {
     "DB_CONFIG": DB_CONFIG,
+    "DB_TYPE": db_type,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", "True")),

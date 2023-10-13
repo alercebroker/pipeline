@@ -54,6 +54,7 @@ secrets:
   mockDb: "False"
   #secretName: name of the secret stored in AWS Secret Manager containing MongoDB credentials
   secretName: ""
+  dbEngine: ""
   consumerGroupId: ""
   metricsHost: ""
   metricsTopic: ""
