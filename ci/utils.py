@@ -13,15 +13,13 @@ def _get_publish_secret(client):
 
 async def _publish_container(
     container: dagger.Container,
-    package_name: str,
+    output_package_name,
     tags: list,
     secret: dagger.Secret,
-    output_package_name: str = "",
 ):
-    output_package_name = output_package_name or package_name
     for tag in tags:
         addr = await container.with_registry_auth(
-            f"ghcr.io/alercebroker/{package_name}:{tag}",
+            f"ghcr.io/alercebroker/{output_package_name}:{tag}",
             "alerceadmin",
             secret,
         ).publish(f"ghcr.io/alercebroker/{output_package_name}:{tag}")
@@ -98,8 +96,8 @@ async def build(
     client: dagger.Client,
     package_dir: str,
     build_args: list,
+    output_package_name,
     dry_run: bool,
-    output_package_name: str = "",
 ):
     path = pathlib.Path().cwd().parent.absolute()
     # get build context directory
@@ -127,9 +125,7 @@ async def build(
             )
         # publish the resulting container to a registry
         secret = _get_publish_secret(client)
-        await _publish_container(
-            image_ref, package_dir, tags, secret, output_package_name
-        )
+        await _publish_container(image_ref, output_package_name, tags, secret)
     else:
         for tag in tags:
             print(

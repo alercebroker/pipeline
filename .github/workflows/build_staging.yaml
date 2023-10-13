@@ -37,7 +37,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: correction_step
+        extra_args: correction_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -46,7 +46,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: early_classification_step
+        extra_args: early_classification_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -55,37 +55,16 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: feature_step
+        extra_args: feature_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-balto-dagger:
+  build-lc-classification-elasticc-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: lc_classification_step
-        extra-args: --build-args=model:balto --output-package-name=lc_classification_step_balto
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  build-lc-classification-messi-dagger:
-    needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        package: lc_classification_step
-        extra-args: --build-args=model:messi --output-package-name=lc_classification_step_messi
-    secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-
-  build-lc-classification-mlp-dagger:
-    needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-        stage: staging
-        package: lc_classification_step
-        extra-args: --build-args=model:mlp --output-package-name=lc_classification_step_mlp
+        extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -94,8 +73,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: lc_classification_step
-        extra-args: --build-args=model:ztf --output-package-name=lc_classification_step_ztf
+        extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -104,7 +82,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: lightcurve-step
+        extra_args: lightcurve-step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -113,7 +91,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: magstats_step
+        extra_args: magstats_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -122,7 +100,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: prv_candidates_step
+        extra_args: prv_candidates_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -131,7 +109,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: s3_step
+        extra_args: s3_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -140,7 +118,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: scribe
+        extra_args: scribe
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -149,7 +127,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: sorting_hat_step
+        extra_args: sorting_hat_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -158,7 +136,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: watchlist_step
+        extra_args: watchlist_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -167,7 +145,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
-        package: xmatch_step
+        extra_args: xmatch_step
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 

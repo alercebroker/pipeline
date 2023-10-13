@@ -18,10 +18,10 @@ async def _build_package(packages: dict, dry_run: bool):
                 tg.start_soon(
                     build,
                     client,
-                    pkg,
+                    packages[pkg]["package-dir"],
                     build_args,
+                    pkg,
                     dry_run,
-                    packages[pkg]["output-package-name"],
                 )
 
 

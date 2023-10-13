@@ -42,10 +42,10 @@ def parse_build_command(packages):
 
     Args:
         packages (list): List of packages and build-args
-            Example: "package1 --build-arg arg1:val1 --build-arg arg2:val2"
+            Example: "output_package1 --build-arg arg1:val1 --build-arg arg2:val2 --package-dir package1"
     Returns:
         dict: Dictionary of packages and build-args
-            Example: { "package1": { "build-arg": ["arg1", "arg2"], "value": ["val1", "val2"] } }
+            Example: { "output_package1": { "build-arg": ["arg1", "arg2"], "value": ["val1", "val2"], "package-dir": "package1" } }
     """
     parsed_args = {}
     current_arg = None
@@ -56,17 +56,15 @@ def parse_build_command(packages):
                 build_arg.split(":")[0]
             )
             parsed_args[current_arg]["value"].append(build_arg.split(":")[1])
-        elif pkg.startswith("--output-package-name"):
-            output_package_name = pkg.split("=")[1]
-            parsed_args[current_arg][
-                "output-package-name"
-            ] = output_package_name
+        elif pkg.startswith("--package-dir"):
+            package_dir = pkg.split("=")[1]
+            parsed_args[current_arg]["package-dir"] = package_dir
         else:
             current_arg = pkg
             parsed_args[pkg] = {
                 "build-arg": [],
                 "value": [],
-                "output-package-name": pkg,
+                "package-dir": pkg,
             }
     return parsed_args
 
