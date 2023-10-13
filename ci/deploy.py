@@ -42,10 +42,6 @@ def get_values(client: dagger.Client, path: str, ssm_parameter_name: str):
     return get_values_inner
 
 
-def _replace_underscore(package: str):
-    return package.replace("_", "-")
-
-
 async def helm_upgrade(
     client: dagger.Client,
     k8s: dagger.Container,
@@ -59,7 +55,7 @@ async def helm_upgrade(
     helm_package_command = [
         "helm",
         "package",
-        f"/pipeline/charts/{chart_folder}/"
+        f"/pipeline/charts/{chart_folder}/",
     ]
     helm_upgrade_command = [
         "helm",
@@ -87,8 +83,9 @@ async def helm_upgrade(
     )
 
 
-async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool):
-
+async def deploy_package(
+    packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool
+):
     async with dagger.Connection() as client:
         # list of bash command to be executed in the dager container
         # with the purpose of conecting to the cluster
@@ -115,15 +112,17 @@ async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, 
             .with_env_variable(
                 "AWS_DEFAULT_REGION", os.environ["AWS_DEFAULT_REGION"]
             )
-            .with_exec(
-                configure_aws_eks_command_list
-            )
+            .with_exec(configure_aws_eks_command_list)
         )
         async with anyio.create_task_group() as tg:
             for package in packages:
-
-                chart_content = yaml.load(open(f"../charts/{packages[package]['chart-folder']}/Chart.yaml"), Loader=SafeLoader)
-                chart_version = chart_content['version']
+                chart_content = yaml.load(
+                    open(
+                        f"../charts/{packages[package]['chart-folder']}/Chart.yaml"
+                    ),
+                    Loader=SafeLoader,
+                )
+                chart_version = chart_content["version"]
 
                 tg.start_soon(
                     helm_upgrade,
@@ -141,6 +140,7 @@ async def deploy_package(packages: dict, cluster_name: str, cluster_alias: str, 
 
 def deploy_staging(packages: dict, dry_run: bool):
     anyio.run(deploy_package, packages, "staging", "staging", dry_run)
+
 
 def deploy_production(packages: dict, dry_run: bool):
     anyio.run(deploy_package, packages, "staging", "staging", dry_run)

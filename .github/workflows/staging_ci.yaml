@@ -245,8 +245,9 @@ jobs:
             magstats-step --values=magstats_step-helm-values --folder=magstats_step \
             prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
             s3-step --values=s3_step-helm-values --folder=s3_step \
-            scribe --chart=scribe --values=scribe-helm-values \
+            scribe-mongo --chart=scribe --values=scribe-helm-values --folder=scribe \
+            scribe-psql --chart=scribe --values=scribe-psql-helm-values --folder=scribe \
             sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
-            sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step\
+            sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step \
             watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
             xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
