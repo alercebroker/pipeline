@@ -33,11 +33,12 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  sorting_hat_step_build:
-    uses: ./.github/workflows/build-template.yaml
+
+  build-sorting-hat-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "sorting_hat_step"
-      build-context: "."
-      step-name: "sorting_hat_step"
+        stage: staging
+        extra-args: sorting_hat_step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

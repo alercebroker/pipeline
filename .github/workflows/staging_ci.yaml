@@ -1,11 +1,11 @@
-name: Build Staging
+name: Staging CI Pipeline
 
 on:
   push:
     branches:
       - main
 
-concurrency: build
+concurrency: staging
 
 jobs:
   update-packages-dagger:
@@ -204,3 +204,50 @@ jobs:
         uses: helm/chart-releaser-action@v1.5.0
         env:
           CR_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+                
+  deploy_staging:
+      needs: release-chart
+      runs-on: ubuntu-latest
+      permissions:
+        id-token: write
+        contents: read
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        - name: Configure AWS credentials
+          id: creds
+          uses: aws-actions/configure-aws-credentials@v3
+          with:
+            role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
+            aws-region: us-east-1
+            output-credentials: true
+            unset-current-credentials: true
+        - name: Install poetry
+          run: pipx install poetry
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: 3.11
+            cache: 'poetry'
+        - name: Install dependencies
+          run: |
+            cd ci
+            poetry install
+        - name: Run dagger pipeline
+          run: |
+            cd ci
+            poetry run python main.py deploy staging \
+            correction-step --values=correction_step-helm-values --folder=correction_step \
+            early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --folder=early_classification_step \
+            feature-step --values=feature_step-helm-values --folder=feature_step \
+            lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
+            lightcurve-step --values=lightcurve-step-helm-values \
+            magstats-step --values=magstats_step-helm-values --folder=magstats_step \
+            prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
+            s3-step --values=s3_step-helm-values --folder=s3_step \
+            scribe-mongo --chart=scribe --values=scribe-helm-values --folder=scribe \
+            scribe-psql --chart=scribe --values=scribe-psql-helm-values --folder=scribe \
+            sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
+            sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step \
+            watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
+            xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step

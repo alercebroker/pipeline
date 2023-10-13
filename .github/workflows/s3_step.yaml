@@ -34,11 +34,11 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
-  s3_step_build:
-    uses: ./.github/workflows/build-template.yaml
+  build-s3-step-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "s3_step"
-      build-context: "s3_step"
-      step-name: "s3_step"
+        stage: staging
+        extra-args: s3_step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
