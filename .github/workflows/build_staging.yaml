@@ -65,6 +65,7 @@ jobs:
     with:
         stage: staging
         extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
+        submodules: true
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
@@ -74,6 +75,7 @@ jobs:
     with:
         stage: staging
         extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
+        submodules: true
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
