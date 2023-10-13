@@ -4,7 +4,6 @@ metadata:
   name: {{ include "prv-candidates.fullname" . }}
   namespace: {{ .Values.namespace }}
 data:
-  class-prefix: {{ .Values.configmap.classPrefix }}
   consumer-topics: {{ .Values.configmap.consumerTopics }}
   consume-messages: "{{ .Values.configmap.consumeMessages }}"
   consumer-server: {{ .Values.configmap.consumerServer }}
