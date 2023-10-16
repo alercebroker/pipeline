@@ -101,8 +101,10 @@ class InsertDetectionsCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
+        unique = {(el["candid"], el["oid"]): el for el in data}
+        unique = list(unique.values())
         return session.connection().execute(
-            insert(Detection).values(data).on_conflict_do_nothing()
+            insert(Detection).values(unique).on_conflict_do_nothing()
         )
 
 
@@ -122,8 +124,10 @@ class InsertForcedPhotometryCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
+        unique = {(el["candid"], el["oid"]): el for el in data}
+        unique = list(unique.values())
         return session.connection().execute(
-            insert(ForcedPhotometry).values(data).on_conflict_do_nothing()
+            insert(ForcedPhotometry).values(unique).on_conflict_do_nothing()
         )
 
 
@@ -182,7 +186,9 @@ class UpsertNonDetectionsCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        insert_stmt = insert(NonDetection).values(data)
+        unique = {(el["oid"], el["fid"], el["mjd"]): el for el in data}
+        unique = list(unique.values())
+        insert_stmt = insert(NonDetection).values(unique)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="non_detection_pkey",
             set_=dict(diffmaglim=insert_stmt.excluded.diffmaglim),

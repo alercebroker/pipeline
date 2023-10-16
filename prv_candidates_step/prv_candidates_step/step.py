@@ -48,6 +48,7 @@ class PrvCandidatesStep(GenericStep):
                 "collection": "non_detection",
                 "type": "update",
                 "criteria": {
+                    "oid": non_detection["oid"],
                     "aid": non_detection["aid"],
                     "fid": non_detection["fid"],
                     "mjd": non_detection["mjd"],
