@@ -44,7 +44,7 @@ jobs:
             stage: production
             extra-args: correction_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-early-classification-dagger:
         needs: update_versions
@@ -53,7 +53,7 @@ jobs:
             stage: production
             extra-args: early_classification_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-feature-dagger:
         needs: update_versions
@@ -62,7 +62,7 @@ jobs:
             stage: production
             extra-args: feature_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-lc-classification-balto-dagger:
         needs: update_versions
@@ -72,7 +72,7 @@ jobs:
             extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
             submodules: true
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-lc-classification-messi-dagger:
         needs: update_versions
@@ -82,7 +82,7 @@ jobs:
             extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
             submodules: true
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-lc-classification-mlp-dagger:
         needs: update_versions
@@ -92,7 +92,7 @@ jobs:
             extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
             submodules: true
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-lc-classification-ztf-dagger:
         needs: update_versions
@@ -102,7 +102,7 @@ jobs:
             extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
             submodules: true
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-lightcurve-dagger:
         needs: update_versions
@@ -111,7 +111,7 @@ jobs:
             stage: production
             extra-args: lightcurve-step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-magstats-dagger:
         needs: update_versions
@@ -120,7 +120,7 @@ jobs:
             stage: production
             extra-args: magstats_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-prv-candidates-dagger:
         needs: update_versions
@@ -129,7 +129,7 @@ jobs:
             stage: production
             extra-args: prv_candidates_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-s3-step-dagger:
         needs: update_versions
@@ -138,7 +138,7 @@ jobs:
             stage: production
             extra-args: s3_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-scribe-dagger:
         needs: update_versions
@@ -147,7 +147,7 @@ jobs:
             stage: production
             extra-args: scribe
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-sorting-hat-dagger:
         needs: update_versions
@@ -156,7 +156,7 @@ jobs:
             stage: production
             extra-args: sorting_hat_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-watchlist-dagger:
         needs: update_versions
@@ -165,7 +165,7 @@ jobs:
             stage: production
             extra-args: watchlist_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     build-xmatch-dagger:
         needs: update_versions
@@ -174,7 +174,7 @@ jobs:
             stage: production
             extra-args: xmatch_step
         secrets:
-            ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
     release-chart:
         needs:
