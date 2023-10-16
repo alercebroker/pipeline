@@ -1,6 +1,7 @@
 apiVersion: v2
-appVersion: 6.1.1a110
+appVersion: 6.2.0a1
 description: Sorting Hat deployment chart
 name: sorting-hat
 type: application
-version: 2.6.74
+version: 2.6.75
+4
