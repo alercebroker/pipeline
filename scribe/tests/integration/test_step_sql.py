@@ -488,7 +488,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     """
                 )
             )
-            print(list(result))
+            assert len(result)
 
     def test_upsert_xmatch(self):
         with self.db.session() as session:
@@ -505,7 +505,7 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": "ALX123", "oid": ["ZTF04ululeea"]},
+                "criteria": {"_id": "ALX123", "oid": ["ZTF04ululeea", "ZTF05ululeea"]},
                 "data": {
                     "xmatch": {
                         "catoid": "J239263.32+240338.4",
@@ -517,7 +517,7 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": "ALX134", "oid": ["ZTF05ululeea"]},
+                "criteria": {"_id": "ALX134", "oid": ["ZTF05ululeea", "ZTF04ululeea"]},
                 "data": {
                     "xmatch": {
                         "catoid": "J239263.32+240338.4",
@@ -603,5 +603,4 @@ class MongoIntegrationTest(unittest.TestCase):
                     """
                     )
                 )
-            print(list(result))
             assert True

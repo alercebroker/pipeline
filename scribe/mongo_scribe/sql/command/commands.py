@@ -156,7 +156,6 @@ class UpdateObjectStatsCommand(Command):
         objstats, magstats = map(list, zip(*data))
         # list flatten
         magstats = sum(magstats, [])
-        print(objstats)
         for stat in objstats:
             oid = stat.pop("oid")
             update_stmt = update(Object).where(Object.oid == oid).values(stat)
@@ -262,7 +261,9 @@ class UpsertXmatchCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        insert_stmt = insert(Xmatch).values(data)
+        uniques = {el["oid"]: el for el in data}
+        uniques = list(uniques.values())
+        insert_stmt = insert(Xmatch).values(uniques)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="xmatch_pkey",
             set_=dict(

@@ -20,7 +20,7 @@ data:
   quantiles-path: "{{ .Values.configmap.quantilesPath }}"
   feature-quantiles-path: "{{ .Values.configmap.featureQuantilesPath }}"
   model-class: {{ .Values.configmap.modelClass }}
-  mapper-class: {{ .Values.configmap.mapperClass }}
+  mapper-class: "{{ .Values.configmap.mapperClass }}"
   scribe-parser-class: {{ .Values.configmap.scribeParserClass }}
   step-parser-class: {{ .Values.configmap.stepParserClass }}
   producer-class: {{ .Values.configmap.producerClass }}
