@@ -49,7 +49,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   build-sorting-hat-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -81,7 +81,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   build-prv-candidates-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging

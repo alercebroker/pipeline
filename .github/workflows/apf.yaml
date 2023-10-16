@@ -199,7 +199,7 @@ jobs:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
   build-correction-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -208,7 +208,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-early-classification-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -217,7 +217,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-feature-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -226,7 +226,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-balto-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -236,7 +236,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-mlp-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -246,7 +246,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-messi-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -256,7 +256,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-ztf-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -266,7 +266,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lightcurve-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -275,7 +275,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-magstats-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -284,7 +284,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-prv-candidates-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -293,7 +293,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-s3-step-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -302,7 +302,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-scribe-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -311,7 +311,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-sorting-hat-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -320,7 +320,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-watchlist-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -329,7 +329,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-xmatch-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging

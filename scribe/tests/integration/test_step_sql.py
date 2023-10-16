@@ -488,7 +488,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     """
                 )
             )
-            assert len(result)
+            assert len(list(result))
 
     def test_upsert_xmatch(self):
         with self.db.session() as session:

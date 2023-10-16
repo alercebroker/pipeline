@@ -35,7 +35,7 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
   build-feature-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
