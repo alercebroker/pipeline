@@ -237,11 +237,28 @@ class UpsertProbabilitiesCommand(Command):
             raise ValueError("No oids were provided in command")
 
     def _format_data(self, data):
-        return [{**data, "oid": i} for i in self.criteria["oid"]]
+        classifier_name = data.pop("classifier_name")
+        classifier_version = data.pop("classifier_version")
+
+        parsed = [
+            {
+                "classifier_name": classifier_name,
+                "classifier_version": classifier_version,
+                "class_name": class_name,
+                "probability": value,
+            }
+            for class_name, value in data.items()
+        ]
+        parsed.sort(key=lambda e: e["probability"], reverse=True)
+        parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
+        return [{**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]]
+
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        insert_stmt = insert(Probability).values(data)
+        unique = {(el["oid"], el["classifier_name"], el["class_name"]): el for el in data}
+        unique = list(unique.values())
+        insert_stmt = insert(Probability).values(unique)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="probability_pkey",
             set_=dict(

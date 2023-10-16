@@ -317,36 +317,18 @@ class MongoIntegrationTest(unittest.TestCase):
             )
             session.commit()
 
-        command_data = [
-            {
-                "class_name": "class1",
-                "classifier_name": "lc_classifier",
-                "classifier_version": "1.0.0",
-                "probability": 0.6,
-                "ranking": 1,
-            },
-            {
-                "class_name": "class2",
-                "classifier_name": "lc_classifier",
-                "classifier_version": "1.0.0",
-                "probability": 0.4,
-                "ranking": 2,
-            },
-            {
-                "class_name": "class2",
-                "classifier_name": "lc_classifier",
-                "classifier_version": "1.0.0",
-                "probability": 0.65,
-                "ranking": 1,
-            },
-            {
-                "class_name": "class1",
-                "classifier_name": "lc_classifier",
-                "classifier_version": "1.0.0",
-                "probability": 0.35,
-                "ranking": 2,
-            },
-        ]
+        command_data = [{
+            "classifier_name": "lc_classifier",
+            "classifier_version": "1.0.0",
+            "class1": 0.6,
+            "class2": 0.4,
+        },
+        {
+            "classifier_name": "lc_classifier",
+            "classifier_version": "1.0.0",
+            "class1": 0.35,
+            "class2": 0.65,
+        }]
 
         commands = [
             {
