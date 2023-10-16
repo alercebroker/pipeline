@@ -111,9 +111,9 @@ if __name__ == "__main__":
     packages = sys.argv[3:]
     print(packages)
     if command == "update-versions":
-        if sys.argv[-1].startswith("--version"):
-            version = sys.argv[-1].split("=")[1]
-            sys.argv.pop(-1)
+        if packages[-1].startswith("--version"):
+            version = packages[-1].split("=")[1]
+            packages.pop(-1)
         else:
             version = "prerelease"
         update_versions(stage, packages, [], version, dry_run)
