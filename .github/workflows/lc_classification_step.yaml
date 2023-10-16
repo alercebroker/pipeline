@@ -52,7 +52,7 @@ jobs:
 
 
   build-lc-classification-balto-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -62,7 +62,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-mlp-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -72,7 +72,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-messi-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
@@ -82,7 +82,7 @@ jobs:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-ztf-dagger:
-    needs: update-packages-dagger
+    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
         stage: staging
