@@ -113,7 +113,7 @@ class CorrectionStep(GenericStep):
             set_on_insert = not detection.get("has_stamp", False)
             extra_fields = detection["extra_fields"].copy()
             # remove possible elasticc extrafields
-            for to_remove in ["prvDiaSources", "prvDiaForcedSources"]:
+            for to_remove in ["prvDiaSources", "prvDiaForcedSources", "fp_hists"]:
                 if to_remove in extra_fields:
                     extra_fields.pop(to_remove)
 

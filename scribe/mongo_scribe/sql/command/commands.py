@@ -182,6 +182,8 @@ class UpsertNonDetectionsCommand(Command):
         self.criteria = criteria
 
     def _format_data(self, data):
+        fid_map = {"g": 1, "r": 2, "i": 3}
+        self.criteria["fid"] = fid_map[self.criteria["fid"]]
         return [{**self.criteria, "diffmaglim": data["diffmaglim"]}]
 
     @staticmethod
