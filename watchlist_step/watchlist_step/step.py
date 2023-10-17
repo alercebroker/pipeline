@@ -45,8 +45,9 @@ class WatchlistStep(GenericStep):
         coordinates = self.get_coordinates(candids)
 
         if len(coordinates) == 0:
+            print(candids)
             raise ValueError(
-                "The object has not been inserted in the database yet.\
+                "The objects have not been inserted in the database yet.\
                              No further action required."
             )
 
