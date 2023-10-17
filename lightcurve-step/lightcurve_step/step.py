@@ -154,7 +154,7 @@ class LightcurveStep(GenericStep):
                 e_dec=det["sigmadec"],
                 extra_fields=extra_fields,
             )
-            parsed_result.append(parsed)
+            parsed_result.append({**parsed, "forced": False, "new": False})
 
         return parsed_result
 
@@ -176,7 +176,11 @@ class LightcurveStep(GenericStep):
 
     def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
         return [
-            MongoForcedPhotometry(**forced, aid=oids[forced["oid"]])
+            {
+                **MongoForcedPhotometry(**forced, aid=oids[forced["oid"]]),
+                "new": False,
+                "forced": True,
+            }
             for forced in ztf_models
         ]
 
