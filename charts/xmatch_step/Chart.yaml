@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 6.2.0a5
+appVersion: 6.2.0a6
 description: A Helm chart for Kubernetes
 name: xmatch-step
 type: application
-version: 2.3.79
+version: 2.3.80
