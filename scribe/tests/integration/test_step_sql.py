@@ -191,7 +191,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 "aid": "AL21XXX",
                 "oid": "ZTF04ululeea",
                 "mjd": 55000,
-                "fid": 1,
+                "fid": "g",
             },
             "data": {
                 "diffmaglim": 0.1,
@@ -206,7 +206,7 @@ class MongoIntegrationTest(unittest.TestCase):
         }
 
         self.producer.produce({"payload": json.dumps(command)})
-        command["criteria"]["fid"] = 2
+        command["criteria"]["fid"] = "r"
         self.producer.produce({"payload": json.dumps(command)})
 
         with self.db.session() as session:

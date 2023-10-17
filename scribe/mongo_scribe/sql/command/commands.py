@@ -165,7 +165,9 @@ class UpdateObjectStatsCommand(Command):
             update_stmt = update(Object).where(Object.oid == oid).values(stat)
             session.connection().execute(update_stmt)
 
-        upsert_stmt = insert(MagStats).values(magstats)
+        unique_magstats = {(el["oid"], el["fid"]): el for el in magstats}
+        unique_magstats = list(unique_magstats.values())
+        upsert_stmt = insert(MagStats).values(unique_magstats)
         upsert_stmt = upsert_stmt.on_conflict_do_update(
             constraint="magstat_pkey", set_=upsert_stmt.excluded
         )
