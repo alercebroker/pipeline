@@ -14,4 +14,4 @@ data:
   scribe-topic: {{ .Values.configmap.scribeTopic }}
   metrics-server: {{ .Values.configmap.metricsServer }}
   metrics-topic: {{ .Values.configmap.metricsTopic }}
-  excluded-calculators: {{ .Values.configmap.excludedCalculators }}
+  excluded-calculators: "{{ .Values.configmap.excludedCalculators }}"
