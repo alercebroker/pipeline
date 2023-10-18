@@ -94,7 +94,9 @@ class InsertDetectionsCommand(Command):
 
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["step_id_corr"] = data.get("step_id_corr", "ALeRCE v3")
-        new_data["parent_candid"] = int(data["parent_candid"])
+        new_data["parent_candid"] = (
+            int(data["parent_candid"]) if data["parent_candid"] != "None" else None
+        )
         new_data["fid"] = fid_map[new_data["fid"]]
 
         return {**new_data, "candid": int(self.criteria["candid"])}
@@ -112,15 +114,14 @@ class InsertForcedPhotometryCommand(Command):
     type = ValidCommands.insert_forced_photo
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "tid", "e_dec", "e_ra", "stellar"]
+        exclude = ["aid", "sid", "tid", "pid", "e_dec", "e_ra", "stellar"]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
         new_data = data.copy()
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
-        new_data["parent_candid"] = int(data["parent_candid"])
         new_data["fid"] = fid_map[new_data["fid"]]
 
-        return {**new_data, "candid": int(self.criteria["candid"])}
+        return {**new_data, "candid": self.criteria["candid"]}
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -257,10 +258,11 @@ class UpsertProbabilitiesCommand(Command):
         parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
         return [{**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]]
 
-
     @staticmethod
     def db_operation(session: Session, data: List):
-        unique = {(el["oid"], el["classifier_name"], el["class_name"]): el for el in data}
+        unique = {
+            (el["oid"], el["classifier_name"], el["class_name"]): el for el in data
+        }
         unique = list(unique.values())
         insert_stmt = insert(Probability).values(unique)
         insert_stmt = insert_stmt.on_conflict_do_update(

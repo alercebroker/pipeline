@@ -32,6 +32,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
+            - name: LOGGING_DEBUG
+              value: "True"
             - name: TOPICS
               value: {{ .Values.secrets.topics }}
             - name: NUM_MESSAGES
