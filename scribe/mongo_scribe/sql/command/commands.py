@@ -117,10 +117,9 @@ class InsertForcedPhotometryCommand(Command):
 
         new_data = data.copy()
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
-        new_data["parent_candid"] = int(data["parent_candid"])
         new_data["fid"] = fid_map[new_data["fid"]]
 
-        return {**new_data, "candid": int(self.criteria["candid"])}
+        return {**new_data, "candid": self.criteria["candid"]}
 
     @staticmethod
     def db_operation(session: Session, data: List):
