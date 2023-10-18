@@ -43,8 +43,12 @@ class FeaturesComputer(GenericStep):
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
 
-    def produce_to_scribe(self, messages_aid_oid: dict, features: pd.DataFrame):
-        commands = parse_scribe_payload(messages_aid_oid, features, self.features_extractor)
+    def produce_to_scribe(
+        self, messages_aid_oid: dict, features: pd.DataFrame
+    ):
+        commands = parse_scribe_payload(
+            messages_aid_oid, features, self.features_extractor
+        )
 
         for command in commands:
             self.scribe_producer.produce({"payload": json.dumps(command)})
@@ -59,7 +63,8 @@ class FeaturesComputer(GenericStep):
                 {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
             )
             messages_aid_oid[message["aid"]] = [
-                message_detection["oid"] for message_detection in message["detections"]
+                message_detection["oid"]
+                for message_detection in message["detections"]
             ]
 
         features_extractor = self.features_extractor(

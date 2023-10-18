@@ -61,7 +61,7 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid1"},
+                "criteria": {"_id": "aid1", "oid": ["oid1", "oid6", "oid7"]},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
@@ -78,7 +78,7 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid2"},
+                "criteria": {"_id": "aid2", "oid": ["oid2", "oid5", "oid8"]},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
@@ -94,8 +94,13 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
+        messages_aid_oid = {
+            "aid1": ["oid1", "oid6", "oid7"],
+            "aid2": ["oid2", "oid5", "oid8"],
+            "aid3": ["oid3", "oid4", "oid9"],
+        }
         parsed_result = parse_scribe_payload(
-            test_features_df, self.mock_extractor_class
+            messages_aid_oid, test_features_df, self.mock_extractor_class
         )
 
         self.assertEqual(parsed_result, expected_payload)

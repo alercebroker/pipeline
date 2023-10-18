@@ -7,7 +7,9 @@ feature_columns_for_parse = [
     ("feat3", ""),
     ("feat4", ""),
 ]
-feature_multi_index_for_parse = pd.MultiIndex.from_tuples(feature_columns_for_parse)
+feature_multi_index_for_parse = pd.MultiIndex.from_tuples(
+    feature_columns_for_parse
+)
 
 features_df_for_parse = pd.DataFrame(
     [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
@@ -42,7 +44,9 @@ feature_columns_for_execute = [
     ("feat3", ""),
     ("rb", ""),
 ]
-feature_multi_index_for_execute = pd.MultiIndex.from_tuples(feature_columns_for_execute)
+feature_multi_index_for_execute = pd.MultiIndex.from_tuples(
+    feature_columns_for_execute
+)
 
 features_df_for_execute = pd.DataFrame(
     [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
