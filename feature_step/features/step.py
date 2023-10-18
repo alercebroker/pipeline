@@ -62,10 +62,11 @@ class FeaturesComputer(GenericStep):
             xmatch.append(
                 {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
             )
-            messages_aid_oid[message["aid"]] = [
-                message_detection["oid"]
-                for message_detection in message["detections"]
-            ]
+            oids_of_aid = []
+            for message_detection in message["detections"]:
+                if message_detection["oid"] not in oids_of_aid:
+                    oids_of_aid.append(message_detection["oid"])
+            messages_aid_oid[message["aid"]] = oids_of_aid
 
         features_extractor = self.features_extractor(
             detections, non_detections, xmatch
