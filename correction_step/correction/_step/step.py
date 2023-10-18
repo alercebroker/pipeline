@@ -9,6 +9,7 @@ from apf.core.step import GenericStep
 
 from ..core.corrector import Corrector
 
+from pprint import pprint
 
 class CorrectionStep(GenericStep):
     """Step that applies magnitude correction to new alert and previous candidates.
@@ -93,6 +94,8 @@ class CorrectionStep(GenericStep):
         detections = corrector.corrected_as_records()
         non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
         coords = corrector.coordinates_as_records()
+        # delet dis
+        pprint(coords)
         return {
             "detections": detections,
             "non_detections": non_detections.to_dict("records"),
