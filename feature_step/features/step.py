@@ -64,7 +64,8 @@ class FeaturesComputer(GenericStep):
             )
             oids_of_aid = []
             oids_of_aid = [
-                message_detection["oid"]  for message_detection in message["detections"]
+                message_detection["oid"]
+                for message_detection in message["detections"]
             ]
             messages_aid_oid[message["aid"]] = list(set(oids_of_aid))
 
