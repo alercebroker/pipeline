@@ -121,9 +121,7 @@ class Feature(Base):
     name = Column(String, primary_key=True, nullable=False)
     value = Column(Float(precision=53))
     fid = Column(Integer, primary_key=True)
-    version = Column(
-        String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
-    )
+    version = Column(String, primary_key=True, nullable=False)
 
     __table_args__ = (Index("ix_feature_oid_2", "oid", postgresql_using="hash"),)
 
