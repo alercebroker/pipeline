@@ -391,11 +391,6 @@ class ForcedPhotometry(Base):
         Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
     )
 
-class ForcedPhotometry(Base):
-    __tablename__ = "forced_photometry"
-
-    candid = Column
-
 class Dataquality(Base):
     __tablename__ = "dataquality"
 
