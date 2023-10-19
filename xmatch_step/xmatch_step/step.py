@@ -49,6 +49,8 @@ class XmatchStep(GenericStep):
 
         result = xmatches.rename(ALLWISE_MAP, axis="columns")
         result["catid"] = "allwise"
+        allwise = result.drop(["dist"], axis=1)
+        allwise = allwise.to_dict(orient="records")
         result.rename(columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True)
 
         data = result[["aid", "catoid", "dist", "catid"]]
@@ -60,7 +62,7 @@ class XmatchStep(GenericStep):
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": aid, "oid": oid_hash[aid]},
-                "data": {"xmatch": obj},
+                "data": {"xmatch": obj, "allwise": allwise},
             }
             print(scribe_data)
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
