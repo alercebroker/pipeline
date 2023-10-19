@@ -103,9 +103,7 @@ class InsertDetectionsCommand(Command):
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["step_id_corr"] = data.get("step_id_corr", "ALeRCE v3")
         new_data["parent_candid"] = (
-            int(data["parent_candid"])
-            if data["parent_candid"] != "None"
-            else None
+            int(data["parent_candid"]) if data["parent_candid"] != "None" else None
         )
         new_data["fid"] = fid_map[new_data["fid"]]
 
@@ -226,14 +224,14 @@ class UpsertFeaturesCommand(Command):
             raise ValueError("No feature group provided in command")
 
     def _format_data(self, data):
-        FID_MAP = {"": 0, "g": 1, "r": 2, "gr": 12, "rg": 12}
+        FID_MAP = {None: 0, "": 0, "g": 1, "r": 2, "gr": 12, "rg": 12}
         return [
             {
                 **feat,
                 "version": data["features_version"],
                 "oid": i,
                 "fid": FID_MAP[feat["fid"]]
-                if isinstance(feat["fid"], str)
+                if isinstance(feat["fid"], str) or feat["fid"] is None
                 else feat["fid"],
             }
             for feat in data["features"]
@@ -275,15 +273,12 @@ class UpsertProbabilitiesCommand(Command):
         ]
         parsed.sort(key=lambda e: e["probability"], reverse=True)
         parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
-        return [
-            {**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]
-        ]
+        return [{**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]]
 
     @staticmethod
     def db_operation(session: Session, data: List):
         unique = {
-            (el["oid"], el["classifier_name"], el["class_name"]): el
-            for el in data
+            (el["oid"], el["classifier_name"], el["class_name"]): el for el in data
         }
         unique = list(unique.values())
         insert_stmt = insert(Probability).values(unique)
