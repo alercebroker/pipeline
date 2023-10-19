@@ -58,7 +58,10 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
             )
 
         detections = list(
-            filter(lambda d: not d.get("forced", False), detections)
+            filter(
+                lambda d: not d.get("forced", False) and d["sid"] == "ZTF",
+                detections,
+            )
         )
         super().__init__(detections, non_detections, xmatches)
 
@@ -80,19 +83,9 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
                 pass
             detections = detections.assign(sgscore1=metadata["sgscore1"])
         detections = detections.reset_index()
-        detections["sid"] = "ZTF"
         detections["fid"].replace(
             {v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True
         )  # reverse mapping
-        detections = detections.rename(
-            columns={
-                "oid": "aid",
-                "magpsf": "mag",
-                "sigmapsf": "e_mag",
-                "magpsf_corr": "mag_corr",
-                "sigmapsf_corr_ext": "e_mag_corr_ext",
-            }
-        )
 
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index()

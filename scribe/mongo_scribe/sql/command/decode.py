@@ -18,7 +18,9 @@ def validate(message: dict) -> dict:
 
     It raises MisformattedCommand if the JSON string isn't a valid command.
     """
-    if any(required not in message for required in ["type", "data", "collection"]):
+    if any(
+        required not in message for required in ["type", "data", "collection"]
+    ):
         raise WrongFormatCommandException
 
     if "criteria" not in message:

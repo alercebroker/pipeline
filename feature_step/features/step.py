@@ -73,7 +73,6 @@ class FeaturesComputer(GenericStep):
             detections, non_detections, xmatch
         )
         features = features_extractor.generate_features()
-
         if len(features) > 0:
             self.produce_to_scribe(messages_aid_oid, features)
 
