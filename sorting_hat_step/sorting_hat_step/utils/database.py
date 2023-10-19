@@ -81,8 +81,7 @@ def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
         to_insert = [{"oid": oid} for oid in oids]
         statement = insert(Object).values(to_insert)
         statement = statement.on_conflict_do_update(
-            "object_pkey",
-            set_=dict(oid=statement.excluded.oid)
+            "object_pkey", set_=dict(oid=statement.excluded.oid)
         )
         session.execute(statement)
         session.commit()
