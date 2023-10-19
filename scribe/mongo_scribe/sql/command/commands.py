@@ -226,7 +226,7 @@ class UpsertFeaturesCommand(Command):
             raise ValueError("No feature group provided in command")
 
     def _format_data(self, data):
-        FID_MAP = {"g": 1, "r": 2, "gr": 12, "rg": 12}
+        FID_MAP = {"": 0, "g": 1, "r": 2, "gr": 12, "rg": 12}
         return [
             {
                 **feat,
