@@ -15,7 +15,16 @@ def multistream_detection_to_ztf(command: dict):
 
     fid_map = {"g": 1, "r": 2, "i": 3}
 
-    exclude = ["aid", "sid", "tid", "new", "pid", "e_ra", "e_dec", "extra_fields"]
+    exclude = [
+        "aid",
+        "sid",
+        "tid",
+        "new",
+        "pid",
+        "e_ra",
+        "e_dec",
+        "extra_fields",
+    ]
 
     new_command = {k: v for k, v in command.items() if k not in exclude}
     for k, v in mapping.items():
@@ -25,7 +34,9 @@ def multistream_detection_to_ztf(command: dict):
     new_command["fid"] = fid_map[new_command["fid"]]
     new_command["candid"] = int(new_command["candid"])
     new_command["parent_candid"] = (
-        int(new_command["parent_candid"]) if new_command["parent_candid"] else None
+        int(new_command["parent_candid"])
+        if new_command["parent_candid"]
+        else None
     )
 
     return new_command

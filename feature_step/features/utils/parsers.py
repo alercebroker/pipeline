@@ -69,7 +69,11 @@ def _parse_scribe_payload_ztf(
     for aid, features_df in features.iterrows():
         FID_MAP = {"g": 1, "r": 2, "gr": 12, "rg": 12}
         features_list = [
-            {"name": name, "fid": 0 if fid == "" else FID_MAP[fid], "value": value}
+            {
+                "name": name,
+                "fid": 0 if fid == "" else FID_MAP[fid],
+                "value": value,
+            }
             for ((name, fid), value) in features_df.items()
         ]
         command = {

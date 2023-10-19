@@ -58,7 +58,15 @@ class InsertDetectionsCommand(Command):
         return super()._check_inputs(data, criteria)
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "tid", "extra_fields", "e_dec", "e_ra", "stellar"]
+        exclude = [
+            "aid",
+            "sid",
+            "tid",
+            "extra_fields",
+            "e_dec",
+            "e_ra",
+            "stellar",
+        ]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
         field_mapping = {
@@ -95,7 +103,9 @@ class InsertDetectionsCommand(Command):
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["step_id_corr"] = data.get("step_id_corr", "ALeRCE v3")
         new_data["parent_candid"] = (
-            int(data["parent_candid"]) if data["parent_candid"] != "None" else None
+            int(data["parent_candid"])
+            if data["parent_candid"] != "None"
+            else None
         )
         new_data["fid"] = fid_map[new_data["fid"]]
 
@@ -235,7 +245,8 @@ class UpsertFeaturesCommand(Command):
         insert_stmt = insert(Feature).values(data)
 
         insert_stmt = insert_stmt.on_conflict_do_update(
-            constraint="feature_pkey", set_=dict(value=insert_stmt.excluded.value)
+            constraint="feature_pkey",
+            set_=dict(value=insert_stmt.excluded.value),
         )
 
         return session.connection().execute(insert_stmt)
@@ -264,12 +275,15 @@ class UpsertProbabilitiesCommand(Command):
         ]
         parsed.sort(key=lambda e: e["probability"], reverse=True)
         parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
-        return [{**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]]
+        return [
+            {**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]
+        ]
 
     @staticmethod
     def db_operation(session: Session, data: List):
         unique = {
-            (el["oid"], el["classifier_name"], el["class_name"]): el for el in data
+            (el["oid"], el["classifier_name"], el["class_name"]): el
+            for el in data
         }
         unique = list(unique.values())
         insert_stmt = insert(Probability).values(unique)

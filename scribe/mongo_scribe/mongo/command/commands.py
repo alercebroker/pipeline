@@ -88,7 +88,11 @@ class UpdateCommand(Command):
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
-        return [UpdateOne(self.criteria, {op: self.data}, upsert=self.options.upsert)]
+        return [
+            UpdateOne(
+                self.criteria, {op: self.data}, upsert=self.options.upsert
+            )
+        ]
 
 
 """ Note:
@@ -206,7 +210,9 @@ class UpdateProbabilitiesCommand(UpdateCommand):
         update = {
             "$set": {
                 "probabilities.$[el].version": self.classifier_version,
-                "probabilities.$[el].class_rank_1": probabilities[0]["class_name"],
+                "probabilities.$[el].class_rank_1": probabilities[0][
+                    "class_name"
+                ],
                 "probabilities.$[el].probability_rank_1": probabilities[0][
                     "probability"
                 ],
@@ -264,7 +270,10 @@ class UpdateFeaturesCommand(UpdateCommand):
             "features": self.data["features"],
         }
 
-        criteria = {"features.survey": {"$ne": features["survey"]}, **self.criteria}
+        criteria = {
+            "features.survey": {"$ne": features["survey"]},
+            **self.criteria,
+        }
 
         insert = {"$push": {"features": features}}
 
