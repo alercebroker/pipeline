@@ -240,8 +240,9 @@ class UpsertFeaturesCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        insert_stmt = insert(Feature).values(data)
-
+        unique = {(el["oid"], el["name"], el["fid"]): el for el in data}
+        unique = list(unique.values())
+        insert_stmt = insert(Feature).values(unique)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="feature_pkey",
             set_=dict(value=insert_stmt.excluded.value),
