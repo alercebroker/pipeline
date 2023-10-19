@@ -4,10 +4,14 @@ import pandas as pd
 from features.core.utils.functions import collapse_fid_columns
 
 
-def parse_scribe_payload(features: pd.DataFrame, extractor_class):
+def parse_scribe_payload(
+    messages_aid_oid: dict, features: pd.DataFrame, extractor_class
+):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 
+    :param messages_aid_oid: a dict that cointains list of oids for each
+        aid in the step input.
     :param features: a dataframe that contains a colum with the aid, and
         a column for each feature.
     :param features_version: a string with the features version used
@@ -16,7 +20,9 @@ def parse_scribe_payload(features: pd.DataFrame, extractor_class):
 
     features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
     if extractor_class.NAME == "ztf_lc_features":
-        return _parse_scribe_payload_ztf(features, extractor_class)
+        return _parse_scribe_payload_ztf(
+            messages_aid_oid, features, extractor_class
+        )
     if extractor_class.NAME == "elasticc_lc_features":
         return _parse_scribe_payload_elasticc(features, extractor_class)
     else:
@@ -56,7 +62,9 @@ def _parse_scribe_payload_elasticc(features, extractor_class):
     return commands_list
 
 
-def _parse_scribe_payload_ztf(features, extractor_class):
+def _parse_scribe_payload_ztf(
+    messages_aid_oid: dict, features, extractor_class
+):
     commands_list = []
     for aid, features_df in features.iterrows():
         features_list = [
@@ -66,7 +74,7 @@ def _parse_scribe_payload_ztf(features, extractor_class):
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"_id": aid},
+            "criteria": {"_id": aid, "oid": messages_aid_oid[aid]},
             "data": {
                 "features_version": extractor_class.VERSION,
                 "features_group": extractor_class.NAME,

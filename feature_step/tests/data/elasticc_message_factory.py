@@ -92,7 +92,9 @@ def generate_non_det(aid: str, num: int, identifier: int) -> list[dict]:
     return non_det
 
 
-def generate_input_batch(n: int, bands: list[str], offset=0, survey = "LSST") -> list[dict]:
+def generate_input_batch(
+    n: int, bands: list[str], offset=0, survey="LSST"
+) -> list[dict]:
     """
     Parameters
     ----------
@@ -108,7 +110,9 @@ def generate_input_batch(n: int, bands: list[str], offset=0, survey = "LSST") ->
         detections = []
         for band in bands:
             detections.extend(
-                generate_alert(aid, band, random.randint(6, 10), m, survey=survey)
+                generate_alert(
+                    aid, band, random.randint(6, 10), m, survey=survey
+                )
             )
         non_det = generate_non_det(aid, random.randint(0, 1), m)
         xmatch = {}
