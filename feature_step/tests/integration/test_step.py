@@ -70,3 +70,4 @@ def test_step_elasticc(kafka_service):
         config=step_config,
     )
     step.start()
+

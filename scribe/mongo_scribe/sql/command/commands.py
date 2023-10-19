@@ -216,8 +216,16 @@ class UpsertFeaturesCommand(Command):
             raise ValueError("No feature group provided in command")
 
     def _format_data(self, data):
+        FID_MAP = {"g": 1, "r": 2, "gr": 12, "rg": 12}
         return [
-            {**feat, "version": data["features_version"], "oid": i}
+            {
+                **feat,
+                "version": data["features_version"],
+                "oid": i,
+                "fid": FID_MAP[feat["fid"]]
+                if isinstance(feat["fid"], str)
+                else feat["fid"],
+            }
             for feat in data["features"]
             for i in self.criteria["oid"]
         ]

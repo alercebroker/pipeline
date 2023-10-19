@@ -254,22 +254,22 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "name": "feature1",
                 "value": 55.0,
-                "fid": 1,
+                "fid": "g",
             },
             {
                 "name": "feature2",
                 "value": 22.0,
-                "fid": 2,
+                "fid": "r",
             },
             {
                 "name": "feature3",
                 "value": 130.0,
-                "fid": 1,
+                "fid": "r",
             },
             {
                 "name": "feature1",
                 "value": 694211.0,
-                "fid": 1,
+                "fid": "r",
             },
         ]
 

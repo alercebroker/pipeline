@@ -58,7 +58,9 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
             )
 
         detections = list(
-            filter(lambda d: not d.get("forced", False), detections)
+            filter(
+                lambda d: not d.get("forced", False) and d["sid"] == "ZTF", detections
+            )
         )
         super().__init__(detections, non_detections, xmatches)
 
@@ -80,19 +82,9 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
                 pass
             detections = detections.assign(sgscore1=metadata["sgscore1"])
         detections = detections.reset_index()
-        detections["sid"] = "ZTF"
         detections["fid"].replace(
             {v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True
         )  # reverse mapping
-        detections = detections.rename(
-            columns={
-                "oid": "aid",
-                "magpsf": "mag",
-                "sigmapsf": "e_mag",
-                "magpsf_corr": "mag_corr",
-                "sigmapsf_corr_ext": "e_mag_corr_ext",
-            }
-        )
 
         if isinstance(non_detections, pd.DataFrame):
             non_detections = non_detections.reset_index()
@@ -137,9 +129,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.add_fid("gr")
     def calculate_colors(self) -> pd.DataFrame:
-        gr_max = self.detections.get_colors(
-            "min", ("g", "r"), ml=False, flux=self.FLUX
-        )
+        gr_max = self.detections.get_colors("min", ("g", "r"), ml=False, flux=self.FLUX)
         gr_max_corr = self.detections.get_colors(
             "min", ("g", "r"), ml=True, flux=self.FLUX
         )
@@ -186,9 +176,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
     @decorators.logger
     @decorators.add_fid("")
     def calculate_sg_score(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {"sgscore1": self.detections.agg("sgscore1", "median")}
-        )
+        return pd.DataFrame({"sgscore1": self.detections.agg("sgscore1", "median")})
 
     @decorators.logger
     @decorators.columns_per_fid
@@ -224,9 +212,7 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
         delta_mag = self.detections.get_delta("mag_ml", by_fid=True)
         min_mag = self.detections.agg("mag_ml", "min", by_fid=True)
         mean_mag = self.detections.agg("mag_ml", "mean", by_fid=True)
-        first_mag = self.detections.which_value(
-            "mag_ml", which="first", by_fid=True
-        )
+        first_mag = self.detections.which_value("mag_ml", which="first", by_fid=True)
 
         max_upper_before = self.non_detections.agg_when(
             "diffmaglim", "max", when="before", by_fid=True
