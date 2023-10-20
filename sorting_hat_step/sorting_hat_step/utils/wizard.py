@@ -242,7 +242,7 @@ def insert_empty_objects(mongodb: MongoConnection, alerts: pd.DataFrame, psql=No
     :param db: Connection to the database.
     :alerts: Dataframe with alerts.
     """
-    objects = alerts[["oid", "aid", "sid"]]
+    objects = alerts[["oid", "aid", "sid", "extra_fields"]]
     objects = objects.rename(columns={"aid": "_id"})
     mongo_objects = objects.groupby("_id").oid.apply(list).reset_index()
     logger.debug(

@@ -23,8 +23,8 @@ def prv_forced_photometry_mapper() -> dict:
 
     mapping.update(
         {
-            "e_ra": Mapper(lambda: 0),
-            "e_dec": Mapper(lambda: 0),
+            "e_ra": Mapper(lambda x: 0),
+            "e_dec": Mapper(lambda x: 0),
             "isdiffpos": Mapper(
                 lambda x: 1 if x >= 0 else -1, origin="forcediffimflux"
             ),
@@ -152,7 +152,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         )
         candidate.update(
             {
-                "pid": fp["pid"],
+                "candid": f'{candidate["oid"]}-{candidate["pid"]}',
                 "aid": aid,
                 "has_stamp": False,  # ?
                 "forced": True,
