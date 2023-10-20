@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 6.2.1a15
+appVersion: 6.2.1a16
 description: A Helm chart for Kubernetes
 name: s3-step
 type: application
-version: 1.3.92
+version: 1.3.93
