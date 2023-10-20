@@ -78,6 +78,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
     @classmethod
     def parse(cls, message: dict, oid: str, ra: float, dec: float) -> dict:
         message = message.copy()
+        message["candid"] = f'{oid}{message["pid"]}'
         message["magpsf"], message["sigmapsf"] = cls.__calculate_mag(message)
         message["objectId"] = oid
 
@@ -152,7 +153,6 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         )
         candidate.update(
             {
-                "candid": f'{candidate["oid"]}-{candidate["pid"]}',
                 "aid": aid,
                 "has_stamp": False,  # ?
                 "forced": True,
