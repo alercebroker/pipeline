@@ -76,9 +76,8 @@ class ZTFForcedPhotometryParser(SurveyParser):
         return True
 
     @classmethod
-    def parse(cls, message: dict, candid: str, oid: str, ra: float, dec: float) -> dict:
+    def parse(cls, message: dict, oid: str, ra: float, dec: float) -> dict:
         message = message.copy()
-        message["candid"] = candid
         message["magpsf"], message["sigmapsf"] = cls.__calculate_mag(message)
         message["objectId"] = oid
 
@@ -149,11 +148,11 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     for fp in prv_forced_photometries:
         # concat parent candid with number (?)
         candidate = ZTFForcedPhotometryParser.parse(
-            fp, candid=alert["candid"], oid=oid, ra=alert["ra"], dec=alert["dec"]
+            fp, oid=oid, ra=alert["ra"], dec=alert["dec"]
         )
         candidate.update(
             {
-                "candid": f'{candidate["candid"]}-{candidate["mjd"]}',
+                "pid": fp["pid"],
                 "aid": aid,
                 "has_stamp": False,  # ?
                 "forced": True,
