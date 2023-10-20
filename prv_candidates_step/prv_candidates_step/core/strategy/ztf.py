@@ -146,13 +146,14 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     else:
         prv_forced_photometries = []
 
-    for i, fp in enumerate(prv_forced_photometries):
+    for fp in prv_forced_photometries:
         # concat parent candid with number (?)
         candidate = ZTFForcedPhotometryParser.parse(
-            fp, candid=f"{parent}-{i}", oid=oid, ra=alert["ra"], dec=alert["dec"]
+            fp, candid=alert["candid"], oid=oid, ra=alert["ra"], dec=alert["dec"]
         )
         candidate.update(
             {
+                "candid": f'{candidate["candid"]}-{candidate["mjd"]}',
                 "aid": aid,
                 "has_stamp": False,  # ?
                 "forced": True,
