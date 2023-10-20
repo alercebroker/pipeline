@@ -179,11 +179,11 @@ class LightcurveStep(GenericStep):
             {
                 **MongoForcedPhotometry(
                     **forced,
-                    _id=f'{forced["oid"]}{forced["pid"]}',
                     aid=oids[forced["oid"]],
                 ),
                 "new": False,
                 "forced": True,
+                "candid": f'{forced["oid"]}{forced["pid"]}',
             }
             for forced in ztf_models
         ]
