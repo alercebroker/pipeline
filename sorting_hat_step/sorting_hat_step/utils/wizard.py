@@ -106,9 +106,9 @@ def find_existing_id(db: MongoConnection, alerts: pd.DataFrame):
 
     Input:
             oid    aid
-        0   A      
-        1   B      
-        2   C      
+        0   A
+        1   B
+        2   C
 
     Output:
             oid    aid

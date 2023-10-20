@@ -40,7 +40,7 @@ class SortingHatTestCase(unittest.TestCase):
                 {"oid": "C", "aid": None},
             ]
         )
-        mock_query.side_effect = ["aid1", None]
+        mock_query.side_effect = ["aid1", "aid1", None]
         response = wizard.find_existing_id(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
@@ -48,9 +48,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_find_id_by_conesearch(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         mock_query.side_effect = ["aid2", "aid2"]
@@ -61,9 +61,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_find_id_by_conesearch_without_found_aid(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         mock_query.side_effect = [None]
@@ -73,9 +73,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_generate_new_id(self):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         response = wizard.generate_new_id(alerts)
