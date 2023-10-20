@@ -57,7 +57,7 @@ class TestAstroObject(unittest.TestCase):
 
         self.metadata = pd.DataFrame(
             [["aid", "aid_example"]],
-            columns=["field", "value"]
+            columns=["name", "value"]
         )
 
     def test_aid_in_metadata(self):
@@ -70,7 +70,7 @@ class TestAstroObject(unittest.TestCase):
             [
                 ["oid", "oid_example"]
             ],
-            columns=["field", "value"]
+            columns=["name", "value"]
         )
 
         with self.assertRaises(ValueError) as cm:

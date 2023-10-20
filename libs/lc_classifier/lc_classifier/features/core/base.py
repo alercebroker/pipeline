@@ -17,7 +17,7 @@ class AstroObject:
     features: [Optional[pd.DataFrame]] = None
 
     def __post_init__(self):
-        if 'aid' not in self.metadata['field'].values:
+        if 'aid' not in self.metadata['name'].values:
             raise ValueError("'aid' is a mandatory field of metadata")
 
         mandatory_detection_columns = {

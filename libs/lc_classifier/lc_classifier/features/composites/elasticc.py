@@ -6,6 +6,7 @@ from ..extractors.period_extractor import PeriodExtractor
 from ..extractors.folded_kim_extractor import FoldedKimExtractor
 from ..extractors.harmonics_extractor import HarmonicsExtractor
 from ..extractors.mhps_extractor import MHPSExtractor
+from ..extractors.turbofats_extractor import TurboFatsExtractor
 
 
 class ElasticcFeatureExtractor(FeatureExtractorComposite):
@@ -25,9 +26,11 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
                 largest_period=50.0,
                 trim_lightcurve_to_n_days=500.0,
                 min_length=15,
-                use_forced_photo=True
+                use_forced_photo=True,
+                return_power_rates=True
             ),
             FoldedKimExtractor(bands),
-            HarmonicsExtractor(bands, use_forced_photo=True)
+            HarmonicsExtractor(bands, use_forced_photo=True),
+            TurboFatsExtractor(bands)
         ]
         return feature_extractors

@@ -15,7 +15,8 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
             largest_period=500.0,
             trim_lightcurve_to_n_days=1500.0,
             min_length=15,
-            use_forced_photo=False
+            use_forced_photo=False,
+            return_power_rates=False
         )
         feature_extractor.compute_features_single_object(ztf_astro_object)
         period = ztf_astro_object.features[ztf_astro_object.features['name'] == 'Multiband_period']
@@ -30,7 +31,8 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
             largest_period=50.0,
             trim_lightcurve_to_n_days=500.0,
             min_length=15,
-            use_forced_photo=True
+            use_forced_photo=True,
+            return_power_rates=False
         )
         all_obs = pd.concat([
             elasticc_astro_object.detections,
@@ -41,3 +43,35 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         trimmed_lc = feature_extractor.get_observations(elasticc_astro_object)
         trimmed_lc_timespan = trimmed_lc['mjd'].max() - trimmed_lc['mjd'].min()
         self.assertLessEqual(trimmed_lc_timespan, 500.0)
+
+    def test_power_rates(self):
+        ztf_astro_object = get_ztf_example(1)
+        feature_extractor = PeriodExtractor(
+            bands=['g', 'r'],
+            smallest_period=0.045,
+            largest_period=500.0,
+            trim_lightcurve_to_n_days=1500.0,
+            min_length=15,
+            use_forced_photo=False,
+            return_power_rates=True
+        )
+        feature_extractor.compute_features_single_object(ztf_astro_object)
+        features = ztf_astro_object.features
+        pr = features[features['name'].isin([f for f in features['name'].values if 'Power_rate' in f])]
+        self.assertLessEqual(np.max(pr['value']), 0.1)
+
+    def test_lc_too_short(self):
+        ztf_astro_object = get_ztf_example(1)
+        bands = ['g', 'r']
+        feature_extractor = PeriodExtractor(
+            bands=bands,
+            smallest_period=0.045,
+            largest_period=500.0,
+            trim_lightcurve_to_n_days=1500.0,
+            min_length=1_000,
+            use_forced_photo=False,
+            return_power_rates=True
+        )
+        feature_extractor.compute_features_single_object(ztf_astro_object)
+        features = ztf_astro_object.features
+        self.assertEqual(len(features), len(feature_extractor.factors)+2+2*len(bands))

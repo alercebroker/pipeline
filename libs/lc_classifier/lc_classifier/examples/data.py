@@ -73,7 +73,7 @@ def get_ztf_example(index: int) -> AstroObject:
             ["aid", "aid_example"],
             ["oid", folder.split('_')[0]]
         ],
-        columns=["field", "value"]
+        columns=["name", "value"]
     )
 
     astro_object = AstroObject(
@@ -118,10 +118,10 @@ def get_elasticc_example() -> AstroObject:
     detections['sid'] = 'elasticc_survey'
     detections['pid'] = 'elasticc_program'
 
-    metadata = metadata[['field', 'value']]
+    metadata = metadata[['name', 'value']]
 
-    detections['ra'] = metadata[metadata['field'] == 'RA']['value'].values[0]
-    detections['dec'] = metadata[metadata['field'] == 'DEC']['value'].values[0]
+    detections['ra'] = metadata[metadata['name'] == 'RA']['value'].values[0]
+    detections['dec'] = metadata[metadata['name'] == 'DEC']['value'].values[0]
     detections['unit'] = 'diff_flux'
 
     is_detected = detections['PHOTFLAG'] > 0
@@ -177,7 +177,7 @@ def get_elasticc_example_2() -> AstroObject:
 
     metadata = pd.DataFrame(
         data=[('aid', detections.index.values[0])],
-        columns=['field', 'value']
+        columns=['name', 'value']
     )
 
     astro_object = AstroObject(
@@ -189,5 +189,5 @@ def get_elasticc_example_2() -> AstroObject:
 
 
 if __name__ == '__main__':
-    astro_object = get_elasticc_example_2()
+    astro_object = get_elasticc_example()
     print(astro_object)
