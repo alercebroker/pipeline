@@ -47,6 +47,9 @@ configmap:
   consumerTopics: ""
   consumerServer: ""
   consumerGroup: ""
+  topicStrategy:
+    enabled: false
+    format: ""
   producerServer: ""
   metricsServer: ""
   metricsTopic: "metrics"

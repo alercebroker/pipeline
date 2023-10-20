@@ -7,6 +7,7 @@ data:
   consumer-topics: {{ .Values.configmap.consumerTopics }}
   consumer-server: {{ .Values.configmap.consumerServer }}
   consumer-group: {{ .Values.configmap.consumerGroup }}
+  topic-strategy-format: "{{ .Values.configmap.topicStrategy.format }}"
   producer-server: {{ .Values.configmap.producerServer }}
   producer-topic-format: {{ .Values.configmap.producerTopicFormat }}
   producer-date-format: "{{ .Values.configmap.producerDateFormat }}"

@@ -41,6 +41,13 @@ spec:
                 configMapKeyRef:
                   name: {{ include "early-classifier.fullname" . }}
                   key: consumer-topics
+            {{- if .Values.topicStrategy.enabled}}
+            - name: TOPIC_STRATEGY_FORMAT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" }}
+                  key: topic-strategy-format
+            {{- end }}
             - name: CONSUMER_SERVER
               valueFrom:
                 configMapKeyRef:
