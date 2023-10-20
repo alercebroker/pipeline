@@ -35,9 +35,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_find_existing_id(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": None},
-                {"oid": "B", "tmp_id": "X", "aid": None},
-                {"oid": "C", "tmp_id": "Y", "aid": None},
+                {"oid": "A", "aid": None},
+                {"oid": "B", "aid": None},
+                {"oid": "C", "aid": None},
             ]
         )
         mock_query.side_effect = ["aid1", None]
