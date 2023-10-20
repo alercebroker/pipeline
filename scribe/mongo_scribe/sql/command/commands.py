@@ -122,14 +122,18 @@ class InsertForcedPhotometryCommand(Command):
     type = ValidCommands.insert_forced_photo
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "tid", "pid", "e_dec", "e_ra", "stellar"]
+        exclude = ["aid", "sid", "tid", "pid", "e_dec", "e_ra", "stellar", "extra_fields"]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
+        extra_fields = data["extra_fields"]
+        extra_fields.pop("brokerIngestTimestamp", "")
+        extra_fields.pop("surveyPublishTimestamp", "")
+        extra_fields.pop("parent_candid", "")
         new_data = data.copy()
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["fid"] = fid_map[new_data["fid"]]
 
-        return {**new_data, "candid": self.criteria["candid"]}
+        return {**new_data, **extra_fields, "candid": self.criteria["candid"]}
 
     @staticmethod
     def db_operation(session: Session, data: List):
