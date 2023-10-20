@@ -31,56 +31,16 @@ class SortingHatTestCase(unittest.TestCase):
         aid_5 = wizard.id_generator(359 + 360, -1)
         self.assertEqual(aid_4, aid_5)
 
-    def test_internal_cross_match_no_closest_objects(self):
-        # Test with 500 unique objects (no closest objects) random.seed set in data.batch.py (1313)
-        example_batch = generate_batch_ra_dec(500)
-        batch = wizard.internal_cross_match(example_batch)
-        self.assertSetEqual(
-            set(batch.index), set(batch["tmp_id"])
-        )  # The index must be equal to tmp_id
-        self.assertEqual(len(batch["oid"].unique()), 500)
-
-    def test_internal_cross_match_closest_objects(self):
-        # Test with 10 objects closest
-        example_batch = generate_batch_ra_dec(1, nearest=9)
-        batch = wizard.internal_cross_match(example_batch)
-        # Check 100 unique tmp_id
-        self.assertEqual(len(batch["tmp_id"].unique()), 1)
-
-    def test_internal_cross_match_same_oid(self):
-        # Test with 10 objects where 5 are close
-        example_batch = generate_batch_ra_dec(10)
-        example_batch.loc[:, "oid"] = "same_object"
-        batch = wizard.internal_cross_match(example_batch)
-        self.assertEqual(len(batch["tmp_id"].unique()), 1)
-
-    def test_internal_cross_match_two_objects_with_oid(self):
-        batch_1 = generate_batch_ra_dec(1, nearest=9)
-        batch_1.loc[:, "oid"] = "same_object_1"
-        batch_2 = generate_batch_ra_dec(10)
-        batch_2.loc[:, "oid"] = "same_object_2"
-        batch = pd.concat([batch_1, batch_2], ignore_index=True)
-        batch_xmatched = wizard.internal_cross_match(batch)
-        self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 2)
-        self.assertEqual(len(batch_xmatched["tmp_id"]), 20)
-
-    def test_internal_cross_match_repeating_oid_and_closest(self):
-        batch = generate_batch_ra_dec(1, nearest=9)
-        batch.loc[:, "oid"] = "same_object_1"
-        batch_xmatched = wizard.internal_cross_match(batch)
-        self.assertEqual(len(batch_xmatched["tmp_id"].unique()), 1)
-        self.assertEqual(len(batch_xmatched["tmp_id"]), 10)
-
     @mock.patch("sorting_hat_step.utils.wizard.oid_query")
     def test_find_existing_id(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": None},
-                {"oid": "B", "tmp_id": "X", "aid": None},
-                {"oid": "C", "tmp_id": "Y", "aid": None},
+                {"oid": "A", "aid": None},
+                {"oid": "B", "aid": None},
+                {"oid": "C", "aid": None},
             ]
         )
-        mock_query.side_effect = ["aid1", None]
+        mock_query.side_effect = ["aid1", "aid1", None]
         response = wizard.find_existing_id(self.mock_db, alerts)
         assert (response["aid"].values == ["aid1", "aid1", None]).all()
 
@@ -88,9 +48,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_find_id_by_conesearch(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         mock_query.side_effect = ["aid2", "aid2"]
@@ -101,9 +61,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_find_id_by_conesearch_without_found_aid(self, mock_query):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         mock_query.side_effect = [None]
@@ -113,9 +73,9 @@ class SortingHatTestCase(unittest.TestCase):
     def test_generate_new_id(self):
         alerts = pd.DataFrame(
             [
-                {"oid": "A", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "B", "tmp_id": "X", "aid": "aid1", "ra": 123, "dec": 456},
-                {"oid": "C", "tmp_id": "Y", "aid": None, "ra": 123, "dec": 456},
+                {"oid": "A", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "B", "aid": "aid1", "ra": 123, "dec": 456},
+                {"oid": "C", "aid": None, "ra": 123, "dec": 456},
             ],
         )
         response = wizard.generate_new_id(alerts)

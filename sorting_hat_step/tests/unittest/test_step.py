@@ -86,7 +86,6 @@ class RunConesearchTestCase(unittest.TestCase):
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
         step.add_aid(self.dataframe)  # the wizzard is mocked
 
-        mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
         mock_wizzard.find_id_by_conesearch.assert_called_once()
         mock_wizzard.generate_new_id.assert_called_once()
@@ -104,7 +103,6 @@ class RunConesearchTestCase(unittest.TestCase):
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
         step.add_aid(self.dataframe)  # the wizzard is mocked
 
-        mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
         mock_wizzard.find_id_by_conesearch.assert_called_once()
         mock_wizzard.generate_new_id.assert_called_once()
@@ -121,7 +119,6 @@ class RunConesearchTestCase(unittest.TestCase):
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
         step.add_aid(self.dataframe)  # the wizzard is mocked
 
-        mock_wizzard.internal_cross_match.assert_called_once()
         mock_wizzard.find_existing_id.assert_called_once()
         mock_wizzard.find_id_by_conesearch.assert_not_called()
         mock_wizzard.generate_new_id.assert_called_once()
