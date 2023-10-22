@@ -60,8 +60,18 @@ def test_ztf_extract_detections_and_non_detections():
 
 
 def test_elasticc_extract_detections_and_non_detections():
-    dia_source_schema = load_schema("tests/shared/elasticc_prv_candidate.avsc")
-    forced_schema = load_schema("tests/shared/elasticc_forced_schema.avsc")
+    try:
+        dia_source_schema = load_schema("tests/shared/elasticc_prv_candidate.avsc")
+    except SchemaRepositoryError:
+        dia_source_schema = load_schema(
+            "prv_candidates_step/tests/shared/elasticc_prv_candidate.avsc"
+        )
+    try:
+        forced_schema = load_schema("tests/shared/elasticc_forced_schema.avsc")
+    except SchemaRepositoryError:
+        forced_schema = load_schema(
+            "prv_candidates_step/tests/shared/elasticc_forced_schema.avsc"
+        )
     prv_dia_sources = list(generate_many(dia_source_schema, 1))
     forced_sources = list(generate_many(forced_schema, 1))
     alert = {

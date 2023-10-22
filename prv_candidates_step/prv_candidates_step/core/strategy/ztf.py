@@ -152,7 +152,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         if ZTFPreviousDetectionsParser.can_parse(candidate)
     ]
     non_detections = [
-        ZTFNonDetectionsParser.parse_message(candidate, oid)
+        ZTFNonDetectionsParser.parse_message(candidate, alert)
         for candidate in prv_candidates
         if ZTFNonDetectionsParser.can_parse(candidate)
     ]
