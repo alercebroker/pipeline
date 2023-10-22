@@ -43,13 +43,31 @@ class ZTFPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return True
+        return message["candid"] is not None
 
     @classmethod
-    def parse(cls, message: dict, oid: str) -> dict:
-        message = message.copy()
-        message["objectId"] = oid
-        return asdict(cls.parse_message(message))
+    def parse_message(cls, candidate: dict, alert) -> dict:
+        candidate["objectId"] = alert["oid"]
+        generic = {name: mapper(candidate) for name, mapper in cls._mapping.items()}
+
+        stamps = cls._extract_stamps(candidate)
+        extra_fields = {
+            k: v
+            for k, v in candidate.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
+        extra_fields.update(alert["extra_fields"])
+        generic.pop("stamps", None)
+        model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model.update(
+            {
+                "aid": alert["aid"],
+                "has_stamp": False,
+                "forced": False,
+                "parent_candid": alert["candid"],
+            }
+        )
+        return model.asdict()
 
 
 class ZTFForcedPhotometryParser(SurveyParser):
@@ -114,24 +132,13 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
     aid, oid, parent = alert["aid"], alert["oid"], alert["candid"]
+    detections = detections + [
+        ZTFPreviousDetectionsParser.parse_message(candidate, alert)
+        for candidate in prv_candidates
+        if ZTFPreviousDetectionsParser.can_parse(candidate)
+    ]
     for candidate in prv_candidates:
-        if candidate["candid"]:
-            candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
-            candidate.update(
-                {
-                    "aid": aid,
-                    "has_stamp": False,
-                    "forced": False,
-                    "parent_candid": parent,
-                    "extra_fields": {
-                        **alert["extra_fields"],
-                        **candidate["extra_fields"],
-                    },
-                }
-            )
-            candidate.pop("stamps", None)
-            detections.append(candidate)
-        else:
+        if candidate["candid"] is None:
             candidate = ZTFNonDetectionsParser.parse(candidate, oid)
             candidate.update({"aid": aid})
             candidate.pop("stamps", None)

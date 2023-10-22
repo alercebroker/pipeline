@@ -2,6 +2,7 @@ from prv_candidates_step.core.strategy.ztf import ZTFNonDetectionsParser
 from prv_candidates_step.core.strategy.ztf import ZTFPreviousDetectionsParser
 from fastavro.utils import generate_many
 from fastavro.schema import load_schema
+from fastavro.repository.base import SchemaRepositoryError
 from prv_candidates_step.core.strategy.ztf import (
     extract_detections_and_non_detections as ztf_extract,
 )
@@ -12,10 +13,23 @@ import pickle
 
 
 def test_prv_detections_parser():
-    schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    try:
+        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    except SchemaRepositoryError:
+        schema = load_schema(
+            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
+        )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
-    result = ZTFPreviousDetectionsParser.parse(data[0], "oid")
+    result = ZTFPreviousDetectionsParser.parse_message(
+        data[0],
+        {
+            "aid": "aid",
+            "oid": "oid",
+            "candid": "123",
+            "extra_fields": {"ef1": 1},
+        },
+    )
     assert result["oid"] == "oid"
 
 
