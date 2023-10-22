@@ -31,10 +31,19 @@ def test_prv_detections_parser():
         },
     )
     assert result["oid"] == "oid"
+    assert result["aid"] == "aid"
+    assert not result["has_stamp"]
+    assert result["extra_fields"]["ef1"] == 1
+    assert result["parent_candid"] == "123"
 
 
 def test_ztf_extract_detections_and_non_detections():
-    schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    try:
+        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    except SchemaRepositoryError:
+        schema = load_schema(
+            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
+        )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     alert = {
@@ -75,9 +84,25 @@ def test_elasticc_extract_detections_and_non_detections():
 
 
 def test_non_detections_parser():
-    schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    try:
+        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
+    except SchemaRepositoryError:
+        schema = load_schema(
+            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
+        )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
-    result = ZTFNonDetectionsParser.parse(data[0], "oid")
+    result = ZTFNonDetectionsParser.parse_message(
+        data[0],
+        {
+            "oid": "oid",
+            "aid": "aid",
+            "extra_fields": {"ef1": 1},
+            "stamps": {"science": "science", "template": "template"},
+        },
+    )
     assert result["tid"] == "ZTF"
     assert result["oid"] == "oid"
+    assert result["aid"] == "aid"
+    assert result.get("extra_fields") is None
+    assert result.get("stamps") is None

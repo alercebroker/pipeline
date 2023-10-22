@@ -30,11 +30,6 @@ class GenericAlert:
     def __getitem__(self, item):
         return self.__getattribute__(item)
 
-    def update(self, other: dict) -> None:
-        """Update the alert with the values from `other`"""
-        for k, v in other.items():
-            self.__setattr__(k, v)
-
     def asdict(self) -> dict:
         """Return the alert as a dictionary"""
         return asdict(self)
@@ -55,6 +50,10 @@ class GenericNonDetection:
 
     def __getitem__(self, item):
         return self.__getattribute__(item)
+
+    def asdict(self) -> dict:
+        """Return the alert as a dictionary"""
+        return asdict(self)
 
 
 class SurveyParser(abc.ABC):

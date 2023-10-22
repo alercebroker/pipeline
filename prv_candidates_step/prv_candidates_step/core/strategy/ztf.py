@@ -59,6 +59,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         extra_fields.update(alert["extra_fields"])
         generic.pop("stamps", None)
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model = model.asdict()
         model.update(
             {
                 "aid": alert["aid"],
@@ -67,7 +68,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
                 "parent_candid": alert["candid"],
             }
         )
-        return model.asdict()
+        return model
 
 
 class ZTFForcedPhotometryParser(SurveyParser):
@@ -114,14 +115,27 @@ class ZTFNonDetectionsParser(SurveyParser):
         return super(ZTFNonDetectionsParser, cls)._extract_stamps(message)
 
     @classmethod
-    def can_parse(cls, message: dict) -> bool:
-        return True
+    def can_parse(cls, candidate: dict) -> bool:
+        return candidate["candid"] is None
 
     @classmethod
-    def parse(cls, message: dict, oid: str) -> dict:
-        message = message.copy()
-        message["objectId"] = oid
-        return asdict(cls.parse_message(message))
+    def parse_message(cls, candidate: dict, alert: dict) -> dict:
+        candcopy = candidate.copy()
+        candcopy["objectId"] = alert["oid"]
+        generic = {name: mapper(candcopy) for name, mapper in cls._mapping.items()}
+
+        stamps = cls._extract_stamps(candcopy)
+        extra_fields = {
+            k: v
+            for k, v in candcopy.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
+        model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model = model.asdict()
+        model.update({"aid": alert["aid"]})
+        model.pop("stamps", None)
+        model.pop("extra_fields", None)
+        return model
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
@@ -137,14 +151,11 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         for candidate in prv_candidates
         if ZTFPreviousDetectionsParser.can_parse(candidate)
     ]
-    for candidate in prv_candidates:
-        if candidate["candid"] is None:
-            candidate = ZTFNonDetectionsParser.parse(candidate, oid)
-            candidate.update({"aid": aid})
-            candidate.pop("stamps", None)
-            candidate.pop("extra_fields", None)
-            non_detections.append(candidate)
-
+    non_detections = [
+        ZTFNonDetectionsParser.parse_message(candidate, oid)
+        for candidate in prv_candidates
+        if ZTFNonDetectionsParser.can_parse(candidate)
+    ]
     alert["extra_fields"]["parent_candid"] = None
 
     prv_forced_photometries = alert["extra_fields"].pop("fp_hists", None)
