@@ -29,7 +29,7 @@ class GenericAlert:
 
     def __getitem__(self, item):
         return self.__getattribute__(item)
-    
+
     def to_dict(self):
         generic_alert_dict = {
             "oid": self.oid,
@@ -51,6 +51,7 @@ class GenericAlert:
         }
         return generic_alert_dict
 
+
 @dataclass
 class GenericNonDetection:
     """Non detection of astronomical surveys."""
@@ -66,7 +67,7 @@ class GenericNonDetection:
 
     def __getitem__(self, item):
         return self.__getattribute__(item)
-    
+
     def to_dict(self):
         generic_non_detection_dict = {
             "oid": self.oid,
@@ -80,6 +81,7 @@ class GenericNonDetection:
         }
 
         return generic_non_detection_dict
+
 
 class SurveyParser(abc.ABC):
     """Base class for survey parsing. Subclasses are intended to be static.
