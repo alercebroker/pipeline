@@ -1,4 +1,4 @@
-FROM python:3.10-slim as python-base
+FROM python:3.12-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

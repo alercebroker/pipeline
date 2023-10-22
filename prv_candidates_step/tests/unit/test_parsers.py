@@ -10,9 +10,11 @@ from prv_candidates_step.core.strategy.lsst import (
     extract_detections_and_non_detections as elasticc_extract,
 )
 import pickle
+import pytest
 
 
-def test_prv_detections_parser():
+@pytest.mark.asyncio
+async def test_prv_detections_parser():
     try:
         schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
     except SchemaRepositoryError:
@@ -21,7 +23,7 @@ def test_prv_detections_parser():
         )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
-    result = ZTFPreviousDetectionsParser.parse_message(
+    result = await ZTFPreviousDetectionsParser.parse_message(
         data[0],
         {
             "aid": "aid",
@@ -37,7 +39,8 @@ def test_prv_detections_parser():
     assert result["parent_candid"] == "123"
 
 
-def test_ztf_extract_detections_and_non_detections():
+@pytest.mark.asyncio
+async def test_ztf_extract_detections_and_non_detections():
     try:
         schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
     except SchemaRepositoryError:
@@ -45,7 +48,7 @@ def test_ztf_extract_detections_and_non_detections():
             "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
         )
     data = list(generate_many(schema, 1))
-    data = list(map(lambda x: {**x, "fid": 1}, data))
+    data = list(map(lambda x: {**x, "fid": 1, "candid": 123}, data))
     alert = {
         "aid": "aid",
         "oid": "oid",
@@ -53,7 +56,7 @@ def test_ztf_extract_detections_and_non_detections():
         "fid": 1,
         "extra_fields": {"ef1": 1, "prv_candidates": pickle.dumps(data)},
     }
-    result = ztf_extract(alert)
+    result = await ztf_extract(alert)
     assert len(result["detections"]) == 2
     for res in result["detections"]:
         assert res["extra_fields"]["ef1"] == 1
@@ -93,7 +96,8 @@ def test_elasticc_extract_detections_and_non_detections():
         assert res["extra_fields"]["ef1"] == 1
 
 
-def test_non_detections_parser():
+@pytest.mark.asyncio
+async def test_non_detections_parser():
     try:
         schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
     except SchemaRepositoryError:
@@ -102,7 +106,7 @@ def test_non_detections_parser():
         )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
-    result = ZTFNonDetectionsParser.parse_message(
+    result = await ZTFNonDetectionsParser.parse_message(
         data[0],
         {
             "oid": "oid",

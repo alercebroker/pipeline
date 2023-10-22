@@ -8,6 +8,8 @@ from survey_parser_plugins.core.generic import GenericNonDetection
 from survey_parser_plugins.core.mapper import Mapper
 from survey_parser_plugins.parsers import ZTFParser
 
+import asyncio
+
 
 def prv_non_detections_mapper() -> dict:
     mapping = copy.deepcopy(ZTFParser._mapping)
@@ -46,7 +48,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         return message["candid"] is not None
 
     @classmethod
-    def parse_message(cls, candidate: dict, alert) -> dict:
+    async def parse_message(cls, candidate: dict, alert) -> dict:
         candidate["objectId"] = alert["oid"]
         generic = {name: mapper(candidate) for name, mapper in cls._mapping.items()}
 
@@ -95,7 +97,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
         return True
 
     @classmethod
-    def parse_message(cls, forced_photometry: dict, alert: dict) -> dict:
+    async def parse_message(cls, forced_photometry: dict, alert: dict) -> dict:
         fpcopy = forced_photometry.copy()
         fpcopy["candid"] = alert["candid"]
         fpcopy["magpsf"], fpcopy["sigmapsf"] = cls.__calculate_mag(fpcopy)
@@ -143,7 +145,7 @@ class ZTFNonDetectionsParser(SurveyParser):
         return candidate["candid"] is None
 
     @classmethod
-    def parse_message(cls, candidate: dict, alert: dict) -> dict:
+    async def parse_message(cls, candidate: dict, alert: dict) -> dict:
         candcopy = candidate.copy()
         candcopy["objectId"] = alert["oid"]
         generic = {name: mapper(candcopy) for name, mapper in cls._mapping.items()}
@@ -162,34 +164,39 @@ class ZTFNonDetectionsParser(SurveyParser):
         return model
 
 
-def extract_detections_and_non_detections(alert: dict) -> dict:
+async def extract_detections_and_non_detections(alert: dict) -> dict:
     detections = [alert]
     non_detections = []
 
     prv_candidates = alert["extra_fields"].pop("prv_candidates")
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
-    detections = detections + [
-        ZTFPreviousDetectionsParser.parse_message(candidate, alert)
-        for candidate in prv_candidates
-        if ZTFPreviousDetectionsParser.can_parse(candidate)
-    ]
-    non_detections = [
-        ZTFNonDetectionsParser.parse_message(candidate, alert)
-        for candidate in prv_candidates
-        if ZTFNonDetectionsParser.can_parse(candidate)
-    ]
-    alert["extra_fields"]["parent_candid"] = None
-
     forced_photometries = alert["extra_fields"].pop("fp_hists", [])
     forced_photometries = (
         pickle.loads(forced_photometries) if forced_photometries else []
     )
-    detections = detections + [
-        ZTFForcedPhotometryParser.parse_message(fp, alert)
-        for fp in forced_photometries
-        if ZTFForcedPhotometryParser.can_parse(fp)
-    ]
+
+    async with asyncio.TaskGroup() as tg:
+        detection_tasks = [
+            tg.create_task(ZTFPreviousDetectionsParser.parse_message(candidate, alert))
+            for candidate in prv_candidates
+            if ZTFPreviousDetectionsParser.can_parse(candidate)
+        ]
+        non_detection_tasks = [
+            tg.create_task(ZTFNonDetectionsParser.parse_message(candidate, alert))
+            for candidate in prv_candidates
+            if ZTFNonDetectionsParser.can_parse(candidate)
+        ]
+        fp_tasks = [
+            tg.create_task(ZTFForcedPhotometryParser.parse_message(fp, alert))
+            for fp in forced_photometries
+            if ZTFForcedPhotometryParser.can_parse(fp)
+        ]
+
+    detections = detections + [task.result() for task in detection_tasks]
+    non_detections = non_detections + [task.result() for task in non_detection_tasks]
+    detections = detections + [task.result() for task in fp_tasks]
+    alert["extra_fields"]["parent_candid"] = None
 
     return {
         "aid": alert["aid"],

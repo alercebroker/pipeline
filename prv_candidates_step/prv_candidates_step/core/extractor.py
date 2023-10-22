@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from . import strategy
 
@@ -29,7 +30,7 @@ class PreviousCandidatesExtractor:
                 )
                 self.logger.debug(msg.format(0, 0, alert["aid"]))
             else:
-                out = module.extract_detections_and_non_detections(alert)
+                out = asyncio.run(module.extract_detections_and_non_detections(alert))
                 messages.append(out)
                 self.logger.debug(
                     msg.format(
