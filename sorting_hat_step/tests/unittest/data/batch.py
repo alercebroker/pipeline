@@ -72,6 +72,10 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
             "cutoutDifference": {"stampData": b"difference"},
             "candidate": {
                 "jd": random.randrange(2458000, 2459000),
+                "ndethist": random.randint(5,15),
+                "ncovhist": random.randint(5,15),
+                "jdstarthist": random.randint(2458000,2459000),
+                "jdendhist": random.randint(2458000,2459000),
                 "ra": random.uniform(0, 360),
                 "dec": random.uniform(-90, 90),
                 "magpsf": random.uniform(15, 20),

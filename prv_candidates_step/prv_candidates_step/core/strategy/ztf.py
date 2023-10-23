@@ -97,7 +97,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
     @classmethod
     def parse_message(cls, forced_photometry: dict, alert: dict) -> dict:
         fpcopy = forced_photometry.copy()
-        fpcopy["candid"] = alert["candid"]
+        fpcopy["candid"] = alert["oid"] + forced_photometry["pid"]
         fpcopy["magpsf"], fpcopy["sigmapsf"] = cls.__calculate_mag(fpcopy)
         fpcopy["objectId"] = alert["oid"]
 

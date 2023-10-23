@@ -543,11 +543,12 @@ class MongoIntegrationTest(unittest.TestCase):
                 "collection": "forced_photometry",
                 "type": "update",
                 "criteria": {
-                    "_id": "candid",
-                    "candid": "12345678-1",
+                    "_id": "candid-pid",
+                    "candid": "candid-pid",
                 },
                 "data": {
                     "mag": 10.0,
+                    "pid": 423432,
                     "oid": "ZTF04ululeea",
                     "corrected": False,
                     "dubious": False,
