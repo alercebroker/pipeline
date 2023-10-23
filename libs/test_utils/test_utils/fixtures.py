@@ -51,8 +51,9 @@ def kafka_consumer():
                     "auto.offset.reset": "earliest",
                     "enable.partition.eof": "true",
                 },
-                "TOPIC": topics,
+                "TOPICS": topics,
             }
         )
+        return consumer
 
     return consumer

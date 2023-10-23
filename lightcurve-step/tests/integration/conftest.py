@@ -92,6 +92,17 @@ def populate_sql(conn: PsqlDatabase):
         """
             )
         )
+        session.execute(
+            text("""
+            INSERT INTO non_detection(oid, fid, mjd, diffmaglim) VALUES ('ZTF000llmn', 1, 55000, 42.00)
+            """)
+        )
+        session.execute(
+            text("""
+            INSERT INTO forced_photometry(candid, oid, mjd, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp) 
+            VALUES (98765432155500, 'ZTF000llmn', 55500, 1, 45.0, 45.0, 1, false, false, false)
+            """)
+        )
         session.commit()
 
 
