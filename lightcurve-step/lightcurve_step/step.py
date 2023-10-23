@@ -177,9 +177,13 @@ class LightcurveStep(GenericStep):
     def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
         return [
             {
-                **MongoForcedPhotometry(**forced, aid=oids[forced["oid"]]),
+                **MongoForcedPhotometry(
+                    **forced,
+                    aid=oids[forced["oid"]],
+                ),
                 "new": False,
                 "forced": True,
+                "candid": f'{forced["oid"]}{forced["pid"]}',
             }
             for forced in ztf_models
         ]

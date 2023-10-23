@@ -110,10 +110,10 @@ class SortingHatTestCase(unittest.TestCase):
     def test_write_object(self, insert_mock):
         alerts = pd.DataFrame(
             [
-                {"oid": 10, "aid": 0, "sid": "ZTF", "extra": "extra1"},
-                {"oid": 20, "aid": 1, "sid": "ZTF", "extra": "extra2"},
-                {"oid": 30, "aid": 0, "sid": "ZTF", "extra": "extra3"},
-                {"oid": 40, "aid": 2, "sid": "ZTF", "extra": "extra4"},
+                {"oid": 10, "aid": 0, "sid": "ZTF", "extra_fields": {}},
+                {"oid": 20, "aid": 1, "sid": "ZTF", "extra_fields": {}},
+                {"oid": 30, "aid": 0, "sid": "ZTF", "extra_fields": {}},
+                {"oid": 40, "aid": 2, "sid": "ZTF", "extra_fields": {}},
             ]
         )
 

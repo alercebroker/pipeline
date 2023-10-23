@@ -75,13 +75,29 @@ def update_query(db: MongoConnection, records: List[dict]):
 
 def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
     # insert into db values = records on conflict do nothing
-    oids = [r["oid"] for r in records if r["sid"].lower() == "ztf"]
-    oids = set(oids)
+    def format_extra_fields(record):
+        extra_fields = record["extra_fields"]
+        return {
+            "ndethist": extra_fields["ndethist"],
+            "ncovhist": extra_fields["ncovhist"],
+            "mjdstarthist": extra_fields["jdstarthist"] - 2400000.5,
+            "mjdendhist": extra_fields["jdendhist"] - 2400000.5,
+        }
+
+    oids = {
+        r["oid"]: format_extra_fields(r) for r in records if r["sid"].lower() == "ztf"
+    }
     with db.session() as session:
-        to_insert = [{"oid": oid} for oid in oids]
+        to_insert = [{"oid": oid, **extra_fields} for oid, extra_fields in oids.items()]
         statement = insert(Object).values(to_insert)
         statement = statement.on_conflict_do_update(
-            "object_pkey", set_=dict(oid=statement.excluded.oid)
+            "object_pkey",
+            set_=dict(
+                ndethist=statement.excluded.ndethist,
+                ncovhist=statement.excluded.ncovhist,
+                mjdstarthist=statement.excluded.mjdstarthist,
+                mjdendhist=statement.excluded.mjdendhist,
+            ),
         )
         session.execute(statement)
         session.commit()

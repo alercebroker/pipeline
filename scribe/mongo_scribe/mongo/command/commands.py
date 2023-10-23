@@ -85,6 +85,8 @@ class UpdateCommand(Command):
         super()._check_inputs(collection, data, criteria)
         if not criteria:
             raise UpdateWithNoCriteriaException()
+        if collection == "forced_photometry":
+            self.criteria = { "_id": self.criteria["_id"] }
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
