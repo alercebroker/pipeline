@@ -59,7 +59,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         extra_fields.update(alert["extra_fields"])
         generic.pop("stamps", None)
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
-        model = model.asdict()
+        model = model.to_dict()
         model.update(
             {
                 "aid": alert["aid"],
@@ -112,7 +112,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
             if k not in cls._exclude_from_extra_fields()
         }
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
-        model = model.asdict()
+        model = model.to_dict()
 
         model.update(
             {
@@ -155,7 +155,7 @@ class ZTFNonDetectionsParser(SurveyParser):
             if k not in cls._exclude_from_extra_fields()
         }
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
-        model = model.asdict()
+        model = model.to_dict()
         model.update({"aid": alert["aid"]})
         model.pop("stamps", None)
         model.pop("extra_fields", None)

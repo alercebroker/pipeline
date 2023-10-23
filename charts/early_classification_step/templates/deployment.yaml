@@ -45,7 +45,7 @@ spec:
             - name: TOPIC_STRATEGY_FORMAT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "early-classifier.fullname" }}
+                  name: {{ include "early-classifier.fullname" . }}
                   key: topic-strategy-format
             {{- end }}
             - name: CONSUMER_SERVER

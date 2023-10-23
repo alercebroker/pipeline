@@ -30,9 +30,26 @@ class GenericAlert:
     def __getitem__(self, item):
         return self.__getattribute__(item)
 
-    def asdict(self) -> dict:
-        """Return the alert as a dictionary"""
-        return asdict(self)
+    def to_dict(self):
+        generic_alert_dict = {
+            "oid": self.oid,
+            "tid": self.tid,
+            "sid": self.sid,
+            "pid": self.pid,
+            "candid": self.candid,
+            "mjd": self.mjd,
+            "fid": self.fid,
+            "ra": self.ra,
+            "dec": self.dec,
+            "mag": self.mag,
+            "e_mag": self.e_mag,
+            "isdiffpos": self.isdiffpos,
+            "e_ra": self.e_ra,
+            "e_dec": self.e_dec,
+            "extra_fields": self.extra_fields,
+            "stamps": self.stamps,
+        }
+        return generic_alert_dict
 
 
 @dataclass
@@ -51,9 +68,19 @@ class GenericNonDetection:
     def __getitem__(self, item):
         return self.__getattribute__(item)
 
-    def asdict(self) -> dict:
-        """Return the alert as a dictionary"""
-        return asdict(self)
+    def to_dict(self):
+        generic_non_detection_dict = {
+            "oid": self.oid,
+            "tid": self.tid,
+            "sid": self.sid,
+            "mjd": self.mjd,
+            "fid": self.fid,
+            "diffmaglim": self.diffmaglim,
+            "extra_fields": self.extra_fields,
+            "stamps": self.stamps,
+        }
+
+        return generic_non_detection_dict
 
 
 class SurveyParser(abc.ABC):
