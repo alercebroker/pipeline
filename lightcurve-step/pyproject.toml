@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "lightcurve_step"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.10,<3.12"
 apf-base = { path = "../libs/apf", develop = true }
 pymongo = "^4.4.1"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.19"}
@@ -21,6 +21,7 @@ black = "^23.3.0"
 pytest = "^7.3.1"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
+test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.black]
 line-length = 88

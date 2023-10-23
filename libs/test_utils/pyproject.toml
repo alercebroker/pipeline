@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "test-utils"
-version = "6.1.1a34"
+version = "6.1.1a35"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
@@ -14,7 +14,15 @@ db-plugins = {path = "../db-plugins", develop = true}
 psycopg2-binary = "*"
 pytest-docker = "^1.0.1"
 
+[project]
+name = "test-utils"
+classifiers = [
+    "Framework :: Pytest",
+]
+
+[project.entry-points.pytest11]
+test_utils = "test_utils.test_utils"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

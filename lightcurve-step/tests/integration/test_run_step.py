@@ -19,21 +19,32 @@ def mock_get_secret(secret_name):
         return json.dumps(
             {
                 "HOST": "localhost",
-                "USERNAME": "mongo",
-                "PASSWORD": "mongo",
+                "USERNAME": "test_user",
+                "PASSWORD": "test_password",
                 "PORT": 27017,
-                "DATABASE": "mongo",
+                "DATABASE": "test_db",
+                "AUTH_SOURCE": "test_db",
             }
         )
     else:
         return None
 
+
 @mock.patch("credentials.get_secret")
 def test_step_start(
-    mock_credentials, produce_messages, mongo_service, env_variables, psql_conn
+    mock_credentials,
+    produce_messages,
+    mongo_service,
+    env_variables,
+    psql_conn,
+    kafka_consumer,
 ):
     from scripts.run_step import step_creator
 
     mock_credentials.side_effect = mock_get_secret
 
     step_creator().start()
+
+    consumer = kafka_consumer(["lightcurve"])
+    for message in consumer.consume():
+        print(message)

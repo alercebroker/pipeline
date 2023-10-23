@@ -1,9 +1,11 @@
+from typing import List
 import pytest
 from test_utils.utils import (
     is_responsive_psql,
     is_responsive_mongo,
     is_responsive_kafka,
 )
+from apf.consumers import KafkaConsumer
 
 
 @pytest.fixture(scope="session")
@@ -36,3 +38,21 @@ def kafka_service(docker_ip, docker_services):
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
     return server
+
+
+@pytest.fixture
+def kafka_consumer():
+    def consumer(topics: List[str]):
+        consumer = KafkaConsumer(
+            {
+                "PARAMS": {
+                    "bootstrap.servers": "localhost:9092",
+                    "group.id": "test_step",
+                    "auto.offset.reset": "earliest",
+                    "enable.partition.eof": "true",
+                },
+                "TOPIC": topics,
+            }
+        )
+
+    return consumer
