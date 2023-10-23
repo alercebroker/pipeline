@@ -44,7 +44,11 @@ class LightcurveStep(GenericStep):
         for msg in messages:
             aid = msg["aid"]
             oids.update(
-                {det["oid"]: aid for det in msg["detections"] if det["sid"].lower() == "ztf"}
+                {
+                    det["oid"]: aid
+                    for det in msg["detections"]
+                    if det["sid"].lower() == "ztf"
+                }
             )
             aids.add(aid)
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
@@ -136,6 +140,7 @@ class LightcurveStep(GenericStep):
         }
         parsed_result = []
         for det in ztf_models:
+            det = det[0].__dict__
             extra_fields = {}
             for field, value in det.items():
                 if field not in fields and not field.startswith("_"):
@@ -143,33 +148,36 @@ class LightcurveStep(GenericStep):
             parsed = MongoDetection(
                 **det,
                 aid=oids[det["oid"]],
-                sid="ztf",
-                tid="ztf",
+                sid="ZTF",
+                tid="ZTF",
                 mag=det["magpsf"],
                 e_mag=det["sigmapsf"],
                 mag_corr=det["magpsf_corr"],
                 e_mag_corr=det["sigmapsf_corr"],
                 e_mag_corr_ext=det["sigmapsf_corr_ext"],
-                e_ra=det["sigmara"],
-                e_dec=det["sigmadec"],
                 extra_fields=extra_fields,
+                e_ra=-999,
+                e_dec=-999,
             )
             parsed_result.append({**parsed, "forced": False, "new": False})
 
         return parsed_result
 
     def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
+        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
         non_dets = []
         for non_det in ztf_models:
+            non_det = non_det[0].__dict__
             non_dets.append(
                 MongoNonDetection(
+                    _id="jej",
                     tid="ZTF",
                     sid="ZTF",
                     aid=oids[non_det["oid"]],
                     oid=non_det["oid"],
                     mjd=non_det["mjd"],
-                    fid=non_det["fid"],
-                    diffmaglims=non_det.get("diffmaglim", None),
+                    fid=FID[non_det["fid"]],
+                    diffmaglim=non_det.get("diffmaglim", None),
                 )
             )
         return non_dets
@@ -178,8 +186,11 @@ class LightcurveStep(GenericStep):
         return [
             {
                 **MongoForcedPhotometry(
-                    **forced,
-                    aid=oids[forced["oid"]],
+                    **forced[0].__dict__,
+                    aid=oids[forced[0].__dict__["oid"]],
+                    sid="ZTF",
+                    candid=str(forced[0].__dict__["candid"])
+                    + str(forced[0].__dict__["pid"]),
                 ),
                 "new": False,
                 "forced": True,

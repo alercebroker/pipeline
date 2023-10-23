@@ -312,6 +312,66 @@ class MongoIntegrationTest(unittest.TestCase):
             "fid": "g",
         } in features["features"]
 
+    def test_update_non_detections_into_database(self):
+        command = json.dumps(
+            {
+                "collection": "non_detection",
+                "type": "update",
+                "criteria": {
+                    "oid": "ZTF12345",
+                    "aid": "ALX534311",
+                    "fid": "g",
+                    "mjd": 55500,
+                },
+                "data": {
+                    "diffmaglim": 21.11
+                },
+                "options": {"upsert": True},
+            }
+        )
+        self.producer.produce({"payload": command})
+        command = json.dumps(
+            {
+                "collection": "non_detection",
+                "type": "update",
+                "criteria": {
+                    "oid": "ZTF12345",
+                    "aid": "ALX534311",
+                    "fid": "g",
+                    "mjd": 55500,
+                },
+                "data": {
+                    "diffmaglim": 33.33
+                },
+                "options": {"upsert": True},
+            }
+        )
+        self.producer.produce({"payload": command})
+        self.producer.produce({"payload": command})
+
+        command = json.dumps(
+            {
+                "collection": "non_detection",
+                "type": "update",
+                "criteria": {
+                    "oid": "ZTF12345",
+                    "aid": "ALX534311",
+                    "fid": "g",
+                    "mjd": 55500,
+                },
+                "data": {
+                    "diffmaglim": 11.11
+                },
+                "options": {"upsert": True},
+            }
+        )
+        self.producer.produce({"payload": command})
+        self.producer.producer.flush(1)
+        self.step.start()
+        collection = self.step.db_client.connection.database["non_detection"]
+        result = collection.find_one({"aid": "ALX534311"})
+        print(result)
+
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
         commands = [

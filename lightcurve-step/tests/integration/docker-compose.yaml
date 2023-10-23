@@ -20,11 +20,11 @@ services:
     depends_on:
       - zookeeper
 
-  mongodb:
+  mongo:
     image: mongo
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: mongo
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
     ports:
       - "27017:27017"
     command: mongod --notablescan

@@ -28,52 +28,6 @@ def docker_compose_command():
     return "docker compose" if v2 else "docker-compose"
 
 
-def is_responsive_kafka(url):
-    client = AdminClient({"bootstrap.servers": url})
-    topics = ["correction", "lightcurve"]
-    new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
-    fs = client.create_topics(new_topics)
-    for topic, f in fs.items():
-        try:
-            f.result()
-        except Exception as e:
-            print(f"Can't create topic {topic}")
-            print(e)
-            return False
-    return True
-
-
-@pytest.fixture(scope="session")
-def kafka_service(docker_ip, docker_services):
-    """Ensure that Kafka service is up and responsive."""
-    port = docker_services.port_for("kafka", 9092)
-    server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
-    )
-    return server
-
-
-def is_mongo_responsive(ip, port):
-    client = MongoClient(f"mongodb://mongo:mongo@{ip}:{port}")
-    try:
-        client.admin.command("ismaster")
-        return True
-    except ConnectionFailure:
-        return False
-
-
-@pytest.fixture(scope="session")
-def mongo_service(docker_ip, docker_services):
-    port = docker_services.port_for("mongodb", 27017)
-    docker_services.wait_until_responsive(
-        timeout=90.0,
-        pause=0.1,
-        check=lambda: is_mongo_responsive(docker_ip, port),
-    )
-    return docker_ip, port
-
-
 @pytest.fixture
 def env_variables():
     random_string = uuid.uuid4().hex
@@ -117,29 +71,6 @@ def produce_messages(kafka_service):
     return
 
 
-def is_responsive_psql(url):
-    try:
-        conn = psycopg2.connect(
-            "dbname='postgres' user='postgres' host=localhost password='postgres'"
-        )
-        conn.close()
-        return True
-    except Exception:
-        return False
-
-
-@pytest.fixture(scope="session")
-def psql_service(docker_ip, docker_services):
-    """Ensure that Kafka service is up and responsive."""
-    # `port_for` takes a container port and returns the corresponding host port
-    port = docker_services.port_for("postgres", 5432)
-    server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(server)
-    )
-    return server
-
-
 def populate_sql(conn: PsqlDatabase):
     with conn.session() as session:
         session.execute(
@@ -159,6 +90,17 @@ def populate_sql(conn: PsqlDatabase):
                     false, false, false, 'step')
         """
             )
+        )
+        session.execute(
+            text("""
+            INSERT INTO non_detection(oid, fid, mjd, diffmaglim) VALUES ('ZTF000llmn', 1, 55000, 42.00)
+            """)
+        )
+        session.execute(
+            text("""
+            INSERT INTO forced_photometry(oid, mjd, pid, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp) 
+            VALUES ('ZTF000llmn', 55500, 9182734, 1, 45.0, 45.0, 1, false, false, false)
+            """)
         )
         session.commit()
 
