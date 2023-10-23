@@ -49,7 +49,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
     def parse(cls, message: dict, oid: str) -> dict:
         message = message.copy()
         message["objectId"] = oid
-        return asdict(cls.parse_message(message))
+        return cls.parse_message(message).to_dict()
 
 
 class ZTFForcedPhotometryParser(SurveyParser):
@@ -84,7 +84,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
 
         message["ra"] = ra
         message["dec"] = dec
-        return asdict(cls.parse_message(message))
+        return cls.parse_message(message).to_dict()
 
 
 class ZTFNonDetectionsParser(SurveyParser):
@@ -103,7 +103,7 @@ class ZTFNonDetectionsParser(SurveyParser):
     def parse(cls, message: dict, oid: str) -> dict:
         message = message.copy()
         message["objectId"] = oid
-        return asdict(cls.parse_message(message))
+        return cls.parse_message(message).to_dict()
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
