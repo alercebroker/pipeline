@@ -15,14 +15,14 @@ psycopg2-binary = "*"
 pytest-docker = "^1.0.1"
 
 [project]
-name = "test-utils"
-version = "1.0.0"
+name = "test_utils"
+version = "1.0.0" # ignore this, we use [tool.poetry]->version
 classifiers = [
     "Framework :: Pytest",
 ]
 
 [project.entry-points.pytest11]
-test_utils = "test_utils"
+test_utils = "test_utils.fixtures"
 
 [build-system]
 requires = ["hatchling"]

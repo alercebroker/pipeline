@@ -11,7 +11,6 @@ from sqlalchemy import text
 import psycopg2
 from db_plugins.db.sql._connection import PsqlDatabase
 from .utils import generate_message
-from test_utils.fixtures import *
 
 
 @pytest.fixture(scope="session")
