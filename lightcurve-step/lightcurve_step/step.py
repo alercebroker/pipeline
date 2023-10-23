@@ -194,6 +194,7 @@ class LightcurveStep(GenericStep):
                 ),
                 "new": False,
                 "forced": True,
+                "candid": f'{forced["oid"]}{forced["pid"]}',
             }
             for forced in ztf_models
         ]
