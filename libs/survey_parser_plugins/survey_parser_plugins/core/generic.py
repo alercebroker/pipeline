@@ -1,6 +1,6 @@
 import abc
 import functools
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Dict, Sequence, Set
 
 from .mapper import Mapper

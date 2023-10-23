@@ -43,13 +43,32 @@ class ZTFPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def can_parse(cls, message: dict) -> bool:
-        return True
+        return message["candid"] is not None
 
     @classmethod
-    def parse(cls, message: dict, oid: str) -> dict:
-        message = message.copy()
-        message["objectId"] = oid
-        return cls.parse_message(message).to_dict()
+    def parse_message(cls, candidate: dict, alert) -> dict:
+        candidate["objectId"] = alert["oid"]
+        generic = {name: mapper(candidate) for name, mapper in cls._mapping.items()}
+
+        stamps = cls._extract_stamps(candidate)
+        extra_fields = {
+            k: v
+            for k, v in candidate.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
+        extra_fields.update(alert["extra_fields"])
+        generic.pop("stamps", None)
+        model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model = model.to_dict()
+        model.update(
+            {
+                "aid": alert["aid"],
+                "has_stamp": False,
+                "forced": False,
+                "parent_candid": alert["candid"],
+            }
+        )
+        return model
 
 
 class ZTFForcedPhotometryParser(SurveyParser):
@@ -76,15 +95,39 @@ class ZTFForcedPhotometryParser(SurveyParser):
         return True
 
     @classmethod
-    def parse(cls, message: dict, oid: str, ra: float, dec: float) -> dict:
-        message = message.copy()
-        message["candid"] = f'{oid}{message["pid"]}'
-        message["magpsf"], message["sigmapsf"] = cls.__calculate_mag(message)
-        message["objectId"] = oid
+    def parse_message(cls, forced_photometry: dict, alert: dict) -> dict:
+        fpcopy = forced_photometry.copy()
+        fpcopy["candid"] = alert["oid"] + str(forced_photometry["pid"])
+        fpcopy["magpsf"], fpcopy["sigmapsf"] = cls.__calculate_mag(fpcopy)
+        fpcopy["objectId"] = alert["oid"]
 
-        message["ra"] = ra
-        message["dec"] = dec
-        return cls.parse_message(message).to_dict()
+        fpcopy["ra"] = alert["ra"]
+        fpcopy["dec"] = alert["dec"]
+        generic = {name: mapper(fpcopy) for name, mapper in cls._mapping.items()}
+
+        stamps = cls._extract_stamps(fpcopy)
+        extra_fields = {
+            k: v
+            for k, v in forced_photometry.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
+        model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model = model.to_dict()
+
+        model.update(
+            {
+                "candid": f'{model["candid"]}-{model["mjd"]}',
+                "aid": alert["aid"],
+                "has_stamp": False,  # ?
+                "forced": True,
+                "parent_candid": alert["candid"],
+                "extra_fields": {
+                    **alert["extra_fields"],
+                },
+            }
+        )
+        model.pop("stamps")
+        return model
 
 
 class ZTFNonDetectionsParser(SurveyParser):
@@ -96,14 +139,27 @@ class ZTFNonDetectionsParser(SurveyParser):
         return super(ZTFNonDetectionsParser, cls)._extract_stamps(message)
 
     @classmethod
-    def can_parse(cls, message: dict) -> bool:
-        return True
+    def can_parse(cls, candidate: dict) -> bool:
+        return candidate["candid"] is None
 
     @classmethod
-    def parse(cls, message: dict, oid: str) -> dict:
-        message = message.copy()
-        message["objectId"] = oid
-        return cls.parse_message(message).to_dict()
+    def parse_message(cls, candidate: dict, alert: dict) -> dict:
+        candcopy = candidate.copy()
+        candcopy["objectId"] = alert["oid"]
+        generic = {name: mapper(candcopy) for name, mapper in cls._mapping.items()}
+
+        stamps = cls._extract_stamps(candcopy)
+        extra_fields = {
+            k: v
+            for k, v in candcopy.items()
+            if k not in cls._exclude_from_extra_fields()
+        }
+        model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
+        model = model.to_dict()
+        model.update({"aid": alert["aid"]})
+        model.pop("stamps", None)
+        model.pop("extra_fields", None)
+        return model
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
@@ -113,58 +169,27 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     prv_candidates = alert["extra_fields"].pop("prv_candidates")
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
-    aid, oid, parent = alert["aid"], alert["oid"], alert["candid"]
-    for candidate in prv_candidates:
-        if candidate["candid"]:
-            candidate = ZTFPreviousDetectionsParser.parse(candidate, oid)
-            candidate.update(
-                {
-                    "aid": aid,
-                    "has_stamp": False,
-                    "forced": False,
-                    "parent_candid": parent,
-                    "extra_fields": {
-                        **alert["extra_fields"],
-                        **candidate["extra_fields"],
-                    },
-                }
-            )
-            candidate.pop("stamps", None)
-            detections.append(candidate)
-        else:
-            candidate = ZTFNonDetectionsParser.parse(candidate, oid)
-            candidate.update({"aid": aid})
-            candidate.pop("stamps", None)
-            candidate.pop("extra_fields", None)
-            non_detections.append(candidate)
-
+    detections = detections + [
+        ZTFPreviousDetectionsParser.parse_message(candidate, alert)
+        for candidate in prv_candidates
+        if ZTFPreviousDetectionsParser.can_parse(candidate)
+    ]
+    non_detections = [
+        ZTFNonDetectionsParser.parse_message(candidate, alert)
+        for candidate in prv_candidates
+        if ZTFNonDetectionsParser.can_parse(candidate)
+    ]
     alert["extra_fields"]["parent_candid"] = None
 
-    prv_forced_photometries = alert["extra_fields"].pop("fp_hists", None)
-    if prv_forced_photometries:
-        prv_forced_photometries = pickle.loads(prv_forced_photometries)
-    else:
-        prv_forced_photometries = []
-
-    for fp in prv_forced_photometries:
-        # concat parent candid with number (?)
-        candidate = ZTFForcedPhotometryParser.parse(
-            fp, oid=oid, ra=alert["ra"], dec=alert["dec"]
-        )
-        candidate.update(
-            {
-                "aid": aid,
-                "has_stamp": False,  # ?
-                "forced": True,
-                "parent_candid": parent,
-                "extra_fields": {
-                    **alert["extra_fields"],
-                    **candidate["extra_fields"],
-                },
-            }
-        )
-        candidate.pop("stamps")
-        detections.append(candidate)
+    forced_photometries = alert["extra_fields"].pop("fp_hists", [])
+    forced_photometries = (
+        pickle.loads(forced_photometries) if forced_photometries else []
+    )
+    detections = detections + [
+        ZTFForcedPhotometryParser.parse_message(fp, alert)
+        for fp in forced_photometries
+        if ZTFForcedPhotometryParser.can_parse(fp)
+    ]
 
     return {
         "aid": alert["aid"],
