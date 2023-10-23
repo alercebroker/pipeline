@@ -164,7 +164,7 @@ class LightcurveStep(GenericStep):
         return parsed_result
 
     def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
-        FID = {1: 'g', 2: 'r', 0: None, 12: 'gr'}
+        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
         non_dets = []
         for non_det in ztf_models:
             non_det = non_det[0].__dict__
@@ -186,7 +186,11 @@ class LightcurveStep(GenericStep):
         return [
             {
                 **MongoForcedPhotometry(
-                    **forced[0].__dict__, aid=oids[forced[0].__dict__["oid"]], sid="ZTF"
+                    **forced[0].__dict__,
+                    aid=oids[forced[0].__dict__["oid"]],
+                    sid="ZTF",
+                    candid=str(forced[0].__dict__["candid"])
+                    + str(forced[0].__dict__["pid"]),
                 ),
                 "new": False,
                 "forced": True,
