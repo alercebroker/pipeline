@@ -44,7 +44,7 @@ class LightcurveStep(GenericStep):
         for msg in messages:
             aid = msg["aid"]
             oids.update(
-                {det["oid"]: aid for det in msg["detections"] if det["sid"] == "ztf"}
+                {det["oid"]: aid for det in msg["detections"] if det["sid"].lower() == "ztf"}
             )
             aids.add(aid)
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
