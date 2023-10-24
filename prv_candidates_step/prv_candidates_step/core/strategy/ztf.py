@@ -116,7 +116,6 @@ class ZTFForcedPhotometryParser(SurveyParser):
 
         model.update(
             {
-                "candid": f'{model["candid"]}-{model["mjd"]}',
                 "aid": alert["aid"],
                 "has_stamp": False,  # ?
                 "forced": True,
