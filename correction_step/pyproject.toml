@@ -10,13 +10,7 @@ readme = "README.md"
 python = ">=3.10"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
-fastavro = { version = "~1.4.12", optional = true }
-prometheus-client = { version = "~0.16.0", optional = true }
-confluent-kafka = { version = "~2.0.2", optional = true }
 apf_base = { path = "../libs/apf", develop = true }
-
-[tool.poetry.extras]
-apf = ["fastavro", "prometheus-client", "confluent-kafka", "apf_base"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"

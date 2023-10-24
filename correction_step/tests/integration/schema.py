@@ -9,7 +9,7 @@ EXTRA_FIELDS = {
 
 DETECTION = {
     "type": "record",
-    "name": "alert",
+    "name": "detection",
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "oid", "type": "string"},
@@ -17,7 +17,7 @@ DETECTION = {
         {"name": "pid", "type": "long"},
         {"name": "tid", "type": "string"},
         {"name": "fid", "type": "string"},
-        {"name": "candid", "type": "string"},
+        {"name": "candid", "type": ["long", "string"]},
         {"name": "mjd", "type": "double"},
         {"name": "ra", "type": "double"},
         {"name": "e_ra", "type": "float"},
@@ -28,13 +28,14 @@ DETECTION = {
         {"name": "isdiffpos", "type": "int"},
         {"name": "has_stamp", "type": "boolean"},
         {"name": "forced", "type": "boolean"},
-        {"name": "parent_candid", "type": ["string", "null"]},
         {"name": "new", "type": "boolean"},
+        {"name": "parent_candid", "type": ["long", "string", "null"]},
         {
             "name": "extra_fields",
-            "type": EXTRA_FIELDS,
+            "type": {"default": {}, "type": "map", "values": ["null", "int", "float", "string", "bytes", "boolean"]},
         },
     ],
+    "default": [],
 }
 
 NON_DETECTION = {
@@ -49,15 +50,22 @@ NON_DETECTION = {
         {"name": "mjd", "type": "double"},
         {"name": "diffmaglim", "type": "float"},
     ],
+    "default": [],
 }
 
 SCHEMA = {
     "type": "record",
-    "doc": "Multi stream alert of any telescope/survey",
-    "name": "alerce.alert",
+    "doc": "Lightcurve schema with detections and non-detections",
+    "name": "lightcurve",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "detections", "type": {"type": "array", "items": DETECTION}},
-        {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}},
+        {
+            "name": "detections",
+            "type": {"type": "array", "items": DETECTION},
+        },
+        {
+            "name": "non_detections",
+            "type": {"type": "array", "items": NON_DETECTION},
+        },
     ],
 }
