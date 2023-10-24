@@ -39,9 +39,9 @@ class Command(abc.ABC):
         criteria=None,
         options=None,
     ):
+        self.criteria = criteria if criteria else {}
         self._check_inputs(collection, data, criteria)
         self.collection = collection
-        self.criteria = criteria if criteria else {}
         self.data = data
 
         try:
@@ -86,7 +86,7 @@ class UpdateCommand(Command):
         if not criteria:
             raise UpdateWithNoCriteriaException()
         if collection == "forced_photometry":
-            self.criteria = { "_id": self.criteria["_id"] }
+            self.criteria = { "_id": criteria["_id"] }
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
