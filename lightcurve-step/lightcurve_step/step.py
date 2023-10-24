@@ -134,6 +134,7 @@ class LightcurveStep(GenericStep):
             "isdiffpos",
             "corrected",
             "dubious",
+            "candid",
             "parent_candid",
             "has_stamp",
         }
