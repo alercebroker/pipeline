@@ -165,9 +165,7 @@ class LightcurveStep(GenericStep):
                 e_dec=-999,
             )
             parsed["candid"] = parsed.pop("_id")
-            parsed_result.append(
-                {**parsed, "forced": False, "new": False }
-            )
+            parsed_result.append({**parsed, "forced": False, "new": False})
 
         return parsed_result
 
