@@ -122,7 +122,7 @@ class InsertForcedPhotometryCommand(Command):
     type = ValidCommands.insert_forced_photo
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "tid", "e_dec", "e_ra", "stellar", "extra_fields"]
+        exclude = ["aid", "sid", "candid", "tid", "e_dec", "e_ra", "stellar", "extra_fields"]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
         extra_fields = data["extra_fields"]
