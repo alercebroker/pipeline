@@ -141,7 +141,8 @@ class LightcurveStep(GenericStep):
         for det in ztf_models:
             det: dict = det[0].__dict__
             extra_fields = {}
-            for field in det.keys():
+            det_keys = det.keys()
+            for field in det_keys:
                 if field not in GENERIC_FIELDS and not field.startswith("_"):
                     extra_fields[field] = det.pop(field)
             parsed = MongoDetection(
