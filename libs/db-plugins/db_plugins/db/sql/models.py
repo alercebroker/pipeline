@@ -266,7 +266,7 @@ class Detection(Base, Commons):
 class ForcedPhotometry(Base):
     __tablename__ = "forced_photometry"
 
-    pid = Column(Integer, primary_key=True)
+    pid = Column(BigInteger, primary_key=True)
     oid = Column(String, primary_key=True)
     mjd = Column(Float(precision=53), nullable=False)
     fid = Column(Integer, nullable=False)
