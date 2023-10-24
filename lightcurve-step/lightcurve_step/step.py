@@ -116,17 +116,16 @@ class LightcurveStep(GenericStep):
         }
 
     def _parse_ztf_detection(self, ztf_models: list, *, oids):
-        fields = {
+        GENERIC_FIELDS = {
             "tid",
             "sid",
             "aid",
             "oid",
+            "pid",
             "mjd",
             "fid",
             "ra",
-            "sigmara",
             "dec",
-            "sigmadec",
             "magpsf",
             "sigmapsf",
             "magpsf_corr",
@@ -140,11 +139,11 @@ class LightcurveStep(GenericStep):
         }
         parsed_result = []
         for det in ztf_models:
-            det = det[0].__dict__
+            det: dict = det[0].__dict__
             extra_fields = {}
-            for field, value in det.items():
-                if field not in fields and not field.startswith("_"):
-                    extra_fields[field] = value
+            for field in det.keys():
+                if field not in GENERIC_FIELDS and not field.startswith("_"):
+                    extra_fields[field] = det.pop(field)
             parsed = MongoDetection(
                 **det,
                 aid=oids[det["oid"]],
@@ -168,22 +167,26 @@ class LightcurveStep(GenericStep):
         non_dets = []
         for non_det in ztf_models:
             non_det = non_det[0].__dict__
-            non_dets.append(
-                MongoNonDetection(
-                    _id="jej",
-                    tid="ZTF",
-                    sid="ZTF",
-                    aid=oids[non_det["oid"]],
-                    oid=non_det["oid"],
-                    mjd=non_det["mjd"],
-                    fid=FID[non_det["fid"]],
-                    diffmaglim=non_det.get("diffmaglim", None),
-                )
+            mongo_non_detection = MongoNonDetection(
+                _id="jej",
+                tid="ZTF",
+                sid="ZTF",
+                aid=oids[non_det["oid"]],
+                oid=non_det["oid"],
+                mjd=non_det["mjd"],
+                fid=FID[non_det["fid"]],
+                diffmaglim=non_det.get("diffmaglim", None),
             )
+            mongo_non_detection.pop("_id")
+            non_dets.append(mongo_non_detection)
         return non_dets
 
     def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
-        return [
+        def format_as_detection(fp):
+            fp["candid"] = fp.pop("_id")
+            return fp
+
+        parsed = [
             {
                 **MongoForcedPhotometry(
                     **forced[0].__dict__,
@@ -194,10 +197,11 @@ class LightcurveStep(GenericStep):
                 ),
                 "new": False,
                 "forced": True,
-                "candid": f'{forced["oid"]}{forced["pid"]}',
             }
             for forced in ztf_models
         ]
+
+        return list(map(format_as_detection, parsed))
 
     @classmethod
     def pre_produce(cls, result: dict) -> List[dict]:
