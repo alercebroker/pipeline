@@ -16,6 +16,8 @@ from db_plugins.db.sql.models import (
     Xmatch,
     Reference,
     Gaia_ztf,
+    Ss_ztf,
+    Dataquality,
 )
 
 from .commons import ValidCommands
@@ -374,9 +376,54 @@ class UpsertMetadataCommand(Command):
             "neargaiabright",
             "maggaia",
             "maggaiabright",
-            "unique1"
+            "unique1",
         ]
         return {k: v for k, v in alert.items() if k in GAIA_KEYS}
+
+    @staticmethod
+    def __format_ss_ztf(alert):
+        SS_KEYS = ["oid", "candid", "ssdistnr", "ssmagnr", "ssnamenr"]
+        return {k: v for k, v in alert.items() if k in SS_KEYS}
+
+    def __format_ps1_ztf(alert):
+        pass
+
+    def __format_dataquality_ztf(alert):
+        DATAQUALITY_KEYS = [
+            "oid",
+            "candid",
+            "fid",
+            "xpos",
+            "ypos",
+            "chipsf",
+            "sky",
+            "fwhm",
+            "classtar",
+            "mindtoedge",
+            "seeratio",
+            "aimage",
+            "bimage",
+            "aimagerat",
+            "bimagerat",
+            "nneg",
+            "nbad",
+            "sumrat",
+            "scorr",
+            "magzpsci",
+            "magzpsciunc",
+            "magzpscirms",
+            "clrcoeff",
+            "clrcounc",
+            "dsnrms",
+            "ssnrms",
+            "nmatches",
+            "zpclrcov",
+            "zpmed",
+            "clrmed",
+            "clrrms",
+            "exptime",
+        ]
+        return {k: v for k, v in alert.items() if k in DATAQUALITY_KEYS}
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -384,7 +431,6 @@ class UpsertMetadataCommand(Command):
         reference_data = [UpsertMetadataCommand.__format_reference(el) for el in data]
         reference_data = list({el["oid"]: el for el in reference_data}.values())
         reference_stmt = insert(Reference).values(reference_data)
-        print(reference_data)
         reference_stmt = reference_stmt.on_conflict_do_update(
             constraint="reference_pkey", set_=dict(oid=reference_stmt.excluded.oid)
         )
@@ -394,8 +440,27 @@ class UpsertMetadataCommand(Command):
         gaia_data = [UpsertMetadataCommand.__format_gaia_ztf(el) for el in data]
         gaia_data = list({el["oid"]: el for el in gaia_data}.values())
         gaia_stmt = insert(Gaia_ztf).values(gaia_data)
-        print(gaia_data)
         gaia_stmt = gaia_stmt.on_conflict_do_update(
             constraint="gaia_ztf_pkey", set_=dict(oid=gaia_stmt.excluded.oid)
         )
-        return session.connection().execute(gaia_stmt)
+        session.connection().execute(gaia_stmt)
+
+        # Handling SS ZTF
+        ss_data = [UpsertMetadataCommand.__format_ss_ztf(el) for el in data]
+        ss_data = list({el["oid"]: el for el in ss_data}.values())
+        ss_stmt = insert(Ss_ztf).values(ss_data)
+        ss_stmt = ss_stmt.on_conflict_do_update(
+            constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid)
+        )
+        session.connection().execute(ss_stmt)
+
+        # Handling Dataquality
+        dataquality_data = [
+            UpsertMetadataCommand.__format_dataquality_ztf(el) for el in data
+        ]
+        dataquality_data = list({el["oid"]: el for el in dataquality_data}.values())
+        dataquality_stmt = insert(Dataquality).values(dataquality_data)
+        dataquality_stmt = dataquality_stmt.on_conflict_do_update(
+            constraint="dataquality_pkey", set_=dict(oid=dataquality_stmt.excluded.oid)
+        )
+        session.connection().execute(dataquality_stmt)

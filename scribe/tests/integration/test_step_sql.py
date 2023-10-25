@@ -696,6 +696,18 @@ class MongoIntegrationTest(unittest.TestCase):
                     ON CONFLICT DO NOTHING"""
                 )
             )
+            session.execute(
+                text(
+                    """
+                    INSERT INTO detection
+                    (candid, oid, mjd, fid, pid, isdiffpos, ra, dec, \
+                     magpsf, sigmapsf, corrected, dubious, has_stamp, step_id_corr)
+                     VALUES
+                     (9192746, 'ZTF04ululeea', 55500, 1, 654321, 1, 45, 45, \
+                        20.0, 1.0, false, false, false, 'ALERCE')
+                    """
+                )
+            )
             session.commit()
             command = {
                 "collection": "metadata",
@@ -716,7 +728,7 @@ class MongoIntegrationTest(unittest.TestCase):
                         "pdiffimfilename": "/ztf/archive/sci/2023/0122/240231/ztf_20230122240231_000354_zg_c01_o_q1_scimrefdiffimg.fits.fz",
                         "programpi": "Kulkarni",
                         "programid": 1,
-                        "candid": "2212240240015015002",
+                        "candid": 9192746,
                         "isdiffpos": "t",
                         "tblid": 2,
                         "nid": 2212,
