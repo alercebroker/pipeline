@@ -1,3 +1,6 @@
+import json
+
+from apf.core import get_class
 from apf.core.step import GenericStep
 from survey_parser_plugins import ALeRCEParser
 from datetime import datetime
@@ -20,6 +23,9 @@ class SortingHatStep(GenericStep):
         self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
         self.use_psql = config["USE_PSQL"].lower() == "true"
+
+        producer_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = producer_class(self.config["SCRIBE_PRODUCER_CONFIG"])
 
     def set_psql_driver(self, psql_connection: PsqlConnection):
         if not self.use_psql:
@@ -61,6 +67,21 @@ class SortingHatStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
+    def _produce_scribe(self, alerts: pd.DataFrame):
+        alerts = alerts[alerts["sid"] == "ZTF"].to_dict("records")
+        for alert in alerts:
+            alert = alert.copy()
+            extra_fields = alert["extra_fields"].copy()
+            extra_fields.pop("fp_hists", b"")
+            extra_fields.pop("prv_candidates", b"")
+            alert.pop("stamps", "")
+            scribe_data = {
+                "collection": "metadata",
+                "type": "upsert",
+                "data": alert,
+            }
+            self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
+
     def pre_execute(self, messages: List[dict]):
         ingestion_timestamp = int(datetime.now().timestamp())
         messages_with_timestamp = list(
@@ -99,6 +120,8 @@ class SortingHatStep(GenericStep):
         if self.use_psql:
             psql_driver = self.psql_driver
         wizard.insert_empty_objects(self.mongo_driver, alerts, psql=psql_driver)
+        if self.use_psql:
+            self._produce_scribe(alerts)
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:

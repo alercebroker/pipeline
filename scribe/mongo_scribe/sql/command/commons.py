@@ -19,3 +19,5 @@ class ValidCommands:
     upsert_xmatch = "upsert_xmatch"
     # update + forced_photometry
     insert_forced_photo = "insert_forced_photo"
+    # upsert + metadata PSQL EXCLUSIVE
+    upsert_metadata = "upsert_metadata"

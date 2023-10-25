@@ -4,6 +4,7 @@
 import os
 from credentials import get_credentials
 from schemas.output_schema import SCHEMA
+from schemas.scribe_schema import SCRIBE_SCHEMA
 from fastavro.repository.base import SchemaRepositoryError
 
 # Set the global logging level to debug
@@ -69,6 +70,14 @@ PRODUCER_CONFIG = {
     "SCHEMA": SCHEMA,
 }
 
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
+    "PARAMS": {
+        "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
+    },
+    "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"], #w_metadata
+    "SCHEMA": SCRIBE_SCHEMA,
+}
 
 METRICS_CONFIG = {
     "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
@@ -133,6 +142,15 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
         "METRICS_KAFKA_PASSWORD"
     )
+if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "SCRIBE_KAFKA_USERNAME"
+    )
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "SCRIBE_KAFKA_PASSWORD"
+    )
 
 ## Feature flags
 RUN_CONESEARCH = os.getenv("RUN_CONESEARCH", "True")
@@ -147,6 +165,7 @@ STEP_CONFIG = {
     "PSQL_CONFIG": PSQL_CONFIG,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
+    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "RUN_CONESEARCH": RUN_CONESEARCH,
     "USE_PSQL": USE_PSQL,

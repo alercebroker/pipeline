@@ -15,6 +15,7 @@ class SortingHatStepTestCase(unittest.TestCase):
             "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "True",
             "USE_PSQL": "False",
         }
@@ -22,6 +23,7 @@ class SortingHatStepTestCase(unittest.TestCase):
         self.mock_db.database = mock.create_autospec(Database)
         self.mock_producer = mock.create_autospec(KafkaProducer)
         self.mock_consumer = mock.create_autospec(KafkaConsumer)
+        self.mock_scribe_producer = mock.create_autospec(KafkaProducer)
         self.step = SortingHatStep(
             config=self.step_config,
             mongo_connection=self.mock_db,
@@ -78,6 +80,7 @@ class RunConesearchTestCase(unittest.TestCase):
         step_config = {
             "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "True",
             "USE_PSQL": "False",
@@ -95,6 +98,7 @@ class RunConesearchTestCase(unittest.TestCase):
         step_config = {
             "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "ASDF",
             "USE_PSQL": "False",
@@ -112,6 +116,7 @@ class RunConesearchTestCase(unittest.TestCase):
         step_config = {
             "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
+            "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "False",
             "USE_PSQL": "False",
@@ -127,12 +132,14 @@ class RunConesearchTestCase(unittest.TestCase):
     def test_run_post_execute(self, mock_wizzard):
         step_config = {
             "DB_CONFIG": {},
+            "SCRIBE_PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "RUN_CONESEARCH": "False",
             "USE_PSQL": "False",
         }
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
+        step.scribe_producer = mock.create_autospec(KafkaProducer)
         step.post_execute(self.dataframe)  # the wizzard is mocked
 
         mock_wizzard.insert_empty_objects.assert_called_once()

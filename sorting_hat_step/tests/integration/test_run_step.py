@@ -8,6 +8,7 @@ from unittest import mock
 from apf.consumers import KafkaConsumer
 from sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
+from schemas.scribe_schema import SCRIBE_SCHEMA
 from ..unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
 from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
@@ -42,6 +43,15 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": "localhost:9092",
     },
     "SCHEMA": SCHEMA,
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "TOPIC": "w_metadata",
+    "PARAMS": {
+        "bootstrap.servers": "localhost:9092",
+    },
+    "SCHEMA": SCRIBE_SCHEMA
 }
 
 CONSUMER_CONFIG = {
@@ -125,6 +135,7 @@ class DbIntegrationTest(unittest.TestCase):
             "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
             "USE_PSQL": "True",
@@ -228,6 +239,7 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "MONGO_CONFIG": MONGO_CONFIG,
             "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
@@ -281,6 +293,7 @@ class OnlyMongoIntegrationTest(unittest.TestCase):
             "MONGO_CONFIG": MONGO_CONFIG,
             "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",

@@ -685,3 +685,102 @@ class MongoIntegrationTest(unittest.TestCase):
                     )
                 )
             assert True
+
+    def test_upsert_metadata(self):
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
+                    VALUES
+                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45)
+                    ON CONFLICT DO NOTHING"""
+                )
+            )
+            session.commit()
+            command = {
+                "collection": "metadata",
+                "type": "upsert",
+                "criteria": {
+                    "_id": "candid-pid",
+                    "candid": "candid-pid",  # maybe add oid here?
+                },
+                "data": {
+                    "oid": "ZTF04ululeea",
+                    "candid": 9192746,
+                    "rfid": 4000000,
+                    "extra_fields": {
+                        "jd": 2459966.7402431,
+                        "fid": 1,
+                        "pid": 2212240240015,
+                        "diffmaglim": 19.8356990814209,
+                        "pdiffimfilename": "/ztf/archive/sci/2023/0122/240231/ztf_20230122240231_000354_zg_c01_o_q1_scimrefdiffimg.fits.fz",
+                        "programpi": "Kulkarni",
+                        "programid": 1,
+                        "candid": "2212240240015015002",
+                        "isdiffpos": "t",
+                        "tblid": 2,
+                        "nid": 2212,
+                        "rcid": 0,
+                        "field": 354,
+                        "xpos": 242.45599365234375,
+                        "ypos": 481.0260009765625,
+                        "mjdstartref": 55000,
+                        "mjdendref": 60000,
+                        "nframesref": 2,
+                        "ra": 72.3385553,
+                        "dec": -11.9220759,
+                        "magpsf": 18.461200714111328,
+                        "sigmapsf": 0.20323200523853302,
+                        "chipsf": 5.37214994430542,
+                        "magap": 18.402599334716797,
+                        "sigmagap": 0.09950000047683716,
+                        "distnr": 0.6387689709663391,
+                        "magnr": 15.371999740600586,
+                        "sigmagnr": 0.012000000104308128,
+                        "chinr": 0.4580000042915344,
+                        "sharpnr": 0.008999999612569809,
+                        "sky": -1.4953199625015259,
+                        "magdiff": -0.05859399959445,
+                        "fwhm": 1.8398799896240234,
+                        "classtar": 0.9340000152587891,
+                        "mindtoedge": 242.45599365234375,
+                        "magfromlim": 1.4330500364303589,
+                        "seeratio": 2.0,
+                        "aimage": 0.7059999704360962,
+                        "bimage": 0.5709999799728394,
+                        "aimagerat": 0.3837209939956665,
+                        "bimagerat": 0.3103469908237457,
+                        "elong": 1.236430048942566,
+                        "nneg": 8,
+                        "nbad": 0,
+                        "rb": 0.46142899990081787,
+                        "ssdistnr": None,
+                        "ssmagnr": None,
+                        "ssnamenr": None,
+                        "sumrat": 0.6994069814682007,
+                        "magapbig": 18.365100860595703,
+                        "sigmagapbig": 0.11460000276565552,
+                        "ranr": 72.3385822,
+                        "decnr": -11.9218982,
+                        "scorr": 10.3521,
+                        "magzpsci": 26.209199905395508,
+                        "magzpsciunc": 1.6734900782466866e-05,
+                        "magzpscirms": 0.0390545018017292,
+                        "clrcoeff": -0.04869139939546585,
+                        "clrcounc": 3.019940049853176e-05,
+                        "rbversion": "t17_f5_c3",
+                        "unique1": False,
+                    },
+                },
+            }
+        self.producer.produce({"payload": json.dumps(command)})
+        self.producer.produce({"payload": json.dumps(command)})
+        self.producer.producer.flush()
+        
+        self.step.start()
+        with self.db.session() as session:
+            result = session.execute(
+                text("""SELECT * FROM gaia_ztf WHERE oid='ZTF04ululeea'""")
+            ).all()
+
+        assert True

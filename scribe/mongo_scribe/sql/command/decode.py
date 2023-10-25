@@ -10,6 +10,7 @@ from .commands import (
     UpsertNonDetectionsCommand,
     UpsertProbabilitiesCommand,
     UpsertXmatchCommand,
+    UpsertMetadataCommand
 )
 
 
@@ -70,4 +71,6 @@ def command_factory(msg: str) -> Command:
         return UpsertXmatchCommand(**message)
     if type_ == "update" and table == "forced_photometry":
         return InsertForcedPhotometryCommand(**message)
+    if type_ == "upsert" and table == "metadata":
+        return UpsertMetadataCommand(**message)
     raise ValueError(f"Unrecognized command type {type_} in table {table}.")

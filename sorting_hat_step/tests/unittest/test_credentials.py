@@ -49,6 +49,8 @@ class TestCredentials(TestCase):
         os.environ["PRODUCER_TOPIC"] = "test-secret"
         os.environ["PRODUCER_SERVER"] = "test-secret"
         os.environ["METRICS_HOST"] = "test-secret"
+        os.environ["SCRIBE_PRODUCER_SERVER"] = "test-secret"
+        os.environ["SCRIBE_PRODUCER_TOPIC"] = "test-secret"
         from settings import PSQL_CONFIG, MONGO_CONFIG
 
         assert PSQL_CONFIG == {

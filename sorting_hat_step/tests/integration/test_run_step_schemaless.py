@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 from sorting_hat_step.step import SortingHatStep
 from schemas.output_schema import SCHEMA
+from schemas.scribe_schema import SCRIBE_SCHEMA
 from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
 from db_plugins.db.sql._connection import PsqlDatabase as DBPPsqlConnection
 from fastavro.repository.base import SchemaRepositoryError
@@ -35,6 +36,15 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": "localhost:9092",
     },
     "SCHEMA": SCHEMA,
+}
+
+SCRIBE_PRODUCER_CONFIG = {
+    "CLASS": "apf.producers.KafkaProducer",
+    "TOPIC": "w_metadata",
+    "PARAMS": {
+        "bootstrap.servers": "localhost:9092",
+    },
+    "SCHEMA": SCRIBE_SCHEMA
 }
 
 CONSUMER_CONFIG = {
@@ -111,6 +121,7 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
             "RUN_CONESEARCH": "True",
             "USE_PSQL": "False",

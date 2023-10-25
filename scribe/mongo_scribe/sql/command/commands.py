@@ -14,6 +14,8 @@ from db_plugins.db.sql.models import (
     MagStats,
     Probability,
     Xmatch,
+    Reference,
+    Gaia_ztf,
 )
 
 from .commons import ValidCommands
@@ -122,7 +124,16 @@ class InsertForcedPhotometryCommand(Command):
     type = ValidCommands.insert_forced_photo
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "candid", "tid", "e_dec", "e_ra", "stellar", "extra_fields"]
+        exclude = [
+            "aid",
+            "sid",
+            "candid",
+            "tid",
+            "e_dec",
+            "e_ra",
+            "stellar",
+            "extra_fields",
+        ]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
         extra_fields = data["extra_fields"]
@@ -324,3 +335,67 @@ class UpsertXmatchCommand(Command):
         )
 
         return session.connection().execute(insert_stmt)
+
+
+class UpsertMetadataCommand(Command):
+    type = ValidCommands.upsert_metadata
+
+    def _format_data(self, data):
+        return {**data, **data["extra_fields"]}
+
+    @staticmethod
+    def __format_reference(alert):
+        REFERENCE_KEYS = [
+            "oid",
+            "rfid",
+            "candid",
+            "fid",
+            "rcid",
+            "field",
+            "magnr",
+            "sigmagnr",
+            "chinr",
+            "sharpnr",
+            "chinr",
+            "ranr",
+            "decnr",
+            "nframesref",
+            "mjdstartref",
+            "mjdendref",
+        ]
+        return {k: v for k, v in alert.items() if k in REFERENCE_KEYS}
+
+    @staticmethod
+    def __format_gaia_ztf(alert):
+        GAIA_KEYS = [
+            "oid",
+            "candid",
+            "neargaia",
+            "neargaiabright",
+            "maggaia",
+            "maggaiabright",
+            "unique1"
+        ]
+        return {k: v for k, v in alert.items() if k in GAIA_KEYS}
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        # Handling "reference"
+        reference_data = [UpsertMetadataCommand.__format_reference(el) for el in data]
+        reference_data = list({el["oid"]: el for el in reference_data}.values())
+        reference_stmt = insert(Reference).values(reference_data)
+        print(reference_data)
+        reference_stmt = reference_stmt.on_conflict_do_update(
+            constraint="reference_pkey", set_=dict(oid=reference_stmt.excluded.oid)
+        )
+        session.connection().execute(reference_stmt)
+
+        # Handling Gaia ZTF
+        gaia_data = [UpsertMetadataCommand.__format_gaia_ztf(el) for el in data]
+        gaia_data = list({el["oid"]: el for el in gaia_data}.values())
+        gaia_stmt = insert(Gaia_ztf).values(gaia_data)
+        print(gaia_data)
+        gaia_stmt = gaia_stmt.on_conflict_do_update(
+            constraint="gaia_ztf_pkey", set_=dict(oid=gaia_stmt.excluded.oid)
+        )
+        return session.connection().execute(gaia_stmt)
