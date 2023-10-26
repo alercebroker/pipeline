@@ -39,52 +39,52 @@ spec:
             - name: CONSUMER_CLASS
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consumer-class
             - name: CONSUMER_TOPICS
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consumer-topics
             - name: CONSUMER_SERVER
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consumer-server
             - name: CONSUME_MESSAGES
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consume-messages
             - name: CONSUME_TIMEOUT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consume-timeout
             - name: CONSUMER_GROUP_ID
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: consumer-group-id
             - name: SCRIBE_PRODUCER_SERVER
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: scribe-server
             - name: SCRIBE_PRODUCER_TOPIC
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: scribe-topic
             - name: METRICS_SERVER
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: metrics-server
             - name: METRICS_TOPIC
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "magstats-step.fullname" . }}
+                  name: {{ include "metadata-step.fullname" . }}
                   key: metrics-topic
             {{- if .Values.secrets.kafkaAuth.consumer.enabled}}
             - name: CONSUMER_KAFKA_USERNAME
