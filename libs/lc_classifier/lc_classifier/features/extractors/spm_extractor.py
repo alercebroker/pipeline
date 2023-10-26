@@ -48,7 +48,7 @@ class SPMExtractor(FeatureExtractor):
         self.redshift_name = redshift
         self.extinction_color_excess_name = extinction_color_excess
         self.forced_phot_prelude = forced_phot_prelude
-        self.sn_model = SNModel(self.bands)
+        self.sn_model = SNModel(self.bands, debugging=False)
 
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections.copy()
@@ -128,7 +128,6 @@ class SPMExtractor(FeatureExtractor):
             extinction_color_excess = metadata[metadata['name'] == self.extinction_color_excess_name]['value'].values[0]
             extinction_color_excess = float(extinction_color_excess)
 
-        print(redshift, extinction_color_excess)
         observations = self.get_observations(astro_object)
         observations = self.convert_units(observations)
 
@@ -152,15 +151,52 @@ class SPMExtractor(FeatureExtractor):
 
         model_parameters = self.sn_model.get_model_parameters()
         chis = self.sn_model.get_chis()
-        print(model_parameters)
-        print(chis)
+
+        param_names = [
+            'SPM_A',
+            'SPM_t0',
+            'SPM_gamma',
+            'SPM_beta',
+            'SPM_tau_rise',
+            'SPM_tau_fall'
+        ]
+        features = []
+        for band_index, band in enumerate(self.bands):
+            for param_index, param_name in enumerate(param_names):
+                model_param_index = band_index * len(param_names) + param_index
+                features.append(
+                    (param_name, model_parameters[model_param_index], band)
+                )
+
+        for band, chi in zip(self.bands, chis):
+            features.append(
+                ('SPM_chi', chi, band)
+            )
+
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
+        )
+
+        sids = astro_object.detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        astro_object.features = pd.concat(
+            [astro_object.features, features_df],
+            axis=0
+        )
 
 
 class SNModel:
-    def __init__(self, bands: List[str]):
+    def __init__(self, bands: List[str], debugging: bool = False):
         self.parameters = None
         self.chis = None
         self.bands = bands
+        self.debugging = debugging
         numba.set_num_threads(1)
 
     def fit(self, times, fluxpsf, obs_errors, bands):
@@ -295,6 +331,13 @@ class SNModel:
                     band_times.astype(np.float64),
                     *best_params[index, :])
 
+                if self.debugging:
+                    import matplotlib.pyplot as plt
+                    plt.scatter(band_times, band_flux)
+                    order = np.argsort(band_times)
+                    plt.plot(band_times[order], predictions[order])
+                    plt.show()
+
                 chi = np.sum((predictions - band_flux) ** 2 / (band_errors + 5) ** 2)
                 chi_den = len(predictions) - 6
                 if chi_den >= 1:
@@ -309,7 +352,6 @@ class SNModel:
 
         self.parameters = np.concatenate(parameters, axis=0)
         self.chis = np.array(chis)
-        # print(objective_function.inspect_asm())
 
     def get_model_parameters(self) -> List[float]:
         return self.parameters.tolist()

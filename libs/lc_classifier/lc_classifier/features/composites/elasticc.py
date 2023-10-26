@@ -7,6 +7,8 @@ from ..extractors.folded_kim_extractor import FoldedKimExtractor
 from ..extractors.harmonics_extractor import HarmonicsExtractor
 from ..extractors.mhps_extractor import MHPSExtractor
 from ..extractors.turbofats_extractor import TurboFatsExtractor
+from ..extractors.spm_extractor import SPMExtractor
+from ..extractors.sn_extractor import SNExtractor
 
 
 class ElasticcFeatureExtractor(FeatureExtractorComposite):
@@ -31,6 +33,15 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
             ),
             FoldedKimExtractor(bands),
             HarmonicsExtractor(bands, use_forced_photo=True),
-            TurboFatsExtractor(bands)
+            TurboFatsExtractor(bands),
+            SPMExtractor(
+                bands, unit,
+                redshift='REDSHIFT_HELIO',
+                extinction_color_excess='MWEBV',
+                forced_phot_prelude=30.0
+            ),
+            SNExtractor(
+                bands, unit, use_forced_photo=True
+            )
         ]
         return feature_extractors

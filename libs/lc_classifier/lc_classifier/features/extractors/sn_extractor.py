@@ -1,0 +1,115 @@
+import numpy as np
+import pandas as pd
+
+from ..core.base import FeatureExtractor, AstroObject
+from typing import List, Tuple, Dict
+
+
+class SNExtractor(FeatureExtractor):
+    def __init__(self, bands: List[str], unit: str, use_forced_photo: bool):
+        self.version = '1.0.0'
+        self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
+        self.use_forced_photo = use_forced_photo
+
+        self.detections_min_len = 1
+
+    def compute_features_single_object(self, astro_object: AstroObject):
+        if self.unit == 'diff_flux':
+            self._sn_features_diff_flux(astro_object)
+        elif self.unit == 'magnitude':
+            raise NotImplementedError('oops')
+        else:
+            raise Exception()
+
+    def _sn_features_diff_flux(self, astro_object: AstroObject):
+        detections = astro_object.detections
+        detections = detections.sort_values('mjd')
+        forced_photometry = astro_object.forced_photometry
+        first_detection = detections.iloc[0]
+        first_detection_mjd = first_detection['mjd']
+
+        features = []
+        for band in self.bands:
+            detections_band = detections[detections['fid'] == band]
+            band_features = {
+                'positive_fraction': np.nan,
+                'n_forced_phot_band_before': np.nan,
+                'dflux_first_det_band': np.nan,
+                'dflux_forced_phot_band': np.nan,
+                'last_flux_before_band': np.nan,
+                'max_flux_before_band': np.nan,
+                'median_flux_before_band': np.nan,
+                'n_forced_phot_band_after': np.nan,
+                'max_flux_after_band': np.nan,
+                'median_flux_after_band': np.nan
+            }
+            if len(detections_band) >= self.detections_min_len:
+                positive_fraction = np.mean(detections_band['brightness'].values > 0)
+                band_features['positive_fraction'] = positive_fraction
+                detections_band = detections_band.sort_values('mjd')
+                first_flux_in_band = detections_band.iloc[0]['brightness']
+            else:
+                first_flux_in_band = np.nan
+
+            if not self.use_forced_photo or forced_photometry is None:
+                features += self._dict_to_features(band_features, band)
+                continue
+
+            forced_photometry_band = forced_photometry[forced_photometry['fid'] == band]
+            if len(forced_photometry_band) == 0:
+                features += self._dict_to_features(band_features, band)
+                continue
+
+            forced_phot_band_before = forced_photometry_band[
+                forced_photometry_band['mjd'] < first_detection_mjd]
+            forced_phot_band_before = forced_phot_band_before.sort_values('mjd')
+
+            band_features['n_forced_phot_band_before'] = len(forced_phot_band_before)
+            band_features['last_flux_before_band'] = forced_phot_band_before.iloc[-1]['brightness']
+            band_features['dflux_first_det_band'] = first_flux_in_band \
+                                                    - band_features['last_flux_before_band']
+            band_features['dflux_forced_phot_band'] = first_flux_in_band \
+                                                    - np.median(forced_phot_band_before['brightness'])
+            band_features['max_flux_before_band'] = np.max(forced_phot_band_before['brightness'])
+            band_features['median_flux_before_band'] = np.median(forced_phot_band_before['brightness'])
+
+            forced_phot_band_after = forced_photometry_band[
+                forced_photometry_band['mjd'] > first_detection_mjd]
+
+            band_features['n_forced_phot_band_after'] = len(forced_phot_band_after)
+            if band_features['n_forced_phot_band_after'] == 0:
+                features += self._dict_to_features(band_features, band)
+                continue
+
+            band_features['max_flux_after_band'] = np.max(forced_phot_band_after['brightness'])
+            band_features['median_flux_after_band'] = np.median(forced_phot_band_after['brightness'])
+
+            features += self._dict_to_features(band_features, band)
+
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
+        )
+
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        astro_object.features = pd.concat(
+            [astro_object.features, features_df],
+            axis=0
+        )
+
+    def _dict_to_features(self, band_features: Dict[str, float], band: str) -> List:
+        features = []
+        for k, v in band_features.items():
+            features.append((k, v, band))
+
+        return features

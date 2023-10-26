@@ -7,7 +7,8 @@ from lc_classifier.features.core.base import AstroObject
 def get_ztf_example(index: int) -> AstroObject:
     folders = [
         'ZTF18abombrp_20231006',
-        'ZTF18aasycma_20231012'
+        'ZTF18aasycma_20231012',
+        'ZTF19aawgxdn_20231025'
     ]
     assert index < len(folders)
 
@@ -32,6 +33,18 @@ def get_ztf_example(index: int) -> AstroObject:
         2: 'r',
         3: 'i'
     }
+
+    is_corrected = True in detections['corrected'].unique()
+    if is_corrected:
+        detections.rename(columns={
+            'magpsf_corr': 'brightness',
+            'sigmapsf_corr': 'e_brightness'
+        }, inplace=True)
+    else:
+        detections.rename(columns={
+            'magpsf': 'brightness',
+            'sigmapsf': 'e_brightness'
+        }, inplace=True)
     detections = detections[
         [
             'candid',
@@ -41,14 +54,11 @@ def get_ztf_example(index: int) -> AstroObject:
             'pid',
             'ra',
             'dec',
-            'magpsf_corr',
-            'sigmapsf_corr',
+            'brightness',
+            'e_brightness',
         ]
     ]
-    detections.rename(columns={
-        'magpsf_corr': 'brightness',
-        'sigmapsf_corr': 'e_brightness'
-    }, inplace=True)
+    detections = detections.dropna(subset=['brightness'])
     detections['sid'] = 'ztf'
     detections['unit'] = 'magnitude'
     detections['fid'] = detections['fid'].map(fid_map)
