@@ -18,7 +18,7 @@ RUN apt-get update && \
 
 RUN pip install poetry
 
-COPY metadata-step/poetry.lock metadata-step/pyproject.toml /app/
+COPY metadata_step/poetry.lock metadata_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 
 WORKDIR /app
@@ -30,11 +30,11 @@ RUN pip install poetry
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 
-COPY metadata-step/metadata-step /app/metadata-step
-COPY metadata-step/scripts /app/scripts
-COPY metadata-step/README.md \
-    metadata-step/settings.py \
-    metadata-step/scribe_schema.avsc \
+COPY metadata_step/metadata_step /app/metadata_step
+COPY metadata_step/scripts /app/scripts
+COPY metadata_step/README.md \
+    metadata_step/settings.py \
+    metadata_step/scribe_schema.avsc \
     /app/
 
 WORKDIR /app
