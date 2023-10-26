@@ -26,9 +26,7 @@ class MagstatsStep(GenericStep):
 
     def _execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded).replace(
-            {np.nan: None}
-        )
+        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
         stats = stats.to_dict("index")
 
         magstats_calculator = MagnitudeStatistics(**messages)
@@ -43,18 +41,12 @@ class MagstatsStep(GenericStep):
         return stats
 
     def _execute_ztf(self, messages: dict):
-        ztf_detections = list(
-            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
-        )
+        ztf_detections = list(filter(lambda d: d["sid"] == "ZTF", messages["detections"]))
         obj_calculator = ObjectStatistics(ztf_detections)
-        stats = obj_calculator.generate_statistics(self.excluded).replace(
-            {np.nan: None}
-        )
+        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
         stats = stats.to_dict("index")
 
-        magstats_calculator = MagnitudeStatistics(
-            detections=ztf_detections, non_detections=messages["non_detections"]
-        )
+        magstats_calculator = MagnitudeStatistics(detections=ztf_detections, non_detections=messages["non_detections"])
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
         magstats = magstats.set_index("aid").replace({np.nan: None})
         for aid in stats:
