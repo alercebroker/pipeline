@@ -4,8 +4,6 @@ from typing import List
 from apf.core.step import GenericStep, get_class
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
-from pprint import pprint
-
 
 class MagstatsStep(GenericStep):
     def __init__(
@@ -28,7 +26,9 @@ class MagstatsStep(GenericStep):
 
     def _execute(self, messages: dict):
         obj_calculator = ObjectStatistics(messages["detections"])
-        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
+        stats = obj_calculator.generate_statistics(self.excluded).replace(
+            {np.nan: None}
+        )
         stats = stats.to_dict("index")
 
         magstats_calculator = MagnitudeStatistics(**messages)
@@ -43,12 +43,18 @@ class MagstatsStep(GenericStep):
         return stats
 
     def _execute_ztf(self, messages: dict):
-        ztf_detections = list(filter(lambda d: d["sid"] == "ZTF", messages["detections"]))
+        ztf_detections = list(
+            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
+        )
         obj_calculator = ObjectStatistics(ztf_detections)
-        stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
+        stats = obj_calculator.generate_statistics(self.excluded).replace(
+            {np.nan: None}
+        )
         stats = stats.to_dict("index")
 
-        magstats_calculator = MagnitudeStatistics(detections=ztf_detections, non_detections=messages["non_detections"])
+        magstats_calculator = MagnitudeStatistics(
+            detections=ztf_detections, non_detections=messages["non_detections"]
+        )
         magstats = magstats_calculator.generate_statistics(self.excluded).reset_index()
         magstats = magstats.set_index("aid").replace({np.nan: None})
         for aid in stats:
@@ -98,7 +104,6 @@ class MagstatsStep(GenericStep):
             ]
 
             for command in commands:
-                pprint(command)
                 self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def post_execute(self, result: dict):
