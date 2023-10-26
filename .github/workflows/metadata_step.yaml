@@ -33,7 +33,7 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  build-magstats-dagger:
+  build-metadata-dagger:
     
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
