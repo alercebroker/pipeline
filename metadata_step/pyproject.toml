@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "metadata-step"
+version = "6.2.1a1"
+description = ""
+authors = ["Pedro Gallardo <pedrogallardorobinson@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+apf-base = { path = "../libs/apf", develop = true }
+methodtools = "^0.4.7"
+numpy = "~1.24.2"
+pandas = "~1.5.3"
+fastavro = { version = "~1.4.12", optional = true }
+prometheus-client = { version = "~0.16.0", optional = true }
+confluent-kafka = { version = "~2.0.2", optional = true }
+
+[tool.poetry.extras]
+apf = ["fastavro", "prometheus-client", "confluent-kafka", "apf_base"]
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+pytest-docker = "^1.0.1"
+
+[tool.black]
+line-length = 120
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step_factory()", extras = ["apf"] }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

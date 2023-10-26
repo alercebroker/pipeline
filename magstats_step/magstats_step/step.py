@@ -4,8 +4,6 @@ from typing import List
 from apf.core.step import GenericStep, get_class
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
 
-from pprint import pprint
-
 
 class MagstatsStep(GenericStep):
     def __init__(
@@ -98,7 +96,6 @@ class MagstatsStep(GenericStep):
             ]
 
             for command in commands:
-                pprint(command)
                 self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def post_execute(self, result: dict):

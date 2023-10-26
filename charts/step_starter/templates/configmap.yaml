@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "<CHARTNAME>.fullname" . }}
+  namespace: {{ .Values.namespace }}
+data:
+  consumer-class: {{ .Values.configmap.consumerClass | default "apf.consumers.KafkaConsumer" }}
+  consumer-topics: {{ .Values.configmap.consumerTopics }}
+  consumer-server: {{ .Values.configmap.consumerServer }}
+  consumer-group-id: {{ .Values.configmap.consumerGroupId }}
+  consume-messages: "{{ .Values.configmap.consumeMessages }}"
+  consume-timeout: "{{ .Values.configmap.consumeTimeout }}"
+  scribe-server: {{ .Values.configmap.scribeServer }}
+  scribe-topic: {{ .Values.configmap.scribeTopic }}
+  metrics-server: {{ .Values.configmap.metricsServer }}
+  metrics-topic: {{ .Values.configmap.metricsTopic }}
+  excluded-calculators: "{{ .Values.configmap.excludedCalculators }}"
