@@ -3,7 +3,7 @@ import unittest
 from survey_parser_plugins.core import ParserSelector, ALeRCEParser
 from survey_parser_plugins.parsers import ATLASParser, ZTFParser
 
-from tests.parsers.utils import get_content
+from utils import get_content
 
 
 class TestParserSelector(unittest.TestCase):
