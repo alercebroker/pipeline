@@ -1,30 +1,16 @@
-import os
-from fastavro import reader
 import unittest
 
 from survey_parser_plugins.core import GenericAlert
 from survey_parser_plugins.parsers import LSSTParser
 
-FILE_PATH = os.path.dirname(__file__)
-ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../data/ATLAS_samples")
-LSST_DATA_PATH = os.path.join(FILE_PATH, "../data/LSST_samples")
-
-
-def get_content(file_path):
-    with open(file_path, "rb") as f:
-        for content in reader(f):
-            return content
+from utils import get_content
 
 
 class TestLSSTParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [
-            get_content(os.path.join(ATLAS_DATA_PATH, f))
-            for f in os.listdir(ATLAS_DATA_PATH)
-        ]
+        self._atlas_sample = [get_content("tests/schemas/atlas/alert.avsc")]
         self._lsst_sample = [
-            get_content(os.path.join(LSST_DATA_PATH, f))
-            for f in os.listdir(LSST_DATA_PATH)
+            get_content("tests/schemas/lsst/elasticc.v0_9_1.alert.avsc")
         ]
 
     def test_can_parse(self):

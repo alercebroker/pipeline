@@ -1,30 +1,24 @@
-import os
-from fastavro.schema import load_schema
-from fastavro.utils import generate_many
 import unittest
 
 from survey_parser_plugins.core import GenericAlert
 from survey_parser_plugins.parsers import ZTFParser
-
-
-def get_content(schema_path):
-    schema = load_schema(schema_path)
-    generator = generate_many(schema, size=10)
-    return [x for x in generator]
+from utils import get_content
 
 
 class TestZTFParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [get_content("tests/data/atlas_schema.avsc")]
+        self._atlas_sample = [get_content("tests/schemas/atlas/alert.avsc")]
         self._ztf_sample = [get_content("tests/schemas/ztf/alert.avsc")]
 
     def test_can_parse(self):
         ztf_message = self._ztf_sample[0]
+        ztf_message["publisher"] = "ZTF"
         response = ZTFParser.can_parse(ztf_message)
         self.assertTrue(response)
 
     def test_cant_parse(self):
         atlas_message = self._atlas_sample[0]
+        atlas_message["publisher"] = "ATLAS"
         response = ZTFParser.can_parse(atlas_message)
         self.assertFalse(response)
 

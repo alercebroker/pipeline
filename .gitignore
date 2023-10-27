@@ -141,3 +141,5 @@ values.staging.yml
 values.production.yml
 *.tgz
 .vscode/
+
+.dir-locals.el

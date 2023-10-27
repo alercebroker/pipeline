@@ -40,10 +40,16 @@ class ATLASParser(SurveyParser):
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
+        science = message.get("cutoutScience") or {}
+        science = science.get("stampData")
+        template = message.get("cutoutTemplate") or {}
+        template = template.get("stampData")
+        difference = message.get("cutoutDifference") or {}
+        difference = difference.get("stampData")
         return {
-            "science": message["cutoutScience"]["stampData"],
+            "science": science,
             "template": None,
-            "difference": message["cutoutDifference"]["stampData"],
+            "difference": difference,
         }
 
     @classmethod

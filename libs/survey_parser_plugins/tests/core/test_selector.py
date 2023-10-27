@@ -1,33 +1,18 @@
-import os
-from fastavro import reader
 import unittest
 
 from survey_parser_plugins.core import ParserSelector, ALeRCEParser
 from survey_parser_plugins.parsers import ATLASParser, ZTFParser
 
-FILE_PATH = os.path.dirname(__file__)
-ATLAS_DATA_PATH = os.path.join(FILE_PATH, "../data/ATLAS_samples")
-ZTF_DATA_PATH = os.path.join(FILE_PATH, "../data/ZTF_samples")
-
-
-def get_content(file_path, is_atlas=False):
-    with open(file_path, "rb") as f:
-        for content in reader(f):
-            if is_atlas:
-                content["candidate"]["filter"] = "o"
-            return content
+from tests.parsers.utils import get_content
 
 
 class TestParserSelector(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [
-            get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True)
-            for f in os.listdir(ATLAS_DATA_PATH)
-        ]
-        self._ztf_sample = [
-            get_content(os.path.join(ZTF_DATA_PATH, f))
-            for f in os.listdir(ZTF_DATA_PATH)
-        ]
+        self._atlas_sample = [get_content("tests/schemas/atlas/alert.avsc")]
+        self._atlas_sample[0]["publisher"] = "ATLAS"
+        self._ztf_sample = [get_content("tests/schemas/ztf/alert.avsc")]
+        self._ztf_sample[0]["publisher"] = "ZTF"
+        self._ztf_sample[0]["candidate"]["fid"] = 1
 
     def test_empty_parser(self):
         parser = ParserSelector()
@@ -66,14 +51,11 @@ class TestParserSelector(unittest.TestCase):
 
 class TestALeRCEParser(unittest.TestCase):
     def setUp(self) -> None:
-        self._atlas_sample = [
-            get_content(os.path.join(ATLAS_DATA_PATH, f), is_atlas=True)
-            for f in os.listdir(ATLAS_DATA_PATH)
-        ]
-        self._ztf_sample = [
-            get_content(os.path.join(ZTF_DATA_PATH, f))
-            for f in os.listdir(ZTF_DATA_PATH)
-        ]
+        self._atlas_sample = [get_content("tests/schemas/atlas/alert.avsc")]
+        self._atlas_sample[0]["publisher"] = "ATLAS"
+        self._ztf_sample = [get_content("tests/schemas/ztf/alert.avsc")]
+        self._ztf_sample[0]["publisher"] = "ZTF"
+        self._ztf_sample[0]["candidate"]["fid"] = 1
 
     def test_init(self):
         parser = ALeRCEParser()

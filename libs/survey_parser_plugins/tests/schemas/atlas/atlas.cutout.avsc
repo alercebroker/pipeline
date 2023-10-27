@@ -1,0 +1,11 @@
+{
+	"namespace": "atlas",
+  	"type": "record",
+    "name": "cutout",
+    "doc": "avro schema for ATLAS cutouts",
+    "version": "0.1",
+    "fields": [
+		{"name": "fileName", "type": "string"},
+        {"name": "stampData", "type": "bytes", "doc": "fits.gz"}
+    ]
+}

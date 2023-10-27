@@ -54,10 +54,16 @@ class ZTFParser(SurveyParser):
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
+        science = message.get("cutoutScience") or {}
+        science = science.get("stampData")
+        template = message.get("cutoutTemplate") or {}
+        template = template.get("stampData")
+        difference = message.get("cutoutDifference") or {}
+        difference = difference.get("stampData")
         return {
-            "science": message["cutoutScience"]["stampData"],
-            "template": message["cutoutTemplate"]["stampData"],
-            "difference": message["cutoutDifference"]["stampData"],
+            "science": science,
+            "template": template,
+            "difference": difference,
         }
 
     @classmethod
