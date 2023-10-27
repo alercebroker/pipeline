@@ -13,12 +13,7 @@ import pickle
 
 
 def test_prv_detections_parser():
-    try:
-        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
-    except SchemaRepositoryError:
-        schema = load_schema(
-            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
-        )
+    schema = load_schema("tests/shared/ztf.alert.prv_candidate.avsc")
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     result = ZTFPreviousDetectionsParser.parse_message(
@@ -38,14 +33,9 @@ def test_prv_detections_parser():
 
 
 def test_ztf_extract_detections_and_non_detections():
-    try:
-        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
-    except SchemaRepositoryError:
-        schema = load_schema(
-            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
-        )
+    schema = load_schema("tests/shared/ztf.alert.prv_candidate.avsc")
     data = list(generate_many(schema, 1))
-    data = list(map(lambda x: {**x, "fid": 1}, data))
+    data = list(map(lambda x: {**x, "fid": 1, "candid": 456}, data))
     alert = {
         "aid": "aid",
         "oid": "oid",
@@ -60,18 +50,8 @@ def test_ztf_extract_detections_and_non_detections():
 
 
 def test_elasticc_extract_detections_and_non_detections():
-    try:
-        dia_source_schema = load_schema("tests/shared/elasticc_prv_candidate.avsc")
-    except SchemaRepositoryError:
-        dia_source_schema = load_schema(
-            "prv_candidates_step/tests/shared/elasticc_prv_candidate.avsc"
-        )
-    try:
-        forced_schema = load_schema("tests/shared/elasticc_forced_schema.avsc")
-    except SchemaRepositoryError:
-        forced_schema = load_schema(
-            "prv_candidates_step/tests/shared/elasticc_forced_schema.avsc"
-        )
+    dia_source_schema = load_schema("tests/shared/elasticc_prv_candidate.avsc")
+    forced_schema = load_schema("tests/shared/elasticc_forced_schema.avsc")
     prv_dia_sources = list(generate_many(dia_source_schema, 1))
     forced_sources = list(generate_many(forced_schema, 1))
     alert = {
@@ -94,12 +74,7 @@ def test_elasticc_extract_detections_and_non_detections():
 
 
 def test_non_detections_parser():
-    try:
-        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
-    except SchemaRepositoryError:
-        schema = load_schema(
-            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
-        )
+    schema = load_schema("tests/shared/ztf.alert.prv_candidate.avsc")
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     result = ZTFNonDetectionsParser.parse_message(

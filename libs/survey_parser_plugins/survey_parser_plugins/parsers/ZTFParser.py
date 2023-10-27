@@ -20,6 +20,8 @@ def _e_ra(dec, fid):
         return ERRORS[fid] / abs(math.cos(math.radians(dec)))
     except ZeroDivisionError:
         return float("nan")
+    except TypeError:
+        return float("nan")
 
 
 class ZTFParser(SurveyParser):
