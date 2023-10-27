@@ -12,15 +12,13 @@ step = { callable = "scripts.run_step:step" }
 [tool.poetry.dependencies]
 apf_base = { path = "../libs/apf", develop = true }
 boto3 = "1.26.69"
-confluent_kafka = "2.0.2"
 numpy = "^1.24.3"
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.12"
 scipy = "1.10.1"
 survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 pymongo = "^4.4.1"
 db-plugins = {path = "../libs/db-plugins", develop = true}
 psycopg2-binary = "^2.9.9"
-
 
 
 [tool.poetry.group.dev.dependencies]

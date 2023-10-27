@@ -1,4 +1,4 @@
-FROM python:3.10-slim as python-base
+FROM python:3.11-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -17,13 +17,12 @@ COPY libs/survey_parser_plugins libs/survey_parser_plugins
 COPY sorting_hat_step/poetry.lock sorting_hat_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins libs/db-plugins
-COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
 
 
-FROM python:3.10-slim as production
+FROM python:3.11-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app /app
