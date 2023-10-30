@@ -74,6 +74,4 @@ _PS1_MultKey = [
     "distpsnr",
 ]
 
-PS1_KEYS = ["oid", "candid", "nmtchps"] + [
-    f"{key}{i}" for key in _PS1_MultKey for i in range(1, 4)
-]
+PS1_KEYS = ["oid", "candid", "nmtchps"] + [f"{key}{i}" for key in _PS1_MultKey for i in range(1, 4)]

@@ -4,6 +4,7 @@ from typing import Dict, List
 from apf.core.step import GenericStep, get_class
 from utils.parse import format_detection
 
+
 class MetadataStep(GenericStep):
     def __init__(self, config, **step_args):
         super().__init__(config=config, **step_args)
@@ -19,11 +20,7 @@ class MetadataStep(GenericStep):
 
     def _produce_scribe(self, result: List[Dict]):
         for data in result:
-            payload = {
-                "type": "upsert",
-                "collection": "metadata",
-                "data": data
-            }
+            payload = {"type": "upsert", "collection": "metadata", "data": data}
             self.scribe_producer.produce({"payload": json.dumps(payload)})
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
@@ -31,7 +28,6 @@ class MetadataStep(GenericStep):
         result = [self._format_detection(message) for message in messages]
         return result
 
-        
     def post_execute(self, result: List[Dict]):
         self._produce_scribe(result)
         return []

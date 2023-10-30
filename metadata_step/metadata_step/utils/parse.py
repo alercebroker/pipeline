@@ -3,23 +3,28 @@ import numpy as np
 from typing import Dict, List
 from constants import REFERENCE_KEYS, GAIA_KEYS, SS_KEYS, PS1_KEYS, DATAQUALITY_KEYS
 
+
 def _clear_nan(value):
     if value == np.nan:
         return None
     return value
 
+
 def _filter_keys(d: Dict, keys: List):
     return {k: _clear_nan(v) for k, v in d.items() if d in keys}
 
+
 # only needs to filter keys
 def format_ss(alert: Dict):
-    alert =  _filter_keys(alert, SS_KEYS)
+    alert = _filter_keys(alert, SS_KEYS)
     return alert
+
 
 # only needs to filter keys
 def format_dataquality(alert: Dict):
     alert = _filter_keys(alert, DATAQUALITY_KEYS)
     return alert
+
 
 # filter + calculate mjd
 def format_reference(alert: Dict):
@@ -28,10 +33,12 @@ def format_reference(alert: Dict):
     new_alert["mjdendref"] = alert["jdendref"] - 2400000.5
     return alert
 
+
 # needs past alerts/database catalog
 def format_gaia(alert: Dict):
     alert = _filter_keys(alert, GAIA_KEYS)
     return alert
+
 
 # this one too
 def format_ps1(alert: Dict):
