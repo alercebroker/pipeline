@@ -35,24 +35,24 @@ def format_reference(alert: Dict):
 
 
 # needs past alerts/database catalog
-def format_gaia(alert: Dict):
+def format_gaia(alert: Dict, catalog = []):
     alert = _filter_keys(alert, GAIA_KEYS)
     return alert
 
 
 # this one too
-def format_ps1(alert: Dict):
+def format_ps1(alert: Dict, catalog = []):
     alert = _filter_keys(alert, PS1_KEYS)
     return alert
 
 
 # formats each alert to send it to scribe psql
-def format_detection(alert: Dict):
+def format_detection(alert: Dict, catalogs: Dict):
     return {
         "oid": alert["oid"],
         "ss": format_ss(alert),
         "reference": format_reference(alert),
-        "gaia": format_gaia(alert),
-        "ps1": format_ps1(alert),
         "dataquality": format_dataquality(alert),
+        "gaia": format_gaia(alert, catalogs["gaia"]),
+        "ps1": format_ps1(alert, catalogs["ps1"]),
     }

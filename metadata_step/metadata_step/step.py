@@ -1,4 +1,3 @@
-import json
 from typing import Dict, List
 
 from apf.core.step import GenericStep, get_class
@@ -18,16 +17,15 @@ class MetadataStep(GenericStep):
         extra_fields.pop("prv_candidates", {})
         return format_detection({**d, **extra_fields})
 
-    def _produce_scribe(self, result: List[Dict]):
-        for data in result:
-            payload = {"type": "upsert", "collection": "metadata", "data": data}
-            self.scribe_producer.produce({"payload": json.dumps(payload)})
+    def _write_metadata_into_db(self, result: List[Dict]):
+        pass
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
     def execute(self, messages: List[Dict]):
-        result = [self._format_detection(message) for message in messages]
+        catalogs = {"ps1": {}, "ss": {}}
+        result = [self._format_detection(message, catalogs) for message in messages]
         return result
 
     def post_execute(self, result: List[Dict]):
-        self._produce_scribe(result)
+        self._write_metadata_into_db(result)
         return []
