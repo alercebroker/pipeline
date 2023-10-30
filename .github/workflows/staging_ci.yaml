@@ -30,7 +30,8 @@ jobs:
         run: |
           cd ci
           poetry run python main.py update-versions staging \
-          correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step
+          correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step \
+          metadata_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step
 
   build-correction-dagger:
     needs: update-packages-dagger
