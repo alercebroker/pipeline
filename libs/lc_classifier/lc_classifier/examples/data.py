@@ -130,8 +130,8 @@ def get_elasticc_example() -> AstroObject:
 
     metadata = metadata[['name', 'value']]
 
-    detections['ra'] = metadata[metadata['name'] == 'RA']['value'].values[0]
-    detections['dec'] = metadata[metadata['name'] == 'DEC']['value'].values[0]
+    detections['ra'] = float(metadata[metadata['name'] == 'RA']['value'].values[0])
+    detections['dec'] = float(metadata[metadata['name'] == 'DEC']['value'].values[0])
     detections['unit'] = 'diff_flux'
 
     is_detected = detections['PHOTFLAG'] > 0

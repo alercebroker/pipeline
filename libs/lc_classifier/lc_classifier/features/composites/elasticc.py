@@ -9,6 +9,8 @@ from ..extractors.mhps_extractor import MHPSExtractor
 from ..extractors.turbofats_extractor import TurboFatsExtractor
 from ..extractors.spm_extractor import SPMExtractor
 from ..extractors.sn_extractor import SNExtractor
+from ..extractors.timespan_extractor import TimespanExtractor
+from ..extractors.coordinate_extractor import CoordinateExtractor
 
 
 class ElasticcFeatureExtractor(FeatureExtractorComposite):
@@ -42,6 +44,8 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
             ),
             SNExtractor(
                 bands, unit, use_forced_photo=True
-            )
+            ),
+            TimespanExtractor(),
+            CoordinateExtractor()
         ]
         return feature_extractors
