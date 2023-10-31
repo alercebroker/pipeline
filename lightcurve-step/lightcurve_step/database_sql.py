@@ -3,7 +3,7 @@ from typing import Callable, ContextManager
 
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker, Session
-from db_plugins.db.sql.models import Detection, NonDetection
+from db_plugins.db.sql.models import Detection, NonDetection, ForcedPhotometry
 
 
 class PSQLConnection:
@@ -50,4 +50,7 @@ def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
 
 
 def _get_sql_forced_photometries(oids, db_sql, parser: Callable = default_parser):
-    return []
+    with db_sql.session() as session:
+        stmt = select(ForcedPhotometry).where(ForcedPhotometry.oid.in_(oids))
+        forced = session.execute(stmt).all()
+        return parser(forced, oids=oids)

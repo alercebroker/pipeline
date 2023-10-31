@@ -1,8 +1,8 @@
 import itertools
 from contextlib import contextmanager
-from typing import Callable, ContextManager, List
+from typing import Callable, ContextManager, Dict, List
 
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import sessionmaker, Session
 from db_plugins.db.sql.models import Reference, Gaia_ztf, Ss_ztf, Dataquality, Ps1_ztf
@@ -30,13 +30,20 @@ class PSQLConnection:
         finally:
             session.close()
 
+def _parse_sql_dict(d: Dict):
+    return {k: v for k, v in d.items() if not k.startswith("_")}
 
-def get_ps1_catalog(oids: List):
-    pass
+def get_ps1_catalog(session: Session, oids: List):
+    stmt = select(Ps1_ztf).where(Ps1_ztf.oid.in_(oids))
+    catalog = session.execute(stmt).all()
+    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
 
 
-def get_gaia_catalog(oids: List):
-    pass
+def get_gaia_catalog(session: Session, oids: List):
+    stmt = select(Gaia_ztf).where(Gaia_ztf.oid.in_(oids))
+    catalog = session.execute(stmt).all()
+    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
+
 
 
 def insert_metadata(session: Session, data: List):

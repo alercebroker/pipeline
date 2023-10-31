@@ -1,7 +1,7 @@
 import numpy as np
 
 from typing import Dict, List
-from constants import REFERENCE_KEYS, GAIA_KEYS, SS_KEYS, PS1_KEYS, DATAQUALITY_KEYS
+from .constants import REFERENCE_KEYS, GAIA_KEYS, SS_KEYS, PS1_KEYS, DATAQUALITY_KEYS
 
 
 def _clear_nan(value):

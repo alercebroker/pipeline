@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from apf.core.step import GenericStep, get_class
-from utils.parse import format_detection
+from metadata_step.utils.parse import format_detection
 
 
 class MetadataStep(GenericStep):
