@@ -17,12 +17,17 @@ from tests.utils import ztf_extra_fields
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return (pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml").absolute()
+    return (
+        pathlib.Path(pytestconfig.rootdir)
+        / "tests/integration/docker-compose.yaml"
+    ).absolute()
 
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    futures = client.create_topics([NewTopic("prv-candidates", num_partitions=1)])
+    futures = client.create_topics(
+        [NewTopic("prv-candidates", num_partitions=1)]
+    )
     for topic, future in futures.items():
         try:
             future.result()
@@ -38,7 +43,9 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
+    )
     return server
 
 
@@ -90,6 +97,7 @@ def produce_messages(topic):
                 }
         producer.produce(message)
 
+
 @pytest.fixture(scope="session")
 def kafka_consumer():
     consumer = KafkaConsumer(
@@ -101,7 +109,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["corrections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer
@@ -119,7 +127,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_detections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer
