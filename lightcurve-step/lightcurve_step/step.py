@@ -138,6 +138,8 @@ class LightcurveStep(GenericStep):
             "parent_candid",
             "has_stamp",
         }
+        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+
         parsed_result = []
         for det in ztf_models:
             det: dict = det[0].__dict__
@@ -155,6 +157,7 @@ class LightcurveStep(GenericStep):
                 aid=oids[det["oid"]],
                 sid="ZTF",
                 tid="ZTF",
+                fid=FID[det["fid"]],
                 mag=det["magpsf"],
                 e_mag=det["sigmapsf"],
                 mag_corr=det["magpsf_corr"],
