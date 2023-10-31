@@ -21,10 +21,10 @@ pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
 
 [tool.poetry.scripts]
-step = { callable = "correction._step:run_step", extras = ["apf"] }
+step = { callable = "correction._step:run_step" }
 
 [tool.black]
-line-length = 120
+line-length = 79
 
 [build-system]
 requires = ["poetry-core"]
