@@ -126,11 +126,6 @@ class LightcurveStep(GenericStep):
             "fid",
             "ra",
             "dec",
-            "magpsf",
-            "sigmapsf",
-            "magpsf_corr",
-            "sigmapsf_corr",
-            "sigmapsf_corr_ext",
             "isdiffpos",
             "corrected",
             "dubious",
@@ -150,6 +145,8 @@ class LightcurveStep(GenericStep):
                     continue
                 if field not in GENERIC_FIELDS:
                     extra_fields[field] = value
+                if field == "fid":
+                    extra_fields[field] = FID[value]
                 else:
                     parsed_det[field] = value
             parsed = MongoDetection(
@@ -157,7 +154,6 @@ class LightcurveStep(GenericStep):
                 aid=oids[det["oid"]],
                 sid="ZTF",
                 tid="ZTF",
-                fid=FID[det["fid"]],
                 mag=det["magpsf"],
                 e_mag=det["sigmapsf"],
                 mag_corr=det["magpsf_corr"],
