@@ -17,7 +17,9 @@ class PSQLConnection:
         )
 
     def __format_db_url(self, config):
-        return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+        return (
+            f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+        )
 
     @contextmanager
     def session(self) -> Callable[..., ContextManager[Session]]:
@@ -30,8 +32,10 @@ class PSQLConnection:
         finally:
             session.close()
 
+
 def _parse_sql_dict(d: Dict):
     return {k: v for k, v in d.items() if not k.startswith("_")}
+
 
 def get_ps1_catalog(session: Session, oids: List):
     stmt = select(Ps1_ztf).where(Ps1_ztf.oid.in_(oids))
@@ -43,7 +47,6 @@ def get_gaia_catalog(session: Session, oids: List):
     stmt = select(Gaia_ztf).where(Gaia_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
     return [_parse_sql_dict(c[0].__dict__) for c in catalog]
-
 
 
 def insert_metadata(session: Session, data: List):
@@ -67,9 +70,7 @@ def insert_metadata(session: Session, data: List):
 
     # SS
     ss_stmt = insert(Ss_ztf).values(accumulated_metadata["ss"])
-    ss_stmt = ss_stmt.on_conflict_do_update(
-        constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid)
-    )
+    ss_stmt = ss_stmt.on_conflict_do_update(constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid))
     session.connection().execute(ss_stmt)
 
     # Dataquality
