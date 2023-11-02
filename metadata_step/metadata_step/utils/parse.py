@@ -11,7 +11,7 @@ def _clear_nan(value):
 
 
 def _filter_keys(d: Dict, keys: List):
-    return {k: _clear_nan(v) for k, v in d.items() if d in keys}
+    return {k: _clear_nan(v) for k, v in d.items() if k in keys}
 
 
 # only needs to filter keys
