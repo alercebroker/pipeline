@@ -1,0 +1,71 @@
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+configmap:
+  consumeMessages: "100"
+  consumeTimeout: "10"
+  consumerGroup: lc_classifier_mlp
+  consumerTopics: features_elasticc
+  internalServer: ${kafka_server}
+  kafka:
+    saslMechanism: SCRAM-SHA-512
+    securityProtocol: SASL_SSL
+  mapperClass: alerce_classifiers.tinkywinky.mapper.TinkyWinkyMapper
+  metricsTopic: metrics_elasticc
+  modelClass: alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier
+  modelPath: ${model_path}
+  modelVersion: 1.1.0
+  producerClass: apf.producers.kafka.KafkaSchemalessProducer
+  producerTopicFormat: lc_classifier_tinkywinky_%s
+  publicServer: ${kafka_public_server}
+  scribeParserClass: lc_classification.core.parsers.scribe_parser.ScribeParser
+  scribeTopic: w_object_elasticc
+  stepParserClass: lc_classification.core.parsers.elasticc_parser.ElasticcParser
+  stream: elasticc
+extraEnvVariables:
+- name: METRICS_SOURCE
+  value: 'tinkywinky-classifier'
+- name: METRICS_SURVEY
+  value: LSST
+image:
+  repository: ghcr.io/alercebroker/lc_classification_step_mlp
+  tag: 6.1.1a30
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+namespace: mlp-classifier
+resources:
+  requests:
+    cpu: 500m
+    memory: 600M
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    producer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    scribe:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}

@@ -33,7 +33,7 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py update-versions staging \
+                poetry run python main.py update-versions production \
                 alert_archiving_step correction_step early_classification_step feature_step \
                 lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
                 s3_step scribe sorting_hat_step watchlist_step xmatch_step --version=${{ inputs.tag }}
@@ -229,6 +229,8 @@ jobs:
         steps:
           - name: Checkout
             uses: actions/checkout@v3
+            with:
+                ref: main
           - name: Configure AWS credentials
             id: creds
             uses: aws-actions/configure-aws-credentials@v3
@@ -269,12 +271,60 @@ jobs:
                 watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
                 xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
 
+    deploy_elasticc:
+        needs: release-chart
+        runs-on: ubuntu-latest
+        permissions:
+          id-token: write
+          contents: read
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+            with:
+                ref: main
+          - name: Configure AWS credentials
+            id: creds
+            uses: aws-actions/configure-aws-credentials@v3
+            with:
+              role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
+              aws-region: us-east-1
+              output-credentials: true
+              unset-current-credentials: true
+          - name: Install poetry
+            run: pipx install poetry
+          - name: Set up Python
+            uses: actions/setup-python@v4
+            with:
+              python-version: 3.11
+              cache: 'poetry'
+          - name: Install dependencies
+            run: |
+              cd ci
+              poetry install
+          - name: Run dagger pipeline
+            run: |
+                cd ci
+                poetry run python main.py deploy production \
+                correction-step-elasticc --values=correction_step-helm-values-elasticc --folder=correction_step \
+                feature-step-elasticc --values=feature_step-helm-values-elasticc --folder=feature_step \
+                balto-classifier --chart=lc-classifier-step --values=balto-helm-values --folder=lc_classification_step \
+                messi-classifier --chart=lc-classifier-step --values=messi-helm-values --folder=lc_classification_step \
+                tinkywinky-classifier --chart=lc-classifier-step --values=tinkywinky-helm-values --folder=lc_classification_step \
+                lightcurve-step-elasticc --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step \
+                magstats-step-elasticc --values=magstats_step-helm-values-elasticc --folder=magstats_step \
+                prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --folder=prv_candidates_step \
+                scribe-elasticc --chart=scribe --values=scribe-helm-values-elasticc --folder=scribe \
+                sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --folder=sorting_hat_step \
+                xmatch-step-elasticc --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
+
     create_realease:
         needs: deploy_production
         runs-on: ubuntu-latest
         steps:
           - name: Checkout code
             uses: actions/checkout@v3
+            with:
+                ref: main
           - name: Create Release
             id: create_release
             uses: actions/create-release@v1
