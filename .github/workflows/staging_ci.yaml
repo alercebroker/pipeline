@@ -34,6 +34,15 @@ jobs:
           lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
           s3_step scribe sorting_hat_step watchlist_step xmatch_step
 
+  build-alert-archiving-dagger:
+      needs: update_versions
+      uses: ./.github/workflows/template_build_with_dagger.yaml
+      with:
+          stage: production
+          extra-args: alert_archiving_step
+      secrets:
+          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   build-correction-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
