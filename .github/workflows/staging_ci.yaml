@@ -35,7 +35,7 @@ jobs:
           s3_step scribe sorting_hat_step watchlist_step xmatch_step
 
   build-alert-archiving-dagger:
-      needs: update_versions
+      needs: update-packages-dagger
       uses: ./.github/workflows/template_build_with_dagger.yaml
       with:
           stage: production
