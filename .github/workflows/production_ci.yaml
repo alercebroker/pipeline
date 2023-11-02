@@ -33,9 +33,10 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py update-versions production \
-                correction_step early_classification_step feature_step lc_classification_step lightcurve-step magstats_step prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step \
-                --version=${{ inputs.tag }}
+                poetry run python main.py update-versions staging \
+                alert_archiving_step correction_step early_classification_step feature_step \
+                lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
+                s3_step scribe sorting_hat_step watchlist_step xmatch_step --version=${{ inputs.tag }}
 
     build-correction-dagger:
         needs: update_versions
@@ -239,22 +240,24 @@ jobs:
               poetry install
           - name: Run dagger pipeline
             run: |
-              cd ci
-              poetry run python main.py deploy production \
-              correction-step --values=correction_step-helm-values --folder=correction_step \
-              early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --folder=early_classification_step \
-              feature-step --values=feature_step-helm-values --folder=feature_step \
-              lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
-              lightcurve-step --values=lightcurve-step-helm-values \
-              magstats-step --values=magstats_step-helm-values --folder=magstats_step \
-              prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
-              s3-step --values=s3_step-helm-values --folder=s3_step \
-              scribe-mongo --chart=scribe --values=scribe-helm-values --folder=scribe \
-              scribe-psql --chart=scribe --values=scribe-psql-helm-values --folder=scribe \
-              sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
-              sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step \
-              watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
-              xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
+                cd ci
+                poetry run python main.py deploy staging \
+                alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --folder=alert_archiving_step \
+                correction-step --values=correction_step-helm-values --folder=correction_step \
+                early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --folder=early_classification_step \
+                feature-step --values=feature_step-helm-values --folder=feature_step \
+                lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
+                lightcurve-step --values=lightcurve-step-helm-values \
+                magstats-step --values=magstats_step-helm-values --folder=magstats_step \
+                metadata-step --values=metadata_step-helm-values --folder=metadata_step \
+                prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
+                s3-step --values=s3_step-helm-values --folder=s3_step \
+                scribe-mongo --chart=scribe --values=scribe-helm-values --folder=scribe \
+                scribe-psql --chart=scribe --values=scribe-psql-helm-values --folder=scribe \
+                sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
+                sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step \
+                watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
+                xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
 
     create_realease:
         needs: deploy_production
