@@ -18,4 +18,6 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
     corr = detections["mag"] * FACTOR
     e_corr = detections["e_mag"] * FACTOR
-    return pd.DataFrame({"mag_corr": corr, "e_mag_corr": e_corr, "e_mag_corr_ext": e_corr})
+    return pd.DataFrame(
+        {"mag_corr": corr, "e_mag_corr": e_corr, "e_mag_corr_ext": e_corr}
+    )

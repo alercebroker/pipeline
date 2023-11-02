@@ -32,7 +32,10 @@ class CorrectionStep(GenericStep):
         import os
         from .settings import settings_creator
         from prometheus_client import start_http_server
-        from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
+        from apf.metrics.prometheus import (
+            PrometheusMetrics,
+            DefaultPrometheusMetrics,
+        )
 
         settings = settings_creator()
         level = logging.INFO
@@ -42,24 +45,35 @@ class CorrectionStep(GenericStep):
         logger = logging.getLogger("alerce")
         logger.setLevel(level)
 
-        fmt = logging.Formatter("%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+        fmt = logging.Formatter(
+            "%(asctime)s %(levelname)7s %(name)36s: %(message)s",
+            "%Y-%m-%d %H:%M:%S",
+        )
         handler = logging.StreamHandler()
         handler.setFormatter(fmt)
         handler.setLevel(level)
 
         logger.addHandler(handler)
 
-        prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
+        prometheus_metrics = (
+            PrometheusMetrics()
+            if settings["PROMETHEUS"]
+            else DefaultPrometheusMetrics()
+        )
         if settings["PROMETHEUS"]:
             start_http_server(8000)
 
-        return CorrectionStep(config=settings, prometheus_metrics=prometheus_metrics)
+        return CorrectionStep(
+            config=settings, prometheus_metrics=prometheus_metrics
+        )
 
     @classmethod
     def pre_produce(cls, result: dict):
         detections = pd.DataFrame(result["detections"]).groupby("aid")
         try:  # At least one non-detection
-            non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+            non_detections = pd.DataFrame(result["non_detections"]).groupby(
+                "aid"
+            )
         except KeyError:  # to reproduce expected error for missing non-detections in loop
             non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
         output = []
@@ -68,6 +82,12 @@ class CorrectionStep(GenericStep):
                 nd = non_detections.get_group(aid).to_dict("records")
             except KeyError:
                 nd = []
+            det_records = dets.to_dict("records")
+            for det in det_records:
+                det["candid"] = str(det["candid"])
+                det["parent_candid"] = (
+                    str(det["parent_candid"]) if det["parent_candid"] else None
+                )
             output.append(
                 {
                     "aid": aid,
@@ -91,7 +111,9 @@ class CorrectionStep(GenericStep):
     def execute(cls, message: dict) -> dict:
         corrector = Corrector(message["detections"])
         detections = corrector.corrected_as_records()
-        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        non_detections = pd.DataFrame(
+            message["non_detections"]
+        ).drop_duplicates(["oid", "fid", "mjd"])
         coords = corrector.coordinates_as_records()
         # delet dis
         return {
@@ -106,7 +128,9 @@ class CorrectionStep(GenericStep):
 
     def produce_scribe(self, detections: list[dict]):
         for detection in detections:
-            detection = detection.copy()  # Prevent further modification for next step
+            detection = (
+                detection.copy()
+            )  # Prevent further modification for next step
             if not detection.pop("new"):
                 continue
             candid = detection.pop("candid")
@@ -114,16 +138,24 @@ class CorrectionStep(GenericStep):
             set_on_insert = not detection.get("has_stamp", False)
             extra_fields = detection["extra_fields"].copy()
             # remove possible elasticc extrafields
-            for to_remove in ["prvDiaSources", "prvDiaForcedSources", "fp_hists"]:
+            for to_remove in [
+                "prvDiaSources",
+                "prvDiaForcedSources",
+                "fp_hists",
+            ]:
                 if to_remove in extra_fields:
                     extra_fields.pop(to_remove)
 
             if "diaObject" in extra_fields:
-                extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
+                extra_fields["diaObject"] = pickle.loads(
+                    extra_fields["diaObject"]
+                )
 
             detection["extra_fields"] = extra_fields
             scribe_data = {
-                "collection": "forced_photometry" if is_forced else "detection",
+                "collection": "forced_photometry"
+                if is_forced
+                else "detection",
                 "type": "update",
                 "criteria": {"_id": candid, "candid": candid},
                 "data": detection,
