@@ -141,3 +141,6 @@ values.staging.yml
 values.production.yml
 *.tgz
 .vscode/
+
+.terraform/
+.terraform.lock.hcl

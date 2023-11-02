@@ -1,0 +1,58 @@
+namespace: correction-step-elasticc
+resources:
+  requests:
+    cpu: 100m
+    memory: 50Mi
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              values:
+                - elasticc-pipeline
+
+configmap:
+  consumerTopics: "lightcurve_elasticc"
+  consumerServer: "${kafka_server}"
+  producerServer: "${kafka_server}"
+  producerTopic: "correction_elasticc"
+  scribeServer: "${kafka_server}"
+  scribeTopic: "w_detection_elasticc"
+  metricsServer: "${kafka_server}"
+  metricsTopic: "metrics_elasticc"
+  consumeMessages: "250"
+  consumeTimeout: "10"
+  producerMessageMaxBytes: "6291456"
+
+imageCredentials:
+  registry: "ghcr.io"
+  username: "${ghcr_username}"
+  password: "${ghcr_password}"
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+    producer:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+    scribe:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+    metrics:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80

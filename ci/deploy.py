@@ -144,3 +144,7 @@ def deploy_staging(packages: dict, dry_run: bool):
 
 def deploy_production(packages: dict, dry_run: bool):
     anyio.run(deploy_package, packages, "staging", "staging", dry_run)
+
+
+def deploy_elasticc(packages: dict, dry_run: bool):
+    anyio.run(deploy_package, packages, "production", "production", dry_run)
