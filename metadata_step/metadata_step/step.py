@@ -16,7 +16,9 @@ class MetadataStep(GenericStep):
         self.db = db_sql
 
     def _format_detection(self, d: Dict, catalogs: Dict):
+        FID = {"g": 1, "r": 2}
         d = d.copy()
+        d["fid"] = FID[d["fid"]]
         extra_fields = d.pop("extra_fields")
         extra_fields.pop("fp_hists", {})
         extra_fields.pop("prv_candidates", {})
