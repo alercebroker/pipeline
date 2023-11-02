@@ -188,6 +188,7 @@ jobs:
 
     release-chart:
         needs:
+            - build-alert-archiving-dagger
             - build-correction-dagger
             - build-early-classification-dagger
             - build-feature-dagger
