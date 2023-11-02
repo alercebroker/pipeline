@@ -198,6 +198,7 @@ class LightcurveStep(GenericStep):
                     **forced[0].__dict__,
                     aid=oids[forced[0].__dict__["oid"]],
                     sid="ZTF",
+                    tid="ZTF",
                     candid=forced[0].__dict__["oid"] + str(forced[0].__dict__["pid"]),
                 ),
                 "new": False,
