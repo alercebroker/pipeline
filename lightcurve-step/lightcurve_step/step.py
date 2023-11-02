@@ -146,7 +146,7 @@ class LightcurveStep(GenericStep):
                 if field not in GENERIC_FIELDS:
                     extra_fields[field] = value
                 if field == "fid":
-                    extra_fields[field] = FID[value]
+                    parsed_det[field] = FID[value]
                 else:
                     parsed_det[field] = value
             parsed = MongoDetection(
