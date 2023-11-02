@@ -35,7 +35,6 @@ class LightcurveStep(GenericStep):
         self.db_mongo = db_mongo
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
-        self.last_mjd = {}
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -198,6 +197,7 @@ class LightcurveStep(GenericStep):
                     **forced[0].__dict__,
                     aid=oids[forced[0].__dict__["oid"]],
                     sid="ZTF",
+                    tid="ZTF",
                     candid=forced[0].__dict__["oid"] + str(forced[0].__dict__["pid"]),
                 ),
                 "new": False,

@@ -76,6 +76,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "metadata_step.fullname" . }}
                   key: scribe-topic
+            - name: SQL_SECRET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "metadata_step.fullname" . }}
+                  key: sql-secret-name
             - name: METRICS_SERVER
               valueFrom:
                 configMapKeyRef:

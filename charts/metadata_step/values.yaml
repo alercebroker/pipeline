@@ -46,10 +46,11 @@ configmap:
   consumerTopics: ""
   consumerServer: ""
   consumerGroupId: ""
-  consumerMessages: "250"
+  consumeMessages: "250"
   consumeTimeout: "10"
   scribeServer: ""
   scribeTopic: ""
+  sqlSecretName: ""
   metricsServer: ""
   metricsTopic: ""
 
