@@ -1,8 +1,11 @@
 import os
 from fastavro import schema
+from credentials import get_credentials
 
 ## Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
+
+DATABASE = get_credentials(os.environ["SQL_SECRET_NAME"])
 
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
@@ -95,4 +98,5 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "LOGGING_DEBUG": LOGGING_DEBUG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+    "DATABASE": DATABASE
 }

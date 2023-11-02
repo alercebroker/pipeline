@@ -4,8 +4,9 @@ from metadata_step.utils.database import (
     get_ps1_catalog,
     insert_metadata,
 )
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from db_plugins.db.sql.models import Detection, Gaia_ztf, Object, Ps1_ztf
+from db_plugins.db.sql.models import Detection, Gaia_ztf, Object, Ps1_ztf, Ss_ztf
 from tests.data.mocks import object_mocks, detection_mocks, gaia_mocks, ps1_mocks
 
 config = {
@@ -47,15 +48,71 @@ def test_metadata_insertion(psql_service):
 
     data = [
         {
-            "oid": "ZTF",
-            "ss": {},
-            "reference": {},
-            "dataquality": {},
-            "gaia": {},
-            "ps1": {},
+            "oid": "ZTF00llmn",
+            "ss": {
+                "oid": "ZTF00llmn",
+                "candid": 987654321,
+                "ssdistnr": 93.00,
+                "ssmagnr": 39.00,
+                "ssnamenr": "neimu",
+            },
+            "reference": {
+                "oid": "ZTF00llmn",
+                "rfid": 99,
+                "candid": 987654321,
+                "fid": 1,
+                "ranr": 11.11,
+                "decnr": 22.22,
+                "mjdstartref": 55500,
+                "mjdendref": 56600,
+                "nframesref": 1,
+            },
+            "dataquality": {
+                "candid": 1234567890,
+                "oid": "ZTF00llmn",
+                "fid": 1,
+                "xpos": 0,
+                "ypos": 0,
+            },
+            "gaia": {
+                "oid": "ZTF00llmn",
+                "candid": 987654321,
+                "neargaia": 55.55,
+                "unique1": False,
+            },
+            "ps1": {
+                "oid": "ZTF00llmn",
+                "candid": 1234567890,
+                "objectidps1": 15.11,
+                "objectidps2": 25.22,
+                "objectidps3": 35.33,
+                "nmtchps": 1,
+                "unique1": False,
+                "unique2": False,
+                "unique3": False,
+            },
         }
     ]
 
-    # with conn.session() as session:
-    #    insert_metadata(session, data)
-    #    # perform queries to make sure they were inserted/updated
+    with conn.session() as session:
+        insert_metadata(session, data)
+        session.commit()
+        # perform queries to make sure they were inserted/updated
+        ss_result = session.execute(select(Ss_ztf).where(Ss_ztf.oid == "ZTF00llmn"))
+        ps1_result = session.execute(
+            select(Ps1_ztf)
+            .where(Ps1_ztf.oid == "ZTF00llmn")
+            .where(Ps1_ztf.candid == 1234567890)
+        )
+        gaia_result = session.execute(
+            select(Gaia_ztf)
+            .where(Ps1_ztf.oid == "ZTF00llmn")
+            .where(Ps1_ztf.candid == 987654321)
+        )
+        ss_result = list(ss_result)[0][0].__dict__
+        ps1_result = list(ps1_result)[0][0].__dict__
+        gaia_result = list(gaia_result)[0][0].__dict__
+
+        assert ss_result["ssnamenr"] == "neimu"
+        assert ps1_result["unique1"] is False
+        assert gaia_result["unique1"] is False

@@ -37,12 +37,18 @@ def format_reference(alert: Dict):
 # needs past alerts/database catalog
 def format_gaia(alert: Dict, catalog = []):
     alert = _filter_keys(alert, GAIA_KEYS)
+    # TODO: update "unique1" value when needed
+    alert["unique1"] = True
     return alert
 
 
 # this one too
 def format_ps1(alert: Dict, catalog = []):
     alert = _filter_keys(alert, PS1_KEYS)
+    # TODO: update "uniqueX" values when needed
+    alert["unique1"] = True
+    alert["unique2"] = True
+    alert["unique3"] = True
     return alert
 
 

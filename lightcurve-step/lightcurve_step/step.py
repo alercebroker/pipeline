@@ -35,7 +35,6 @@ class LightcurveStep(GenericStep):
         self.db_mongo = db_mongo
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
-        self.last_mjd = {}
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:

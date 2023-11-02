@@ -54,8 +54,9 @@ def insert_metadata(session: Session, data: List):
     accumulated_metadata = itertools.accumulate(
         data,
         accumulate,
-        {"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []},
+        initial={"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []},
     )
+    accumulated_metadata = list(accumulated_metadata)[-1]
 
     # Reference
     reference_stmt = insert(Reference).values(accumulated_metadata["reference"])
