@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from apf.core.step import GenericStep, get_class
+from apf.core.step import GenericStep
 from metadata_step.utils.parse import format_detection
 from metadata_step.utils.database import (
     PSQLConnection,
@@ -13,8 +13,6 @@ from metadata_step.utils.database import (
 class MetadataStep(GenericStep):
     def __init__(self, config, db_sql: PSQLConnection, **step_args):
         super().__init__(config=config, **step_args)
-        cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
-        self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
         self.db = db_sql
 
     def _format_detection(self, d: Dict, catalogs: Dict):

@@ -22,15 +22,6 @@ CONSUMER_CONFIG = {
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
 }
 
-SCRIBE_PRODUCER_CONFIG = {
-    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
-    "PARAMS": {
-        "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
-    },
-    "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-    "SCHEMA": schema.load_schema("scribe_schema.avsc"),
-}
-
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
@@ -86,17 +77,11 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("METRICS_KAFKA_USERNAME")
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("METRICS_KAFKA_PASSWORD")
-if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("SCRIBE_KAFKA_USERNAME")
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("SCRIBE_KAFKA_PASSWORD")
 
 ## Step Configuration
 STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "LOGGING_DEBUG": LOGGING_DEBUG,
-    "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "DATABASE": DATABASE
 }

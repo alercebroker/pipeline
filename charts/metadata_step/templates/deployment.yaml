@@ -66,16 +66,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "metadata_step.fullname" . }}
                   key: consumer-group-id
-            - name: SCRIBE_PRODUCER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "metadata_step.fullname" . }}
-                  key: scribe-server
-            - name: SCRIBE_PRODUCER_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "metadata_step.fullname" . }}
-                  key: scribe-topic
             - name: SQL_SECRET_NAME
               valueFrom:
                 configMapKeyRef:

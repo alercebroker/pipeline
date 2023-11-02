@@ -31,7 +31,7 @@ def format_reference(alert: Dict):
     new_alert = _filter_keys(alert, REFERENCE_KEYS)
     new_alert["mjdstartref"] = alert["jdstartref"] - 2400000.5
     new_alert["mjdendref"] = alert["jdendref"] - 2400000.5
-    return alert
+    return new_alert
 
 
 # needs past alerts/database catalog
