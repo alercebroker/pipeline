@@ -11,7 +11,7 @@ class GPDRWExtractor(FeatureExtractor):
     def __init__(self, bands: List[str], unit: str):
         self.version = '1.0.0'
         self.bands = bands
-        valid_units = ['magnitude']
+        valid_units = ['magnitude', 'diff_flux']
         if unit not in valid_units:
             raise ValueError(f'{unit} is not a valid unit ({valid_units})')
         self.unit = unit

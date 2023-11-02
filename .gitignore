@@ -131,3 +131,5 @@ dmypy.json
 __SUCCESS__
 
 flycheck*
+
+libs/lc_classifier/lc_classifier/examples/secrets
