@@ -95,6 +95,8 @@ def produce_messages(topic):
                     "prvDiaSources": b"bainari2",
                     "diaObject": pickle.dumps("bainari2"),
                 }
+            else:
+                detection["extra_fields"] = {"field": "value"}
         producer.produce(message)
 
 
