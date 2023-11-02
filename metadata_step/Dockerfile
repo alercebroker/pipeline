@@ -36,6 +36,7 @@ COPY metadata_step/scripts /app/scripts
 COPY metadata_step/README.md \
     metadata_step/settings.py \
     metadata_step/scribe_schema.avsc \
+    metadata_step/credentials.py \
     /app/
 
 WORKDIR /app
