@@ -27,6 +27,7 @@ class MetadataStep(GenericStep):
     def _write_metadata_into_db(self, result: List[Dict]):
         with self.db.session() as session:
             insert_metadata(session, result)
+            session.commit()
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
     def execute(self, messages: List[Dict]):
