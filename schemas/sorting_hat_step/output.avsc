@@ -1,20 +1,4 @@
-STAMPS = {
-    "type": "record",
-    "name": "stamps",
-    "fields": [
-        {"name": "science", "type": ["null", "bytes"], "default": None},
-        {"name": "template", "type": ["null", "bytes"], "default": None},
-        {"name": "difference", "type": ["null", "bytes"], "default": None},
-    ],
-}
-
-EXTRA_FIELDS = {
-    "type": "map",
-    "values": ["null", "int", "float", "string", "bytes"],
-    "default": {},
-}
-
-SCHEMA = {
+{
     "type": "record",
     "doc": "Multi stream alert of any telescope/survey",
     "name": "alerce.alert",
@@ -36,8 +20,23 @@ SCHEMA = {
         {"name": "e_dec", "type": "float"},
         {
             "name": "extra_fields",
-            "type": EXTRA_FIELDS,
+            "type": {
+                "type": "map",
+                "values": ["null", "int", "float", "string", "bytes"],
+                "default": {},
+            },
         },
-        {"name": "stamps", "type": STAMPS},
+        {
+            "name": "stamps",
+            "type": {
+                "type": "record",
+                "name": "stamps",
+                "fields": [
+                    {"name": "science", "type": ["null", "bytes"], "default": None},
+                    {"name": "template", "type": ["null", "bytes"], "default": None},
+                    {"name": "difference", "type": ["null", "bytes"], "default": None},
+                ],
+            }
+        },
     ],
 }
