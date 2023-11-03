@@ -8,10 +8,16 @@ class HarmonicsExtractor(FeatureExtractor):
     def __init__(
             self,
             bands: List[str],
+            unit: str,
             use_forced_photo: bool,
             n_harmonics: int = 7):
+
         self.version = '1.0.0'
         self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
         self.use_forced_photo = use_forced_photo
         self.n_harmonics = n_harmonics
         self.degrees_of_freedom = self.n_harmonics * 2 + 1
@@ -23,6 +29,7 @@ class HarmonicsExtractor(FeatureExtractor):
                 observations = pd.concat([
                     observations,
                     astro_object.forced_photometry], axis=0)
+        observations = observations[observations['unit'] == self.unit]
         observations = observations[observations['brightness'].notna()]
         observations = observations[observations['e_brightness'] > 0.0]
         return observations

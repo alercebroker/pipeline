@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject
+from typing import List
 
 
 def get_ztf_example(index: int) -> AstroObject:
@@ -198,6 +199,73 @@ def get_elasticc_example_2() -> AstroObject:
     return astro_object
 
 
+def get_ztf_forced_training_examples() -> List[AstroObject]:
+    ztf_data = pd.read_parquet(
+        os.path.join(
+            os.path.dirname(__file__),
+            'ztf_forced_examples_training.parquet'
+        )
+    )
+    print(ztf_data.iloc[0])
+
+    def df_to_astro_object(df):
+        df['detected'] = np.abs(df['forcediffimsnr']) > 5.0
+        diff_flux = df[[
+            'index', 'forcediffimflux',
+            'forcediffimfluxunc', 'fid',
+            'mjd', 'detected'
+        ]].copy()
+        diff_flux.rename(columns={
+            'forcediffimflux': 'brightness',
+            'forcediffimfluxunc': 'e_brightness'
+        }, inplace=True)
+        diff_flux['unit'] = 'diff_flux'
+
+        magnitude = df[[
+            'index', 'mag_tot',
+            'sigma_mag_tot', 'fid',
+            'mjd', 'detected'
+        ]].copy()
+        magnitude.rename(columns={
+            'mag_tot': 'brightness',
+            'sigma_mag_tot': 'e_brightness'
+        }, inplace=True)
+        magnitude['unit'] = 'magnitude'
+
+        df = pd.concat([diff_flux, magnitude], axis=0)
+        df['sid'] = 'ztf'
+        df['tid'] = 'ztf_telescope'
+        df['candid'] = np.nan
+        df['pid'] = 'ztf_forced_phot_service'
+
+        # TODO: complete this later
+        df['ra'] = np.nan
+        df['dec'] = np.nan
+
+        metadata = pd.DataFrame(
+            [
+                ["aid", "aid_"+df.index.values[0]],
+                ["oid", df.index.values[0]]
+            ],
+            columns=["name", "value"]
+        )
+
+        astro_object = AstroObject(
+            detections=df[df['detected']],
+            forced_photometry=df[~df['detected']],
+            metadata=metadata
+        )
+        return astro_object
+    
+    oids = ztf_data.index.unique()
+    astro_objects = []
+    for oid in oids:
+        astro_object = df_to_astro_object(ztf_data.loc[oid].copy())
+        astro_objects.append(astro_object)
+
+    return astro_objects
+
+
 if __name__ == '__main__':
-    astro_object = get_elasticc_example()
-    print(astro_object)
+    astro_objects = get_ztf_forced_training_examples()
+    print(astro_objects[0])

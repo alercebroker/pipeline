@@ -133,3 +133,4 @@ __SUCCESS__
 flycheck*
 
 libs/lc_classifier/lc_classifier/examples/secrets
+training/lc_classifier_ztf/feature_computation/config.py

@@ -1,5 +1,6 @@
 import numba
 import numpy as np
+from .base import AstroObject
 
 
 @numba.jit(nopython=True)

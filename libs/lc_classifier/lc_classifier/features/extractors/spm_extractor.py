@@ -41,7 +41,7 @@ class SPMExtractor(FeatureExtractor):
                 raise ValueError(f'{band} is not a valid band')
 
         self.bands = bands
-        valid_units = ['magnitude', 'diff_flux']
+        valid_units = ['diff_flux']
         if unit not in valid_units:
             raise ValueError(f'{unit} is not a valid unit ({valid_units})')
         self.unit = unit
@@ -57,33 +57,14 @@ class SPMExtractor(FeatureExtractor):
             observations = pd.concat([
                 observations,
                 astro_object.forced_photometry], axis=0)
+
+        observations = observations[observations['unit'] == self.unit]
         observations = observations[observations['brightness'].notna()]
         if self.forced_phot_prelude is not None:
             before_prelude = mjd_first_detection - self.forced_phot_prelude
             observations = observations[observations['mjd'] > before_prelude]
         observations['mjd'] -= mjd_first_detection
         return observations
-
-    def convert_units(self, observations: pd.DataFrame) -> pd.DataFrame:
-        if self.unit == 'diff_flux':
-            return observations
-        elif self.unit == 'magnitude':
-            observations = observations.copy()
-
-            mag = observations['brightness'].values
-            mag_error = observations['e_brightness'].values
-
-            flux = mag_to_flux(mag)
-            flux_error = mag_to_flux(mag - mag_error) - flux
-
-            observations['brightness'] = flux
-            observations['e_brightness'] = flux_error
-
-            observations['unit'] = 'diff_flux'
-
-            return observations
-        else:
-            raise Exception('oops')
 
     def _deattenuation_factor(self, band: str, mwebv: float):
         rv = 3.1
@@ -129,7 +110,6 @@ class SPMExtractor(FeatureExtractor):
             extinction_color_excess = float(extinction_color_excess)
 
         observations = self.get_observations(astro_object)
-        observations = self.convert_units(observations)
 
         times = observations['mjd'].values
         flux = observations['brightness'].values

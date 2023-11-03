@@ -19,6 +19,7 @@ class SNExtractor(FeatureExtractor):
 
     def compute_features_single_object(self, astro_object: AstroObject):
         detections = astro_object.detections
+        detections = detections[detections['unit'] == self.unit]
         detections = detections.sort_values('mjd')
         forced_photometry = astro_object.forced_photometry
         first_detection = detections.iloc[0]
@@ -51,6 +52,7 @@ class SNExtractor(FeatureExtractor):
                 features += self._dict_to_features(band_features, band)
                 continue
 
+            forced_photometry = forced_photometry[forced_photometry['unit'] == self.unit]
             forced_photometry_band = forced_photometry[forced_photometry['fid'] == band]
             if len(forced_photometry_band) == 0:
                 features += self._dict_to_features(band_features, band)

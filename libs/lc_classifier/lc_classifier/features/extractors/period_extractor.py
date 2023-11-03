@@ -11,6 +11,7 @@ class PeriodExtractor(FeatureExtractor):
     def __init__(
             self,
             bands: List[str],
+            unit: str,
             smallest_period: float,
             largest_period: float,
             trim_lightcurve_to_n_days: Optional[float],
@@ -20,7 +21,10 @@ class PeriodExtractor(FeatureExtractor):
     ):
         self.version = '1.0.0'
         self.bands = bands
-
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
         self.periodogram_computer = MultiBandPeriodogram(method='MHAOV')
         self.smallest_period = smallest_period
         self.largest_period = largest_period
@@ -85,6 +89,7 @@ class PeriodExtractor(FeatureExtractor):
                 observations = pd.concat([
                     observations,
                     astro_object.forced_photometry], axis=0)
+        observations = observations[observations['unit'] == self.unit]
         observations = observations[observations['brightness'].notna()]
         observations = observations.sort_values('mjd')
         observations = self._trim_lightcurve(observations)

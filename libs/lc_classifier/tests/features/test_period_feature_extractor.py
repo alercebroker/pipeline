@@ -11,6 +11,7 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         ztf_astro_object = get_ztf_example(1)
         feature_extractor = PeriodExtractor(
             bands=['g', 'r'],
+            unit='magnitude',
             smallest_period=0.045,
             largest_period=500.0,
             trim_lightcurve_to_n_days=1500.0,
@@ -27,6 +28,7 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         elasticc_astro_object = get_elasticc_example_2()
         feature_extractor = PeriodExtractor(
             bands=list('ugrizY'),
+            unit='diff_flux',
             smallest_period=0.045,
             largest_period=50.0,
             trim_lightcurve_to_n_days=500.0,
@@ -48,6 +50,7 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         ztf_astro_object = get_ztf_example(1)
         feature_extractor = PeriodExtractor(
             bands=['g', 'r'],
+            unit='magnitude',
             smallest_period=0.045,
             largest_period=500.0,
             trim_lightcurve_to_n_days=1500.0,
@@ -65,6 +68,7 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         bands = ['g', 'r']
         feature_extractor = PeriodExtractor(
             bands=bands,
+            unit='magnitude',
             smallest_period=0.045,
             largest_period=500.0,
             trim_lightcurve_to_n_days=1500.0,

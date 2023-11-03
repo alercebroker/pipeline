@@ -26,6 +26,7 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
             ),
             PeriodExtractor(
                 bands,
+                unit,
                 smallest_period=0.045,
                 largest_period=50.0,
                 trim_lightcurve_to_n_days=500.0,
@@ -33,9 +34,9 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
                 use_forced_photo=True,
                 return_power_rates=True
             ),
-            FoldedKimExtractor(bands),
-            HarmonicsExtractor(bands, use_forced_photo=True),
-            TurboFatsExtractor(bands),
+            FoldedKimExtractor(bands, unit),
+            HarmonicsExtractor(bands, unit, use_forced_photo=True),
+            TurboFatsExtractor(bands, unit),
             SPMExtractor(
                 bands, unit,
                 redshift='REDSHIFT_HELIO',

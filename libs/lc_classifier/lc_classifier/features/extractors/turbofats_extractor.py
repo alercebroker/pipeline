@@ -7,9 +7,14 @@ from typing import List
 
 
 class TurboFatsExtractor(FeatureExtractor):
-    def __init__(self, bands: List[str]):
+    def __init__(self, bands: List[str], unit: str):
         self.version = '1.0.0'
         self.bands = bands
+
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
 
         feature_names = [
             'Amplitude', 'AndersonDarling', 'Autocor_length',
@@ -30,6 +35,7 @@ class TurboFatsExtractor(FeatureExtractor):
 
     def get_observations(self, astro_object: AstroObject):
         observations = astro_object.detections
+        observations = observations[observations['unit'] == self.unit]
         observations = observations[observations['brightness'].notna()]
         observations = observations.drop_duplicates('mjd')
         return observations

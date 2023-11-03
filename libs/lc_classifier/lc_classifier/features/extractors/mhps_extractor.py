@@ -27,6 +27,7 @@ class MHPSExtractor(FeatureExtractor):
         self.unit = unit
 
     def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['unit'] == self.unit]
         detections = detections[detections['brightness'].notna()]
         return detections
 

@@ -16,15 +16,3 @@ class TestSPMExtractor(unittest.TestCase):
         )
         feature_extractor.compute_features_single_object(astro_object)
         print(astro_object.features)
-
-    def test_ztf_object(self):
-        ztf_astro_object = get_ztf_example(2)
-        feature_extractor = SPMExtractor(
-            bands=list('gr'),
-            unit='magnitude',
-            redshift=None,
-            extinction_color_excess=None,
-            forced_phot_prelude=30.0
-        )
-        feature_extractor.compute_features_single_object(ztf_astro_object)
-        print(ztf_astro_object.features)

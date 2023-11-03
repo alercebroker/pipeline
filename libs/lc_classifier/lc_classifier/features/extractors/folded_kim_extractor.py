@@ -5,11 +5,16 @@ from typing import List
 
 
 class FoldedKimExtractor(FeatureExtractor):
-    def __init__(self, bands: List[str]):
+    def __init__(self, bands: List[str], unit: str):
         self.version = '1.0.0'
         self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
 
     def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['unit'] == self.unit]
         detections = detections[detections['brightness'].notna()]
         return detections
 

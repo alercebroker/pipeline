@@ -18,6 +18,7 @@ class TestHarmonicsFeatureExtractor(unittest.TestCase):
         ]
         feature_extractor = HarmonicsExtractor(
             bands=['g', 'r'],
+            unit='magnitude',
             use_forced_photo=True
         )
         feature_extractor.compute_features_single_object(ztf_astro_object)

@@ -17,8 +17,15 @@ class GPDRWExtractor(FeatureExtractor):
         self.unit = unit
         self.detections_min_len = 5
 
+    def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['brightness'].notna()]
+        detections = detections[detections['unit'] == self.unit]
+
+        return detections
+
     def compute_features_single_object(self, astro_object: AstroObject):
         detections = astro_object.detections
+        detections = self.preprocess_detections(detections)
 
         features = []
         for band in self.bands:
