@@ -98,9 +98,12 @@ class KafkaProducer(GenericProducer):
     def __init__(self, config):
         super().__init__(config=config)
         self.producer = Producer(self.config["PARAMS"])
-        self.schema = self.config["SCHEMA"]
-
-        self.schema = fastavro.parse_schema(self.schema)
+        
+        schema_path = config.get("SCHEMA_PATH")
+        if schema_path:
+            self.schema = fastavro.schema.load_schema(schema_path)
+        else:
+            raise Exception("No Schema path provided")
 
         self.dynamic_topic = False
         if self.config.get("TOPIC"):
