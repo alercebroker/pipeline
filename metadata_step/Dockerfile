@@ -20,6 +20,7 @@ RUN pip install poetry
 
 COPY metadata_step/poetry.lock metadata_step/pyproject.toml /app/
 COPY libs/apf libs/apf
+COPY libs/db-plugins libs/db-plugins
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -35,6 +36,7 @@ COPY metadata_step/scripts /app/scripts
 COPY metadata_step/README.md \
     metadata_step/settings.py \
     metadata_step/scribe_schema.avsc \
+    metadata_step/credentials.py \
     /app/
 
 WORKDIR /app

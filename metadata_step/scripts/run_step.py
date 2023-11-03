@@ -17,9 +17,11 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-
-
 from metadata_step import MetadataStep
+from metadata_step.utils.database import PSQLConnection
 
-step = MetadataStep(config=STEP_CONFIG)
+sql = PSQLConnection(STEP_CONFIG["DATABASE"])
+
+
+step = MetadataStep(config=STEP_CONFIG, db_sql=sql)
 step.start()
