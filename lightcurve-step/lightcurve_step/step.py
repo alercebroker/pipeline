@@ -192,6 +192,8 @@ class LightcurveStep(GenericStep):
         def format_as_detection(fp):
             FID = {1: "g", 2: "r", 0: None, 12: "gr"}
             fp["fid"] = FID[fp["fid"]]
+            fp["e_ra"] = 0
+            fp["e_dec"] = 0
             fp["candid"] = fp.pop("_id")
             return fp
 
