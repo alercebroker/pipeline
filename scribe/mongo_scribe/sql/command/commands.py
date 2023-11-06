@@ -113,8 +113,11 @@ class InsertDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["candid"], el["oid"]): el for el in data}
         unique = list(unique.values())
+        stmt = insert(Detection).values(unique)
         return session.connection().execute(
-            insert(Detection).values(unique).on_conflict_do_nothing()
+            stmt.on_conflict_do_update(
+                constraint="detection_pkey", set_=dict(oid=stmt.excluded.oid)
+            )
         )
 
 
@@ -122,7 +125,16 @@ class InsertForcedPhotometryCommand(Command):
     type = ValidCommands.insert_forced_photo
 
     def _format_data(self, data: Dict):
-        exclude = ["aid", "sid", "candid", "tid", "e_dec", "e_ra", "stellar", "extra_fields"]
+        exclude = [
+            "aid",
+            "sid",
+            "candid",
+            "tid",
+            "e_dec",
+            "e_ra",
+            "stellar",
+            "extra_fields",
+        ]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
         extra_fields = data["extra_fields"]

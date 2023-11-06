@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "<CHARTNAME>.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "<CHARTNAME>.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "<CHARTNAME>.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "<CHARTNAME>.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: CONSUMER_CLASS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consumer-class
+            - name: CONSUMER_TOPICS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consumer-topics
+            - name: CONSUMER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consumer-server
+            - name: CONSUME_MESSAGES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consume-messages
+            - name: CONSUME_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consume-timeout
+            - name: CONSUMER_GROUP_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: consumer-group-id
+            - name: SCRIBE_PRODUCER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: scribe-server
+            - name: SCRIBE_PRODUCER_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: scribe-topic
+            - name: METRICS_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: metrics-server
+            - name: METRICS_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "<CHARTNAME>.fullname" . }}
+                  key: metrics-topic
+            {{- if .Values.secrets.kafkaAuth.consumer.enabled}}
+            - name: CONSUMER_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-username
+            - name: CONSUMER_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.scribe.enabled}}
+            - name: SCRIBE_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: scribe-username
+            - name: SCRIBE_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: scribe-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.metrics.enabled}}
+            - name: METRICS_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-username
+            - name: METRICS_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-password
+            {{- end }}
+            {{- with .Values.extraEnvVariables }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end}}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

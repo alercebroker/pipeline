@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.0.0a1
+description: A Helm chart for Kubernetes
+name: step_starter
+type: application
+version: 1.0.0

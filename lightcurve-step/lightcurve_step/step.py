@@ -35,7 +35,6 @@ class LightcurveStep(GenericStep):
         self.db_mongo = db_mongo
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
-        self.last_mjd = {}
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -126,11 +125,6 @@ class LightcurveStep(GenericStep):
             "fid",
             "ra",
             "dec",
-            "magpsf",
-            "sigmapsf",
-            "magpsf_corr",
-            "sigmapsf_corr",
-            "sigmapsf_corr_ext",
             "isdiffpos",
             "corrected",
             "dubious",
@@ -138,6 +132,8 @@ class LightcurveStep(GenericStep):
             "parent_candid",
             "has_stamp",
         }
+        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+
         parsed_result = []
         for det in ztf_models:
             det: dict = det[0].__dict__
@@ -148,6 +144,8 @@ class LightcurveStep(GenericStep):
                     continue
                 if field not in GENERIC_FIELDS:
                     extra_fields[field] = value
+                if field == "fid":
+                    parsed_det[field] = FID[value]
                 else:
                     parsed_det[field] = value
             parsed = MongoDetection(
@@ -199,6 +197,7 @@ class LightcurveStep(GenericStep):
                     **forced[0].__dict__,
                     aid=oids[forced[0].__dict__["oid"]],
                     sid="ZTF",
+                    tid="ZTF",
                     candid=forced[0].__dict__["oid"] + str(forced[0].__dict__["pid"]),
                 ),
                 "new": False,
