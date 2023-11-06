@@ -195,6 +195,9 @@ class LightcurveStep(GenericStep):
             fp["e_ra"] = 0
             fp["e_dec"] = 0
             fp["candid"] = fp.pop("_id")
+            fp["extra_fields"] = {
+                k: v for k, v in fp["extra_fields"] if not k.startswith("_")
+            }
             return fp
 
         parsed = [
