@@ -54,7 +54,7 @@ class LightcurveStep(GenericStep):
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
-            
+
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
@@ -233,7 +233,7 @@ class LightcurveStep(GenericStep):
             except KeyError:
                 nd = []
             dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
-            if not os.getenv("SKIP_MJD_FILTER", "false") == "true": 
+            if not os.getenv("SKIP_MJD_FILTER", "false") == "true":
                 mjds = result["last_mjds"]
                 dets = dets[dets["mjd"] <= mjds[aid]]
             output.append(
