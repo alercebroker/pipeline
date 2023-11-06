@@ -20,3 +20,4 @@ data:
   sql-secret-name: {{ .Values.configmap.psqlSecretName }}
   mongo-secret: {{ .Values.configmap.mongoSecret }}
   logging-debug: "{{ .Values.configmap.loggingDebug }}"
+  skip-mjd-filter: "{{ .Values.configmap.skipMjdFilter }}"

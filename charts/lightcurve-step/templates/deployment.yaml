@@ -101,6 +101,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "lightcurve-step.fullname" . }}
                   key: logging-debug
+            - name: SKIP_MJD_FILTER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "lightcurve-step.fullname" . }}
+                  key: skip-mjd-filter
             {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
             - name: CONSUMER_KAFKA_USERNAME
               valueFrom:
