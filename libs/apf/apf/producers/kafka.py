@@ -98,7 +98,7 @@ class KafkaProducer(GenericProducer):
     def __init__(self, config):
         super().__init__(config=config)
         self.producer = Producer(self.config["PARAMS"])
-        
+
         schema_path = config.get("SCHEMA_PATH")
         if schema_path:
             self.schema = fastavro.schema.load_schema(schema_path)
