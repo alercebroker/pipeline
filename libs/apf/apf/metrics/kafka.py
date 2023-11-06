@@ -47,6 +47,9 @@ class KafkaMetricsProducer(GenericMetricsProducer):
             self.topic = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f"Producing to {self.topic}")
+        if self.config.get("SCHEMA_PATH"):
+            schema_file = open(self.config.get("SCHEMA_PATH"), "r")
+            self.config["SCHEMA"] = json.load(schema_file)
 
     def send_metrics(self, metrics):
         metrics = json.dumps(metrics, cls=self.time_encoder).encode("utf-8")
