@@ -14,6 +14,7 @@ from fastavro.utils import generate_many
 from tests.integration.schema import SCHEMA
 from tests.utils import ztf_extra_fields
 
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
@@ -68,7 +69,7 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
         }
     )
     messages = generate_many(SCHEMA, 15)
