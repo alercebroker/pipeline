@@ -58,6 +58,7 @@ configmap:
   useProfiling: ""
   mongoSecret: ""
   pyroscopeServer: "http://pyroscope.pyroscope:4040"
+  skipMjdFilter: ""
 
 secrets:
   kafkaAuth:
