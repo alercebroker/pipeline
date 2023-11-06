@@ -11,6 +11,7 @@ from ..core.corrector import Corrector
 
 from pprint import pprint
 
+
 class CorrectionStep(GenericStep):
     """Step that applies magnitude correction to new alert and previous candidates.
 
