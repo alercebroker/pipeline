@@ -27,10 +27,13 @@ class MetadataStep(GenericStep):
     def _write_metadata_into_db(self, result: List[Dict]):
         with self.db.session() as session:
             insert_metadata(session, result)
+            session.commit()
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
     def execute(self, messages: List[Dict]):
-        oids = list(set([message["oid"] for message in messages]))
+        unique = {message["oid"]: message for message in messages}
+        oids = list(unique.keys())
+        messages = list(unique.values())
         catalogs = {"ps1": {}, "gaia": {}}
         with self.db.session() as session:
             catalogs["ps1"] = get_ps1_catalog(session, oids)

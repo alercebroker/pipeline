@@ -1,8 +1,8 @@
 REFERENCE_KEYS = [
     "oid",
-    "rfid",
     "candid",
     "fid",
+    "rfid",
     "rcid",
     "field",
     "magnr",

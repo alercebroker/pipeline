@@ -106,8 +106,8 @@ def test_metadata_insertion(psql_service):
         )
         gaia_result = session.execute(
             select(Gaia_ztf)
-            .where(Ps1_ztf.oid == "ZTF00llmn")
-            .where(Ps1_ztf.candid == 987654321)
+            .where(Gaia_ztf.oid == "ZTF00llmn")
+            .where(Gaia_ztf.candid == 987654321)
         )
         ss_result = list(ss_result)[0][0].__dict__
         ps1_result = list(ps1_result)[0][0].__dict__

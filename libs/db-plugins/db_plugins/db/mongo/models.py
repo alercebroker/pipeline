@@ -129,6 +129,7 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     tid = Field()  # Telescope ID
     sid = Field()  # Survey ID
     aid = Field()
+    pid = Field()
     oid = Field()
     mjd = Field()
     fid = Field()
