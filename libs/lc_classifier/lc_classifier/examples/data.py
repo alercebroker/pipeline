@@ -206,10 +206,14 @@ def get_ztf_forced_training_examples() -> List[AstroObject]:
             'ztf_forced_examples_training.parquet'
         )
     )
-    print(ztf_data.iloc[0])
 
     def df_to_astro_object(df):
         df['detected'] = np.abs(df['forcediffimsnr']) > 5.0
+        df['fid'] = df['fid'].map({
+            1: 'g',
+            2: 'r',
+            3: 'i'
+        })
         diff_flux = df[[
             'index', 'forcediffimflux',
             'forcediffimfluxunc', 'fid',
@@ -238,9 +242,9 @@ def get_ztf_forced_training_examples() -> List[AstroObject]:
         df['candid'] = np.nan
         df['pid'] = 'ztf_forced_phot_service'
 
-        # TODO: complete this later
-        df['ra'] = np.nan
-        df['dec'] = np.nan
+        # TODO: improve this later
+        df['ra'] = np.random.rand() * 360.0
+        df['dec'] = np.random.rand() * 180.0 - 90.0
 
         metadata = pd.DataFrame(
             [

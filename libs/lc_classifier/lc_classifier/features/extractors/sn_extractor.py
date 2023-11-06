@@ -62,14 +62,22 @@ class SNExtractor(FeatureExtractor):
                 forced_photometry_band['mjd'] < first_detection_mjd]
             forced_phot_band_before = forced_phot_band_before.sort_values('mjd')
 
-            band_features['n_forced_phot_band_before'] = len(forced_phot_band_before)
-            band_features['last_brightness_before_band'] = forced_phot_band_before.iloc[-1]['brightness']
-            band_features['dbrightness_first_det_band'] = first_brightness_in_band \
-                                                    - band_features['last_brightness_before_band']
-            band_features['dbrightness_forced_phot_band'] = first_brightness_in_band \
-                                                    - np.median(forced_phot_band_before['brightness'])
-            band_features['max_brightness_before_band'] = np.max(forced_phot_band_before['brightness'])
-            band_features['median_brightness_before_band'] = np.median(forced_phot_band_before['brightness'])
+            if len(forced_phot_band_before) > 0:
+                band_features['n_forced_phot_band_before'] = len(forced_phot_band_before)
+                band_features['last_brightness_before_band'] = forced_phot_band_before.iloc[-1]['brightness']
+                band_features['dbrightness_first_det_band'] = first_brightness_in_band \
+                                                        - band_features['last_brightness_before_band']
+                band_features['dbrightness_forced_phot_band'] = first_brightness_in_band \
+                                                        - np.median(forced_phot_band_before['brightness'])
+                band_features['max_brightness_before_band'] = np.max(forced_phot_band_before['brightness'])
+                band_features['median_brightness_before_band'] = np.median(forced_phot_band_before['brightness'])
+            else:
+                band_features['n_forced_phot_band_before'] = len(forced_phot_band_before)
+                band_features['last_brightness_before_band'] = np.nan
+                band_features['dbrightness_first_det_band'] = np.nan
+                band_features['dbrightness_forced_phot_band'] = np.nan
+                band_features['max_brightness_before_band'] = np.nan
+                band_features['median_brightness_before_band'] = np.nan
 
             forced_phot_band_after = forced_photometry_band[
                 forced_photometry_band['mjd'] > first_detection_mjd]

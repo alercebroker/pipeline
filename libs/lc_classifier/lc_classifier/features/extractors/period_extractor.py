@@ -125,7 +125,7 @@ class PeriodExtractor(FeatureExtractor):
             self.periodogram_computer.optimal_frequency_grid_evaluation(
                 smallest_period=self.smallest_period,
                 largest_period=self.largest_period,
-                shift=0.2
+                shift=0.25
             )
             self.periodogram_computer.optimal_finetune_best_frequencies(
                 times_finer=10.0, n_local_optima=10)

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass
 import pandas as pd
+from tqdm import tqdm
 
 
 @dataclass
@@ -47,8 +48,8 @@ class FeatureExtractor(ABC):
         """This method is inplace"""
         pass
 
-    def compute_features_batch(self, astro_objects: List[AstroObject]):
-        for astro_object in astro_objects:
+    def compute_features_batch(self, astro_objects: List[AstroObject], progress_bar=False):
+        for astro_object in tqdm(astro_objects, disable=(not progress_bar)):
             self.compute_features_single_object(astro_object)
 
 

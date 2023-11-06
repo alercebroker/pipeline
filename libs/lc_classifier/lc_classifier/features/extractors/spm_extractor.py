@@ -15,11 +15,11 @@ from jax import grad
 from jax import jit as jax_jit
 
 from ..core.base import FeatureExtractor, AstroObject
-from ..core.utils import mag_to_flux
 from typing import List, Optional
 
 
 class SPMExtractor(FeatureExtractor):
+    """Note: the firsts calls are really expensive because of jax compilations"""
     def __init__(
             self,
             bands: List[str],
@@ -347,6 +347,7 @@ def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     return np.concatenate([x_array, pad_array])
 
 
+@jax_jit
 def objective_function_jax(
         params: np.ndarray,
         times: np.ndarray,
