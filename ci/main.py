@@ -1,6 +1,6 @@
 import sys
 from build import build_packages, update_packages
-from deploy import deploy_staging, deploy_production, deploy_elasticc
+from deploy import deploy_staging, deploy_production
 
 
 def update_versions(stage, packages, libs, version, dry_run=False):
