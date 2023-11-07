@@ -305,17 +305,17 @@ jobs:
             run: |
                 cd ci
                 poetry run python main.py deploy production \
-                correction-step-elasticc --values=correction_step-helm-values-elasticc --folder=correction_step \
-                feature-step-elasticc --values=feature_step-helm-values-elasticc --folder=feature_step \
+                correction-step-elasticc --chart=correction-step --values=correction_step-helm-values-elasticc --folder=correction_step \
+                feature-step-elasticc --chart=feature-step --values=feature_step-helm-values-elasticc --folder=feature_step \
                 balto-classifier --chart=lc-classifier-step --values=balto-helm-values --folder=lc_classification_step \
                 messi-classifier --chart=lc-classifier-step --values=messi-helm-values --folder=lc_classification_step \
                 tinkywinky-classifier --chart=lc-classifier-step --values=tinkywinky-helm-values --folder=lc_classification_step \
-                lightcurve-step-elasticc --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step \
-                magstats-step-elasticc --values=magstats_step-helm-values-elasticc --folder=magstats_step \
+                lightcurve-step-elasticc --chart=lightcurve-step --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step \
+                magstats-step-elasticc --chart=magstats-step --values=magstats_step-helm-values-elasticc --folder=magstats_step \
                 prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --folder=prv_candidates_step \
                 scribe-elasticc --chart=scribe --values=scribe_step-helm-values-elasticc --folder=scribe \
                 sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --folder=sorting_hat_step \
-                xmatch-step-elasticc --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
+                xmatch-step-elasticc --chart=xmatch-step --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
 
     create_realease:
         needs: deploy_production
