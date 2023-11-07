@@ -313,7 +313,7 @@ jobs:
                 lightcurve-step-elasticc --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step \
                 magstats-step-elasticc --values=magstats_step-helm-values-elasticc --folder=magstats_step \
                 prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --folder=prv_candidates_step \
-                scribe-elasticc --chart=scribe --values=scribe-helm-values-elasticc --folder=scribe \
+                scribe-elasticc --chart=scribe --values=scribe_step-helm-values-elasticc --folder=scribe \
                 sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --folder=sorting_hat_step \
                 xmatch-step-elasticc --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
 
