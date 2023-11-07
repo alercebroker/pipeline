@@ -1,0 +1,47 @@
+namespace: feature-step-elasticc
+resources:
+  requests:
+    cpu: 600m
+    memory: 300M
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              values:
+                - elasticc-features
+
+configmap:
+  consumerTopics: "xmatch_elasticc"
+  groupId: "feature_consumer"
+  consumeTimeout: "10"
+  consumeMessages: "500"
+  internalServer: "${kafka_server}"
+  producerTopic: "features_elasticc"
+  featureVersion: "${feature_version}"
+  featureExtractor: "elasticc"
+  stepId: "features_elasticc"
+  metricsTopic: "metrics_elasticc"
+  scribeTopic: "w_object_elasticc"
+  producerMessageMaxBytes: "6291456"
+
+
+secrets:
+  kafkaAuth:
+    enabled: true
+    username: "${kafka_username}"
+    password: "${kafka_password}"
+
+imageCredentials:
+  registry: "ghcr.io"
+  username: "${ghcr_username}"
+  password: "${ghcr_password}"

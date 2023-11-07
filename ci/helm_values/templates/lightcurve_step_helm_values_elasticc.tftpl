@@ -1,0 +1,58 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 60
+configmap:
+  classPrefix: Elasticc
+  consumeMessages: "200"
+  consumeTimeout: "10"
+  consumerServer: ${kafka_server}
+  consumerTopics: prv-candidates_elasticc
+  metricsServer: ${kafka_server}
+  metricsTopic: metrics_elasticc
+  mongoSecret: mongo-elasticc-production/reader
+  producerMessageMaxBytes: "67108864"
+  producerServer: ${kafka_server}
+  producerTopic: lightcurve_elasticc
+  usePrometheus: "true"
+extraEnvVariables:
+- name: METRICS_SOURCE
+  value: 'lightcurve-step-elasticc'
+- name: METRICS_SURVEY
+  value: LSST
+image:
+  tag: 6.1.1a30
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+namespace: lightcurve-step-elasticc
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 200M
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    producer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
