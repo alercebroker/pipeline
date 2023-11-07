@@ -9,6 +9,8 @@ affinity:
           - elasticc-pipeline
 autoscaling:
   enabled: true
+  minReplicas: 1
+  maxReplicas: 16
   targetCPUUtilizationPercentage: 80
 configmap:
   classPrefix: Elasticc
@@ -27,8 +29,6 @@ extraEnvVariables:
   value: 'prv-candidates-elasticc'
 - name: METRICS_SURVEY
   value: LSST
-image:
-  tag: 6.1.1a30
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
@@ -36,8 +36,8 @@ imageCredentials:
 namespace: prv-candidates-elasticc
 resources:
   requests:
-    cpu: 200m
-    memory: 360Mi
+    cpu: 700m
+    memory: 900Mi
 secrets:
   kafkaAuth:
     consumer:

@@ -23,13 +23,16 @@ configmap:
   producerMessageMaxBytes: "67108864"
   producerServer: ${kafka_server}
   producerTopic: sorting-hat-elasticc
+
+featureFlags:
+  usePsql: false
+
 extraEnvVariables:
 - name: METRICS_SOURCE
   value: 'sorting-hat-elasticc'
 - name: METRICS_SURVEY
   value: LSST
-image:
-  tag: 6.1.1a30
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io

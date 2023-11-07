@@ -19,7 +19,6 @@ extraEnvVariables:
   value: LSST
 image:
   repository: ghcr.io/alercebroker/scribe
-  tag: 6.1.1a30
 namespace: scribe-elasticc
 resources:
   requests:
@@ -42,3 +41,4 @@ secrets:
   numMessages: "1000"
   secretName: mongo-elasticc-production/writer
   topics: w_object_elasticc,w_detection_elasticc
+  dbEngine: "mongo"
