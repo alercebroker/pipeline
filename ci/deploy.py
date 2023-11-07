@@ -86,7 +86,8 @@ async def helm_upgrade(
 async def deploy_package(
     packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool
 ):
-    async with dagger.Connection() as client:
+    config = dagger.Config(log_output=sys.stdout)
+    async with dagger.Connection(config) as client:
         # list of bash command to be executed in the dager container
         # with the purpose of conecting to the cluster
         configure_aws_eks_command_list = [
