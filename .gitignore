@@ -144,3 +144,4 @@ values.production.yml
 
 .terraform/
 .terraform.lock.hcl
+terraform.tfvars
