@@ -80,7 +80,7 @@ def test_metadata_insertion(psql_service):
                 "neargaia": 55.55,
                 "unique1": False,
             },
-            "ps1": {
+            "ps1": [{
                 "oid": "ZTF00llmn",
                 "candid": 1234567890,
                 "objectidps1": 15.11,
@@ -90,7 +90,7 @@ def test_metadata_insertion(psql_service):
                 "unique1": False,
                 "unique2": False,
                 "unique3": False,
-            },
+            }],
         }
     ]
 

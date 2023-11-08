@@ -1,4 +1,5 @@
 import itertools
+import numpy as np
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Dict, List
 
@@ -17,9 +18,7 @@ class PSQLConnection:
         )
 
     def __format_db_url(self, config):
-        return (
-            f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
-        )
+        return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
     @contextmanager
     def session(self) -> Callable[..., ContextManager[Session]]:
@@ -33,20 +32,42 @@ class PSQLConnection:
             session.close()
 
 
+def _none_to_nan(value):
+    if value == None:
+        return np.nan
+    return value
+
+
+def _nan_to_none(value):
+    if value == np.nan:
+        return None
+    return value
+
+
 def _parse_sql_dict(d: Dict):
-    return {k: v for k, v in d.items() if not k.startswith("_")}
+    return {k: _none_to_nan(v) for k, v in d.items() if not k.startswith("_")}
+
+
+def _create_hashmap(catalog: List[Dict]):
+    hashmap: Dict[List] = {}
+    for item in catalog:
+        catalog_of_oid: List = hashmap.get(item["oid"], [])
+        catalog_of_oid.append(item)
+        hashmap[item["oid"]] = catalog_of_oid
+
+    return hashmap
 
 
 def get_ps1_catalog(session: Session, oids: List):
     stmt = select(Ps1_ztf).where(Ps1_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
-    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
+    return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
 
 
 def get_gaia_catalog(session: Session, oids: List):
     stmt = select(Gaia_ztf).where(Gaia_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
-    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
+    return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
 
 
 def insert_metadata(session: Session, data: List):
@@ -70,7 +91,9 @@ def insert_metadata(session: Session, data: List):
 
     # SS
     ss_stmt = insert(Ss_ztf).values(accumulated_metadata["ss"])
-    ss_stmt = ss_stmt.on_conflict_do_update(constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid))
+    ss_stmt = ss_stmt.on_conflict_do_update(
+        constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid)
+    )
     session.connection().execute(ss_stmt)
 
     # Dataquality
@@ -88,7 +111,8 @@ def insert_metadata(session: Session, data: List):
     session.connection().execute(gaia_stmt)
 
     # PS1
-    ps1_stmt = insert(Ps1_ztf).values(accumulated_metadata["ps1"])
+    ps1_data = list(map(sum, accumulated_metadata["ps1"]))
+    ps1_stmt = insert(Ps1_ztf).values(ps1_data)
     ps1_stmt = ps1_stmt.on_conflict_do_update(
         constraint="ps1_ztf_pkey",
         set_=dict(
