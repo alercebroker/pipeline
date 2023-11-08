@@ -1,0 +1,59 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: '{{ include "logstash.fullname" . }}-plaintext'
+  namespace: {{ .Values.namespace }}
+data:
+  log-pipeline-es.conf: |-
+    input {
+        kafka {
+            bootstrap_servers => "${CONSUMER_SERVER}"
+            topics =>  ["${METRICS_TOPIC}"]
+            codec => "json"
+            group_id => "${CONSUMER_GROUP_ID}"
+            auto_offset_reset => "earliest"
+      }
+    }
+    filter {
+
+    }
+    output {
+        opensearch {
+            hosts       => ["${ES_HOST}"]
+            user        => "${LOGSTASH_USER}"
+            password    => "${LOGSTASH_PASSWORD}"
+            index => "pipeline-metrics-%{+YYYY-MM-dd}"
+        }
+    }
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: '{{ include "logstash.fullname" . }}-sasl'
+  namespace: {{ .Values.namespace }}
+data:
+  log-pipeline-es.conf: |-
+    input {
+        kafka {
+            bootstrap_servers => "${CONSUMER_SERVER}"
+            topics =>  ["${METRICS_TOPIC}"]
+            codec => "json"
+            group_id => "${CONSUMER_GROUP_ID}"
+            auto_offset_reset => "earliest"
+            security_protocol => "SASL_SSL"
+            sasl_mechanism => "SCRAM-SHA-512"
+            sasl_jaas_config => "org.apache.kafka.common.security.scram.ScramLoginModule required username='${KAFKA_USERNAME}' password='${KAFKA_PASSWORD}';"
+      }
+    }
+    filter {
+
+    }
+    output {
+        opensearch {
+            hosts       => ["${ES_HOST}"]
+            user        => "${LOGSTASH_USER}"
+            password    => "${LOGSTASH_PASSWORD}"
+            index => "pipeline-metrics-%{+YYYY-MM-dd}"
+        }
+    }
