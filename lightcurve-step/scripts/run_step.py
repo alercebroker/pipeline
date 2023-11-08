@@ -29,7 +29,10 @@ def step_creator():
 
     logger.addHandler(handler)
     db_mongo = DatabaseConnection(settings["DB_CONFIG"])
-    db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
+    if settings["DB_CONFIG_SQL"]:
+        db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
+    else:
+        db_sql = None
 
     step_params = {"config": settings, "db_mongo": db_mongo, "db_sql": db_sql}
 
