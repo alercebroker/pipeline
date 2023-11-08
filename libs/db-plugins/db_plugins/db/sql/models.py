@@ -384,7 +384,6 @@ class ForcedPhotometry(Base):
     scisigpix = Column(Float)
     adpctdif1 = Column(Float)
     adpctdif2 = Column(Float)
-    forcediffimfluxunc = Column(Float)
     procstatus = Column(String)
 
     __table_args__ = (
