@@ -84,7 +84,11 @@ async def helm_upgrade(
 
 
 async def deploy_package(
-    packages: dict, cluster_name: str, cluster_alias: str, dry_run: bool
+    packages: dict,
+    stage: str,
+    cluster_name: str,
+    cluster_alias: str,
+    dry_run: bool,
 ):
     config = dagger.Config(log_output=sys.stdout)
     async with dagger.Connection(config) as client:
@@ -115,6 +119,30 @@ async def deploy_package(
             )
             .with_exec(configure_aws_eks_command_list)
         )
+        terraform = (
+            client.container()
+            .from_("hashicorp/terraform:latest")
+            .with_env_variables(
+                {
+                    "AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
+                    "AWS_SECRET_ACCESS_KEY": os.environ[
+                        "AWS_SECRET_ACCESS_KEY"
+                    ],
+                    "AWS_SESSION_TOKEN": os.environ["AWS_SESSION_TOKEN"],
+                },
+            )
+            .with_directory(
+                "/pipeline",
+                client.host().directory(
+                    str(pathlib.Path().cwd().parent.absolute()),
+                    exclude=[".venv/", "**/.venv/"],
+                ),
+            )
+            .with_workdir(f"/pipeline/ci/helm_values/{stage}")
+            .with_exec(["terraform", "init"])
+            .with_exec(["terraform", "apply", "-auto-approve"])
+        )
+        await terraform
         async with anyio.create_task_group() as tg:
             for package in packages:
                 chart_content = yaml.load(
@@ -140,8 +168,17 @@ async def deploy_package(
 
 
 def deploy_staging(packages: dict, dry_run: bool):
-    anyio.run(deploy_package, packages, "staging", "staging", dry_run)
+    anyio.run(
+        deploy_package, packages, "staging", "staging", "staging", dry_run
+    )
 
 
 def deploy_production(packages: dict, dry_run: bool):
-    anyio.run(deploy_package, packages, "production", "production", dry_run)
+    anyio.run(
+        deploy_package,
+        packages,
+        "production",
+        "production",
+        "production",
+        dry_run,
+    )
