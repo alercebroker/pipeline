@@ -25,6 +25,13 @@ configmap:
   producerServer: ${kafka_server}
   producerTopic: lightcurve_elasticc
   usePrometheus: "true"
+
+featureFlags:
+  usePsql: false
+
+image:
+  repository: ghcr.io/alercebroker/lightcurve-step
+
 extraEnvVariables:
 - name: METRICS_SOURCE
   value: 'lightcurve-step-elasticc'
