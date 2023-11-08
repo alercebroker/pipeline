@@ -47,7 +47,7 @@ spec:
                 configMapKeyRef:
                   name: {{ include "lightcurve-step.fullname" . }}
                   key: sql-secret-name
-            {{- endif }}
+            {{- end }}
             - name: CONSUMER_TOPICS
               valueFrom:
                 configMapKeyRef:

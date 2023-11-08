@@ -23,4 +23,4 @@ data:
   skip-mjd-filter: "{{ .Values.configmap.skipMjdFilter }}"
   {{- if .Values.featureFlags.usePsql }}
   sql-secret-name: {{ .Values.configmap.psqlSecretName }}
-  {{- endif }}
+  {{- end }}
