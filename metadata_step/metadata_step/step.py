@@ -38,6 +38,7 @@ class MetadataStep(GenericStep):
         with self.db.session() as session:
             catalogs["ps1"] = get_ps1_catalog(session, oids)
             catalogs["gaia"] = get_gaia_catalog(session, oids)
+            print(catalogs)
 
         result = [self._format_detection(message, catalogs) for message in messages]
         return result
