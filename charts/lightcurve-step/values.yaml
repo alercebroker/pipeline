@@ -60,6 +60,9 @@ configmap:
   pyroscopeServer: "http://pyroscope.pyroscope:4040"
   skipMjdFilter: ""
 
+featureFlags:
+  usePsql: true
+
 secrets:
   kafkaAuth:
     consumer:
