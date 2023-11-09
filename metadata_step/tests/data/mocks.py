@@ -109,7 +109,7 @@ ps1_mocks = [
     {
         "oid": "ZTF00llmn",
         "candid": 1234567890,
-        "objectidps1": 11.11,
+        "objectidps1": 100,
         "objectidps2": 22.22,
         "objectidps3": 33.33,
         "nmtchps": 1,

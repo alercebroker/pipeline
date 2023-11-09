@@ -18,7 +18,9 @@ class PSQLConnection:
         )
 
     def __format_db_url(self, config):
-        return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+        return (
+            f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
+        )
 
     @contextmanager
     def session(self) -> Callable[..., ContextManager[Session]]:
@@ -70,18 +72,20 @@ def get_gaia_catalog(session: Session, oids: List):
     return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
 
 
+def _accumulate(data: List):
+    acc = {"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []}
+    for d in data:
+        acc["ss"].append(d["ss"])
+        acc["dataquality"].append(d["dataquality"])
+        acc["reference"].append(d["reference"])
+        acc["gaia"].append(d["gaia"])
+        acc["ps1"].extend(d["ps1"])
+
+    return acc
+
+
 def insert_metadata(session: Session, data: List):
-    def accumulate(accumulator, el):
-        keys = ["ss", "reference", "dataquality", "gaia", "ps1"]
-        return {k: [*accumulator[k], {"oid": el["oid"], **el[k]}] for k in keys}
-
-    accumulated_metadata = itertools.accumulate(
-        data,
-        accumulate,
-        initial={"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []},
-    )
-    accumulated_metadata = list(accumulated_metadata)[-1]
-
+    accumulated_metadata = _accumulate(data)
     # Reference
     reference_stmt = insert(Reference).values(accumulated_metadata["reference"])
     reference_stmt = reference_stmt.on_conflict_do_update(
@@ -91,9 +95,7 @@ def insert_metadata(session: Session, data: List):
 
     # SS
     ss_stmt = insert(Ss_ztf).values(accumulated_metadata["ss"])
-    ss_stmt = ss_stmt.on_conflict_do_update(
-        constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid)
-    )
+    ss_stmt = ss_stmt.on_conflict_do_update(constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid))
     session.connection().execute(ss_stmt)
 
     # Dataquality
@@ -111,8 +113,7 @@ def insert_metadata(session: Session, data: List):
     session.connection().execute(gaia_stmt)
 
     # PS1
-    ps1_data = list(map(sum, accumulated_metadata["ps1"]))
-    ps1_stmt = insert(Ps1_ztf).values(ps1_data)
+    ps1_stmt = insert(Ps1_ztf).values(accumulated_metadata["ps1"])
     ps1_stmt = ps1_stmt.on_conflict_do_update(
         constraint="ps1_ztf_pkey",
         set_=dict(

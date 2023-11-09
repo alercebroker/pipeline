@@ -40,6 +40,7 @@ def test_step(psql_service):
     step.post_execute(result)
 
     with db.session() as session:
+        # assert insertion
         ss_result = session.execute(select(Ss_ztf).where(Ss_ztf.oid == "ZTF21waka"))
         ps1_result = session.execute(
             select(Ps1_ztf)
@@ -63,3 +64,14 @@ def test_step(psql_service):
         assert ps1_result["sgmag1"] == 100
         
         assert gaia_result["neargaia"] == 100
+
+        # assert updating
+        ps1_result = session.execute(
+            select(Ps1_ztf)
+            .where(Ps1_ztf.oid == "ZTF00llmn")
+            .where(Ps1_ztf.candid == 1234567890)
+        )
+        ps1_result = list(ps1_result)[0][0].__dict__
+
+        assert ps1_result["oid"] == "ZTF00llmn"
+        assert ps1_result["unique1"] == False
