@@ -87,9 +87,9 @@ def test_metadata_insertion(psql_service):
                 "objectidps2": 25.22,
                 "objectidps3": 35.33,
                 "nmtchps": 1,
-                "unique1": False,
-                "unique2": False,
-                "unique3": False,
+                "unique1": True,
+                "unique2": True,
+                "unique3": True,
             }],
         }
     ]
@@ -114,5 +114,5 @@ def test_metadata_insertion(psql_service):
         gaia_result = list(gaia_result)[0][0].__dict__
 
         assert ss_result["ssnamenr"] == "neimu"
-        assert ps1_result["unique1"] is False
+        assert ps1_result["unique1"] is True
         assert gaia_result["unique1"] is False

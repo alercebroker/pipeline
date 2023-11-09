@@ -65,7 +65,7 @@ def format_ps1(alert: Dict, catalog={}):
     alert["unique3"] = True
 
     ps1: List = catalog.get(alert["oid"])
-    new_ps1 = [alert]
+    new_ps1 = []
     if ps1:
         candids = {}
         for i in [1, 2, 3]:
@@ -75,15 +75,21 @@ def format_ps1(alert: Dict, catalog={}):
                     ps1,
                 )
             )
+            if len(ps1_filtered):
+                alert[f"unique{i}"] = False
+            else:
+                continue
+
             for ps1_aux in ps1_filtered:
                 candid = ps1_aux["candid"]
                 saved = candids.get(candid)
                 if not saved:
-                    saved = ps1_aux
+                    saved = ps1_aux.copy()
                 saved[f"unique{i}"] = False
                 candids[candid] = saved                
         new_ps1.extend(list(candids.values()))
 
+    new_ps1.append(alert)
     return new_ps1
 
 
