@@ -22,9 +22,12 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             ColorFeatureExtractor(bands, unit='magnitude'),
             MHPSExtractor(bands, unit='diff_flux'),
             GPDRWExtractor(bands, unit='diff_flux'),
+
+            # TODO: move lightcurve to helio reference for period lc stuff
+            # TODO: and for everything maybe?
             PeriodExtractor(
                 bands,
-                unit='diff_flux',
+                unit='magnitude',
                 smallest_period=0.045,
                 largest_period=100.0,
                 trim_lightcurve_to_n_days=300.0,
@@ -32,8 +35,8 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
                 use_forced_photo=True,
                 return_power_rates=True
             ),  # TODO: consider LPVs + be within comp. budget
-            FoldedKimExtractor(bands, unit='diff_flux'),
-            HarmonicsExtractor(bands, unit='diff_flux', use_forced_photo=True),
+            FoldedKimExtractor(bands, unit='magnitude'),
+            HarmonicsExtractor(bands, unit='magnitude', use_forced_photo=True),
             TurboFatsExtractor(bands, unit='diff_flux'),
             SPMExtractor(
                 bands, unit='diff_flux',

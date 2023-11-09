@@ -32,8 +32,8 @@ class FoldedKimExtractor(FeatureExtractor):
         for band in self.bands:
             band_detections = detections[detections['fid'] == band]
             if len(band_detections) <= 2 or np.isnan(period):
-                features.append((f'Psi_CS_{band}', np.nan, band))
-                features.append((f'Psi_eta_{band}', np.nan, band))
+                features.append((f'Psi_CS', np.nan, band))
+                features.append((f'Psi_eta', np.nan, band))
             else:
                 time = band_detections['mjd'].values
                 brightness = band_detections['brightness'].values
@@ -52,8 +52,8 @@ class FoldedKimExtractor(FeatureExtractor):
                 else:
                     psi_cumsum = psi_eta = np.nan
 
-                features.append((f'Psi_CS_{band}', psi_cumsum, band))
-                features.append((f'Psi_eta_{band}', psi_eta, band))
+                features.append((f'Psi_CS', psi_cumsum, band))
+                features.append((f'Psi_eta', psi_eta, band))
 
         features_df = pd.DataFrame(
             data=features,

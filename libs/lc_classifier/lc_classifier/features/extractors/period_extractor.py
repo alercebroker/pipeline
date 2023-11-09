@@ -38,7 +38,7 @@ class PeriodExtractor(FeatureExtractor):
         self.pr_names = ['Power_rate_' + n for n in pr_names]
 
     def _trim_lightcurve(self, observations: pd.DataFrame):
-        if self.trim_lightcurve_to_n_days is None:
+        if self.trim_lightcurve_to_n_days is None or len(observations) == 0:
             return observations
 
         times = observations['mjd'].values
@@ -125,7 +125,7 @@ class PeriodExtractor(FeatureExtractor):
             self.periodogram_computer.optimal_frequency_grid_evaluation(
                 smallest_period=self.smallest_period,
                 largest_period=self.largest_period,
-                shift=0.25
+                shift=0.1
             )
             self.periodogram_computer.optimal_finetune_best_frequencies(
                 times_finer=10.0, n_local_optima=10)
@@ -194,8 +194,8 @@ class PeriodExtractor(FeatureExtractor):
         for band in self.bands:
             period_band, delta_period_band = band_periods[band]
 
-            features.append((f'Period_band_{band}', period_band, band))
-            features.append((f'delta_period_{band}', delta_period_band, band))
+            features.append((f'Period_band', period_band, band))
+            features.append((f'delta_period', delta_period_band, band))
 
         if self.return_power_rates:
             if power_rates is not None:

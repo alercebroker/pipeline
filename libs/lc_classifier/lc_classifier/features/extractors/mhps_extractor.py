@@ -71,11 +71,11 @@ class MHPSExtractor(FeatureExtractor):
                         self.t1,
                         self.t2)
 
-            features.append((f'MHPS_ratio_{band}', ratio, band))
-            features.append((f'MHPS_low_{band}', low, band))
-            features.append((f'MHPS_high_{band}', high, band))
-            features.append((f'MHPS_non_zero_{band}', non_zero, band))
-            features.append((f'MHPS_PN_flag_{band}', pn_flag, band))
+            features.append((f'MHPS_ratio', ratio, band))
+            features.append((f'MHPS_low', low, band))
+            features.append((f'MHPS_high', high, band))
+            features.append((f'MHPS_non_zero', non_zero, band))
+            features.append((f'MHPS_PN_flag', pn_flag, band))
 
         features_df = pd.DataFrame(
             data=features,
