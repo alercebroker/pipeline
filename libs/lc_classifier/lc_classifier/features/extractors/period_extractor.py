@@ -1,5 +1,6 @@
-from ..core.base import FeatureExtractor, AstroObject
-from ..core.utils import is_sorted
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
+from lc_classifier.utils import is_sorted
 import numpy as np
 import pandas as pd
 import logging
@@ -17,7 +18,8 @@ class PeriodExtractor(FeatureExtractor):
             trim_lightcurve_to_n_days: Optional[float],
             min_length: int,
             use_forced_photo: bool,
-            return_power_rates: bool
+            return_power_rates: bool,
+            shift: float = 0.1
     ):
         self.version = '1.0.0'
         self.bands = bands
@@ -30,6 +32,7 @@ class PeriodExtractor(FeatureExtractor):
         self.largest_period = largest_period
         self.trim_lightcurve_to_n_days = trim_lightcurve_to_n_days
         self.min_length = min_length
+        self.shift = shift
         self.use_forced_photo = use_forced_photo
         self.return_power_rates = return_power_rates
 
@@ -125,7 +128,7 @@ class PeriodExtractor(FeatureExtractor):
             self.periodogram_computer.optimal_frequency_grid_evaluation(
                 smallest_period=self.smallest_period,
                 largest_period=self.largest_period,
-                shift=0.1
+                shift=self.shift
             )
             self.periodogram_computer.optimal_finetune_best_frequencies(
                 times_finer=10.0, n_local_optima=10)

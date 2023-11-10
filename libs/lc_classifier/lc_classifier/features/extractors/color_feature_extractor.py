@@ -1,6 +1,7 @@
 import pandas as pd
 
-from ..core.base import FeatureExtractor, AstroObject
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
 import numpy as np
 from typing import List, Tuple
 

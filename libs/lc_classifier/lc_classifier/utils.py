@@ -1,6 +1,6 @@
 import numba
 import numpy as np
-from .base import AstroObject
+from lc_classifier.base import AstroObject
 import matplotlib.pyplot as plt
 
 
@@ -17,20 +17,21 @@ def mag_to_flux(mag: np.ndarray):
     return 10 ** (-(mag + 48.6) / 2.5 + 26.0)
 
 
-def plot_astro_object(astro_object: AstroObject, unit: str, period=None):
+def plot_astro_object(astro_object: AstroObject, unit: str, use_forced_phot: bool, period=None):
     detections = astro_object.detections
     detections = detections[detections['unit'] == unit]
 
-    forced_phot = astro_object.forced_photometry
-    forced_phot = forced_phot[forced_phot['unit'] == unit]
+    available_bands = np.unique(detections['fid'])
+    available_bands = set(available_bands)
 
-    detection_bands = np.unique(detections['fid'])
-    detection_bands = set(detection_bands)
+    if use_forced_phot:
+        forced_phot = astro_object.forced_photometry
+        forced_phot = forced_phot[forced_phot['unit'] == unit]
 
-    forced_phot_bands = np.unique(forced_phot['fid'])
-    forced_phot_bands = set(forced_phot_bands)
+        forced_phot_bands = np.unique(forced_phot['fid'])
+        forced_phot_bands = set(forced_phot_bands)
 
-    available_bands = detection_bands.union(forced_phot_bands)
+        available_bands = available_bands.union(forced_phot_bands)
 
     color_map = {'g': 'tab:green', 'r': "tab:red", 'i': "tab:purple", 'z': "tab:brown"}
 
@@ -49,19 +50,20 @@ def plot_astro_object(astro_object: AstroObject, unit: str, period=None):
             color=color_map[band]
         )
 
-        band_forced = forced_phot[forced_phot['fid'] == band]
-        band_forced_time = band_forced['mjd']
-        if period is not None:
-            band_forced_time = band_forced_time % period
+        if use_forced_phot:
+            band_forced = forced_phot[forced_phot['fid'] == band]
+            band_forced_time = band_forced['mjd']
+            if period is not None:
+                band_forced_time = band_forced_time % period
 
-        plt.errorbar(
-            band_forced_time,
-            band_forced['brightness'],
-            yerr=band_forced['e_brightness'],
-            fmt='.',
-            label=band+' forced',
-            color=color_map[band]
-        )
+            plt.errorbar(
+                band_forced_time,
+                band_forced['brightness'],
+                yerr=band_forced['e_brightness'],
+                fmt='.',
+                label=band+' forced',
+                color=color_map[band]
+            )
 
     aid = astro_object.metadata[astro_object.metadata['name'] == 'aid']['value'].values[0]
     plt.title(aid)

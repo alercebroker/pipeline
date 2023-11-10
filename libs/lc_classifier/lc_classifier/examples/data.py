@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
-from lc_classifier.features.core.base import AstroObject
+from lc_classifier.base import AstroObject
 from typing import List
 
 
@@ -9,7 +9,8 @@ def get_ztf_example(index: int) -> AstroObject:
     folders = [
         'ZTF18abombrp_20231006',
         'ZTF18aasycma_20231012',
-        'ZTF19aawgxdn_20231025'
+        'ZTF19aawgxdn_20231025',
+        'ZTF18aauxofy_20231110'
     ]
     assert index < len(folders)
 
@@ -39,7 +40,7 @@ def get_ztf_example(index: int) -> AstroObject:
     if is_corrected:
         detections.rename(columns={
             'magpsf_corr': 'brightness',
-            'sigmapsf_corr': 'e_brightness'
+            'sigmapsf_corr_ext': 'e_brightness'
         }, inplace=True)
     else:
         detections.rename(columns={

@@ -1,45 +1,9 @@
-import numpy as np
-from typing import Optional, Dict, List
+from typing import List
 from abc import ABC, abstractmethod
 
-from dataclasses import dataclass
-import pandas as pd
 from tqdm import tqdm
 
-
-@dataclass
-class AstroObject:
-    metadata: pd.DataFrame
-    detections: pd.DataFrame
-    non_detections: [Optional[pd.DataFrame]] = None
-    forced_photometry: [Optional[pd.DataFrame]] = None
-    xmatch: [Optional[pd.DataFrame]] = None
-    stamps: Optional[Dict[str, np.ndarray]] = None  # Might change
-    features: [Optional[pd.DataFrame]] = None
-
-    def __post_init__(self):
-        if 'aid' not in self.metadata['name'].values:
-            raise ValueError("'aid' is a mandatory field of metadata")
-
-        mandatory_detection_columns = {
-            'candid', 'tid', 'mjd', 'sid',
-            'fid', 'pid', 'ra', 'dec', 'brightness',
-            'e_brightness', 'unit'}
-
-        missing_detections_columns = mandatory_detection_columns - set(self.detections.columns)
-        if len(missing_detections_columns) > 0:
-            raise ValueError(f"detections has missing columns: {missing_detections_columns}")
-
-        if self.features is None:
-            self.features = pd.DataFrame(
-                columns=[
-                    'name',
-                    'value',
-                    'fid',
-                    'sid',
-                    'version'
-                ]
-            )
+from lc_classifier.base import AstroObject
 
 
 class FeatureExtractor(ABC):
@@ -64,3 +28,13 @@ class FeatureExtractorComposite(FeatureExtractor, ABC):
     def compute_features_single_object(self, astro_object: AstroObject):
         for extractor in self.extractors:
             extractor.compute_features_single_object(astro_object)
+
+
+class LightcurvePreprocessor(ABC):
+    @abstractmethod
+    def preprocess_single_object(self, astro_object: AstroObject):
+        pass
+
+    def preprocess_batch(self, astro_objects: List[AstroObject], progress_bar=False):
+        for astro_object in tqdm(astro_objects, disable=(not progress_bar)):
+            self.preprocess_single_object(astro_object)

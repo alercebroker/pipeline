@@ -4,7 +4,7 @@ import unittest
 
 from lc_classifier.features.extractors.coordinate_extractor import CoordinateExtractor
 from lc_classifier.examples.data import get_ztf_example, get_elasticc_example
-from lc_classifier.features.core.base import AstroObject
+from lc_classifier.base import AstroObject
 
 
 class TestCoordinateExtractor(unittest.TestCase):

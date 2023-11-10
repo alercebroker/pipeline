@@ -2,8 +2,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from lc_classifier.features.core.base import AstroObject
-from lc_classifier.features.core.utils import plot_astro_object
+from lc_classifier.base import AstroObject
 from tqdm import tqdm
 from typing import List
 
@@ -85,7 +84,7 @@ def create_astro_object(
 
 
 def save_batch(astro_objects: List[AstroObject], batch_id: int):
-    filename = f'astro_objects_batch_{batch_id:04}.pkl'
+    filename = f'data/astro_objects_batch_{batch_id:04}.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(astro_objects, f)
 
@@ -93,8 +92,8 @@ def save_batch(astro_objects: List[AstroObject], batch_id: int):
 if __name__ == '__main__':
     # Build AstroObjects
 
-    lightcurves = pd.read_pickle('lightcurves.pkl')
-    object_df = pd.read_pickle('objects.pkl')
+    lightcurves = pd.read_pickle('data/lightcurves.pkl')
+    object_df = pd.read_pickle('data/objects.pkl')
 
     lightcurves.set_index('oid', inplace=True)
     object_df.set_index('oid', inplace=True)
