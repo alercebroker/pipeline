@@ -9,7 +9,10 @@
     },
     {
       "name": "candid",
-      "type": "string"
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
     },
     {
       "name": "meanra",

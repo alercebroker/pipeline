@@ -44,7 +44,9 @@ class LightcurveStep(GenericStep):
         candids = {}
         for msg in messages:
             aid = msg["aid"]
-            candids[aid] = msg["candid"]
+            if aid not in candids:
+                candids[aid] = []
+            candids[aid].append(msg["candid"])
             oids.update(
                 {
                     det["oid"]: aid
@@ -112,7 +114,6 @@ class LightcurveStep(GenericStep):
         self.logger.debug(
             f"Obtained {len(detections[detections['new']])} new detections"
         )
-        print(f'messages {len(messages["detections"])}')
         return {
             "candids": messages["candids"],
             "detections": detections,
@@ -142,6 +143,7 @@ class LightcurveStep(GenericStep):
 
         parsed_result = []
         for det in ztf_models:
+            print(det)
             det: dict = det[0].__dict__
             extra_fields = {}
             parsed_det = {}

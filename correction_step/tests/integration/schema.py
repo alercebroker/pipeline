@@ -9,7 +9,7 @@ EXTRA_FIELDS = {
 
 DETECTION = {
     "type": "record",
-    "name": "alert",
+    "name": "detection",
     "fields": [
         {"name": "aid", "type": "string"},
         {"name": "oid", "type": "string"},
@@ -54,10 +54,10 @@ NON_DETECTION = {
 SCHEMA = {
     "type": "record",
     "doc": "Multi stream alert of any telescope/survey",
-    "name": "alerce.alert",
+    "name": "prv_candidates",
     "fields": [
         {"name": "aid", "type": "string"},
-        {"name": "candid", "type": "string"},
+        {"name": "candid", "type": {"type": "array", "items": "string"}},
         {"name": "detections", "type": {"type": "array", "items": DETECTION}},
         {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}},
     ],

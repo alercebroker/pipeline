@@ -77,7 +77,7 @@ class StepTestCase(unittest.TestCase):
         expected_output = [
             {
                 "aid": "aid1",
-                "candid": "1_candid_aid_1",
+                "candid": ["1_candid_aid_1", "2_candid_aid_1"],
                 "meanra": 888,
                 "meandec": 999,
                 "detections": [
@@ -167,7 +167,7 @@ class StepTestCase(unittest.TestCase):
             },
             {
                 "aid": "aid2",
-                "candid": "1_candid_aid_2",
+                "candid": ["1_candid_aid_2"],
                 "meanra": 444,
                 "meandec": 555,
                 "detections": [
