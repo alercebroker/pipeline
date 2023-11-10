@@ -55,8 +55,10 @@ class FeaturesComputer(GenericStep):
 
     def execute(self, messages):
         detections, non_detections, xmatch, messages_aid_oid = [], [], [], {}
+        candids = {}
 
         for message in messages:
+            candids[message["aid"]] = message["candid"]
             detections.extend(message.get("detections", []))
             non_detections.extend(message.get("non_detections", []))
             xmatch.append(
@@ -76,7 +78,9 @@ class FeaturesComputer(GenericStep):
         if len(features) > 0:
             self.produce_to_scribe(messages_aid_oid, features)
 
-        output = parse_output(features, messages, self.features_extractor)
+        output = parse_output(
+            features, messages, self.features_extractor, candids
+        )
         return output
 
     def post_execute(self, result):

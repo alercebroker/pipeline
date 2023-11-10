@@ -83,6 +83,7 @@ SCHEMA = {
     "type": "record",
     "fields": [
         {"name": "aid", "type": "string"},
+        {"name": "candid", "type": "string"},
         {"name": "meanra", "type": "float"},
         {"name": "meandec", "type": "float"},
         {"name": "detections", "type": DETECTIONS},

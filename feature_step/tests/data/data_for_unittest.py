@@ -21,6 +21,7 @@ features_df_for_parse.index.name = "aid"
 messages_for_parsing = [
     {
         "aid": "aid1",
+        "candid": "candid1",
         "meanra": 888,
         "meandec": 999,
         "detections": [],
@@ -29,6 +30,7 @@ messages_for_parsing = [
     },
     {
         "aid": "aid2",
+        "candid": "candid2",
         "meanra": 444,
         "meandec": 555,
         "detections": [],
@@ -58,6 +60,7 @@ features_df_for_execute.index.name = "aid"
 messages_for_execute = [
     {
         "aid": "aid1",
+        "candid": "1_candid_aid_1",
         "meanra": 888,
         "meandec": 999,
         "detections": [
@@ -140,6 +143,7 @@ messages_for_execute = [
     },
     {
         "aid": "aid2",
+        "candid": "1_candid_aid_2",
         "meanra": 444,
         "meandec": 555,
         "detections": [

@@ -153,7 +153,8 @@ class XmatchStep(GenericStep):
         self.logger.info("Getting xmatches")
         xmatches = self.request_xmatch(input_catalog, self.retries)
         # Get output format
-        output_messages = parse_output(light_curves, xmatches, lc_hash)
+        candids = {msg["aid"]: msg["candid"] for msg in messages}
+        output_messages = parse_output(light_curves, xmatches, lc_hash, candids)
         del messages
         del light_curves
         del input_catalog

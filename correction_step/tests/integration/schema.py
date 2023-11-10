@@ -57,6 +57,7 @@ SCHEMA = {
     "name": "alerce.alert",
     "fields": [
         {"name": "aid", "type": "string"},
+        {"name": "candid", "type": "string"},
         {"name": "detections", "type": {"type": "array", "items": DETECTION}},
         {"name": "non_detections", "type": {"type": "array", "items": NON_DETECTION}},
     ],

@@ -33,9 +33,7 @@ def settings_factory():
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
-        "EXTRA_METRICS": [
-            {"key": "aid"},
-        ],
+        "EXTRA_METRICS": [{"key": "aid"}, {"key": "candid"}],
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),

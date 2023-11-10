@@ -11,24 +11,32 @@ from tests.utils import ztf_alert, atlas_alert, non_detection, elasticc_alert
 messages = [
     {
         "aid": "AID1",
+        "candid": "a",
         "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, new=False, forced=True)],
         "non_detections": [],
     },
     {
         "aid": "AID2",
+        "candid": "c",
         "detections": [
             ztf_alert(aid="AID2", candid="c", new=True),
             ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
         ],
         "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
     },
-    {"aid": "AID3", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
-    {"aid": "AID4", "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)], "non_detections": []},
+    {"aid": "AID3", "candid": "e", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
+    {
+        "aid": "AID4",
+        "candid": "hehe",
+        "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
+        "non_detections": [],
+    },
 ]
 
 message4produce = [
     {
         "aid": "AID1",
+        "candid": "a",
         "meanra": 1,
         "meandec": 1,
         "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, forced=True, new=False)],
@@ -36,6 +44,7 @@ message4produce = [
     },
     {
         "aid": "AID2",
+        "candid": "c",
         "meanra": 1,
         "meandec": 1,
         "detections": [
@@ -46,6 +55,7 @@ message4produce = [
     },
     {
         "aid": "AID3",
+        "candid": "e",
         "meanra": 1,
         "meandec": 1,
         "detections": [atlas_alert(aid="AID3", candid="e", new=True)],
@@ -53,6 +63,7 @@ message4produce = [
     },
     {
         "aid": "AID4",
+        "candid": "hehe",
         "meanra": 1,
         "meandec": 1,
         "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
@@ -61,6 +72,7 @@ message4produce = [
 ]
 
 message4execute = {
+    "candids": {"AID1": "a", "AID2": "c", "AID3": "e", "AID4": "hehe"},
     "detections": [
         ztf_alert(aid="AID1", candid="a", new=True),
         ztf_alert(aid="AID1", candid="b", has_stamp=False, new=False, forced=True),

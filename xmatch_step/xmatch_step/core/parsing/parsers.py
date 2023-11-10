@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 
 
-def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame, lc: dict):
+def parse_output(
+    lightcurves: pd.DataFrame, xmatches: pd.DataFrame, lc: dict, candids: dict
+):
     """Join xmatches with input lightcurves. If xmatch not exists for an object, the value is None.
     Also generate a list of dict as output.
     :param light_curves: Generic messages that contain the light curves (in dataframe)
@@ -36,6 +38,7 @@ def parse_output(lightcurves: pd.DataFrame, xmatches: pd.DataFrame, lc: dict):
 
     for obj in data:
         object_lc = lc[obj["aid"]]
+        obj["candid"] = candids[obj["aid"]]
         obj["detections"] = object_lc["detections"]
         obj["non_detections"] = object_lc["non_detections"]
 
