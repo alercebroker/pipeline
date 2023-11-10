@@ -1,0 +1,63 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 1
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+configmap:
+  classPrefix: Elasticc
+  consumeMessages: "1000"
+  consumeTimeout: "10"
+  consumerGroupId: xmatch-elasticc
+  consumerServer: ${kafka_server}
+  consumerTopics: correction_elasticc
+  metricsServer: ${kafka_server}
+  metricsTopic: metrics_elasticc
+  producerMessageMaxBytes: "67108864"
+  producerServer: ${kafka_server}
+  producerTopic: xmatch_elasticc
+  retries: "3"
+  retryInterval: "1"
+  scribeServer: ${kafka_server}
+  scribeTopic: w_object_elasticc
+  skipXmatch: "true"
+extraEnvVariables:
+- name: METRICS_SOURCE
+  value: 'xmatch-step-elasticc'
+- name: METRICS_SURVEY
+  value: LSST
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+namespace: xmatch-step-elasticc
+resources:
+  requests:
+    cpu: 500m
+    memory: 320M
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    producer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    scribe:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}

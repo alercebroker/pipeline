@@ -36,6 +36,8 @@ def default_parser(data, **kwargs):
 def _get_sql_detections(
     oids: dict, db_sql: PSQLConnection, parser: Callable = default_parser
 ):
+    if db_sql is None:
+        return []
     with db_sql.session() as session:
         stmt = select(Detection).where(Detection.oid.in_(oids))
         detections = session.execute(stmt).all()
@@ -43,6 +45,8 @@ def _get_sql_detections(
 
 
 def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
+    if db_sql is None:
+        return []
     with db_sql.session() as session:
         stmt = select(NonDetection).where(NonDetection.oid.in_(oids))
         detections = session.execute(stmt).all()
@@ -50,6 +54,8 @@ def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
 
 
 def _get_sql_forced_photometries(oids, db_sql, parser: Callable = default_parser):
+    if db_sql is None:
+        return []
     with db_sql.session() as session:
         stmt = select(ForcedPhotometry).where(ForcedPhotometry.oid.in_(oids))
         forced = session.execute(stmt).all()

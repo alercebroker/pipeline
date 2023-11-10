@@ -267,6 +267,7 @@ jobs:
             feature-step --values=feature_step-helm-values --folder=feature_step \
             lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
             lightcurve-step --values=lightcurve-step-helm-values \
+            logstash --values=logstash-helm-values --chart=logstash --folder=logstash \
             magstats-step --values=magstats_step-helm-values --folder=magstats_step \
             metadata-step --values=metadata_step-helm-values --folder=metadata_step \
             prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \

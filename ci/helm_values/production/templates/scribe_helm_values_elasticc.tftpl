@@ -1,0 +1,44 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 4
+  targetCPUUtilizationPercentage: 80
+extraEnvVariables:
+- name: METRICS_SOURCE
+  value: 'scribe-elasticc'
+- name: METRICS_SURVEY
+  value: LSST
+image:
+  repository: ghcr.io/alercebroker/scribe
+namespace: scribe-elasticc
+resources:
+  requests:
+    cpu: 20m
+    memory: 128Mi
+secrets:
+  bootstrapServers: ${kafka_server}
+  consumerGroupId: scribe_consumer_elasticc
+  kafkaAuth:
+    enabled: true
+    password: ${kafka_password}
+    username: ${kafka_username}
+  metricsHost: ${kafka_server}
+  metricsKafkaAuth:
+    enabled: true
+    password: ${kafka_password}
+    username: ${kafka_username}
+  metricsTopic: metrics_elasticc
+  mockDb: ""
+  numMessages: "1000"
+  secretName: mongo-elasticc-production/writer
+  topics: w_object_elasticc,w_detection_elasticc
+  dbEngine: "mongo"

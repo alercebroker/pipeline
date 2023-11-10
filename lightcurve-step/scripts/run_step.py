@@ -29,13 +29,12 @@ def step_creator():
 
     logger.addHandler(handler)
     db_mongo = DatabaseConnection(settings["DB_CONFIG"])
-    db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
+    if settings["DB_CONFIG_SQL"]:
+        db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
+    else:
+        db_sql = None
 
-    step_params = {
-        "config": settings,
-        "db_mongo": db_mongo,
-        "db_sql": db_sql
-    }
+    step_params = {"config": settings, "db_mongo": db_mongo, "db_sql": db_sql}
 
     if settings["PROMETHEUS"]:
         step_params["prometheus_metrics"] = PrometheusMetrics()
@@ -47,6 +46,12 @@ def step_creator():
         configure(
             application_name="step.Lightcurve",
             server_address=settings["PYROSCOPE_SERVER"],
+        )
+
+    if os.getenv("SKIP_MJD_FILTER", "false") == "true":
+        logger.info(
+            "This step won't filter detections by MJD. \
+            Keep this in mind when using for ELAsTiCC"
         )
 
     return LightcurveStep(**step_params)

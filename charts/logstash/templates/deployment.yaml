@@ -1,0 +1,83 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "logstash.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "logstash.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "logstash.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "logstash.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          ports:
+            - containerPort: {{ .Values.containerPort.filebeat }}
+              name: filebeat
+            - containerPort: {{ .Values.containerPort.logstash }}
+              name: logstash
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          image: '{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+          - name: log-pipeline-config
+            mountPath: /usr/share/logstash/pipeline/
+          command:
+          - logstash
+          env:
+            - name: MONITORING_ELASTICSEARCH_HOSTS
+              value: {{ .Values.elasticsearchHost }}
+            - name: ES_HOST
+              value: {{ .Values.elasticsearchHost }}
+            - name: LOGSTASH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "logstash.fullname" . }}
+                  key: username
+            - name: LOGSTASH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "logstash.fullname" . }}
+                  key: password
+            - name: CONSUMER_SERVER
+              value: {{ .Values.kafkaHost }}
+            - name: CONSUMER_GROUP_ID
+              value: {{ .Values.consumerGroupId }}
+            - name: METRICS_TOPIC
+              value: {{ .Values.kafkaTopic }}
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: username
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: password
+      volumes:
+      - name: log-pipeline-config
+        configMap:
+          {{- if .Values.secrets.kafkaAuth.enabled }}
+          name: '{{ include "logstash.fullname" . }}-sasl'
+          {{- else }}
+          name: '{{ include "logstash.fullname" . }}-plaintext'
+          {{- end}}
+          items:
+          - key: log-pipeline-es.conf
+            path: log-pipeline-es.conf
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

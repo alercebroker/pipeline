@@ -1,0 +1,41 @@
+replicaCount: 1
+
+namespace: "logstash"
+
+fullnameOverride: ""
+nameOverride: ""
+
+image:
+  repository: opensearchproject/logstash-oss-with-opensearch-output-plugin
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "7.16.2"
+
+containerPort:
+  filebeat: 5044
+  logstash: 9600
+
+elasticsearchHost: ""
+kafkaHost: ""
+kafkaTopic: "metrics"
+consumerGroupId: "logstash"
+
+secrets:
+  elasticsearch:
+    username: ""
+    password: ""
+  kafkaAuth:
+    enabled: false
+    username: ""
+    password: ""
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+affinity: {}

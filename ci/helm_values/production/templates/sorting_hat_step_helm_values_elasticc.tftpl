@@ -1,0 +1,59 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 60
+configmap:
+  consumerClass: apf.consumers.KafkaSchemalessConsumer
+  consumerGroupId: sorting-hat-elasticc
+  consumerServer: ${kafka_server}
+  consumerTopics: elasticc
+  metricsServer: ${kafka_server}
+  metricsTopic: metrics_elasticc
+  mongoSecretName: mongo-elasticc-production/writer
+  producerMessageMaxBytes: "67108864"
+  producerServer: ${kafka_server}
+  producerTopic: sorting-hat-elasticc
+
+featureFlags:
+  usePsql: false
+
+extraEnvVariables:
+- name: METRICS_SOURCE
+  value: 'sorting-hat-elasticc'
+- name: METRICS_SURVEY
+  value: LSST
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+loggingDebug: false
+namespace: sorting-hat-elasticc
+resources:
+  requests:
+    cpu: 150m
+    memory: 128Mi
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    producer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}

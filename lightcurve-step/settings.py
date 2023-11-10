@@ -12,8 +12,15 @@ def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
-    db_config_mongo = get_credentials(os.environ["MONGODB_SECRET_NAME"],db_name="mongo")
-    db_config_sql = get_credentials(os.environ["SQL_SECRET_NAME"],db_name="sql")
+    db_config_mongo = get_credentials(
+        os.environ["MONGODB_SECRET_NAME"], db_name="mongo"
+    )
+    if os.getenv("SQL_SECRET_NAME"):
+        db_config_sql = get_credentials(
+            os.environ.get("SQL_SECRET_NAME"), db_name="sql"
+        )
+    else:
+        db_config_sql = None
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -131,7 +138,7 @@ def settings_creator():
         "METRICS_CONFIG": metrics_config,
         "PROMETHEUS": prometheus,
         "DB_CONFIG": db_config_mongo,
-        "DB_CONFIG_SQL":db_config_sql,
+        "DB_CONFIG_SQL": db_config_sql,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROFILING": use_profiling,
         "PYROSCOPE_SERVER": pyroscope_server,
