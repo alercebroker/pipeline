@@ -60,7 +60,7 @@ features_df_for_execute.index.name = "aid"
 messages_for_execute = [
     {
         "aid": "aid1",
-        "candid": "1_candid_aid_1",
+        "candid": ["1_candid_aid_1", "2_candid_aid_1"],
         "meanra": 888,
         "meandec": 999,
         "detections": [
@@ -143,7 +143,7 @@ messages_for_execute = [
     },
     {
         "aid": "aid2",
-        "candid": "1_candid_aid_2",
+        "candid": ["1_candid_aid_2"],
         "meanra": 444,
         "meandec": 555,
         "detections": [

@@ -58,7 +58,9 @@ class FeaturesComputer(GenericStep):
         candids = {}
 
         for message in messages:
-            candids[message["aid"]] = message["candid"]
+            if not message["aid"] in candids:
+                candids[message["aid"]] = []
+            candids[message["aid"]].extend(message["candid"])
             detections.extend(message.get("detections", []))
             non_detections.extend(message.get("non_detections", []))
             xmatch.append(

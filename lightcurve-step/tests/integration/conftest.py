@@ -4,7 +4,6 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 import uuid
 from fastavro.schema import load_schema
-from fastavro.repository.base import SchemaRepositoryError
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from sqlalchemy import text
@@ -51,10 +50,7 @@ def env_variables():
 
 @pytest.fixture()
 def produce_messages(kafka_service):
-    try:
-        schema = load_schema("tests/integration/input_schema.avsc")
-    except SchemaRepositoryError:
-        schema = load_schema("lightcurve-step/tests/integration/input_schema.avsc")
+    schema = load_schema("tests/integration/input_schema.avsc")
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -92,15 +88,19 @@ def populate_sql(conn: PsqlDatabase):
             )
         )
         session.execute(
-            text("""
+            text(
+                """
             INSERT INTO non_detection(oid, fid, mjd, diffmaglim) VALUES ('ZTF000llmn', 1, 55000, 42.00)
-            """)
+            """
+            )
         )
         session.execute(
-            text("""
-            INSERT INTO forced_photometry(oid, mjd, pid, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp) 
+            text(
+                """
+            INSERT INTO forced_photometry(oid, mjd, pid, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp)
             VALUES ('ZTF000llmn', 55500, 9182734, 1, 45.0, 45.0, 1, false, false, false)
-            """)
+            """
+            )
         )
         session.commit()
 

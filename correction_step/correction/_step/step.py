@@ -87,7 +87,9 @@ class CorrectionStep(GenericStep):
         detections, non_detections = [], []
         candids = {}
         for msg in messages:
-            candids[msg["aid"]] = msg["candid"]
+            if msg["aid"] not in candids:
+                candids[msg["aid"]] = []
+            candids[msg["aid"]].extend(msg["candid"])
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections, "candids": candids}
