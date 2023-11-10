@@ -11,3 +11,17 @@ variable "elasticsearch_username" {
 variable "elasticsearch_password" {
   type = string
 }
+
+variable "lightcurve_kafka_username" {
+  type = string
+}
+variable "lightcurve_kafka_password" {
+  type = string
+}
+
+variable "ghcr_username" {
+  type = string
+}
+variable "ghcr_password" {
+  type = string
+}
