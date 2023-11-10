@@ -1,9 +1,9 @@
 import os
 
-# should be environment variables
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/correction_step/output.avsc")
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/correction_step/metrics.json")
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), "../../../schemas/scribe.avsc")
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
 
 
 def settings_creator():

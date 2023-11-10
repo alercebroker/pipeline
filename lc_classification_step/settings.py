@@ -7,6 +7,11 @@ from models_settings import configurator
 from fastavro.schema import load_schema
 from fastavro.repository.base import SchemaRepositoryError
 
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
@@ -20,12 +25,6 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
-try:
-    ELASTICC_SCHEMA = load_schema("schemas/output_elasticc.avsc")
-except SchemaRepositoryError:
-    ELASTICC_SCHEMA = load_schema(
-        "lc_classification_step/schemas/output_elasticc.avsc"
-    )
 PRODUCER_CONFIG = {
     "TOPIC_STRATEGY": {
         "PARAMS": {
@@ -43,9 +42,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.kafka.KafkaProducer"),
-    "SCHEMA": SCHEMA
-    if os.getenv("STREAM", "ztf") == "ztf"
-    else ELASTICC_SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -54,7 +51,7 @@ SCRIBE_PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
     "TOPIC": os.environ["SCRIBE_TOPIC"],
-    "SCHEMA": SCRIBE_SCHEMA,
+    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
 }
 
 METRICS_CONFIG = {
@@ -67,25 +64,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "type": "object",
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "type": "string",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "type": "string",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 

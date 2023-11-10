@@ -3,6 +3,12 @@ from schema import SCHEMA
 from features.utils.selector import selector
 from fastavro.schema import load_schema
 import pathlib
+import os
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/feature_step/output.avsc")
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/feature_step/metrics.json")
+SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/scribe.avsc")
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.kafka.KafkaConsumer",
@@ -23,7 +29,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 try:
@@ -38,7 +44,7 @@ SCRIBE_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": load_schema(schema_path),
+    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
 }
 
 

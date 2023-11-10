@@ -47,6 +47,10 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "../../../schemas/correction_step/output.avsc",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../../../schemas/correction_step/metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
         "SCRIBE_SERVER": "localhost:9092",

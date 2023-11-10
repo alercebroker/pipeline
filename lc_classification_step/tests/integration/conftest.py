@@ -17,6 +17,8 @@ from tests.mockdata.extra_felds import generate_extra_fields
 from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
 from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
 
+ELASTICC_INPUT_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../mockdata/input_elasticc.avsc")
+ZTF_INPUT_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../mockdata/input_ztf.avsc")
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
@@ -90,6 +92,9 @@ def env_variables_ztf():
     def set_env_variables():
         random_string = uuid.uuid4().hex
         env_variables_dict = {
+            "PRODUCER_SCHEMA_PATH": "../../../schemas/lc_classification_step/output_ztf.avsc",
+            "METRIS_SCHEMA_PATH": "../../../schemas/lc_classification_step/metrics.json",
+            "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
             "CONSUMER_SERVER": "localhost:9092",
             "CONSUMER_TOPICS": "features_ztf",
             "CONSUMER_GROUP_ID": random_string,
@@ -124,6 +129,9 @@ def env_variables_elasticc():
     ):
         random_string = uuid.uuid4().hex
         env_variables_dict = {
+            "PRODUCER_SCHEMA_PATH": "../../../schemas/lc_classification_step/output_elasticc.avsc",
+            "METRIS_SCHEMA_PATH": "../../../schemas/lc_classification_step/metrics.json",
+            "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
             "CONSUMER_SERVER": "localhost:9092",
             "CONSUMER_TOPICS": "features_elasticc",
             "CONSUMER_GROUP_ID": random_string,
@@ -145,6 +153,7 @@ def env_variables_elasticc():
         }
         env_variables_dict.update(extra_env_vars)
         for key, value in env_variables_dict.items():
+            print(f"SETEANDO VARIABLE {key} WITH {value}")
             os.environ[key] = value
 
     return set_env_variables
@@ -155,21 +164,23 @@ def produce_messages():
     def func(topic, force_empty_features=False):
         if topic == "features_ztf":
             schema = SCHEMA_ZTF
+            schema_path = ZTF_INPUT_SCHEMA_PATH
         elif topic == "features_elasticc":
             schema = SCHEMA_ELASTICC
+            schema_path = ELASTICC_INPUT_SCHEMA_PATH
         if force_empty_features:
             schema["fields"][-1]["type"] = "null"
-        _produce_messages(topic, schema)
+        _produce_messages(topic, schema, schema_path)
 
     return func
 
 
-def _produce_messages(topic, SCHEMA):
+def _produce_messages(topic, SCHEMA, SCHEMA_PATH):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": SCHEMA_PATH,
         }
     )
     random.seed(42)

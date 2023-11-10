@@ -8,15 +8,14 @@
         {"name": "meandec", "type": "float"},
         {
             "name": "detections",
-            "type":
-            {
+            "type": {
                 "type": "array",
                 "default": [],
                 "items": {
                     "name": "detections_record",
                     "type": "record",
                     "fields": [
-                        {"name": "candid", "type": "string"},
+                        {"name": "candid", "type": ["long", "string"]},
                         {"name": "tid", "type": "string"},
                         {"name": "aid", "type": "string"},
                         {"name": "oid", "type": "string"},
@@ -86,16 +85,6 @@
                 {
                     "type": "map",
                     "values": {"type": "map", "values": ["string", "float", "null", "int"]}
-                },
-                "null"
-            ]
-        },
-        {
-            "name": "features",
-            "type": [
-                {
-                    "type": "map",
-                    "values": ["boolean", "float", "null", "int"]
                 },
                 "null"
             ]
