@@ -73,6 +73,7 @@ class CorrectionStep(GenericStep):
             output.append(
                 {
                     "aid": aid,
+                    "candid": result["candids"][aid],
                     "meanra": result["coords"][aid]["meanra"],
                     "meandec": result["coords"][aid]["meandec"],
                     "detections": dets.to_dict("records"),
@@ -84,10 +85,12 @@ class CorrectionStep(GenericStep):
     @classmethod
     def pre_execute(cls, messages: list[dict]) -> dict:
         detections, non_detections = [], []
+        candids = {}
         for msg in messages:
+            candids[msg["aid"]] = msg["candid"]
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
-        return {"detections": detections, "non_detections": non_detections}
+        return {"detections": detections, "non_detections": non_detections, "candids": candids}
 
     @classmethod
     def execute(cls, message: dict) -> dict:
@@ -99,6 +102,7 @@ class CorrectionStep(GenericStep):
             "detections": detections,
             "non_detections": non_detections.to_dict("records"),
             "coords": coords,
+            "candids": message["candids"],
         }
 
     def post_execute(self, result: dict):

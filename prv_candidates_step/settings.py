@@ -58,6 +58,8 @@ def settings_creator():
         "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
         "EXTRA_METRICS": [
             {"key": "candid", "format": lambda x: str(x)},
+            {"key": "oid"},
+            {"key": "aid"},
         ],
         "PARAMS": {
             "PARAMS": {

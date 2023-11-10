@@ -77,6 +77,7 @@ def produce_messages(topic):
 
     for message in messages:
         for detection in message["detections"]:
+            detection["aid"] = message["aid"]
             detection["forced"] = False
             detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
             if str(detection["tid"]).lower() == "ztf":
@@ -90,6 +91,7 @@ def produce_messages(topic):
                 }
         producer.produce(message)
 
+
 @pytest.fixture(scope="session")
 def kafka_consumer():
     consumer = KafkaConsumer(
@@ -101,7 +103,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["corrections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer
@@ -119,7 +121,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_detections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer

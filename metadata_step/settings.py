@@ -26,6 +26,7 @@ METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
         {"key": "aid"},
+        {"key": "candid"},
     ],
     "PARAMS": {
         "PARAMS": {
@@ -40,9 +41,7 @@ METRICS_CONFIG = {
             "title": "The root schema",
             "description": "The root schema comprises the entire JSON document.",
             "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
+            "examples": [{"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
                 "timestamp_sent": {
@@ -83,5 +82,5 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
     "LOGGING_DEBUG": LOGGING_DEBUG,
-    "DATABASE": DATABASE
+    "DATABASE": DATABASE,
 }

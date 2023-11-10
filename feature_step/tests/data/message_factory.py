@@ -123,6 +123,7 @@ def generate_input_batch(n: int) -> list[dict]:
         xmatch = get_fake_xmatch(aid, meanra, meandec)
         msg = {
             "aid": aid,
+            "candid": detections_g[0]["candid"],
             "meanra": meanra,
             "meandec": meandec,
             "detections": detections_g + detections_r,

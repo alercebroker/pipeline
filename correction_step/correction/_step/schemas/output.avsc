@@ -8,6 +8,10 @@
       "type": "string"
     },
     {
+      "name": "candid",
+      "type": "string"
+    },
+    {
       "name": "meanra",
       "type": "float"
     },

@@ -59,6 +59,7 @@ def settings_creator():
         "CLASS": "apf.metrics.KafkaMetricsProducer",
         "EXTRA_METRICS": [
             {"key": "aid", "format": lambda x: str(x)},
+            {"key": "candid", "format": lambda x: str(x)},
         ],
         "PARAMS": {
             "PARAMS": {

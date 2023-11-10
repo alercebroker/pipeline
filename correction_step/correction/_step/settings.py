@@ -61,6 +61,10 @@ def settings_creator():
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
+        "EXTRA_METRICS": [
+            {"key": "aid", "format": lambda x: str(x)},
+            {"key": "candid", "format": lambda x: str(x)},
+        ],
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),

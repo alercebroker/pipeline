@@ -25,12 +25,17 @@ class PreviousCandidatesExtractor:
                 module = getattr(strategy, survey)
             except AttributeError:
                 messages.append(
-                    {"aid": alert["aid"], "detections": [alert], "non_detections": []}
+                    {
+                        "aid": alert["aid"],
+                        "detections": [alert],
+                        "non_detections": [],
+                        "candid": alert["candid"],
+                    }
                 )
                 self.logger.debug(msg.format(0, 0, alert["aid"]))
             else:
                 out = module.extract_detections_and_non_detections(alert)
-                messages.append(out)
+                messages.append({"candid": alert["candid"], **out})
                 self.logger.debug(
                     msg.format(
                         len(out["detections"]) - 1,
