@@ -74,6 +74,7 @@ class XmatchStep(GenericStep):
             )
             return message
 
+        self.set_producer_key_field("aid")
         return list(map(_add_non_detection, result))
 
     def request_xmatch(

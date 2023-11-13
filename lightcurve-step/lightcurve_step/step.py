@@ -258,6 +258,7 @@ class LightcurveStep(GenericStep):
         except KeyError:  # Handle empty non-detections
             non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
         output = []
+        cls.set_producer_key_field("aid")
         for aid, dets in detections:
             try:
                 nd = non_detections.get_group(aid).to_dict("records")
