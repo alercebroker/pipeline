@@ -18,6 +18,12 @@ from sqlalchemy import text
 
 os.environ["LOGGING_DEBUG"] = "True"
 
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc")
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json")
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), )
+
 MONGO_CONFIG = {
     "host": "localhost",
     "username": "test_user",
@@ -41,7 +47,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 CONSUMER_CONFIG = {
@@ -68,37 +74,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": "localhost:9092",
         },
         "TOPIC": "metrics",
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 
