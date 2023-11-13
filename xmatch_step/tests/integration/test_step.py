@@ -10,7 +10,6 @@ from tests.data.messages import (
     get_fake_xmatch,
     get_fake_empty_xmatch,
 )
-import os
 
 PRODUCER_SCHEMA_PATH = pathlib.Path(
     pathlib.Path(__file__).parent.parent.parent.parent,
