@@ -2,14 +2,18 @@
 #       sorting_hat_step   Settings File
 ##################################################
 import os
+import pathlib
 from credentials import get_credentials
-from schemas.output_schema import SCHEMA
-from fastavro.repository.base import SchemaRepositoryError
 
-# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
@@ -71,7 +75,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
     },
-    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
 }
 
 
@@ -85,7 +89,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.getenv("METRICS_HOST"),
         },
         "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 
