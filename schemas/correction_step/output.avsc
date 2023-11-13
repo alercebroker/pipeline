@@ -8,6 +8,13 @@
       "type": "string"
     },
     {
+      "name": "candid",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
       "name": "meanra",
       "type": "float"
     },
