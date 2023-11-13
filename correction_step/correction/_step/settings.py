@@ -1,23 +1,9 @@
 import os
-import json
 
-from fastavro import schema
-
-SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
-
-
-def get_output_schema() -> dict:
-    return schema.load_schema(os.path.join(SCHEMA_DIR, "output.avsc"))
-
-
-def get_scribe_schema() -> dict:
-    return schema.load_schema(os.path.join(SCHEMA_DIR, "scribe.avsc"))
-
-
-def get_metrics_schema() -> dict:
-    path = os.path.join(SCHEMA_DIR, "metrics.json")
-    with open(path, "r") as fh:
-        return json.load(fh)
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
 
 
 def settings_creator():
@@ -47,7 +33,7 @@ def settings_creator():
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": get_output_schema(),
+        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
     }
 
     scribe_producer_config = {
@@ -56,7 +42,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": get_scribe_schema(),
+        "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
     }
 
     metrics_config = {
@@ -71,7 +57,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": get_metrics_schema(),
+            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
         },
     }
 

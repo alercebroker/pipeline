@@ -14,6 +14,7 @@ from fastavro.utils import generate_many
 from tests.integration.schema import SCHEMA
 from tests.utils import ztf_extra_fields
 
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
@@ -46,6 +47,10 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "../../../schemas/correction_step/output.avsc",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../../../schemas/correction_step/metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
         "SCRIBE_SERVER": "localhost:9092",
@@ -68,7 +73,7 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
         }
     )
     messages = generate_many(SCHEMA, 15)

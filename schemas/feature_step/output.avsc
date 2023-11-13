@@ -52,12 +52,12 @@
                                     "float",
                                     "string",
                                     "bytes",
-                                    "boolean",
-                                ],
-                            },
-                        },
-                    ],
-                },
+                                    "boolean"
+                                ]
+                            }
+                        }
+                    ]
+                }
             }
         },
         {
@@ -75,9 +75,9 @@
                         {"name": "oid", "type": "string"},
                         {"name": "mjd", "type": "double"},
                         {"name": "fid", "type": "string"},
-                        {"name": "diffmaglim", "type": "float"},
-                    ],
-                },
+                        {"name": "diffmaglim", "type": "float"}
+                    ]
+                }
             }
         },
         {
@@ -85,7 +85,7 @@
             "type": [
                 {
                     "type": "map",
-                    "values": {"type": "map", "values": ["string", "float", "null", "int"]},
+                    "values": {"type": "map", "values": ["string", "float", "null", "int"]}
                 },
                 "null"
             ]
@@ -95,10 +95,10 @@
             "type": [
                 {
                     "type": "map",
-                    "values": ["boolean", "float", "null", "int"],
+                    "values": ["boolean", "float", "null", "int"]
                 },
                 "null"
             ]
-        },
-    ],
+        }
+    ]
 }

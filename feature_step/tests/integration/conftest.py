@@ -13,7 +13,8 @@ from tests.data.elasticc_message_factory import (
     generate_input_batch as generate_elasticc_batch,
     ELASTICC_BANDS,
 )
-from tests.integration.input_schema import SCHEMA
+
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "input_schema.avsc")
 
 os.environ["FEATURE_EXTRACTOR"] = ""
 os.environ["CONSUMER_TOPICS"] = ""
@@ -68,7 +69,7 @@ def kafka_service(docker_ip, docker_services):
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "elasticc",
-        "SCHEMA": SCHEMA,
+        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
     }
     producer = KafkaProducer(config)
     data_elasticc = generate_elasticc_batch(5, ELASTICC_BANDS)
@@ -79,7 +80,7 @@ def kafka_service(docker_ip, docker_services):
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "ztf",
-        "SCHEMA": SCHEMA,
+        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
     }
     producer = KafkaProducer(config)
     for data in data_ztf:

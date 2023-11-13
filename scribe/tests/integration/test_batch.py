@@ -3,6 +3,7 @@ from mongo_scribe.step import MongoScribe
 from apf.producers.kafka import KafkaProducer
 from _generator import CommandGenerator
 from db_plugins.db.mongo._connection import MongoConnection
+import os
 
 from pprint import pprint
 
@@ -32,14 +33,7 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic_2",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA": {
-        "namespace": "db_operation",
-        "type": "record",
-        "name": "Command",
-        "fields": [
-            {"name": "payload", "type": "string"},
-        ],
-    },
+    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
 }
 
 

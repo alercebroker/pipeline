@@ -10,6 +10,12 @@ from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnectio
 from db_plugins.db.sql._connection import PsqlDatabase as DBPPsqlConnection
 from fastavro.repository.base import SchemaRepositoryError
 from sorting_hat_step.database import MongoConnection, PsqlConnection
+import os
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc")
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json")
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), )
 
 MONGO_CONFIG = {
     "host": "localhost",
@@ -34,7 +40,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 CONSUMER_CONFIG = {
@@ -49,7 +55,7 @@ CONSUMER_CONFIG = {
     "consume.timeout": 10,
     "consume.messages": 1,
     "TOPICS": ["survey_stream_schemaless"],
-    "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avscs",
+    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "../../schemas/elasticc/elasticc.v0_9_1.alert.avscs"),
 }
 
 METRICS_CONFIG = {
@@ -63,37 +69,7 @@ METRICS_CONFIG = {
             "auto.offset.reset": "smallest",
         },
         "TOPIC": "metrics",
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 
@@ -131,20 +107,10 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
         mongo_db = MongoConnection(MONGO_CONFIG)
         psql_db = PsqlConnection(PSQL_CONFIG)
         with mock.patch.object(SortingHatStep, "_write_success"):
-            try:
-                step = SortingHatStep(
-                    mongo_connection=mongo_db,
-                    config=self.step_config,
-                )
-            except SchemaRepositoryError:
-                config = self.step_config.copy()
-                config["CONSUMER_CONFIG"][
-                    "SCHEMA_PATH"
-                ] = "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avscs"
-                step = SortingHatStep(
-                    mongo_connection=mongo_db,
-                    config=self.step_config,
-                )
+            step = SortingHatStep(
+                mongo_connection=mongo_db,
+                config=self.step_config,
+            )
             step.start()
             step.producer.producer.flush()
 

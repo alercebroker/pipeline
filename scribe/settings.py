@@ -5,6 +5,11 @@ from credentials import get_credentials
 #       mongo_scribe   Settings File
 ##################################################
 
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
@@ -41,40 +46,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {
-                    "timestamp_sent": "2020-09-01",
-                    "timestamp_received": "2020-09-01",
-                }
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 

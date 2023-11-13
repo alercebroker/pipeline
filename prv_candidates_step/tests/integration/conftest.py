@@ -57,6 +57,10 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "../schemas/prv_candidate_step/output.avsc",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../schemas/prv_candidate_step/metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "sorting-hat",
         "CONSUMER_GROUP_ID": random_string,
@@ -78,7 +82,7 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "../shared/sorting_hat_schema.avsc"),
         }
     )
     messages = generate_many(SCHEMA, 10)
