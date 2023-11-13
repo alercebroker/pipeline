@@ -33,6 +33,7 @@ COPY feature_step/features /app/features
 FROM python:3.10-slim
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/
 RUN poetry install --only-root

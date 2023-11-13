@@ -20,6 +20,7 @@ RUN pip install poetry
 
 COPY correction_step/poetry.lock correction_step/pyproject.toml /app/
 COPY libs/apf /libs/apf
+COPY schemas/correction_step /schemas/correction_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -30,6 +31,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY correction_step/correction /app/correction
 COPY correction_step/README.md /app
