@@ -17,10 +17,10 @@
                     "name": "detections_record",
                     "type": "record",
                     "fields": [
-                        {"name": "candid", "type": "string"},
+                        {"name": "candid", "type": [ "long", "string" ]},
                         {"name": "tid", "type": "string"},
                         {"name": "aid", "type": "string"},
-                        {"name": "oid", "type": "string"},
+                        {"name": "oid", "type": ["long", "string" ]},
                         {"name": "mjd", "type": "double"},
                         {"name": "sid", "type": "string"},
                         {"name": "fid", "type": "string"},
@@ -73,7 +73,7 @@
                         {"name": "aid", "type": "string"},
                         {"name": "tid", "type": "string"},
                         {"name": "sid", "type": "string"},
-                        {"name": "oid", "type": "string"},
+                        {"name": "oid", "type": ["long", "string" ]},
                         {"name": "mjd", "type": "double"},
                         {"name": "fid", "type": "string"},
                         {"name": "diffmaglim", "type": "float"}

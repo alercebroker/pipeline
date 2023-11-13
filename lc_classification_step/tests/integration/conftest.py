@@ -12,13 +12,18 @@ from apf.producers import KafkaProducer
 from apf.core import get_class
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
+from fastavro.schema import load_schema
 
 from tests.mockdata.extra_felds import generate_extra_fields
-from tests.mockdata.input_elasticc import INPUT_SCHEMA as SCHEMA_ELASTICC
-from tests.mockdata.input_ztf import INPUT_SCHEMA as SCHEMA_ZTF
+from tests.mockdata.features_elasticc import features_elasticc
+from tests.mockdata.features_ztf import features_ztf
 
-ELASTICC_INPUT_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../mockdata/input_elasticc.avsc")
-ZTF_INPUT_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../mockdata/input_ztf.avsc")
+INPUT_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/feature_step",
+    "output.avsc",
+)
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ztf: mark a test as a ztf test.")
@@ -48,8 +53,7 @@ def get_lc_classifier_topic(model: str):
     return f"lc_classifier_{model}{datetime.utcnow().strftime('%Y%m%d')}"
 
 
-def is_responsive_kafka(url):
-    client = AdminClient({"bootstrap.servers": url})
+def create_topics(client):
     futures = client.create_topics(
         [
             NewTopic("features_ztf", num_partitions=1),
@@ -76,6 +80,39 @@ def is_responsive_kafka(url):
     return True
 
 
+def delete_topics(client: AdminClient):
+    futures = client.delete_topics(
+        [
+            "features_ztf",
+            "features_elasticc",
+            "w_object",
+            "balto",
+            "balto_schemaless",
+            "messi",
+            "toretto",
+            "barney",
+            "mlp",
+            "metrics",
+        ],
+        operation_timeout=3,
+        request_timeout=3,
+    )
+    for topic, future in futures.items():
+        try:
+            future.result()
+        except Exception as e:
+            logging.error(f"Can't delete topic {topic}: {e}")
+            return False
+    return True
+
+
+def is_responsive_kafka(url):
+    client = AdminClient({"bootstrap.servers": url})
+    responsive = delete_topics(client)
+    responsive = create_topics(client)
+    return responsive
+
+
 @pytest.fixture(scope="session")
 def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
@@ -91,10 +128,16 @@ def kafka_service(docker_ip, docker_services):
 def env_variables_ztf():
     def set_env_variables():
         random_string = uuid.uuid4().hex
+        step_schema_path = pathlib.Path(
+            pathlib.Path(__file__).parent.parent.parent.parent,
+            "schemas/lc_classification_step",
+        )
         env_variables_dict = {
-            "PRODUCER_SCHEMA_PATH": "../../../schemas/lc_classification_step/output_ztf.avsc",
-            "METRIS_SCHEMA_PATH": "../../../schemas/lc_classification_step/metrics.json",
-            "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
+            "PRODUCER_SCHEMA_PATH": str(step_schema_path / "output_ztf.avsc"),
+            "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
+            "SCRIBE_SCHEMA_PATH": str(
+                step_schema_path / "../scribe_step/scribe.avsc"
+            ),
             "CONSUMER_SERVER": "localhost:9092",
             "CONSUMER_TOPICS": "features_ztf",
             "CONSUMER_GROUP_ID": random_string,
@@ -128,10 +171,18 @@ def env_variables_elasticc():
         extra_env_vars: dict = {},
     ):
         random_string = uuid.uuid4().hex
+        step_schema_path = pathlib.Path(
+            pathlib.Path(__file__).parent.parent.parent.parent,
+            "schemas/lc_classification_step",
+        )
         env_variables_dict = {
-            "PRODUCER_SCHEMA_PATH": "../../../schemas/lc_classification_step/output_elasticc.avsc",
-            "METRIS_SCHEMA_PATH": "../../../schemas/lc_classification_step/metrics.json",
-            "SCRIBE_SCHEMA_PATH": "../../../schemas/scribe.avsc",
+            "PRODUCER_SCHEMA_PATH": str(
+                step_schema_path / "output_elasticc.avsc"
+            ),
+            "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
+            "SCRIBE_SCHEMA_PATH": str(
+                step_schema_path / "../scribe_step/scribe.avsc"
+            ),
             "CONSUMER_SERVER": "localhost:9092",
             "CONSUMER_TOPICS": "features_elasticc",
             "CONSUMER_GROUP_ID": random_string,
@@ -153,7 +204,6 @@ def env_variables_elasticc():
         }
         env_variables_dict.update(extra_env_vars)
         for key, value in env_variables_dict.items():
-            print(f"SETEANDO VARIABLE {key} WITH {value}")
             os.environ[key] = value
 
     return set_env_variables
@@ -162,20 +212,14 @@ def env_variables_elasticc():
 @pytest.fixture
 def produce_messages():
     def func(topic, force_empty_features=False):
-        if topic == "features_ztf":
-            schema = SCHEMA_ZTF
-            schema_path = ZTF_INPUT_SCHEMA_PATH
-        elif topic == "features_elasticc":
-            schema = SCHEMA_ELASTICC
-            schema_path = ELASTICC_INPUT_SCHEMA_PATH
-        if force_empty_features:
-            schema["fields"][-1]["type"] = "null"
-        _produce_messages(topic, schema, schema_path)
+        schema = load_schema(str(INPUT_SCHEMA_PATH))
+        schema_path = INPUT_SCHEMA_PATH
+        _produce_messages(topic, schema, schema_path, force_empty_features)
 
     return func
 
 
-def _produce_messages(topic, SCHEMA, SCHEMA_PATH):
+def _produce_messages(topic, SCHEMA, SCHEMA_PATH, force_empty_features):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -190,9 +234,18 @@ def _produce_messages(topic, SCHEMA, SCHEMA_PATH):
     for message in messages:
         for det in message["detections"]:
             det["aid"] = message["aid"]
+            det["candid"] = random.randint(0, 100000)
             det["extra_fields"] = generate_extra_fields()
+            if topic == "features_elasticc":
+                det["oid"] = random.randint(0, 100000)
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
+        if topic == "features_ztf":
+            message["features"] = features_ztf()
+        elif topic == "features_elasticc" and not force_empty_features:
+            message["features"] = features_elasticc()
+        else:  # force_empty_features
+            message["features"] = None
         producer.produce(message)
 
 

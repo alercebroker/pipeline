@@ -32,12 +32,12 @@ def test_step_elasticc_result(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import config
 
     kconsumer = kafka_consumer("balto")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():
@@ -54,7 +54,7 @@ def test_step_elasticc_result(
 def test_step_schemaless(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[str], KafkaConsumer],
+    kafka_consumer: Callable[[str, str, dict], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc(
@@ -68,7 +68,7 @@ def test_step_schemaless(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import config
 
     try:
         kconsumer = kafka_consumer(
@@ -86,7 +86,7 @@ def test_step_schemaless(
         )
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():
