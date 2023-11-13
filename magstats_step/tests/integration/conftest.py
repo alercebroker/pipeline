@@ -5,7 +5,7 @@ import os
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
-from tests.unittests import SCHEMA, data as messages
+from tests.unittests import data as messages
 
 
 @pytest.fixture(scope="session")
@@ -50,6 +50,10 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../schemas/magstats_step//metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
         "CONSUMER_GROUP_ID": random_string,
@@ -87,7 +91,7 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "../../schema.avsc"),
         }
     )
 
