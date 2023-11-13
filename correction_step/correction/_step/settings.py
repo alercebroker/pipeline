@@ -3,7 +3,7 @@ import os
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
 PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
 METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
 
 
 def settings_creator():
