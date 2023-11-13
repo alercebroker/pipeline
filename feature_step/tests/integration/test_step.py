@@ -1,14 +1,7 @@
 from features.step import FeaturesComputer
-from schema import SCHEMA
 from features.utils.selector import selector
-from fastavro.schema import load_schema
 import pathlib
-import os
 
-# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/feature_step/output.avsc")
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/feature_step/metrics.json")
-SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/scribe.avsc")
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.kafka.KafkaConsumer",
@@ -29,22 +22,24 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA_PATH": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/feature_step",
+        "output.avsc",
+    ),
 }
 
-try:
-    schema_path = pathlib.Path("scribe_schema.avsc")
-    assert schema_path.exists()
-except Exception:
-    schema_path = pathlib.Path("feature_step/scribe_schema.avsc")
-    assert schema_path.exists()
 SCRIBE_PRODUCER_CONFIG = {
     "CLASS": "apf.producers.kafka.KafkaProducer",
     "TOPIC": "test-scribe",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
+    "SCHEMA_PATH": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/scribe_step",
+        "scribe.avsc",
+    ),
 }
 
 
@@ -76,4 +71,3 @@ def test_step_elasticc(kafka_service):
         config=step_config,
     )
     step.start()
-

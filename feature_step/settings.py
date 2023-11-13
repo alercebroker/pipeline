@@ -2,19 +2,34 @@
 #       features   Settings File
 ##################################################
 import os
-from schema import SCHEMA
-from fastavro import schema
-
-# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+import pathlib
 
 EXTRACTOR = os.environ["FEATURE_EXTRACTOR"]
 
+output_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/feature_step",
+        "output.avsc",
+    )
+)
+scribe_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/scribe_step",
+        "scribe.avsc",
+    )
+)
+metrics_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/feature_step",
+        "metrics.json",
+    )
+)
 
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
@@ -28,7 +43,7 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
@@ -36,16 +51,16 @@ PRODUCER_CONFIG = {
             os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)
         ),
     },
-    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", output_schema_path),
 }
 
 SCRIBE_PRODUCER_CONFIG = {
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
     "PARAMS": {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
     "TOPIC": os.environ["SCRIBE_TOPIC"],
-    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
+    "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
 }
 
 
@@ -57,7 +72,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 

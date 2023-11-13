@@ -3,7 +3,6 @@
 import pytest
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers.kafka import KafkaProducer
-import glob
 import os
 import pathlib
 from tests.data.message_factory import (
@@ -13,8 +12,6 @@ from tests.data.elasticc_message_factory import (
     generate_input_batch as generate_elasticc_batch,
     ELASTICC_BANDS,
 )
-
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "input_schema.avsc")
 
 os.environ["FEATURE_EXTRACTOR"] = ""
 os.environ["CONSUMER_TOPICS"] = ""
@@ -66,10 +63,15 @@ def kafka_service(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
+    schema_path = pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/xmatch_step",
+        "output.avsc",
+    )
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "elasticc",
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        "SCHEMA_PATH": schema_path,
     }
     producer = KafkaProducer(config)
     data_elasticc = generate_elasticc_batch(5, ELASTICC_BANDS)
@@ -80,7 +82,7 @@ def kafka_service(docker_ip, docker_services):
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "ztf",
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        "SCHEMA_PATH": schema_path,
     }
     producer = KafkaProducer(config)
     for data in data_ztf:
