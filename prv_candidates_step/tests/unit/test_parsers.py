@@ -1,3 +1,4 @@
+import pathlib
 from prv_candidates_step.core.strategy.ztf import ZTFNonDetectionsParser
 from prv_candidates_step.core.strategy.ztf import ZTFPreviousDetectionsParser
 from fastavro.utils import generate_many
@@ -60,18 +61,24 @@ def test_ztf_extract_detections_and_non_detections():
 
 
 def test_elasticc_extract_detections_and_non_detections():
-    try:
-        dia_source_schema = load_schema("tests/shared/elasticc_prv_candidate.avsc")
-    except SchemaRepositoryError:
-        dia_source_schema = load_schema(
-            "prv_candidates_step/tests/shared/elasticc_prv_candidate.avsc"
+    dia_source_schema = load_schema(
+        str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/elasticc",
+                "elasticc.v0_9_1.diaSource.avsc",
+            )
         )
-    try:
-        forced_schema = load_schema("tests/shared/elasticc_forced_schema.avsc")
-    except SchemaRepositoryError:
-        forced_schema = load_schema(
-            "prv_candidates_step/tests/shared/elasticc_forced_schema.avsc"
+    )
+    forced_schema = load_schema(
+        str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/elasticc",
+                "elasticc.v0_9_1.diaForcedSource.avsc",
+            )
         )
+    )
     prv_dia_sources = list(generate_many(dia_source_schema, 1))
     forced_sources = list(generate_many(forced_schema, 1))
     alert = {
@@ -94,12 +101,15 @@ def test_elasticc_extract_detections_and_non_detections():
 
 
 def test_non_detections_parser():
-    try:
-        schema = load_schema("tests/shared/ztf_prv_candidate_schema.avsc")
-    except SchemaRepositoryError:
-        schema = load_schema(
-            "prv_candidates_step/tests/shared/ztf_prv_candidate_schema.avsc"
+    schema = load_schema(
+        str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/ztf",
+                "prv_candidate.avsc",
+            )
         )
+    )
     data = list(generate_many(schema, 1))
     data = list(map(lambda x: {**x, "fid": 1}, data))
     result = ZTFNonDetectionsParser.parse_message(

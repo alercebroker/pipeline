@@ -1,10 +1,21 @@
+import pathlib
 from fastavro.utils import generate_one
 from prv_candidates_step.core.extractor import PreviousCandidatesExtractor
 from tests.mocks.mock_alerts import (
     ztf_extra_fields_generator,
     lsst_extra_fields_generator,
 )
-from tests.shared.sorting_hat_schema import SCHEMA
+from fastavro.schema import load_schema
+
+SCHEMA = load_schema(
+    str(
+        pathlib.Path(
+            pathlib.Path(__file__).parent.parent.parent.parent,
+            "schemas/sorting_hat_step",
+            "output.avsc",
+        )
+    )
+)
 
 
 def test_compute_ztf():

@@ -1,15 +1,21 @@
+import pathlib
 import os
-from fastavro import schema
-from fastavro.repository.base import SchemaRepositoryError
 
 ##################################################
 #       prv_candidates_step   Settings File
 ##################################################
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+PRODUCER_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/prv_candidate_step", "output.avsc"
+)
+METRICS_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/prv_candidate_step", "metrics.json"
+)
+SCRIBE_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
+
 
 def settings_creator():
     # Set the global logging level to debug
@@ -38,7 +44,7 @@ def settings_creator():
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH ", PRODUCER_SCHEMA_PATH),
     }
 
     scribe_producer_config = {
@@ -47,7 +53,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", SCRIBE_SCHEMA_PATH),
     }
 
     metrics_config = {
@@ -63,7 +69,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", METRICS_SCHEMA_PATH),
         },
     }
 
