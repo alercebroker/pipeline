@@ -23,6 +23,7 @@ from db_plugins.db.mongo.models import (
     ForcedPhotometry as MongoForcedPhotometry,
 )
 
+CANDID = os.getenv("CANDID_SEARCH", "")
 
 class LightcurveStep(GenericStep):
     def __init__(
@@ -36,6 +37,8 @@ class LightcurveStep(GenericStep):
         self.db_mongo = db_mongo
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
+        # Delet this when the wizard is fired
+        self.candid_found = False
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -43,6 +46,10 @@ class LightcurveStep(GenericStep):
         last_mjds = {}
         candids = {}
         for msg in messages:
+            # If the candid is found, we'll track it
+            if str(msg["candid"]) == str(CANDID):
+                cls.candid_found = True
+
             aid = msg["aid"]
             if aid not in candids:
                 candids[aid] = []
@@ -107,9 +114,20 @@ class LightcurveStep(GenericStep):
 
         # Try to keep those with stamp coming from the DB if there are clashes
         # maybe drop duplicates with candid and AID in LSST/ELAsTiCC
+
+        # This is the sussy part
+        check_before_drop = detections[detections["candid"] == str(CANDID)]
+        if self.candid_found and check_before_drop.empty:
+            raise ValueError(f"The detection with candid {CANDID} disappeared BEFORE drop_duplicates")
+        
         detections = detections.sort_values(
             ["has_stamp", "new"], ascending=[False, True]
         ).drop_duplicates("candid", keep="first")
+        
+        check_after_drop = detections[detections["candid"] == str(CANDID)]
+        if self.candid_found and check_after_drop.empty:
+            raise ValueError(f"The detection with candid {CANDID} disappeared AFTER drop_duplicates")
+        
         non_detections = non_detections.drop_duplicates(["aid", "fid", "mjd"])
         self.logger.debug(
             f"Obtained {len(detections[detections['new']])} new detections"
@@ -257,4 +275,5 @@ class LightcurveStep(GenericStep):
                     "non_detections": nd,
                 }
             )
+        cls.candid_found = False
         return output
