@@ -11,6 +11,10 @@ from tests.data.messages import (
     get_fake_xmatch,
     get_fake_empty_xmatch,
 )
+import os
+
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "test_producer_schema.avsc")
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), "../../scribe_schema.avsc")
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
@@ -31,14 +35,14 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
     "CLASS": "apf.producers.KafkaProducer",
     "TOPIC": "w_object",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA": load_schema("scribe_schema.avsc"),
+    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
 }
 
 XMATCH_CONFIG = {
