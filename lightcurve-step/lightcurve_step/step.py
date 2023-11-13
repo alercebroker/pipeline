@@ -37,6 +37,7 @@ class LightcurveStep(GenericStep):
         self.db_mongo = db_mongo
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
+        self.set_producer_key_field("aid")
         # Delet this when the wizard is fired
         self.candid_found = False
 
@@ -258,7 +259,6 @@ class LightcurveStep(GenericStep):
         except KeyError:  # Handle empty non-detections
             non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
         output = []
-        cls.set_producer_key_field("aid")
         for aid, dets in detections:
             try:
                 nd = non_detections.get_group(aid).to_dict("records")
