@@ -1,10 +1,9 @@
+import pathlib
 import pytest
 import unittest
-from fastavro.schema import load_schema
 
 from xmatch_step import XmatchStep
 from xmatch_step.core.xmatch_client import XmatchClient
-from schema import SCHEMA
 from unittest import mock
 from tests.data.messages import (
     generate_input_batch,
@@ -13,8 +12,16 @@ from tests.data.messages import (
 )
 import os
 
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "test_producer_schema.avsc")
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), "../../scribe_schema.avsc")
+PRODUCER_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/xmatch_step",
+    "output.avsc",
+)
+SCRIBE_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/scribe_step",
+    "scribe.avsc",
+)
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
