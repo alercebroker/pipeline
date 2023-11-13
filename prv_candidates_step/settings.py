@@ -6,6 +6,10 @@ from fastavro.repository.base import SchemaRepositoryError
 #       prv_candidates_step   Settings File
 ##################################################
 
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
 
 def settings_creator():
     # Set the global logging level to debug
@@ -27,10 +31,6 @@ def settings_creator():
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
     }
 
-    try:
-        the_schema = schema.load_schema("schema.avsc")
-    except SchemaRepositoryError:
-        the_schema = schema.load_schema("prv_candidates_step/schema.avsc")
     producer_config = {
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
@@ -38,20 +38,16 @@ def settings_creator():
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": the_schema,
+        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
     }
 
-    try:
-        the_schema = schema.load_schema("scribe_schema.avsc")
-    except SchemaRepositoryError:
-        the_schema = schema.load_schema("prv_candidates_step/scribe_schema.avsc")
     scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA": the_schema,
+        "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
     }
 
     metrics_config = {
@@ -67,37 +63,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "http://example.com/example.json",
-                "type": "object",
-                "title": "The root schema",
-                "description": "The root schema comprises the entire JSON document.",
-                "default": {},
-                "examples": [
-                    {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-                ],
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "$id": "#/properties/timestamp_sent",
-                        "type": "string",
-                        "title": "The timestamp_sent schema",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "$id": "#/properties/timestamp_received",
-                        "type": "string",
-                        "title": "The timestamp_received schema",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
         },
     }
 
