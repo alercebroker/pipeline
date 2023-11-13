@@ -78,6 +78,3 @@ pytest-docker = "^1.0.1"
 
 [tool.black]
 line-length = 79
-
-[tool.pytest.ini_options]
-addopts = "-x"
