@@ -1,0 +1,29 @@
+{
+    "type": "record",
+    "doc": "Classification of ATLAS stamps",
+    "name": "atlas_stamp_classification_schema",
+    "fields": [
+        {"name": "aid", "type": "string"},
+        {
+            "name": "classifications",
+            "type": {
+                "type": "array",
+                "items": {
+                    "type": "record",
+                    "name": "classificationDict",
+                    "fields": [
+                        {"name": "class_name", "type": "string"},
+                        {"name": "probability", "type": "double"},
+                    ],
+                }
+            }
+        },
+        {"name": "classifier_name", "type": "string"},
+        {"name": "classifier_version", "type": "string"},
+        {
+            "name": "brokerPublishTimestamp",
+            "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+            "doc": "timestamp of broker ingestion of ATLAS alert",
+        },
+    ],
+}
