@@ -31,6 +31,10 @@ def docker_compose_command():
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "../schemas/lightcurve_step/output.avsc",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../schemas/lightcurve_step//metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
         "CONSUMER_GROUP_ID": random_string,
@@ -55,7 +59,7 @@ def produce_messages(kafka_service):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": "correction",
-            "SCHEMA": schema,
+            "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "input_schema.avsc"),
         }
     )
     messages = generate_message(schema, 10)
