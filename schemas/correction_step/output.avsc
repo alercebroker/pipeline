@@ -56,7 +56,7 @@
           },
           {
             "name": "candid",
-            "type": "string"
+            "type": ["string", "long"]
           },
           {
             "name": "mjd",
@@ -128,7 +128,7 @@
           },
           {
             "name": "parent_candid",
-            "type": ["string", "null"]
+            "type": ["string", "long", "null"]
           },
           {
             "name": "extra_fields",

@@ -129,6 +129,7 @@ class CorrectionStep(GenericStep):
                 extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
 
             detection["extra_fields"] = extra_fields
+            print("extra_fields", extra_fields)
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",

@@ -1,9 +1,15 @@
 import os
+import pathlib
 
-# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent, "schemas/correction_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent, "schemas/correction_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 
 def settings_creator():
@@ -14,7 +20,7 @@ def settings_creator():
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaConsumer",
+        "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -23,26 +29,26 @@ def settings_creator():
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     }
 
     producer_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+        "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
     }
 
     scribe_producer_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+        "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
     metrics_config = {
@@ -57,7 +63,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
         },
     }
 
