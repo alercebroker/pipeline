@@ -50,6 +50,7 @@ class KafkaMetricsProducer(GenericMetricsProducer):
         if self.config.get("SCHEMA_PATH"):
             schema_file = open(self.config.get("SCHEMA_PATH"), "r")
             self.config["SCHEMA"] = json.load(schema_file)
+            schema_file.close()
 
     def send_metrics(self, metrics):
         metrics = json.dumps(metrics, cls=self.time_encoder).encode("utf-8")
