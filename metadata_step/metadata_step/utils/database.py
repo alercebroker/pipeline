@@ -113,7 +113,8 @@ def insert_metadata(session: Session, data: List):
     session.connection().execute(gaia_stmt)
 
     # PS1
-    ps1_stmt = insert(Ps1_ztf).values(accumulated_metadata["ps1"])
+    ps1_data = list({el["candid"]: el for el in accumulated_metadata["ps1"]}.values())
+    ps1_stmt = insert(Ps1_ztf).values(ps1_data)
     ps1_stmt = ps1_stmt.on_conflict_do_update(
         constraint="ps1_ztf_pkey",
         set_=dict(
