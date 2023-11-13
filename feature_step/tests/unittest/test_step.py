@@ -4,7 +4,6 @@ from apf.producers import GenericProducer
 from features.step import (
     FeaturesComputer,
 )
-from schema import SCHEMA
 from tests.data.data_for_unittest import (
     features_df_for_execute,
     messages_for_execute,
@@ -29,7 +28,6 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    # "SCHEMA": SCHEMA, necesario?
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -38,7 +36,6 @@ SCRIBE_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
 }
 
 
