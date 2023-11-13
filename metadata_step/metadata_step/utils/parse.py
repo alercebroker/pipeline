@@ -87,7 +87,7 @@ def format_ps1(alert: Dict, catalog={}):
                     saved = ps1_aux.copy()
                 saved[f"unique{i}"] = False
                 candids[candid] = saved
-        new_ps1.extend(list(candids.values()))
+        # new_ps1.extend(list(candids.values()))
 
     new_ps1.append(alert)
     return new_ps1
