@@ -372,7 +372,10 @@ class GenericStep(abc.ABC):
                     # Checking if the metric exists
                     if aliased_metric not in extra_metrics:
                         extra_metrics[aliased_metric] = []
-                    extra_metrics[aliased_metric].append(value)
+                    if isinstance(value, list):
+                        extra_metrics[aliased_metric].extend(value)
+                    else:
+                        extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)
 
         # If not they are only added as a single value.

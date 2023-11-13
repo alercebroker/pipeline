@@ -117,6 +117,7 @@ def generate_input_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "candid": [candid],
             "sid": ["ATLAS", "ZTF"],
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
@@ -137,6 +138,7 @@ def generate_non_ztf_batch(n: int) -> List[dict]:
         detections[-1]["candid"] = candid
         msg = {
             "aid": f"AL2X{str(m).zfill(5)}",
+            "candid": [candid],
             "sid": ["ATLAS"],
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),

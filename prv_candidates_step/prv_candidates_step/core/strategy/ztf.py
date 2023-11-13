@@ -162,7 +162,8 @@ class ZTFNonDetectionsParser(SurveyParser):
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
-    detections = [alert]
+    acopy = alert.copy()
+    detections = [acopy]
     non_detections = []
 
     prv_candidates = alert["extra_fields"].pop("prv_candidates")

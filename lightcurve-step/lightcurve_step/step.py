@@ -41,8 +41,12 @@ class LightcurveStep(GenericStep):
     def pre_execute(cls, messages: List[dict]) -> dict:
         aids, detections, non_detections, oids = set(), [], [], {}
         last_mjds = {}
+        candids = {}
         for msg in messages:
             aid = msg["aid"]
+            if aid not in candids:
+                candids[aid] = []
+            candids[aid].append(msg["candid"])
             oids.update(
                 {
                     det["oid"]: aid
@@ -59,6 +63,7 @@ class LightcurveStep(GenericStep):
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
             "aids": list(aids),
+            "candids": candids,
             "oids": oids,
             "last_mjds": last_mjds,
             "detections": detections,
@@ -109,8 +114,8 @@ class LightcurveStep(GenericStep):
         self.logger.debug(
             f"Obtained {len(detections[detections['new']])} new detections"
         )
-        print(f'messages {len(messages["detections"])}')
         return {
+            "candids": messages["candids"],
             "detections": detections,
             "non_detections": non_detections,
             "last_mjds": messages["last_mjds"],
@@ -138,6 +143,7 @@ class LightcurveStep(GenericStep):
 
         parsed_result = []
         for det in ztf_models:
+            print(det)
             det: dict = det[0].__dict__
             extra_fields = {}
             parsed_det = {}
@@ -246,6 +252,7 @@ class LightcurveStep(GenericStep):
             output.append(
                 {
                     "aid": aid,
+                    "candid": result["candids"][aid],
                     "detections": dets.to_dict("records"),
                     "non_detections": nd,
                 }

@@ -96,6 +96,7 @@ def parse_output(
     features: pd.DataFrame,
     alert_data: list[dict],
     extractor_class,
+    candids: dict,
 ) -> list[dict]:
     """
     Parse output of the step. It uses the input data to extend the schema to
@@ -110,9 +111,13 @@ def parse_output(
 
     """
     if extractor_class.NAME == "ztf_lc_features":
-        return _parse_output_ztf(features, alert_data, extractor_class)
+        return _parse_output_ztf(
+            features, alert_data, extractor_class, candids
+        )
     elif extractor_class.NAME == "elasticc_lc_features":
-        return _parse_output_elasticc(features, alert_data, extractor_class)
+        return _parse_output_elasticc(
+            features, alert_data, extractor_class, candids
+        )
     else:
         raise Exception(
             'Cannot parse output for extractor "{}"'.format(
@@ -121,7 +126,7 @@ def parse_output(
         )
 
 
-def _parse_output_elasticc(features, alert_data, extractor_class):
+def _parse_output_elasticc(features, alert_data, extractor_class, candids):
     output_messages = []
     if len(features):
         features.replace(
@@ -129,6 +134,7 @@ def _parse_output_elasticc(features, alert_data, extractor_class):
         )
     for message in alert_data:
         aid = message["aid"]
+        candid = candids[aid]
         try:
             features_dict = features.loc[aid].to_dict()
         except KeyError:  # No feature for the object
@@ -137,6 +143,7 @@ def _parse_output_elasticc(features, alert_data, extractor_class):
             features_dict = None
         out_message = {
             "aid": aid,
+            "candid": candid,
             "meanra": message["meanra"],
             "meandec": message["meandec"],
             "detections": message["detections"],
@@ -149,7 +156,7 @@ def _parse_output_elasticc(features, alert_data, extractor_class):
     return output_messages
 
 
-def _parse_output_ztf(features, alert_data, extractor_class):
+def _parse_output_ztf(features, alert_data, extractor_class, candids):
     output_messages = []
 
     if len(features):
@@ -162,6 +169,7 @@ def _parse_output_ztf(features, alert_data, extractor_class):
 
     for message in alert_data:
         aid = message["aid"]
+        candid = candids[aid]
         try:
             features_dict = features.loc[aid].to_dict()
         except KeyError:  # No feature for the object
@@ -170,6 +178,7 @@ def _parse_output_ztf(features, alert_data, extractor_class):
             features_dict = None
         out_message = {
             "aid": aid,
+            "candid": candid,
             "meanra": message["meanra"],
             "meandec": message["meandec"],
             "detections": message["detections"],

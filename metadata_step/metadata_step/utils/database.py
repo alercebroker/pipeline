@@ -1,4 +1,5 @@
 import itertools
+import numpy as np
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Dict, List
 
@@ -33,34 +34,58 @@ class PSQLConnection:
             session.close()
 
 
+def _none_to_nan(value):
+    if value == None:
+        return np.nan
+    return value
+
+
+def _nan_to_none(value):
+    if value == np.nan:
+        return None
+    return value
+
+
 def _parse_sql_dict(d: Dict):
-    return {k: v for k, v in d.items() if not k.startswith("_")}
+    return {k: _none_to_nan(v) for k, v in d.items() if not k.startswith("_")}
+
+
+def _create_hashmap(catalog: List[Dict]):
+    hashmap: Dict[List] = {}
+    for item in catalog:
+        catalog_of_oid: List = hashmap.get(item["oid"], [])
+        catalog_of_oid.append(item)
+        hashmap[item["oid"]] = catalog_of_oid
+
+    return hashmap
 
 
 def get_ps1_catalog(session: Session, oids: List):
     stmt = select(Ps1_ztf).where(Ps1_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
-    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
+    return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
 
 
 def get_gaia_catalog(session: Session, oids: List):
     stmt = select(Gaia_ztf).where(Gaia_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
-    return [_parse_sql_dict(c[0].__dict__) for c in catalog]
+    return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
+
+
+def _accumulate(data: List):
+    acc = {"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []}
+    for d in data:
+        acc["ss"].append(d["ss"])
+        acc["dataquality"].append(d["dataquality"])
+        acc["reference"].append(d["reference"])
+        acc["gaia"].append(d["gaia"])
+        acc["ps1"].extend(d["ps1"])
+
+    return acc
 
 
 def insert_metadata(session: Session, data: List):
-    def accumulate(accumulator, el):
-        keys = ["ss", "reference", "dataquality", "gaia", "ps1"]
-        return {k: [*accumulator[k], {"oid": el["oid"], **el[k]}] for k in keys}
-
-    accumulated_metadata = itertools.accumulate(
-        data,
-        accumulate,
-        initial={"ss": [], "reference": [], "dataquality": [], "gaia": [], "ps1": []},
-    )
-    accumulated_metadata = list(accumulated_metadata)[-1]
-
+    accumulated_metadata = _accumulate(data)
     # Reference
     reference_stmt = insert(Reference).values(accumulated_metadata["reference"])
     reference_stmt = reference_stmt.on_conflict_do_update(

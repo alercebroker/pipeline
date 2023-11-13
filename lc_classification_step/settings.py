@@ -56,9 +56,7 @@ SCRIBE_PRODUCER_CONFIG = {
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "aid", "alias": "aid"},
-    ],
+    "EXTRA_METRICS": [{"key": "aid", "alias": "aid"}, {"key": "candid"}],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
