@@ -9,6 +9,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
     messages = [
         {
             "aid": "aid1",
+            "candid": "a",
             "detections": [
                 {
                     "aid": "aid1",
@@ -33,6 +34,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         },
         {
             "aid": "aid1",
+            "candid": "c",
             "detections": [
                 {
                     "aid": "aid1",
@@ -57,6 +59,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         },
         {
             "aid": "aid2",
+            "candid": "c",
             "detections": [
                 {
                     "aid": "aid2",
@@ -84,6 +87,7 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
     output = LightcurveStep.pre_execute(messages)
     expected = {
         "aids": ["aid1", "aid2"],
+        "candids": {"aid1": ["a", "c"], "aid2": ["c"]},
         "oids": {
             "oid1": "aid1",
             "oid2": "aid1",
@@ -259,6 +263,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps(
             "ZTF123": "aid2",
             "oidy": "aid1",
         },
+        "candids": {"aid1": ["a", "c"], "aid2": ["c"]},
         "last_mjds": {"aid1": 4, "aid2": 5},
         "detections": [
             {
@@ -489,6 +494,7 @@ def test_pre_produce_restores_messages():
             ]
         ),
         "last_mjds": {"AID1": 1, "AID2": 1},
+        "candids": {"AID1": ["a", "MOST_RECENT"], "AID2": ["c", "b"]},
     }
 
     output = LightcurveStep.pre_produce(message)
@@ -508,9 +514,11 @@ def test_pre_produce_restores_messages():
                 },
             ],
             "non_detections": [{"mjd": 1, "oid": "a", "fid": 1, "aid": "AID1"}],
+            "candid": ["a", "MOST_RECENT"],
         },
         {
             "aid": "AID2",
+            "candid": ["c", "b"],
             "detections": [
                 {
                     "candid": "c",

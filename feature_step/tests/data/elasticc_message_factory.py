@@ -118,6 +118,7 @@ def generate_input_batch(
         xmatch = {}
         msg = {
             "aid": aid,
+            "candid": [det["candid"] for det in detections],
             "meanra": meanra,
             "meandec": meandec,
             "detections": detections,

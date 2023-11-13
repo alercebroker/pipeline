@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import os
 import pandas as pd
 import pickle
 from typing import List
@@ -40,8 +41,12 @@ class LightcurveStep(GenericStep):
     def pre_execute(cls, messages: List[dict]) -> dict:
         aids, detections, non_detections, oids = set(), [], [], {}
         last_mjds = {}
+        candids = {}
         for msg in messages:
             aid = msg["aid"]
+            if aid not in candids:
+                candids[aid] = []
+            candids[aid].append(msg["candid"])
             oids.update(
                 {
                     det["oid"]: aid
@@ -53,10 +58,12 @@ class LightcurveStep(GenericStep):
             last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
+
         logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
         return {
             "aids": list(aids),
+            "candids": candids,
             "oids": oids,
             "last_mjds": last_mjds,
             "detections": detections,
@@ -107,8 +114,8 @@ class LightcurveStep(GenericStep):
         self.logger.debug(
             f"Obtained {len(detections[detections['new']])} new detections"
         )
-        print(f'messages {len(messages["detections"])}')
         return {
+            "candids": messages["candids"],
             "detections": detections,
             "non_detections": non_detections,
             "last_mjds": messages["last_mjds"],
@@ -136,6 +143,7 @@ class LightcurveStep(GenericStep):
 
         parsed_result = []
         for det in ztf_models:
+            print(det)
             det: dict = det[0].__dict__
             extra_fields = {}
             parsed_det = {}
@@ -188,7 +196,14 @@ class LightcurveStep(GenericStep):
 
     def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
         def format_as_detection(fp):
+            FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+            fp["fid"] = FID[fp["fid"]]
+            fp["e_ra"] = 0
+            fp["e_dec"] = 0
             fp["candid"] = fp.pop("_id")
+            fp["extra_fields"] = {
+                k: v for k, v in fp["extra_fields"].items() if not k.startswith("_")
+            }
             return fp
 
         parsed = [
@@ -231,11 +246,13 @@ class LightcurveStep(GenericStep):
             except KeyError:
                 nd = []
             dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
-            mjds = result["last_mjds"]
-            dets = dets[dets["mjd"] <= mjds[aid]]
+            if not os.getenv("SKIP_MJD_FILTER", "false") == "true":
+                mjds = result["last_mjds"]
+                dets = dets[dets["mjd"] <= mjds[aid]]
             output.append(
                 {
                     "aid": aid,
+                    "candid": result["candids"][aid],
                     "detections": dets.to_dict("records"),
                     "non_detections": nd,
                 }

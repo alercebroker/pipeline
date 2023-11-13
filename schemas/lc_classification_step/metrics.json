@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "required": ["timestamp_sent", "timestamp_received"],
+    "properties": {
+        "timestamp_sent": {
+            "type": "string",
+            "description": "Timestamp sent refers to the time at which a message is sent.",
+            "default": "",
+            "examples": ["2020-09-01"]
+        },
+        "timestamp_received": {
+            "type": "string",
+            "description": "Timestamp received refers to the time at which a message is received.",
+            "default": "",
+            "examples": ["2020-09-01"]
+        }
+    },
+    "additionalProperties": true
+}

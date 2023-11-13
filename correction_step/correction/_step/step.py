@@ -11,6 +11,7 @@ from ..core.corrector import Corrector
 
 from pprint import pprint
 
+
 class CorrectionStep(GenericStep):
     """Step that applies magnitude correction to new alert and previous candidates.
 
@@ -72,6 +73,7 @@ class CorrectionStep(GenericStep):
             output.append(
                 {
                     "aid": aid,
+                    "candid": result["candids"][aid],
                     "meanra": result["coords"][aid]["meanra"],
                     "meandec": result["coords"][aid]["meandec"],
                     "detections": dets.to_dict("records"),
@@ -83,24 +85,26 @@ class CorrectionStep(GenericStep):
     @classmethod
     def pre_execute(cls, messages: list[dict]) -> dict:
         detections, non_detections = [], []
+        candids = {}
         for msg in messages:
+            if msg["aid"] not in candids:
+                candids[msg["aid"]] = []
+            candids[msg["aid"]].extend(msg["candid"])
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
-        return {"detections": detections, "non_detections": non_detections}
+        return {"detections": detections, "non_detections": non_detections, "candids": candids}
 
     @classmethod
     def execute(cls, message: dict) -> dict:
-        pprint(message)
         corrector = Corrector(message["detections"])
         detections = corrector.corrected_as_records()
         non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
         coords = corrector.coordinates_as_records()
-        # delet dis
-        pprint(coords)
         return {
             "detections": detections,
             "non_detections": non_detections.to_dict("records"),
             "coords": coords,
+            "candids": message["candids"],
         }
 
     def post_execute(self, result: dict):

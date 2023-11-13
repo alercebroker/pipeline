@@ -20,6 +20,7 @@ class ParsersTestCase(unittest.TestCase):
         expected_payload = [
             {
                 "aid": "aid1",
+                "candid": "candid1",
                 "meanra": 888,
                 "meandec": 999,
                 "detections": [],
@@ -35,6 +36,7 @@ class ParsersTestCase(unittest.TestCase):
             },
             {
                 "aid": "aid2",
+                "candid": "candid2",
                 "meanra": 444,
                 "meandec": 555,
                 "detections": [],
@@ -50,8 +52,12 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
+        candids = {"aid1": "candid1", "aid2": "candid2"}
         parsed_result = parse_output(
-            test_features_df, messages_for_parsing, self.mock_extractor_class
+            test_features_df,
+            messages_for_parsing,
+            self.mock_extractor_class,
+            candids,
         )
 
         self.assertEqual(parsed_result, expected_payload)

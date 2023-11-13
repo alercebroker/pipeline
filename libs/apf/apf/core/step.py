@@ -266,8 +266,6 @@ class GenericStep(abc.ABC):
             self.logger.debug("Error at pre_produce")
             self.logger.debug(f"The result that caused the error: {result}")
             raise error
-        if self.commit:
-            self.consumer.commit()
         return message_to_produce
 
     def pre_produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
@@ -284,6 +282,8 @@ class GenericStep(abc.ABC):
         self.logger.info("Messages produced. Begin post production")
         try:
             self.post_produce()
+            if self.commit:
+                self.consumer.commit()
         except Exception as error:
             self.logger.debug("Error at post_produce")
             raise error
@@ -372,7 +372,10 @@ class GenericStep(abc.ABC):
                     # Checking if the metric exists
                     if aliased_metric not in extra_metrics:
                         extra_metrics[aliased_metric] = []
-                    extra_metrics[aliased_metric].append(value)
+                    if isinstance(value, list):
+                        extra_metrics[aliased_metric].extend(value)
+                    else:
+                        extra_metrics[aliased_metric].append(value)
             extra_metrics["n_messages"] = len(message)
 
         # If not they are only added as a single value.

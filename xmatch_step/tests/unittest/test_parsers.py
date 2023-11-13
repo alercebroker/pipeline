@@ -13,11 +13,16 @@ def test_parse_output():
         mock_lightcurves_list, exclude=["detections", "non_detections"]
     )
     xmatch_dataframe = pd.DataFrame.from_records(mock_xmatch_list)
-    result_json = parse_output(lightcurve_dataframe, xmatch_dataframe, lc_hash)
+    candids = {}
+    for aid in lc_hash:
+        candids[aid] = lc_hash[aid]["detections"][0]["candid"]
+    result_json = parse_output(lightcurve_dataframe, xmatch_dataframe, lc_hash, candids)
 
     assert len(result_json) == 2
+    assert result_json[0]["candid"]
     assert result_json[0]["detections"] is not None
     assert result_json[0]["non_detections"] == []
+    assert result_json[1]["candid"]
     assert result_json[1]["detections"] is not None
     assert result_json[1]["non_detections"] is not None
     assert "xmatches" in result_json[0].keys()

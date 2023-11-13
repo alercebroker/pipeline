@@ -15,11 +15,14 @@ def test_result_has_everything(
     from scripts.run_step import step_creator
 
     step_creator().start()
+    count = 0
     for message in kafka_consumer.consume():
+        count += 1
         assert_result_has_non_detections(message)
         assert_result_has_prv_detections(message)
         assert_result_has_alert(message)
         kafka_consumer.commit()
+    assert count == 10
 
 
 def assert_result_has_prv_detections(message):
