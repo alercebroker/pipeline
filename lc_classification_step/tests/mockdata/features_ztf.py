@@ -1,7 +1,12 @@
 from fastavro.utils import generate_one
+import random
 
 
-def features_ztf():
+def _get_random_key(dictionary: dict):
+    return random.choice(list(dictionary.keys()))
+
+
+def features_ztf(force_empty_features=False, force_missing_features=False):
     FEATURES_SCHEMA = {
         "name": "features_record",
         "type": "record",
@@ -217,4 +222,14 @@ def features_ztf():
             {"name": "PPE", "type": ["float", "null"]},
         ],
     }
-    return generate_one(FEATURES_SCHEMA)
+    if force_empty_features:
+        return {}
+    features = generate_one(FEATURES_SCHEMA)
+    if force_missing_features:
+        for _ in range(random.randint(1, len(features))):
+            try:
+                key = _get_random_key(features)
+                features[key] = None
+            except KeyError:
+                pass
+    return features

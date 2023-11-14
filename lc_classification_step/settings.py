@@ -32,7 +32,7 @@ def config():
         pathlib.Path(
             pathlib.Path(__file__).parent.parent,
             "schemas/lc_classification_step",
-            "output.avsc",
+            "output_ztf.avsc",
         )
     )
     PRODUCER_CONFIG = {

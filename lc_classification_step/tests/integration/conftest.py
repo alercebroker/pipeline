@@ -126,6 +126,8 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def env_variables_ztf():
+    env_copy = os.environ.copy()
+
     def set_env_variables():
         random_string = uuid.uuid4().hex
         step_schema_path = pathlib.Path(
@@ -160,11 +162,14 @@ def env_variables_ztf():
         for key, value in env_variables_dict.items():
             os.environ[key] = value
 
-    return set_env_variables
+    yield set_env_variables
+    os.environ = env_copy
 
 
 @pytest.fixture
 def env_variables_elasticc():
+    env_copy = os.environ.copy()
+
     def set_env_variables(
         model: str,
         model_class: str,
@@ -206,20 +211,29 @@ def env_variables_elasticc():
         for key, value in env_variables_dict.items():
             os.environ[key] = value
 
-    return set_env_variables
+    yield set_env_variables
+    os.environ = env_copy
 
 
 @pytest.fixture
 def produce_messages():
-    def func(topic, force_empty_features=False):
+    def func(topic, force_empty_features=False, force_missing_features=False):
         schema = load_schema(str(INPUT_SCHEMA_PATH))
         schema_path = INPUT_SCHEMA_PATH
-        _produce_messages(topic, schema, schema_path, force_empty_features)
+        _produce_messages(
+            topic,
+            schema,
+            schema_path,
+            force_empty_features,
+            force_missing_features,
+        )
 
     return func
 
 
-def _produce_messages(topic, SCHEMA, SCHEMA_PATH, force_empty_features):
+def _produce_messages(
+    topic, SCHEMA, SCHEMA_PATH, force_empty_features, force_missing_features
+):
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -241,11 +255,13 @@ def _produce_messages(topic, SCHEMA, SCHEMA_PATH, force_empty_features):
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         if topic == "features_ztf":
-            message["features"] = features_ztf()
-        elif topic == "features_elasticc" and not force_empty_features:
-            message["features"] = features_elasticc()
-        else:  # force_empty_features
-            message["features"] = None
+            message["features"] = features_ztf(
+                force_empty_features, force_missing_features
+            )
+        elif topic == "features_elasticc":
+            message["features"] = features_elasticc(
+                force_empty_features, force_missing_features
+            )
         producer.produce(message)
 
 
