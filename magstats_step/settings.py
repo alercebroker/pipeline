@@ -4,10 +4,10 @@ from fastavro import schema
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
 producer_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent, "schemas/correction_step", "output.avsc"
+    pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "output.avsc"
 )
 metrics_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/correction_step", "metrics.json"
+    pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "metrics.json"
 )
 scribe_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"

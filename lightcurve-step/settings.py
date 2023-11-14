@@ -1,4 +1,5 @@
 import os
+import pathlib
 from fastavro import schema
 from fastavro.repository.base import SchemaRepositoryError
 from credentials import get_credentials
@@ -8,9 +9,15 @@ from credentials import get_credentials
 ##################################################
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/lightcurve_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/lightcurve_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 def settings_creator():
     # Set the global logging level to debug
@@ -29,7 +36,7 @@ def settings_creator():
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaConsumer",
+        "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -44,13 +51,13 @@ def settings_creator():
     }
 
     producer_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+        "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
     }
 
     metrics_config = {
@@ -64,7 +71,7 @@ def settings_creator():
                 "bootstrap.servers": os.environ["METRICS_SERVER"],
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
         },
     }
 
