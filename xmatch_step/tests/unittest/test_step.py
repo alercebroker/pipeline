@@ -94,6 +94,7 @@ class StepXmatchTest(unittest.TestCase):
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, xmatch_client):
+        self.step.producer.set_key_field = mock.MagicMock()
         xmatch_client.return_value = get_fake_xmatch(self.batch)
         self.step.scribe_producer = mock.MagicMock()
         result = self.step.execute(self.batch)
