@@ -36,8 +36,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: CANDID_SEARCH
-              value: "2503521701415015005"
             - name: MONGODB_SECRET_NAME
               valueFrom:
                 configMapKeyRef:
