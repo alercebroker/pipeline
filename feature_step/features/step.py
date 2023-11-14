@@ -11,7 +11,7 @@ from features.utils.metrics import get_sid
 from features.core.ztf import ZTFFeatureExtractor
 from features.core.elasticc import ELAsTiCCFeatureExtractor
 
-from typing import Callable
+from typing import Any, Callable, Dict, Iterable, Union
 
 
 class FeaturesComputer(GenericStep):
@@ -52,6 +52,10 @@ class FeaturesComputer(GenericStep):
 
         for command in commands:
             self.scribe_producer.produce({"payload": json.dumps(command)})
+
+    def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
+        self.set_producer_key_field("aid")
+        return result
 
     def execute(self, messages):
         detections, non_detections, xmatch, messages_aid_oid = [], [], [], {}
