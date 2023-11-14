@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from apf.core.settings import config_from_yaml_file
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -21,7 +22,10 @@ logging.basicConfig(
 
 from lc_classification.core import LateClassifier
 
-step_config = config()
+if os.getenv("CONFIG_FROM_YAML"):
+    step_config = config_from_yaml_file("/config/config.yaml")
+else:
+    step_config = config()
 
 prometheus_metrics = None
 if step_config["PROMETHEUS"]:

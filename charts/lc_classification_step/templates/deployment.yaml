@@ -29,197 +29,26 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: metrics
-              containerPort: 8000
-              protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: CONSUMER_TOPICS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: consumer-topics
-            - name: CONSUMER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: internal-server
-            - name: CONSUMER_GROUP_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: consumer-group
-            - name: PRODUCER_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: producer-class
-            - name: PRODUCER_TOPIC_FORMAT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: producer-topic-format
-            - name: PRODUCER_DATE_FORMAT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: producer-date-format
-            - name: PRODUCER_CHANGE_HOUR
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: producer-change-hour
-            - name: PRODUCER_RETENTION_DAYS
-              value: "1"
-            - name: PRODUCER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: public-server
-            - name: SCRIBE_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: internal-server
-            - name: SCRIBE_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: scribe-topic
-            - name: METRICS_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: internal-server
-            - name: METRICS_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: metrics-topic
-            {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
-            - name: CONSUMER_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: consumer-username
-            - name: CONSUMER_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: consumer-password
-            {{- end }}
-            {{- if .Values.secrets.kafkaAuth.scribe.enabled }}
-            - name: SCRIBE_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: scribe-username
-            - name: SCRIBE_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: scribe-password
-            {{- end }}
-            {{- if .Values.secrets.kafkaAuth.producer.enabled }}
-            - name: PRODUCER_SECURITY_PROTOCOL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: kafka-producer-security-protocol
-            - name: PRODUCER_SASL_MECHANISM
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: kafka-producer-sasl-mechanism
-            - name: PRODUCER_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: producer-username
-            - name: PRODUCER_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: producer-password
-            {{- end }}
-            {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
-            - name: METRICS_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-username
-            - name: METRICS_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-password
-            {{- end }}
-            - name: CONSUME_TIMEOUT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: consume-timeout
-            - name: CONSUME_MESSAGES
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: consume-messages
-            - name: STREAM
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: stream
-            - name: MODEL_VERSION
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: model-version
-            - name: MODEL_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: model-class
-            - name: MAPPER_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: mapper-class
-            - name: MODEL_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: model-path
-            - name: QUANTILES_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: quantiles-path
-            - name: HEADER_QUANTILES_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: quantiles-path
-            - name: FEATURE_QUANTILES_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: feature-quantiles-path
-            - name: SCRIBE_PARSER_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: scribe-parser-class
-            - name: STEP_PARSER_CLASS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "lc-classifier-step.fullname" . }}
-                  key: step-parser-class
-            {{- with .Values.extraEnvVariables }}
-            {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end}}
+            {{- toYaml .Values.envVariables | nindent 12}}
+          {{- if .Values.configYaml.enabled }}
+          volumeMounts:
+            - name: config
+              mountPath: "/config"
+              readOnly: true
+          {{- end}}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.configYaml.enabled }}
+      volumes:
+        - name: config
+          configMap:
+            name: config-yaml
+            items:
+              - key: "config.yaml"
+                path: "config.yaml"
       {{- end }}
