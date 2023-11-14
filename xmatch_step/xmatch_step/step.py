@@ -64,7 +64,6 @@ class XmatchStep(GenericStep):
                 "criteria": {"_id": aid, "oid": oid_hash[aid]},
                 "data": {"xmatch": obj, "allwise": allwise},
             }
-            print(scribe_data)
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
     def pre_produce(self, result: List[dict]):
