@@ -1,4 +1,5 @@
 import os
+import pathlib
 from credentials import get_credentials
 
 ##################################################
@@ -6,14 +7,20 @@ from credentials import get_credentials
 ##################################################
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -46,7 +53,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 
