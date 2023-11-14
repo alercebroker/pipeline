@@ -1,10 +1,17 @@
 import os
+import pathlib
 from fastavro import schema
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent, "schemas/correction_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/correction_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 def settings_factory():
     # Set the global logging level to debug
@@ -32,7 +39,7 @@ def settings_factory():
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
     metrics_config = {
@@ -44,7 +51,7 @@ def settings_factory():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
         },
     }
 

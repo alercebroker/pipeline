@@ -53,7 +53,7 @@ def env_variables():
         "PRODUCER_SCHEMA_PATH": "",
         "CONSUMER_SCHEMA_PATH": "",
         "METRIS_SCHEMA_PATH": "../schemas/magstats_step//metrics.json",
-        "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
+        "SCRIBE_SCHEMA_PATH": "../schemas/scribe_step/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
         "CONSUMER_GROUP_ID": random_string,
