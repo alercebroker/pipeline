@@ -152,7 +152,7 @@
                     {"name": "g-r_max_corr", "type": ["float", "null"]},
                     {"name": "g-r_mean", "type": ["float", "null"]},
                     {"name": "g-r_mean_corr", "type": ["float", "null"]},
-                    {"name": "gal_b", "type": ["float", "navscull"]},
+                    {"name": "gal_b", "type": ["float", "null"]},
                     {"name": "gal_l", "type": ["float", "null"]},
                     {"name": "iqr_1", "type": ["float", "null"]},
                     {"name": "iqr_2", "type": ["float", "null"]},

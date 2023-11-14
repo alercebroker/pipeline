@@ -70,20 +70,13 @@ def test_step_schemaless(
 
     from settings import config
 
-    try:
-        kconsumer = kafka_consumer(
-            "balto_schemaless",
-            "apf.consumers.kafka.KafkaSchemalessConsumer",
-            {"SCHEMA_PATH": "schemas/output_elasticc.avsc"},
-        )
-    except SchemaRepositoryError:
-        kconsumer = kafka_consumer(
-            "balto_schemaless",
-            "apf.consumers.kafka.KafkaSchemalessConsumer",
-            {
-                "SCHEMA_PATH": "lc_classification_step/schemas/output_elasticc.avsc"
-            },
-        )
+    kconsumer = kafka_consumer(
+        "balto_schemaless",
+        "apf.consumers.kafka.KafkaSchemalessConsumer",
+        {
+            "SCHEMA_PATH": "../schemas/lc_classification_step/output_elasticc.avsc"
+        },
+    )
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=config())
