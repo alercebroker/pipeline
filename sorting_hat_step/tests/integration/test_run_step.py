@@ -7,7 +7,6 @@ import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
 from sorting_hat_step.step import SortingHatStep
-from schemas.output_schema import SCHEMA
 from ..unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
 from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
@@ -16,13 +15,17 @@ from sorting_hat_step.database import MongoConnection, PsqlConnection
 import pandas as pd
 from sqlalchemy import text
 
-os.environ["LOGGING_DEBUG"] = "True"
-
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc")
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json")
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), )
+PRODUCER_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc"
+)
+METRICS_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json"
+)
+SCRIBE_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__),
+)
 
 MONGO_CONFIG = {
     "host": "localhost",
@@ -97,13 +100,13 @@ class DbIntegrationTest(unittest.TestCase):
 
     def setUp(self):
         self.step_config = {
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "True",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": True,
+            },
         }
         self.psql_database.create_db()
 
@@ -201,14 +204,15 @@ class PrometheusIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "PROMETHEUS": True,
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "True",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": True,
+            },
         }
+
         self.psql_database.create_db()
 
     def tearDown(self):
@@ -254,13 +258,13 @@ class OnlyMongoIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "PROMETHEUS": False,
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
 
     def tearDown(self):

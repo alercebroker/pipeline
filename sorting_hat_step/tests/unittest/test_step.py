@@ -12,11 +12,12 @@ from pymongo.database import Database
 class SortingHatStepTestCase(unittest.TestCase):
     def setUp(self):
         self.step_config = {
-            "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
         self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
@@ -74,13 +75,14 @@ class RunConesearchTestCase(unittest.TestCase):
         )
 
     @mock.patch("sorting_hat_step.step.wizard")
-    def test_run_conesearch_explicit_true(self, mock_wizzard):
+    def test_run_conesearch_explicit_True(self, mock_wizzard):
         step_config = {
-            "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
 
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
@@ -91,13 +93,14 @@ class RunConesearchTestCase(unittest.TestCase):
         mock_wizzard.generate_new_id.assert_called_once()
 
     @mock.patch("sorting_hat_step.step.wizard")
-    def test_run_conesearch_default_true(self, mock_wizzard):
+    def test_run_conesearch_default_True(self, mock_wizzard):
         step_config = {
-            "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
-            "RUN_CONESEARCH": "ASDF",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
 
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
@@ -110,11 +113,12 @@ class RunConesearchTestCase(unittest.TestCase):
     @mock.patch("sorting_hat_step.step.wizard")
     def test_dont_run_conesearch(self, mock_wizzard):
         step_config = {
-            "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
-            "RUN_CONESEARCH": "False",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": False,
+                "USE_PSQL": False,
+            },
         }
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
         step.add_aid(self.dataframe)  # the wizzard is mocked
@@ -126,11 +130,12 @@ class RunConesearchTestCase(unittest.TestCase):
     @mock.patch("sorting_hat_step.step.wizard")
     def test_run_post_execute(self, mock_wizzard):
         step_config = {
-            "DB_CONFIG": {},
             "PRODUCER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
             "CONSUMER_CONFIG": {"CLASS": "unittest.mock.MagicMock"},
-            "RUN_CONESEARCH": "False",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": False,
+                "USE_PSQL": False,
+            },
         }
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
         step.post_execute(self.dataframe)  # the wizzard is mocked
