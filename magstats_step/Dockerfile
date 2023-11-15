@@ -31,6 +31,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY magstats_step/magstats_step /app/magstats_step
 COPY magstats_step/scripts /app/scripts
