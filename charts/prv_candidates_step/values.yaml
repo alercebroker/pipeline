@@ -19,17 +19,12 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 4
-  #targetConsumedMessages: 500
 
 affinity:
   nodeAffinity:
@@ -41,46 +36,71 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  consumeMessages: ""
-  consumerServer: ""
-  consumerGroupId: ""
-  scribeServer: ""
-  scribeTopic: ""
-  metricsServer: ""
-  metricsTopic: ""
-  producerServer: ""
-  producerTopic: ""
-  producerMessageMaxBytes: ""
-
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    producer:
-      enabled: false
-      username: ""
-      password: ""
-    scribe:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: true
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: ""
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: "prv-candidates-step"
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: []
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      message.max.bytes: 6291456
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: ""
+    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "w_non_detections"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: candid
+      - key: oid
+      - key: aid
+    PARAMS:
+      PARAM:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/prv_candidates_step/metrics.json"
+  LOGGING_DEBUG: false
+  USE_PROMETHEUS: false

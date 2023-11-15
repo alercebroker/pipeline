@@ -36,113 +36,23 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: CONSUMER_TOPICS
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: consumer-topics
-            - name: CONSUMER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: consumer-server
-            - name: CONSUMER_GROUP_ID
-              valueFrom:
-                configMapKeyRef:  
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: consumer-group-id
-            - name: CONSUME_MESSAGES
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: consume-messages
-            - name: PRODUCER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: producer-server
-            - name: PRODUCER_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: producer-topic
-            - name: PRODUCER_MESSAGE_MAX_BYTES
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: producer-message-max-bytes
-            - name: SCRIBE_PRODUCER_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: scribe-server
-            - name: SCRIBE_PRODUCER_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: scribe-topic
-            - name: METRICS_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: metrics-server
-            - name: METRICS_TOPIC
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "prv-candidates.fullname" . }}
-                  key: metrics-topic
-            {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
-            - name: CONSUMER_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: consumer-username
-            - name: CONSUMER_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: consumer-password
-            {{- end}}
-            {{- if .Values.secrets.kafkaAuth.producer.enabled }}
-            - name: PRODUCER_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: producer-username
-            - name: PRODUCER_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: producer-password
-            {{- end}}
-            {{- if .Values.secrets.kafkaAuth.scribe.enabled }}
-            - name: SCRIBE_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: scribe-username
-            - name: SCRIBE_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: scribe-password
-            {{- end}}
-            {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
-            - name: METRICS_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-username
-            - name: METRICS_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-password
-            {{- end}}
-            {{- with .Values.extraEnvVariables }}
-            {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end}}
+            {{- toYaml .Values.envVariables | nindent 12 }}
+          {{- if .Values.configYaml.enabled }}
+          volumeMounts:
+            - name: config
+              mountPath: "/config"
+              readOnly: true
+          {{- end}}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.configYaml.enabled }}
+      volumes:
+        - name: config
+          configMap:
+            name: config-yaml
+            items:
+              - key: "config.yaml"
+                path: "config.yaml"
       {{- end }}
