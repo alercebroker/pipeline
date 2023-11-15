@@ -29,7 +29,6 @@ jobs:
       TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -47,7 +46,6 @@ jobs:
       TEST_MESSI_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
 
 
