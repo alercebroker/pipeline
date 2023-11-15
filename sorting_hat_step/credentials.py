@@ -37,7 +37,7 @@ class _MongoConfig(UserDict):
         super().__setitem__("".join(klist), value)
 
 
-def get_secret(secret_name: str):
+def get_secret(secret_name: str) -> str:
     secret_name = secret_name
     region_name = "us-east-1"
 
@@ -54,7 +54,7 @@ def get_secret(secret_name: str):
     return get_secret_value_response["SecretString"]
 
 
-def get_credentials(secret_name: str, secret_type="mongo"):
+def get_credentials(secret_name: str, secret_type="mongo") -> UserDict | dict:
     secret = get_secret(secret_name)
     secret = json.loads(secret)
     # check if config is valid
