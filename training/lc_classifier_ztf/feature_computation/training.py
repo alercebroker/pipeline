@@ -42,5 +42,11 @@ labels = pd.concat([labels_training, labels_validation, labels_test])
 labels.index.name = 'aid'
 labels.reset_index(inplace=True)
 
-ztf_classifier = ZTFClassifier()
+list_of_classes = labels['astro_class'].unique()
+
+ztf_classifier = ZTFClassifier(
+    list_of_classes,
+    learning_rate=1e-4,
+    batch_size=256
+)
 ztf_classifier.fit_from_features(features, labels)
