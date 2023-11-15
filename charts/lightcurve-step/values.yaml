@@ -19,10 +19,6 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
@@ -30,7 +26,6 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
 affinity:
   nodeAffinity:
@@ -42,50 +37,63 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  consumeTimeout: ""
-  consumeMessages: ""
-  consumerServer: ""
-  consumerGroupId: ""
-  loggingDebug: ""
-  producerServer: ""
-  producerTopic: ""
-  producerMessageMaxBytes: ""
-  metricsServer: ""
-  metricsTopic: ""
-  usePrometheus: ""
-  useProfiling: ""
-  mongoSecret: ""
-  pyroscopeServer: "http://pyroscope.pyroscope:4040"
-  skipMjdFilter: ""
-
-featureFlags:
-  usePsql: true
-
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    producer:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: "lightcurve-step"
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: ["prv-candidates"]
+    consume.messages: 100
+    consume.timeout: 15
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      message.max.bytes: 6291456
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "lightcurve"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: candid
+      - key: aid
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/lighcurve_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_MJD_FILTER: false
+    USE_SQL: true

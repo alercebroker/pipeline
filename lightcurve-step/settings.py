@@ -19,19 +19,10 @@ scribe_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
 )
 
+
 def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
-
-    db_config_mongo = get_credentials(
-        os.environ["MONGODB_SECRET_NAME"], db_name="mongo"
-    )
-    if os.getenv("SQL_SECRET_NAME"):
-        db_config_sql = get_credentials(
-            os.environ.get("SQL_SECRET_NAME"), db_name="sql"
-        )
-    else:
-        db_config_sql = None
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
@@ -112,11 +103,15 @@ def settings_creator():
         "CONSUMER_CONFIG": consumer_config,
         "PRODUCER_CONFIG": producer_config,
         "METRICS_CONFIG": metrics_config,
-        "PROMETHEUS": prometheus,
-        "DB_CONFIG": db_config_mongo,
-        "DB_CONFIG_SQL": db_config_sql,
+        "MONGO_SECRET_NAME": os.getenv("MONGO_SECRET_NAME"),
+        "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
         "LOGGING_DEBUG": logging_debug,
-        "USE_PROFILING": use_profiling,
         "PYROSCOPE_SERVER": pyroscope_server,
+        "FEATURE_FLAGS": {
+            "USE_PROFILING": use_profiling,
+            "PROMETHEUS": prometheus,
+            "USE_SQL": bool(os.getenv("USE_SQL", True)),
+            "SKIP_MJD_FILTER": bool(os.getenv("SKIP_MJD_FILTER", False)),
+        },
     }
     return step_config

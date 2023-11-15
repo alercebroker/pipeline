@@ -1,11 +1,13 @@
 from unittest import mock
 import pandas as pd
 from pandas.testing import assert_frame_equal
-import pickle
 from lightcurve_step.step import LightcurveStep
+from settings import settings_creator
 
 
-def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_detections():
+def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_detections(
+    env_variables,
+):
     messages = [
         {
             "aid": "aid1",
@@ -84,7 +86,9 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
         },
     ]
 
-    output = LightcurveStep.pre_execute(messages)
+    output = LightcurveStep(
+        settings_creator(), mock.MagicMock(), mock.MagicMock()
+    ).pre_execute(messages)
     expected = {
         "aids": ["aid1", "aid2"],
         "candids": {"aid1": ["a", "c"], "aid2": ["c"]},
@@ -172,14 +176,12 @@ def test_pre_execute_joins_detections_and_non_detections_and_adds_new_flag_to_de
 @mock.patch("lightcurve_step.step._get_sql_non_detections")
 @mock.patch("lightcurve_step.step._get_sql_detections")
 def test_execute_removes_duplicates_keeping_ones_with_stamps(
-    _get_sql_det, _get_sql_non_det
+    _get_sql_det, _get_sql_non_det, env_variables
 ):
     mock_mongo = mock.MagicMock()
-    LightcurveStep.__init__ = lambda self: None
-    step = LightcurveStep()
-    step.db_mongo = mock_mongo
-    step.db_sql = mock.MagicMock()
-    step.logger = mock.MagicMock()
+    db_mongo = mock_mongo
+    db_sql = mock.MagicMock()
+    step = LightcurveStep(settings_creator(), db_mongo, db_sql)
     mock_mongo.database["detection"].aggregate.return_value = [
         {
             "aid": "aid2",
@@ -449,7 +451,7 @@ def test_execute_removes_duplicates_keeping_ones_with_stamps(
     )
 
 
-def test_pre_produce_restores_messages():
+def test_pre_produce_restores_messages(env_variables):
     message = {
         "detections": pd.DataFrame(
             [
@@ -497,7 +499,9 @@ def test_pre_produce_restores_messages():
         "candids": {"AID1": ["a", "MOST_RECENT"], "AID2": ["c", "b"]},
     }
 
-    output = LightcurveStep.pre_produce(message)
+    output = LightcurveStep(
+        settings_creator(), mock.MagicMock(), mock.MagicMock()
+    ).pre_produce(message)
 
     # This one has the object with MOST_RECENT candid removed
     expected = [

@@ -33,7 +33,7 @@ def env_variables():
     env_variables_dict = {
         "PRODUCER_SCHEMA_PATH": "../schemas/lightcurve_step/output.avsc",
         "CONSUMER_SCHEMA_PATH": "",
-        "METRIS_SCHEMA_PATH": "../schemas/lightcurve_step//metrics.json",
+        "METRICS_SCHEMA_PATH": "../schemas/lightcurve_step//metrics.json",
         "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
@@ -42,7 +42,7 @@ def env_variables():
         "PRODUCER_SERVER": "localhost:9092",
         "PRODUCER_TOPIC": "lightcurve",
         "ENABLE_PARTITION_EOF": "True",
-        "MONGODB_SECRET_NAME": "mongo_secret",
+        "MONGO_SECRET_NAME": "mongo_secret",
         "SQL_SECRET_NAME": "sql_secret",
         "CONSUME_MESSAGES": "10",
     }

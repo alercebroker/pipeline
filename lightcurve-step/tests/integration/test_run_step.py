@@ -1,6 +1,4 @@
 from unittest import mock
-from unittest.mock import patch
-from lightcurve_step.step import LightcurveStep
 import json
 
 
@@ -27,7 +25,7 @@ def mock_get_secret(secret_name):
             }
         )
     else:
-        return None
+        raise ValueError("Unknown secret name")
 
 
 @mock.patch("credentials.get_secret")
