@@ -53,7 +53,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
+        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 

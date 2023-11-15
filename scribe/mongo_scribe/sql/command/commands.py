@@ -141,6 +141,7 @@ class InsertForcedPhotometryCommand(Command):
         extra_fields.pop("brokerIngestTimestamp", "")
         extra_fields.pop("surveyPublishTimestamp", "")
         extra_fields.pop("parent_candid", "")
+        extra_fields.pop("forcediffimfluxunc", "")
         new_data = data.copy()
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["fid"] = fid_map[new_data["fid"]]
