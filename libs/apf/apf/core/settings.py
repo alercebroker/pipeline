@@ -1,7 +1,7 @@
 import yaml
 
 
-def config_from_yaml_file(path: str):
+def config_from_yaml_file(path: str) -> dict:
     """Load a yaml file."""
     with open(path) as f:
         return yaml.load(f, Loader=yaml.SafeLoader)
