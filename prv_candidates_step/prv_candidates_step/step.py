@@ -53,7 +53,9 @@ class PrvCandidatesStep(GenericStep):
                 msg["candid"] for msg in result if msg["candid"] == CANDID_SEARCH
             ]
             if len(with_candid) == 0:
-                raise Exception(f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!")
+                raise Exception(
+                    f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!"
+                )
         for alert in result:
             non_detections = alert["non_detections"]
             self.produce_scribe(non_detections)
