@@ -12,7 +12,16 @@ LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 # Export prometheus metrics
 PROMETHEUS = True
 
-MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
+#MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
+
+MONGO_CONFIG = {
+    "username": "root",
+    "password": "root",
+    "host": "mongo",
+    "port": 27017,
+    "database": "alerts",
+    "authSource": "admin"
+}
 PSQL_CONFIG = {}
 
 # Consumer configuration

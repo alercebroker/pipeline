@@ -12,15 +12,29 @@ def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
-    db_config_mongo = get_credentials(
-        os.environ["MONGODB_SECRET_NAME"], db_name="mongo"
-    )
+    # db_config_mongo = get_credentials(
+    #     os.environ["MONGODB_SECRET_NAME"], db_name="mongo"
+    # )
+    db_config_mongo = {
+        "username": "root",
+        "password": "root",
+        "host": "mongo",
+        "port": 27017,
+        "database": "alerts",
+        "authSource": "admin",
+    }
     if os.getenv("SQL_SECRET_NAME"):
         db_config_sql = get_credentials(
             os.environ.get("SQL_SECRET_NAME"), db_name="sql"
         )
     else:
-        db_config_sql = None
+        db_config_sql = {
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "postgres",
+            "PORT": 5432,
+            "DB_NAME": "postgres"
+        }
 
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation

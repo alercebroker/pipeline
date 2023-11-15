@@ -23,7 +23,7 @@ from db_plugins.db.mongo.models import (
     ForcedPhotometry as MongoForcedPhotometry,
 )
 
-CANDID = os.getenv("CANDID_SEARCH", "")
+CANDID = str(os.getenv("CANDID_SEARCH", "2503521701415015005"))
 
 
 class LightcurveStep(GenericStep):
@@ -39,14 +39,23 @@ class LightcurveStep(GenericStep):
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.set_producer_key_field("aid")
+        self.candid_found = False
+
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
         aids, detections, non_detections, oids = set(), [], [], {}
         last_mjds = {}
         candids = {}
+        logger = logging.getLogger("alerce.LightcurveStep")
+        logger.info(f"Recieved {len(messages)} messages...")
         for msg in messages:
             aid = msg["aid"]
+            
+            if str(msg["candid"]) == CANDID:
+                cls.candid_found = True
+                logger.info(f"\n======= CANDID {CANDID} FOUND!")
+
             if aid not in candids:
                 candids[aid] = []
             candids[aid].append(msg["candid"])
@@ -62,8 +71,8 @@ class LightcurveStep(GenericStep):
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
 
-        logger = logging.getLogger("alerce.LightcurveStep")
         logger.debug(f"Received {len(detections)} detections from messages")
+        logger.info(candids)
         return {
             "aids": list(aids),
             "candids": candids,
@@ -99,6 +108,7 @@ class LightcurveStep(GenericStep):
             + list(db_mongo_forced_photometries)
             + list(db_sql_forced_photometries)
         )
+        print(messages["candids"])
         non_detections = pd.DataFrame(
             messages["non_detections"]
             + list(db_mongo_non_detections)
@@ -110,9 +120,17 @@ class LightcurveStep(GenericStep):
 
         # Try to keep those with stamp coming from the DB if there are clashes
         # maybe drop duplicates with candid and AID in LSST/ELAsTiCC
+        candid_helper = detections[detections["candid"] == CANDID]
+        if self.candid_found and candid_helper.empty:
+            raise Exception(f"CANDID {CANDID} DISAPPEARED BEFORE DROP!")
+
         detections = detections.sort_values(
             ["has_stamp", "new"], ascending=[False, True]
         ).drop_duplicates("candid", keep="first")
+
+        candid_helper = detections[detections["candid"] == CANDID]
+        if self.candid_found and candid_helper.empty:
+            raise Exception(f"CANDID {CANDID} DISAPPEARED AFTER DROP!")
 
         non_detections = non_detections.drop_duplicates(["aid", "fid", "mjd"])
         self.logger.debug(

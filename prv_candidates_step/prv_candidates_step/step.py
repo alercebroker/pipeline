@@ -31,7 +31,15 @@ class PrvCandidatesStep(GenericStep):
         self.candid_found = False
 
     def pre_produce(self, result: List[dict]):
+        if self.candid_found:
+            with_candid = [
+                msg["candid"] for msg in result if msg["candid"] == CANDID_SEARCH
+            ]
+            self.logger.info(with_candid)
+            if len(with_candid) == 0:
+                raise Exception(f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!")
         self.set_producer_key_field("aid")
+        self.candid_found = False
         return result
 
     def execute(self, messages):
@@ -57,7 +65,6 @@ class PrvCandidatesStep(GenericStep):
         for alert in result:
             non_detections = alert["non_detections"]
             self.produce_scribe(non_detections)
-
         return result
 
     def produce_scribe(self, non_detections: List[dict]):
