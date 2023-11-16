@@ -42,6 +42,8 @@ class MagstatsStep(GenericStep):
 
     def _execute_ztf(self, messages: dict):
         ztf_detections = list(filter(lambda d: d["sid"] == "ZTF", messages["detections"]))
+        if not len(ztf_detections):
+            return {}
         obj_calculator = ObjectStatistics(ztf_detections)
         stats = obj_calculator.generate_statistics(self.excluded).replace({np.nan: None})
         stats = stats.to_dict("index")
