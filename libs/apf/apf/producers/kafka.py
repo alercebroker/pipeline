@@ -171,7 +171,7 @@ class KafkaProducer(GenericProducer):
                 topic, value=message, key=key, callback=acked, **kwargs
             )
             if flush:
-                self.producer.flush(1)
+                self.producer.flush()
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")
