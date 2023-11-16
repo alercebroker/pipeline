@@ -19,10 +19,6 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
@@ -42,33 +38,72 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  groupId: "feature_consumer"
-  internalServer: ""
-  featureExtractor: ""
-  producerTopic: ""
-  loggingDebug: ""
-  consumeTimeout: "10"
-  consumeMessages: "50"
-  metricsTopic: ""
-  scribeTopic: ""
-  producerMessageMaxBytes: ""
-
-secrets:
-  kafkaAuth:
-    enabled: false
-    username: ""
-    password: ""
-
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  EXTRACTOR: ""
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    TOPICS: ["xmatch"]
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: "feature_consumer"
+      auto.offset.reset: "beginning"
+      max.poll.interval.ms: 360000
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    TOPIC: "features"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+      max.message.bytes: 6291456
+    SCHEMA_PATH: "/schemas/feature_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    TOPIC: "w_object"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: aid
+      - key: candid
+    PARAMS:
+      TOPIC: "metrics"
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      SCHEMA_PATH: "/schemas/feature_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  FEATURE_FLAGS:
+    USE_PROFILING: true

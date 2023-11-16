@@ -111,10 +111,13 @@ pyroscope_server = os.getenv(
 )
 
 STEP_CONFIG = {
+    "EXTRACTOR": EXTRACTOR,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "USE_PROFILING": use_profiling,
+    "FEATURE_FLAGS": {
+        "USE_PROFILING": use_profiling,
+    },
     "PYROSCOPE_SERVER": pyroscope_server,
 }
