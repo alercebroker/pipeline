@@ -52,6 +52,7 @@ envVariables:
   ##   value: ATLAS
 
 configYaml:
+  enabled: true
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     PARAMS:
