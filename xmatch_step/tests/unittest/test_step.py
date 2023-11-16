@@ -84,7 +84,7 @@ class StepXmatchTest(unittest.TestCase):
             config=step_config,
         )
 
-        def mock_method():
+        def mock_method(a):
             return None
 
         cls.step.producer.set_key_field = mock_method
