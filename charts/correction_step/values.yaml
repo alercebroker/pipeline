@@ -103,6 +103,7 @@ configYaml:
       sasl.mechanisms: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
   LOGGING_DEBUG: false
   FEATURE_FLAGS:
     PROMETHEUS: false
