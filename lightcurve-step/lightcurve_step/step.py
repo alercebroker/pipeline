@@ -40,7 +40,7 @@ class LightcurveStep(GenericStep):
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.set_producer_key_field("aid")
         self.candid_found = False
-
+        self.logger.info("HOOOOOOOOOOOOOOOOOOOLA")
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -51,10 +51,6 @@ class LightcurveStep(GenericStep):
         logger.info(f"Recieved {len(messages)} messages...")
         for msg in messages:
             aid = msg["aid"]
-            
-            if str(msg["candid"]) == CANDID:
-                cls.candid_found = True
-                logger.info(f"\n======= CANDID {CANDID} FOUND!")
 
             if aid not in candids:
                 candids[aid] = []
@@ -71,8 +67,8 @@ class LightcurveStep(GenericStep):
             detections.extend([det | {"new": True} for det in msg["detections"]])
             non_detections.extend(msg["non_detections"])
 
-        logger.debug(f"Received {len(detections)} detections from messages")
-        logger.info(candids)
+        logger.info(f"Obtained {len(aids)} AIDs")
+        logger.info(f"Obtained {len(candids)} Candid AIDS")
         return {
             "aids": list(aids),
             "candids": candids,

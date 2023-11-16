@@ -20,7 +20,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": bool(os.getenv("ENABLE_PARTITION_EOF", False)),
+            "enable.partition.eof": True,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", "1")),
@@ -35,7 +35,7 @@ def settings_creator():
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-            "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
+            "message.max.bytes": 100000000,
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
         "SCHEMA": the_schema,
@@ -49,6 +49,7 @@ def settings_creator():
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
+            "message.max.bytes": 100000000,
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
         "SCHEMA": the_schema,
@@ -64,7 +65,6 @@ def settings_creator():
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_HOST"),
-                "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
             "SCHEMA": {
@@ -146,4 +146,5 @@ def settings_creator():
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROMETHEUS": prometheus,
+        "COMMIT": False,
     }

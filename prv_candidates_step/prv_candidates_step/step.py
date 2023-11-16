@@ -37,7 +37,9 @@ class PrvCandidatesStep(GenericStep):
             ]
             self.logger.info(with_candid)
             if len(with_candid) == 0:
-                raise Exception(f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!")
+                raise Exception(
+                    f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!"
+                )
         self.set_producer_key_field("aid")
         self.candid_found = False
         return result
@@ -61,7 +63,9 @@ class PrvCandidatesStep(GenericStep):
                 msg["candid"] for msg in result if msg["candid"] == CANDID_SEARCH
             ]
             if len(with_candid) == 0:
-                raise Exception(f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!")
+                raise Exception(
+                    f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!"
+                )
         for alert in result:
             non_detections = alert["non_detections"]
             self.produce_scribe(non_detections)

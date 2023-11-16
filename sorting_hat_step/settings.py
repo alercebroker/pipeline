@@ -12,7 +12,7 @@ LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 # Export prometheus metrics
 PROMETHEUS = True
 
-#MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
+# MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
 
 MONGO_CONFIG = {
     "username": "root",
@@ -20,7 +20,7 @@ MONGO_CONFIG = {
     "host": "mongo",
     "port": 27017,
     "database": "alerts",
-    "authSource": "admin"
+    "authSource": "admin",
 }
 PSQL_CONFIG = {}
 
@@ -33,6 +33,7 @@ CONSUMER_CONFIG = {
         "group.id": os.environ["CONSUMER_GROUP_ID"],
         "auto.offset.reset": "beginning",
         "max.poll.interval.ms": 3600000,
+        "enable.partition.eof": True,
     },
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
@@ -159,4 +160,5 @@ STEP_CONFIG = {
     "METRICS_CONFIG": METRICS_CONFIG,
     "RUN_CONESEARCH": RUN_CONESEARCH,
     "USE_PSQL": USE_PSQL,
+    "COMMIT": False,
 }

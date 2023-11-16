@@ -162,12 +162,15 @@ class ZTFNonDetectionsParser(SurveyParser):
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
+    prv_candidates = alert["extra_fields"].pop("prv_candidates")
+    prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
+    forced_photometries = alert["extra_fields"].pop("fp_hists", [])
+    forced_photometries = (
+        pickle.loads(forced_photometries) if forced_photometries else []
+    )
     acopy = alert.copy()
     detections = [acopy]
     non_detections = []
-
-    prv_candidates = alert["extra_fields"].pop("prv_candidates")
-    prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
     detections = detections + [
         ZTFPreviousDetectionsParser.parse_message(candidate, alert)
@@ -180,11 +183,6 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         if ZTFNonDetectionsParser.can_parse(candidate)
     ]
     alert["extra_fields"]["parent_candid"] = None
-
-    forced_photometries = alert["extra_fields"].pop("fp_hists", [])
-    forced_photometries = (
-        pickle.loads(forced_photometries) if forced_photometries else []
-    )
     detections = detections + [
         ZTFForcedPhotometryParser.parse_message(fp, alert)
         for fp in forced_photometries

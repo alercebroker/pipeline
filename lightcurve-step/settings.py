@@ -33,7 +33,7 @@ def settings_creator():
             "PASSWORD": "postgres",
             "HOST": "postgres",
             "PORT": 5432,
-            "DB_NAME": "postgres"
+            "DB_NAME": "postgres",
         }
 
     # Consumer configuration
@@ -44,9 +44,7 @@ def settings_creator():
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": True
-            if os.getenv("ENABLE_PARTITION_EOF")
-            else False,
+            "enable.partition.eof": True,
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
@@ -157,5 +155,6 @@ def settings_creator():
         "LOGGING_DEBUG": logging_debug,
         "USE_PROFILING": use_profiling,
         "PYROSCOPE_SERVER": pyroscope_server,
+        "COMMIT": False,
     }
     return step_config

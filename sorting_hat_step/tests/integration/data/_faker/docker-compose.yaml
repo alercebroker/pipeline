@@ -1,0 +1,53 @@
+version: "3"
+services:
+  faker:
+    image: "faker:latest"
+    networks:
+      - network1
+
+  sorting-hat:
+    image: "sorting-hat:debug"
+    networks:
+      - network1
+    environment:
+      - CONSUME_MESSAGES=98
+      - CONSUMER_GROUP_ID=sorting
+      - CONSUMER_SERVER=kafka:9092
+      - CONSUMER_TOPICS=ztf
+      - PRODUCER_TOPIC=sorting-hat
+      - PRODUCER_SERVER=kafka:9092
+      - METRICS_HOST=kafka:9092
+      - PYROSCOPE_SERVER=localhost:4000
+
+  prv-candidates:
+    image: "prv-candidates:debug"
+    networks:
+      - network1
+    environment:
+      - CONSUME_MESSAGES=98
+      - CONSUMER_GROUP_ID=prev
+      - CONSUMER_SERVER=kafka:9092
+      - CONSUMER_TOPICS=sorting-hat
+      - PRODUCER_TOPIC=prv-candidates
+      - PRODUCER_SERVER=kafka:9092
+      - METRICS_HOST=kafka:9092
+      - SCRIBE_PRODUCER_SERVER=kafka:9092
+      - SCRIBE_PRODUCER_TOPIC=w_non_detections
+
+  lightcurve:
+    image: "lightcurve-step:debug"
+    networks:
+      - network1
+    environment:
+      - CONSUME_MESSAGES=98
+      - CONSUMER_GROUP_ID=lightcurve
+      - CONSUMER_SERVER=kafka:9092
+      - CONSUMER_TOPICS=prv-candidates
+      - PRODUCER_TOPIC=lightcurve
+      - PRODUCER_SERVER=kafka:9092
+      - METRICS_SERVER=kafka:9092
+
+networks:
+  network1:
+    external: true
+    name: infra

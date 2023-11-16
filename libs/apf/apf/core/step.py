@@ -387,7 +387,7 @@ class GenericStep(abc.ABC):
             extra_metrics["n_messages"] = 1
         return extra_metrics
 
-    def produce(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+    def produce(self, result: Union[List[Dict[str, Any]], Dict[str, Any]]):
         """
         Produces messages using the configured producer class.
 
@@ -401,16 +401,17 @@ class GenericStep(abc.ABC):
         NOTE: If you want to produce with a key, use the set_producer_key_field(key_field)
         method somewhere in the lifecycle of the step prior to the produce state.
         """
-        n_messages = 0
         if isinstance(result, dict):
             to_produce = [result]
         else:
             to_produce = result
+        count = 0
         for prod_message in to_produce:
-            self.producer.produce(prod_message)
-            n_messages += 1
+            count += 1
+            flush = count == len(to_produce)
+            self.producer.produce(prod_message, flush=flush)
         if not isinstance(self.producer, DefaultProducer):
-            self.logger.info(f"Produced {n_messages} messages")
+            self.logger.info(f"Produced {len(to_produce)} messages")
 
     def set_producer_key_field(self, key_field: str):
         """
