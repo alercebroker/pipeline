@@ -7,8 +7,6 @@ from apf.core.step import GenericStep
 
 from .core.extractor import PreviousCandidatesExtractor
 
-CANDID_SEARCH = str(os.getenv("CANDID_SEARCH", "2503521701415015005"))
-
 
 class PrvCandidatesStep(GenericStep):
     """PrvDetectionStep Description
@@ -35,27 +33,12 @@ class PrvCandidatesStep(GenericStep):
         return result
 
     def execute(self, messages):
-        with_candid = [
-            msg["candid"] for msg in messages if str(msg["candid"]) == CANDID_SEARCH
-        ]
-        if len(with_candid):
-            self.logger.info(f"CANDID {CANDID_SEARCH} FOUND!")
-            self.candid_found = True
-
         self.logger.info(f"Processing {len(messages)} alerts")
         extractor = PreviousCandidatesExtractor(messages)
         return extractor.extract_all()
 
     def post_execute(self, result: List[dict]):
         # Produce a message with the non_detections
-        if self.candid_found:
-            with_candid = [
-                msg["candid"] for msg in result if msg["candid"] == CANDID_SEARCH
-            ]
-            if len(with_candid) == 0:
-                raise Exception(
-                    f"=====\nALERT WITH CANDID {CANDID_SEARCH} DISAPPEARED!"
-                )
         for alert in result:
             non_detections = alert["non_detections"]
             self.produce_scribe(non_detections)
