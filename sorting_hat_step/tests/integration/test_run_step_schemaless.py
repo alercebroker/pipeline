@@ -6,7 +6,7 @@ import unittest
 from unittest import mock
 from sorting_hat_step.step import SortingHatStep
 from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
-from sorting_hat_step.database import MongoConnection, PsqlConnection
+from sorting_hat_step.database import MongoConnection
 import os
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
