@@ -4,7 +4,6 @@ from typing import Dict, List, Tuple
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
 from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
 from xmatch_step.core.utils.extract_info import (

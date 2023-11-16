@@ -1,15 +1,19 @@
 import os
-from schema import SCHEMA
-from fastavro import schema
 
 ##################################################
 #       xmatch_step   Settings File
 ##################################################
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
+PRODUCER_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH")
+)
+METRICS_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH")
+)
+SCRIBE_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH")
+)
 
 # Set the global logging level to debug
 
@@ -51,7 +55,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
     },
-        "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 # Xmatch Configuration
@@ -141,7 +145,9 @@ if os.getenv("SCRIBE_KAFKA_USERNAME") and os.getenv("SCRIBE_KAFKA_PASSWORD"):
 
 # Step Configuration
 STEP_CONFIG = {
-    "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
+    "FEATURE_FLAGS": {
+        "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
+    },
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "XMATCH_CONFIG": XMATCH_CONFIG,
