@@ -83,6 +83,7 @@ class StepXmatchTest(unittest.TestCase):
         cls.step = XmatchStep(
             config=step_config,
         )
+        cls.step.producer.set_key_field.return_value = None
         cls.batch = generate_input_batch(20)  # I want 20 light  curves
 
     @mock.patch.object(XmatchClient, "execute")
