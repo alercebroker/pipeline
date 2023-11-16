@@ -60,7 +60,6 @@ def settings_creator():
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),
-                "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
             "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
@@ -95,6 +94,8 @@ def settings_creator():
         "PRODUCER_CONFIG": producer_config,
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
-        "PROMETHEUS": prometheus,
+        "FEATURE_FLAGS": {
+            "PROMETHEUS": prometheus,
+        },
     }
     return step_config

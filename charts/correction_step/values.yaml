@@ -19,10 +19,6 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources:
   requests:
     memory: 600M
@@ -45,42 +41,6 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  consumerServer: ""
-  consumerGroupId: ""
-  loggingDebug: ""
-  producerServer: ""
-  producerTopic: ""
-  producerMessageMaxBytes: ""
-  pyroscopeServer: "http://pyroscope.pyroscope:4040"
-  scribeServer: ""
-  scribeTopic: ""
-  metricsServer: ""
-  metricsTopic: ""
-  consumeMessages: "500"
-  consumeTimeout: "0"
-  useProfiling: ""
-
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    producer:
-      enabled: false
-      username: ""
-      password: ""
-    scribe:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-
 imageCredentials:
   registry: ""
   username: ""
@@ -88,7 +48,61 @@ imageCredentials:
   email: ""
 
 extraEnvVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanisms: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: ["lightcurve"]
+    consume.messages: 100
+    consume.timeout: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: aid
+      - key: candid
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanisms: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/correction_step/metrics.json"
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanisms: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "correction"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      message.max.bytes: 6291456
+      security.protocol: "SASL_SSL"
+      sasl.mechanisms: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false

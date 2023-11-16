@@ -9,8 +9,6 @@ from apf.core.step import GenericStep
 
 from ..core.corrector import Corrector
 
-from pprint import pprint
-
 
 class CorrectionStep(GenericStep):
     """Step that applies magnitude correction to new alert and previous candidates.
@@ -31,14 +29,13 @@ class CorrectionStep(GenericStep):
 
     @staticmethod
     def create_step() -> CorrectionStep:
-        import os
         from .settings import settings_creator
         from prometheus_client import start_http_server
         from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
 
         settings = settings_creator()
         level = logging.INFO
-        if os.getenv("LOGGING_DEBUG"):
+        if settings.get("LOGGING_DEBUG"):
             level = logging.DEBUG
 
         logger = logging.getLogger("alerce")
@@ -51,8 +48,10 @@ class CorrectionStep(GenericStep):
 
         logger.addHandler(handler)
 
-        prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
-        if settings["PROMETHEUS"]:
+        prometheus_metrics = (
+            PrometheusMetrics() if settings["FEATURE_FLAGS"]["PROMETHEUS"] else DefaultPrometheusMetrics()
+        )
+        if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
             start_http_server(8000)
 
         return CorrectionStep(config=settings, prometheus_metrics=prometheus_metrics)
