@@ -29,11 +29,17 @@ class CorrectionStep(GenericStep):
 
     @staticmethod
     def create_step() -> CorrectionStep:
-        from .settings import settings_creator
+        import os
         from prometheus_client import start_http_server
         from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
+        from apf.core.settings import config_from_yaml_file
 
-        settings = settings_creator()
+        if os.getenv("CONFIG_FROM_YAML"):
+            settings = config_from_yaml_file("/config/config.yaml")
+        else:
+            from .settings import settings_creator
+
+            settings = settings_creator()
         level = logging.INFO
         if settings.get("LOGGING_DEBUG"):
             level = logging.DEBUG
