@@ -19,10 +19,6 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
@@ -42,41 +38,59 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  consumerServer: ""
-  consumerGroupId: ""
-  consumeMessages: "250"
-  consumeTimeout: "10"
-  scribeServer: ""
-  scribeTopic: ""
-  metricsServer: ""
-  metricsTopic: ""
-  excludedCalculators: ""
-
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    scribe:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "earliest"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: ["correction"]
+    consume.messages: 100
+    consume.timeout: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: aid
+      - key: candid
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/magstats_step/metrics.json"
+  LOGGING_DEBUG: false
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "w_detection"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  EXCLUDED_CALCULATORS: []

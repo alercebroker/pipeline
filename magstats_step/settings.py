@@ -1,17 +1,11 @@
 import os
 import pathlib
-from fastavro import schema
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
-producer_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "output.avsc"
-)
-metrics_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "metrics.json"
-)
-scribe_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
-)
+producer_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "output.avsc")
+metrics_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "metrics.json")
+scribe_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc")
+
 
 def settings_factory():
     # Set the global logging level to debug
@@ -48,7 +42,6 @@ def settings_factory():
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),
-                "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
             "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
@@ -76,7 +69,7 @@ def settings_factory():
         "METRICS_CONFIG": metrics_config,
         "LOGGING_DEBUG": logging_debug,
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
-        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators),
+        "EXCLUDED_CALCULATORS": excluded_calculators,
     }
 
     return step_config
