@@ -24,7 +24,7 @@ class MetadataStep(GenericStep):
         extra_fields.pop("prv_candidates", {})
         return format_detection({**d, **extra_fields}, catalogs)
 
-    def _write_metadata_into_db(self, result: List[Dict], ps1: Dict[List]):
+    def _write_metadata_into_db(self, result: List[Dict], ps1: Dict[str, List]):
         ps1_updates = []
         for el in ps1.values():
             if el["updated"]:
