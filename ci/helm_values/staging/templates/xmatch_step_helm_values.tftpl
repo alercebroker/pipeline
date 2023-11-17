@@ -7,41 +7,42 @@ affinity:
           operator: In
           values:
           - staging-pipeline
+
 autoscaling:
   enabled: true
-  maxReplicas: 8
+  maxReplicas: 4
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
-image:
-  repository: ghcr.io/alercebroker/lightcurve-step
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
   username: ${ghcr_username}
-namespace: lightcurve-step
+
+namespace: xmatch-step
+
 resources:
   requests:
-    cpu: 100m
-    memory: 250M
-
-envVariables:
-  - name: CONFIG_FROM_YAML
-    value: "True"
-  - name: METRICS_SOURCE
-    value: lightcurve
-  - name: METRICS_SURVEY
-    value: ATLAS,ZTF
+    cpu: 500m
+    memory: 320M
 
 configYaml:
   CONSUMER_CONFIG:
-    # CLASS: "apf.consumers.KafkaSchemalessConsumer"
-    CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 1000
   PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
     PARAMS:
       bootstrap.servers: ${kafka_server}

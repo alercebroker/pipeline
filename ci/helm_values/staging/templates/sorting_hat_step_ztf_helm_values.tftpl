@@ -9,47 +9,43 @@ affinity:
           - staging-pipeline
 autoscaling:
   enabled: true
-  maxReplicas: 8
+  maxReplicas: 4
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
-image:
-  repository: ghcr.io/alercebroker/lightcurve-step
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
   username: ${ghcr_username}
-namespace: lightcurve-step
+
+namespace: sorting-hat-ztf
+
 resources:
   requests:
-    cpu: 100m
-    memory: 250M
-
-envVariables:
-  - name: CONFIG_FROM_YAML
-    value: "True"
-  - name: METRICS_SOURCE
-    value: lightcurve
-  - name: METRICS_SURVEY
-    value: ATLAS,ZTF
+    cpu: 300m
+    memory: 128Mi
 
 configYaml:
+  MONGO_SECRET_NAME: "mongodb-alerts-staging"
+  PSQL_SECRET_NAME: "psql-users-staging/writer"
   CONSUMER_CONFIG:
-    # CLASS: "apf.consumers.KafkaSchemalessConsumer"
-    CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/ztf/alert.avsc"
+    TOPICS: ["ztf"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
+      group.id: "sorting-hat-ztf"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
   PRODUCER_CONFIG:
-    CLASS: "apf.producers.KafkaProducer"
     PARAMS:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+    TOPIC: "sorting-hat-ztf"
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
   METRICS_CONFIG:
     PARAMS:
       PARAMS:
         bootstrap.servers: ${kafka_server}
-        sasl.username: ${kafka_username}
-        sasl.password: ${kafka_password}
