@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from apf.core.step import GenericStep
 from metadata_step.utils.parse import format_detection
@@ -24,9 +24,14 @@ class MetadataStep(GenericStep):
         extra_fields.pop("prv_candidates", {})
         return format_detection({**d, **extra_fields}, catalogs)
 
-    def _write_metadata_into_db(self, result: List[Dict]):
+    def _write_metadata_into_db(self, result: List[Dict], ps1: Dict[List]):
+        ps1_updates = []
+        for el in ps1.values():
+            if el["updated"]:
+                ps1_updates.append(el)
+
         with self.db.session() as session:
-            insert_metadata(session, result)
+            insert_metadata(session, result, ps1_updates)
             session.commit()
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
@@ -40,8 +45,9 @@ class MetadataStep(GenericStep):
             catalogs["gaia"] = get_gaia_catalog(session, oids)
 
         result = [self._format_detection(message, catalogs) for message in messages]
-        return result
+        return result, catalogs["ps1"]
 
-    def post_execute(self, result: List[Dict]):
-        self._write_metadata_into_db(result)
+    def post_execute(self, result: Tuple[List[Dict], List[Dict]]):
+        data, ps1 = result
+        self._write_metadata_into_db(data, ps1)
         return []
