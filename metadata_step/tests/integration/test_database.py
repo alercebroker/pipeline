@@ -95,7 +95,7 @@ def test_metadata_insertion(psql_service):
     ]
 
     with conn.session() as session:
-        insert_metadata(session, data)
+        insert_metadata(session, data, [])
         session.commit()
         # perform queries to make sure they were inserted/updated
         ss_result = session.execute(select(Ss_ztf).where(Ss_ztf.oid == "ZTF00llmn"))
