@@ -56,8 +56,6 @@ STEP_CONFIG = {
     "DB_TYPE": os.getenv("DB_ENGINE", "mongo"),
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "RETRIES": int(os.getenv("RETRIES", "3")),
-    "RETRY_INTERVAL": int(os.getenv("RETRY_INTERVAL", "1")),
     "FEATURE_FLAGS": {
         "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", "True")),
         "USE_PROFILING": bool(os.getenv("USE_PROFILING", True)),
