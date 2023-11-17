@@ -68,7 +68,7 @@ def test_metadata_insertion(psql_service):
                 "nframesref": 1,
             },
             "dataquality": {
-                "candid": 1234567890,
+                "candid": 987654321,
                 "oid": "ZTF00llmn",
                 "fid": 1,
                 "xpos": 0,
@@ -80,9 +80,9 @@ def test_metadata_insertion(psql_service):
                 "neargaia": 55.55,
                 "unique1": False,
             },
-            "ps1": [{
+            "ps1": {
                 "oid": "ZTF00llmn",
-                "candid": 1234567890,
+                "candid": 987654321,
                 "objectidps1": 15.11,
                 "objectidps2": 25.22,
                 "objectidps3": 35.33,
@@ -90,7 +90,7 @@ def test_metadata_insertion(psql_service):
                 "unique1": True,
                 "unique2": True,
                 "unique3": True,
-            }],
+            },
         }
     ]
 

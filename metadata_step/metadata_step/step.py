@@ -26,7 +26,8 @@ class MetadataStep(GenericStep):
 
     def _write_metadata_into_db(self, result: List[Dict], ps1: Dict[str, List]):
         ps1_updates = []
-        for el in ps1.values():
+        flattened = sum(ps1.values(), [])
+        for el in flattened:
             if el["updated"]:
                 ps1_updates.append(el)
 
