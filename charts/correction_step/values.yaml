@@ -56,11 +56,12 @@ extraEnvVariables:
   ##   value: ATLAS
 
 configYaml:
+  enabled: true
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     PARAMS:
       bootstrap.servers: ""
-      group.id: ""
+      group.id: "correction-step"
       auto.offset.reset: "beginning"
       enable.partition.eof: false
       security.protocol: "SASL_SSL"

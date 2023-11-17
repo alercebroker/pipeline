@@ -57,6 +57,7 @@ configYaml:
   LOGGING_DEBUG: false
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: ""
     PARAMS:
       bootstrap.servers: ""
       group.id: "xmatch-step"

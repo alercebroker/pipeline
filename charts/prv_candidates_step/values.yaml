@@ -44,16 +44,17 @@ imageCredentials:
 
 envVariables:
   - name: CONFIG_FROM_YAML
-    value: true
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
 
 configYaml:
+  enabled: true
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: ""
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
     PARAMS:
       bootstrap.servers: ""
       group.id: "prv-candidates-step"
@@ -63,7 +64,7 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
-    TOPICS: []
+    TOPICS: ["^sorting-hat.*"]
     consume.messages: 100
     consume.timeout: 10
   PRODUCER_CONFIG:
@@ -75,7 +76,7 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
-    TOPIC: ""
+    TOPIC: "prv-candidates"
     SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
   SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
