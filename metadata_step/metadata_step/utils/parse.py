@@ -81,16 +81,10 @@ def format_ps1(alert: Dict, catalog={}):
                 continue
 
             for ps1_aux in ps1_filtered:
-                candid = ps1_aux["candid"]
-                saved = candids.get(candid)
-                if not saved:
-                    saved = ps1_aux.copy()
-                saved[f"unique{i}"] = False
-                candids[candid] = saved
-        # new_ps1.extend(list(candids.values()))
+                ps1_aux[f"unique{i}"] = False
+                ps1_aux["updated"] = True
 
-    new_ps1.append(alert)
-    return new_ps1
+    return alert
 
 
 # formats each alert to send it to scribe psql
