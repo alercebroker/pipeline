@@ -97,17 +97,6 @@ gaia_mocks = [
 ps1_mocks = [
     {
         "oid": "ZTF00llmn",
-        "candid": 987654321,
-        "objectidps1": 55.55,
-        "objectidps2": 44.44,
-        "objectidps3": 33.33,
-        "nmtchps": 1,
-        "unique1": True,
-        "unique2": True,
-        "unique3": True,
-    },
-    {
-        "oid": "ZTF00llmn",
         "candid": 1234567890,
         "objectidps1": 100,
         "objectidps2": 22.22,
