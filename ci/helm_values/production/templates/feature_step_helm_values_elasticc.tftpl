@@ -2,12 +2,12 @@ namespace: feature-step-elasticc
 resources:
   requests:
     cpu: 600m
-    memory: 300M
+    memory: 1800Mi
 
 autoscaling:
   enabled: true
   minReplicas: 1
-  maxReplicas: 8
+  maxReplicas: 16
   targetCPUUtilizationPercentage: 80
 
 affinity:
