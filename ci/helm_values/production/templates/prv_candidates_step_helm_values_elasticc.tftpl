@@ -11,7 +11,7 @@ autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 16
-  targetCPUUtilizationPercentage: 80
+  targetCPUUtilizationPercentage: 50
 configmap:
   classPrefix: Elasticc
   consumeMessages: "100"
@@ -36,7 +36,7 @@ imageCredentials:
 namespace: prv-candidates-elasticc
 resources:
   requests:
-    cpu: 700m
+    cpu: 500m
     memory: 900Mi
 secrets:
   kafkaAuth:
