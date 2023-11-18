@@ -110,7 +110,10 @@ class CorrectionStep(GenericStep):
         return result
 
     def produce_scribe(self, detections: list[dict]):
+        count = 0
         for detection in detections:
+            count += 1
+            flush = False
             detection = detection.copy()  # Prevent further modification for next step
             if not detection.pop("new"):
                 continue
@@ -135,4 +138,6 @@ class CorrectionStep(GenericStep):
                 "options": {"upsert": True, "set_on_insert": set_on_insert},
             }
             scribe_payload = {"payload": json.dumps(scribe_data)}
-            self.scribe_producer.produce(scribe_payload)
+            if count == len(detections):
+                flush = True
+            self.scribe_producer.produce(scribe_payload, flush=flush)
