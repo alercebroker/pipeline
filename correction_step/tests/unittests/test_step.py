@@ -144,7 +144,10 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
     step = MockCorrectionStep()
     output = step.post_execute(copy.deepcopy(message4execute))
     assert output == message4execute_copy
+    count = 0
     for det in message4execute_copy["detections"]:
+        count += 1
+        flush = False
         if not det["new"]:  # does not write
             continue
         det["extra_fields"] = {
@@ -161,7 +164,9 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
             "data": {k: v for k, v in det.items() if k not in ["candid", "forced", "new"]},
             "options": {"upsert": True, "set_on_insert": not det["has_stamp"]},
         }
-        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)})
+        if count == len(message4execute_copy["detections"]):
+            flush = True
+        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
 
 
 def test_pre_produce_unpacks_detections_and_non_detections_by_aid():
