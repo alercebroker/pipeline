@@ -132,7 +132,12 @@ class KafkaProducer(GenericProducer):
         self.logger.error(f"Error producing message: {err}")
         self.logger.error("Calling flush and producing again")
         self.producer.flush(1)
-        self.producer.produce(topic, value=msg, key=key, callback=callback, **kwargs)
+        try:
+            self.producer.produce(
+                topic, value=msg, key=key, callback=callback, **kwargs
+            )
+        except BufferError as err:
+            self._handle_buffer_error(err, topic, msg, key, callback, **kwargs)
 
     def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
