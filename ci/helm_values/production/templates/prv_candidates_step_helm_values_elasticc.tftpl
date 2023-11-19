@@ -11,10 +11,10 @@ autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 16
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 20
 configmap:
   classPrefix: Elasticc
-  consumeMessages: "100"
+  consumeMessages: "200"
   consumerServer: ${kafka_server}
   consumerTopics: sorting-hat-elasticc
   metricsServer: ${kafka_server}
@@ -36,7 +36,7 @@ imageCredentials:
 namespace: prv-candidates-elasticc
 resources:
   requests:
-    cpu: 500m
+    cpu: 300m
     memory: 900Mi
 secrets:
   kafkaAuth:

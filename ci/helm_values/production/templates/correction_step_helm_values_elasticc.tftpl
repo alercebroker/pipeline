@@ -2,7 +2,7 @@ namespace: correction-step-elasticc
 resources:
   requests:
     cpu: 450m
-    memory: 1200Mi
+    memory: 2000Mi
 
 affinity:
   nodeAffinity:
@@ -55,4 +55,4 @@ autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 16
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 20
