@@ -7,6 +7,7 @@ from tests.unittest.data.datagen import create_messages
 
 
 PRODUCER_CONFIG = {
+    "CLASS": "reflector_step.utils.RawKafkaProducer",
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
 }
@@ -34,17 +35,6 @@ class MyTestCase(unittest.TestCase):
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
 
-    def test_step_runs(self):
-        n_messages = 10
-        external = Producer({"bootstrap.servers": "localhost:9092"})
-        step = CustomMirrormaker(config=self.step_config)
-
-        messages = create_messages(n_messages, "test_topic")
-        for msg in messages:
-            external.produce(topic=msg.topic(), value=msg.value())
-        external.flush()
-        step.start()
-
     def test_keep_timestamp(self):
         n_messages = 10
         external = Producer({"bootstrap.servers": "localhost:9092"})
@@ -71,9 +61,10 @@ class MyTestCase(unittest.TestCase):
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },
-                "consume.timeout": 0,
-                "consume.messages": 1,
+                "consume.timeout": 1,
+                "consume.messages": 5,
             }
         )
-        for msg in consumer.consume():
-            assert msg.timestamp()[1] == 123
+        for msgs in consumer.consume():
+            for msg in msgs:
+                assert msg.timestamp()[1] == 123
