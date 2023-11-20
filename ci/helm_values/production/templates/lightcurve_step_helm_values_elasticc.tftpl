@@ -11,7 +11,7 @@ autoscaling:
   enabled: true
   maxReplicas: 16
   minReplicas: 1
-  targetCPUUtilizationPercentage: 60
+  targetCPUUtilizationPercentage: 50
 configmap:
   classPrefix: Elasticc
   consumeMessages: "100"
@@ -45,8 +45,8 @@ namespace: lightcurve-step-elasticc
 
 resources:
   requests:
-    cpu: 100m
-    memory: 200M
+    cpu: 200m
+    memory: 3000Mi
 secrets:
   kafkaAuth:
     consumer:

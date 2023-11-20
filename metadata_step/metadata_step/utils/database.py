@@ -3,7 +3,7 @@ import numpy as np
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Dict, List
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import sessionmaker, Session
 from db_plugins.db.sql.models import Reference, Gaia_ztf, Ss_ztf, Dataquality, Ps1_ztf
@@ -50,6 +50,12 @@ def _parse_sql_dict(d: Dict):
     return {k: _none_to_nan(v) for k, v in d.items() if not k.startswith("_")}
 
 
+def _parse_ps1(d: Dict):
+    parsed = _parse_sql_dict(d)
+    parsed["updated"] = False
+    return parsed
+
+
 def _create_hashmap(catalog: List[Dict]):
     hashmap: Dict[List] = {}
     for item in catalog:
@@ -63,7 +69,7 @@ def _create_hashmap(catalog: List[Dict]):
 def get_ps1_catalog(session: Session, oids: List):
     stmt = select(Ps1_ztf).where(Ps1_ztf.oid.in_(oids))
     catalog = session.execute(stmt).all()
-    return _create_hashmap([_parse_sql_dict(c[0].__dict__) for c in catalog])
+    return _create_hashmap([_parse_ps1(c[0].__dict__) for c in catalog])
 
 
 def get_gaia_catalog(session: Session, oids: List):
@@ -79,12 +85,12 @@ def _accumulate(data: List):
         acc["dataquality"].append(d["dataquality"])
         acc["reference"].append(d["reference"])
         acc["gaia"].append(d["gaia"])
-        acc["ps1"].extend(d["ps1"])
+        acc["ps1"].append(d["ps1"])
 
     return acc
 
 
-def insert_metadata(session: Session, data: List):
+def insert_metadata(session: Session, data: List, ps1_updates: List):
     accumulated_metadata = _accumulate(data)
     # Reference
     reference_stmt = insert(Reference).values(accumulated_metadata["reference"])
@@ -115,12 +121,11 @@ def insert_metadata(session: Session, data: List):
     # PS1
     ps1_data = list({el["candid"]: el for el in accumulated_metadata["ps1"]}.values())
     ps1_stmt = insert(Ps1_ztf).values(ps1_data)
-    ps1_stmt = ps1_stmt.on_conflict_do_update(
-        constraint="ps1_ztf_pkey",
-        set_=dict(
-            unique1=ps1_stmt.excluded.unique1,
-            unique2=ps1_stmt.excluded.unique2,
-            unique3=ps1_stmt.excluded.unique3,
-        ),
-    )
     session.connection().execute(ps1_stmt)
+
+    for el in ps1_updates:
+        session.connection().execute(
+            update(Ps1_ztf)
+            .where(Ps1_ztf.candid == el["candid"])
+            .values(unique1=el["unique1"], unique2=el["unique2"], unique3=el["unique3"])
+        )

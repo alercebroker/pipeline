@@ -2,10 +2,10 @@
 
 [[package]]
 name = "apf-base"
-version = "2.5.2"
+version = "6.1.1a44"
 description = "Alert Processing Framework"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = []
 develop = true
 

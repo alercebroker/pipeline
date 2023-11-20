@@ -128,6 +128,17 @@ class KafkaProducer(GenericProducer):
         fastavro.writer(out, self.schema, [message])
         return out.getvalue()
 
+    def _handle_buffer_error(self, err, topic, msg, key, callback, **kwargs):
+        self.logger.error(f"Error producing message: {err}")
+        self.logger.error("Calling flush and producing again")
+        self.producer.flush(1)
+        try:
+            self.producer.produce(
+                topic, value=msg, key=key, callback=callback, **kwargs
+            )
+        except BufferError as err:
+            self._handle_buffer_error(err, topic, msg, key, callback, **kwargs)
+
     def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
 
@@ -145,6 +156,15 @@ class KafkaProducer(GenericProducer):
         The producer will have a key_field attribute that will be either None, or some specified value,
         and will use that for each produce() call.
         """
+
+        def acked(err, msg):
+            self.logger.debug("Message produced")
+            if err is not None:
+                if isinstance(err, BufferError):
+                    self._handle_buffer_error(err, topic, msg, key, acked, **kwargs)
+                else:
+                    raise err
+
         key = None
         if message:
             key = message[self.key_field] if self.key_field else None
@@ -152,14 +172,15 @@ class KafkaProducer(GenericProducer):
         if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
+            flush = kwargs.pop("flush", False)
             try:
-                self.producer.produce(topic, value=message, key=key, **kwargs)
-                self.producer.poll(0)
-            except BufferError as e:
-                self.logger.info(f"Error producing message: {e}")
-                self.logger.info("Calling poll to empty queue and producing again")
+                self.producer.produce(
+                    topic, value=message, key=key, callback=acked, **kwargs
+                )
+            except BufferError as err:
+                self._handle_buffer_error(err, topic, message, key, acked, **kwargs)
+            if flush:
                 self.producer.flush()
-                self.producer.produce(topic, value=message, key=key, **kwargs)
 
     def __del__(self):
         self.logger.info("Waiting to produce last messages")

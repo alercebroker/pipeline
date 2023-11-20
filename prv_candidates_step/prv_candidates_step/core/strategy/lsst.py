@@ -42,13 +42,13 @@ class LSSTForcedPhotometryParser(SurveyParser):
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:
-    detections = [alert]
+    prv_candidates = alert["extra_fields"].pop("prvDiaSources")
+    prv_forced = alert["extra_fields"].pop("prvDiaForcedSources")
+
+    detections = [alert.copy()]
 
     aid, parent = alert["aid"], alert["candid"]
     ra, dec = alert["ra"], alert["dec"]
-
-    prv_candidates = alert["extra_fields"].pop("prvDiaSources")
-    prv_forced = alert["extra_fields"].pop("prvDiaForcedSources")
 
     if "parent_candid" in alert["extra_fields"]:
         alert["extra_fields"].pop("parent_candid")
