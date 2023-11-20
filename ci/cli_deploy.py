@@ -40,7 +40,7 @@ def execute(stage: Stage = Stage.staging, dry_run: bool = False, clear: bool = F
     file.close()
         
 @app.command()
-def deploy_direct(
+def direct(
     package: str,
     chart_folder: str = None,
     values: str = None,
@@ -61,7 +61,7 @@ def deploy_direct(
     _deploy(package_dict, stage, dry_run)
 
 @app.command()
-def deploy(
+def add_package(
     package: str,
     chart_folder: str = None,
     values: str = None,

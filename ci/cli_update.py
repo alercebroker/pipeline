@@ -18,7 +18,7 @@ app = typer.Typer(
 
 @app.command()
 def update_version(
-    packages: Annotated[Optional[List[str]], typer.Option()] = None,
+    packages: List[str],
     version: str = None,
     stage: Stage = Stage.staging,
     dry_run: bool = False

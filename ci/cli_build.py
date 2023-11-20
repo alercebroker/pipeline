@@ -36,16 +36,16 @@ def execute(stage: Stage = Stage.staging, dry_run: bool = False, clear: bool = F
     """
     file = open(state_file_name, 'r+')
     packages_dict = json.load(file)
-    #_build(packages_dict, dry_run)
+    _build(packages_dict, dry_run)
     if clear:
         file.truncate(0)
     file.close()
         
 @app.command()
-def build_direct(
+def direct(
     package: str,
     package_dir: str = None,
-    build_arg: Annotated[Optional[List[str]], typer.Option()] = None,
+    build_args: Annotated[Optional[List[str]], typer.Option()] = None,
     stage: Stage = Stage.staging,
     dry_run: bool = False
 ):
@@ -54,7 +54,7 @@ def build_direct(
     """
     build_args_names = []
     build_args_values = []
-    for a in build_arg:
+    for a in build_args:
         name, value = a.split(':')
         build_args_names.append(name)
         build_args_values.append(value)
@@ -70,10 +70,10 @@ def build_direct(
     _build(package_dict, dry_run)
 
 @app.command()
-def build(
+def add_package(
     package: str,
     package_dir: str = None,
-    build_arg: Annotated[Optional[List[str]], typer.Option()] = None,
+    build_args: Annotated[Optional[List[str]], typer.Option()] = None,
 ):
     """
     Update the manifesto file to add a package to build
@@ -84,7 +84,7 @@ def build(
 
     build_args_names = []
     build_args_values = []
-    for a in build_arg:
+    for a in build_args:
         name, value = a.split(':')
         build_args_names.append(name)
         build_args_values.append(value)
