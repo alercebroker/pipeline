@@ -7,6 +7,7 @@ from tests.unittest.data.datagen import create_messages
 
 
 PRODUCER_CONFIG = {
+    "CLASS": "reflector_step.utils.RawKafkaProducer",
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
 }
@@ -21,7 +22,7 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
     },
     "consume.timeout": 1,
-    "consume.messages": 1,
+    "consume.messages": 5,
 }
 
 
@@ -31,27 +32,17 @@ class MyTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "keep_original_timestamp": False,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
-
-    def test_step_runs(self):
-        n_messages = 10
-        external = Producer({"bootstrap.servers": "localhost:9092"})
-        rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
-        step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
-
-        messages = create_messages(n_messages, "test_topic")
-        for msg in messages:
-            external.produce(topic=msg.topic(), value=msg.value())
-        external.flush()
-        step.start()
 
     def test_keep_timestamp(self):
         n_messages = 10
         external = Producer({"bootstrap.servers": "localhost:9092"})
-        rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
-        self.step_config["keep_original_timestamp"] = True
-        step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
+        step = CustomMirrormaker(
+            config=self.step_config,
+            keep_original_timestamp=True,
+            use_message_topic=False,
+        )
 
         messages = create_messages(n_messages, "test_topic")
         for msg in messages:
@@ -60,7 +51,6 @@ class MyTestCase(unittest.TestCase):
             )
         external.flush()
         step.start()
-        del rkconsumer
         consumer = RawKafkaConsumer(
             {
                 "CLASS": "reflector_step.utils.RawKafkaConsumer",
@@ -71,9 +61,10 @@ class MyTestCase(unittest.TestCase):
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },
-                "consume.timeout": 0,
-                "consume.messages": 1,
+                "consume.timeout": 1,
+                "consume.messages": 5,
             }
         )
-        for msg in consumer.consume():
-            assert msg.timestamp()[1] == 123
+        for msgs in consumer.consume():
+            for msg in msgs:
+                assert msg.timestamp()[1] == 123

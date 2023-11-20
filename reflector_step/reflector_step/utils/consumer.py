@@ -6,3 +6,6 @@ class RawKafkaConsumer(KafkaConsumer):
 
     def _deserialize_message(self, message):
         return message
+
+    def _post_process(self, parsed, original_message):
+        return parsed
