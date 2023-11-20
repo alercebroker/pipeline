@@ -1,5 +1,5 @@
 from apf.core import get_class
-from apf.core.step import GenericStep
+from apf.core.step import GenericStep, DefaultProducer
 import logging
 
 
@@ -16,47 +16,24 @@ class CustomMirrormaker(GenericStep):
         Logging level.
     """
 
-    def __init__(
-        self, consumer=None, config=None, level=logging.INFO, producer=None
-    ):
-        super().__init__(consumer, config=config, level=level)
+    def __init__(self, config=None, **step_args):
+        super().__init__(config=config)
+        self.keep_original_timestamp = step_args.get("keep_original_timestamp", False)
+        self.use_message_topic = step_args.get("use_message_topic", False)
 
-        if producer and "PRODUCER_CONFIG" in self.config:
-            self.logger.warning(
-                "Producer is defined twice. Using PRODUCER_CONFIG"
-            )
-        self.use_message_topic = True
-        if "PRODUCER_CONFIG" in self.config:
-            pconfig = self.config["PRODUCER_CONFIG"]
-            if (
-                "TOPIC" in pconfig
-                and pconfig["TOPIC"]
-                or "TOPIC_STRATEGY" in pconfig
-                and pconfig["TOPIC_STRATEGY"]
-            ):
-                self.use_message_topic = False
-            producer = get_class(
-                pconfig.pop("CLASS", "reflector_step.utils.RawKafkaProducer")
-            )(pconfig)
-        if producer is None:
-            raise Exception("Kafka producer not configured in settings.py")
-        self.producer = producer
+    def produce(self, messages):
+        to_produce = [messages] if isinstance(messages, dict) else messages
+        count = 0
+        for msg in to_produce:
+            count += 1
+            producer_kwargs = {"flush": count == len(to_produce)}
+            if self.keep_original_timestamp:
+                producer_kwargs["timestamp"] = msg.timestamp()[1]
+            if self.use_message_topic:
+                self.producer.topic = [msg.topic()]
+            self.producer.produce(msg, **producer_kwargs)
+        if not isinstance(self.producer, DefaultProducer):
+            self.logger.info(f"Produced {count} messages")
 
-    def produce(self, message):
-        try:
-            self._produce_single_message(message)
-        except (AttributeError, TypeError):
-            for msg in message:
-                self._produce_single_message(msg)
-
-    def _produce_single_message(self, message):
-        if self.use_message_topic:
-            self.producer.topic = [message.topic()]
-        if self.config["keep_original_timestamp"]:
-            timestamp = message.timestamp()[1]
-            self.producer.produce(message, timestamp=timestamp)
-        else:
-            self.producer.produce(message)
-
-    def execute(self, message):
-        self.produce(message)
+    def execute(self, messages):
+        return messages

@@ -21,7 +21,7 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
     },
     "consume.timeout": 1,
-    "consume.messages": 1,
+    "consume.messages": 5,
 }
 
 
@@ -31,14 +31,13 @@ class MyTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "keep_original_timestamp": False,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
         }
 
     def test_step_runs(self):
         n_messages = 10
         external = Producer({"bootstrap.servers": "localhost:9092"})
-        rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
-        step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
+        step = CustomMirrormaker(config=self.step_config)
 
         messages = create_messages(n_messages, "test_topic")
         for msg in messages:
@@ -49,9 +48,11 @@ class MyTestCase(unittest.TestCase):
     def test_keep_timestamp(self):
         n_messages = 10
         external = Producer({"bootstrap.servers": "localhost:9092"})
-        rkconsumer = RawKafkaConsumer(CONSUMER_CONFIG)
-        self.step_config["keep_original_timestamp"] = True
-        step = CustomMirrormaker(consumer=rkconsumer, config=self.step_config)
+        step = CustomMirrormaker(
+            config=self.step_config,
+            keep_original_timestamp=True,
+            use_message_topic=False,
+        )
 
         messages = create_messages(n_messages, "test_topic")
         for msg in messages:
@@ -60,7 +61,6 @@ class MyTestCase(unittest.TestCase):
             )
         external.flush()
         step.start()
-        del rkconsumer
         consumer = RawKafkaConsumer(
             {
                 "CLASS": "reflector_step.utils.RawKafkaConsumer",
