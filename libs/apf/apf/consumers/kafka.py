@@ -194,9 +194,9 @@ class KafkaConsumer(GenericConsumer):
             timeout = self.config["TIMEOUT"]
         return num_messages, timeout
 
-    def _post_process(self, message):
-        message["timestamp"] = message.timestamp()[1]
-        return message
+    def _post_process(self, parsed, original_message):
+        parsed["timestamp"] = original_message.timestamp()[1]
+        return parsed
 
     def consume(self, num_messages=1, timeout=60):
         """
@@ -238,7 +238,7 @@ class KafkaConsumer(GenericConsumer):
                     continue
                 else:
                     ds_message = self._deserialize_message(message)
-                    ds_message = self._post_process(ds_message)
+                    ds_message = self._post_process(ds_message, message)
                     deserialized.append(ds_message)
 
             self.messages = messages
