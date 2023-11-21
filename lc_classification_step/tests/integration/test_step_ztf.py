@@ -22,12 +22,12 @@ def test_step_ztf_result(
     produce_messages("features_ztf")
     env_variables_ztf()
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
     kconsumer = kafka_consumer("ztf")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():

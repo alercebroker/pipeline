@@ -30,12 +30,12 @@ def test_step_elasticc_result(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
     kconsumer = kafka_consumer("toretto")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():

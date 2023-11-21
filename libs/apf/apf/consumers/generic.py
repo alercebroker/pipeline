@@ -9,7 +9,7 @@ class GenericConsumer(ABC):
     Parameters are passed through *config* as a :py:class:`dict` of params.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config: dict):
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self.logger.info(f"Creating {self.__class__.__name__}")
         self.config = config

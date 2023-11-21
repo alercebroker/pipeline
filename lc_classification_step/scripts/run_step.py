@@ -6,7 +6,9 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import STEP_CONFIG
+from settings import settings_creator
+
+STEP_CONFIG = settings_creator()
 
 level = logging.INFO
 if os.getenv("LOGGING_DEBUG"):
