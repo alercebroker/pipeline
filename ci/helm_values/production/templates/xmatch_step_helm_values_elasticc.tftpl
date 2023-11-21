@@ -9,12 +9,12 @@ affinity:
           - elasticc-pipeline
 autoscaling:
   enabled: true
-  maxReplicas: 1
+  maxReplicas: 8
   minReplicas: 1
-  targetCPUUtilizationPercentage: 80
+  targetCPUUtilizationPercentage: 50
 configmap:
   classPrefix: Elasticc
-  consumeMessages: "1000"
+  consumeMessages: "200"
   consumeTimeout: "10"
   consumerGroupId: xmatch-elasticc
   consumerServer: ${kafka_server}
@@ -41,8 +41,8 @@ imageCredentials:
 namespace: xmatch-step-elasticc
 resources:
   requests:
-    cpu: 500m
-    memory: 320M
+    cpu: 300m
+    memory: 500Mi
 secrets:
   kafkaAuth:
     consumer:

@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 6.2.1a59
+appVersion: 6.2.1a60
 description: A Helm chart for Kubernetes
 name: metadata-step
 type: application
-version: 1.0.60
+version: 1.0.61
