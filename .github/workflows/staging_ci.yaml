@@ -147,6 +147,15 @@ jobs:
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+  build-reflector-step-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+        stage: staging
+        extra-args: reflector_step
+    secrets:
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   build-s3-step-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -206,6 +215,7 @@ jobs:
       - build-magstats-dagger
       - build-metadata-dagger
       - build-prv-candidates-dagger
+      - build-reflector-step-dagger
       - build-s3-step-dagger
       - build-scribe-dagger
       - build-sorting-hat-dagger

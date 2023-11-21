@@ -21,6 +21,8 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
+USE_MESSAGE_TOPIC = bool(os.getenv("PRODUCER_TOPIC"))
+
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
@@ -105,5 +107,6 @@ STEP_CONFIG = {
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
+    "use_message_topic": USE_MESSAGE_TOPIC,
     "keep_original_timestamp": os.getenv("KEEP_ORIGINAL_TIMESTAMP", False),
 }
