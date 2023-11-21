@@ -28,12 +28,12 @@ def test_step_elasticc_result_mlp(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
     kconsumer = kafka_consumer("mlp")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():
@@ -64,12 +64,12 @@ def test_step_elasticc_result_mlp_without_features(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
     kconsumer = kafka_consumer("mlp")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():
