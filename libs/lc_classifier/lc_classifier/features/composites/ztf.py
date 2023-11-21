@@ -23,8 +23,6 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             MHPSExtractor(bands, unit='diff_flux'),
             GPDRWExtractor(bands, unit='diff_flux'),
 
-            # TODO: move lightcurve to helio reference for period lc stuff
-            # TODO: and for everything maybe?
             PeriodExtractor(
                 bands,
                 unit='magnitude',

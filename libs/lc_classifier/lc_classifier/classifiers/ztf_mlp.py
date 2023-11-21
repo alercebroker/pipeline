@@ -1,10 +1,11 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 import os
+import pickle
 
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import classification_report
@@ -18,45 +19,74 @@ from .preprocess import MLPFeaturePreprocessor
 class ZTFClassifier(Classifier):
     version = '1.0.0'
 
-    def __init__(self, list_of_classes: List[str], learning_rate: float, batch_size: int):
-        self.model = MLPModel(
-            list_of_classes,
-            learning_rate,
-            batch_size
-        )
+    def __init__(self, list_of_classes: List[str]):
+        self.list_of_classes = list_of_classes
         self.preprocessor = MLPFeaturePreprocessor()
+        self.full_model = None
+        self.inference_model = None
         self.feature_list = None
 
     def classify_single_object(self, astro_object: AstroObject) -> None:
         self.classify_batch([astro_object])
 
     def classify_batch(self, astro_objects: List[AstroObject]) -> None:
+        if self.feature_list is None or self.inference_model is None:
+            raise NotTrainedException(
+                'This classifier is not trained or has not been loaded')
         features_df = all_features_from_astro_objects(astro_objects)
-        if self.feature_list is None:
-            raise NotTrainedException('This classifier is not trained or has not been loaded')
         features_df = features_df[self.feature_list]
+        features_np = self.preprocessor.preprocess_features(
+            features_df).values
+        probs_np = self.inference_model.inference(features_np).numpy()
+        for object_probs, astro_object in zip(probs_np, astro_objects):
+            data = np.stack(
+                [
+                    self.list_of_classes,
+                    object_probs.flatten()
+                ],
+                axis=-1
+            )
+            object_probs_df = pd.DataFrame(
+                data=data,
+                columns=[['name', 'value']]
+            )
+            object_probs_df['fid'] = None
+            object_probs_df['sid'] = 'ztf'
+            object_probs_df['version'] = self.version
+            astro_object.predictions = object_probs_df
 
-    def fit(self, astro_objects: List[AstroObject], labels: pd.DataFrame):
+    def fit(self, astro_objects: List[AstroObject], labels: pd.DataFrame, config: Dict):
         assert len(astro_objects) == len(labels)
         all_features_df = all_features_from_astro_objects(astro_objects)
-        self.fit_from_features(all_features_df, labels)
+        self.fit_from_features(all_features_df, labels, config)
 
-    def fit_from_features(self, features: pd.DataFrame, labels: pd.DataFrame):
+    def fit_from_features(self, features: pd.DataFrame, labels: pd.DataFrame, config: Dict):
         self.feature_list = features.columns.values
         training_labels = labels[labels['partition'] == 'training']
         training_features = features.loc[training_labels['aid'].values]
         self.preprocessor.fit(training_features)
-        training_features = self.preprocessor.preprocess_features(training_features)
+        training_features = self.preprocessor.preprocess_features(
+            training_features)
 
         validation_labels = labels[labels['partition'] == 'validation']
         validation_features = features.loc[validation_labels['aid'].values]
-        validation_features = self.preprocessor.preprocess_features(validation_features)
+        validation_features = self.preprocessor.preprocess_features(
+            validation_features)
 
-        self.model.train(
+        self.full_model = MLPModel(
+            self.list_of_classes,
+            config['learning_rate'],
+            config['batch_size']
+        )
+
+        self.full_model.train(
             training_features, training_labels,
             validation_features, validation_labels)
 
     def save_classifier(self, directory: str):
+        if self.full_model is None:
+            raise NotTrainedException('Cannot save model that has not been trained')
+
         if not os.path.exists(directory):
             os.mkdir(directory)
 
@@ -67,11 +97,43 @@ class ZTFClassifier(Classifier):
             )
         )
 
+        with open(os.path.join(directory, 'feature_list.pkl'), 'wb') as f:
+            pickle.dump(self.feature_list, f)
+
+        export_archive = tf.keras.export.ExportArchive()
+        export_archive.track(self.full_model)
+        n_features = len(self.feature_list)
+        export_archive.add_endpoint(
+            name="inference",
+            fn=lambda x: self.full_model.call(x, training=False, logits=False),
+            input_signature=[tf.TensorSpec(shape=(None, n_features), dtype=tf.float32)],
+        )
+        export_archive.write_out(
+            os.path.join(
+                directory,
+                "tf_model"
+            )
+        )
+
     def load_classifier(self, directory: str):
         self.preprocessor.load(
             os.path.join(
                 directory,
                 'preprocessor.pkl'
+            )
+        )
+
+        self.feature_list = pd.read_pickle(
+            os.path.join(
+                directory,
+                'feature_list.pkl'
+            )
+        )
+
+        self.inference_model = tf.saved_model.load(
+            os.path.join(
+                directory,
+                "tf_model"
             )
         )
 
@@ -106,7 +168,7 @@ class MLPModel(tf.keras.Model):
 
         lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
             initial_learning_rate=0.0,
-            decay_steps=50000,
+            decay_steps=25000,
             warmup_target=learning_rate,
             warmup_steps=1500,
             alpha=5e-2
@@ -144,8 +206,8 @@ class MLPModel(tf.keras.Model):
             loss_value = self.loss_computer(y_batch, y_pred)
 
             loss_value = loss_value \
-                         + tf.keras.regularizers.L1(l1=1e-6)(self.dense_layer_1.kernel) \
-                         + tf.keras.regularizers.L1(l1=1e-6)(self.dense_layer_2.kernel)
+                         + tf.keras.regularizers.L1(l1=1e-5)(self.dense_layer_1.kernel) \
+                         + tf.keras.regularizers.L1(l1=1e-5)(self.dense_layer_2.kernel)
 
         gradients = tape.gradient(loss_value, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
@@ -197,11 +259,11 @@ class MLPModel(tf.keras.Model):
         for x_batch, y_batch in training_dataset:
             training_loss = self.train_step(x_batch, y_batch)
             iteration += 1
-            if iteration % 100 == 0:
+            if iteration % 250 == 0:
                 print(
                     'iteration', iteration,
-                    'training loss', training_loss.numpy(),
-                    f'lr {self.optimizer.learning_rate.numpy()}')
+                    'training loss', f'{training_loss.numpy():3e}',
+                    f'lr {self.optimizer.learning_rate.numpy():3e}')
 
             if iteration % 2500 == 0:
 

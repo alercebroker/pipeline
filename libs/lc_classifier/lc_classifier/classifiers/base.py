@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ class Classifier(ABC):
         pass
 
     @abstractmethod
-    def fit(self, astro_objects: List[AstroObject], labels: pd.DataFrame):
+    def fit(self, astro_objects: List[AstroObject], labels: pd.DataFrame, config: Dict):
         pass
 
     @abstractmethod
