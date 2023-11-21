@@ -10,7 +10,6 @@ from tests.test_commons import (
     assert_command_is_correct,
     assert_elasticc_object_is_correct,
 )
-from fastavro.repository.base import SchemaRepositoryError
 
 
 @pytest.mark.elasticc
@@ -32,12 +31,12 @@ def test_step_elasticc_result(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
     kconsumer = kafka_consumer("balto")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():
@@ -54,7 +53,7 @@ def test_step_elasticc_result(
 def test_step_schemaless(
     kafka_service,
     env_variables_elasticc,
-    kafka_consumer: Callable[[str], KafkaConsumer],
+    kafka_consumer: Callable[[str, str, dict], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     env_variables_elasticc(
@@ -68,25 +67,16 @@ def test_step_schemaless(
         },
     )
 
-    from settings import STEP_CONFIG
+    from settings import settings_creator
 
-    try:
-        kconsumer = kafka_consumer(
-            "balto_schemaless",
-            "apf.consumers.kafka.KafkaSchemalessConsumer",
-            {"SCHEMA_PATH": "schemas/output_elasticc.avsc"},
-        )
-    except SchemaRepositoryError:
-        kconsumer = kafka_consumer(
-            "balto_schemaless",
-            "apf.consumers.kafka.KafkaSchemalessConsumer",
-            {
-                "SCHEMA_PATH": "lc_classification_step/schemas/output_elasticc.avsc"
-            },
-        )
+    kconsumer = kafka_consumer(
+        "balto_schemaless",
+        "apf.consumers.kafka.KafkaSchemalessConsumer",
+        {"SCHEMA_PATH": "schemas/output_elasticc.avsc"},
+    )
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=STEP_CONFIG)
+    step = LateClassifier(config=settings_creator())
     step.start()
 
     for message in kconsumer.consume():

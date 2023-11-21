@@ -87,6 +87,8 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def env_variables_ztf():
+    envcopy = os.environ.copy()
+
     def set_env_variables():
         random_string = uuid.uuid4().hex
         env_variables_dict = {
@@ -112,11 +114,14 @@ def env_variables_ztf():
         for key, value in env_variables_dict.items():
             os.environ[key] = value
 
-    return set_env_variables
+    yield set_env_variables
+    os.environ = envcopy
 
 
 @pytest.fixture
 def env_variables_elasticc():
+    envcopy = os.environ.copy()
+
     def set_env_variables(
         model: str,
         model_class: str,
@@ -147,7 +152,8 @@ def env_variables_elasticc():
         for key, value in env_variables_dict.items():
             os.environ[key] = value
 
-    return set_env_variables
+    yield set_env_variables
+    os.environ = envcopy
 
 
 @pytest.fixture
@@ -185,7 +191,7 @@ def _produce_messages(topic, SCHEMA):
         producer.produce(message)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def kafka_consumer():
     def factory(
         stream: str,
@@ -212,14 +218,14 @@ def kafka_consumer():
     return factory
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def scribe_consumer():
     def factory():
         consumer = KafkaConsumer(
             {
                 "PARAMS": {
                     "bootstrap.servers": "localhost:9092",
-                    "group.id": "test_step_",
+                    "group.id": f"test_step_{time.time()}",
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },
