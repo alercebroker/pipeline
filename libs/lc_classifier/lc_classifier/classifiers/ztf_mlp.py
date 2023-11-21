@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,6 @@ import os
 import pickle
 
 from sklearn.metrics import precision_recall_fscore_support
-from sklearn.metrics import classification_report
 
 from lc_classifier.base import AstroObject
 from .base import all_features_from_astro_objects
@@ -29,7 +28,11 @@ class ZTFClassifier(Classifier):
     def classify_single_object(self, astro_object: AstroObject) -> None:
         self.classify_batch([astro_object])
 
-    def classify_batch(self, astro_objects: List[AstroObject]) -> None:
+    def classify_batch(
+            self,
+            astro_objects: List[AstroObject],
+            return_dataframe: bool = False) -> Optional[pd.DataFrame]:
+
         if self.feature_list is None or self.inference_model is None:
             raise NotTrainedException(
                 'This classifier is not trained or has not been loaded')
@@ -55,12 +58,28 @@ class ZTFClassifier(Classifier):
             object_probs_df['version'] = self.version
             astro_object.predictions = object_probs_df
 
-    def fit(self, astro_objects: List[AstroObject], labels: pd.DataFrame, config: Dict):
+        if return_dataframe:
+            dataframe = pd.DataFrame(
+                data=probs_np,
+                columns=self.list_of_classes,
+                index=features_df.index
+            )
+            return dataframe
+
+    def fit(
+            self,
+            astro_objects: List[AstroObject],
+            labels: pd.DataFrame,
+            config: Dict):
         assert len(astro_objects) == len(labels)
         all_features_df = all_features_from_astro_objects(astro_objects)
         self.fit_from_features(all_features_df, labels, config)
 
-    def fit_from_features(self, features: pd.DataFrame, labels: pd.DataFrame, config: Dict):
+    def fit_from_features(
+            self,
+            features: pd.DataFrame,
+            labels: pd.DataFrame,
+            config: Dict):
         self.feature_list = features.columns.values
         training_labels = labels[labels['partition'] == 'training']
         training_features = features.loc[training_labels['aid'].values]
@@ -85,7 +104,8 @@ class ZTFClassifier(Classifier):
 
     def save_classifier(self, directory: str):
         if self.full_model is None:
-            raise NotTrainedException('Cannot save model that has not been trained')
+            raise NotTrainedException(
+                'Cannot save model that has not been trained')
 
         if not os.path.exists(directory):
             os.mkdir(directory)
@@ -97,8 +117,18 @@ class ZTFClassifier(Classifier):
             )
         )
 
-        with open(os.path.join(directory, 'feature_list.pkl'), 'wb') as f:
-            pickle.dump(self.feature_list, f)
+        with open(
+                os.path.join(
+                    directory,
+                    'features_and_classes.pkl'),
+                'wb') as f:
+            pickle.dump(
+                {
+                    'feature_list': self.feature_list,
+                    'list_of_classes': self.list_of_classes
+                },
+                f
+            )
 
         export_archive = tf.keras.export.ExportArchive()
         export_archive.track(self.full_model)
@@ -106,7 +136,12 @@ class ZTFClassifier(Classifier):
         export_archive.add_endpoint(
             name="inference",
             fn=lambda x: self.full_model.call(x, training=False, logits=False),
-            input_signature=[tf.TensorSpec(shape=(None, n_features), dtype=tf.float32)],
+            input_signature=[
+                tf.TensorSpec(
+                    shape=(None, n_features),
+                    dtype=tf.float32
+                )
+            ]
         )
         export_archive.write_out(
             os.path.join(
@@ -123,12 +158,14 @@ class ZTFClassifier(Classifier):
             )
         )
 
-        self.feature_list = pd.read_pickle(
+        features_and_classes = pd.read_pickle(
             os.path.join(
                 directory,
-                'feature_list.pkl'
+                'features_and_classes.pkl'
             )
         )
+        self.feature_list = features_and_classes['feature_list']
+        self.list_of_classes = features_and_classes['list_of_classes']
 
         self.inference_model = tf.saved_model.load(
             os.path.join(
@@ -235,7 +272,6 @@ class MLPModel(tf.keras.Model):
 
         labels = [label.decode('UTF-8') for label in labels]
         predictions = self.list_of_classes[np.argmax(predicted_probabilities, axis=1)]
-        print(classification_report(labels, predictions))
         precision, recall, f1, _ = precision_recall_fscore_support(
             labels, predictions, average='macro')
         return precision, recall, f1
@@ -262,12 +298,12 @@ class MLPModel(tf.keras.Model):
             if iteration % 250 == 0:
                 print(
                     'iteration', iteration,
-                    'training loss', f'{training_loss.numpy():3e}',
-                    f'lr {self.optimizer.learning_rate.numpy():3e}')
+                    'training loss', f'{training_loss.numpy():.3f}',
+                    f'lr {self.optimizer.learning_rate.numpy():.3e}')
 
             if iteration % 2500 == 0:
-
-                val_labels, val_predictions = self.validation_or_test_step(validation_dataset)
+                val_labels, val_predictions = self.validation_or_test_step(
+                    validation_dataset)
                 val_precision, val_recall, val_f1 = self._compute_stats(
                     val_labels, val_predictions)
                 print(f'iteration {iteration} valstats f1 {val_f1:.3f} '

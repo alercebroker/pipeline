@@ -15,4 +15,6 @@ Feature computation (libs/lc_classifier) + MLP
  * Run download_training_set_ff.ipynb to download the data
  * Run dataset.py to transform lightcurves.pkl and objects.pkl to AstroObject.
  * Run compute_features.py
- * 
+ * Run consolidate_features.py and partition_labels.py
+ * Run training.py
+ * Run evaluate_model.py

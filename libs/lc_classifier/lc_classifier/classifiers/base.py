@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
@@ -12,7 +12,10 @@ class NotTrainedException(Exception):
 
 class Classifier(ABC):
     @abstractmethod
-    def classify_batch(self, astro_objects: List[AstroObject]) -> None:
+    def classify_batch(
+            self,
+            astro_objects: List[AstroObject],
+            return_dataframe: bool = False) -> Optional[pd.DataFrame]:
         pass
 
     @abstractmethod
