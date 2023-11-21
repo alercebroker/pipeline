@@ -147,3 +147,6 @@ values.production.yml
 terraform.tfvars
 
 .projectile
+
+*/.build_state.json
+*/.deploy_state.json
