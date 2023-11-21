@@ -6,12 +6,20 @@ from utils import Stage
 
 app = typer.Typer(
     help="""
-    This help pannel may be
-    extensive
+    Group of commands to deploy packages of the Alerce pipeline.
 
-    and have multiple parts?
+    There are two ways to deploy packages.
+    
+    1- A single deploy accion calling the direct command.
+        eg: python main.py deploy direct package_name
 
-    more?
+    2- A bulk deploy acction, this involved 3 commands: prepare,
+       add_package and execute.
+        eg: 
+        poetry run python main.py deploy prepare
+        poetry run python main.py deploy add-package package_name_1
+        poetry run python main.py deploy add-package package_name_2
+        poetry run python main.py deploy execute
     """
 )
 
@@ -20,7 +28,7 @@ state_file_name = ".deploy_state.json"
 @app.command()
 def prepare():
     """
-    Prepare the manifesto file.
+    Start the bulk deploy proccess by seting up the environment.
     """
     empty_dict = {}
     file = open(state_file_name, 'w')
@@ -30,7 +38,7 @@ def prepare():
 @app.command()
 def execute(stage: Stage = Stage.staging, dry_run: bool = False, clear: bool = False):
     """
-    Read the manifesto file and execute the deploy with its instruction.
+    Executes the bulk deploy process according to the environment previously setted up.
     """
     file = open(state_file_name, 'r+')
     packages_dict = json.load(file)
@@ -49,7 +57,7 @@ def direct(
     dry_run: bool = False
 ):
     """
-    Deploy a package.
+    Deploy a single package.
     """
     package_dict = {}
     package_dict[package] = {
@@ -68,7 +76,8 @@ def add_package(
     chart: str = None,
 ):
     """
-    Update the manifesto file to add a package to deploy
+    Update the environment setup to add a package to be deployed in bulk
+    with other packages.
     """
     file = open(state_file_name, '+r')
     packages_dict = json.load(file)

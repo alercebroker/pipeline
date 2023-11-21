@@ -33,10 +33,11 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py update-versions production \
+                poetry run python main.py update version \
                 alert_archiving_step correction_step early_classification_step feature_step \
                 lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
-                s3_step scribe sorting_hat_step watchlist_step xmatch_step --version=${{ inputs.tag }}
+                s3_step scribe sorting_hat_step watchlist_step xmatch_step \
+                --stage=production --version=${{ inputs.tag }}
 
     build-alert-archiving-dagger:
         needs: update_versions
@@ -304,18 +305,19 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py deploy production \
-                correction-step-elasticc --chart=correction-step --values=correction_step-helm-values-elasticc --folder=correction_step \
-                feature-step-elasticc --chart=feature-step --values=feature_step-helm-values-elasticc --folder=feature_step \
-                balto-classifier --chart=lc-classifier-step --values=balto-helm-values --folder=lc_classification_step \
-                messi-classifier --chart=lc-classifier-step --values=messi-helm-values --folder=lc_classification_step \
-                tinkywinky-classifier --chart=lc-classifier-step --values=tinkywinky-helm-values --folder=lc_classification_step \
-                lightcurve-step-elasticc --chart=lightcurve-step --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step \
-                magstats-step-elasticc --chart=magstats-step --values=magstats_step-helm-values-elasticc --folder=magstats_step \
-                prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --folder=prv_candidates_step \
-                scribe-elasticc --chart=scribe --values=scribe_step-helm-values-elasticc --folder=scribe \
-                sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --folder=sorting_hat_step \
-                xmatch-step-elasticc --chart=xmatch-step --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
+                poetry run python main.py deploy prepare
+                poetry run python main.py deploy add-package correction-step-elasticc --chart=correction-step --values=correction_step-helm-values-elasticc --folder=correction_step
+                poetry run python main.py deploy add-package feature-step-elasticc --chart=feature-step --values=feature_step-helm-values-elasticc --folder=feature_step
+                poetry run python main.py deploy add-package balto-classifier --chart=lc-classifier-step --values=balto-helm-values --folder=lc_classification_step
+                poetry run python main.py deploy add-package messi-classifier --chart=lc-classifier-step --values=messi-helm-values --folder=lc_classification_step
+                poetry run python main.py deploy add-package tinkywinky-classifier --chart=lc-classifier-step --values=tinkywinky-helm-values --folder=lc_classification_step
+                poetry run python main.py deploy add-package lightcurve-step-elasticc --chart=lightcurve-step --values=lightcurve-step-helm-values-elasticc --folder=lightcurve-step
+                poetry run python main.py deploy add-package magstats-step-elasticc --chart=magstats-step --values=magstats_step-helm-values-elasticc --folder=magstats_step
+                poetry run python main.py deploy add-package prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --folder=prv_candidates_step
+                poetry run python main.py deploy add-package scribe-elasticc --chart=scribe --values=scribe_step-helm-values-elasticc --folder=scribe
+                poetry run python main.py deploy add-package sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --folder=sorting_hat_step
+                poetry run python main.py deploy add-package xmatch-step-elasticc --chart=xmatch-step --values=xmatch_step-helm-values-elasticc --folder=xmatch_step
+                poetry run python main.py deploy execute --stage=production --clear
 
     create_realease:
         needs: deploy_production
