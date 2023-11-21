@@ -21,7 +21,7 @@ CONSUMER_CONFIG = {
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
 }
 
-USE_MESSAGE_TOPIC = bool(os.getenv("PRODUCER_TOPIC"))
+USE_MESSAGE_TOPIC = not bool(os.getenv("PRODUCER_TOPIC"))
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
