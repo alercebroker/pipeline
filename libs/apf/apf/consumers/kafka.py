@@ -1,5 +1,6 @@
+import datetime
 from apf.consumers.generic import GenericConsumer
-from confluent_kafka import Consumer, KafkaException
+from confluent_kafka import OFFSET_END, Consumer, KafkaException
 
 import fastavro
 import io
@@ -121,7 +122,7 @@ class KafkaConsumer(GenericConsumer):
 
     consumer: Consumer
 
-    def __init__(self, config):
+    def __init__(self, config: dict):
         super().__init__(config)
         # Disable auto commit
         self.config["PARAMS"]["enable.auto.commit"] = False
@@ -136,7 +137,7 @@ class KafkaConsumer(GenericConsumer):
         self.dynamic_topic = False
         if self.config.get("TOPICS"):
             self.logger.info(f'Subscribing to {self.config["TOPICS"]}')
-            self.consumer.subscribe(self.config["TOPICS"])
+            self.consumer.subscribe(self.config["TOPICS"], on_assign=self._on_assign)
         elif self.config.get("TOPIC_STRATEGY"):
             self.dynamic_topic = True
             module_name, class_name = self.config["TOPIC_STRATEGY"]["CLASS"].rsplit(
@@ -149,7 +150,7 @@ class KafkaConsumer(GenericConsumer):
             self.topics = self.topic_strategy.get_topics()
             self.logger.info(f'Using {self.config["TOPIC_STRATEGY"]}')
             self.logger.info(f"Subscribing to {self.topics}")
-            self.consumer.subscribe(self.topics)
+            self.consumer.subscribe(self.topics, on_assign=self._on_assign)
         else:
             raise Exception("No topics o topic strategy set. ")
 
@@ -180,7 +181,7 @@ class KafkaConsumer(GenericConsumer):
         self.topics = self.topic_strategy.get_topics()
         self.consumer.unsubscribe()
         self.logger.info(f"Suscribing to {self.topics}")
-        self.consumer.subscribe(self.topics)
+        self.consumer.subscribe(self.topics, on_assign=self._on_assign)
 
     def set_basic_config(self, num_messages, timeout):
         if "consume.messages" in self.config:
@@ -193,6 +194,15 @@ class KafkaConsumer(GenericConsumer):
         elif "TIMEOUT" in self.config:
             timeout = self.config["TIMEOUT"]
         return num_messages, timeout
+
+    def _on_assign(self, consumer, partitions):
+        if self.config.get("offsets", {}).get("start", False):
+            self.logger.info(f"Running with offsets {self.config['offsets']}")
+            for partition in partitions:
+                partition.offset = self.config["offsets"]["start"]
+            partitions = consumer.offsets_for_times(partitions)
+            consumer.assign(partitions)
+            self.logger.debug(f"Assigned partitions {partitions}")
 
     def _post_process(self, parsed, original_message):
         parsed["timestamp"] = original_message.timestamp()[1]
@@ -229,6 +239,7 @@ class KafkaConsumer(GenericConsumer):
                 continue
 
             deserialized = []
+            do_break = False
             for message in messages:
                 if message.error():
                     if message.error().name() == "_PARTITION_EOF":
@@ -237,6 +248,16 @@ class KafkaConsumer(GenericConsumer):
                     self.logger.exception(f"Error in kafka stream: {message.error()}")
                     continue
                 else:
+                    if self.config.get("offsets"):
+                        if message.timestamp()[1] >= self.config["offsets"].get(
+                            "end", datetime.datetime.now().timestamp() + 1
+                        ):
+                            self.logger.info(
+                                "Reached end offset %s with timestamp %s",
+                                self.config["offsets"]["end"],
+                                message.timestamp()[1],
+                            )
+                            break
                     ds_message = self._deserialize_message(message)
                     ds_message = self._post_process(ds_message, message)
                     deserialized.append(ds_message)

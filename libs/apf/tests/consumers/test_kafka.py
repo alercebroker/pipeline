@@ -1,3 +1,8 @@
+import logging
+from typing import Generator
+import uuid
+
+from apf.producers.kafka import KafkaProducer
 from .test_core import GenericConsumerTest
 from apf.consumers.kafka import (
     KafkaJsonConsumer,
@@ -15,6 +20,7 @@ from .message_mock import (
 )
 import datetime
 import os
+import pytest
 
 
 def consume(num_messages=1):
@@ -238,3 +244,59 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
 
         with self.assertRaises(Exception):
             consumer._deserialize_message(schemaless_avro)
+
+
+@pytest.fixture
+def consumer():
+    def initialize_consumer(topic: str, extra_config: dict = {}):
+        params = {
+            "TOPICS": [topic],
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": uuid.uuid4().hex,
+                "enable.partition.eof": True,
+                "auto.offset.reset": "earliest",
+            },
+        }
+        params.update(extra_config)
+        return KafkaConsumer(params)
+
+    yield initialize_consumer
+
+
+def test_consumer_with_offests(consumer, kafka_service, caplog):
+    caplog.set_level(logging.DEBUG)
+    producer = KafkaProducer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+            },
+            "TOPIC": "offset_tests",
+            "SCHEMA": {
+                "namespace": "example.avro",
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "id", "type": "int"},
+                ],
+            },
+        }
+    )
+    producer.produce({"id": 1}, timestamp=10)
+    producer.produce({"id": 3}, timestamp=15)
+    producer.produce({"id": 2}, timestamp=20)
+    producer.produce({"id": 4}, timestamp=30)
+    producer.producer.flush()
+    kconsumer = consumer("offset_tests", {"offsets": {"start": 10, "end": 20}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 2
+    assert messages[0]["id"] == 1
+    assert messages[1]["id"] == 3
+    kconsumer = consumer("offset_tests", {"offsets": {"start": 20}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 2
+    assert messages[0]["id"] == 2
+    assert messages[1]["id"] == 4
+    kconsumer = consumer("offset_tests")
+    messages = list(kconsumer.consume())
+    assert len(messages) == 4
