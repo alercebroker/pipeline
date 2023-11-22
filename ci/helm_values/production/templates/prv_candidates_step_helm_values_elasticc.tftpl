@@ -54,7 +54,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPIC: "prv-candidates_elasticc"
-    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
   SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
     PARAMS:
@@ -65,10 +65,11 @@ configYaml:
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
   METRICS_CONFIG:
     PARAMS:
-      PARAM:
+      PARAMS:
         bootstrap.servers: ${kafka_server}
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/prv_candidate_step/metrics.json"
   LOGGING_DEBUG: false
   USE_PROMETHEUS: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
