@@ -36,6 +36,15 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
+            {{- if .Values.configmap.useProfiling }}
+            - name: USE_PROFILING
+              value: "True"
+            - name: PYROSCOPE_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "prv-candidates.fullname" . }}
+                  key: pyroscope-server
+            {{- end }}
             - name: CONSUMER_TOPICS
               valueFrom:
                 configMapKeyRef:
