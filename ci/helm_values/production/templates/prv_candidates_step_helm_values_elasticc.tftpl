@@ -24,6 +24,7 @@ configmap:
   producerTopic: prv-candidates_elasticc
   scribeServer: ${kafka_server}
   scribeTopic: w_non_detections_elasticc
+  useProfiling: true
 extraEnvVariables:
 - name: METRICS_SOURCE
   value: 'prv-candidates-elasticc'
