@@ -39,7 +39,6 @@ COPY lightcurve-step/lightcurve_step /app/lightcurve_step
 COPY lightcurve-step/scripts /app/scripts
 COPY lightcurve-step/README.md \
   lightcurve-step/settings.py \
-  lightcurve-step/schema.avsc \
   lightcurve-step/credentials.py \
   /app/
 
