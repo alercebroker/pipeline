@@ -11,6 +11,7 @@ packages = [{include = "reflector_step"}]
 [tool.poetry.dependencies]
 python = "^3.9"
 apf_base = { path = "../libs/apf", develop = true }
+confluent-kafka = { version = "~2.0.2", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
