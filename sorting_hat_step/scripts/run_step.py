@@ -15,11 +15,14 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import STEP_CONFIG
 
 if os.getenv("CONFIG_FROM_YAML"):
     STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
-    STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key":"candid", "format": lambda x: str(x)}]
+    STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [
+        {"key": "candid", "format": lambda x: str(x)}
+    ]
+else:
+    from settings import STEP_CONFIG
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG"):
@@ -59,6 +62,8 @@ step = SortingHatStep(
     prometheus_metrics=prometheus_metrics,
 )
 if STEP_CONFIG["FEATURE_FLAGS"]["USE_PSQL"].lower() == "true":
-    psql_database = PsqlConnection(get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql"))
+    psql_database = PsqlConnection(
+        get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql")
+    )
     step.set_psql_driver(psql_database)
 step.start()
