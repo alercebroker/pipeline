@@ -7,36 +7,22 @@ affinity:
           operator: In
           values:
           - elasticc-pipeline
+
 autoscaling:
   enabled: true
   maxReplicas: 16
   minReplicas: 1
   targetCPUUtilizationPercentage: 20
-configmap:
-  classPrefix: Elasticc
-  consumeMessages: "100"
-  consumeTimeout: "10"
-  consumerServer: ${kafka_server}
-  consumerTopics: prv-candidates_elasticc
-  metricsServer: ${kafka_server}
-  metricsTopic: metrics_elasticc
-  mongoSecret: mongo-elasticc-production/reader
-  producerMessageMaxBytes: "67108864"
-  producerServer: ${kafka_server}
-  producerTopic: lightcurve_elasticc
-  usePrometheus: "true"
-
-featureFlags:
-  usePsql: false
 
 image:
   repository: ghcr.io/alercebroker/lightcurve-step
 
-extraEnvVariables:
+envVariables:
 - name: METRICS_SOURCE
   value: 'lightcurve-step-elasticc'
 - name: METRICS_SURVEY
   value: LSST
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
@@ -46,18 +32,42 @@ namespace: lightcurve-step-elasticc
 resources:
   requests:
     cpu: 200m
-    memory: 500Mi
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    metrics:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    producer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
+    memory: 1000Mi
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lightcurve-step-elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["prv-candidates_elasticc"]
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "lightcurve_elasticc"
+    SCHEMA_PATH: "/schemas/lightcurve_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/lighcurve_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_MJD_FILTER: false
+    USE_SQL: false
