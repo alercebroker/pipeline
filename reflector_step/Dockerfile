@@ -1,4 +1,4 @@
-FROM python:3.9-slim as python-base
+FROM python:3.10-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -26,7 +26,7 @@ WORKDIR /app
 RUN poetry install --no-root --without=dev
 
 
-FROM python:3.9-slim as production
+FROM python:3.10-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app /app
