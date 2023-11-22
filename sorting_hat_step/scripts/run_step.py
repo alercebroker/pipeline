@@ -59,6 +59,6 @@ step = SortingHatStep(
     prometheus_metrics=prometheus_metrics,
 )
 if STEP_CONFIG["FEATURE_FLAGS"]["USE_PSQL"].lower() == "true":
-    psql_database = PsqlConnection(get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql")
+    psql_database = PsqlConnection(get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql"))
     step.set_psql_driver(psql_database)
 step.start()
