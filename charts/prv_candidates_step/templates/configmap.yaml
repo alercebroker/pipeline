@@ -15,5 +15,4 @@ data:
   producer-message-max-bytes: "{{ .Values.configmap.producerMessageMaxBytes }}"
   metrics-server: {{ .Values.configmap.metricsServer }}
   metrics-topic: {{ .Values.configmap.metricsTopic }}
-  use-profiling: {{ .Values.configmap.useProfiling }}
   pyroscope-server: {{ .Values.configmap.pyroscopeServer }}
