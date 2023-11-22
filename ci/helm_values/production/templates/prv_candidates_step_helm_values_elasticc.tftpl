@@ -66,6 +66,8 @@ configYaml:
   METRICS_CONFIG:
     PARAMS:
       PARAMS:
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
         bootstrap.servers: ${kafka_server}
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
@@ -73,4 +75,4 @@ configYaml:
   LOGGING_DEBUG: false
   USE_PROMETHEUS: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
-  USE_PROFILING: false
+  USE_PROFILING: true
