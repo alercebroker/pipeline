@@ -249,12 +249,13 @@ class KafkaConsumer(GenericConsumer):
                     continue
                 else:
                     if self.config.get("offsets"):
-                        if message.timestamp()[1] >= self.config["offsets"].get(
+                        end = self.config["offsets"].get(
                             "end", datetime.datetime.now().timestamp() + 1
-                        ):
+                        )
+                        if message.timestamp()[1] >= end:
                             self.logger.info(
                                 "Reached end offset %s with timestamp %s",
-                                self.config["offsets"]["end"],
+                                end,
                                 message.timestamp()[1],
                             )
                             break
