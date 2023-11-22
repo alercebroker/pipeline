@@ -77,7 +77,7 @@ configYaml:
       sasl.username: ""
       sasl.password: ""
     TOPIC: "prv-candidates"
-    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
   SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
     PARAMS:
@@ -95,14 +95,14 @@ configYaml:
       - key: oid
       - key: aid
     PARAMS:
-      PARAM:
+      PARAMS:
         bootstrap.servers: ""
         security.protocol: "SASL_SSL"
         sasl.mechanism: "SCRAM-SHA-512"
         sasl.username: ""
         sasl.password: ""
       TOPIC: "metrics"
-      SCHEMA_PATH: "/schemas/prv_candidates_step/metrics.json"
+      SCHEMA_PATH: "/schemas/prv_candidate_step/metrics.json"
   LOGGING_DEBUG: false
   USE_PROMETHEUS: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
