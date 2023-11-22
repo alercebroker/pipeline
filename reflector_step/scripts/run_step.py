@@ -31,6 +31,4 @@ step = CustomMirrormaker(
     use_message_topic=use_message_topic,
 )
 
-
-def run_step():
-    step.start()
+step.start()
