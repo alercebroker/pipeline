@@ -250,7 +250,7 @@ class KafkaConsumer(GenericConsumer):
                 else:
                     if self.config.get("offsets"):
                         end = self.config["offsets"].get(
-                            "end", datetime.datetime.now().timestamp() + 1
+                            "end", (datetime.datetime.now().timestamp() + 1) * 1000
                         )
                         if message.timestamp()[1] >= end:
                             self.logger.info(
