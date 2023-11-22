@@ -12,48 +12,64 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 16
   targetCPUUtilizationPercentage: 20
-configmap:
-  classPrefix: Elasticc
-  consumeMessages: "100"
-  consumerServer: ${kafka_server}
-  consumerTopics: sorting-hat-elasticc
-  metricsServer: ${kafka_server}
-  metricsTopic: metrics_elasticc
-  producerMessageMaxBytes: "67108864"
-  producerServer: ${kafka_server}
-  producerTopic: prv-candidates_elasticc
-  scribeServer: ${kafka_server}
-  scribeTopic: w_non_detections_elasticc
-  useProfiling: true
-extraEnvVariables:
-- name: METRICS_SOURCE
-  value: 'prv-candidates-elasticc'
-- name: METRICS_SURVEY
-  value: LSST
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
   username: ${ghcr_username}
+
 namespace: prv-candidates-elasticc
+
 resources:
   requests:
     cpu: 300m
     memory: 900Mi
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    metrics:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    producer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    scribe:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: prv-candidates-elasticc
+  - name: METRICS_SURVEY
+    value: LSST
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "prv-candidates-step-elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["^sorting-hat.*"]
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "prv-candidates_elasticc"
+    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_non_detections_elasticc"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    PARAMS:
+      PARAM:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+  LOGGING_DEBUG: false
+  USE_PROMETHEUS: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  USE_PROFILING: false
