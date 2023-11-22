@@ -2,34 +2,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ include "sorting-hat.fullname" . }}'
+  name: config-yaml
   namespace: {{ .Values.namespace }}
 data:
-  consumer-topics: "{{ .Values.configmap.consumerTopics }}"
-  topic-strategy-topic-format: "{{ .Values.configmap.topicStrategy.topicFormat }}"
-  topic-strategy-date-format: "{{ .Values.configmap.topicStrategy.dateFormat }}"
-  topic-strategy-change-hour: "{{ .Values.configmap.topicStrategy.changeHour }}"
-  consumer-group-id: {{ .Values.configmap.consumerGroupId | default (printf "%s" (include "sorting-hat.fullname" .)) }}
-  consumer-server: {{ .Values.configmap.consumerServer }}
-  consume-messages: "{{ .Values.configmap.consumeMessages }}"
-  consumer-class: {{ .Values.configmap.consumerClass }}
-  producer-server: {{ .Values.configmap.producerServer }}
-  producer-topic: {{ .Values.configmap.producerTopic }}
-  producer-message-max-bytes: "{{ .Values.configmap.producerMessageMaxBytes }}"
-  pyroscope-server: {{ .Values.configmap.pyroscopeServer }}
-  metrics-server: {{ .Values.configmap.metricsServer }}
-  metrics-topic: {{ .Values.configmap.metricsTopic }}
-  mongo-secret-name: {{ .Values.configmap.mongoSecretName }}
-  {{- if .Values.featureFlags.usePsql }}
-  psql-secret-name: {{ .Values.configmap.psqlSecretName }}
-  {{- end }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: 'feature-flags'
-  namespace: {{ .Values.namespace }}
-data:
-  run-conesearch: '{{ .Values.featureFlags.runConesearch }}'
-  use-profiling: '{{ .Values.featureFlags.useProfiling }}'
-  use-psql: '{{ .Values.featureFlags.usePsql }}'
+  config.yaml: |
+    {{- toYaml .Values.configYaml | nindent 4 }}

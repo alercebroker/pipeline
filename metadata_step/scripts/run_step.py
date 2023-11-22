@@ -1,15 +1,21 @@
 import logging
 import os
 import sys
+from credentials import get_credentials
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
-sys.path.append(PACKAGE_PATH)
-from settings import STEP_CONFIG
+if os.getenv("CONFIG_FROM_YAML"):
+    from apf.core.settings import config_from_yaml_file
+
+    STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
+else:
+    sys.path.append(PACKAGE_PATH)
+    from settings import STEP_CONFIG
 
 level = logging.INFO
-if os.getenv("LOGGING_DEBUG"):
+if STEP_CONFIG("LOGGING_DEBUG"):
     level = logging.DEBUG
 
 logging.basicConfig(
@@ -20,8 +26,9 @@ logging.basicConfig(
 from metadata_step import MetadataStep
 from metadata_step.utils.database import PSQLConnection
 
-sql = PSQLConnection(STEP_CONFIG["DATABASE"])
 
+DATABASE = get_credentials(STEP_CONFIG["DATABASE_SECRET_NAME"])
+sql = PSQLConnection(DATABASE)
 
 step = MetadataStep(config=STEP_CONFIG, db_sql=sql)
 step.start()

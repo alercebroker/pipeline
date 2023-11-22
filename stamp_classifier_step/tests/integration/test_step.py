@@ -3,6 +3,7 @@ from apf.consumers import KafkaConsumer
 from apf.producers import KafkaProducer
 import tensorflow as tf
 import pytest
+import os
 
 if tf.__version__.startswith("1"):
     pytest.skip("Incompatible TensorFlow version", allow_module_level=True)
@@ -12,6 +13,9 @@ from stamp_classifier_step.step import StampClassifierStep
 from stamp_classifier_step.strategies.atlas import ATLASStrategy
 from schema import SCHEMA, SCRIBE_SCHEMA
 
+
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "test_schema.avsc")
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), "scribe.avsc")
 
 def consume_messages(topic) -> List[dict]:
     config = {
@@ -74,7 +78,7 @@ def test_atlas_step():
             "PARAMS": {
                 "bootstrap.servers": "localhost:9092",
             },
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
         }
     )
 
@@ -84,7 +88,7 @@ def test_atlas_step():
             "PARAMS": {
                 "bootstrap.servers": "localhost:9092",
             },
-            "SCHEMA": SCRIBE_SCHEMA,
+            "SCHEMA_PATH": SCRIBE_SCHEMA_PATH
         }
     )
     strategy = ATLASStrategy()

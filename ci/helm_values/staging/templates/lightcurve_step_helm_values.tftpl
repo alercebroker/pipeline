@@ -12,20 +12,6 @@ autoscaling:
   maxReplicas: 8
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
-configmap:
-  consumeMessages: "250"
-  consumeTimeout: "10"
-  consumerServer: ${kafka_server}
-  consumerTopics: prv-candidates
-  metricsServer: ${kafka_server}
-  metricsTopic: metrics
-  mongoSecret: mongodb-alerts-staging
-  producerMessageMaxBytes: "6291456"
-  producerServer: ${kafka_server}
-  producerTopic: lightcurve
-  psqlSecretName: psql-users-staging/writer
-  skipMjdFilter: "true"
-  usePrometheus: "true"
 image:
   repository: ghcr.io/alercebroker/lightcurve-step
 imageCredentials:
@@ -37,17 +23,33 @@ resources:
   requests:
     cpu: 100m
     memory: 250M
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    metrics:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    producer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  - name: METRICS_SOURCE
+    value: lightcurve
+  - name: METRICS_SURVEY
+    value: ATLAS,ZTF
+
+configYaml:
+  CONSUMER_CONFIG:
+    # CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}

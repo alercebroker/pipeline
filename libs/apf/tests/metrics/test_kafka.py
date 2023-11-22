@@ -2,51 +2,23 @@ import unittest
 from unittest import mock
 from apf.metrics.kafka import Producer, KafkaMetricsProducer
 import datetime
+import os
 
 
 class KafkaMetricsProducerTest(unittest.TestCase):
     def setUp(self):
-        self.schema = {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {
-                    "timestamp_sent": "2020-09-01",
-                    "timestamp_received": "2020-09-01",
-                }
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        }
+        FILE_PATH = os.path.dirname(__file__)
+        self.schema_path = os.path.join(
+            FILE_PATH, "../examples/kafka_producer_schema.avsc"
+        )
+        
         self.config = {
             "PARAMS": {
                 "bootstrap.servers": "fake",
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": "test",
-            "SCHEMA": self.schema,
+            "SCHEMA_PATH": self.schema_path,
         }
         self.mock_producer = mock.create_autospec(Producer)
         self.now = datetime.datetime.utcnow()
@@ -77,7 +49,7 @@ class KafkaMetricsProducerTest(unittest.TestCase):
                     "change_hour": np1,
                 },
             },
-            "SCHEMA": self.schema,
+            "SCHEMA_PATH": self.schema_path,
         }
         producer = KafkaMetricsProducer(self.config, producer=self.mock_producer)
         producer.send_metrics(metrics)

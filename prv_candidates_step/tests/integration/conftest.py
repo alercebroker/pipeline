@@ -5,8 +5,8 @@ from apf.consumers import KafkaConsumer
 import pathlib
 import os
 from fastavro.utils import generate_many
+from fastavro.schema import load_schema
 import random
-from tests.shared.sorting_hat_schema import SCHEMA
 from tests.mocks.mock_alerts import ztf_extra_fields_generator
 import uuid
 
@@ -56,7 +56,30 @@ def kafka_service(docker_ip, docker_services):
 @pytest.fixture
 def env_variables():
     random_string = uuid.uuid4().hex
+
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/prv_candidate_step",
+                "output.avsc",
+            )
+        ),
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRICS_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/prv_candidate_step",
+                "output.avsc",
+            )
+        ),
+        "SCRIBE_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/scribe_step",
+                "scribe.avsc",
+            )
+        ),
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "sorting-hat",
         "CONSUMER_GROUP_ID": random_string,
@@ -74,14 +97,20 @@ def env_variables():
 
 
 def produce_messages(topic):
+    schema_path = pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/sorting_hat_step",
+        "output.avsc",
+    )
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": schema_path,
         }
     )
-    messages = generate_many(SCHEMA, 10)
+    schema = load_schema(str(schema_path))
+    messages = generate_many(schema, 10)
     producer.set_key_field("aid")
     random.seed(42)
 

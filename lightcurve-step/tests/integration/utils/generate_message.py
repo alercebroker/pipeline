@@ -3,6 +3,7 @@ import random
 
 random.seed(42)
 
+
 def generate_message(schema, n=10):
     messages = generate_many(schema, n)
     parsed_msgs = []

@@ -24,16 +24,16 @@ COPY libs/P4J /libs/P4J
 COPY libs/mhps /libs/mhps
 COPY libs/lc_classifier /libs/lc_classifier
 COPY libs/apf /libs/apf
+COPY schemas/feature_step /schemas/feature_step
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
-COPY feature_step/schema.py /app/schema.py
-COPY feature_step/scribe_schema.avsc /app/scribe_schema.avsc
 COPY feature_step/features /app/features
 
 FROM python:3.10-slim
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/
 RUN poetry install --only-root

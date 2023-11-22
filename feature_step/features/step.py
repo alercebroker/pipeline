@@ -1,17 +1,14 @@
 import json
+from typing import Any, Callable, Dict, Iterable
 
 import pandas as pd
-
 from apf.core import get_class
 from apf.core.step import GenericStep
 
-from features.utils.parsers import parse_scribe_payload, parse_output
-from features.utils.metrics import get_sid
-
-from features.core.ztf import ZTFFeatureExtractor
 from features.core.elasticc import ELAsTiCCFeatureExtractor
-
-from typing import Any, Callable, Dict, Iterable, Union
+from features.core.ztf import ZTFFeatureExtractor
+from features.utils.metrics import get_sid
+from features.utils.parsers import parse_output, parse_scribe_payload
 
 
 class FeaturesComputer(GenericStep):

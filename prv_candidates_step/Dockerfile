@@ -22,6 +22,7 @@ RUN pip install poetry
 COPY prv_candidates_step/poetry.lock prv_candidates_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
+COPY schemas/prv_candidate_step schemas/prv_candidate_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -32,13 +33,12 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY prv_candidates_step/prv_candidates_step /app/prv_candidates_step
 COPY prv_candidates_step/scripts /app/scripts
 COPY prv_candidates_step/README.md \
     prv_candidates_step/settings.py \
-    prv_candidates_step/schema.avsc \
-    prv_candidates_step/scribe_schema.avsc \
     /app/
 
 WORKDIR /app

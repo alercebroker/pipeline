@@ -4,7 +4,6 @@ from typing import Dict, List, Tuple
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
-from apf.producers import KafkaProducer
 from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
 from xmatch_step.core.utils.extract_info import (
@@ -64,7 +63,6 @@ class XmatchStep(GenericStep):
                 "criteria": {"_id": aid, "oid": oid_hash[aid]},
                 "data": {"xmatch": obj, "allwise": allwise},
             }
-            print(scribe_data)
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
     def pre_produce(self, result: List[dict]):

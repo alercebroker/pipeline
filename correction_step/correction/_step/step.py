@@ -30,13 +30,18 @@ class CorrectionStep(GenericStep):
     @staticmethod
     def create_step() -> CorrectionStep:
         import os
-        from .settings import settings_creator
         from prometheus_client import start_http_server
         from apf.metrics.prometheus import PrometheusMetrics, DefaultPrometheusMetrics
+        from apf.core.settings import config_from_yaml_file
 
-        settings = settings_creator()
+        if os.getenv("CONFIG_FROM_YAML"):
+            settings = config_from_yaml_file("/config/config.yaml")
+        else:
+            from .settings import settings_creator
+
+            settings = settings_creator()
         level = logging.INFO
-        if os.getenv("LOGGING_DEBUG"):
+        if settings.get("LOGGING_DEBUG"):
             level = logging.DEBUG
 
         logger = logging.getLogger("alerce")
@@ -49,8 +54,10 @@ class CorrectionStep(GenericStep):
 
         logger.addHandler(handler)
 
-        prometheus_metrics = PrometheusMetrics() if settings["PROMETHEUS"] else DefaultPrometheusMetrics()
-        if settings["PROMETHEUS"]:
+        prometheus_metrics = (
+            PrometheusMetrics() if settings["FEATURE_FLAGS"]["PROMETHEUS"] else DefaultPrometheusMetrics()
+        )
+        if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
             start_http_server(8000)
 
         return CorrectionStep(config=settings, prometheus_metrics=prometheus_metrics)
@@ -130,6 +137,7 @@ class CorrectionStep(GenericStep):
                 extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
 
             detection["extra_fields"] = extra_fields
+            print("extra_fields", extra_fields)
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",

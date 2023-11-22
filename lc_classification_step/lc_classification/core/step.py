@@ -139,7 +139,13 @@ class LateClassifier(GenericStep):
                 probabilities["probabilities"], probabilities["hierarchical"]
             )
         else:
-            probabilities = self.model.predict(model_input)
+            try:
+                probabilities = self.model.predict(model_input)
+            except ValueError as e:
+                self.logger.error(e)
+                probabilities = OutputDTO(
+                    DataFrame(), {"top": DataFrame(), "children": {}}
+                )
         # after the former line, probabilities must be an OutputDTO
 
         self.logger.info("Processing results")

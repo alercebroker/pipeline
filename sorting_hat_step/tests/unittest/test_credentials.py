@@ -38,31 +38,3 @@ class TestCredentials(TestCase):
             "database": "test",
             "port": 1,
         }
-
-    def test_settings_with_psql(self):
-        os.environ["USE_PSQL"] = "True"
-        os.environ["MONGODB_SECRET_NAME"] = "test-secret"
-        os.environ["PSQL_SECRET_NAME"] = "psql-secret"
-        os.environ["CONSUMER_GROUP_ID"] = "test-secret"
-        os.environ["CONSUMER_SERVER"] = "test-secret"
-        os.environ["CONSUMER_TOPICS"] = "test-secret"
-        os.environ["PRODUCER_TOPIC"] = "test-secret"
-        os.environ["PRODUCER_SERVER"] = "test-secret"
-        os.environ["METRICS_HOST"] = "test-secret"
-        from settings import PSQL_CONFIG, MONGO_CONFIG
-
-        assert PSQL_CONFIG == {
-            "username": "postgres",
-            "password": "postgres",
-            "host": "localhost",
-            "database": "postgres",
-            "port": 5432,
-        }
-
-        assert MONGO_CONFIG == {
-            "username": "test",
-            "password": "test",
-            "host": "test",
-            "database": "test",
-            "port": 1,
-        }

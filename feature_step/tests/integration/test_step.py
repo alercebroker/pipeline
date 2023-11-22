@@ -1,8 +1,7 @@
 from features.step import FeaturesComputer
-from schema import SCHEMA
 from features.utils.selector import selector
-from fastavro.schema import load_schema
 import pathlib
+
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.kafka.KafkaConsumer",
@@ -23,22 +22,24 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/feature_step",
+        "output.avsc",
+    ),
 }
 
-try:
-    schema_path = pathlib.Path("scribe_schema.avsc")
-    assert schema_path.exists()
-except Exception:
-    schema_path = pathlib.Path("feature_step/scribe_schema.avsc")
-    assert schema_path.exists()
 SCRIBE_PRODUCER_CONFIG = {
     "CLASS": "apf.producers.kafka.KafkaProducer",
     "TOPIC": "test-scribe",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": load_schema(schema_path),
+    "SCHEMA_PATH": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/scribe_step",
+        "scribe.avsc",
+    ),
 }
 
 
@@ -70,4 +71,3 @@ def test_step_elasticc(kafka_service):
         config=step_config,
     )
     step.start()
-

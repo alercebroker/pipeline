@@ -3,4 +3,4 @@ appVersion: 6.2.1a102
 description: Sorting Hat deployment chart
 name: sorting-hat
 type: application
-version: 2.6.183
+version: 3.0.0

@@ -1,5 +1,5 @@
+import pathlib
 import unittest
-import pandas as pd
 
 from apf.producers import GenericProducer
 from xmatch_step import XmatchStep, XmatchClient
@@ -8,7 +8,6 @@ from tests.data.messages import (
     get_fake_xmatch,
     generate_non_ztf_batch,
 )
-from schema import SCHEMA
 from unittest import mock
 
 CONSUMER_CONFIG = {
@@ -30,7 +29,11 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/xmatch_step",
+        "output.avsc",
+    ),
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -39,7 +42,11 @@ SCRIBE_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA": pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/scribe_step",
+        "scribe.avsc",
+    ),
 }
 
 XMATCH_CONFIG = {
@@ -92,6 +99,7 @@ class StepXmatchTest(unittest.TestCase):
 
     @mock.patch.object(XmatchClient, "execute")
     def test_execute(self, xmatch_client):
+        self.step.producer.set_key_field = mock.MagicMock()
         xmatch_client.return_value = get_fake_xmatch(self.batch)
         self.step.scribe_producer = mock.MagicMock()
         result = self.step.execute(self.batch)

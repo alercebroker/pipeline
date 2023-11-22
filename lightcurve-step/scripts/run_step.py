@@ -1,6 +1,8 @@
 import logging
 import os
 from apf.metrics.prometheus import PrometheusMetrics
+from apf.core.settings import config_from_yaml_file
+from credentials import get_credentials
 from prometheus_client import start_http_server
 
 from lightcurve_step.step import LightcurveStep
@@ -8,13 +10,9 @@ from lightcurve_step.database_mongo import DatabaseConnection
 from lightcurve_step.database_sql import PSQLConnection
 
 
-def step_creator():
-    from settings import settings_creator
-
-    settings = settings_creator()
-
+def set_logger(settings):
     level = logging.INFO
-    if os.getenv("LOGGING_DEBUG"):
+    if settings.get("LOGGING_DEBUG"):
         level = logging.DEBUG
 
     logger = logging.getLogger("alerce")
@@ -28,19 +26,33 @@ def step_creator():
     handler.setLevel(level)
 
     logger.addHandler(handler)
-    db_mongo = DatabaseConnection(settings["DB_CONFIG"])
-    if settings["DB_CONFIG_SQL"]:
-        db_sql = PSQLConnection(settings["DB_CONFIG_SQL"])
+    return logger
+
+
+def step_creator():
+    if os.getenv("CONFIG_FROM_YAML", False):
+        settings = config_from_yaml_file("/config/config.yaml")
     else:
-        db_sql = None
+        from settings import settings_creator
+
+        settings = settings_creator()
+
+    logger = set_logger(settings)
+
+    db_mongo = DatabaseConnection(
+        get_credentials(settings["MONGO_SECRET_NAME"], "mongo")
+    )
+    db_sql = None
+    if settings["FEATURE_FLAGS"]["USE_SQL"]:
+        db_sql = PSQLConnection(get_credentials(settings["SQL_SECRET_NAME"], "sql"))
 
     step_params = {"config": settings, "db_mongo": db_mongo, "db_sql": db_sql}
 
-    if settings["PROMETHEUS"]:
+    if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
         step_params["prometheus_metrics"] = PrometheusMetrics()
         start_http_server(8000)
 
-    if settings["USE_PROFILING"]:
+    if settings["FEATURE_FLAGS"]["USE_PROFILING"]:
         from pyroscope import configure
 
         configure(
@@ -48,7 +60,7 @@ def step_creator():
             server_address=settings["PYROSCOPE_SERVER"],
         )
 
-    if os.getenv("SKIP_MJD_FILTER", "false") == "true":
+    if settings["FEATURE_FLAGS"]["SKIP_MJD_FILTER"]:
         logger.info(
             "This step won't filter detections by MJD. \
             Keep this in mind when using for ELAsTiCC"

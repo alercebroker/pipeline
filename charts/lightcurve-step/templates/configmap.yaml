@@ -1,26 +1,9 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "lightcurve-step.fullname" . }}
+  name: config-yaml
   namespace: {{ .Values.namespace }}
 data:
-  consume-messages: "{{ .Values.configmap.consumeMessages }}"
-  consume-timeout: "{{ .Values.configmap.consumeTimeout }}"
-  consumer-topics: {{ .Values.configmap.consumerTopics }}
-  consumer-server: {{ .Values.configmap.consumerServer }}
-  consumer-group-id: {{ .Values.configmap.consumerGroupId | default (printf "%s" (include "lightcurve-step.fullname" .)) }}
-  producer-server: {{ .Values.configmap.producerServer }}
-  producer-topic: {{ .Values.configmap.producerTopic }}
-  producer-message-max-bytes: "{{ .Values.configmap.producerMessageMaxBytes }}"
-  pyroscope-server: {{ .Values.configmap.pyroscopeServer }}
-  metrics-server: {{ .Values.configmap.metricsServer }}
-  metrics-topic: {{ .Values.configmap.metricsTopic }}
-  use-prometheus: "{{ .Values.configmap.usePrometheus }}"
-  use-profiling: "{{ .Values.configmap.useProfiling }}"
-  sql-secret-name: {{ .Values.configmap.psqlSecretName }}
-  mongo-secret: {{ .Values.configmap.mongoSecret }}
-  logging-debug: "{{ .Values.configmap.loggingDebug }}"
-  skip-mjd-filter: "{{ .Values.configmap.skipMjdFilter }}"
-  {{- if .Values.featureFlags.usePsql }}
-  sql-secret-name: {{ .Values.configmap.psqlSecretName }}
-  {{- end }}
+  config.yaml: |
+    {{- toYaml .Values.configYaml | nindent 4 }}

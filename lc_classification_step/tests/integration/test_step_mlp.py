@@ -15,25 +15,27 @@ from tests.test_commons import (
 @pytest.mark.elasticc
 def test_step_elasticc_result_mlp(
     kafka_service,
+    produce_messages,
     env_variables_elasticc,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
+    produce_messages("features_elasticc", force_empty_features=False)
     env_variables_elasticc(
         "mlp",
         "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MLP_MODEL_PATH"),
-            "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
+            "MAPPER_CLASS": "alerce_classifiers.tinkywinky.mapper.TinkyWinkyMapper",
         },
     )
 
-    from settings import settings_creator
+    from settings import config
 
     kconsumer = kafka_consumer("mlp")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=settings_creator())
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():
@@ -60,16 +62,16 @@ def test_step_elasticc_result_mlp_without_features(
         "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MLP_MODEL_PATH"),
-            "MAPPER_CLASS": "alerce_classifiers.mlp_elasticc.mapper.MLPMapper",
+            "MAPPER_CLASS": "alerce_classifiers.tinkywinky.mapper.TinkyWinkyMapper",
         },
     )
 
-    from settings import settings_creator
+    from settings import config
 
     kconsumer = kafka_consumer("mlp")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=settings_creator())
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():

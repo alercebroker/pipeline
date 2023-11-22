@@ -1,5 +1,6 @@
 import pickle
 
+
 def ztf_extra_fields(**kwargs):
     extra_fields = {
         "magnr": 10.0,
@@ -10,6 +11,25 @@ def ztf_extra_fields(**kwargs):
         "chinr": 1,
         "sharpnr": 0.0,
         "unused": None,
+    }
+    extra_fields.update(kwargs)
+    return extra_fields
+
+
+def lsst_extra_fields(**kwargs):
+    extra_fields = {
+        "field": "value",
+        "prvDiaForcedSources": b"bainari",
+        "prvDiaSources": b"bainari2",
+        "diaObject": pickle.dumps("bainari2"),
+    }
+    extra_fields.update(kwargs)
+    return extra_fields
+
+
+def atlas_extra_fields(**kwargs):
+    extra_fields = {
+        "field": "value",
     }
     extra_fields.update(kwargs)
     return extra_fields
@@ -37,6 +57,7 @@ def ztf_alert(**kwargs):
     alert.update(kwargs)
     return alert
 
+
 def elasticc_extra_fields():
     extra_fields = {
         "diaObject": pickle.dumps("bainari_diaObject"),
@@ -45,12 +66,14 @@ def elasticc_extra_fields():
     }
     return extra_fields
 
+
 def elasticc_alert(**kwargs):
     alert = ztf_alert(**kwargs)
     alert["tid"] = "LSST"
     alert["sid"] = "LSST"
     alert["extra_fields"] = elasticc_extra_fields()
     return alert
+
 
 def atlas_alert(**kwargs):
     alert = {

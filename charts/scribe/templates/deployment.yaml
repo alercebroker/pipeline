@@ -32,58 +32,23 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: LOGGING_DEBUG
-              value: "True"
-            - name: TOPICS
-              value: {{ .Values.secrets.topics }}
-            - name: NUM_MESSAGES
-              value: "{{ .Values.secrets.numMessages }}"
-            - name: CONSUMER_SERVER
-              value: {{ .Values.secrets.bootstrapServers }}
-            - name: MOCK_DB_COLLECTION
-              value: "{{ .Values.secrets.mockDb }}"
-            - name: DB_SECRET_NAME
-              value: "{{ .Values.secrets.secretName }}"
-            - name: CONSUMER_GROUP_ID
-              value: "{{ .Values.secrets.consumerGroupId }}"
-            - name: METRICS_HOST
-              value: "{{ .Values.secrets.metricsHost }}"
-            - name: METRICS_TOPIC
-              value: "{{ .Values.secrets.metricsTopic }}"
-            - name: USE_PROFILING
-              value: "{{ .Values.secrets.useProfiling }}"
-            - name: DB_ENGINE
-              value: "{{ .Values.secrets.dbEngine }}"
-            - name: PYROSCOPE_SERVER
-              value: "http://pyroscope.pyroscope:4040"
-            {{- if .Values.secrets.kafkaAuth.enabled }}
-            - name: KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: username
-            - name: KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: password
-            {{- end }}
-            {{- if .Values.secrets.metricsKafkaAuth.enabled }}
-            - name: METRICS_KAFKA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-username
-            - name: METRICS_KAFKA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kafka-auth
-                  key: metrics-password
-            {{- end }}
-            {{- with .Values.extraEnvVariables }}
-            {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end}}
+            {{- toYaml .Values.envVariables | nindent 12 }}
+          {{- if .Values.configYaml.enabled }}
+          volumeMounts:
+            - name: config
+              mountPath: "/config"
+              readOnly: true
+          {{- end}}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.configYaml.enabled }}
+      volumes:
+        - name: config
+          configMap:
+            name: config-yaml
+            items:
+              - key: "config.yaml"
+                path: "config.yaml"
       {{- end }}

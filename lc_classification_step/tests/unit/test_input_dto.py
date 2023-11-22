@@ -48,7 +48,6 @@ def test_create_features_dto():
         {"aid": "aid4", "features": {"feat1": 4, "feat2": None}},
     ]
     features = create_features_dto(messages)
-    print(features)
     assert features.loc["aid1", "feat1"] == 2
     assert np.isnan(features.loc["aid4", "feat2"])
     assert features.index.tolist() == ["aid1", "aid2", "aid3", "aid4"]
