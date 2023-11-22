@@ -81,6 +81,11 @@ spec:
                 configMapKeyRef:
                   name: '{{ include "sorting-hat.fullname" . }}'
                   key: consumer-group-id
+            - name: CONSUME_MESSAGES
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "sorting-hat.fullname" . }}'
+                  key: consume-messages
             - name: PRODUCER_SERVER
               valueFrom:
                 configMapKeyRef:

@@ -11,6 +11,7 @@ data:
   topic-strategy-change-hour: "{{ .Values.configmap.topicStrategy.changeHour }}"
   consumer-group-id: {{ .Values.configmap.consumerGroupId | default (printf "%s" (include "sorting-hat.fullname" .)) }}
   consumer-server: {{ .Values.configmap.consumerServer }}
+  consume-messages: "{{ .Values.configmap.consumeMessages }}"
   consumer-class: {{ .Values.configmap.consumerClass }}
   producer-server: {{ .Values.configmap.producerServer }}
   producer-topic: {{ .Values.configmap.producerTopic }}
