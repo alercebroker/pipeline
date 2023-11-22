@@ -82,7 +82,7 @@ class SortingHatStep(GenericStep):
         :return: Dataframe with the alerts
         """
         response = self.parser.parse(messages)
-        alerts = pd.DataFrame(response)
+        alerts = pd.DataFrame([r.to_dict() for r in response])
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
