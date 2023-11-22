@@ -91,7 +91,7 @@ configYaml:
         sasl.username: ""
         sasl.password: ""
       TOPIC: "metrics"
-      SCHEMA_PATH: "/schemas/lighcurve_step/metrics.json"
+      SCHEMA_PATH: "/schemas/lightcurve_step/metrics.json"
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   LOGGING_DEBUG: false
   MONGO_SECRET_NAME: ""
