@@ -53,6 +53,8 @@ configmap:
   producerServer: ""
   producerTopic: ""
   producerMessageMaxBytes: ""
+  useProfiling: false
+  pyroscopeServer: "http://pyroscope.pyroscope:4040"
 
 imageCredentials:
   registry: ""

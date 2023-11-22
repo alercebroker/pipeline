@@ -39,6 +39,22 @@ def step_creator():
     if settings["USE_PROMETHEUS"]:
         start_http_server(8000)
 
+    if settings["USE_PROFILING"]:
+        import pyroscope
+
+        logger.info("Configuring Pyroscope profiling...")
+        try:
+            pyroscope.configure(
+                application_name="steps.PrvCandidates",
+                server_address=settings["PYROSCOPE_SERVER"],
+            )
+        except KeyError as e:
+            logger.error("Pyroscope server address not found in environment variables")
+            logger.error(
+                "You need to set PYROSCOPE_SERVER environment variable when using USE_PROFILE"
+            )
+            raise e
+
     return PrvCandidatesStep(
         config=settings,
         prometheus_metrics=prometheus_metrics,
