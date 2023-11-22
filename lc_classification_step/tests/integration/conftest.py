@@ -265,7 +265,7 @@ def _produce_messages(
         producer.produce(message)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def kafka_consumer():
     def factory(
         stream: str,
@@ -292,14 +292,14 @@ def kafka_consumer():
     return factory
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def scribe_consumer():
     def factory():
         consumer = KafkaConsumer(
             {
                 "PARAMS": {
                     "bootstrap.servers": "localhost:9092",
-                    "group.id": "test_step_",
+                    "group.id": f"test_step_{time.time()}",
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },

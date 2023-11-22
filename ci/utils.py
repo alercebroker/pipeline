@@ -3,6 +3,7 @@ import dagger
 import os
 import pathlib
 import sys
+from enum import Enum
 
 
 def _get_publish_secret(client):
@@ -168,3 +169,7 @@ def update_chart(
     if dry_run:
         script.append("--dry-run")
     return container.with_workdir("/pipeline/ci").with_exec(script)
+
+class Stage(str, Enum):
+    staging = "staging"
+    production = "production"

@@ -127,6 +127,17 @@ class KafkaProducer(GenericProducer):
         fastavro.writer(out, self.schema, [message])
         return out.getvalue()
 
+    def _handle_buffer_error(self, err, topic, msg, key, callback, **kwargs):
+        self.logger.error(f"Error producing message: {err}")
+        self.logger.error("Calling flush and producing again")
+        self.producer.flush(1)
+        try:
+            self.producer.produce(
+                topic, value=msg, key=key, callback=callback, **kwargs
+            )
+        except BufferError as err:
+            self._handle_buffer_error(err, topic, msg, key, callback, **kwargs)
+
     def produce(self, message=None, **kwargs):
         """Produce Message to a topic.
 
@@ -149,12 +160,7 @@ class KafkaProducer(GenericProducer):
             self.logger.debug("Message produced")
             if err is not None:
                 if isinstance(err, BufferError):
-                    self.logger.error(f"Error producing message: {err}")
-                    self.logger.error("Calling poll to empty queue and producing again")
-                    self.producer.flush(1)
-                    self.producer.produce(
-                        topic, value=msg, key=key, callback=acked, **kwargs
-                    )
+                    self._handle_buffer_error(err, topic, msg, key, acked, **kwargs)
                 else:
                     raise err
 
@@ -166,9 +172,12 @@ class KafkaProducer(GenericProducer):
             self.topic = self.topic_strategy.get_topics()
         for topic in self.topic:
             flush = kwargs.pop("flush", False)
-            self.producer.produce(
-                topic, value=message, key=key, callback=acked, **kwargs
-            )
+            try:
+                self.producer.produce(
+                    topic, value=message, key=key, callback=acked, **kwargs
+                )
+            except BufferError as err:
+                self._handle_buffer_error(err, topic, message, key, acked, **kwargs)
             if flush:
                 self.producer.flush()
 

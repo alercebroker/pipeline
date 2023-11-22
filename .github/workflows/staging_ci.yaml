@@ -29,16 +29,17 @@ jobs:
       - name: Run dagger pipeline
         run: |
           cd ci
-          poetry run python main.py update-versions staging \
+          poetry run python main.py update version \
           alert_archiving_step correction_step early_classification_step feature_step \
           lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
-          s3_step scribe sorting_hat_step watchlist_step xmatch_step
+          s3_step scribe sorting_hat_step watchlist_step xmatch_step \
+          --stage=staging
 
   build-alert-archiving-dagger:
       needs: update-packages-dagger
       uses: ./.github/workflows/template_build_with_dagger.yaml
       with:
-          stage: production
+          stage: staging
           extra-args: alert_archiving_step
       secrets:
           GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -146,6 +147,15 @@ jobs:
     secrets:
         GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+  build-reflector-step-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+        stage: staging
+        extra-args: reflector_step
+    secrets:
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   build-s3-step-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -205,6 +215,7 @@ jobs:
       - build-magstats-dagger
       - build-metadata-dagger
       - build-prv-candidates-dagger
+      - build-reflector-step-dagger
       - build-s3-step-dagger
       - build-scribe-dagger
       - build-sorting-hat-dagger
@@ -259,22 +270,23 @@ jobs:
             poetry install
         - name: Run dagger pipeline
           run: |
-            cd ci
-            poetry run python main.py deploy staging \
-            alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --folder=alert_archiving_step \
-            correction-step --values=correction_step-helm-values --folder=correction_step \
-            early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --folder=early_classification_step \
-            feature-step --values=feature_step-helm-values --folder=feature_step \
-            lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --folder=lc_classification_step \
-            lightcurve-step --values=lightcurve-step-helm-values \
-            logstash --values=logstash-helm-values --chart=logstash --folder=logstash \
-            magstats-step --values=magstats_step-helm-values --folder=magstats_step \
-            metadata-step --values=metadata_step-helm-values --folder=metadata_step \
-            prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --folder=prv_candidates_step \
-            s3-step --values=s3_step-helm-values --folder=s3_step \
-            scribe-mongo --chart=scribe --values=scribe-helm-values --folder=scribe \
-            scribe-psql --chart=scribe --values=scribe-psql-helm-values --folder=scribe \
-            sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --folder=sorting_hat_step \
-            sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --folder=sorting_hat_step \
-            watchlist-step --values=watchlist_step-helm-values --folder=watchlist_step \
-            xmatch-step --values=xmatch_step-helm-values --folder=xmatch_step
+            cd ci 
+            poetry run python main.py deploy prepare
+            poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
+            poetry run python main.py deploy add-package correction-step --values=correction_step-helm-values --chart-folder=correction_step
+            poetry run python main.py deploy add-package early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
+            poetry run python main.py deploy add-package feature-step --values=feature_step-helm-values --chart-folder=feature_step
+            poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
+            poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
+            poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
+            poetry run python main.py deploy add-package magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
+            poetry run python main.py deploy add-package metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
+            poetry run python main.py deploy add-package prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step
+            poetry run python main.py deploy add-package s3-step --values=s3_step-helm-values --chart-folder=s3_step
+            poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe-helm-values --chart-folder=scribe
+            poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe-psql-helm-values --chart-folder=scribe
+            poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
+            poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
+            poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
+            poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
+            poetry run python main.py deploy execute --stage=staging --clear

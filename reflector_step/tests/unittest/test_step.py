@@ -40,7 +40,9 @@ class TestRawProducer(TestCase):
         message.value.assert_called_once()
 
     def test_initialization_with_schema_logs_warning(self, mock_producer):
-        with self.assertLogs(logger="RawKafkaProducer", level="WARNING"):
+        with self.assertLogs(
+            logger="alerce.RawKafkaProducer", level="WARNING"
+        ):
             RawKafkaProducer(
                 {
                     "SCHEMA": {
@@ -56,55 +58,52 @@ class TestRawProducer(TestCase):
 
 class TestStep(TestCase):
     def setUp(self):
+        self.settings = {
+            "PRODUCER_CONFIG": {
+                "CLASS": "unittest.mock.MagicMock",
+            },
+            "CONSUMER_CONFIG": {
+                "CLASS": "unittest.mock.MagicMock",
+            },
+        }
+
         self.mock_consumer = mock.create_autospec(RawKafkaConsumer)
         self.mock_producer = mock.create_autospec(RawKafkaProducer)
         self.step = CustomMirrormaker(
-            consumer=self.mock_consumer,
-            producer=self.mock_producer,
-            config={"keep_original_timestamp": False},
+            config=self.settings,
+            keep_original_timestamp=False,
+            use_message_topic=False,
         )
+        self.step.consumer = self.mock_consumer
+        self.step.producer = self.mock_producer
 
     def tearDown(self):
         del self.step
 
-    def test_step_fails_if_producer_is_not_defined_in_config(self):
-        with self.assertRaisesRegex(Exception, "producer not configured"):
-            CustomMirrormaker(consumer=self.mock_consumer)
-
-    @mock.patch("reflector_step.step.get_class")
-    def test_step_uses_config_if_producer_is_defined_as_arg_and_in_config(
-        self, mock_class_getter
-    ):
-        step = CustomMirrormaker(
-            consumer=self.mock_consumer,
-            producer=self.mock_producer,
-            config={
-                "PRODUCER_CONFIG": {"TOPIC": None},
-                "keep_original_timestamp": False,
-            },
-        )
-        self.assertEqual(
-            mock_class_getter.return_value.return_value, step.producer
-        )
-
     def test_step_produces_message_batch(self):
         data_batch = create_messages(10)
-        self.step.execute(data_batch)
-        self.mock_producer.produce.assert_called_with(data_batch[-1])
+        result = self.step.execute(data_batch)
+        self.step.produce(result)
+        self.mock_producer.produce.assert_called_with(data_batch[-1], flush=True)
 
     def test_step_produces_single_message(self):
         (data_batch,) = create_messages(1)
-        self.step.execute(data_batch)
-        self.mock_producer.produce.assert_called_with(data_batch)
+        result = self.step.execute(data_batch)
+        self.step.produce([result])
+        self.mock_producer.produce.assert_called_with(data_batch, flush=True)
 
     def test_step_with_timestamp(self):
         step = CustomMirrormaker(
-            consumer=self.mock_consumer,
-            producer=self.mock_producer,
-            config={"keep_original_timestamp": True},
+            config=self.settings,
+            keep_original_timestamp=True,
+            use_message_topic=False,
         )
+        step.consumer = self.mock_consumer
+        step.producer = self.mock_producer
+
         data_batch = create_messages(10)
-        step.execute(data_batch)
+        result = step.execute(data_batch)
+        step.produce(result)
         self.mock_producer.produce.assert_called_with(
-            data_batch[-1], timestamp=123
+            data_batch[-1], timestamp=123, flush=True
         )

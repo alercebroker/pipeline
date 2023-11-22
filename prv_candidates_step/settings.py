@@ -118,4 +118,6 @@ def settings_creator():
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROMETHEUS": prometheus,
+        "USE_PROFILING": os.getenv("USE_PROFILING", False),
+        "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER"),
     }

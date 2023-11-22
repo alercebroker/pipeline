@@ -1,8 +1,8 @@
 namespace: correction-step-elasticc
 resources:
   requests:
-    cpu: 100m
-    memory: 50Mi
+    cpu: 450m
+    memory: 2000Mi
 
 affinity:
   nodeAffinity:
@@ -25,7 +25,7 @@ configmap:
   metricsTopic: "metrics_elasticc"
   consumeMessages: "250"
   consumeTimeout: "10"
-  producerMessageMaxBytes: "6291456"
+  producerMessageMaxBytes: "67108864"
 
 imageCredentials:
   registry: "ghcr.io"
@@ -54,5 +54,5 @@ secrets:
 autoscaling:
   enabled: true
   minReplicas: 1
-  maxReplicas: 4
-  targetCPUUtilizationPercentage: 80
+  maxReplicas: 16
+  targetCPUUtilizationPercentage: 20

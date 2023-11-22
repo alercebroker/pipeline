@@ -1,0 +1,22 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+consumerGroupId: logstash-elasticc
+elasticsearchHost: ${elasticsearch_server}
+kafkaHost: ${kafka_server}
+kafkaTopic: metrics_elasticc
+namespace: logstash-elasticc
+secrets:
+  elasticsearch:
+    password: ${elasticsearch_password}
+    username: ${elasticsearch_username}
+  kafkaAuth:
+    enabled: true
+    password: ${kafka_password}
+    username: ${kafka_username}

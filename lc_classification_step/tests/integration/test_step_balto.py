@@ -10,7 +10,6 @@ from tests.test_commons import (
     assert_command_is_correct,
     assert_elasticc_object_is_correct,
 )
-from fastavro.repository.base import SchemaRepositoryError
 
 
 @pytest.mark.elasticc

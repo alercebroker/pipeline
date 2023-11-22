@@ -105,3 +105,5 @@ configYaml:
       SCHEMA_PATH: "/schemas/prv_candidates_step/metrics.json"
   LOGGING_DEBUG: false
   USE_PROMETHEUS: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  USE_PROFILING: false

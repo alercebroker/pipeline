@@ -22,7 +22,15 @@ def get_values(client: dagger.Client, path: str, ssm_parameter_name: str):
         ctr = (
             ctr.with_directory(
                 "/pipeline",
-                client.host().directory(path, exclude=[".venv/", "**/.venv/"]),
+                client.host().directory(
+                    path,
+                    exclude=[
+                        ".venv/",
+                        "**/.venv/",
+                        ".terraform",
+                        "**/.terraform",
+                    ],
+                ),
             )
             .with_workdir("/pipeline/ci")
             .with_exec(["python", "-m", "pip", "install", "poetry"])

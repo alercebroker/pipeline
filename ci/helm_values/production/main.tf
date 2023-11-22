@@ -19,6 +19,9 @@ data "aws_msk_cluster" "msk_elasticc" {
 data "aws_msk_cluster" "msk_public" {
   cluster_name = "public-production"
 }
+data "aws_opensearch_domain" "opensearch" {
+  domain_name = "production"
+}
 
 resource "aws_ssm_parameter" "correction_step_elasticc" {
   name = "correction_step-helm-values-elasticc"
@@ -159,5 +162,19 @@ resource "aws_ssm_parameter" "xmatch_step_elasticc" {
     kafka_password = var.xmatch_kafka_password
     ghcr_username  = var.ghcr_username
     ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "logstash_elasticc" {
+  name      = "logstash-elasticc-helm-values"
+  overwrite = true
+  type      = "String"
+  value = templatefile("templates/logstash_helm_values_elasticc.tftpl", {
+    kafka_server           = data.aws_msk_cluster.msk_elasticc.bootstrap_brokers_sasl_scram
+    kafka_username         = var.logstash_kafka_username
+    kafka_password         = var.logstash_kafka_password
+    elasticsearch_username = var.elasticsearch_username
+    elasticsearch_password = var.elasticsearch_password
+    elasticsearch_server   = "https://${data.aws_opensearch_domain.opensearch.endpoint}:443"
   })
 }

@@ -21,17 +21,14 @@ logging.basicConfig(
 )
 
 from reflector_step.step import CustomMirrormaker
-from apf.core import get_class
 
-if "CLASS" in CONSUMER_CONFIG:
-    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
-else:
-    from apf.consumers import KafkaConsumer as Consumer
+keep_original_timestamp = STEP_CONFIG.pop("keep_original_timestamp")
+use_message_topic = STEP_CONFIG.pop("use_message_topic")
 
-consumer = Consumer(config=CONSUMER_CONFIG)
+step = CustomMirrormaker(
+    config=STEP_CONFIG,
+    keep_original_timestamp=keep_original_timestamp,
+    use_message_topic=use_message_topic,
+)
 
-step = CustomMirrormaker(consumer, config=STEP_CONFIG, level=level)
-
-
-def run_step():
-    step.start()
+step.start()

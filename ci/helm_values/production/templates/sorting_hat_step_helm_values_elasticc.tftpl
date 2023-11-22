@@ -11,12 +11,13 @@ autoscaling:
   enabled: true
   maxReplicas: 16
   minReplicas: 1
-  targetCPUUtilizationPercentage: 60
+  targetCPUUtilizationPercentage: 20
 configmap:
   consumerClass: apf.consumers.KafkaSchemalessConsumer
   consumerGroupId: sorting-hat-elasticc
   consumerServer: ${kafka_server}
   consumerTopics: elasticc
+  consumeMessages: "500"
   metricsServer: ${kafka_server}
   metricsTopic: metrics_elasticc
   mongoSecretName: mongo-elasticc-production/writer
@@ -25,6 +26,8 @@ configmap:
   producerTopic: sorting-hat-elasticc
 
 featureFlags:
+  runConesearch: "False"
+  useProfiling: "True"
   usePsql: false
 
 extraEnvVariables:
