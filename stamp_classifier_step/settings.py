@@ -5,6 +5,10 @@
 import os
 from schema import SCHEMA, SCRIBE_SCHEMA
 
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), os.getenv("SCRIBE_SCHEMA_PATH"))
 
 CONSUMER_CONFIG = {
     "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
@@ -34,7 +38,7 @@ OUTPUT_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
@@ -42,7 +46,7 @@ SCRIBE_PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
-    "SCHEMA": SCRIBE_SCHEMA,
+    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
 }
 
 CLASSIFIER_STRATEGY = os.environ["CLASSIFIER_STRATEGY"]
@@ -56,37 +60,7 @@ METRICS_CONFIG = {
             "auto.offset.reset": "smallest",
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 

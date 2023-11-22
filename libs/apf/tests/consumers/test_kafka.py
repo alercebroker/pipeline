@@ -300,3 +300,6 @@ def test_consumer_with_offests(consumer, kafka_service, caplog):
     kconsumer = consumer("offset_tests")
     messages = list(kconsumer.consume())
     assert len(messages) == 4
+    kconsumer = consumer("offset_tests", {"offsets": {"start": 40}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 0

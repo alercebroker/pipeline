@@ -19,10 +19,6 @@ fullnameOverride: ""
 
 podAnnotations: {}
 
-service:
-  type: ClusterIP
-  port: 8000
-
 resources: {}
 
 autoscaling:
@@ -42,51 +38,97 @@ affinity:
               ## Override this value with the NodeGroup tag accordingly
               values: []
 
-configmap:
-  consumerTopics: ""
-  consumerServer: ""
-  consumerGroupId: ""
-  metricsTopic: ""
-  metricsServer: ""
-  producerTopic: ""
-  producerServer: ""
-  stepVersion: ""
-  retries: ""
-  retryInterval: ""
-  consumeTimeout: ""
-  consumeMessages: ""
-  scribeServer: ""
-  producerMessageMaxBytes: ""
-  scribeTopic: ""
-  skipXmatch: ""
-
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: false
-      username: ""
-      password: ""
-    producer:
-      enabled: false
-      username: ""
-      password: ""
-    metrics:
-      enabled: false
-      username: ""
-      password: ""
-    scribe:
-      enabled: false
-      username: ""
-      password: ""
-
 imageCredentials:
   registry: ""
   username: ""
   password: ""
   email: ""
 
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  enabled: true
+  LOGGING_DEBUG: false
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: ""
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: "xmatch-step"
+      auto.offset.reset: "beginning"
+      max.poll.interval.ms: 3600000
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: ["correction"]
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    TOPIC: "xmatch"
+    PARAMS:
+      bootstrap.servers: ""
+      message.max.bytes: 6291456
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    SCHEMA_PATH: "/schemas/xmatch_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "w_object"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: candid
+      - key: oid
+      - key: aid
+      - key: tid
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/xmatch_step/metrics.json"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+  XMATCH_CONFIG:
+    CATALOG:
+      name: allwise
+      colums:
+        - "AllWISE"
+        - "RAJ2000"
+        - "DEJ2000"
+        - "W1mag"
+        - "W2mag"
+        - "W3mag"
+        - "W4mag"
+        - "e_W1mag"
+        - "e_W2mag"
+        - "e_W3mag"
+        - "e_W4mag"
+        - "Jmag"
+        - "e_Jmag"
+        - "Hmag"
+        - "e_Hmag"
+        - "Kmag"
+        - "e_Kmag"
+  RETRIES: 3
+  RETRY_INTERVAL: 1

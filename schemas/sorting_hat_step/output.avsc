@@ -23,8 +23,8 @@
             "type": {
                 "type": "map",
                 "values": ["null", "int", "float", "string", "bytes"],
-                "default": {},
-            },
+                "default": {}
+            }
         },
         {
             "name": "stamps",
@@ -32,11 +32,11 @@
                 "type": "record",
                 "name": "stamps",
                 "fields": [
-                    {"name": "science", "type": ["null", "bytes"], "default": None},
-                    {"name": "template", "type": ["null", "bytes"], "default": None},
-                    {"name": "difference", "type": ["null", "bytes"], "default": None},
-                ],
+                    {"name": "science", "type": ["null", "bytes"], "default": null},
+                    {"name": "template", "type": ["null", "bytes"], "default": null},
+                    {"name": "difference", "type": ["null", "bytes"], "default": null}
+                ]
             }
-        },
-    ],
+        }
+    ]
 }

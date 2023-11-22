@@ -7,7 +7,6 @@ import unittest
 from unittest import mock
 from apf.consumers import KafkaConsumer
 from sorting_hat_step.step import SortingHatStep
-from schemas.output_schema import SCHEMA
 from ..unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
 from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
@@ -16,7 +15,17 @@ from sorting_hat_step.database import MongoConnection, PsqlConnection
 import pandas as pd
 from sqlalchemy import text
 
-os.environ["LOGGING_DEBUG"] = "True"
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc"
+)
+METRICS_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json"
+)
+SCRIBE_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__),
+)
 
 MONGO_CONFIG = {
     "host": "localhost",
@@ -41,7 +50,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 CONSUMER_CONFIG = {
@@ -68,37 +77,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": "localhost:9092",
         },
         "TOPIC": "metrics",
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 
@@ -121,13 +100,13 @@ class DbIntegrationTest(unittest.TestCase):
 
     def setUp(self):
         self.step_config = {
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "True",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": True,
+            },
         }
         self.psql_database.create_db()
 
@@ -225,14 +204,15 @@ class PrometheusIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "PROMETHEUS": True,
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "True",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": True,
+            },
         }
+
         self.psql_database.create_db()
 
     def tearDown(self):
@@ -278,13 +258,13 @@ class OnlyMongoIntegrationTest(unittest.TestCase):
     def setUp(self):
         self.step_config = {
             "PROMETHEUS": False,
-            "MONGO_CONFIG": MONGO_CONFIG,
-            "PSQL_CONFIG": PSQL_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
-            "USE_PSQL": "False",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
 
     def tearDown(self):

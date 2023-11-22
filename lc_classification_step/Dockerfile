@@ -26,6 +26,8 @@ COPY lc_classification_step/poetry.lock \
     /app/
 COPY libs/alerce_classifiers /libs/alerce_classifiers
 COPY libs/apf /libs/apf
+COPY schemas/lc_classification_step /schemas/lc_classification_step
+COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test --with=${model}
@@ -36,6 +38,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY lc_classification_step/scripts /app/scripts
 COPY lc_classification_step/schemas /app/schemas

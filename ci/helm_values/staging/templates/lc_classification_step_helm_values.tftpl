@@ -1,0 +1,69 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 4
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+image:
+  repository: ghcr.io/alercebroker/lc_classification_step_ztf
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: lc-classifier-step
+
+resources:
+  requests:
+    cpu: 600m
+    memory: 600M
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/feature_step/output.avsc"
+    PARAMS:
+      group.id: "lc_classifier_consumer"
+      bootstrap.servers: ${kafka_internal_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  PRODUCER_CONFIG:
+    TOPIC_STRATEGY:
+      PARAMS:
+        topic_format: "lc_classifier_%s"
+        date_format: "%Y%m%d"
+        change_hour: 23
+        retention_days: 1
+      CLASS: "apf.core.topic_management.DailyTopicStrategy"
+    PARAMS:
+      bootstrap.servers: ${kafka_public_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    CLASS: "apf.producers.kafka.KafkaProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_ztf.avsc"
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_internal_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+  SCRIBE_PRODUCER_CONFIG:
+    PARAMS:
+      bootstrap.servers: ${kafka_internal_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  MODEL_VERSION: "1.2.3-P"
+  MODEL_CONFIG:
+    CLASS: "lc_classifier.classifier.models.HierarchicalRandomForest"
+    NAME: "lc_classifier"

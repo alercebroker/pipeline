@@ -32,14 +32,7 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA": {
-        "namespace": "db_operation",
-        "type": "record",
-        "name": "Command",
-        "fields": [
-            {"name": "payload", "type": "string"},
-        ],
-    },
+    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
 }
 
 

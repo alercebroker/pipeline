@@ -4,6 +4,7 @@ import os
 
 @pytest.fixture
 def env_variables():
+    envcopy = os.environ.copy()
     env_variables_dict = {
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "sorting-hat",
@@ -19,4 +20,5 @@ def env_variables():
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
 
-    return env_variables_dict
+    yield env_variables_dict
+    os.environ = envcopy

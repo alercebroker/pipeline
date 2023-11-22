@@ -31,12 +31,12 @@ def test_step_elasticc_result(
         },
     )
 
-    from settings import settings_creator
+    from settings import config
 
     kconsumer = kafka_consumer("balto")
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=settings_creator())
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():
@@ -67,16 +67,18 @@ def test_step_schemaless(
         },
     )
 
-    from settings import settings_creator
+    from settings import config
 
     kconsumer = kafka_consumer(
         "balto_schemaless",
         "apf.consumers.kafka.KafkaSchemalessConsumer",
-        {"SCHEMA_PATH": "schemas/output_elasticc.avsc"},
+        {
+            "SCHEMA_PATH": "../schemas/lc_classification_step/output_elasticc.avsc"
+        },
     )
     sconsumer = scribe_consumer()
 
-    step = LateClassifier(config=settings_creator())
+    step = LateClassifier(config=config())
     step.start()
 
     for message in kconsumer.consume():

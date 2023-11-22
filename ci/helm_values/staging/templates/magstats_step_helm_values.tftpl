@@ -1,0 +1,42 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: magstats-step
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  SCRIBE_PRODUCER_CONFIG:
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  EXCLUDED_CALCULATORS: []

@@ -1,6 +1,13 @@
-FEATURES_SCHEMA = {
-    "name": "features",
-    "type": {
+from fastavro.utils import generate_one
+import random
+
+
+def _get_random_key(dictionary: dict):
+    return random.choice(list(dictionary.keys()))
+
+
+def features_ztf(force_empty_features=False, force_missing_features=False):
+    FEATURES_SCHEMA = {
         "name": "features_record",
         "type": "record",
         "fields": [
@@ -212,58 +219,17 @@ FEATURES_SCHEMA = {
             {"name": "r-W3", "type": ["double", "null"]},
             {"name": "rb", "type": ["float", "null"]},
             {"name": "sgscore1", "type": ["float", "null"]},
+            {"name": "PPE", "type": ["float", "null"]},
         ],
-    },
-}
-
-
-SCHEMA = {
-    "doc": "Late Classification",
-    "name": "probabilities_and_features",
-    "type": "record",
-    "fields": [
-        {"name": "aid", "type": "string"},
-        FEATURES_SCHEMA,
-        {
-            "name": "lc_classification",
-            "type": {
-                "type": "record",
-                "name": "late_record",
-                "fields": [
-                    {
-                        "name": "probabilities",
-                        "type": {
-                            "type": "map",
-                            "values": ["float"],
-                        },
-                    },
-                    {"name": "class", "type": "string"},
-                    {
-                        "name": "hierarchical",
-                        "type": {
-                            "name": "root",
-                            "type": "map",
-                            "values": [
-                                {"type": "map", "values": "float"},
-                                {
-                                    "type": "map",
-                                    "values": {
-                                        "type": "map",
-                                        "values": "float",
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                ],
-            },
-        },
-    ],
-}
-
-
-SCRIBE_SCHEMA = {
-    "type": "record",
-    "name": "scribe_message",
-    "fields": [{"name": "payload", "type": "string"}],
-}
+    }
+    if force_empty_features:
+        return {}
+    features = generate_one(FEATURES_SCHEMA)
+    if force_missing_features:
+        for _ in range(random.randint(1, len(features))):
+            try:
+                key = _get_random_key(features)
+                features[key] = None
+            except KeyError:
+                pass
+    return features

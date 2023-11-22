@@ -1,14 +1,13 @@
 import os
 import sys
 import logging
+from apf.core.settings import config_from_yaml_file
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import settings_creator
-
-STEP_CONFIG = settings_creator()
+from settings import config
 
 level = logging.INFO
 if os.getenv("LOGGING_DEBUG"):
@@ -23,8 +22,13 @@ logging.basicConfig(
 
 from lc_classification.core import LateClassifier
 
+if os.getenv("CONFIG_FROM_YAML"):
+    step_config = config_from_yaml_file("/config/config.yaml")
+else:
+    step_config = config()
+
 prometheus_metrics = None
-if STEP_CONFIG["PROMETHEUS"]:
+if step_config["PROMETHEUS"]:
     from prometheus_client import start_http_server
     from apf.metrics.prometheus import PrometheusMetrics
 
@@ -32,6 +36,6 @@ if STEP_CONFIG["PROMETHEUS"]:
     start_http_server(8000)
 
 step = LateClassifier(
-    config=STEP_CONFIG, level=level, prometheus_metrics=prometheus_metrics
+    config=step_config, level=level, prometheus_metrics=prometheus_metrics
 )
 step.start()

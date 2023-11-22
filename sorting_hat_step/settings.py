@@ -2,18 +2,24 @@
 #       sorting_hat_step   Settings File
 ##################################################
 import os
+import pathlib
 from credentials import get_credentials
-from schemas.output_schema import SCHEMA
-from fastavro.repository.base import SchemaRepositoryError
+
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 # Set the global logging level to debug
 LOGGING_DEBUG = os.getenv("LOGGING_DEBUG", False)
 
 # Export prometheus metrics
 PROMETHEUS = True
-
-MONGO_CONFIG = get_credentials(os.environ["MONGODB_SECRET_NAME"], secret_type="mongo")
-PSQL_CONFIG = {}
 
 # Consumer configuration
 # Each consumer has different parameters and can be found in the documentation
@@ -66,7 +72,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
         "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
 }
 
 
@@ -80,37 +86,7 @@ METRICS_CONFIG = {
             "bootstrap.servers": os.getenv("METRICS_HOST"),
         },
         "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 
@@ -135,19 +111,24 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     )
 
 ## Feature flags
-RUN_CONESEARCH = os.getenv("RUN_CONESEARCH", "True")
-USE_PSQL = os.getenv("USE_PSQL", "False")
+RUN_CONESEARCH = bool(os.getenv("RUN_CONESEARCH", False))
+USE_PSQL = bool(os.getenv("USE_PSQL", True))
 
-if USE_PSQL.lower() == "true":
+if USE_PSQL:
     PSQL_CONFIG = get_credentials(os.environ["PSQL_SECRET_NAME"], secret_type="psql")
 # Step Configuration
 STEP_CONFIG = {
-    "PROMETHEUS": PROMETHEUS,
-    "MONGO_CONFIG": MONGO_CONFIG,
-    "PSQL_CONFIG": PSQL_CONFIG,
+    "FEATURE_FLAGS": {
+        "RUN_CONESEARCH": RUN_CONESEARCH,
+        "USE_PSQL": USE_PSQL,
+        "USE_PROFILING": os.getenv("USE_PROFILING", "True"),
+        "PROMETHEUS": PROMETHEUS,
+    },
+    "MONGO_SECRET_NAME": os.getenv("MONGO_SECRET_NAME"),
+    "PSQL_SECRET_NAME": os.getenv("PSQL_SECRET_NAME", ""),
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "RUN_CONESEARCH": RUN_CONESEARCH,
-    "USE_PSQL": USE_PSQL,
+    "LOGGING_DEBUG": LOGGING_DEBUG,
+    "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER", ""),
 }

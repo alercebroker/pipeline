@@ -20,6 +20,8 @@ RUN pip install poetry
 
 COPY magstats_step/poetry.lock magstats_step/pyproject.toml /app/
 COPY libs/apf libs/apf
+COPY schemas/magstats_step /schemas/magstats_step
+COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -29,6 +31,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY magstats_step/magstats_step /app/magstats_step
 COPY magstats_step/scripts /app/scripts

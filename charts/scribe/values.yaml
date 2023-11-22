@@ -43,33 +43,42 @@ affinity:
               operator: In
               values: []
 
-secrets:
-  #topics: all the topics that will be consumed by Alerce Scribe
-  topics: ""
-  #numMessages: size of the message batch
-  numMessages: "100"
-  #bootstrapServers: one or more Kafka servers
-  bootstrapServers: ""
-  #mockDb: flag that chooses if the scribe writes into database or just logs the commands
-  mockDb: "False"
-  #secretName: name of the secret stored in AWS Secret Manager containing MongoDB credentials
-  secretName: ""
-  dbEngine: ""
-  consumerGroupId: ""
-  metricsHost: ""
-  metricsTopic: ""
-  useProfiling: ""
-  kafkaAuth:
-    enabled: false
-    username: ""
-    password: ""
-  metricsKafkaAuth:
-    enabled: false
-    username: ""
-    password: ""
-
-extraEnvVariables:
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
   ##   value: ATLAS
+
+configYaml:
+  enabled: true
+  DB_TYPE: ""
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "beginning"
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: []
+    NUM_MESSAGES: 50
+    TIMEOUT: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
+    TOPIC: "metrics"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"

@@ -2,19 +2,17 @@
 #       Late Classifier Settings File
 ##################################################
 import os
-from schemas import SCHEMA, SCRIBE_SCHEMA
+import pathlib
 from models_settings import configurator
-from fastavro.schema import load_schema
-from fastavro.repository.base import SchemaRepositoryError
 
 
 def model_config_factory():
-    modelclass = os.getenv("MODEL_CLASS")
+    modelclass = os.getenv("MODEL_CLASS", "")
     config = configurator(modelclass)
     return config
 
 
-def settings_creator():
+def config():
     CONSUMER_CONFIG = {
         "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
         "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
@@ -26,16 +24,17 @@ def settings_creator():
                 os.getenv("ENABLE_PARTITION_EOF", None)
             ),
         },
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 0)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 1000)),
     }
 
-    try:
-        ELASTICC_SCHEMA = load_schema("schemas/output_elasticc.avsc")
-    except SchemaRepositoryError:
-        ELASTICC_SCHEMA = load_schema(
-            "lc_classification_step/schemas/output_elasticc.avsc"
+    producer_schema_path = str(
+        pathlib.Path(
+            pathlib.Path(__file__).parent.parent,
+            "schemas/lc_classification_step",
+            "output_ztf.avsc",
         )
+    )
     PRODUCER_CONFIG = {
         "TOPIC_STRATEGY": {
             "PARAMS": {
@@ -55,20 +54,32 @@ def settings_creator():
         "CLASS": os.getenv(
             "PRODUCER_CLASS", "apf.producers.kafka.KafkaProducer"
         ),
-        "SCHEMA": SCHEMA
-        if os.getenv("STREAM", "ztf") == "ztf"
-        else ELASTICC_SCHEMA,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
     }
 
+    scribe_schema_path = str(
+        pathlib.Path(
+            pathlib.Path(__file__).parent.parent,
+            "schemas/scribe_step",
+            "scribe.avsc",
+        )
+    )
     SCRIBE_PRODUCER_CONFIG = {
         "CLASS": "apf.producers.KafkaProducer",
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_TOPIC"],
-        "SCHEMA": SCRIBE_SCHEMA,
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
+    metrics_schema_path = str(
+        pathlib.Path(
+            pathlib.Path(__file__).parent.parent,
+            "schemas/lc_classification_step",
+            "metrics.json",
+        )
+    )
     METRICS_CONFIG = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
         "EXTRA_METRICS": [{"key": "aid", "alias": "aid"}, {"key": "candid"}],
@@ -77,25 +88,9 @@ def settings_creator():
                 "bootstrap.servers": os.environ["METRICS_HOST"],
             },
             "TOPIC": os.environ["METRICS_TOPIC"],
-            "SCHEMA": {
-                "type": "object",
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "type": "string",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "type": "string",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA_PATH": os.getenv(
+                "METRICS_SCHEMA_PATH", metrics_schema_path
+            ),
         },
     }
 
@@ -147,7 +142,8 @@ def settings_creator():
         METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
             "METRICS_KAFKA_PASSWORD"
         )
-    STEP_CONFIG = {
+
+    return {
         "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -158,4 +154,3 @@ def settings_creator():
         "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
         "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
     }
-    return STEP_CONFIG

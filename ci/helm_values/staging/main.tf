@@ -34,6 +34,44 @@ resource "aws_ssm_parameter" "logstash_step" {
   })
 }
 
+resource "aws_ssm_parameter" "sorting_hat_step_ztf" {
+  name      = "sorting_hat_step_ztf-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/sorting_hat_step_ztf_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.sorting_hat_kafka_username
+    kafka_password = var.sorting_hat_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "metadata_step" {
+  name      = "metadata_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/metadata_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.metadata_kafka_username
+    kafka_password = var.metadata_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "prv_candidates_step" {
+  name      = "prv_candidates_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/prv_candidates_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.prv_candidates_kafka_username
+    kafka_password = var.prv_candidates_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
 
 resource "aws_ssm_parameter" "lightcurve_step" {
   name      = "lightcurve-step-helm-values"
@@ -43,6 +81,104 @@ resource "aws_ssm_parameter" "lightcurve_step" {
     kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
     kafka_username = var.lightcurve_kafka_username
     kafka_password = var.lightcurve_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "correction_step" {
+  name      = "correction_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/correction_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.correction_kafka_username
+    kafka_password = var.correction_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "magstats_step" {
+  name      = "magstats_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/magstats_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.magstats_kafka_username
+    kafka_password = var.magstats_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "xmatch_step" {
+  name      = "xmatch_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/xmatch_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.xmatch_kafka_username
+    kafka_password = var.xmatch_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "features_step" {
+  name      = "feature_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/features_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.features_kafka_username
+    kafka_password = var.features_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "lc_classification_step" {
+  name      = "lc_classification_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/lc_classification_step_helm_values.tftpl", {
+    kafka_internal_server = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_public_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username        = var.lc_classification_kafka_username
+    kafka_password        = var.lc_classification_kafka_password
+    ghcr_username         = var.ghcr_username
+    ghcr_password         = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "scribe_step_mongo" {
+  name      = "scribe-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/scribe_helm_values.tftpl", {
+    namespace      = "scribe-step-mongo"
+    db_type        = "mongo"
+    group_id       = "scribe_consumer_mongo"
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.scribe_kafka_username
+    kafka_password = var.scribe_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "scribe_step_sql" {
+  name      = "scribe-psql-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/scribe_helm_values.tftpl", {
+    namespace      = "scribe-step-sql"
+    db_type        = "sql"
+    group_id       = "scribe_consumer_psql"
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.scribe_kafka_username
+    kafka_password = var.scribe_kafka_password
     ghcr_username  = var.ghcr_username
     ghcr_password  = var.ghcr_password
   })

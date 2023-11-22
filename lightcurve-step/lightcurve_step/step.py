@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-import os
 import pandas as pd
 import pickle
 from typing import List
@@ -23,8 +22,6 @@ from db_plugins.db.mongo.models import (
     ForcedPhotometry as MongoForcedPhotometry,
 )
 
-CANDID = os.getenv("CANDID_SEARCH", "")
-
 
 class LightcurveStep(GenericStep):
     def __init__(
@@ -40,8 +37,7 @@ class LightcurveStep(GenericStep):
         self.logger = logging.getLogger("alerce.LightcurveStep")
         self.set_producer_key_field("aid")
 
-    @classmethod
-    def pre_execute(cls, messages: List[dict]) -> dict:
+    def pre_execute(self, messages: List[dict]) -> dict:
         aids, detections, non_detections, oids = set(), [], [], {}
         last_mjds = {}
         candids = {}
@@ -227,8 +223,7 @@ class LightcurveStep(GenericStep):
 
         return list(map(format_as_detection, parsed))
 
-    @classmethod
-    def pre_produce(cls, result: dict) -> List[dict]:
+    def pre_produce(self, result: dict) -> List[dict]:
         def serialize_dia_object(ef: dict):
             if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
                 return ef
@@ -250,7 +245,7 @@ class LightcurveStep(GenericStep):
             except KeyError:
                 nd = []
             dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
-            if not os.getenv("SKIP_MJD_FILTER", "false") == "true":
+            if not self.config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
                 mjds = result["last_mjds"]
                 dets = dets[dets["mjd"] <= mjds[aid]]
             output.append(
@@ -261,5 +256,5 @@ class LightcurveStep(GenericStep):
                     "non_detections": nd,
                 }
             )
-        cls.candid_found = False
+        self.candid_found = False
         return output

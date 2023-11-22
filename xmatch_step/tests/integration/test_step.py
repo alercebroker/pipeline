@@ -1,15 +1,25 @@
+import pathlib
 import pytest
 import unittest
-from fastavro.schema import load_schema
 
 from xmatch_step import XmatchStep
 from xmatch_step.core.xmatch_client import XmatchClient
-from schema import SCHEMA
 from unittest import mock
 from tests.data.messages import (
     generate_input_batch,
     get_fake_xmatch,
     get_fake_empty_xmatch,
+)
+
+PRODUCER_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/xmatch_step",
+    "output.avsc",
+)
+SCRIBE_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/scribe_step",
+    "scribe.avsc",
 )
 
 CONSUMER_CONFIG = {
@@ -31,14 +41,14 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 SCRIBE_PRODUCER_CONFIG = {
     "CLASS": "apf.producers.KafkaProducer",
     "TOPIC": "w_object",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA": load_schema("scribe_schema.avsc"),
+    "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
 }
 
 XMATCH_CONFIG = {

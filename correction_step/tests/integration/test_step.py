@@ -5,10 +5,6 @@ from correction._step import CorrectionStep
 from pprint import pprint
 
 
-def test_step_initialization(kafka_service, env_variables):
-    assert isinstance(CorrectionStep.create_step(), CorrectionStep)
-
-
 def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
     CorrectionStep.create_step().start()
     for message in kafka_consumer.consume():

@@ -17,9 +17,10 @@ class SortingHatStep(GenericStep):
     ):
         super().__init__(config=config, **kwargs)
         self.mongo_driver = mongo_connection
-        self.run_conesearch = config["RUN_CONESEARCH"] != "False"
         self.parser = ALeRCEParser()
-        self.use_psql = config["USE_PSQL"].lower() == "true"
+        # feature flags
+        self.use_psql = config["FEATURE_FLAGS"]["USE_PSQL"]
+        self.run_conesearch = config["FEATURE_FLAGS"]["RUN_CONESEARCH"]
 
     def set_psql_driver(self, psql_connection: PsqlConnection):
         if not self.use_psql:
