@@ -18,15 +18,18 @@ image:
   repository: ghcr.io/alercebroker/lightcurve-step
 
 envVariables:
-- name: METRICS_SOURCE
-  value: 'lightcurve-step-elasticc'
-- name: METRICS_SURVEY
-  value: LSST
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  - name: METRICS_SOURCE
+    value: 'lightcurve-step-elasticc'
+  - name: METRICS_SURVEY
+    value: LSST
 
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
   username: ${ghcr_username}
+
 namespace: lightcurve-step-elasticc
 
 resources:
