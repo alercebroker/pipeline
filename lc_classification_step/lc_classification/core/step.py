@@ -140,7 +140,7 @@ class LateClassifier(GenericStep):
                     probabilities["probabilities"], probabilities["hierarchical"]
                 )
             except Exception as e:
-                print(e) # logger error?
+                self.logger.error(e)
                 return (
                     OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
                     messages,

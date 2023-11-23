@@ -46,4 +46,3 @@ def test_step_empty_features(step_factory_ztf):
     assert scribe_calls == []
     calls = step.producer.mock_calls
     assert calls == []
-    assert False
