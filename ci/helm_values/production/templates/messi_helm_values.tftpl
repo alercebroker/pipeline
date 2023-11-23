@@ -60,7 +60,7 @@ configYaml:
     PARAMS:
       bootstrap.servers: ${kafka_public_server}
       security.protocol: "SASL_PLAINTEXT"
-      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.mechanism: "SCRAM-SHA-256"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     CLASS: "apf.producers.kafka.KafkaProducer"
