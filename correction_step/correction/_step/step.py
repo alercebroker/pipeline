@@ -54,6 +54,14 @@ class CorrectionStep(GenericStep):
 
         logger.addHandler(handler)
 
+        if settings["FEATURE_FLAGS"]["USE_PROFILING"]:
+            from pyroscope import configure
+
+            configure(
+                application_name="step.Correction",
+                server_address=settings["PYROSCOPE_SERVER"],
+            )
+
         prometheus_metrics = (
             PrometheusMetrics() if settings["FEATURE_FLAGS"]["PROMETHEUS"] else DefaultPrometheusMetrics()
         )

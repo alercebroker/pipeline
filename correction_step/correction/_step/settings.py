@@ -96,6 +96,8 @@ def settings_creator():
         "LOGGING_DEBUG": logging_debug,
         "FEATURE_FLAGS": {
             "PROMETHEUS": prometheus,
+            "USE_PROFILING": os.getenv("USE_PROFILING", False),
         },
+        "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER"),
     }
     return step_config
