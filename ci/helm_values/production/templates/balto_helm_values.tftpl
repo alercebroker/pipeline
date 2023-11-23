@@ -15,7 +15,6 @@ autoscaling:
 
 configYaml:
   enabled: true
-  PROMETHEUS: false
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     TOPICS: ["features_elasticc"]
@@ -77,6 +76,10 @@ configYaml:
       ## path_to_model: ""
   SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
   STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+
 
 envVariables:
   - name: CONFIG_FROM_YAML
