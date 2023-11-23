@@ -8,6 +8,10 @@
       "type": "string"
     },
     {
+      "name": "candid",
+      "type": "string"
+    },
+    {
       "name": "detections",
       "type": {
         "type": "array",
