@@ -41,9 +41,7 @@ COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
 COPY lc_classification_step/scripts /app/scripts
-COPY lc_classification_step/schemas /app/schemas
 COPY lc_classification_step/README.md /app/README.md
-COPY lc_classification_step/schemas.py /app/schemas.py
 COPY lc_classification_step/settings.py /app/settings.py
 COPY lc_classification_step/models_settings.py /app/models_settings.py
 COPY lc_classification_step/lc_classification /app/lc_classification
