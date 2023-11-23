@@ -47,13 +47,13 @@ imageCredentials:
   password: ""
   email: ""
 
-extraEnvVariables:
+envVaribales:
   - name: CONFIG_FROM_YAML
     value: "yes"
-  ## - name: METRICS_SOURCE
-  ##   value: {{ .Release.Name }}
-  ## - name: METRICS_SURVEY
-  ##   value: ATLAS
+  # - name: METRICS_SOURCE
+  #   value: ""
+  # - name: METRICS_SURVEY
+  #   value: LSST
 
 configYaml:
   enabled: true
