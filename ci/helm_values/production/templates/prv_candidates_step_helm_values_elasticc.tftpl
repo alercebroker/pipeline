@@ -66,12 +66,13 @@ configYaml:
   METRICS_CONFIG:
     PARAMS:
       PARAMS:
+        bootstrap.servers: ${kafka_server}
         security.protocol: "SASL_SSL"
         sasl.mechanism: "SCRAM-SHA-512"
-        bootstrap.servers: ${kafka_server}
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
       SCHEMA_PATH: "/schemas/prv_candidate_step/metrics.json"
+      TOPIC: "metrics_elasticc"
   LOGGING_DEBUG: false
   USE_PROMETHEUS: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
