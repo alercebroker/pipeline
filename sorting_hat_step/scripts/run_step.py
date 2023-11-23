@@ -52,8 +52,8 @@ if bool(STEP_CONFIG["FEATURE_FLAGS"].get("USE_PROFILING", True)):
     )
 
 prometheus_metrics = None
+prometheus_metrics = PrometheusMetrics()
 if STEP_CONFIG["FEATURE_FLAGS"]["PROMETHEUS"]:
-    prometheus_metrics = PrometheusMetrics()
     start_http_server(8000)
 
 step = SortingHatStep(
