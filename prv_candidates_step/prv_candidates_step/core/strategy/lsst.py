@@ -1,6 +1,4 @@
 import pickle
-from dataclasses import asdict
-
 from survey_parser_plugins.core import SurveyParser
 from survey_parser_plugins.parsers import LSSTParser
 
@@ -18,7 +16,7 @@ class LSSTPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def parse(cls, message: dict) -> dict:
-        return asdict(cls.parse_message(message))
+        return cls.parse_message(message).to_dict()
 
 
 class LSSTForcedPhotometryParser(SurveyParser):
@@ -38,7 +36,7 @@ class LSSTForcedPhotometryParser(SurveyParser):
         message["diaSourceId"] = message.pop("diaForcedSourceId")
         message["ra"] = ra
         message["decl"] = dec
-        return asdict(cls.parse_message(message))
+        return cls.parse_message(message).to_dict()
 
 
 def extract_detections_and_non_detections(alert: dict) -> dict:

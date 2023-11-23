@@ -14,45 +14,65 @@ affinity:
               values:
                 - elasticc-pipeline
 
-configmap:
-  consumerTopics: "lightcurve_elasticc"
-  consumerServer: "${kafka_server}"
-  producerServer: "${kafka_server}"
-  producerTopic: "correction_elasticc"
-  scribeServer: "${kafka_server}"
-  scribeTopic: "w_detection_elasticc"
-  metricsServer: "${kafka_server}"
-  metricsTopic: "metrics_elasticc"
-  consumeMessages: "250"
-  consumeTimeout: "10"
-  producerMessageMaxBytes: "67108864"
-
 imageCredentials:
   registry: "ghcr.io"
   username: "${ghcr_username}"
   password: "${ghcr_password}"
-
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: true
-      username: "${kafka_username}"
-      password: "${kafka_password}"
-    producer:
-      enabled: true
-      username: "${kafka_username}"
-      password: "${kafka_password}"
-    scribe:
-      enabled: true
-      username: "${kafka_username}"
-      password: "${kafka_password}"
-    metrics:
-      enabled: true
-      username: "${kafka_username}"
-      password: "${kafka_password}"
 
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 16
   targetCPUUtilizationPercentage: 20
+
+extraEnvVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: correction-step-elasticc
+  - name: METRICS_SURVEY
+    value: LSST
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "correction-step-elasticc"
+      security.protocol: "SASL_SSL"
+      sasl.mechanisms: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["lightcurve_elasticc"]
+    consume.messages: 100
+    consume.timeout: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/correction_step/metrics.json"
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+      message.max.bytes: 67108864
+    TOPIC: "correction_elasticc"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false

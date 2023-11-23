@@ -38,8 +38,6 @@ COPY --from=builder /schemas /schemas
 COPY xmatch_step/xmatch_step /app/xmatch_step
 COPY xmatch_step/scripts /app/scripts
 COPY xmatch_step/README.md \
-  xmatch_step/schema.py \
-  xmatch_step/scribe_schema.avsc \
   xmatch_step/settings.py \
   /app/
 

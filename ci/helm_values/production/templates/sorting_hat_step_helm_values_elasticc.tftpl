@@ -24,8 +24,8 @@ configYaml:
   MONGODB_SECRET_NAME: mongo-elasticc-production/writer
   PSQL_SECRET_NAME: ""
   CONSUMER_CONFIG:
-    CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/elasticc/elasticc.v0_9_1.alert.avsc"
     TOPICS: ["elasticc"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
@@ -41,22 +41,24 @@ configYaml:
   PRODUCER_CONFIG:
     PARAMS:
       bootstrap.servers: ${kafka_server}
-      sasl.mechanism: "SCRAM-SHA-256"
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
       message.max.bytes: 6291456
     CLASS: "apf.producers.kafka.KafkaProducer"
-    TOPIC: "sorting_hat_elasticc"
+    TOPIC: "sorting-hat-elasticc"
     SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
     PARAMS:
       PARAMS:
         bootstrap.servers: ${kafka_server}
-        sasl.mechanism: "SCRAM-SHA-256"
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
-      TOPIC: "metrics"
+      TOPIC: "metrics_elasticc"
       SCHEMA_PATH: "/schemas/sorting_hat_step/metrics.json"
   LOGGING_DEBUG: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
