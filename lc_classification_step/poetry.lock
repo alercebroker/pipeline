@@ -45,7 +45,7 @@ url = "../libs/alerce_classifiers"
 
 [[package]]
 name = "apf-base"
-version = "6.1.1a30"
+version = "6.1.1a44"
 description = "Alert Processing Framework"
 optional = false
 python-versions = ">=3.7"
@@ -61,6 +61,7 @@ jinja2 = ">=2.10.0"
 pandas = ">=0.24,<=2.0.1"
 prometheus-client = "0.16.0"
 pyroscope-io = "0.8.4"
+pyyaml = "^6.0.1"
 
 [package.source]
 type = "directory"
