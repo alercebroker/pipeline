@@ -290,3 +290,6 @@ jobs:
             poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
             poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
             poetry run python main.py deploy execute --stage=staging --clear
+        - name: Check for graceful cancellation error on previous step
+          run: |
+            sleep 180
