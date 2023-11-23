@@ -25,7 +25,7 @@ autoscaling:
   maxReplicas: 16
   targetCPUUtilizationPercentage: 20
 
-envVaribales:
+envVariables:
   - name: CONFIG_FROM_YAML
     value: "yes"
   - name: METRICS_SOURCE
@@ -73,6 +73,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    TOPIC: "w_detection_elasticc"
   LOGGING_DEBUG: false
   FEATURE_FLAGS:
     PROMETHEUS: false
