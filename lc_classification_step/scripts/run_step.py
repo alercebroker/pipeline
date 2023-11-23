@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from apf.core.settings import config_from_yaml_file
+from apf.metrics.prometheus import DefaultPrometheusMetrics
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -27,7 +28,7 @@ if os.getenv("CONFIG_FROM_YAML"):
 else:
     step_config = config()
 
-prometheus_metrics = None
+prometheus_metrics = DefaultPrometheusMetrics()
 if step_config["PROMETHEUS"]:
     from prometheus_client import start_http_server
     from apf.metrics.prometheus import PrometheusMetrics
