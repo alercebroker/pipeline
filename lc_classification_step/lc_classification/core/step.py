@@ -48,7 +48,7 @@ class LateClassifier(GenericStep):
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
             else:
                 mapper = get_class(
-                    config["MODEL_CONFIG"]["MODEL_CONFIG"]["PARAMS"]["mapper"]
+                    config["MODEL_CONFIG"]["PARAMS"]["mapper"]
                 )()
                 config["MODEL_CONFIG"]["PARAMS"]["mapper"] = mapper
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
