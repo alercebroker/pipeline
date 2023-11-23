@@ -19,13 +19,13 @@ configYaml:
   FEATURE_FLAGS:
     RUN_CONESEARCH: false
     USE_PROFILING: true
-    USE_PSQL: false
+    USE_PSQL: "false"
     PROMETHEUS: false
   MONGODB_SECRET_NAME: mongo-elasticc-production/writer
   PSQL_SECRET_NAME: ""
   CONSUMER_CONFIG:
-    CLASS: "apf.consumers.KafkaConsumer"
-    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/elasticc/elasticc.v0_9_1.alert.avsc"
     TOPICS: ["elasticc"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
