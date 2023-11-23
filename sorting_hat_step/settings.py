@@ -110,17 +110,11 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
         "METRICS_KAFKA_PASSWORD"
     )
 
-## Feature flags
-RUN_CONESEARCH = bool(os.getenv("RUN_CONESEARCH", False))
-USE_PSQL = bool(os.getenv("USE_PSQL", True))
-
-if USE_PSQL:
-    PSQL_CONFIG = get_credentials(os.environ["PSQL_SECRET_NAME"], secret_type="psql")
 # Step Configuration
 STEP_CONFIG = {
     "FEATURE_FLAGS": {
-        "RUN_CONESEARCH": RUN_CONESEARCH,
-        "USE_PSQL": USE_PSQL,
+        "RUN_CONESEARCH": os.getenv("RUN_CONESEARCH", True),
+        "USE_PSQL": os.getenv("USE_PSQL", False),
         "USE_PROFILING": os.getenv("USE_PROFILING", "True"),
         "PROMETHEUS": PROMETHEUS,
     },
