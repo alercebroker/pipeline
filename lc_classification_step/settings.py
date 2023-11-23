@@ -144,7 +144,6 @@ def config():
         )
 
     return {
-        "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -153,4 +152,8 @@ def config():
         "MODEL_CONFIG": model_config_factory(),
         "SCRIBE_PARSER_CLASS": os.getenv("SCRIBE_PARSER_CLASS"),
         "STEP_PARSER_CLASS": os.getenv("STEP_PARSER_CLASS"),
+        "FEATURE_FLAGS": {
+            "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
+            "USE_PROFILING": bool(os.getenv("USE_PROFILING", False)),
+        },
     }

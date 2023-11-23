@@ -28,8 +28,16 @@ if os.getenv("CONFIG_FROM_YAML"):
 else:
     step_config = config()
 
+if step_config["FEATURE_FLAGS"]["USE_PROFILING"]:
+    from pyroscope import configure
+
+    configure(
+        application_name=f"step.LCClassification{step_config['MODEL_CONFIG']['NAME']}",
+        server_address=step_config["PYROSCOPE_SERVER"],
+    )
+
 prometheus_metrics = DefaultPrometheusMetrics()
-if step_config["PROMETHEUS"]:
+if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
     from prometheus_client import start_http_server
     from apf.metrics.prometheus import PrometheusMetrics
 
