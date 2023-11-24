@@ -265,6 +265,10 @@ def consumer():
 
 
 def test_consumer_with_offests(consumer, kafka_service, caplog):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema_woffset.avsc"
+    )
     caplog.set_level(logging.DEBUG)
     producer = KafkaProducer(
         {
@@ -272,14 +276,7 @@ def test_consumer_with_offests(consumer, kafka_service, caplog):
                 "bootstrap.servers": "localhost:9092",
             },
             "TOPIC": "offset_tests",
-            "SCHEMA": {
-                "namespace": "example.avro",
-                "type": "record",
-                "name": "test",
-                "fields": [
-                    {"name": "id", "type": "int"},
-                ],
-            },
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
         }
     )
     producer.produce({"id": 1}, timestamp=10)
