@@ -22,6 +22,7 @@ RUN pip install poetry
 COPY prv_candidates_step/poetry.lock prv_candidates_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
+COPY schemas/sorting_hat_step schemas/sorting_hat_step
 COPY schemas/prv_candidate_step schemas/prv_candidate_step
 COPY schemas/scribe_step schemas/scribe_step
 
