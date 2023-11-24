@@ -40,9 +40,12 @@ logger.addHandler(handler)
 
 from sorting_hat_step.step import SortingHatStep
 
-mongo_database = MongoConnection(
-    get_credentials(STEP_CONFIG["MONGODB_SECRET_NAME"], secret_type="mongo")
-)
+if STEP_CONFIG.get("MONGO_SECRET_NAME"):
+    mongo_database = MongoConnection(
+        get_credentials(STEP_CONFIG["MONGO_SECRET_NAME"], secret_type="mongo")
+    )
+else:
+    mongo_database = MongoConnection(STEP_CONFIG["MONGO_CONFIG"])
 
 if bool(STEP_CONFIG["FEATURE_FLAGS"].get("USE_PROFILING", True)):
     logger.info("Configuring Pyroscope profiling...")
@@ -62,8 +65,11 @@ step = SortingHatStep(
     prometheus_metrics=prometheus_metrics,
 )
 if STEP_CONFIG["FEATURE_FLAGS"]["USE_PSQL"]:
-    psql_database = PsqlConnection(
-        get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql")
-    )
+    if STEP_CONFIG.get("PSQL_SECRET_NAME"):
+        psql_database = PsqlConnection(
+            get_credentials(STEP_CONFIG["PSQL_SECRET_NAME"], secret_type="psql")
+        )
+    else:
+        psql_database = PsqlConnection(STEP_CONFIG["PSQL_CONFIG"])
     step.set_psql_driver(psql_database)
 step.start()
