@@ -99,8 +99,8 @@ configYaml:
     CLASS: ""
     NAME: ""
     PARAMS:
-      model_path: ""
-      mapper: ""
+      # model_path: ""
+      # mapper: ""
       ## here go other settings like
       ## header_quantiles_path: ""
       ## feature_quantiles_path: ""
