@@ -79,7 +79,7 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
-      max.message.bytes: 6291456
+      message.max.bytes: 6291456
     SCHEMA_PATH: "/schemas/feature_step/output.avsc"
   SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
