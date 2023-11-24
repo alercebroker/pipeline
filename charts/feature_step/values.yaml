@@ -53,6 +53,7 @@ envVariables:
   ##   value: ATLAS
 
 configYaml:
+  enabled: true
   EXTRACTOR: ""
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
