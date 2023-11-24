@@ -31,11 +31,16 @@ def test_step(step_factory_ztf):
 
 @pytest.mark.ztf
 def test_step_empty_features(step_factory_ztf):
+    from lc_classifier.classifier.models import HierarchicalRandomForest
+    model = HierarchicalRandomForest()
+    model.download_model()
+    model.load_model(model.MODEL_PICKLE_PATH)
     empty_features = []
     for msg in generate_messages_ztf():
         msg.pop("features")
         empty_features.append(msg)
     step = step_factory_ztf(empty_features)
+    step.model = model
     step.start()
     scribe_calls = step.scribe_producer.mock_calls
     assert scribe_calls == []
