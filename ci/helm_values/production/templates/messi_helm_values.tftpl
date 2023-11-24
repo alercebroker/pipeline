@@ -63,7 +63,7 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
-    CLASS: "apf.producers.kafka.KafkaProducer"
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
     SCHEMA_PATH: "/schemas/lc_classification_step/output_elasticc.avsc"
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
