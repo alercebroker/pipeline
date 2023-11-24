@@ -20,6 +20,8 @@ COPY libs/db-plugins libs/db-plugins
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 COPY schemas/sorting_hat_step schemas/sorting_hat_step
 COPY schemas/elasticc schemas/elasticc
+COPY schemas/ztf schemas/ztf 
+COPY schemas/atlas schemas/atlas 
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
