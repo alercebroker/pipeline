@@ -7,47 +7,62 @@ affinity:
           operator: In
           values:
           - elasticc-pipeline
+
 autoscaling:
   enabled: true
   maxReplicas: 16
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
-configmap:
-  consumeMessages: "300"
-  consumeTimeout: "20"
-  consumerGroupId: magstats-step
-  consumerServer: ${kafka_server}
-  consumerTopics: correction_elasticc
-  excludedCalculators: dmdt,stellar
-  metricsServer: ${kafka_server}
-  metricsTopic: metrics_elasticc
-  scribeServer: ${kafka_server}
-  scribeTopic: w_object_elasticc
-extraEnvVariables:
-- name: METRICS_SOURCE
-  value: 'magstats-step-elasticc'
-- name: METRICS_SURVEY
-  value: LSST
+
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'magstats-step-elasticc'
+  - name: METRICS_SURVEY
+    value: LSST
+
 imageCredentials:
   password: ${ghcr_password}
   registry: ghcr.io
   username: ${ghcr_username}
+
 namespace: magstats-step-elasticc
+
 resources:
   requests:
     cpu: 200m
     memory: 128Mi
-secrets:
-  kafkaAuth:
-    consumer:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    metrics:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
-    scribe:
-      enabled: true
-      password: ${kafka_password}
-      username: ${kafka_username}
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "magstats-step"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["correction_elasticc"]
+    consume.messages: 300
+    consume.timeout: 20
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/magstats_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object_elasticc"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  EXCLUDED_CALCULATORS: ["dmdt", "stellar"]
