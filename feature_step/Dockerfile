@@ -25,6 +25,7 @@ COPY libs/mhps /libs/mhps
 COPY libs/lc_classifier /libs/lc_classifier
 COPY libs/apf /libs/apf
 COPY schemas/feature_step /schemas/feature_step
+COPY schemas/scribe_step /schemas/scribe_step
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
