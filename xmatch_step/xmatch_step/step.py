@@ -151,11 +151,11 @@ class XmatchStep(GenericStep):
         input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
 
         if self.config.get("FEATURE_FLAGS", {}).get("SKIP_XMATCH", False):
-            self.logger.info("Getting xmatches")
-            xmatches = self.request_xmatch(input_catalog, self.retries)
-        else:
             self.logger.info("Skip xmatches")
             xmatches = pd.DataFrame(columns=["ra_in", "dec_in", "col1", "aid_in"])
+        else:
+            self.logger.info("Getting xmatches")
+            xmatches = self.request_xmatch(input_catalog, self.retries)
         # Get output format
         candids = {}
         for msg in messages:
