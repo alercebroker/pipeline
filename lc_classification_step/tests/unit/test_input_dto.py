@@ -32,8 +32,11 @@ def test_create_detections_dto():
         },
     ]
     detections = create_detections_dto(messages)
-    assert detections.index.tolist() == ["aid1", "aid2"]
+
+    assert set(detections.index.tolist()) == set(["aid1", "aid2"])
+    assert len(detections.index) == 3
     assert list(detections["extra_fields"].values) == [
+        {"ef1": {"data1": "data1"}, "ef2": "val2"},
         {"ef1": {"data1": "data1"}, "ef2": "val2"},
         {},
     ]
