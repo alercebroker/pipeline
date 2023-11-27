@@ -1,5 +1,4 @@
 import json
-import os
 from typing import List
 
 from apf.core import get_class
@@ -28,8 +27,20 @@ class PrvCandidatesStep(GenericStep):
         # monitoring
         self.candid_found = False
 
+    def _extract_timestamp(self, message):
+        def __extract_timestamp(detection):
+            detection.pop("timestamp", None)
+            return detection
+
+        dets = message["detections"]
+        dets = list(map(__extract_timestamp, dets))
+        message["detections"] = dets
+
+        return message
+
     def pre_produce(self, result: List[dict]):
         self.set_producer_key_field("aid")
+        result = list(map(self._extract_timestamp, result))
         return result
 
     def execute(self, messages):

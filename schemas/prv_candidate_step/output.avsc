@@ -89,14 +89,24 @@
             },
             {
               "name": "parent_candid",
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             },
             {
               "name": "extra_fields",
               "type": {
                 "default": {},
                 "type": "map",
-                "values": ["null", "int", "float", "string", "bytes", "boolean"]
+                "values": [
+                  "null",
+                  "int",
+                  "float",
+                  "string",
+                  "bytes",
+                  "boolean"
+                ]
               }
             }
           ]

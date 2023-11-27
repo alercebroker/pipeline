@@ -57,9 +57,9 @@ class ZTFPreviousDetectionsParser(SurveyParser):
             if k not in cls._exclude_from_extra_fields()
         }
         extra_fields.update(alert["extra_fields"])
-        generic.pop("stamps", None)
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
         model = model.to_dict()
+        model.pop("stamps", None)
         model.update(
             {
                 "aid": alert["aid"],

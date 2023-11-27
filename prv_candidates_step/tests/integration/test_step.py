@@ -80,3 +80,12 @@ def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaCon
         assert_result_has_prv_detections(message)
         assert_result_has_alert(message)
         kafka_consumer.commit()
+
+
+def test_works_with_schemaless_producer(kafka_service, env_variables):
+    from scripts.run_step import step_creator
+    import os
+
+    os.environ["PRODUCER_CLASS"] = "apf.producers.KafkaSchemalessProducer"
+
+    step_creator().start()
