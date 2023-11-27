@@ -68,8 +68,8 @@ configYaml:
   PRODUCER_CONFIG:
     PARAMS:
       bootstrap.servers: ""
-      security.protocol: "SASL_PLAINTEXT"
-      sasl.mechanism: "SCRAM-SHA-256"
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
       message.max.bytes: 6291456
@@ -81,8 +81,12 @@ configYaml:
     PARAMS:
       PARAMS:
         bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
       TOPIC: "metrics"
-      SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+      SCHEMA_PATH: "/schemas/sorting_hat_step/metrics.json"
   LOGGING_DEBUG: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
 
