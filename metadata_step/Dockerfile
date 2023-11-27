@@ -21,6 +21,9 @@ RUN pip install poetry
 COPY metadata_step/poetry.lock metadata_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins libs/db-plugins
+COPY schemas/sorting_hat_step /schemas/sorting_hat_step
+COPY schemas/metadata_step /schemas/metadata_step
+COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -30,6 +33,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY metadata_step/metadata_step /app/metadata_step
 COPY metadata_step/scripts /app/scripts
