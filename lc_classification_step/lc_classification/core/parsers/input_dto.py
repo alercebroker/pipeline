@@ -48,26 +48,13 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
         aid1    cand1
         aid2    cand3
     """
-    # detections = [
-    #     pd.DataFrame.from_records(msg["detections"]) for msg in messages
-    # ]
-    # detections = pd.concat(detections)
-    # detections.drop_duplicates("aid", inplace=True)
-    # detections = detections.set_index("aid")
-    # detections["extra_fields"] = parse_extra_fields(detections)
-
-    detections = pd.DataFrame(
-        [{"aid": message.get("aid")} for message in messages]
-    )
-    detections["detections"] = [
-        message["detections"] for message in messages if message["detections"]
+    detections = [
+        pd.DataFrame.from_records(msg["detections"]) for msg in messages
     ]
-    exploded_det = detections.explode("detections")
-    detections = pd.DataFrame.from_records(
-        exploded_det["detections"].values, index=exploded_det.index
-    )
-    detections["extra_fields"] = parse_extra_fields(detections)
+    detections = pd.concat(detections)
+    detections.drop_duplicates("candid", inplace=True)
     detections = detections.set_index("aid")
+    detections["extra_fields"] = parse_extra_fields(detections)
 
     if detections is not None:
         return detections
