@@ -21,6 +21,7 @@ RUN pip install poetry
 
 COPY xmatch_step/poetry.lock xmatch_step/pyproject.toml /app/
 COPY libs/apf /libs/apf
+COPY schemas/correction_step /schemas/correction_step
 COPY schemas/xmatch_step /schemas/xmatch_step
 COPY schemas/scribe_step /schemas/scribe_step
 

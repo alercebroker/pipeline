@@ -21,6 +21,7 @@ RUN pip install poetry
 COPY magstats_step/poetry.lock magstats_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY schemas/magstats_step /schemas/magstats_step
+COPY schemas/correction_step /schemas/correction_step
 COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
