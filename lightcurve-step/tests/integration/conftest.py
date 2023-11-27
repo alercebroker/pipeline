@@ -1,13 +1,9 @@
 import os
 import pytest
-from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 import uuid
 from fastavro.schema import load_schema
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
 from sqlalchemy import text
-import psycopg2
 from db_plugins.db.sql._connection import PsqlDatabase
 from .utils import generate_message
 
@@ -29,6 +25,7 @@ def docker_compose_command():
 
 @pytest.fixture
 def env_variables():
+    envcopy = os.environ.copy()
     random_string = uuid.uuid4().hex
     env_variables_dict = {
         "PRODUCER_SCHEMA_PATH": "../schemas/lightcurve_step/output.avsc",
@@ -49,7 +46,8 @@ def env_variables():
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
 
-    return env_variables_dict
+    yield env_variables_dict
+    os.environ = envcopy
 
 
 @pytest.fixture()

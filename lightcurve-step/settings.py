@@ -105,6 +105,22 @@ def settings_creator():
         "METRICS_CONFIG": metrics_config,
         "MONGO_SECRET_NAME": os.getenv("MONGO_SECRET_NAME"),
         "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
+        "MONGO_CONFIG": {
+            "host": os.getenv("MONGO_HOST"),
+            "username": os.getenv("MONGO_USERNAME"),
+            "password": os.getenv("MONGO_PASSWORD"),
+            "port": int(os.getenv("MONGO_PORT", 27017)),
+            "database": os.getenv("MONGO_DATABASE"),
+            "authSource": os.getenv("MONGO_AUTH_SOURCE"),
+        },
+        "PSQL_CONFIG": {
+            "ENGINE": "postgres",
+            "HOST": os.getenv("PSQL_HOST"),
+            "USER": os.getenv("PSQL_USERNAME"),
+            "PASSWORD": os.getenv("PSQL_PASSWORD"),
+            "PORT": int(os.getenv("PSQL_PORT", 5432)),
+            "DB_NAME": os.getenv("PSQL_DATABASE"),
+        },
         "LOGGING_DEBUG": logging_debug,
         "PYROSCOPE_SERVER": pyroscope_server,
         "FEATURE_FLAGS": {
