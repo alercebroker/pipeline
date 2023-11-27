@@ -59,9 +59,6 @@ services:
     image: mongo
     ports:
       - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=root
     command: mongod --notablescan
 
   postgres:

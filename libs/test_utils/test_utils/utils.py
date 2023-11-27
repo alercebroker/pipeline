@@ -2,38 +2,37 @@ from db_plugins.db.mongo.initialization import init_mongo_database
 from pymongo import MongoClient
 import psycopg2
 from confluent_kafka.admin import AdminClient, NewTopic
+import os
 
 
 def is_responsive_mongo():
     try:
-        client = MongoClient(
-            "localhost", 27017, username="root", password="root", authSource="admin"
-        )
+        client = MongoClient("localhost", 27017)
         client.server_info()  # check connection
-        # Create test test_user and test_db
-        db = client.test_db
-        db.command(
-            "createUser",
-            "test_user",
-            pwd="test_password",
-            roles=["dbOwner", "readWrite"],
-        )
-        # put credentials to init database (create collections and indexes)
-        settings = {
-            "HOST": "localhost",
-            "USERNAME": "test_user",
-            "PASSWORD": "test_password",
-            "PORT": 27017,
-            "DATABASE": "test_db",
-            "AUTH_SOURCE": "test_db",
-        }
-        init_mongo_database(settings)
-        cols = [col for col in db.list_collections()]
-        print(cols)
-        return True
     except Exception as e:
         print(e)
         return False
+    # Create test test_user and test_db
+    db = client.test_db
+    db.command(
+        "createUser",
+        "test_user",
+        pwd="test_password",
+        roles=["dbOwner", "readWrite"],
+    )
+    # put credentials to init database (create collections and indexes)
+    settings = {
+        "HOST": "localhost",
+        "USERNAME": "test_user",
+        "PASSWORD": "test_password",
+        "PORT": 27017,
+        "DATABASE": "test_db",
+        "AUTH_SOURCE": "test_db",
+    }
+    init_mongo_database(settings)
+    cols = [col for col in db.list_collections()]
+    print(cols)
+    return True
 
 
 def is_responsive_psql():

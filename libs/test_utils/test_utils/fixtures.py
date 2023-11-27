@@ -24,7 +24,7 @@ def mongo_service(docker_ip, docker_services):
     port = docker_services.port_for("mongo", 27017)
     server = "{}:{}".format(docker_ip, port)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_mongo()
+        timeout=120.0, pause=0.5, check=lambda: is_responsive_mongo()
     )
     return server
 
