@@ -45,7 +45,11 @@ def test_step_start(
     step_creator().start()
 
     consumer = kafka_consumer(["lightcurve"])
-    assert len(list(consumer.consume())) == 10
+    messages = list(consumer.consume())
+    assert len(messages) == 10
+    for msg in messages:
+        candids_are_string = list(map(lambda x: type(x) == str, msg["candid"]))
+        assert all(candids_are_string)
 
 
 def test_step_with_explicit_db_config(

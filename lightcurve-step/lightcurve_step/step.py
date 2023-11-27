@@ -45,7 +45,7 @@ class LightcurveStep(GenericStep):
             aid = msg["aid"]
             if aid not in candids:
                 candids[aid] = []
-            candids[aid].append(msg["candid"])
+            candids[aid].append(str(msg["candid"]))
             oids.update(
                 {
                     det["oid"]: aid
