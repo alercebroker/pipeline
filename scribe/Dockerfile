@@ -32,6 +32,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY scribe/mongo_scribe /app/mongo_scribe
 COPY scribe/scripts /app/scripts
