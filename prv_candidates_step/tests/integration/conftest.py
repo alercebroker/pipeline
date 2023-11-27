@@ -55,6 +55,7 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def env_variables():
+    envcopy = os.environ.copy()
     random_string = uuid.uuid4().hex
 
     env_variables_dict = {
@@ -93,7 +94,8 @@ def env_variables():
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
 
-    return env_variables_dict
+    yield env_variables_dict
+    os.environ = envcopy
 
 
 def produce_messages(topic):
