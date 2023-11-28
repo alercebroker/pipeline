@@ -70,7 +70,7 @@ class SortingHatStep(GenericStep):
                     **m,
                     "brokerIngestTimestamp": ingestion_timestamp,
                     "surveyPublishTimestamp": m["timestamp"],
-                    "source": m.get("topic", "")
+                    "source": m.get("topic", ""),
                 },
                 messages,
             )

@@ -10,6 +10,7 @@ PRODUCER_CONFIG = {
     "CLASS": "reflector_step.utils.RawKafkaProducer",
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
+    "SCHEMA_PATH": ""
 }
 
 CONSUMER_CONFIG = {

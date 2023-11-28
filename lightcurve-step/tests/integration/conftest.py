@@ -66,7 +66,8 @@ def produce_messages(kafka_service):
     for message in messages:
         producer.produce(message)
     producer.producer.flush()
-    return
+    yield
+    # delete topic
 
 
 def populate_sql(conn: PsqlDatabase):
