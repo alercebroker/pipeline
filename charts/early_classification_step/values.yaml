@@ -57,6 +57,7 @@ configmap:
   producerDateFormat: "%Y%m%d"
   producerChangeHour: "23"
   classifierVersion: ""
+  producerSchemaPath: ""
 
 secrets:
   kafkaAuth:

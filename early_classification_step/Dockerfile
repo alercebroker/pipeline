@@ -28,6 +28,7 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 
+COPY schemas/sorting_hat_step /schemas/sorting_hat_step
 COPY early_classification_step/earlyclassifier /app/earlyclassifier
 COPY early_classification_step/scripts /app/scripts
 COPY early_classification_step/model /app/model
