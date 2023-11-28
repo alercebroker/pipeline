@@ -407,7 +407,7 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
         {
             "offsets": {"start": 10},
             "PARAMS": {
-                "group.id": group_id,
+                "group.id": group_id + "_1",
                 "bootstrap.servers": "localhost:9092",
                 "enable.partition.eof": True,
                 "auto.offset.reset": "earliest",
