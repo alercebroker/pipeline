@@ -369,7 +369,7 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
             "PARAMS": {
                 "bootstrap.servers": "localhost:9092",
             },
-            "TOPIC": "offset_tests",
+            "TOPIC": "offset_tests_commit",
             "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
         }
     )
@@ -380,7 +380,7 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
     producer.producer.flush()
     group_id = "test_consumer_with_commit"
     kconsumer = consumer(
-        ["offset_tests"],
+        ["offset_tests_commit"],
         {
             "offsets": {"start": 10},
             "PARAMS": {
@@ -403,7 +403,7 @@ def test_consumer_with_commit(consumer, kafka_service, caplog):
     producer.produce({"id": 5}, timestamp=40)
     producer.producer.flush()
     kconsumer = consumer(
-        ["offset_tests"],
+        ["offset_tests_commit"],
         {
             "offsets": {"start": 10},
             "PARAMS": {
