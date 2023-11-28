@@ -123,9 +123,13 @@ class KafkaProducer(GenericProducer):
             self.logger.info(f"Producing to {self.topic}")
 
     def _serialize_message(self, message):
-        out = io.BytesIO()
-        fastavro.writer(out, self.schema, [message])
-        return out.getvalue()
+        try:
+            out = io.BytesIO()
+            fastavro.writer(out, self.schema, [message])
+            return out.getvalue()
+        except Exception as e:
+            self.logger.error(f"Error serializing message: {message}")
+            raise e
 
     def _handle_buffer_error(self, err, topic, msg, key, callback, **kwargs):
         self.logger.error(f"Error producing message: {err}")
@@ -157,12 +161,12 @@ class KafkaProducer(GenericProducer):
         """
 
         def acked(err, msg):
-            self.logger.debug("Message produced")
             if err is not None:
                 if isinstance(err, BufferError):
                     self._handle_buffer_error(err, topic, msg, key, acked, **kwargs)
                 else:
                     raise err
+            self.logger.debug("Message produced")
 
         key = None
         if message:
@@ -188,6 +192,10 @@ class KafkaProducer(GenericProducer):
 
 class KafkaSchemalessProducer(KafkaProducer):
     def _serialize_message(self, message):
-        out = io.BytesIO()
-        fastavro.schemaless_writer(out, self.schema, message, strict=True)
-        return out.getvalue()
+        try:
+            out = io.BytesIO()
+            fastavro.schemaless_writer(out, self.schema, message, strict=True)
+            return out.getvalue()
+        except Exception as e:
+            self.logger.error(f"Error serializing message: {message}")
+            raise e
