@@ -72,10 +72,10 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
             "cutoutDifference": {"stampData": b"difference"},
             "candidate": {
                 "jd": random.randrange(2458000, 2459000),
-                "ndethist": random.randint(5,15),
-                "ncovhist": random.randint(5,15),
-                "jdstarthist": random.randint(2458000,2459000),
-                "jdendhist": random.randint(2458000,2459000),
+                "ndethist": random.randint(5, 15),
+                "ncovhist": random.randint(5, 15),
+                "jdstarthist": random.randint(2458000, 2459000),
+                "jdendhist": random.randint(2458000, 2459000),
                 "ra": random.uniform(0, 360),
                 "dec": random.uniform(-90, 90),
                 "magpsf": random.uniform(15, 20),
@@ -300,7 +300,14 @@ def generate_alerts_batch(n: int, nearest: int = 0) -> List[dict]:
     for generator, m, near in zip(generators, sub_samples, sub_nearest):
         b = generator(m, nearest=near)
         b = list(
-            map(lambda el: {**el, "timestamp": int(datetime.now().timestamp())}, b)
+            map(
+                lambda el: {
+                    **el,
+                    "timestamp": int(datetime.now().timestamp()),
+                    "topic": "topik",
+                },
+                b,
+            )
         )
         batch.append(b)
     batch = sum(batch, [])
