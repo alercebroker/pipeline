@@ -44,7 +44,7 @@ imageCredentials:
   password: ""
   email: ""
 
-extraEnvVariables:
+envVariables:
   - name: CONFIG_FROM_YAML
     value: yes
   ## - name: METRICS_SOURCE
