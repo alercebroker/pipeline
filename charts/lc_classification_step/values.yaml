@@ -106,6 +106,8 @@ configYaml:
       ## feature_quantiles_path: ""
       ## barney and toretto use path_to_model instead of model_path
       ## path_to_model: ""
+  FEATURE_FLAGS:
+    USE_PROFILING: true
 
 imageCredentials:
   registry: ""
