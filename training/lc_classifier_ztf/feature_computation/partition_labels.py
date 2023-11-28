@@ -2,14 +2,16 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-features = pd.read_parquet('data/consolidated_features.parquet')
-labels = pd.read_pickle('data/objects.pkl')
+features = pd.read_parquet('data_231128/consolidated_features.parquet')
+labels = pd.read_parquet('data_231128/objects_231128.parquet')
+labels.reset_index(inplace=True)
 labels.rename(
     columns={
         'alerceclass': 'astro_class',
         'oid': 'aid'
     }, inplace=True)
 labels = labels[['aid', 'astro_class']]
+labels['aid'] = 'aid_' + labels['aid']
 labels.set_index('aid', inplace=True)
 labels = labels.loc[features.index]
 
@@ -41,4 +43,4 @@ labels = pd.concat([labels_training, labels_validation, labels_test])
 labels.index.name = 'aid'
 labels.reset_index(inplace=True)
 
-labels.to_parquet('data/labels_with_partitions.parquet')
+labels.to_parquet('data_231128/labels_with_partitions.parquet')

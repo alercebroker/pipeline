@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from astropy.time import Time
-from astropy.coordinates import solar_system_ephemeris, get_body
 from astropy.coordinates import get_body_barycentric
 from astropy.coordinates import SkyCoord
 from astropy import units as u

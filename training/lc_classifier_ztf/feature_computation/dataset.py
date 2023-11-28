@@ -16,9 +16,7 @@ def create_astro_object(
         object_info: pd.DataFrame) -> AstroObject:
 
     lc_df = lc_df.copy()
-    lc_df['detected'] = np.abs(lc_df['flux_diff_ujy'] / lc_df['sigma_flux_diff_ujy']) > 5
-    if len(lc_df[lc_df['detected']]) == 0:
-        raise NoDetections()
+    # lc_df['detected'] = np.abs(lc_df['flux_diff_ujy'] / lc_df['sigma_flux_diff_ujy']) > 5
 
     lc_df['fid'] = lc_df['fid'].map({
         1: 'g',
@@ -26,6 +24,9 @@ def create_astro_object(
         3: 'i'
     })
     lc_df = lc_df[lc_df['fid'].isin(['g', 'r'])]
+
+    if len(lc_df[lc_df['detected']]) == 0:
+        raise NoDetections()
 
     diff_flux = lc_df[[
         'index', 'flux_diff_ujy',
@@ -84,7 +85,7 @@ def create_astro_object(
 
 
 def save_batch(astro_objects: List[AstroObject], batch_id: int):
-    filename = f'data/astro_objects_batch_{batch_id:04}.pkl'
+    filename = f'data_231128/astro_objects_batch_{batch_id:04}.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(astro_objects, f)
 
@@ -92,17 +93,17 @@ def save_batch(astro_objects: List[AstroObject], batch_id: int):
 if __name__ == '__main__':
     # Build AstroObjects
 
-    lightcurves = pd.read_pickle('data/lightcurves.pkl')
-    object_df = pd.read_pickle('data/objects.pkl')
+    lightcurves = pd.read_parquet('data_231128/lightcurves_231128.parquet')
+    object_df = pd.read_parquet('data_231128/objects_231128.parquet')
 
     lightcurves.set_index('oid', inplace=True)
-    object_df.set_index('oid', inplace=True)
+    # object_df.set_index('oid', inplace=True)
 
     oids = np.unique(object_df.index.values)
 
     astro_objects_list = []
     for oid in tqdm(oids):
-        lc = lightcurves.loc[oid]
+        lc = lightcurves.loc[[oid]]
         object_info = object_df.loc[oid]
         try:
             astro_object = create_astro_object(lc, object_info)
