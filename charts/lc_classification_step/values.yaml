@@ -39,7 +39,6 @@ affinity:
 
 configYaml:
   enabled: true
-  PROMETHEUS: false
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     TOPICS: ["features"]
@@ -109,6 +108,7 @@ configYaml:
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   FEATURE_FLAGS:
     USE_PROFILING: true
+    PROMETHEUS: false
 
 imageCredentials:
   registry: ""
