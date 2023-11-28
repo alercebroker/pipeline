@@ -27,6 +27,7 @@ COPY lc_classification_step/poetry.lock \
 COPY libs/alerce_classifiers /libs/alerce_classifiers
 COPY libs/apf /libs/apf
 COPY schemas/lc_classification_step /schemas/lc_classification_step
+COPY schemas/feature_step /schemas/feature_step
 COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
