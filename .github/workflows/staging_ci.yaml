@@ -276,7 +276,7 @@ jobs:
             poetry run python main.py deploy add-package correction-step --values=correction_step-helm-values --chart-folder=correction_step
             poetry run python main.py deploy add-package early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
             poetry run python main.py deploy add-package feature-step --values=feature_step-helm-values --chart-folder=feature_step
-            poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
+            poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
             poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
             poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
             poetry run python main.py deploy add-package magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
@@ -290,3 +290,6 @@ jobs:
             poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
             poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
             poetry run python main.py deploy execute --stage=staging --clear
+        - name: Close previous step graciously
+          run: |
+            sleep 5

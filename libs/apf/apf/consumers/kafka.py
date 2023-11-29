@@ -239,12 +239,13 @@ class KafkaConsumer(GenericConsumer):
                 continue
 
             deserialized = []
-            do_break = False
+            eof = False
             for message in messages:
                 if message.error():
                     if message.error().name() == "_PARTITION_EOF":
                         self.logger.info("PARTITION_EOF: No more messages")
-                        return
+                        eof = True
+                        continue
                     self.logger.exception(f"Error in kafka stream: {message.error()}")
                     continue
                 else:
@@ -270,6 +271,8 @@ class KafkaConsumer(GenericConsumer):
                     yield deserialized[0]
                 else:
                     yield deserialized
+            if eof:
+                break
 
     def commit(self):
         retries = 0

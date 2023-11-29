@@ -6,7 +6,8 @@ import os
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
 PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
-METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRIS_SCHEMA_PATH"))
+CONSUMER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("CONSUMER_SCHEMA_PATH"))
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRICS_SCHEMA_PATH"))
 
 DB_CONFIG = {
     "SQL": {
@@ -43,6 +44,7 @@ CONSUMER_CONFIG = {
         "max.poll.interval.ms": 3600000,
         "enable.partition.eof": os.getenv("ENABLE_PARTITION_EOF", False),
     },
+    "SCHEMA_PATH": CONSUMER_SCHEMA_PATH,
 }
 
 if os.getenv("TOPIC_STRATEGY_FORMAT"):
