@@ -107,6 +107,7 @@ configYaml:
       ## path_to_model: ""
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
+  STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
   FEATURE_FLAGS:
     USE_PROFILING: true
     PROMETHEUS: false

@@ -52,22 +52,23 @@ def env_variables():
 
 @pytest.fixture()
 def produce_messages(kafka_service):
-    schema = load_schema("tests/integration/input_schema.avsc")
-    producer = KafkaProducer(
-        {
-            "PARAMS": {"bootstrap.servers": "localhost:9092"},
-            "TOPIC": "correction",
-            "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "input_schema.avsc"),
-        }
-    )
-    messages = generate_message(schema, 10)
-    producer.set_key_field("aid")
+    def _produce(topic: str):
+        schema = load_schema("tests/integration/input_schema.avsc")
+        producer = KafkaProducer(
+            {
+                "PARAMS": {"bootstrap.servers": "localhost:9092"},
+                "TOPIC": topic,
+                "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "input_schema.avsc"),
+            }
+        )
+        messages = generate_message(schema, 10)
+        producer.set_key_field("aid")
 
-    for message in messages:
-        producer.produce(message)
-    producer.producer.flush()
-    return
+        for message in messages:
+            producer.produce(message)
+        producer.producer.flush()
 
+    return _produce
 
 def populate_sql(conn: PsqlDatabase):
     with conn.session() as session:

@@ -128,7 +128,7 @@ class KafkaConsumer(GenericConsumer):
         self.config["PARAMS"]["enable.auto.commit"] = False
         # Creating consumer
         self.consumer = Consumer(self.config["PARAMS"])
-
+        self.add_topic = config.get("ADD_TOPIC", False)
         self.max_retries = int(self.config.get("COMMIT_RETRY", 5))
 
         self.logger.info(
@@ -206,6 +206,8 @@ class KafkaConsumer(GenericConsumer):
 
     def _post_process(self, parsed, original_message):
         parsed["timestamp"] = original_message.timestamp()[1]
+        if self.add_topic:
+            parsed["topic"] = original_message.topic()
         return parsed
 
     def consume(self, num_messages=1, timeout=60):

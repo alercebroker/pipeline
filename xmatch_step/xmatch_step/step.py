@@ -42,6 +42,14 @@ class XmatchStep(GenericStep):
             "output_type": "pandas",
         }
 
+    def pre_execute(self, messages: List[dict]):
+        def remove_timestamp(message: dict):
+            message.pop("timestamp", None)
+            return message
+
+        messages = list(map(remove_timestamp, messages))
+        return messages
+
     def produce_scribe(self, xmatches: pd.DataFrame, oid_hash: Dict):
         if len(xmatches) == 0:
             return

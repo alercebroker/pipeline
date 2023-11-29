@@ -140,6 +140,7 @@ class DbIntegrationTest(unittest.TestCase):
         for message in messages:
             self.assert_message_stamps(message)
             self.assert_message_timestamps(message)
+            self.assert_message_topic(message)
 
         # Check that there are no duplicates inserted
         cursor = self.mongo_database.database["object"].find()
@@ -186,6 +187,11 @@ class DbIntegrationTest(unittest.TestCase):
             message["extra_fields"]["surveyPublishTimestamp"]
             <= message["extra_fields"]["brokerIngestTimestamp"]
         )
+
+    def assert_message_topic(self, message: dict):
+        if message["tid"] == "LSST":
+            source = message.get("extra_fields").get("source")
+            assert source is not None
 
 
 @pytest.mark.usefixtures("mongo_service")

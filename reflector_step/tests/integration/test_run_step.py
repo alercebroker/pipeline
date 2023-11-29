@@ -1,15 +1,18 @@
 import unittest
+import pathlib
 import pytest
 from confluent_kafka import Producer
 from reflector_step.step import CustomMirrormaker
 from reflector_step.utils import RawKafkaConsumer
 from tests.unittest.data.datagen import create_messages
 
+PATH = pathlib.Path(pathlib.Path(__file__).parent.parent.parent.parent, "schemas/ztf", "alert.avsc")
 
 PRODUCER_CONFIG = {
     "CLASS": "reflector_step.utils.RawKafkaProducer",
     "TOPIC": "test",
     "PARAMS": {"bootstrap.servers": "localhost:9093"},
+    "SCHEMA_PATH": PATH
 }
 
 CONSUMER_CONFIG = {

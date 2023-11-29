@@ -41,7 +41,7 @@ def test_step_start(
     from scripts.run_step import step_creator
 
     mock_credentials.side_effect = mock_get_secret
-
+    produce_messages("correction")
     step_creator().start()
 
     consumer = kafka_consumer(["lightcurve"])
@@ -58,6 +58,7 @@ def test_step_with_explicit_db_config(
     psql_conn,
     kafka_consumer,
 ):
+    produce_messages("correction1")
     envcopy = os.environ.copy()
     env_variables_dict = {
         "PRODUCER_SCHEMA_PATH": "../schemas/lightcurve_step/output.avsc",
@@ -65,11 +66,11 @@ def test_step_with_explicit_db_config(
         "METRICS_SCHEMA_PATH": "../schemas/lightcurve_step//metrics.json",
         "SCRIBE_SCHEMA_PATH": "../schemas/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
-        "CONSUMER_TOPICS": "correction",
+        "CONSUMER_TOPICS": "correction1",
         "CONSUMER_GROUP_ID": "with_explicit_db_config",
         "METRICS_SERVER": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
-        "PRODUCER_TOPIC": "lightcurve",
+        "PRODUCER_TOPIC": "lightcurve1",
         "ENABLE_PARTITION_EOF": "True",
         "CONSUME_MESSAGES": "10",
         "MONGO_HOST": "localhost",
@@ -91,6 +92,7 @@ def test_step_with_explicit_db_config(
 
     step_creator().start()
 
-    consumer = kafka_consumer(["lightcurve"])
+    consumer = kafka_consumer(["lightcurve1"])
     assert len(list(consumer.consume())) == 10
     os.environ = envcopy
+

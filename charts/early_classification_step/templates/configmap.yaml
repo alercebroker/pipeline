@@ -17,5 +17,3 @@ data:
   classifier-version: {{ .Values.configmap.classifierVersion }}
   producer-schema-path: {{ .Values.configmap.producerSchemaPath }}
   metrics-schema-path: {{ .Values.configmap.metricsSchemaPath }}
-  consumer-schema-path: {{ .Values.configmap.consumerSchemaPath }}
-  
