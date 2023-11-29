@@ -142,6 +142,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "early-classifier.fullname" . }}
                   key: producer-schema-path
+            - name: METRICS_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: metrics-schema-path
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
