@@ -203,6 +203,7 @@ class LightcurveStep(GenericStep):
                 diffmaglim=non_det.get("diffmaglim", None),
             )
             mongo_non_detection.pop("_id")
+            mongo_non_detection.pop("extra_fields", None)
             non_dets.append(mongo_non_detection)
         return non_dets
 
