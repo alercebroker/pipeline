@@ -210,7 +210,7 @@ class LightcurveStep(GenericStep):
                 "corrected",
                 "mag_corr",
                 "e_mag_corr_ext",
-                "dubious"
+                "dubious",
             ]
             [fp.pop(field, None) for field in FIELDS_TO_REMOVE]
             return fp
