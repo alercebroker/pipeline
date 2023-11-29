@@ -214,7 +214,7 @@ class LightcurveStep(GenericStep):
             ]
             for field in FIELDS_TO_REMOVE:
                 fp.pop(field, None)
-            
+
             return fp
 
         parsed = [
