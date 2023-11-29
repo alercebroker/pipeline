@@ -1,5 +1,4 @@
 {
-	"namespace": "ztf.alert",
 	"type": "record",
 	"name": "cutout",
 	"doc": "avro alert schema",

@@ -1,5 +1,4 @@
 {
-	"namespace": "ztf",
 	"type": "record",
 	"name": "alert",
 	"doc": "avro alert schema for ZTF (www.ztf.caltech.edu)",
