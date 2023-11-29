@@ -24,7 +24,18 @@ def _get_mongo_detections(aids, db_mongo):
                     "new": False,
                 }
             },
-            {"$project": {"_id": False, "evilDocDbHack": False}},
+            {
+                "$project": {
+                    "_id": False,
+                    "evilDocDbHack": False,
+                    "stellar": False,
+                    "e_mag_corr": False,
+                    "corrected": False,
+                    "mag_corr": False,
+                    "e_mag_corr_ext": False,
+                    "dubious": False,
+                }
+            },
         ]
     )
     return db_detections
@@ -49,7 +60,18 @@ def _get_mongo_forced_photometries(aids, db_mongo):
                     "new": False,
                 }
             },
-            {"$project": {"_id": False, "evilDocDbHack": False}},
+            {
+                "$project": {
+                    "_id": False,
+                    "evilDocDbHack": False,
+                    "stellar": False,
+                    "e_mag_corr": False,
+                    "corrected": False,
+                    "mag_corr": False,
+                    "e_mag_corr_ext": False,
+                    "dubious": False,
+                }
+            },
         ]
     )
     return db_forced_photometries
