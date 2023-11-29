@@ -224,14 +224,12 @@ class LightcurveStep(GenericStep):
         return list(map(format_as_detection, parsed))
 
     def pre_produce(self, result: dict) -> List[dict]:
-        
         def serialize_dia_object(ef: dict):
             if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
                 return ef
 
             ef["diaObject"] = pickle.dumps(ef["diaObject"])
             return ef
-
 
         # remove problematic fields
         FIELDS_TO_REMOVE = [
@@ -264,7 +262,7 @@ class LightcurveStep(GenericStep):
             for field in FIELDS_TO_REMOVE:
                 for det in detections_list:
                     det.pop(field, None)
-            
+
             output.append(
                 {
                     "aid": aid,
