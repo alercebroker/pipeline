@@ -92,6 +92,5 @@ def test_step_with_explicit_db_config(
     step_creator().start()
 
     consumer = kafka_consumer(["lightcurve"])
-    consumed_messages = list(consumer.consume())
-    assert len(consumed_messages) == 10
+    assert len(list(consumer.consume())) == 10
     os.environ = envcopy

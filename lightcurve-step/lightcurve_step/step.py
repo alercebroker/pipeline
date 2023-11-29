@@ -204,16 +204,16 @@ class LightcurveStep(GenericStep):
                 k: v for k, v in fp["extra_fields"].items() if not k.startswith("_")
             }
             # remove problematic fields
-            # FIELDS_TO_REMOVE = [
-            #     "stellar",
-            #     "e_mag_corr",
-            #     "corrected",
-            #     "mag_corr",
-            #     "e_mag_corr_ext",
-            #     "dubious",
-            # ]
-            # for field in FIELDS_TO_REMOVE:
-            #     fp.pop(field, None)
+            FIELDS_TO_REMOVE = [
+                "stellar",
+                "e_mag_corr",
+                "corrected",
+                "mag_corr",
+                "e_mag_corr_ext",
+                "dubious",
+            ]
+            for field in FIELDS_TO_REMOVE:
+                fp.pop(field, None)
             
             return fp
 
