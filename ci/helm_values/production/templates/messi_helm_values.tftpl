@@ -34,8 +34,8 @@ namespace: messi-classifier
 
 resources:
   requests:
-    cpu: 500m
-    memory: 1000Mi
+    cpu: 1000m
+    memory: 3000Mi
 
 configYaml:
   enabled: true
@@ -48,7 +48,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     consume.timeout: 10
-    consume.messages: 100
+    consume.messages: 5
   PRODUCER_CONFIG:
     TOPIC_STRATEGY:
       PARAMS:

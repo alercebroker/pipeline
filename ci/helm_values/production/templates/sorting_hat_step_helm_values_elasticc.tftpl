@@ -26,7 +26,7 @@ configYaml:
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaSchemalessConsumer"
     SCHEMA_PATH: "/schemas/elasticc/elasticc.v0_9_1.alert.avsc"
-    TOPICS: ["elasticc"]
+    TOPICS: ["elasticc-ddf", "elasticc-wfd"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
       group.id: "sorting-hat-elasticc"

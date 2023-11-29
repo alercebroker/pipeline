@@ -1,8 +1,8 @@
 namespace: feature-step-elasticc
 resources:
   requests:
-    cpu: 1000m
-    memory: 4500Mi
+    cpu: 1500m
+    memory: 7000Mi
 
 autoscaling:
   enabled: true
@@ -45,7 +45,7 @@ configYaml:
       group.id: "feature_consumer"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
-    consume.messages: 100
+    consume.messages: 50
     consume.timeout: 10
   PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
