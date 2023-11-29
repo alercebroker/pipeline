@@ -260,14 +260,16 @@ class LightcurveStep(GenericStep):
             if not self.config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
                 mjds = result["last_mjds"]
                 dets = dets[dets["mjd"] <= mjds[aid]]
-            detections_dict = dets.to_dict("records")
+            detections_list = dets.to_dict("records")
             for field in FIELDS_TO_REMOVE:
-                detections_dict.pop(field)
+                for det in detections_list:
+                    det.pop(field, None)
+            
             output.append(
                 {
                     "aid": aid,
                     "candid": result["candids"][aid],
-                    "detections": dets.to_dict("records"),
+                    "detections": detections_list,
                     "non_detections": nd,
                 }
             )
