@@ -51,7 +51,7 @@ def _get_sql_detections(
             Detection.ra,
             Detection.dec,
             Detection.magpsf,
-            Detection.sigmapsf.
+            Detection.sigmapsf,
             Detection.magap,
             Detection.sigmagap,
             Detection.distnr,
