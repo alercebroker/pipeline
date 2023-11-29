@@ -46,7 +46,7 @@ imageCredentials:
 
 envVariables:
   - name: CONFIG_FROM_YAML
-    value: yes
+    value: "yes"
   ## - name: METRICS_SOURCE
   ##   value: {{ .Release.Name }}
   ## - name: METRICS_SURVEY
