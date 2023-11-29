@@ -203,17 +203,6 @@ class LightcurveStep(GenericStep):
             fp["extra_fields"] = {
                 k: v for k, v in fp["extra_fields"].items() if not k.startswith("_")
             }
-            # remove problematic fields
-            FIELDS_TO_REMOVE = [
-                "stellar",
-                "e_mag_corr",
-                "corrected",
-                "mag_corr",
-                "e_mag_corr_ext",
-                "dubious",
-            ]
-            for field in FIELDS_TO_REMOVE:
-                fp.pop(field, None)
 
             return fp
 
@@ -235,12 +224,24 @@ class LightcurveStep(GenericStep):
         return list(map(format_as_detection, parsed))
 
     def pre_produce(self, result: dict) -> List[dict]:
+        
         def serialize_dia_object(ef: dict):
             if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
                 return ef
 
             ef["diaObject"] = pickle.dumps(ef["diaObject"])
             return ef
+
+
+        # remove problematic fields
+        FIELDS_TO_REMOVE = [
+            "stellar",
+            "e_mag_corr",
+            "corrected",
+            "mag_corr",
+            "e_mag_corr_ext",
+            "dubious",
+        ]
 
         detections = result["detections"].replace(np.nan, None).groupby("aid")
         try:  # At least one non-detection
@@ -259,6 +260,9 @@ class LightcurveStep(GenericStep):
             if not self.config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
                 mjds = result["last_mjds"]
                 dets = dets[dets["mjd"] <= mjds[aid]]
+            detections_dict = dets.to_dict("records")
+            for field in FIELDS_TO_REMOVE:
+                detections_dict.pop(field)
             output.append(
                 {
                     "aid": aid,
