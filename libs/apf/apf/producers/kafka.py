@@ -166,7 +166,6 @@ class KafkaProducer(GenericProducer):
                     self._handle_buffer_error(err, topic, msg, key, acked, **kwargs)
                 else:
                     raise err
-            self.logger.debug("Message produced")
 
         key = None
         if message:
