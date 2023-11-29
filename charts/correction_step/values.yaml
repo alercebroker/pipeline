@@ -105,6 +105,7 @@ configYaml:
       sasl.username: ""
       sasl.password: ""
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    TOPIC: ""
   LOGGING_DEBUG: false
   FEATURE_FLAGS:
     PROMETHEUS: false
