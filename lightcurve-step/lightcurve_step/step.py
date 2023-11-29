@@ -139,6 +139,15 @@ class LightcurveStep(GenericStep):
             "parent_candid",
             "has_stamp",
         }
+        FIELDS_TO_REMOVE = [
+            "stellar",
+            "e_mag_corr",
+            "corrected",
+            "mag_corr",
+            "e_mag_corr_ext",
+            "dubious",
+        ]
+
         FID = {1: "g", 2: "r", 0: None, 12: "gr"}
 
         parsed_result = []
@@ -170,6 +179,10 @@ class LightcurveStep(GenericStep):
                 e_dec=-999,
             )
             parsed["candid"] = parsed.pop("_id")
+
+            for field in FIELDS_TO_REMOVE:
+                parsed.pop(field, None)
+
             parsed_result.append({**parsed, "forced": False, "new": False})
 
         return parsed_result
