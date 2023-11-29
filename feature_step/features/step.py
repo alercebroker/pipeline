@@ -47,8 +47,15 @@ class FeaturesComputer(GenericStep):
             messages_aid_oid, features, self.features_extractor
         )
 
+        count = 0
+        flush = False
         for command in commands:
-            self.scribe_producer.produce({"payload": json.dumps(command)})
+            count += 1
+            if count == len(commands):
+                flush = True
+            self.scribe_producer.produce(
+                {"payload": json.dumps(command)}, flush=flush
+            )
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("aid")
