@@ -58,7 +58,6 @@ configmap:
   producerChangeHour: "23"
   classifierVersion: ""
   producerSchemaPath: ""
-  consumerSchemaPath: ""
   metricsSchemaPath: "/schemas/early_classification_step/metrics.json"
 
 secrets:
