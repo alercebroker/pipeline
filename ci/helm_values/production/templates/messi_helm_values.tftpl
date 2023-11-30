@@ -48,7 +48,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     consume.timeout: 10
-    consume.messages: 5
+    consume.messages: 50
   PRODUCER_CONFIG:
     TOPIC_STRATEGY:
       PARAMS:
@@ -86,7 +86,7 @@ configYaml:
       sasl.password: ${kafka_password}
     TOPIC: "w_object_elasticc"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
-  MODEL_VERSION: "3.0.0"
+  MODEL_VERSION: "3.1.0"
   MODEL_CONFIG:
     CLASS: "alerce_classifiers.messi.model.MessiClassifier"
     NAME: "MessiClassifier"
