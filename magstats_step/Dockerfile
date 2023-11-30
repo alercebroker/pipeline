@@ -1,4 +1,4 @@
-FROM python:3.9-slim as python-base
+FROM python:3.10-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -27,20 +27,17 @@ COPY schemas/scribe_step /schemas/scribe_step
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
 
-FROM python:3.9-slim as production
+FROM python:3.10-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
-COPY magstats_step/magstats_step /app/magstats_step
+COPY magstats_step/README.md /app/README.md
 COPY magstats_step/scripts /app/scripts
-COPY magstats_step/README.md \
-    magstats_step/settings.py \
-    magstats_step/schema.avsc \
-    magstats_step/scribe_schema.avsc \
-    /app/
+COPY magstats_step/settings.py /app/settings.py
+COPY magstats_step/magstats_step /app/magstats_step
 
 WORKDIR /app
 RUN poetry install --only-root
