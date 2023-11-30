@@ -92,6 +92,6 @@ configYaml:
       sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
-    TOPIC: "w_detection"
+    TOPIC: "w_object"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
   EXCLUDED_CALCULATORS: []
