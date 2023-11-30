@@ -11,10 +11,11 @@ class MongoModelsTest(unittest.TestCase):
             sid="sid",
             lastmjd="lastmjd",
             firstmjd="firstmjd",
+            deltajd=1,
             corrected=True,
             stellar=True,
-            sigmara=.1,
-            sigmadec=.2,
+            sigmara=0.1,
+            sigmadec=0.2,
             meanra=100.0,
             meandec=50.0,
             ndet="ndet",
@@ -67,7 +68,9 @@ class MongoModelsTest(unittest.TestCase):
         self.assertEqual(d["aid"], "aid")
 
     def test_detection_fails_creation(self):
-        with self.assertRaisesRegex(AttributeError, "Detection model needs .+? attribute"):
+        with self.assertRaisesRegex(
+            AttributeError, "Detection model needs .+? attribute"
+        ):
             models.Detection()
 
     def test_detection_with_extra_fields(self):
@@ -152,7 +155,7 @@ class MongoModelsTest(unittest.TestCase):
             parent_candid="parent_candid",
             has_stamp="has_stamp",
             rbversion="rbversion",
-            extra_fields={},            
+            extra_fields={},
         )
         self.assertIsInstance(fp, models.ForcedPhotometry)
         self.assertIsInstance(fp, dict)
@@ -174,7 +177,9 @@ class MongoModelsTest(unittest.TestCase):
         self.assertEqual(o["aid"], "aid")
 
     def test_non_detection_fails_creation(self):
-        with self.assertRaisesRegex(AttributeError, "NonDetection model needs .+ attribute"):
+        with self.assertRaisesRegex(
+            AttributeError, "NonDetection model needs .+ attribute"
+        ):
             models.NonDetection()
         # self.assertEqual(str(e.exception), "NonDetection model needs aid attribute")
 
