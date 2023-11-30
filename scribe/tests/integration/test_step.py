@@ -32,7 +32,9 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
+    "SCHEMA_PATH": os.path.join(
+        os.path.dirname(__file__), "producer_schema.avsc"
+    ),
 }
 
 
@@ -231,7 +233,7 @@ class MongoIntegrationTest(unittest.TestCase):
         assert result is not None
         assert len(result["probabilities"]) == 1
         probabilities = result["probabilities"][0]
-        assert probabilities["classifier_name"] == "classifier" 
+        assert probabilities["classifier_name"] == "classifier"
         assert probabilities["version"] == "1"
         assert probabilities["class_rank_1"] == "class1"
         assert probabilities["probability_rank_1"] == 0.5
@@ -316,9 +318,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     "fid": "g",
                     "mjd": 55500,
                 },
-                "data": {
-                    "diffmaglim": 21.11
-                },
+                "data": {"diffmaglim": 21.11},
                 "options": {"upsert": True},
             }
         )
@@ -333,9 +333,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     "fid": "g",
                     "mjd": 55500,
                 },
-                "data": {
-                    "diffmaglim": 33.33
-                },
+                "data": {"diffmaglim": 33.33},
                 "options": {"upsert": True},
             }
         )
@@ -352,9 +350,7 @@ class MongoIntegrationTest(unittest.TestCase):
                     "fid": "g",
                     "mjd": 55500,
                 },
-                "data": {
-                    "diffmaglim": 11.11
-                },
+                "data": {"diffmaglim": 11.11},
                 "options": {"upsert": True},
             }
         )

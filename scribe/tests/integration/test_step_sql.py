@@ -23,10 +23,10 @@ DB_CONFIG = {
 
 CONSUMER_CONFIG = {
     "CLASS": "apf.consumers.KafkaConsumer",
-    "TOPICS": ["test_topic"],
+    "TOPICS": ["test_topic_sql"],
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
-        "group.id": "command_consumer_2",
+        "group.id": "command_consumer_3",
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },
@@ -35,9 +35,11 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
-    "TOPIC": "test_topic",
+    "TOPIC": "test_topic_sql",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "producer_schema.avsc")
+    "SCHEMA_PATH": os.path.join(
+        os.path.dirname(__file__), "producer_schema.avsc"
+    ),
 }
 
 
@@ -272,7 +274,10 @@ class MongoIntegrationTest(unittest.TestCase):
                     {
                         "collection": "object",
                         "type": "update_features",
-                        "criteria": {"_id": "AL21XXX", "oid": ["ZTF04ululeea"]},
+                        "criteria": {
+                            "_id": "AL21XXX",
+                            "oid": ["ZTF04ululeea"],
+                        },
                         "data": {
                             "features_version": "1.0.0",
                             "features_group": "ztf",
@@ -331,7 +336,10 @@ class MongoIntegrationTest(unittest.TestCase):
                     {
                         "collection": "object",
                         "type": "update_probabilities",
-                        "criteria": {"_id": "AL21XXX", "oid": ["ZTF04ululeea"]},
+                        "criteria": {
+                            "_id": "AL21XXX",
+                            "oid": ["ZTF04ululeea"],
+                        },
                         "data": data,
                     }
                 )
@@ -482,7 +490,10 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": "ALX123", "oid": ["ZTF04ululeea", "ZTF05ululeea"]},
+                "criteria": {
+                    "_id": "ALX123",
+                    "oid": ["ZTF04ululeea", "ZTF05ululeea"],
+                },
                 "data": {
                     "xmatch": {
                         "catoid": "J239263.32+240338.4",
@@ -494,7 +505,10 @@ class MongoIntegrationTest(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": "ALX134", "oid": ["ZTF05ululeea", "ZTF04ululeea"]},
+                "criteria": {
+                    "_id": "ALX134",
+                    "oid": ["ZTF05ululeea", "ZTF04ululeea"],
+                },
                 "data": {
                     "xmatch": {
                         "catoid": "J239263.32+240338.4",
