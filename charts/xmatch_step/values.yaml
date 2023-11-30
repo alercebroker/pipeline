@@ -112,7 +112,7 @@ configYaml:
   XMATCH_CONFIG:
     CATALOG:
       name: allwise
-      colums:
+      columns:
         - "AllWISE"
         - "RAJ2000"
         - "DEJ2000"
