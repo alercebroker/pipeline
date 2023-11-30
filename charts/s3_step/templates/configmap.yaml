@@ -12,9 +12,9 @@ data:
   metrics-topic: {{ .Values.configmap.atlas.metricsTopic }}
   bucket-name: {{ .Values.configmap.atlas.bucketName }}
   region-name: {{ .Values.configmap.atlas.regionName }}
-  producer-schema-path: {{ .Values.configmap.producerSchemaPath }}
-  scribe-schema-path: {{ .Values.configmap.scribeSchemaPath }}
-  metrics-schema-path: {{ .Values.configmap.metricsSchemaPath }}
+  producer-schema-path: "{{ .Values.configmap.producerSchemaPath }}"
+  scribe-schema-path: "{{ .Values.configmap.scribeSchemaPath }}"
+  metrics-schema-path: "{{ .Values.configmap.metricsSchemaPath }}"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -29,6 +29,6 @@ data:
   metrics-topic: {{ .Values.configmap.ztf.metricsTopic }}
   bucket-name: {{ .Values.configmap.ztf.bucketName }}
   region-name: {{ .Values.configmap.ztf.regionName }}
-  producer-schema-path: {{ .Values.configmap.producerSchemaPath }}
-  scribe-schema-path: {{ .Values.configmap.scribeSchemaPath }}
-  metrics-schema-path: {{ .Values.configmap.metricsSchemaPath }}
+  producer-schema-path: "{{ .Values.configmap.producerSchemaPath }}"
+  scribe-schema-path: "{{ .Values.configmap.scribeSchemaPath }}"
+  metrics-schema-path: "{{ .Values.configmap.metricsSchemaPath }}"
