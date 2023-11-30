@@ -290,6 +290,3 @@ jobs:
             poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
             poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
             poetry run python main.py deploy execute --stage=staging --clear
-        - name: Close previous step graciously
-          run: |
-            sleep 5
