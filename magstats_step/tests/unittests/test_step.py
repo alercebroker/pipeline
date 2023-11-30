@@ -6,6 +6,7 @@ from scripts.run_step import step_factory
 
 from pprint import pprint
 
+
 def test_execute_multistream(env_variables):
     step = step_factory()
     formatted_data = step.pre_execute(data)
@@ -40,7 +41,10 @@ def test_scribe_message_multistream(env_variables):
             {
                 "loc": {
                     "type": "Point",
-                    "coordinates": [to_write["meanra"] - 180, to_write["meandec"]],
+                    "coordinates": [
+                        to_write["meanra"] - 180,
+                        to_write["meandec"],
+                    ],
                 }
             }
         )
@@ -51,7 +55,9 @@ def test_scribe_message_multistream(env_variables):
             "data": to_write,
             "options": {"upsert": True},
         }
-        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(command)})
+        step.scribe_producer.produce.assert_any_call(
+            {"payload": json.dumps(command)}
+        )
 
 
 def test_execute_ztf(env_variables):
@@ -60,7 +66,7 @@ def test_execute_ztf(env_variables):
     result = step.execute(formatted_data)
     result = result["ztf"]
     for d in data:
-        if (not any([det["sid"] == "ZTF" for det in d["detections"]])):
+        if not any([det["sid"] == "ZTF" for det in d["detections"]]):
             continue
         assert d["aid"] in result
         assert "meanra" in result[d["aid"]]
