@@ -28,10 +28,11 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
                 unit='magnitude',
                 smallest_period=0.045,
                 largest_period=100.0,
-                trim_lightcurve_to_n_days=300.0,
+                trim_lightcurve_to_n_days=1000.0,
                 min_length=15,
                 use_forced_photo=True,
-                return_power_rates=True
+                return_power_rates=True,
+                shift=0.1
             ),  # TODO: consider LPVs + be within comp. budget
             FoldedKimExtractor(bands, unit='magnitude'),
             HarmonicsExtractor(bands, unit='magnitude', use_forced_photo=True),

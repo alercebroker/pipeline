@@ -6,7 +6,7 @@ from joblib import Parallel, delayed
 from dataset import save_batch
 
 
-astro_objects = pd.read_pickle('data_231128/astro_objects_without_features.pkl')
+astro_objects = pd.read_pickle('data_231130/astro_objects_without_features.pkl')
 
 batch_size = 100
 n_batches = int(np.ceil(len(astro_objects) / batch_size))
@@ -30,4 +30,4 @@ for batch_id in range(n_batches):
             batch_astro_objects)
     )
 
-Parallel(n_jobs=10, verbose=11, backend="loky")(tasks)
+Parallel(n_jobs=12, verbose=11, backend="loky")(tasks)

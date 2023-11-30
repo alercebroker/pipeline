@@ -187,14 +187,14 @@ class MLPModel(tf.keras.Model):
         self.batch_size = batch_size
 
         # simulate missing features
-        self.input_dropout = tf.keras.layers.Dropout(0.2)
+        self.input_dropout = tf.keras.layers.Dropout(0.1)
         self.dense_layer_1 = Dense(
             1_000,
             name='dense_layer_1',
         )
         self.dropout_between_layers = tf.keras.layers.Dropout(0.5)
         self.dense_layer_2 = Dense(
-            1_000,
+            250,
             name='dense_layer_2',
         )
         self.dense_layer_3 = Dense(

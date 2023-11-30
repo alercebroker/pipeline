@@ -85,7 +85,7 @@ def create_astro_object(
 
 
 def save_batch(astro_objects: List[AstroObject], batch_id: int):
-    filename = f'data_231128/astro_objects_batch_{batch_id:04}.pkl'
+    filename = f'data_231130/astro_objects_batch_{batch_id:04}.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(astro_objects, f)
 
@@ -93,8 +93,8 @@ def save_batch(astro_objects: List[AstroObject], batch_id: int):
 if __name__ == '__main__':
     # Build AstroObjects
 
-    lightcurves = pd.read_parquet('data_231128/lightcurves_231128.parquet')
-    object_df = pd.read_parquet('data_231128/objects_231128.parquet')
+    lightcurves = pd.read_parquet('data_231130/lightcurves_231130.parquet')
+    object_df = pd.read_parquet('data_231130/objects_231130.parquet')
 
     lightcurves.set_index('oid', inplace=True)
     # object_df.set_index('oid', inplace=True)

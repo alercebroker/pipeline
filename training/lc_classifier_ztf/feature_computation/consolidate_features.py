@@ -4,7 +4,7 @@ from tqdm import tqdm
 from lc_classifier.classifiers.base import all_features_from_astro_objects
 
 
-dir_name = 'data_231128'
+dir_name = 'data_231130'
 data_dir = os.listdir(dir_name)
 data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
 data_dir = sorted(data_dir)

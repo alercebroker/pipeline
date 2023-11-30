@@ -2,8 +2,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-features = pd.read_parquet('data_231128/consolidated_features.parquet')
-labels = pd.read_parquet('data_231128/objects_231128.parquet')
+features = pd.read_parquet('data_231130/consolidated_features.parquet')
+labels = pd.read_parquet('data_231130/objects_231130.parquet')
 labels.reset_index(inplace=True)
 labels.rename(
     columns={
@@ -43,4 +43,4 @@ labels = pd.concat([labels_training, labels_validation, labels_test])
 labels.index.name = 'aid'
 labels.reset_index(inplace=True)
 
-labels.to_parquet('data_231128/labels_with_partitions.parquet')
+labels.to_parquet('data_231130/labels_with_partitions.parquet')

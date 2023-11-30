@@ -9,7 +9,7 @@ from itertools import product
 from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
 
 
-labels = pd.read_parquet('data_231128/labels_with_partitions.parquet')
+labels = pd.read_parquet('data_231130/labels_with_partitions.parquet')
 labels.set_index('aid', inplace=True)
 
 list_of_classes = labels['astro_class'].unique()
@@ -45,15 +45,15 @@ labels_figure_order = [
 assert set(list_of_classes) == set(labels_figure_order)
 
 ztf_classifier = ZTFClassifier(list_of_classes)
-ztf_classifier.load_classifier('ztf_classifier_model_231128')
+ztf_classifier.load_classifier('ztf_classifier_model_231130')
 
-data_dir = os.listdir('data_231128')
+data_dir = os.listdir('data_231130')
 data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
 data_dir = sorted(data_dir)
 
 predictions = []
 for batch_filename in tqdm(data_dir):
-    full_filename = os.path.join('data_231128', batch_filename)
+    full_filename = os.path.join('data_231130', batch_filename)
     astro_objects_batch = pd.read_pickle(full_filename)
     prediction_df = ztf_classifier.classify_batch(astro_objects_batch, return_dataframe=True)
     predictions.append(prediction_df)
@@ -99,7 +99,7 @@ def compute_stats(predictions_df, labels_df, ax, title):
     true_astro_classes = labels_df['astro_class'].values
     predicted_class = predictions_df.idxmax(axis=1).values
     print(classification_report(true_astro_classes, predicted_class))
-    cm = confusion_matrix(true_astro_classes, predicted_class)
+    cm = confusion_matrix(true_astro_classes, predicted_class, labels=labels_figure_order)
     cm = cm / cm.sum(axis=1, keepdims=True)
     plot_cm_custom(ax, cm, labels_figure_order, title)
 
@@ -113,5 +113,5 @@ compute_stats(predictions.loc[val_labels.index], val_labels, ax[0], 'validation'
 test_labels = labels[labels['partition'] == 'test']
 compute_stats(predictions.loc[test_labels.index], test_labels, ax[1], 'test')
 
-plt.tight_layout(pad=1.1)
+plt.tight_layout()
 plt.show()
