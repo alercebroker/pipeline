@@ -71,8 +71,6 @@ configYaml:
     TIMEOUT: 10
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
-    SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
-    TOPIC: "metrics"
     PARAMS:
       PARAMS:
         bootstrap.servers: ""
@@ -80,6 +78,8 @@ configYaml:
         sasl.mechanism: "SCRAM-SHA-512"
         sasl.username: ""
         sasl.password: ""
+      SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
+      TOPIC: "metrics"
   FEATURE_FLAGS:
     PROMETHEUS: false
   USE_PROFILING: true
