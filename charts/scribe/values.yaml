@@ -54,6 +54,7 @@ envVariables:
 configYaml:
   enabled: true
   DB_TYPE: ""
+  DB_SECRET_NAME: ""
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
