@@ -58,7 +58,7 @@ configmap:
   ztf:
     consumerTopics: ""
     topicStrategy:
-      enabled: true
+      enabled: false
       format: ""
     consumerGroupId: ""
     internalServer: ""
@@ -68,13 +68,16 @@ configmap:
   atlas:
     consumerTopics: ""
     topicStrategy:
-      enabled: true
+      enabled: false
       format: ""
     consumerGroupId: ""
     internalServer: ""
     metricsTopic: ""
     bucketName: ""
     regionName: ""
+  producerSchemaPath: ""
+  metricsSchemaPath: "/schemas/s3_step/metrics.json"
+  scribeSchemaPath: "/schemas/scribe_step/scribe.avsc"
 
 secrets:
   kafkaAuth:

@@ -26,3 +26,6 @@ data:
   metrics-topic: {{ .Values.configmap.ztf.metricsTopic }}
   bucket-name: {{ .Values.configmap.ztf.bucketName }}
   region-name: {{ .Values.configmap.ztf.regionName }}
+  producer-schema-path: {{ .Values.configmap.producerSchemaPath }}
+  scribe-schema-path: {{ .Values.configmap.scribeSchemaPath }}
+  metrics-schema-path: {{ .Values.configmap.metricsSchemaPath }}

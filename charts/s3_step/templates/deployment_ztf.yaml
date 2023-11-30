@@ -82,6 +82,21 @@ spec:
                 configMapKeyRef:
                   name: '{{ include "s3-step.fullname" . }}-ztf'
                   key: region-name
+            - name: PRODUCER_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: producer-schema-path
+            - name: METRICS_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: metrics-schema-path
+            - name: SCRIBE_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: scribe-schema-path
             {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
             - name: CONSUMER_KAFKA_USERNAME
               valueFrom:

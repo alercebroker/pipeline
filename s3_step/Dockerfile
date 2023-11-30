@@ -25,6 +25,8 @@ FROM python:3.9-slim as production
 RUN pip install poetry
 COPY --from=builder /app /app
 WORKDIR /app
+COPY schemas/s3_step /schemas/s3_step
+COPY schemas/scribe_step /schemas/scribe_step
 COPY ./s3_step/README.md /app/README.md
 COPY ./s3_step/settings.py /app/settings.py
 COPY ./s3_step/scripts /app/scripts
