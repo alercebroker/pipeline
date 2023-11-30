@@ -6,10 +6,7 @@
     "description": "The root schema comprises the entire JSON document.",
     "default": {},
     "examples": [
-        {
-            "timestamp_sent": "2020-09-01",
-            "timestamp_received": "2020-09-01"
-        }
+        {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
     ],
     "required": ["timestamp_sent", "timestamp_received"],
     "properties": {

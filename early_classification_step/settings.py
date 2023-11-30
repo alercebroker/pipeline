@@ -2,11 +2,16 @@
 #       early_classifier   Settings File
 ##################################################
 import os
-
+import json
 
 # SCHEMA PATH RELATIVE TO THE SETTINGS FILE
 PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+with open(PRODUCER_SCHEMA_PATH, "r") as f:
+    PRODUCER_SCHEMA = json.load(f)
+
 METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRICS_SCHEMA_PATH"))
+with open(METRICS_SCHEMA_PATH, "r") as f:
+    METRICS_SCHEMA = json.load(f)
 
 DB_CONFIG = {
     "SQL": {
@@ -32,6 +37,7 @@ METRICS_CONFIG = {
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
         "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+        "SCHEMA": METRICS_SCHEMA
     },
 }
 
@@ -76,6 +82,7 @@ PRODUCER_CONFIG = {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
     "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA": PRODUCER_SCHEMA
 }
 
 if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):

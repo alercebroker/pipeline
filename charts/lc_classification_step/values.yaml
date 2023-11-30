@@ -63,8 +63,8 @@ configYaml:
       CLASS: "apf.core.topic_management.DailyTopicStrategy"
     PARAMS:
       bootstrap.servers: ""
-      security.protocol: "SASL_PLAINTEXT"
-      sasl.mechanism: "SCRAM-SHA-256"
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
       sasl.username: ""
       sasl.password: ""
     CLASS: "apf.producers.kafka.KafkaProducer"

@@ -1,0 +1,23 @@
+{
+    "doc": "Early Classification",
+    "name": "stamp_probabilities",
+    "type": "record",
+    "fields": [
+        {"name": "objectId", "type": "string"},
+        {"name": "candid", "type": "long"},
+        {
+            "name": "probabilities",
+            "type": {
+                "name": "probabilities",
+                "type": "record",
+                "fields": [
+                    {"name": "SN", "type": "float"},
+                    {"name": "AGN", "type": "float"},
+                    {"name": "VS", "type": "float"},
+                    {"name": "asteroid", "type": "float"},
+                    {"name": "bogus", "type": "float"}
+                ]
+            }
+        }
+    ]
+}
