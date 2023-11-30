@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "magstats-step"
-version = "6.2.1a195"
+version = "6.2.1a196"
 description = ""
 authors = ["ASHuenchuleo <arsepulh@gmail.com>", "Pablo Castellanos"]
 readme = "README.md"
