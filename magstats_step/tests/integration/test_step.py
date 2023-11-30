@@ -16,7 +16,17 @@ def assert_message_schema(command):
 
 
 def assert_command_data_schema(data):
-    expected_fields = ["lastmjd", "meandec", "meanra", "sigmadec", "corrected", "firstmjd", "magstats"]
+    expected_fields = [
+        "lastmjd",
+        "meandec",
+        "meanra",
+        "sigmadec",
+        "corrected",
+        "firstmjd",
+        "lastmjd",
+        "deltajd",
+        "magstats",
+    ]
     for field in expected_fields:
         assert field in data
 

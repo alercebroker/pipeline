@@ -45,6 +45,7 @@ class Object(BaseModel):
     stellar = Field()
     firstmjd = Field()
     lastmjd = Field()
+    deltajd = Field()
     ndet = Field()
     meanra = Field()
     sigmara = Field()

@@ -13,16 +13,24 @@ class ObjectStatistics(BaseStatistics):
         super().__init__(detections)
 
     @staticmethod
-    def _arcsec2deg(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+    def _arcsec2deg(
+        values: Union[pd.Series, float]
+    ) -> Union[pd.Series, float]:
         return values / 3600.0
 
     @staticmethod
-    def _deg2arcsec(values: Union[pd.Series, float]) -> Union[pd.Series, float]:
+    def _deg2arcsec(
+        values: Union[pd.Series, float]
+    ) -> Union[pd.Series, float]:
         return values * 3600.0
 
     @staticmethod
-    def _compute_weights(sigmas: Union[pd.Series, float]) -> Union[pd.Series, float]:
-        return sigmas.astype(float) ** -2  # Integers cannot be raised to negative powers
+    def _compute_weights(
+        sigmas: Union[pd.Series, float]
+    ) -> Union[pd.Series, float]:
+        return (
+            sigmas.astype(float) ** -2
+        )  # Integers cannot be raised to negative powers
 
     @classmethod
     def _weighted_mean(cls, values: pd.Series, sigmas: pd.Series) -> float:
@@ -32,7 +40,9 @@ class ObjectStatistics(BaseStatistics):
     def _weighted_mean_error(cls, sigmas: pd.Series) -> float:
         return np.sqrt(1 / np.sum(cls._compute_weights(sigmas)))
 
-    def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> pd.DataFrame:
+    def _calculate_coordinates(
+        self, label: Literal["ra", "dec"]
+    ) -> pd.DataFrame:
         def average(series):  # Needs wrapper to use the sigmas in the agg call
             return self._weighted_mean(series, sigmas.loc[series.index])
 
@@ -41,12 +51,16 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(
             {
                 f"mean{label}": self._grouped_detections()[label].agg(average),
-                f"sigma{label}": self._deg2arcsec(grouped_sigmas.agg(self._weighted_mean_error)),
+                f"sigma{label}": self._deg2arcsec(
+                    grouped_sigmas.agg(self._weighted_mean_error)
+                ),
             }
         )
 
     def _calculate_unique(self, label: str) -> pd.DataFrame:
-        return pd.DataFrame({label: self._grouped_detections()[label].unique().apply(list)})
+        return pd.DataFrame(
+            {label: self._grouped_detections()[label].unique().apply(list)}
+        )
 
     def calculate_ra(self) -> pd.DataFrame:
         return self._calculate_coordinates("ra")
@@ -55,10 +69,22 @@ class ObjectStatistics(BaseStatistics):
         return self._calculate_coordinates("dec")
 
     def calculate_firstmjd(self) -> pd.DataFrame:
-        return pd.DataFrame({"firstmjd": self._grouped_value("mjd", which="first")})
+        return pd.DataFrame(
+            {"firstmjd": self._grouped_value("mjd", which="first")}
+        )
 
     def calculate_lastmjd(self) -> pd.DataFrame:
-        return pd.DataFrame({"lastmjd": self._grouped_value("mjd", which="last")})
+        return pd.DataFrame(
+            {"lastmjd": self._grouped_value("mjd", which="last")}
+        )
+
+    def calculate_deltajd(self) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "deltajd": self._grouped_value("mjd", which="last")
+                - self._grouped_value("mjd", which="first")
+            }
+        )
 
     def calculate_oid(self) -> pd.DataFrame:
         return self._calculate_unique("oid")
@@ -70,7 +96,19 @@ class ObjectStatistics(BaseStatistics):
         return self._calculate_unique("sid")
 
     def calculate_corrected(self) -> pd.DataFrame:
-        return pd.DataFrame({"corrected": self._grouped_value("corrected", which="first", surveys=self._CORRECTED)})
+        return pd.DataFrame(
+            {
+                "corrected": self._grouped_value(
+                    "corrected", which="first", surveys=self._CORRECTED
+                )
+            }
+        )
 
     def calculate_stellar(self) -> pd.DataFrame:
-        return pd.DataFrame({"stellar": self._grouped_value("stellar", which="first", surveys=self._STELLAR)})
+        return pd.DataFrame(
+            {
+                "stellar": self._grouped_value(
+                    "stellar", which="first", surveys=self._STELLAR
+                )
+            }
+        )
