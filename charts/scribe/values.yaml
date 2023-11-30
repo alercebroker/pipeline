@@ -74,11 +74,12 @@ configYaml:
     SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
     TOPIC: "metrics"
     PARAMS:
-      bootstrap.servers: ""
-      security.protocol: "SASL_SSL"
-      sasl.mechanism: "SCRAM-SHA-512"
-      sasl.username: ""
-      sasl.password: ""
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
   FEATURE_FLAGS:
     PROMETHEUS: false
   USE_PROFILING: true
