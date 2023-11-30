@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   alert-archive-step:
   - apiVersion: v2
+    appVersion: 6.1.1a184
+    created: "2023-11-30T00:58:13.255986872Z"
+    description: A Helm chart for Kubernetes
+    digest: 6ee86be3990a6f743319c2f6b58a026d6d2df935107495c224e78ce10cce9478
+    name: alert-archive-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/alert-archive-step-1.2.152/alert-archive-step-1.2.152.tgz
+    version: 1.2.152
+  - apiVersion: v2
     appVersion: 6.1.1a183
     created: "2023-11-30T00:45:17.130205377Z"
     description: A Helm chart for Kubernetes
@@ -1252,6 +1262,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/alert-archive-step-1.2.3/alert-archive-step-1.2.3.tgz
     version: 1.2.3
   correction-step:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:13.407427776Z"
+    description: Correction step chart
+    digest: b01f2678ad1003c602ed84091c1f023ffadbf3a709a28375a963faa03e9e5093
+    name: correction-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/correction-step-2.0.86/correction-step-2.0.86.tgz
+    version: 2.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.265762496Z"
@@ -3494,6 +3514,16 @@ entries:
     version: 1.2.5
   early-classifier:
   - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:13.563946441Z"
+    description: A Helm chart for Kubernetes
+    digest: dc461e8caef842cc7534b03e4f0624c6dedba2b69fcf2396124568be8710318c
+    name: early-classifier
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/early-classifier-1.2.263/early-classifier-1.2.263.tgz
+    version: 1.2.263
+  - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.379348301Z"
     description: A Helm chart for Kubernetes
@@ -5704,6 +5734,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/early-classifier-1.2.3/early-classifier-1.2.3.tgz
     version: 1.2.3
   feature-step:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:13.71770976Z"
+    description: Step for feature calculation
+    digest: f123af5d4c109c41c728fea4d9cdb1ebdc91c3228be404eca636d4463db2f692
+    name: feature-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/feature-step-2.0.86/feature-step-2.0.86.tgz
+    version: 2.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.482674218Z"
@@ -7946,6 +7986,16 @@ entries:
     version: 1.4.4
   lc-classifier-step:
   - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:13.863161567Z"
+    description: Lightcurve classifier step
+    digest: 3a81d4e111c95a6d71d005f0ed3e2b25d97284541c0dba6c9edfb94705526ead
+    name: lc-classifier-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/lc-classifier-step-5.0.86/lc-classifier-step-5.0.86.tgz
+    version: 5.0.86
+  - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.58470053Z"
     description: Lightcurve classifier step
@@ -10146,6 +10196,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/lc-classifier-step-4.8.4/lc-classifier-step-4.8.4.tgz
     version: 4.8.4
   lightcurve-step:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.023275131Z"
+    description: Full lightcurve provider step
+    digest: cce6c888fcbcd261ef3ff6a0ea1e8cae59c235c9aa6df57323521cfe102da2f4
+    name: lightcurve-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/lightcurve-step-2.0.86/lightcurve-step-2.0.86.tgz
+    version: 2.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.704465982Z"
@@ -12409,6 +12469,16 @@ entries:
     version: 1.1.1
   magstats-step:
   - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.171080719Z"
+    description: A Helm chart for Kubernetes
+    digest: 9328f57163a8895c2bb686a289c62521d13efba9288222c0e550c7f5059e5c01
+    name: magstats-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/magstats-step-2.0.86/magstats-step-2.0.86.tgz
+    version: 2.0.86
+  - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:17.808356084Z"
     description: A Helm chart for Kubernetes
@@ -14650,6 +14720,16 @@ entries:
     version: 1.2.4
   metadata-step:
   - apiVersion: v2
+    appVersion: 6.2.1a155
+    created: "2023-11-30T00:58:14.3301978Z"
+    description: A Helm chart for Kubernetes
+    digest: c029e849d864a4fd4ff3c1f07af7486b4747b11cd0c3338515ab7609bd083ade
+    name: metadata-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/metadata-step-2.0.86/metadata-step-2.0.86.tgz
+    version: 2.0.86
+  - apiVersion: v2
     appVersion: 6.2.1a154
     created: "2023-11-30T00:45:17.909294041Z"
     description: A Helm chart for Kubernetes
@@ -15961,6 +16041,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/metadata_step-1.0.0/metadata_step-1.0.0.tgz
     version: 1.0.0
   prv-candidates:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.479054588Z"
+    description: Previous candidates processor step
+    digest: 449172b7d8856f84d577941016f9339449825b626be2327c2385467137648bf4
+    name: prv-candidates
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/prv-candidates-2.0.86/prv-candidates-2.0.86.tgz
+    version: 2.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.003225761Z"
@@ -18203,6 +18293,16 @@ entries:
     version: 1.3.4
   s3-step:
   - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.628449035Z"
+    description: A Helm chart for Kubernetes
+    digest: f5365e54f9f9389ca19e133a4130c7ba3bc7a307ba6808adbfc70bfe08f57b62
+    name: s3-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/s3-step-1.3.265/s3-step-1.3.265.tgz
+    version: 1.3.265
+  - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.101188524Z"
     description: A Helm chart for Kubernetes
@@ -20423,6 +20523,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/s3-step-1.3.3/s3-step-1.3.3.tgz
     version: 1.3.3
   scribe:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.78681811Z"
+    description: ALeRCE pipeline CQRS eventual consistency engine
+    digest: 5f9e0b077548dfb2e19ac6db8de53412736c5b42a2a29d79703b911c8ea77456
+    name: scribe
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/scribe-2.0.86/scribe-2.0.86.tgz
+    version: 2.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.22720249Z"
@@ -22664,6 +22774,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/scribe-1.1.4/scribe-1.1.4.tgz
     version: 1.1.4
   sorting-hat:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:14.942347244Z"
+    description: Sorting Hat deployment chart
+    digest: 00911336f0e5b26aac0ba4330cdc2c54ba6c4108cb0445c8157508a7809b759c
+    name: sorting-hat
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/sorting-hat-3.0.86/sorting-hat-3.0.86.tgz
+    version: 3.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.33871576Z"
@@ -24978,6 +25098,16 @@ entries:
     version: 1.0.0
   watchlist-step:
   - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:15.094555231Z"
+    description: A Helm chart for Kubernetes
+    digest: f5335eb4393df210b7df36cd2f5a6ce52d54bd64858043c3f4e1d8686e749f75
+    name: watchlist-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/watchlist-step-1.2.259/watchlist-step-1.2.259.tgz
+    version: 1.2.259
+  - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.450542217Z"
     description: A Helm chart for Kubernetes
@@ -27158,6 +27288,16 @@ entries:
     - https://github.com/alercebroker/pipeline/releases/download/watchlist-step-1.2.4/watchlist-step-1.2.4.tgz
     version: 1.2.4
   xmatch-step:
+  - apiVersion: v2
+    appVersion: 6.2.1a188
+    created: "2023-11-30T00:58:15.255873503Z"
+    description: A Helm chart for Kubernetes
+    digest: cf4b62ce329e29d4c1f0dc3f6ca1f4875feb605b91548daa953c5bd838de829e
+    name: xmatch-step
+    type: application
+    urls:
+    - https://github.com/alercebroker/pipeline/releases/download/xmatch-step-3.0.86/xmatch-step-3.0.86.tgz
+    version: 3.0.86
   - apiVersion: v2
     appVersion: 6.2.1a187
     created: "2023-11-30T00:45:18.543940183Z"
@@ -29408,4 +29548,4 @@ entries:
     urls:
     - https://github.com/alercebroker/pipeline/releases/download/xmatch-step-2.3.4/xmatch-step-2.3.4.tgz
     version: 2.3.4
-generated: "2023-11-30T00:45:18.551848453Z"
+generated: "2023-11-30T00:58:15.264120707Z"
