@@ -47,7 +47,7 @@ class ElasticcParser(KafkaParser):
 
             new_detection = new_detection[0]
 
-            # terrible parche (este codigo es transicional, 
+            # terrible parche (este codigo es transicional,
             # cambiar antes de la semana del congreso)
             detection_extra_info[new_detection["aid"]] = {
                 "candid": new_detection["extra_fields"].get(
