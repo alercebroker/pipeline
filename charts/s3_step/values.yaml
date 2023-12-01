@@ -77,7 +77,7 @@ configmap:
     regionName: ""
   producerSchemaPath: ""
   metricsSchemaPath: "/schemas/s3_step/metrics.json"
-  scribeSchemaPath: "/schemas/scribe_step/scribe.avsc"
+  scribeSchemaPath: ""
 
 secrets:
   kafkaAuth:
