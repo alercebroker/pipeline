@@ -1,7 +1,7 @@
 apiVersion: v2
-appVersion: 6.2.1a204
+appVersion: 6.2.1a205
 description: A Helm chart for Kubernetes
 name: watchlist-step
 type: application
-version: 1.2.275
+version: 1.2.276
 
