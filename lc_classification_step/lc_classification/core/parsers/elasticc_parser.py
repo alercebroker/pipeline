@@ -47,9 +47,15 @@ class ElasticcParser(KafkaParser):
 
             new_detection = new_detection[0]
 
+            # terrible parche (este codigo es transicional,
+            # cambiar antes de la semana del congreso)
             detection_extra_info[new_detection["aid"]] = {
-                "candid": new_detection["candid"],
-                "oid": new_detection["oid"],
+                "candid": new_detection["extra_fields"].get(
+                    "alertId", new_detection["candid"]
+                ),
+                "diaSourceId": new_detection["extra_fields"].get(
+                    "diaSourceId", new_detection["candid"]
+                ),
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
                     "surveyPublishTimestamp"
                 ),
@@ -82,7 +88,7 @@ class ElasticcParser(KafkaParser):
             ]
             response = {
                 "alertId": int(detection_extra_info[aid]["candid"]),
-                "diaSourceId": int(detection_extra_info[aid]["oid"]),
+                "diaSourceId": int(detection_extra_info[aid]["diaSourceId"]),
                 "elasticcPublishTimestamp": int(
                     detection_extra_info[aid]["elasticcPublishTimestamp"]
                 ),

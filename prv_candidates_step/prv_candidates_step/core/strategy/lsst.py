@@ -1,10 +1,18 @@
+import copy
 import pickle
 from survey_parser_plugins.core import SurveyParser
 from survey_parser_plugins.parsers import LSSTParser
+from survey_parser_plugins.core.mapper import Mapper
+
+
+def lsst_prv_mapping():
+    mapping = copy.deepcopy(LSSTParser._mapping)
+    mapping.update({"candid": Mapper(origin="diaSourceId")})
+    return mapping
 
 
 class LSSTPreviousDetectionsParser(SurveyParser):
-    _mapping = LSSTParser._mapping
+    _mapping = lsst_prv_mapping()
 
     @classmethod
     def _extract_stamps(cls, message: dict) -> dict:
@@ -16,6 +24,8 @@ class LSSTPreviousDetectionsParser(SurveyParser):
 
     @classmethod
     def parse(cls, message: dict) -> dict:
+        message = message.copy()
+        message["alertId"] = message["diaSourceId"]
         return cls.parse_message(message).to_dict()
 
 
@@ -33,7 +43,7 @@ class LSSTForcedPhotometryParser(SurveyParser):
     @classmethod
     def parse(cls, message: dict, ra: float, dec: float) -> dict:
         message = message.copy()
-        message["diaSourceId"] = message.pop("diaForcedSourceId")
+        message["alertId"] = message.pop("diaForcedSourceId")
         message["ra"] = ra
         message["decl"] = dec
         return cls.parse_message(message).to_dict()
