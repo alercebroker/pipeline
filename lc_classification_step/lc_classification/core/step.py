@@ -92,7 +92,6 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
         self.logger.debug("Messages received:\n", messages)
-        self.logger.info("Getting batch alert data")
         model_input = create_input_dto(messages)
         self.oids = {}
         forced = []
