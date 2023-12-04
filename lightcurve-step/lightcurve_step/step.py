@@ -256,7 +256,6 @@ class LightcurveStep(GenericStep):
             ef["diaObject"] = pickle.dumps(ef["diaObject"])
             return ef
 
-
         detections = result["detections"].replace(np.nan, None).groupby("aid")
         try:  # At least one non-detection
             non_detections = (
