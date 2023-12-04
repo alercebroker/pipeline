@@ -139,14 +139,14 @@ class LightcurveStep(GenericStep):
             "parent_candid",
             "has_stamp",
         }
-        FIELDS_TO_REMOVE = [
-            "stellar",
-            "e_mag_corr",
-            "corrected",
-            "mag_corr",
-            "e_mag_corr_ext",
-            "dubious",
-        ]
+        # FIELDS_TO_REMOVE = [
+        #     "stellar",
+        #     "e_mag_corr",
+        #     "corrected",
+        #     "mag_corr",
+        #     "e_mag_corr_ext",
+        #     "dubious",
+        # ]
 
         FID = {1: "g", 2: "r", 0: None, 12: "gr"}
 
@@ -180,8 +180,8 @@ class LightcurveStep(GenericStep):
             )
             parsed["candid"] = parsed.pop("_id")
 
-            for field in FIELDS_TO_REMOVE:
-                parsed.pop(field, None)
+            # for field in FIELDS_TO_REMOVE:
+            #     parsed.pop(field, None)
 
             parsed_result.append({**parsed, "forced": False, "new": False})
 
@@ -218,16 +218,16 @@ class LightcurveStep(GenericStep):
                 k: v for k, v in fp["extra_fields"].items() if not k.startswith("_")
             }
             # remove problematic fields
-            FIELDS_TO_REMOVE = [
-                "stellar",
-                "e_mag_corr",
-                "corrected",
-                "mag_corr",
-                "e_mag_corr_ext",
-                "dubious",
-            ]
-            for field in FIELDS_TO_REMOVE:
-                fp.pop(field, None)
+            # FIELDS_TO_REMOVE = [
+            #     "stellar",
+            #     "e_mag_corr",
+            #     "corrected",
+            #     "mag_corr",
+            #     "e_mag_corr_ext",
+            #     "dubious",
+            # ]
+            # for field in FIELDS_TO_REMOVE:
+            #     fp.pop(field, None)
 
             return fp
 
