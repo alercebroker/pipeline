@@ -117,9 +117,7 @@ async def deploy_package(
                     },
                 )
             )
-            .with_env_variable(
-                "AWS_DEFAULT_REGION", os.environ["AWS_DEFAULT_REGION"]
-            )
+            .with_env_variable("AWS_DEFAULT_REGION", "us-east-1")
             .with_exec(configure_aws_eks_command_list)
         )
         async with anyio.create_task_group() as tg:
