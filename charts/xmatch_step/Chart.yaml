@@ -4,4 +4,3 @@ description: A Helm chart for Kubernetes
 name: xmatch-step
 type: application
 version: 3.0.108
-7
