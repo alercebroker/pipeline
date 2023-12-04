@@ -40,6 +40,30 @@ variable "magstats_kafka_username" {
 variable "magstats_kafka_password" {
   type = string
 }
+variable "metadata_kafka_username" {
+  type = string
+}
+variable "metadata_kafka_password" {
+  type = string
+}
+variable "s3_kafka_username" {
+  type = string
+}
+variable "s3_kafka_password" {
+  type = string
+}
+variable "lc_classification_kafka_username" {
+  type = string
+}
+variable "lc_classification_kafka_password" {
+  type = string
+}
+variable "watchlist_kafka_username" {
+  type = string
+}
+variable "watchlist_kafka_password" {
+  type = string
+}
 variable "prv_candidates_kafka_username" {
   type = string
 }
@@ -95,5 +119,17 @@ variable "elasticsearch_username" {
   type = string
 }
 variable "elasticsearch_password" {
+  type = string
+}
+variable "alerts_psql_username" {
+  type = string
+}
+variable "alerts_psql_password" {
+  type = string
+}
+variable "users_psql_username" {
+  type = string
+}
+variable "users_psql_password" {
   type = string
 }

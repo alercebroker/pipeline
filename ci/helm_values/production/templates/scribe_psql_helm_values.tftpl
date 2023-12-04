@@ -6,7 +6,7 @@ affinity:
         - key: nodegroup
           operator: In
           values:
-          - elasticc-pipeline
+          - production-pipeline
 
 autoscaling:
   enabled: true
@@ -18,14 +18,14 @@ envVariables:
   - name: CONFIG_FROM_YAML
     value: "yes"
   - name: METRICS_SOURCE
-    value: 'scribe-elasticc'
+    value: 'scribe-psql'
   - name: METRICS_SURVEY
-    value: LSST
+    value: ZTF,ATLAS
 
 image:
   repository: ghcr.io/alercebroker/scribe
 
-namespace: scribe-elasticc
+namespace: scribe-psql
 
 resources:
   requests:
@@ -33,17 +33,17 @@ resources:
     memory: 128Mi
 
 configYaml:
-  DB_TYPE: "mongo"
-  DB_SECRET_NAME: "mongo-elasticc-production/writer"
+  DB_TYPE: "psql"
+  DB_SECRET_NAME: "alerts-database"
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
-      group.id: "scribe_consumer_elasticc"
+      group.id: "scribe_consumer_psql"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
-    TOPICS: ["w_object_elasticc","w_detection_elasticc"]
+    TOPICS: ["w_object","w_detection"]
     NUM_MESSAGES: 1000
     TIMEOUT: 10
   METRICS_CONFIG:
@@ -54,7 +54,7 @@ configYaml:
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
       SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
-      TOPIC: "metrics_elasticc"
+      TOPIC: "metrics"
   FEATURE_FLAGS:
     PROMETHEUS: false
   USE_PROFILING: true
