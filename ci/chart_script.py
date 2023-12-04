@@ -3,11 +3,11 @@ import sys
 
 
 def update_app_version(package: str, new_version: str, dry_run: bool):
-    with open(f"../charts/{package}/Chart.yaml", "r+") as f:
+    with open(f"../charts/{package}/Chart.yaml", "r") as f:
         original = f.read()
         f.seek(0)
         match = re.search(r"appVersion: (\d+).(\d+).(\d+).*", original)
-        f.seek(0)
+    with open(f"../charts/{package}/Chart.yaml", "w") as f:
         if not match:
             chart = re.sub(
                 r"appVersion: \"(\d+).(\d+).(\d+).*\"",
@@ -28,12 +28,13 @@ def update_app_version(package: str, new_version: str, dry_run: bool):
 def update_chart_version(
     package: str, version: str = "", dry_run: bool = False
 ):
-    with open(f"../charts/{package}/Chart.yaml", "r+") as f:
+    with open(f"../charts/{package}/Chart.yaml", "r") as f:
         original = f.read()
         f.seek(0)
         match = re.search(
             r"version: (?P<version>(\d+).(\d+).(\d+).*)", original
         )
+    with open(f"../charts/{package}/Chart.yaml", "w") as f:
         if not match:
             raise ValueError("Could not find valid version in Chart.yaml")
         version = version or match.group("version")
