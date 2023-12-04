@@ -208,6 +208,7 @@ jobs:
             - build-lc-classification-ztf-dagger
             - build-lightcurve-dagger
             - build-magstats-dagger
+            - build-metadata-dagger
             - build-prv-candidates-dagger
             - build-s3-step-dagger
             - build-scribe-dagger
