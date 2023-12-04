@@ -48,7 +48,7 @@ configYaml:
     consume.timeout: 10
     consume.messages: 200
   PRODUCER_CONFIG:
-    CLASS: "apf.producers.KafkaProducer"
+    CLASS: "apf.producers.KafkaSchemalessProducer"
     TOPIC: "xmatch"
     PARAMS:
       bootstrap.servers: ${kafka_server}
@@ -76,5 +76,5 @@ configYaml:
   FEATURE_FLAGS:
     PROMETHEUS: false
     USE_PROFILING: true
-    SKIP_XMATCH: true
+    SKIP_XMATCH: false
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
