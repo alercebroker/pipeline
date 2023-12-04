@@ -265,8 +265,8 @@ jobs:
                 metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step \
                 prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step \
                 s3-step --values=s3_step-helm-values --chart-folder=s3_step \
-                scribe-mongo --chart=scribe --values=scribe-helm-values --chart-folder=scribe \
-                scribe-psql --chart=scribe --values=scribe-psql-helm-values --chart-folder=scribe \
+                scribe-mongo --chart=scribe --values=scribe_step_mongo-helm-values --chart-folder=scribe \
+                scribe-psql --chart=scribe --values=scribe_step_psql-helm-values --chart-folder=scribe \
                 sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step \
                 sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step \
                 watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step \
