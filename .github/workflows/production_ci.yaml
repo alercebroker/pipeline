@@ -133,6 +133,15 @@ jobs:
         secrets:
             GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+    build-metadata-dagger:
+        needs: update_versions
+        uses: ./.github/workflows/template_build_with_dagger.yaml
+        with:
+            stage: production
+            extra-args: metadata_step
+        secrets:
+            GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
     build-prv-candidates-dagger:
         needs: update_versions
         uses: ./.github/workflows/template_build_with_dagger.yaml
