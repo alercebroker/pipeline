@@ -8,7 +8,7 @@ on:
             required: true
             type: string
 
-concurrency: production
+concurrency: ci
 
 jobs:
     # cada job necesita el anterior
