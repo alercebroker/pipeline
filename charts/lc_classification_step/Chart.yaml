@@ -4,4 +4,3 @@ description: Lightcurve classifier step
 name: lc-classifier-step
 type: application
 version: 5.0.113
-2
