@@ -33,14 +33,14 @@ resources:
     memory: 128Mi
 
 configYaml:
-  DB_TYPE: "psql"
-  DB_SECRET_NAME: "alerts-database"
+  DB_TYPE: "sql"
+  DB_SECRET_NAME: "psql-alerts-production/alerce"
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
-      group.id: "scribe_consumer_psql"
+      group.id: "scribe-psql"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["w_object","w_detection"]

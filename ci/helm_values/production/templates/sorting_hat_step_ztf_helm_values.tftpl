@@ -17,12 +17,12 @@ autoscaling:
 configYaml:
   enabled: true
   FEATURE_FLAGS:
-    RUN_CONESEARCH: false
+    RUN_CONESEARCH: true
     USE_PROFILING: true
-    USE_PSQL: false
+    USE_PSQL: true
     PROMETHEUS: false
   MONGO_SECRET_NAME: mongodb-alerts-production-writer
-  PSQL_SECRET_NAME: "alerts-database"
+  PSQL_SECRET_NAME: "psql-alerts-production/alerce"
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     SCHEMA_PATH: "/schemas/ztf/alert.avsc"

@@ -28,10 +28,11 @@ configYaml:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
+    TOPICS: ["sorting-hat"]
   METRICS_CONFIG:
     PARAMS:
       PARAMS:
         bootstrap.servers: ${kafka_server}
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
-  DATABASE_SECRET_NAME: "alerts-database"
+  DATABASE_SECRET_NAME: "psql-alerts-production/alerce"

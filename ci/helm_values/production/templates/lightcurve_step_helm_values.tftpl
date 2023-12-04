@@ -71,8 +71,9 @@ configYaml:
   PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
   LOGGING_DEBUG: false
   MONGO_SECRET_NAME: "mongodb-alerts-production-writer"
+  SQL_SECRET_NAME: "psql-alerts-production/alerce"
   FEATURE_FLAGS:
     PROMETHEUS: false
     USE_PROFILING: true
     SKIP_MJD_FILTER: false
-    USE_SQL: false
+    USE_SQL: true

@@ -34,13 +34,13 @@ resources:
 
 configYaml:
   DB_TYPE: "mongo"
-  DB_SECRET_NAME: "alerts-database"
+  DB_SECRET_NAME: "mongodb-alerts-production-writer"
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaConsumer"
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
-      group.id: "mongodb-alerts-production-writer"
+      group.id: "scribe-mongo"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["w_object","w_detection"]
