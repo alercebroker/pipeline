@@ -236,7 +236,7 @@ jobs:
             id: creds
             uses: aws-actions/configure-aws-credentials@v3
             with:
-              role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
+              role-to-assume: ${{ secrets.AWS_ROLE }}
               aws-region: us-east-1
               output-credentials: true
               unset-current-credentials: true
@@ -254,23 +254,24 @@ jobs:
           - name: Run dagger pipeline
             run: |
                 cd ci
-                poetry run python main.py deploy staging \
-                alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step \
-                correction-step --values=correction_step-helm-values --chart-folder=correction_step \
-                early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step \
-                feature-step --values=feature_step-helm-values --chart-folder=feature_step \
-                lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step \
-                lightcurve-step --values=lightcurve-step-helm-values \
-                magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step \
-                metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step \
-                prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step \
-                s3-step --values=s3_step-helm-values --chart-folder=s3_step \
-                scribe-mongo --chart=scribe --values=scribe_step_mongo-helm-values --chart-folder=scribe \
-                scribe-psql --chart=scribe --values=scribe_step_psql-helm-values --chart-folder=scribe \
-                sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step \
-                sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step \
-                watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step \
-                xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
+                poetry run python main.py deploy prepare
+                poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
+                poetry run python main.py deploy add-package correction-step --chart=correction-step --values=correction_step-helm-values --chart-folder=correction_step
+                poetry run python main.py deploy add-package early-classifier-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
+                poetry run python main.py deploy add-package feature-step --chart=feature-step --values=feature_step-helm-values --chart-folder=feature_step
+                poetry run python main.py deploy add-package lc-classifier-step --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
+                poetry run python main.py deploy add-package lightcurve-step --chart=lightcurve-step --values=lightcurve-step-helm-values --chart-folder=lightcurve-step
+                poetry run python main.py deploy add-package magstats-step --chart=magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
+                poetry run python main.py deploy add-package metadata-step --chart=metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
+                poetry run python main.py deploy add-package prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step
+                poetry run python main.py deploy add-package s3-step --chart=s3-step --values=s3_step-helm-values --chart-folder=s3_step
+                poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe_step_psql-helm-values --chart-folder=scribe
+                poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe_step_mongo-helm-values --chart-folder=scribe
+                poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
+                poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
+                poetry run python main.py deploy add-package xmatch-step --chart=xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
+                poetry run python main.py deploy add-package watchlist-step --chart=watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
+                poetry run python main.py deploy execute --stage=production --clear
 
     deploy_elasticc:
         needs: release-chart
@@ -287,7 +288,7 @@ jobs:
             id: creds
             uses: aws-actions/configure-aws-credentials@v3
             with:
-              role-to-assume: ${{ secrets.AWS_ROLE_PRODUCTION }}
+              role-to-assume: ${{ secrets.AWS_ROLE }}
               aws-region: us-east-1
               output-credentials: true
               unset-current-credentials: true
