@@ -18,6 +18,7 @@ configYaml:
   enabled: true
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/feature_step/output.avsc"
     TOPICS: ["features"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
