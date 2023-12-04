@@ -42,7 +42,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
-    SCHEMA_PATH: "/schemas/lc_classification_step/output.avsc"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_ztf.avsc"
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
     PARAMS:
