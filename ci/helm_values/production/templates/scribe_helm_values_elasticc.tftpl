@@ -7,38 +7,53 @@ affinity:
           operator: In
           values:
           - elasticc-pipeline
+
 autoscaling:
   enabled: true
   maxReplicas: 16
-  minReplicas: 4
+  minReplicas: 1
   targetCPUUtilizationPercentage: 80
-extraEnvVariables:
+
+envVariables:
 - name: METRICS_SOURCE
   value: 'scribe-elasticc'
 - name: METRICS_SURVEY
   value: LSST
+
 image:
   repository: ghcr.io/alercebroker/scribe
+
 namespace: scribe-elasticc
+
 resources:
   requests:
     cpu: 20m
     memory: 128Mi
-secrets:
-  bootstrapServers: ${kafka_server}
-  consumerGroupId: scribe_consumer_elasticc
-  kafkaAuth:
-    enabled: true
-    password: ${kafka_password}
-    username: ${kafka_username}
-  metricsHost: ${kafka_server}
-  metricsKafkaAuth:
-    enabled: true
-    password: ${kafka_password}
-    username: ${kafka_username}
-  metricsTopic: metrics_elasticc
-  mockDb: ""
-  numMessages: "1000"
-  secretName: mongo-elasticc-production/writer
-  topics: w_object_elasticc,w_detection_elasticc
-  dbEngine: "mongo"
+
+configYaml:
+  DB_TYPE: "mongo"
+  DB_SECRET_NAME: "mongo-elasticc-production/writer"
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "scribe_consumer_elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["w_object_elasticc","w_detection_elasticc"]
+    NUM_MESSAGES: 1000
+    TIMEOUT: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
+      TOPIC: "metrics_elasticc"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+  USE_PROFILING: true
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
