@@ -1,0 +1,64 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+autoscaling:
+  enabled: false
+  maxReplicas: 8
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+configmap:
+  classifierVersion: stamp_classifier_1.0.4
+  consumerGroup: stamp_classifier
+  consumerServer: ${kafka_server}
+  consumerTopics: ztf
+  metricsServer: ${kafka_server}
+  metricsTopic: metrics
+  producerChangeHour: "23"
+  producerDateFormat: '%Y%m%d'
+  producerSchemaPath: /schemas/early_classification_step/output.avsc
+  producerServer: ${kafka_public_server}
+  producerTopicFormat: stamp_classifier_%s
+  topicStrategy:
+    enabled: false
+    format: ztf_%s_programid1
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: early-classifier
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 400M
+
+secrets:
+  db:
+    host: ${db_host}
+    name: ztf
+    password: ${db_password}
+    port: "5432"
+    user: ${db_username}
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    producer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}

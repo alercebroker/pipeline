@@ -1,0 +1,51 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+configmap:
+  alertsDb:
+    host: ${alerts_db_host}
+    name: ztf
+  consumeMessages: "10"
+  consumerGroup: watchlist_consumer_k8
+  consumerTopics: ztf
+  internalServer: ${kafka_server}
+  metricsTopic: metrics
+  usersDb:
+    host: ${users_db_host}
+    name: users
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: watchlist-step
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 300M
+
+secrets:
+  alertsDb:
+    password: ${alerts_db_password}
+    username: ${alerts_db_username}
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+  usersDb:
+    password: ${users_db_password}
+    username: ${users_db_username}
