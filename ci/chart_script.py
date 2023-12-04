@@ -39,7 +39,7 @@ def update_chart_version(
         version = version or match.group("version")
         major, minor, patch = version.split(".")
         chart = re.sub(
-            r"version: (\d+).(\d+).(\d+).*",
+            r"version: (\d+).(\d+).(\d+)",
             f"version: { major }.{ minor }.{ int(patch) + 1 }",
             original,
         )
