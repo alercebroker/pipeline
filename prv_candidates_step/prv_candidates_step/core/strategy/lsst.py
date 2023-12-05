@@ -7,7 +7,7 @@ from survey_parser_plugins.core.mapper import Mapper
 
 def lsst_prv_mapping():
     mapping = copy.deepcopy(LSSTParser._mapping)
-    mapping.update({"candid": Mapper(origin="diaSourceId")})
+    mapping.update({"candid": Mapper(str, origin="diaSourceId")})
     return mapping
 
 
