@@ -57,7 +57,7 @@ configYaml:
       sasl.password: ${kafka_password}
     SCHEMA_PATH: "/schemas/xmatch_step/output.avsc"
   SCRIBE_PRODUCER_CONFIG:
-    CLASS: "apf.producers.KafkaSchemalessProducer"
+    CLASS: "apf.producers.KafkaProducer"
     PARAMS:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
