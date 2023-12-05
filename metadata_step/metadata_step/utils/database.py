@@ -121,6 +121,7 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
     # PS1
     ps1_data = list({el["candid"]: el for el in accumulated_metadata["ps1"]}.values())
     ps1_stmt = insert(Ps1_ztf).values(ps1_data)
+    ps1_stmt = ps1_stmt.on_conflict_do_update(constraint="ps1_ztf_pkey", set_=dict(oid=ps1_stmt.excluded.oid))
     session.connection().execute(ps1_stmt)
 
     for el in ps1_updates:
