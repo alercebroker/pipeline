@@ -43,7 +43,7 @@ configYaml:
       group.id: "scribe-psql"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
-    TOPICS: ["w_object","w_detection"]
+    TOPICS: ["w_object","w_detection", "w_non_detections"]
     NUM_MESSAGES: 1000
     TIMEOUT: 10
   METRICS_CONFIG:
