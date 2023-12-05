@@ -22,7 +22,7 @@ autoscaling:
 
 configmap:
   atlas:
-    bucketName: atlas-stream-staging-bucket:ATLAS
+    bucketName: atlas-stream:ATLAS
     consumerGroupId: s3_step_atlas
     consumerTopics: atlas
     internalServer: ${kafka_server}
@@ -33,7 +33,7 @@ configmap:
       enabled: false
       format: ^ATLAS_%s_.*
   ztf:
-    bucketName: ztf-stream-staging-bucket:ztf
+    bucketName: ztf-stream:ztf
     consumerGroupId: s3_step_ztf
     consumerTopics: ztf
     internalServer: ${kafka_server}
