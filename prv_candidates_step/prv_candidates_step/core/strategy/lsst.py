@@ -25,7 +25,7 @@ class LSSTPreviousDetectionsParser(SurveyParser):
     @classmethod
     def parse(cls, message: dict) -> dict:
         message = message.copy()
-        message["alertId"] = message["diaSourceId"]
+        message["alertId"] = str(message["diaSourceId"])
         return cls.parse_message(message).to_dict()
 
 
@@ -43,7 +43,7 @@ class LSSTForcedPhotometryParser(SurveyParser):
     @classmethod
     def parse(cls, message: dict, ra: float, dec: float) -> dict:
         message = message.copy()
-        message["alertId"] = message.pop("diaForcedSourceId")
+        message["alertId"] = str(message.pop("diaForcedSourceId"))
         message["ra"] = ra
         message["decl"] = dec
         return cls.parse_message(message).to_dict()
