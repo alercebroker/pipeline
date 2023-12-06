@@ -152,8 +152,11 @@ class InsertForcedPhotometryCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["pid"], el["oid"]): el for el in data}
         unique = list(unique.values())
+        fp_stmt = insert(ForcedPhotometry).values(unique)
         return session.connection().execute(
-            insert(ForcedPhotometry).values(unique).on_conflict_do_nothing()
+            fp_stmt.on_conflict_do_update(
+                constraint="forced_photometry_pkey", set_=fp_stmt.excluded
+            )
         )
 
 
