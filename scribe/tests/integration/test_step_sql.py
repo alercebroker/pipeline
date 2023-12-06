@@ -30,8 +30,8 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },
-    "NUM_MESSAGES": 2,
-    "TIMEOUT": 10,
+    "NUM_MESSAGES": 3,
+    "TIMEOUT": 1,
 }
 
 PRODUCER_CONFIG = {
@@ -696,8 +696,11 @@ class PsqlIntegrationTest(unittest.TestCase):
             }
 
             self.producer.produce({"payload": json.dumps(command)})
+            command["data"]["mag"] = 20
             self.producer.produce({"payload": json.dumps(command)})
-            self.producer.producer.flush(1)
+            command["data"]["pid"] = 420
+            self.producer.produce({"payload": json.dumps(command)})
+            self.producer.producer.flush()
 
             self.step.start()
             with self.db.session() as session:
@@ -708,4 +711,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                     """
                     )
                 )
-            assert True
+                result = result.fetchall()
+                assert len(result) == 2
+                assert result[0][0] == 420
+                assert result[1][0] == 423432
