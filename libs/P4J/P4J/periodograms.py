@@ -65,14 +65,15 @@ class MultiBandPeriodogram(BasePeriodogram):
             per = np.array(
                 [self.cython_per[filter_name].eval_frequency(freq) for freq in freqs],
                 dtype=np.float32)
-            d2 = float(self.lc_stats[filter_name].N - 2*self.Nharmonics - 1)  
+            d2 = float(self.lc_stats[filter_name].N - 2*self.Nharmonics - 1)
+            d2 = max(d2, 0.0)
             per_single_band.update(
-                {filter_name: (d2/d1)*per/(self.cython_per[filter_name].wvar-per)})
+                {filter_name: (d2/d1)*per/np.maximum(self.cython_per[filter_name].wvar-per, 1e-9)})
             per_sum += per
             wvar_sum += self.cython_per[filter_name].wvar
             d2_sum += d2
 
-        return d2_sum*per_sum/(d1*(wvar_sum - per_sum)), per_single_band
+        return d2_sum*per_sum/(d1*np.maximum(wvar_sum - per_sum, 1e-9)), per_single_band
     
     def _update_periodogram(self, replace_idx, freqs_fine, pers_fine):
         new_best = np.argmax(pers_fine[0])

@@ -7,9 +7,11 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from itertools import product
 from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
+from consolidate_features import get_shorten
 
 
-labels = pd.read_parquet('data_231130/labels_with_partitions.parquet')
+dir_name = 'data_231130'
+labels = pd.read_parquet(os.path.join(dir_name, 'labels_with_partitions.parquet'))
 labels.set_index('aid', inplace=True)
 
 list_of_classes = labels['astro_class'].unique()
@@ -24,9 +26,6 @@ labels_figure_order = [
     'SLSN',
     'TDE',
     'Microlensing',
-
-    #'nonSNIa',
-
     'QSO',
     'AGN',
     'Blazar',
@@ -44,21 +43,30 @@ labels_figure_order = [
 ]
 assert set(list_of_classes) == set(labels_figure_order)
 
-ztf_classifier = ZTFClassifier(list_of_classes)
-ztf_classifier.load_classifier('ztf_classifier_model_231130')
+compute_predictions = False
+if compute_predictions:
+    ztf_classifier = ZTFClassifier(list_of_classes)
+    ztf_classifier.load_classifier('ztf_classifier_model_231130_v2')
 
-data_dir = os.listdir('data_231130')
-data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
-data_dir = sorted(data_dir)
+    data_dir = os.listdir(dir_name)
+    data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
+    # data_dir = [filename for filename in data_dir if len(filename.split('_')) == 4]
+    data_dir = sorted(data_dir)
 
-predictions = []
-for batch_filename in tqdm(data_dir):
-    full_filename = os.path.join('data_231130', batch_filename)
-    astro_objects_batch = pd.read_pickle(full_filename)
-    prediction_df = ztf_classifier.classify_batch(astro_objects_batch, return_dataframe=True)
-    predictions.append(prediction_df)
+    predictions = []
+    for batch_filename in tqdm(data_dir):
+        full_filename = os.path.join(dir_name, batch_filename)
+        shorten = get_shorten(full_filename)
+        astro_objects_batch = pd.read_pickle(full_filename)
+        prediction_df = ztf_classifier.classify_batch(astro_objects_batch, return_dataframe=True)
+        prediction_df['shorten'] = shorten
+        predictions.append(prediction_df)
 
-predictions = pd.concat(predictions, axis=0)
+    predictions = pd.concat(predictions, axis=0)
+    predictions.to_parquet(os.path.join(dir_name, 'all_predictions_v2.parquet'))
+
+predictions = pd.read_parquet(os.path.join(dir_name, 'all_predictions_v2.parquet'))
+print(predictions)
 
 
 def plot_cm_custom(ax, cm_mean, display_labels, title):
@@ -104,14 +112,26 @@ def compute_stats(predictions_df, labels_df, ax, title):
     plot_cm_custom(ax, cm, labels_figure_order, title)
 
 
-fig, ax = plt.subplots(1, 2, figsize=(6, 6), facecolor='white')  # , dpi=100)
-# plt.rcParams.update({'font.size': 12})
+all_shorten = predictions['shorten'].unique()
+all_shorten = np.sort(all_shorten)
 
-val_labels = labels[labels['partition'] == 'validation']
-compute_stats(predictions.loc[val_labels.index], val_labels, ax[0], 'validation')
+for shorten in all_shorten:
+    if np.isnan(shorten):
+        shorten_predictions = predictions[predictions['shorten'].isna()]
+    else:
+        shorten_predictions = predictions[predictions['shorten'] == shorten]
 
-test_labels = labels[labels['partition'] == 'test']
-compute_stats(predictions.loc[test_labels.index], test_labels, ax[1], 'test')
+    shorten_predictions = shorten_predictions[[c for c in shorten_predictions.columns if c != 'shorten']]
 
-plt.tight_layout()
-plt.show()
+    fig, ax = plt.subplots(1, 2, figsize=(15, 8), facecolor='white', dpi=100)
+    plt.rcParams.update({'font.size': 8})
+
+    val_labels = labels[labels['partition'] == 'validation']
+    compute_stats(shorten_predictions.loc[val_labels.index], val_labels, ax[0], 'validation')
+
+    test_labels = labels[labels['partition'] == 'test']
+    compute_stats(shorten_predictions.loc[test_labels.index], test_labels, ax[1], 'test')
+
+    plt.suptitle(str(shorten))
+    plt.tight_layout()
+    plt.show()

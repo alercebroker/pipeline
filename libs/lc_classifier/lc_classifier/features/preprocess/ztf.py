@@ -41,3 +41,17 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
         non_detections = astro_object.non_detections
         if non_detections is not None and len(non_detections) > 0:
             helio_correct_dataframe(non_detections)
+
+
+class ShortenPreprocessor(LightcurvePreprocessor):
+    def __init__(self, n_days: float):
+        self.n_days = n_days
+
+    def preprocess_single_object(self, astro_object: AstroObject):
+        first_mjd = np.min(astro_object.detections['mjd'])
+        max_mjd = first_mjd + self.n_days
+        astro_object.detections = astro_object.detections[
+            astro_object.detections['mjd'] <= max_mjd]
+        last_detection_mjd = np.max(astro_object.detections['mjd'])
+        astro_object.forced_photometry = astro_object.forced_photometry[
+            astro_object.forced_photometry['mjd'] < last_detection_mjd]

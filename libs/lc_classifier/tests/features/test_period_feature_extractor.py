@@ -2,6 +2,7 @@ import unittest
 from lc_classifier.features.extractors.period_extractor import PeriodExtractor
 from lc_classifier.examples.data import get_ztf_example
 from lc_classifier.examples.data import get_elasticc_example_2
+from lc_classifier.examples.data import get_ztf_forced_phot_cepheid
 import numpy as np
 import pandas as pd
 
@@ -79,3 +80,44 @@ class TestPeriodFeatureExtractor(unittest.TestCase):
         feature_extractor.compute_features_single_object(ztf_astro_object)
         features = ztf_astro_object.features
         self.assertEqual(len(features), len(feature_extractor.factors)+2+2*len(bands))
+
+    def test_lc_single_band_obs(self):
+        astro_object = get_ztf_forced_phot_cepheid()
+        selected_band = 'g'
+        astro_object.detections = astro_object.detections[
+            astro_object.detections['fid'] == selected_band]
+        astro_object.forced_photometry = astro_object.forced_photometry[
+            astro_object.forced_photometry['fid'] == selected_band]
+
+        bands = ['g', 'r']
+        feature_extractor = PeriodExtractor(
+            bands=bands,
+            unit='magnitude',
+            smallest_period=0.045,
+            largest_period=500.0,
+            trim_lightcurve_to_n_days=500.0,
+            min_length=15,
+            use_forced_photo=True,
+            return_power_rates=True
+        )
+        feature_extractor.compute_features_single_object(astro_object)
+        features = astro_object.features
+        print(features)
+
+    def test_lc_band_with_few_obs(self):
+        astro_object = get_ztf_forced_phot_cepheid()
+
+        bands = ['g', 'r']
+        feature_extractor = PeriodExtractor(
+            bands=bands,
+            unit='magnitude',
+            smallest_period=0.045,
+            largest_period=500.0,
+            trim_lightcurve_to_n_days=500.0,
+            min_length=15,
+            use_forced_photo=False,
+            return_power_rates=True
+        )
+        feature_extractor.compute_features_single_object(astro_object)
+        features = astro_object.features
+        print(features)

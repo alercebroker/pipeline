@@ -13,7 +13,7 @@ class NoDetections(Exception):
 
 def create_astro_object(
         lc_df: pd.DataFrame,
-        object_info: pd.DataFrame) -> AstroObject:
+        object_info: pd.Series) -> AstroObject:
 
     lc_df = lc_df.copy()
     # lc_df['detected'] = np.abs(lc_df['flux_diff_ujy'] / lc_df['sigma_flux_diff_ujy']) > 5
@@ -71,7 +71,11 @@ def create_astro_object(
     metadata = pd.DataFrame(
         [
             ["aid", "aid_" + df.index.values[0]],
-            ["oid", df.index.values[0]]
+            ["oid", df.index.values[0]],
+            ["W1", object_info['W1mag']],
+            ["W2", object_info['W2mag']],
+            ["W3", object_info['W3mag']],
+            ["W4", object_info['W4mag']],
         ],
         columns=["name", "value"]
     )
@@ -84,8 +88,7 @@ def create_astro_object(
     return astro_object
 
 
-def save_batch(astro_objects: List[AstroObject], batch_id: int):
-    filename = f'data_231130/astro_objects_batch_{batch_id:04}.pkl'
+def save_batch(astro_objects: List[AstroObject], filename: str):
     with open(filename, 'wb') as f:
         pickle.dump(astro_objects, f)
 
@@ -94,10 +97,10 @@ if __name__ == '__main__':
     # Build AstroObjects
 
     lightcurves = pd.read_parquet('data_231130/lightcurves_231130.parquet')
-    object_df = pd.read_parquet('data_231130/objects_231130.parquet')
+    object_df = pd.read_parquet('data_231130/objects_231130_with_wise.parquet')
 
     lightcurves.set_index('oid', inplace=True)
-    # object_df.set_index('oid', inplace=True)
+    object_df.set_index('oid', inplace=True)
 
     oids = np.unique(object_df.index.values)
 
@@ -113,4 +116,4 @@ if __name__ == '__main__':
             print(object_info)
             print('Object with no detections')
 
-    save_batch(astro_objects_list, 0)
+    save_batch(astro_objects_list, 'data_231130/astro_objects_without_features.pkl')

@@ -189,25 +189,31 @@ class MLPModel(tf.keras.Model):
         # simulate missing features
         self.input_dropout = tf.keras.layers.Dropout(0.1)
         self.dense_layer_1 = Dense(
-            1_000,
+            1_100,
             name='dense_layer_1',
         )
-        self.dropout_between_layers = tf.keras.layers.Dropout(0.5)
+        self.dropout_1_2 = tf.keras.layers.Dropout(0.5)
         self.dense_layer_2 = Dense(
-            250,
+            275,
             name='dense_layer_2',
         )
+        self.dropout_2_3 = tf.keras.layers.Dropout(0.5)
         self.dense_layer_3 = Dense(
+            60,
+            name='dense_layer_3',
+        )
+
+        self.dense_layer_4 = Dense(
             len(self.list_of_classes),
-            name='dense_layer_3'
+            name='dense_layer_4'
         )
         self.activation = tf.nn.relu
 
         lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
             initial_learning_rate=0.0,
-            decay_steps=25000,
+            decay_steps=45000,
             warmup_target=learning_rate,
-            warmup_steps=1500,
+            warmup_steps=2000,
             alpha=5e-2
         )
 
@@ -222,10 +228,13 @@ class MLPModel(tf.keras.Model):
         x = self.input_dropout(x, training=training)
         x = self.dense_layer_1(x)
         x = self.activation(x)
-        x = self.dropout_between_layers(x, training=training)
+        x = self.dropout_1_2(x, training=training)
         x = self.dense_layer_2(x)
         x = self.activation(x)
+        x = self.dropout_2_3(x, training=training)
         x = self.dense_layer_3(x)
+        x = self.activation(x)
+        x = self.dense_layer_4(x)
 
         if logits:
             return x
@@ -243,8 +252,7 @@ class MLPModel(tf.keras.Model):
             loss_value = self.loss_computer(y_batch, y_pred)
 
             loss_value = loss_value \
-                         + tf.keras.regularizers.L1(l1=1e-5)(self.dense_layer_1.kernel) \
-                         + tf.keras.regularizers.L1(l1=1e-5)(self.dense_layer_2.kernel)
+                         + tf.keras.regularizers.L1(l1=1e-5)(self.dense_layer_1.kernel)
 
         gradients = tape.gradient(loss_value, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))

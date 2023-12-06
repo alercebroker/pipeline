@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
-from lc_classifier.base import AstroObject
+from lc_classifier.base import AstroObject, empty_normal_dataframe
 from typing import List
 
 
@@ -271,6 +271,21 @@ def get_ztf_forced_training_examples() -> List[AstroObject]:
     return astro_objects
 
 
+def get_ztf_forced_phot_cepheid():
+    filename = os.path.join(
+        os.path.dirname(__file__),
+        'ZTF17aabqnaf_astro_object.pickle'
+    )
+
+    d = pd.read_pickle(filename)
+    astro_object = AstroObject(**d)
+    astro_object.features = empty_normal_dataframe()
+    return astro_object
+
+
 if __name__ == '__main__':
+    astro_object = get_ztf_forced_phot_cepheid()
+    print(astro_object)
+
     astro_objects = get_ztf_forced_training_examples()
     print(astro_objects[0])
