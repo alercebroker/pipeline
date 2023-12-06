@@ -148,7 +148,7 @@ class LightcurveStep(GenericStep):
             "dubious",
         ]
 
-        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
 
         parsed_result = []
         for det in ztf_models:
