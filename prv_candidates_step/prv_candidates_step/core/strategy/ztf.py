@@ -7,6 +7,8 @@ from survey_parser_plugins.core.generic import GenericNonDetection
 from survey_parser_plugins.core.mapper import Mapper
 from survey_parser_plugins.parsers import ZTFParser
 
+_ZERO_MAG = 100.0
+
 
 def prv_non_detections_mapper() -> dict:
     mapping = copy.deepcopy(ZTFParser._mapping)
@@ -84,12 +86,12 @@ class ZTFForcedPhotometryParser(SurveyParser):
         mag = -2.5 * np.log10(np.abs(forcediffimflux)) + 23.9
         e_mag = 1.0857 * forcediffimfluxunc / np.abs(forcediffimflux)
 
-        if np.isclose(data["forcediffimflux"], -99999.0):
-            mag = -999999
-            e_mag = -999999
+        if np.isclose(data["forcediffimflux"], _ZERO_MAG):
+            mag = _ZERO_MAG
+            e_mag = _ZERO_MAG
 
-        if np.isclose(data["forcediffimfluxunc"], -99999.0):
-            e_mag = -999999
+        if np.isclose(data["forcediffimfluxunc"], _ZERO_MAG):
+            e_mag = _ZERO_MAG
 
         return mag, e_mag
 
