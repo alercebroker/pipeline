@@ -170,8 +170,9 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -217,8 +218,9 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -249,8 +251,9 @@ class PsqlIntegrationTest(unittest.TestCase):
             )
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -319,8 +322,9 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -383,8 +387,9 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -489,9 +494,10 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
-                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -547,10 +553,11 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES
-                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
-                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45)
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES
+                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false)
                     ON CONFLICT DO NOTHING"""
                 )
             )
