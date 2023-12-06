@@ -71,3 +71,17 @@ def test_step_elasticc(kafka_service):
         config=step_config,
     )
     step.start()
+
+def test_step_atlas(kafka_service):
+    CONSUMER_CONFIG["TOPICS"] = ["atlas"]
+    step_config = {
+        "PRODUCER_CONFIG": PRODUCER_CONFIG,
+        "CONSUMER_CONFIG": CONSUMER_CONFIG,
+        "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+    }
+    extractor = selector("atlas")
+    step = FeaturesComputer(
+        extractor,
+        config=step_config,
+    )
+    step.start()

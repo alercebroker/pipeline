@@ -87,5 +87,14 @@ def kafka_service(docker_ip, docker_services):
     producer = KafkaProducer(config)
     for data in data_ztf:
         producer.produce(data)
-    producer.producer.flush(10)
+    # Produce messages for atlas test
+    config = {
+        "PARAMS": {"bootstrap.servers": "localhost:9092"},
+        "TOPIC": "atlas",
+        "SCHEMA_PATH": schema_path,
+    }
+    producer = KafkaProducer(config)
+    for data in data_ztf:
+        producer.produce(data)
+    producer.producer.flush(15)
     return server
