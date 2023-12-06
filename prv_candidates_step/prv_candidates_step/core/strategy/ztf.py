@@ -79,20 +79,18 @@ class ZTFForcedPhotometryParser(SurveyParser):
         magzpsci = data["magzpsci"]
         flux2uJy = 10.0 ** ((8.9 - magzpsci) / 2.5) * 1.0e6
 
+        forcediffimflux = data["forcediffimflux"] * flux2uJy
+        forcediffimfluxunc = data["forcediffimfluxunc"] * flux2uJy
+
+        mag = -2.5 * np.log10(np.abs(forcediffimflux)) + 23.9
+        e_mag = 1.0857 * forcediffimfluxunc / np.abs(forcediffimflux)
+
         if np.isclose(data["forcediffimflux"], -99999.):
             mag = np.nan
-        else:
-            forcediffimflux = data["forcediffimflux"] * flux2uJy
-            mag = -2.5 * np.log10(np.abs(forcediffimflux)) + 23.9
 
-        if np.isclose(data["forcediffimfluxunc"], -99999.):
+        if np.isclose(data["forcediffimflux"], -99999.) \
+        or np.isclose(data["forcediffimfluxunc"], -99999.):
             e_mag = np.nan
-        else:
-            if np.isclose(data["forcediffimflux"], -99999.):
-                e_mag = np.nan
-            else:
-                forcediffimfluxunc = data["forcediffimfluxunc"] * flux2uJy
-                e_mag = 1.0857 * forcediffimfluxunc / np.abs(forcediffimflux)
 
         return mag, e_mag
 
