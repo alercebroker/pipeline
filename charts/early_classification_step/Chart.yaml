@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.11a0
+appVersion: 23.12.11a1
 description: A Helm chart for Kubernetes
 name: early-classifier
 type: application
-version: 1.2.305
+version: 1.2.306
