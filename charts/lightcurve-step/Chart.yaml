@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.11a4
+appVersion: 23.12.11
 description: Full lightcurve provider step
 name: lightcurve-step
 type: application
-version: 2.0.132
+version: 2.0.133
