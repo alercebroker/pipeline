@@ -5,6 +5,9 @@ from sqlalchemy.dialects.postgresql import insert
 
 from db_plugins.db.sql.models import Object
 from ..database import MongoConnection, PsqlConnection
+import importlib.metadata
+
+version = importlib.metadata.version("sorting-hat-step")
 
 
 def oid_query(db: MongoConnection, oid: list) -> Union[str, None]:
@@ -82,6 +85,12 @@ def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
             "ncovhist": extra_fields["ncovhist"],
             "mjdstarthist": extra_fields["jdstarthist"] - 2400000.5,
             "mjdendhist": extra_fields["jdendhist"] - 2400000.5,
+            "meanra": record["ra"],
+            "meandec": record["dec"],
+            "firstmjd": record["mjd"],
+            "lastmjd": record["mjd"],
+            "deltajd": 0,
+            "step_id_corr": version,
         }
 
     oids = {
