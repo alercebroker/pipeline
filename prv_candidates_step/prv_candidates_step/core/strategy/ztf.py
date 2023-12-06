@@ -85,11 +85,11 @@ class ZTFForcedPhotometryParser(SurveyParser):
         e_mag = 1.0857 * forcediffimfluxunc / np.abs(forcediffimflux)
 
         if np.isclose(data["forcediffimflux"], -99999.0):
-            mag = np.nan
-            e_mag = np.nan
+            mag = -999999
+            e_mag = -999999
 
         if np.isclose(data["forcediffimfluxunc"], -99999.0):
-            e_mag = np.nan
+            e_mag = -999999
 
         return mag, e_mag
 
