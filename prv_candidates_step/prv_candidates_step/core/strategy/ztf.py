@@ -87,9 +87,9 @@ class ZTFForcedPhotometryParser(SurveyParser):
 
         if np.isclose(data["forcediffimflux"], -99999.):
             mag = np.nan
+            e_mag = np.nan
 
-        if np.isclose(data["forcediffimflux"], -99999.) \
-        or np.isclose(data["forcediffimfluxunc"], -99999.):
+        if np.isclose(data["forcediffimfluxunc"], -99999.):
             e_mag = np.nan
 
         return mag, e_mag
