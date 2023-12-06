@@ -16,12 +16,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
       - name: Install poetry
-        run: pipx install poetry
+        run: pipx install poetry==1.5.1
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
       - name: Install dependencies
         run: |
           cd ci
@@ -36,170 +36,170 @@ jobs:
           --stage=staging
 
   build-alert-archiving-dagger:
-      needs: update-packages-dagger
-      uses: ./.github/workflows/template_build_with_dagger.yaml
-      with:
-          stage: staging
-          extra-args: alert_archiving_step
-      secrets:
-          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: staging
+      extra-args: alert_archiving_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-correction-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: correction_step
+      stage: staging
+      extra-args: correction_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-early-classification-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: early_classification_step
+      stage: staging
+      extra-args: early_classification_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-feature-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: feature_step
+      stage: staging
+      extra-args: feature_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-balto-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
-        submodules: true
+      stage: staging
+      extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
+      submodules: true
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-mlp-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
-        submodules: true
+      stage: staging
+      extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
+      submodules: true
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-messi-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
-        submodules: true
+      stage: staging
+      extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
+      submodules: true
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-ztf-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
-        submodules: true
+      stage: staging
+      extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
+      submodules: true
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lightcurve-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: lightcurve-step
+      stage: staging
+      extra-args: lightcurve-step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-magstats-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: magstats_step
+      stage: staging
+      extra-args: magstats_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-metadata-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: metadata_step
+      stage: staging
+      extra-args: metadata_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-prv-candidates-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: prv_candidates_step
+      stage: staging
+      extra-args: prv_candidates_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-reflector-step-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: reflector_step
+      stage: staging
+      extra-args: reflector_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-s3-step-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: s3_step
+      stage: staging
+      extra-args: s3_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-scribe-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: scribe
+      stage: staging
+      extra-args: scribe
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-sorting-hat-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: sorting_hat_step
+      stage: staging
+      extra-args: sorting_hat_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-watchlist-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: watchlist_step
+      stage: staging
+      extra-args: watchlist_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-xmatch-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: xmatch_step
+      stage: staging
+      extra-args: xmatch_step
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   release-chart:
     needs:
@@ -237,56 +237,56 @@ jobs:
         uses: helm/chart-releaser-action@v1.5.0
         env:
           CR_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
-                
+
   deploy_staging:
-      needs: release-chart
-      runs-on: ubuntu-latest
-      permissions:
-        id-token: write
-        contents: read
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v3
-          with:
-            ref: main
-        - name: Configure AWS credentials
-          id: creds
-          uses: aws-actions/configure-aws-credentials@v3
-          with:
-            role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
-            aws-region: us-east-1
-            output-credentials: true
-            unset-current-credentials: true
-        - name: Install poetry
-          run: pipx install poetry
-        - name: Set up Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: 3.11
-            cache: 'poetry'
-        - name: Install dependencies
-          run: |
-            cd ci
-            poetry install
-        - name: Run dagger pipeline
-          run: |
-            cd ci 
-            poetry run python main.py deploy prepare
-            poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
-            poetry run python main.py deploy add-package correction-step --values=correction_step-helm-values --chart-folder=correction_step
-            poetry run python main.py deploy add-package early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
-            poetry run python main.py deploy add-package feature-step --values=feature_step-helm-values --chart-folder=feature_step
-            poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
-            poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
-            poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
-            poetry run python main.py deploy add-package magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
-            poetry run python main.py deploy add-package metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
-            poetry run python main.py deploy add-package prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step
-            poetry run python main.py deploy add-package s3-step --values=s3_step-helm-values --chart-folder=s3_step
-            poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe-helm-values --chart-folder=scribe
-            poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe-psql-helm-values --chart-folder=scribe
-            poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
-            poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
-            poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
-            poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
-            poetry run python main.py deploy execute --stage=staging --clear
+    needs: release-chart
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Configure AWS credentials
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
+          aws-region: us-east-1
+          output-credentials: true
+          unset-current-credentials: true
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "poetry"
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py deploy prepare
+          poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
+          poetry run python main.py deploy add-package correction-step --values=correction_step-helm-values --chart-folder=correction_step
+          poetry run python main.py deploy add-package early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
+          poetry run python main.py deploy add-package feature-step --values=feature_step-helm-values --chart-folder=feature_step
+          poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
+          poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
+          poetry run python main.py deploy add-package magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
+          poetry run python main.py deploy add-package metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
+          poetry run python main.py deploy add-package prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step
+          poetry run python main.py deploy add-package s3-step --values=s3_step-helm-values --chart-folder=s3_step
+          poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe-helm-values --chart-folder=scribe
+          poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe-psql-helm-values --chart-folder=scribe
+          poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
+          poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
+          poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
+          poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
+          poetry run python main.py deploy execute --stage=staging --clear
