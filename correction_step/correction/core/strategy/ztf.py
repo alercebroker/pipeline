@@ -9,6 +9,8 @@ CHINR_THRESHOLD = 2
 SHARPNR_MAX = 0.1
 SHARPNR_MIN = -0.13
 
+_ZERO_MAG = 100.0
+
 
 def is_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the nearest source is closer than `DISTANCE_THRESHOLD`"""
@@ -69,6 +71,12 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         e_mag_corr = np.where(aux4 < 0, np.inf, np.sqrt(aux4) / aux3)
         e_mag_corr_ext = aux2 * detections["e_mag"] / aux3
+
+    mask = np.array(np.isclose(detections["mag"], _ZERO_MAG))
+    mag_corr[mask] = np.inf
+    mask = np.array(np.isclose(detections["mag"], _ZERO_MAG) or np.isclose(detections["e_mag"], _ZERO_MAG))
+    e_mag_corr[mask] = np.inf
+    e_mag_corr_ext[mask] = np.inf
 
     return pd.DataFrame({"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext})
 
