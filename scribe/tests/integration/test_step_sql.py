@@ -45,7 +45,7 @@ PRODUCER_CONFIG = {
 
 @pytest.mark.usefixtures("psql_service")
 @pytest.mark.usefixtures("kafka_service")
-class MongoIntegrationTest(unittest.TestCase):
+class PsqlIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.db = PsqlDatabase(DB_CONFIG["PSQL"])
@@ -58,7 +58,7 @@ class MongoIntegrationTest(unittest.TestCase):
             session.execute(
                 text(
                     """
-                    INSERT INTO step(step_id, name, version, comments, date) 
+                    INSERT INTO step(step_id, name, version, comments, date)
                     VALUES ('v1', 'version 1', '1', '', current_timestamp)
                     """
                 )
@@ -80,10 +80,15 @@ class MongoIntegrationTest(unittest.TestCase):
                     "oid": "ZTF02ululeea",
                     "ndet": 1,
                     "firstmjd": 50001,
+                    "lastmjd": 50001,
                     "g_r_max": 1.0,
                     "g_r_mean_corr": 0.9,
                     "meanra": 45,
                     "meandec": 45,
+                    "ndethist": 1,
+                    "ncovhist": 1,
+                    "deltajd": 0,
+                    "step_id_corr": "v1",
                 },
             }
         )
@@ -95,10 +100,15 @@ class MongoIntegrationTest(unittest.TestCase):
                     "oid": "ZTF03ululeea",
                     "ndet": 1,
                     "firstmjd": 50001,
+                    "lastmjd": 50001,
                     "g_r_max": 1.0,
                     "g_r_mean_corr": 0.9,
                     "meanra": 45,
                     "meandec": 45,
+                    "ndethist": 1,
+                    "ncovhist": 1,
+                    "step_id_corr": "v1",
+                    "deltajd": 0,
                 },
             }
         )
@@ -160,8 +170,9 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -207,8 +218,9 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -239,8 +251,9 @@ class MongoIntegrationTest(unittest.TestCase):
             )
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -309,8 +322,9 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -373,8 +387,9 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -469,7 +484,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 text(
                     """
                     SELECT object.oid as oid, fid, meanra, meandec, magstat.ndet as ndet
-                    FROM object JOIN magstat on object.oid = magstat.oid 
+                    FROM object JOIN magstat on object.oid = magstat.oid
                     """
                 )
             )
@@ -479,9 +494,10 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
-                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING"""
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
                 )
             )
             session.commit()
@@ -527,7 +543,7 @@ class MongoIntegrationTest(unittest.TestCase):
             result = session.execute(
                 text(
                     """
-                    SELECT * FROM xmatch WHERE oid = 'ZTF04ululeea' 
+                    SELECT * FROM xmatch WHERE oid = 'ZTF04ululeea'
                     """
                 )
             )
@@ -537,10 +553,11 @@ class MongoIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             session.execute(
                 text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES
-                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45),
-                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45)
+                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES
+                    ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false),
+                    ('ZTF05ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false)
                     ON CONFLICT DO NOTHING"""
                 )
             )
@@ -687,7 +704,7 @@ class MongoIntegrationTest(unittest.TestCase):
                 result = session.execute(
                     text(
                         """
-                    SELECT * FROM forced_photometry WHERE oid = 'ZTF04ululeea' 
+                    SELECT * FROM forced_photometry WHERE oid = 'ZTF04ululeea'
                     """
                     )
                 )

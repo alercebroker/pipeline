@@ -58,7 +58,9 @@ def produce_messages(kafka_service):
             {
                 "PARAMS": {"bootstrap.servers": "localhost:9092"},
                 "TOPIC": topic,
-                "SCHEMA_PATH": os.path.join(os.path.dirname(__file__), "input_schema.avsc"),
+                "SCHEMA_PATH": os.path.join(
+                    os.path.dirname(__file__), "input_schema.avsc"
+                ),
             }
         )
         messages = generate_message(schema, 10)
@@ -70,13 +72,15 @@ def produce_messages(kafka_service):
 
     return _produce
 
+
 def populate_sql(conn: PsqlDatabase):
     with conn.session() as session:
         session.execute(
             text(
                 """
-            INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec)
-                    VALUES ('ZTF000llmn', 1, 50001, 1.0, 0.9, 45, 45) ON CONFLICT DO NOTHING
+            INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                VALUES ('ZTF000llmn', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING
         """
             )
         )

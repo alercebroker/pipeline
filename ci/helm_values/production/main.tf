@@ -213,8 +213,8 @@ resource "aws_ssm_parameter" "early_classification_step" {
   value = templatefile("templates/early_classification_step_helm_values.tftpl", {
     kafka_server        = data.aws_msk_cluster.msk_production.bootstrap_brokers_sasl_scram
     kafka_public_server = data.aws_msk_cluster.msk_public.bootstrap_brokers_sasl_scram
-    kafka_username      = var.correction_kafka_username
-    kafka_password      = var.correction_kafka_password
+    kafka_username      = var.early_kafka_username
+    kafka_password      = var.early_kafka_password
     ghcr_username       = var.ghcr_username
     ghcr_password       = var.ghcr_password
     db_host             = data.aws_instance.psql-alerts.private_ip

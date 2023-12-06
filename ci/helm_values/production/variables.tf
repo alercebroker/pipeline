@@ -94,6 +94,12 @@ variable "logstash_kafka_username" {
 variable "logstash_kafka_password" {
   type = string
 }
+variable "early_kafka_username" {
+  type = string
+}
+variable "early_kafka_password" {
+  type = string
+}
 variable "ghcr_username" {
   type = string
 }
