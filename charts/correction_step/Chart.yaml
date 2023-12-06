@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.11a2
+appVersion: 23.12.11a3
 description: Correction step chart
 name: correction-step
 type: application
-version: 2.0.130
+version: 2.0.131
