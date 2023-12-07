@@ -115,11 +115,12 @@ class InsertDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["candid"], el["oid"]): el for el in data}
         unique = list(unique.values())
-        stmt = insert(Detection).values(unique)
-        return session.connection().execute(
+        stmt = insert(Detection)
+        return session.execute(
             stmt.on_conflict_do_update(
-                constraint="detection_pkey", set_=dict(oid=stmt.excluded.oid)
-            )
+                constraint="detection_pkey", set_=stmt.excluded
+            ),
+            unique,
         )
 
 
