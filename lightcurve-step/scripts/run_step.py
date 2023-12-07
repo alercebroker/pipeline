@@ -49,7 +49,10 @@ def step_creator():
     db_sql = None
     if settings["FEATURE_FLAGS"]["USE_SQL"]:
         if settings.get("SQL_SECRET_NAME"):
-            db_sql = PSQLConnection(get_credentials(settings["SQL_SECRET_NAME"], "sql"))
+            db_sql = PSQLConnection(
+                get_credentials(settings["SQL_SECRET_NAME"], "sql"),
+                echo=settings["LOGGING_DEBUG"],
+            )
         else:
             db_sql = PSQLConnection(settings["PSQL_CONFIG"])
 

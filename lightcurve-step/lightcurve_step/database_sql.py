@@ -7,9 +7,9 @@ from db_plugins.db.sql.models import Detection, NonDetection, ForcedPhotometry
 
 
 class PSQLConnection:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, echo=False) -> None:
         url = self.__format_db_url(config)
-        self._engine = create_engine(url, echo=True)
+        self._engine = create_engine(url, echo=echo)
         self._session_factory = sessionmaker(
             self._engine,
         )
