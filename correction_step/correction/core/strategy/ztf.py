@@ -74,7 +74,9 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
 
     mask = np.array(np.isclose(detections["mag"], _ZERO_MAG))
     mag_corr[mask] = np.inf
-    mask = np.array(np.isclose(detections["mag"], _ZERO_MAG) or np.isclose(detections["e_mag"], _ZERO_MAG))
+    e_mag_corr[mask] = np.inf
+    e_mag_corr_ext[mask] = np.inf
+    mask = np.array(np.isclose(detections["e_mag"], _ZERO_MAG))
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
 
