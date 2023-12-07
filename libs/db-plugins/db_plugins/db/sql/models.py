@@ -297,6 +297,7 @@ class ForcedPhotometry(Base):
     clrcoeff = Column(Float)
     clrcounc = Column(Float)
     exptime = Column(Float)
+    adpctdif1 = Column(Float)
     adpctdif2 = Column(Float)
     diffmaglim = Column(Float)
     programid = Column(Integer)
