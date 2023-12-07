@@ -51,7 +51,8 @@ async def git_push(dry_run: bool):
             .with_directory(
                 "/pipeline",
                 client.host().directory(
-                    str(path), exclude=[".venv/", "**/.venv/"]
+                    str(path),
+                    exclude=[".venv/", "**/.venv/", "*/.venv/", "*.venv"],
                 ),
             )
             .with_workdir("/pipeline")
@@ -72,6 +73,7 @@ async def update_version(
     path: pathlib.Path,
     package_dir: str,
     version: str,
+    update_chart: bool,
     dry_run: bool,
 ):
     update_version_command = ["poetry", "version", version]
@@ -82,15 +84,16 @@ async def update_version(
         .with_exec(update_version_command)
         .with_exec(["poetry", "version", "--short"])
     )
-    new_version = await source.stdout()
-    new_version = new_version.strip()
-    updated = update_chart(source, package_dir, new_version, dry_run)
-    await updated.directory(f"/pipeline/{package_dir}").export(
+    await source.directory(f"/pipeline/{package_dir}").export(
         str(path / package_dir)
     )
-    await updated.directory(f"/pipeline/charts/{package_dir}").export(
-        str(path / f"charts/{package_dir}")
-    )
+    if update_chart:
+        new_version = await source.stdout()
+        new_version = new_version.strip()
+        updated = update_chart(source, package_dir, new_version, dry_run)
+        await updated.directory(f"/pipeline/charts/{package_dir}").export(
+            str(path / f"charts/{package_dir}")
+        )
 
 
 async def build(
@@ -134,6 +137,33 @@ async def build(
             )
 
 
+async def publish_lib(client: dagger.Client, package_dir, dry_run: bool):
+    path = pathlib.Path().cwd().parent.absolute()
+    command = ["poetry", "publish", "--build"]
+    if dry_run:
+        command.append("--dry-run")
+    # get build context directory
+    source = (
+        client.container()
+        .from_("python:3.11-slim")
+        .with_exec(["pip", "install", "poetry"])
+        .with_directory(
+            f"/pipeline/{package_dir}",
+            client.host().directory(
+                str(path / package_dir),
+                exclude=[".venv/", "**/.venv/", "*.venv", "*/.venv/"],
+            ),
+        )
+        .with_workdir(f"/pipeline/{package_dir}")
+        .with_exec(
+            ["poetry", "config", "pypi-token.pypi", os.environ["PYPI_TOKEN"]]
+        )
+        .with_exec(command)
+    )
+    out = await source.stdout()
+    print(out)
+
+
 async def get_tags(client: dagger.Client, package_dir: str) -> list:
     path = pathlib.Path().cwd().parent.absolute()
     # get build context directory
@@ -169,6 +199,7 @@ def update_chart(
     if dry_run:
         script.append("--dry-run")
     return container.with_workdir("/pipeline/ci").with_exec(script)
+
 
 class Stage(str, Enum):
     staging = "staging"

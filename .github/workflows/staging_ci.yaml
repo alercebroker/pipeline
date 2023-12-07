@@ -32,7 +32,7 @@ jobs:
           alert_archiving_step correction_step early_classification_step feature_step \
           lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
           s3_step scribe sorting_hat_step watchlist_step xmatch_step \
-          --stage=staging
+          libs/db-plugins --stage=staging
 
   build-alert-archiving-dagger:
     needs: update-packages-dagger
@@ -199,6 +199,16 @@ jobs:
       extra-args: xmatch_step
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  build-db-plugins:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: staging
+      extra-args: libs/db-plugins
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
   release-chart:
     needs:
