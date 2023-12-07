@@ -181,6 +181,7 @@ class UpdateObjectStatsCommand(Command):
 
             magstat["oid"] = self.criteria["oid"]
             magstat["fid"] = fid_map[magstat["fid"]]
+            magstat["stellar"] = bool(magstat.get("stellar"))
             if "step_id_corr" not in magstat:
                 magstat["step_id_corr"] = "ALeRCE ZTF"
 
