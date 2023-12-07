@@ -337,7 +337,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "db-plugins"
-version = "6.1.1a44"
+version = "6.1.1a47"
 description = "ALeRCE database plugins."
 optional = false
 python-versions = ">=3.7, <3.12"
