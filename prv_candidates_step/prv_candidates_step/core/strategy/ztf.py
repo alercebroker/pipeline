@@ -123,18 +123,12 @@ class ZTFForcedPhotometryParser(SurveyParser):
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
         model = model.to_dict()
 
-        # start with the alert extra fields
-        # then update with the forced photometry extra fields
-        # so that the forced photometry extra fields take precedence
-        final_extra_fields = alert["extra_fields"]
-        final_extra_fields.update(model["extra_fields"])
         model.update(
             {
                 "aid": alert["aid"],
                 "has_stamp": False,
                 "forced": True,
                 "parent_candid": alert["candid"],
-                "extra_fields": final_extra_fields,
             }
         )
         model.pop("stamps")
