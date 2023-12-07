@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.15a1
+appVersion: 23.12.15a2
 description: Previous candidates processor step
 name: prv-candidates
 type: application
-version: 2.0.141
+version: 2.0.142
