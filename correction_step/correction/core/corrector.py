@@ -106,6 +106,7 @@ class Corrector:
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
         corrected = self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
+        corrected = corrected.replace(-np.inf, None)
         self.logger.debug(f"Corrected {corrected['corrected'].sum()}")
         corrected = corrected.reset_index().to_dict("records")
         return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
