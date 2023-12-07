@@ -71,14 +71,14 @@ async def _update_package_version(packages: list, version: str, dry_run: bool):
         )
         async with anyio.create_task_group() as tg:
             for package in packages:
-                update_chart = not package.startswith("libs")
+                also_update_chart = not package.startswith("libs")
                 tg.start_soon(
                     update_version,
                     source,
                     path,
                     package,
                     version,
-                    update_chart,
+                    also_update_chart,
                     dry_run,
                 )
 

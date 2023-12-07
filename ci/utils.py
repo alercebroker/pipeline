@@ -73,7 +73,7 @@ async def update_version(
     path: pathlib.Path,
     package_dir: str,
     version: str,
-    update_chart: bool,
+    also_update_chart: bool,
     dry_run: bool,
 ):
     update_version_command = ["poetry", "version", version]
@@ -87,7 +87,7 @@ async def update_version(
     await source.directory(f"/pipeline/{package_dir}").export(
         str(path / package_dir)
     )
-    if update_chart:
+    if also_update_chart:
         new_version = await source.stdout()
         new_version = new_version.strip()
         updated = update_chart(source, package_dir, new_version, dry_run)
