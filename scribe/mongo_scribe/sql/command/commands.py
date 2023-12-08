@@ -1,20 +1,20 @@
+import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from sqlalchemy import update
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import insert
-
 from db_plugins.db.sql.models import (
-    Object,
-    ForcedPhotometry,
     Detection,
-    NonDetection,
     Feature,
+    ForcedPhotometry,
     MagStats,
+    NonDetection,
+    Object,
     Probability,
     Xmatch,
 )
+from sqlalchemy import update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from .commons import ValidCommands
 
