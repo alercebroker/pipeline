@@ -55,7 +55,7 @@ def update_chart_version(package: str, version: str, dry_run: bool = False):
         if not match:
             raise ValueError("Could not find valid version in Chart.yaml")
         chart = re.sub(
-            r"version: (\d+).(\d+).(\d+)",
+            r"version: (\d+).(\d+).(\d+).*",
             f"version: {version}",
             original,
         )
