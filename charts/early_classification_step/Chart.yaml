@@ -3,4 +3,4 @@ appVersion: 23.12.16a3
 description: A Helm chart for Kubernetes
 name: early-classifier
 type: application
-version: 1.2.326
+version: 23.12.0
