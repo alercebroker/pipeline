@@ -59,7 +59,6 @@ class ZTFPreviousDetectionsParser(SurveyParser):
             for k, v in candcopy.items()
             if k not in cls._exclude_from_extra_fields()
         }
-        extra_fields.update(acopy["extra_fields"])
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
         model = model.to_dict()
         model.pop("stamps", None)
