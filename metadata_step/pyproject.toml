@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "metadata-step"
-version = "23.12.16a3"
+version = "23.12.16a4"
 description = ""
 authors = ["Pedro Gallardo <pedrogallardorobinson@gmail.com>"]
 readme = "README.md"
