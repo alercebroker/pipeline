@@ -33,9 +33,7 @@ def update_app_version(package: str, new_version: str, dry_run: bool):
             f.write(chart)
 
 
-def update_chart_version(
-    package: str, version: str = "", dry_run: bool = False
-):
+def update_chart_version(package: str, version: str, dry_run: bool = False):
     """Updates the chart version in the Chart.yaml file
 
     If no version is provided, it will increment the patch version
@@ -56,19 +54,12 @@ def update_chart_version(
     with open(f"../charts/{package}/Chart.yaml", "w") as f:
         if not match:
             raise ValueError("Could not find valid version in Chart.yaml")
-        updating = version == ""
-        version = version or match.group("version")
-        major, minor, patch = version.split(".")
-        patch = int(patch)
-        patch = patch + 1 if updating else patch
         chart = re.sub(
             r"version: (\d+).(\d+).(\d+)",
-            f"version: { major }.{ minor }.{ patch }",
+            f"version: {version}",
             original,
         )
-        print(
-            f"Updating chart {package} version to {major}.{minor}.{(int(patch) + 1)}"
-        )
+        print(f"Updating chart {package} version to {version}")
         if not dry_run:
             f.write(chart)
 
@@ -95,7 +86,9 @@ def get_package_version(package: str):
 def main(package: str, package_version, dry_run: bool):
     update_app_version(package, package_version, dry_run)
     if "a" in package_version:
+        modifier = package_version[package_version.index("a") + 1 :]
         package_version = package_version[: package_version.index("a")]
+        package_version = f"{package_version}-{modifier}"
     update_chart_version(package, package_version, dry_run=dry_run)
 
 
