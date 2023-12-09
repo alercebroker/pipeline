@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.18
+appVersion: 23.12.19a0
 description: Lightcurve classifier step
 name: lc-classifier-step
 type: application
-version: 23.12.18-6-5
+version: 23.12.19-0-6-5
