@@ -295,7 +295,6 @@ jobs:
           poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe-helm-values --chart-folder=scribe
           poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe-psql-helm-values --chart-folder=scribe
           poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
-          poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
           poetry run python main.py deploy add-package watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
           poetry run python main.py deploy add-package xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
           poetry run python main.py deploy execute --stage=staging --clear
