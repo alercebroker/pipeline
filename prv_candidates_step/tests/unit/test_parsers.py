@@ -34,7 +34,9 @@ def test_prv_detections_parser():
     assert result["oid"] == "oid"
     assert result["aid"] == "aid"
     assert not result["has_stamp"]
-    assert result["extra_fields"]["ef1"] == 1
+    assert "ef1" not in result["extra_fields"]
+    assert "distnr" in result["extra_fields"]
+    # Other extra fields should be verified as well
     assert result["parent_candid"] == "123"
 
 
@@ -52,12 +54,25 @@ def test_ztf_extract_detections_and_non_detections():
         "oid": "oid",
         "candid": "123",
         "fid": 1,
-        "extra_fields": {"ef1": 1, "prv_candidates": pickle.dumps(data)},
+        "extra_fields": {
+            "ef1": 1,
+            "prv_candidates": pickle.dumps(data),
+            "distnr": -555,
+        },
     }
     result = ztf_extract(alert)
     assert len(result["detections"]) == 2
     for res in result["detections"]:
-        assert res["extra_fields"]["ef1"] == 1
+        assert (
+            "ef1" in res["extra_fields"]
+            if res["candid"] == "123"
+            else "ef1" not in res["extra_fields"]
+        )
+        assert (
+            res["extra_fields"]["distnr"] == -555
+            if res["candid"] == "123"
+            else res["extra_fields"]["distnr"] > 0
+        )
 
 
 def test_elasticc_extract_detections_and_non_detections():
