@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.16a2
+appVersion: 23.12.16a3
 description: A Helm chart for Kubernetes
 name: magstats-step
 type: application
-version: 2.0.148
+version: 2.0.149
