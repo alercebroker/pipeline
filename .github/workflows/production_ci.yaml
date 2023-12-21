@@ -285,53 +285,6 @@ jobs:
           poetry run python main.py deploy add-package watchlist-step --chart=watchlist-step --values=watchlist_step-helm-values --chart-folder=watchlist_step
           poetry run python main.py deploy execute --stage=production --clear
 
-  deploy_elasticc:
-    needs: release-chart
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: main
-      - name: Configure AWS credentials
-        id: creds
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          aws-region: us-east-1
-          output-credentials: true
-          unset-current-credentials: true
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-          cache: "poetry"
-      - name: Install dependencies
-        run: |
-          cd ci
-          poetry install
-      - name: Run dagger pipeline
-        run: |
-          cd ci
-          poetry run python main.py deploy prepare
-          poetry run python main.py deploy add-package correction-step-elasticc --chart=correction-step --values=correction_step-helm-values-elasticc --chart-folder=correction_step
-          poetry run python main.py deploy add-package feature-step-elasticc --chart=feature-step --values=feature_step-helm-values-elasticc --chart-folder=feature_step
-          poetry run python main.py deploy add-package balto-classifier --chart=lc-classifier-step --values=balto-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package messi-classifier --chart=lc-classifier-step --values=messi-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package tinkywinky-classifier --chart=lc-classifier-step --values=tinkywinky-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package lightcurve-step-elasticc --chart=lightcurve-step --values=lightcurve-step-helm-values-elasticc --chart-folder=lightcurve-step
-          poetry run python main.py deploy add-package magstats-step-elasticc --chart=magstats-step --values=magstats_step-helm-values-elasticc --chart-folder=magstats_step
-          poetry run python main.py deploy add-package prv-candidates-step-elasticc --chart=prv-candidates --values=prv_candidates_step-helm-values-elasticc --chart-folder=prv_candidates_step
-          poetry run python main.py deploy add-package scribe-elasticc --chart=scribe --values=scribe_step-helm-values-elasticc --chart-folder=scribe
-          poetry run python main.py deploy add-package sorting-hat-step-elasticc --chart=sorting-hat --values=sorting_hat_step-helm-values-elasticc --chart-folder=sorting_hat_step
-          poetry run python main.py deploy add-package xmatch-step-elasticc --chart=xmatch-step --values=xmatch_step-helm-values-elasticc --chart-folder=xmatch_step
-          poetry run python main.py deploy execute --stage=production --clear
-
   create_realease:
     needs: deploy_production
     runs-on: ubuntu-latest
