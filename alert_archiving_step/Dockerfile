@@ -1,11 +1,16 @@
 FROM python:3.9-slim as builder
 MAINTAINER ALeRCE
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONFAULTHANDLER=1 \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100 \
+  POETRY_VIRTUALENVS_IN_PROJECT=true \
+  POETRY_NO_INTERACTION=1
 WORKDIR /app/
 RUN pip install poetry
 COPY ./alert_archiving_step/poetry.lock ./alert_archiving_step/pyproject.toml /app/
-RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --without=dev --no-root
 
 FROM python:3.9-slim
