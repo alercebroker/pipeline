@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 23.12.24a0
+appVersion: 23.12.24
 description: A Helm chart for Kubernetes
 name: alert-archive-step
 type: application
-version: 23.12.24-0
+version: 23.12.24

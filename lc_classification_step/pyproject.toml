@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "23.12.24a0"
+version = "23.12.24"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
