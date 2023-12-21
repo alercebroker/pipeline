@@ -2,6 +2,7 @@ import json
 import os
 import pytest
 import unittest
+import math
 
 from sqlalchemy import text
 
@@ -30,8 +31,8 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
         "auto.offset.reset": "beginning",
     },
-    "NUM_MESSAGES": 2,
-    "TIMEOUT": 10,
+    "NUM_MESSAGES": 3,
+    "TIMEOUT": 1,
 }
 
 PRODUCER_CONFIG = {
@@ -161,6 +162,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                     "sid": "lIklphisOV",
                     "stellar": False,
                     "tid": "ZTF",
+                    "step_id_corr": "test",
                 },
             }
         )
@@ -182,12 +184,42 @@ class PsqlIntegrationTest(unittest.TestCase):
         with self.db.session() as session:
             result = session.execute(
                 text(
-                    """ SELECT candid, oid FROM detection WHERE oid = 'ZTF04ululeea' """
+                    """ SELECT * FROM detection WHERE oid = 'ZTF04ululeea' """
                 )
             )
-            result = list(result)[0]
+            result = list(result)
+            assert len(result) == 1
+            result = result[0]
             assert result[0] == 932472823
             assert result[1] == "ZTF04ululeea"
+            assert math.isclose(result[2], 0.8421688401414276)
+            assert result[3] == 3
+            assert math.isclose(result[4], -285679341253738006)
+            assert result[5] is None
+            assert result[6] == -224123822
+            assert result[7] is None
+            assert math.isclose(result[8], 0.10448978320949609)
+            assert math.isclose(result[9], 0.5753534762299036)
+            assert math.isclose(result[10], 0.43753013014793396)
+            assert math.isclose(result[11], 0.5646288990974426)
+            assert result[12] is None
+            assert result[13] is None
+            assert result[14] == 1
+            assert result[15] is None
+            assert result[16] is None
+            assert result[17] is None
+            assert result[18] is None
+            assert result[19] is None
+            assert result[20] is None
+            assert result[21] is None
+            assert result[22] is None
+            assert result[23] is None
+            assert result[24] is None
+            assert result[25] is False
+            assert result[26] is False
+            assert result[27] == 87654321
+            assert result[28] is True
+            assert result[29] == "test"
 
     def test_upsert_non_detections(self):
         command = {
@@ -696,8 +728,11 @@ class PsqlIntegrationTest(unittest.TestCase):
             }
 
             self.producer.produce({"payload": json.dumps(command)})
+            command["data"]["mag"] = 20
             self.producer.produce({"payload": json.dumps(command)})
-            self.producer.producer.flush(1)
+            command["data"]["pid"] = 420
+            self.producer.produce({"payload": json.dumps(command)})
+            self.producer.producer.flush()
 
             self.step.start()
             with self.db.session() as session:
@@ -708,4 +743,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                     """
                     )
                 )
-            assert True
+                result = result.fetchall()
+                assert len(result) == 2
+                assert result[0][0] == 420
+                assert result[1][0] == 423432

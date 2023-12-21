@@ -10,7 +10,7 @@ affinity:
 
 autoscaling:
   enabled: true
-  maxReplicas: 16
+  maxReplicas: 8
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
 
@@ -44,7 +44,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["w_object","w_detection", "w_non_detections"]
-    NUM_MESSAGES: 1000
+    NUM_MESSAGES: 500
     TIMEOUT: 10
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"

@@ -1,7 +1,7 @@
-import itertools
 import numpy as np
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Dict, List
+import logging
 
 from sqlalchemy import create_engine, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -10,9 +10,9 @@ from db_plugins.db.sql.models import Reference, Gaia_ztf, Ss_ztf, Dataquality, P
 
 
 class PSQLConnection:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, echo: bool) -> None:
         url = self.__format_db_url(config)
-        self._engine = create_engine(url, echo=True)
+        self._engine = create_engine(url, echo=echo)
         self._session_factory = sessionmaker(
             self._engine,
         )
@@ -28,6 +28,7 @@ class PSQLConnection:
         try:
             yield session
         except Exception as e:
+            logging.error(e)
             session.rollback()
             raise
         finally:
@@ -35,7 +36,7 @@ class PSQLConnection:
 
 
 def _none_to_nan(value):
-    if value == None:
+    if value is None:
         return np.nan
     return value
 

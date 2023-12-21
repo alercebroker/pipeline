@@ -2,7 +2,7 @@ import anyio
 import dagger
 import sys
 import pathlib
-from utils import build, update_version, git_push
+from utils import build, update_version, git_push, publish_lib
 
 
 async def _build_package(packages: dict, dry_run: bool):
@@ -15,14 +15,22 @@ async def _build_package(packages: dict, dry_run: bool):
                 build_args = []
                 for arg, value in z:
                     build_args.append((arg, value))
-                tg.start_soon(
-                    build,
-                    client,
-                    packages[pkg]["package-dir"],
-                    build_args,
-                    pkg,
-                    dry_run,
-                )
+                if not pkg.startswith("libs"):
+                    tg.start_soon(
+                        build,
+                        client,
+                        packages[pkg]["package-dir"],
+                        build_args,
+                        pkg,
+                        dry_run,
+                    )
+                else:
+                    tg.start_soon(
+                        publish_lib,
+                        client,
+                        packages[pkg]["package-dir"],
+                        dry_run,
+                    )
 
 
 async def _update_package_version(packages: list, version: str, dry_run: bool):
@@ -56,24 +64,27 @@ async def _update_package_version(packages: list, version: str, dry_run: bool):
             .with_directory(
                 "/pipeline",
                 client.host().directory(
-                    str(path), exclude=[".venv/", "**/.venv/"]
+                    str(path),
+                    exclude=[".venv/", "**/.venv/", "*/.venv/", "*.venv"],
                 ),
             )
         )
         async with anyio.create_task_group() as tg:
             for package in packages:
+                also_update_chart = not package.startswith("libs")
                 tg.start_soon(
                     update_version,
                     source,
                     path,
                     package,
                     version,
+                    also_update_chart,
                     dry_run,
                 )
 
 
-def update_packages(packages, libs, version, dry_run: bool):
-    anyio.run(_update_package_version, packages + libs, version, dry_run)
+def update_packages(packages, version, dry_run: bool):
+    anyio.run(_update_package_version, packages, version, dry_run)
     anyio.run(git_push, dry_run)
 
 

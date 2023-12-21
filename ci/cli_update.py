@@ -11,21 +11,23 @@ app = typer.Typer(
     """
 )
 
+
 @app.command()
 def version(
     packages: List[str],
     version: str = None,
     stage: Stage = Stage.staging,
-    dry_run: bool = False
+    dry_run: bool = False,
 ):
     """
     Update the versions of a list of packages. Can be used with a single package.
     """
     if stage == Stage.staging:
-        update_packages(packages, [], "prerelease", dry_run)
+        update_packages(packages, "prerelease", dry_run)
     if stage == Stage.production:
         # si no viene version lanzar error?
-        update_packages(packages, [], version, dry_run)
+        update_packages(packages, version, dry_run)
+
 
 if __name__ == "__main__":
     app()

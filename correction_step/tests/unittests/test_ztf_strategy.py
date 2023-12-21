@@ -138,3 +138,23 @@ def test_ztf_strategy_correction_with_null_nr_fields_results_in_null_corrections
     assert corrected["mag_corr"].isna().all()
     assert corrected["e_mag_corr"].isna().all()
     assert corrected["e_mag_corr_ext"].isna().all()
+
+
+def test_ztf_strategy_correction_with_zeromag():
+    detections = pd.DataFrame.from_records(
+        {"magnr": [13, 15], "sigmagnr": [0.1, 1], "mag": [100, 100], "e_mag": [0.1, 0.2], "isdiffpos": [1, 0]}
+    )
+    corrected = ztf.correct(detections)
+    assert np.isinf(corrected["mag_corr"]).all()
+    assert np.isinf(corrected["e_mag_corr"]).all()
+    assert np.isinf(corrected["e_mag_corr_ext"]).all()
+
+
+def test_ztf_strategy_correction_with_zeromag_only_emag():
+    detections = pd.DataFrame.from_records(
+        {"magnr": [13, 15], "sigmagnr": [0.1, 1], "mag": [14, 15], "e_mag": [100, 100], "isdiffpos": [1, 0]}
+    )
+    corrected = ztf.correct(detections)
+    assert not np.isinf(corrected["mag_corr"]).all()
+    assert np.isinf(corrected["e_mag_corr"]).all()
+    assert np.isinf(corrected["e_mag_corr_ext"]).all()

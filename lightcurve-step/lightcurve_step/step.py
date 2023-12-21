@@ -148,7 +148,7 @@ class LightcurveStep(GenericStep):
             "dubious",
         ]
 
-        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
 
         parsed_result = []
         for det in ztf_models:
@@ -188,7 +188,7 @@ class LightcurveStep(GenericStep):
         return parsed_result
 
     def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
-        FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
         non_dets = []
         for non_det in ztf_models:
             non_det = non_det[0].__dict__
@@ -209,7 +209,7 @@ class LightcurveStep(GenericStep):
 
     def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
         def format_as_detection(fp):
-            FID = {1: "g", 2: "r", 0: None, 12: "gr"}
+            FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
             fp["fid"] = FID[fp["fid"]]
             fp["e_ra"] = 0
             fp["e_dec"] = 0

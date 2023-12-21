@@ -2,6 +2,7 @@ from __future__ import annotations
 import pickle
 import json
 import logging
+from copy import deepcopy
 
 import pandas as pd
 from apf.core import get_class
@@ -109,9 +110,10 @@ class CorrectionStep(GenericStep):
 
     @classmethod
     def execute(cls, message: dict) -> dict:
-        corrector = Corrector(message["detections"])
+        message_copy = deepcopy(message)
+        corrector = Corrector(message_copy["detections"])
         detections = corrector.corrected_as_records()
-        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        non_detections = pd.DataFrame(message_copy["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
         coords = corrector.coordinates_as_records()
         return {
             "detections": detections,
@@ -129,7 +131,7 @@ class CorrectionStep(GenericStep):
         for detection in detections:
             count += 1
             flush = False
-            detection = detection.copy()  # Prevent further modification for next step
+            detection = deepcopy(detection)  # Prevent further modification for next step
             if not detection.pop("new"):
                 continue
             candid = detection.pop("candid")

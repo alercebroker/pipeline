@@ -1,22 +1,28 @@
+import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List
-
-from sqlalchemy import update
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import insert
+from importlib.metadata import version, PackageNotFoundError
 
 from db_plugins.db.sql.models import (
-    Object,
-    ForcedPhotometry,
     Detection,
-    NonDetection,
     Feature,
+    ForcedPhotometry,
     MagStats,
+    NonDetection,
+    Object,
     Probability,
     Xmatch,
 )
+from sqlalchemy import update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from .commons import ValidCommands
+
+try:
+    step_version = version("srcibe")
+except PackageNotFoundError:
+    step_version = "23.12.x"
 
 
 class Command(ABC):
@@ -90,20 +96,22 @@ class InsertDetectionsCommand(Command):
             "drb",
             "drbversion",
         ]
-        new_data = data.copy()
+        new_data = copy.deepcopy(data)
         # rename some fields
         for k, v in field_mapping.items():
             new_data[v] = new_data.pop(k)
 
         # add fields from extra_fields
         for field in _extra_fields:
-            if field in data["extra_fields"]:
-                new_data[field] = data["extra_fields"][field]
+            if field in new_data["extra_fields"]:
+                new_data[field] = new_data["extra_fields"][field]
 
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
-        new_data["step_id_corr"] = data.get("step_id_corr", "ALeRCE v3")
+        new_data["step_id_corr"] = new_data.get("step_id_corr", step_version)
         new_data["parent_candid"] = (
-            int(data["parent_candid"]) if data["parent_candid"] != "None" else None
+            int(new_data["parent_candid"])
+            if new_data["parent_candid"] != "None"
+            else None
         )
         new_data["fid"] = fid_map[new_data["fid"]]
 
@@ -113,11 +121,12 @@ class InsertDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["candid"], el["oid"]): el for el in data}
         unique = list(unique.values())
-        stmt = insert(Detection).values(unique)
-        return session.connection().execute(
+        stmt = insert(Detection)
+        return session.execute(
             stmt.on_conflict_do_update(
-                constraint="detection_pkey", set_=dict(oid=stmt.excluded.oid)
-            )
+                constraint="detection_pkey", set_=stmt.excluded
+            ),
+            unique,
         )
 
 
@@ -137,13 +146,13 @@ class InsertForcedPhotometryCommand(Command):
         ]
         fid_map = {"g": 1, "r": 2, "i": 3}
 
+        data = copy.deepcopy(data)
         extra_fields = data["extra_fields"]
         extra_fields.pop("brokerIngestTimestamp", "")
         extra_fields.pop("surveyPublishTimestamp", "")
         extra_fields.pop("parent_candid", "")
         extra_fields.pop("forcediffimfluxunc", "")
-        new_data = data.copy()
-        new_data = {k: v for k, v in new_data.items() if k not in exclude}
+        new_data = {k: v for k, v in data.items() if k not in exclude}
         new_data["fid"] = fid_map[new_data["fid"]]
 
         return {**new_data, **extra_fields}
@@ -152,11 +161,12 @@ class InsertForcedPhotometryCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["pid"], el["oid"]): el for el in data}
         unique = list(unique.values())
-        fp_stmt = insert(ForcedPhotometry).values(unique)
-        return session.connection().execute(
-            fp_stmt.on_conflict_do_update(
-                constraint="forced_photometry_pkey", set_=fp_stmt.excluded
-            )
+        statement = insert(ForcedPhotometry)
+        return session.execute(
+            statement.on_conflict_do_update(
+                constraint="forced_photometry_pkey", set_=statement.excluded
+            ),
+            unique,
         )
 
 
@@ -170,6 +180,7 @@ class UpdateObjectStatsCommand(Command):
             raise ValueError("Magstats not provided in the commands data")
 
     def _format_data(self, data):
+        data = copy.deepcopy(data)
         magstats = data.pop("magstats")
         data["oid"] = self.criteria["oid"]
         for magstat in magstats:
@@ -178,6 +189,7 @@ class UpdateObjectStatsCommand(Command):
 
             magstat["oid"] = self.criteria["oid"]
             magstat["fid"] = fid_map[magstat["fid"]]
+            magstat["stellar"] = bool(magstat.get("stellar"))
             if "step_id_corr" not in magstat:
                 magstat["step_id_corr"] = "ALeRCE ZTF"
 
@@ -221,12 +233,12 @@ class UpsertNonDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["oid"], el["fid"], el["mjd"]): el for el in data}
         unique = list(unique.values())
-        insert_stmt = insert(NonDetection).values(unique)
+        insert_stmt = insert(NonDetection)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="non_detection_pkey",
             set_=dict(diffmaglim=insert_stmt.excluded.diffmaglim),
         )
-        return session.connection().execute(insert_stmt)
+        return session.execute(insert_stmt, unique)
 
 
 class UpsertFeaturesCommand(Command):
@@ -262,13 +274,13 @@ class UpsertFeaturesCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["oid"], el["name"], el["fid"]): el for el in data}
         unique = list(unique.values())
-        insert_stmt = insert(Feature).values(unique)
+        insert_stmt = insert(Feature)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="feature_pkey",
             set_=dict(value=insert_stmt.excluded.value),
         )
 
-        return session.connection().execute(insert_stmt)
+        return session.execute(insert_stmt, unique)
 
 
 class UpsertProbabilitiesCommand(Command):
@@ -294,15 +306,18 @@ class UpsertProbabilitiesCommand(Command):
         ]
         parsed.sort(key=lambda e: e["probability"], reverse=True)
         parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
-        return [{**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]]
+        return [
+            {**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]
+        ]
 
     @staticmethod
     def db_operation(session: Session, data: List):
         unique = {
-            (el["oid"], el["classifier_name"], el["class_name"]): el for el in data
+            (el["oid"], el["classifier_name"], el["class_name"]): el
+            for el in data
         }
         unique = list(unique.values())
-        insert_stmt = insert(Probability).values(unique)
+        insert_stmt = insert(Probability)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="probability_pkey",
             set_=dict(
@@ -311,7 +326,7 @@ class UpsertProbabilitiesCommand(Command):
             ),
         )
 
-        return session.connection().execute(insert_stmt)
+        return session.execute(insert_stmt, unique)
 
 
 class UpsertXmatchCommand(Command):
@@ -330,7 +345,7 @@ class UpsertXmatchCommand(Command):
     def db_operation(session: Session, data: List):
         uniques = {el["oid"]: el for el in data}
         uniques = list(uniques.values())
-        insert_stmt = insert(Xmatch).values(uniques)
+        insert_stmt = insert(Xmatch)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="xmatch_pkey",
             set_=dict(
@@ -339,4 +354,4 @@ class UpsertXmatchCommand(Command):
             ),
         )
 
-        return session.connection().execute(insert_stmt)
+        return session.execute(insert_stmt, uniques)

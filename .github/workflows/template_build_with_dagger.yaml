@@ -2,47 +2,49 @@ name: Build_with dagget template
 on:
   workflow_call:
     inputs:
-        stage:
-            required: true
-            type: string
-            default: 'staging'
-        extra-args:
-            required: false
-            type: string
-            default: ''
-        submodules:
-            required: false
-            type: boolean
-            default: false
+      stage:
+        required: true
+        type: string
+        default: "staging"
+      extra-args:
+        required: false
+        type: string
+        default: ""
+      submodules:
+        required: false
+        type: boolean
+        default: false
     secrets:
-        GH_TOKEN:
-          required: true
-
+      GH_TOKEN:
+        required: true
+      PYPI_TOKEN:
+        required: false
 
 jobs:
-    build-package:
-        runs-on: ubuntu-latest
-        env:
-            GHCR_TOKEN: ${{ secrets.GH_TOKEN }}
-        steps:
-          - name: Check out repository code
-            uses: actions/checkout@v4
-            with:
-                ref: main
-                submodules: ${{ inputs.submodules}}
-                token: ${{ secrets.GH_TOKEN }}
-          - name: Install poetry
-            run: pipx install poetry
-          - name: Set up Python
-            uses: actions/setup-python@v4
-            with:
-                python-version: 3.11
-                cache: 'poetry'
-          - name: Install dependencies
-            run: |
-                cd ci
-                poetry install
-          - name: Run dagger pipeline
-            run: |
-                cd ci
-                poetry run python main.py build direct ${{ inputs.extra-args }} --stage=${{ inputs.stage }}
+  build-package:
+    runs-on: ubuntu-latest
+    env:
+      GHCR_TOKEN: ${{ secrets.GH_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: ${{ inputs.submodules}}
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: "poetry"
+      - name: Install dependencies
+        run: |
+          cd ci
+          poetry install
+      - name: Run dagger pipeline
+        run: |
+          cd ci
+          poetry run python main.py build direct ${{ inputs.extra-args }} --stage=${{ inputs.stage }}

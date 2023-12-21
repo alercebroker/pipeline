@@ -28,7 +28,7 @@ from metadata_step.utils.database import PSQLConnection
 
 
 DATABASE = get_credentials(STEP_CONFIG["DATABASE_SECRET_NAME"])
-sql = PSQLConnection(DATABASE)
+sql = PSQLConnection(DATABASE, echo=STEP_CONFIG.get("LOGGING_DEBUG", False))
 
 step = MetadataStep(config=STEP_CONFIG, db_sql=sql)
 step.start()
