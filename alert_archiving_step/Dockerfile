@@ -13,6 +13,7 @@ RUN pip install poetry
 WORKDIR /app
 COPY --from=builder /app /app
 COPY ./alert_archiving_step/README.md /app/
+COPY ./alert_archiving_step/settings.py /app/
 COPY ./alert_archiving_step/scripts /app/scripts
 COPY ./alert_archiving_step/alert_archiving_step /app/alert_archiving_step
 RUN poetry install --no-interaction --only-root
