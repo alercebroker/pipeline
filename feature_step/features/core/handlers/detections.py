@@ -5,8 +5,10 @@ import pandas as pd
 from ..utils import functions
 from ._base import BaseHandler
 
+
 class NoDetectionsException(Exception):
     pass
+
 
 class DetectionsHandler(BaseHandler):
     """Class for handling detections.
@@ -38,7 +40,6 @@ class DetectionsHandler(BaseHandler):
         "e_mag_ml",
         "forced",
     ]
-
 
     def __init__(
         self,

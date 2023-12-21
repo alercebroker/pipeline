@@ -81,14 +81,14 @@ class FeaturesComputer(GenericStep):
                 for message_detection in message["detections"]
             ]
             messages_aid_oid[message["aid"]] = list(set(oids_of_aid))
-        
+
         try:
             features_extractor = self.features_extractor(
                 detections, non_detections, xmatch
             )
         except NoDetectionsException:
             return []
-        
+
         features = features_extractor.generate_features()
         if len(features) > 0:
             self.produce_to_scribe(messages_aid_oid, features)
