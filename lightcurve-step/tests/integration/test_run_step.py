@@ -36,6 +36,7 @@ def test_step_start(
     mongo_service,
     env_variables,
     psql_conn,
+    mongo_conn,
     kafka_consumer,
 ):
     from scripts.run_step import step_creator
@@ -48,6 +49,13 @@ def test_step_start(
     messages = list(consumer.consume())
     assert len(messages) == 10
     for msg in messages:
+        detections = msg["detections"]
+        oids = set(map(lambda x: x["oid"], msg["detections"]))
+        assert len(oids) == 1
+        if oids.pop() == "ZTF000llmn":
+            assert len(detections) == 12  # 10 from the input + 2 from the db
+        else:
+            assert len(detections) == 10  # 10 from the input only
         candids_are_string = list(map(lambda x: type(x) == str, msg["candid"]))
         assert all(candids_are_string)
 
@@ -95,4 +103,3 @@ def test_step_with_explicit_db_config(
     consumer = kafka_consumer(["lightcurve1"])
     assert len(list(consumer.consume())) == 10
     os.environ = envcopy
-

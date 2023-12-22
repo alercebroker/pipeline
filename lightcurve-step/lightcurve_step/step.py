@@ -91,14 +91,14 @@ class LightcurveStep(GenericStep):
         detections = pd.DataFrame(
             messages["detections"]
             + list(db_mongo_detections)
-            + list(db_sql_detections)
+            + db_sql_detections
             + list(db_mongo_forced_photometries)
-            + list(db_sql_forced_photometries)
+            + db_sql_forced_photometries
         )
         non_detections = pd.DataFrame(
             messages["non_detections"]
             + list(db_mongo_non_detections)
-            + list(db_sql_non_detections)
+            + db_sql_non_detections
         )
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["candid"] = detections["candid"].astype(str)
@@ -121,7 +121,7 @@ class LightcurveStep(GenericStep):
             "last_mjds": messages["last_mjds"],
         }
 
-    def _parse_ztf_detection(self, ztf_models: list, *, oids):
+    def _parse_ztf_detection(self, ztf_models: list, *, oids) -> list:
         GENERIC_FIELDS = {
             "tid",
             "sid",
@@ -146,6 +146,11 @@ class LightcurveStep(GenericStep):
             "mag_corr",
             "e_mag_corr_ext",
             "dubious",
+            "magpsf",
+            "sigmapsf",
+            "magpsf_corr",
+            "sigmapsf_corr",
+            "sigmapsf_corr_ext",
         ]
 
         FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
@@ -182,12 +187,13 @@ class LightcurveStep(GenericStep):
 
             for field in FIELDS_TO_REMOVE:
                 parsed.pop(field, None)
+                parsed["extra_fields"].pop(field, None)
 
             parsed_result.append({**parsed, "forced": False, "new": False})
 
         return parsed_result
 
-    def _parse_ztf_non_detection(self, ztf_models: list, *, oids):
+    def _parse_ztf_non_detection(self, ztf_models: list, *, oids) -> list:
         FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
         non_dets = []
         for non_det in ztf_models:
@@ -207,7 +213,7 @@ class LightcurveStep(GenericStep):
             non_dets.append(mongo_non_detection)
         return non_dets
 
-    def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids):
+    def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids) -> list:
         def format_as_detection(fp):
             FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
             fp["fid"] = FID[fp["fid"]]

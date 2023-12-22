@@ -5,6 +5,7 @@ import uuid
 from fastavro.schema import load_schema
 from sqlalchemy import text
 from db_plugins.db.sql._connection import PsqlDatabase
+from db_plugins.db.mongo._connection import MongoConnection
 from .utils import generate_message
 
 
@@ -42,6 +43,7 @@ def env_variables():
         "MONGO_SECRET_NAME": "mongo_secret",
         "SQL_SECRET_NAME": "sql_secret",
         "CONSUME_MESSAGES": "10",
+        "SKIP_MJD_FILTER": "True",
     }
     for key in env_variables_dict:
         os.environ[key] = env_variables_dict[key]
@@ -71,6 +73,77 @@ def produce_messages(kafka_service):
         producer.producer.flush()
 
     return _produce
+
+
+def populate_mongo(mongo_database):
+    mongo_database["detection"].insert_one(
+        {
+            "candid": 987654321,
+            "oid": "ZTF000llmn",
+            "tid": "ztf",
+            "sid": "ztf",
+            "aid": "AL00XYZ00",
+            "pid": 1,
+            "mjd": 1,
+            "fid": 1,
+            "isdiffpos": -1,
+            "ra": 45,
+            "dec": 45,
+            "e_ra": 0.1,
+            "e_dec": 0.1,
+            "mag": 23.1,
+            "e_mag": 0.9,
+            "corrected": False,
+            "dubious": False,
+            "has_stamp": False,
+        }
+    )
+    mongo_database["object"].insert_one(
+        {
+            "aid": "AL00XYZ00",
+            "oid": "ZTF000llmn",
+            "ndet": 1,
+            "firstmjd": 50001,
+            "lastmjd": 50001,
+            "deltajd": 0,
+            "meanra": 45,
+            "meandec": 45,
+            "sigmara": 0.1,
+            "sigmadec": 0.1,
+        }
+    )
+    mongo_database["non_detection"].insert_one(
+        {
+            "candid": 987654321,
+            "oid": "ZTF000llmn",
+            "fid": 1,
+            "mjd": 55000,
+            "diffmaglim": 42.00,
+            "aid": "AL00XYZ00",
+            "tid": "ztf",
+            "sid": "ztf",
+        }
+    )
+    mongo_database["forced_photometry"].insert_one(
+        {
+            "_id": "ZTF000llmn_9182734",
+            "oid": "ZTF000llmn",
+            "mjd": 55500,
+            "pid": 9182734,
+            "mag": 21,
+            "e_mag": 0.1,
+            "fid": 1,
+            "ra": 45.0,
+            "dec": 45.0,
+            "isdiffpos": 1,
+            "corrected": False,
+            "dubious": False,
+            "has_stamp": False,
+            "aid": "AL00XYZ00",
+            "tid": "ztf",
+            "sid": "ztf",
+        }
+    )
 
 
 def populate_sql(conn: PsqlDatabase):
@@ -104,8 +177,8 @@ def populate_sql(conn: PsqlDatabase):
         session.execute(
             text(
                 """
-            INSERT INTO forced_photometry(oid, mjd, pid, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp)
-            VALUES ('ZTF000llmn', 55500, 9182734, 1, 45.0, 45.0, 1, false, false, false)
+            INSERT INTO forced_photometry(oid, mjd, pid, mag, e_mag, fid, ra, dec, isdiffpos, corrected, dubious, has_stamp)
+            VALUES ('ZTF000llmn', 55500, 9182734, 21, 0.1, 1, 45.0, 45.0, 1, false, false, false)
             """
             )
         )
@@ -126,3 +199,20 @@ def psql_conn(psql_service):
     populate_sql(psql_conn)
     yield psql_conn
     psql_conn.drop_db()
+
+
+@pytest.fixture()
+def mongo_conn(mongo_service):
+    config = {
+        "HOST": "localhost",
+        "USERNAME": "test_user",
+        "PASSWORD": "test_password",
+        "PORT": 27017,
+        "DATABASE": "test_db",
+        "AUTH_SOURCE": "test_db",
+    }
+    conn = MongoConnection(config)
+    conn.create_db()
+    populate_mongo(conn.database)
+    yield conn
+    conn.drop_db()
