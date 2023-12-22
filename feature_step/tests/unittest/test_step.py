@@ -8,6 +8,7 @@ from tests.data.data_for_unittest import (
     features_df_for_execute,
     messages_for_execute,
 )
+from features.utils.selector import selector
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -354,3 +355,39 @@ class StepTestCase(unittest.TestCase):
             self.step.scribe_producer.produce.call_count
         )
         self.assertEqual(scribe_producer_call_count, 2)
+
+class ZTFWithAtlasDataTestCase(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.step_config = {
+            "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+            "FEATURE_VERSION": "v1",
+            "STEP_METADATA": {
+                "STEP_VERSION": "feature",
+                "STEP_ID": "feature",
+                "STEP_NAME": "feature",
+                "STEP_COMMENTS": "feature",
+                "FEATURE_VERSION": "1.0-test",
+            },
+        }
+        extractor = selector("ztf")
+        self.step = FeaturesComputer(
+            config=self.step_config, extractor=extractor
+        )
+        self.step.scribe_producer = mock.create_autospec(GenericProducer)
+        self.step.scribe_producer.produce = mock.MagicMock()
+
+    def test_execute_ztf_extractor_with_atlas_messages(self):
+        import copy
+        expected_output = []
+        result = self.step.execute(messages_for_execute)
+
+        messages_for_test = copy.deepcopy(messages_for_execute)
+        for message in messages_for_test:
+            for detection in message["detections"]:
+                detection["tid"] = "atlas"
+
+        self.assertEqual(result, expected_output)
+        self.step.scribe_producer.produce.assert_not_called()
