@@ -104,10 +104,11 @@ class LightcurveStep(GenericStep):
         detections["candid"] = detections["candid"].astype(str)
         detections["parent_candid"] = detections["parent_candid"].astype(str)
 
-        # Try to keep those with stamp coming from the DB if there are clashes
-        # maybe drop duplicates with candid and AID in LSST/ELAsTiCC
+        # has_stamp true will be on top
+        # new true will be on top
+        # so this will drop alerts coming from the database if they are also in the stream
         detections = detections.sort_values(
-            ["has_stamp", "new"], ascending=[False, True]
+            ["has_stamp", "new"], ascending=[False, False]
         ).drop_duplicates("candid", keep="first")
 
         non_detections = non_detections.drop_duplicates(["aid", "fid", "mjd"])
