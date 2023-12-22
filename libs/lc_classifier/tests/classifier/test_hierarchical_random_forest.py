@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+import random
 
 from lc_classifier.classifier.models import HierarchicalRandomForest
 
