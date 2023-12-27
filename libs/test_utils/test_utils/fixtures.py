@@ -6,6 +6,7 @@ from test_utils.utils import (
     is_responsive_kafka,
 )
 from apf.consumers import KafkaConsumer
+from confluent_kafka.admin import AdminClient
 
 
 @pytest.fixture(scope="session")
@@ -42,7 +43,11 @@ def kafka_service(docker_ip, docker_services):
 
 @pytest.fixture
 def kafka_consumer():
+    topics_to_delete = []
+
     def consumer(topics: List[str]):
+        nonlocal topics_to_delete
+        topics_to_delete = topics
         consumer = KafkaConsumer(
             {
                 "PARAMS": {
@@ -56,4 +61,10 @@ def kafka_consumer():
         )
         return consumer
 
-    return consumer
+    yield consumer
+    admin_client = AdminClient({"bootstrap.servers": "localhost:9092"})
+    futures = admin_client.delete_topics(
+        topics_to_delete, operation_timeout=30, request_timeout=30
+    )
+    for f in futures.values():
+        f.result()

@@ -16,10 +16,15 @@ from .database_sql import (
     _get_sql_forced_photometries,
     _get_sql_non_detections,
 )
-from db_plugins.db.mongo.models import (
-    Detection as MongoDetection,
-    NonDetection as MongoNonDetection,
-    ForcedPhotometry as MongoForcedPhotometry,
+from .parser_mongo import (
+    parse_mongo_forced_photometry,
+    parse_mongo_detection,
+    parse_mongo_non_detection,
+)
+from .parser_sql import (
+    parse_sql_detection,
+    parse_sql_forced_photometry,
+    parse_sql_non_detection,
 )
 
 
@@ -54,8 +59,12 @@ class LightcurveStep(GenericStep):
                 }
             )
             aids.add(aid)
-            last_mjds[aid] = max(last_mjds.get(aid, 0), msg["detections"][0]["mjd"])
-            detections.extend([det | {"new": True} for det in msg["detections"]])
+            last_mjds[aid] = max(
+                last_mjds.get(aid, 0), msg["detections"][0]["mjd"]
+            )
+            detections.extend(
+                [det | {"new": True} for det in msg["detections"]]
+            )
             non_detections.extend(msg["non_detections"])
 
         logger = logging.getLogger("alerce.LightcurveStep")
@@ -72,43 +81,50 @@ class LightcurveStep(GenericStep):
     def execute(self, messages: dict) -> dict:
         """Queries the database for all detections and non-detections for each AID and removes duplicates"""
 
-        db_mongo_detections = _get_mongo_detections(messages["aids"], self.db_mongo)
+        db_mongo_detections = _get_mongo_detections(
+            messages["aids"], self.db_mongo, parse_mongo_detection
+        )
         db_mongo_non_detections = _get_mongo_non_detections(
-            messages["aids"], self.db_mongo
+            messages["aids"], self.db_mongo, parse_mongo_non_detection
         )
         db_mongo_forced_photometries = _get_mongo_forced_photometries(
-            messages["aids"], self.db_mongo
+            messages["aids"],
+            self.db_mongo,
+            parse_mongo_forced_photometry,
         )
         db_sql_detections = _get_sql_detections(
-            messages["oids"], self.db_sql, self._parse_ztf_detection
+            messages["oids"], self.db_sql, parse_sql_detection
         )
         db_sql_non_detections = _get_sql_non_detections(
-            messages["oids"], self.db_sql, self._parse_ztf_non_detection
+            messages["oids"], self.db_sql, parse_sql_non_detection
         )
         db_sql_forced_photometries = _get_sql_forced_photometries(
-            messages["oids"], self.db_sql, self._parse_ztf_forced_photometry
+            messages["oids"], self.db_sql, parse_sql_forced_photometry
         )
         detections = pd.DataFrame(
             messages["detections"]
-            + list(db_mongo_detections)
+            + db_mongo_detections
             + db_sql_detections
-            + list(db_mongo_forced_photometries)
+            + db_mongo_forced_photometries
             + db_sql_forced_photometries
         )
         non_detections = pd.DataFrame(
             messages["non_detections"]
-            + list(db_mongo_non_detections)
+            + db_mongo_non_detections
             + db_sql_non_detections
         )
         self.logger.debug(f"Retrieved {detections.shape[0]} detections")
         detections["candid"] = detections["candid"].astype(str)
         detections["parent_candid"] = detections["parent_candid"].astype(str)
+        detections["has_aid"] = (
+            detections["aid"] != "" and detections["aid"].notnull()
+        )
 
         # has_stamp true will be on top
         # new true will be on top
         # so this will drop alerts coming from the database if they are also in the stream
         detections = detections.sort_values(
-            ["has_stamp", "new"], ascending=[False, False]
+            ["has_stamp", "new", "has_aid"], ascending=[False, False, True]
         ).drop_duplicates("candid", keep="first")
 
         non_detections = non_detections.drop_duplicates(["aid", "fid", "mjd"])
@@ -122,142 +138,11 @@ class LightcurveStep(GenericStep):
             "last_mjds": messages["last_mjds"],
         }
 
-    def _parse_ztf_detection(self, ztf_models: list, *, oids) -> list:
-        GENERIC_FIELDS = {
-            "tid",
-            "sid",
-            "aid",
-            "oid",
-            "pid",
-            "mjd",
-            "fid",
-            "ra",
-            "dec",
-            "isdiffpos",
-            "corrected",
-            "dubious",
-            "candid",
-            "parent_candid",
-            "has_stamp",
-        }
-        FIELDS_TO_REMOVE = [
-            "stellar",
-            "e_mag_corr",
-            "corrected",
-            "mag_corr",
-            "e_mag_corr_ext",
-            "dubious",
-            "magpsf",
-            "sigmapsf",
-            "magpsf_corr",
-            "sigmapsf_corr",
-            "sigmapsf_corr_ext",
-        ]
-
-        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
-
-        parsed_result = []
-        for det in ztf_models:
-            det: dict = det[0].__dict__
-            extra_fields = {}
-            parsed_det = {}
-            for field, value in det.items():
-                if field.startswith("_"):
-                    continue
-                if field not in GENERIC_FIELDS:
-                    extra_fields[field] = value
-                if field == "fid":
-                    parsed_det[field] = FID[value]
-                else:
-                    parsed_det[field] = value
-            parsed = MongoDetection(
-                **parsed_det,
-                aid=oids[det["oid"]],
-                sid="ZTF",
-                tid="ZTF",
-                mag=det["magpsf"],
-                e_mag=det["sigmapsf"],
-                mag_corr=det["magpsf_corr"],
-                e_mag_corr=det["sigmapsf_corr"],
-                e_mag_corr_ext=det["sigmapsf_corr_ext"],
-                extra_fields=extra_fields,
-                e_ra=-999,
-                e_dec=-999,
-            )
-            parsed["candid"] = parsed.pop("_id")
-
-            for field in FIELDS_TO_REMOVE:
-                parsed.pop(field, None)
-                parsed["extra_fields"].pop(field, None)
-
-            parsed_result.append({**parsed, "forced": False, "new": False})
-
-        return parsed_result
-
-    def _parse_ztf_non_detection(self, ztf_models: list, *, oids) -> list:
-        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
-        non_dets = []
-        for non_det in ztf_models:
-            non_det = non_det[0].__dict__
-            mongo_non_detection = MongoNonDetection(
-                _id="jej",
-                tid="ZTF",
-                sid="ZTF",
-                aid=oids[non_det["oid"]],
-                oid=non_det["oid"],
-                mjd=non_det["mjd"],
-                fid=FID[non_det["fid"]],
-                diffmaglim=non_det.get("diffmaglim", None),
-            )
-            mongo_non_detection.pop("_id")
-            mongo_non_detection.pop("extra_fields", None)
-            non_dets.append(mongo_non_detection)
-        return non_dets
-
-    def _parse_ztf_forced_photometry(self, ztf_models: list, *, oids) -> list:
-        def format_as_detection(fp):
-            FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
-            fp["fid"] = FID[fp["fid"]]
-            fp["e_ra"] = 0
-            fp["e_dec"] = 0
-            fp["candid"] = fp.pop("_id")
-            fp["extra_fields"] = {
-                k: v for k, v in fp["extra_fields"].items() if not k.startswith("_")
-            }
-            # remove problematic fields
-            FIELDS_TO_REMOVE = [
-                "stellar",
-                "e_mag_corr",
-                "corrected",
-                "mag_corr",
-                "e_mag_corr_ext",
-                "dubious",
-            ]
-            for field in FIELDS_TO_REMOVE:
-                fp.pop(field, None)
-
-            return fp
-
-        parsed = [
-            {
-                **MongoForcedPhotometry(
-                    **forced[0].__dict__,
-                    aid=oids[forced[0].__dict__["oid"]],
-                    sid="ZTF",
-                    tid="ZTF",
-                    candid=forced[0].__dict__["oid"] + str(forced[0].__dict__["pid"]),
-                ),
-                "new": False,
-                "forced": True,
-            }
-            for forced in ztf_models
-        ]
-
-        return list(map(format_as_detection, parsed))
-
     def pre_produce(self, result: dict) -> List[dict]:
         def serialize_dia_object(ef: dict):
-            if "diaObject" not in ef or not isinstance(ef["diaObject"], list):
+            if "diaObject" not in ef or not isinstance(
+                ef.get("diaObject"), list
+            ):
                 return ef
 
             ef["diaObject"] = pickle.dumps(ef["diaObject"])
@@ -276,7 +161,9 @@ class LightcurveStep(GenericStep):
                 nd = non_detections.get_group(aid).to_dict("records")
             except KeyError:
                 nd = []
-            dets["extra_fields"] = dets["extra_fields"].apply(serialize_dia_object)
+            dets["extra_fields"] = dets["extra_fields"].apply(
+                serialize_dia_object
+            )
             if not self.config["FEATURE_FLAGS"].get("SKIP_MJD_FILTER", False):
                 mjds = result["last_mjds"]
                 dets = dets[dets["mjd"] <= mjds[aid]]
