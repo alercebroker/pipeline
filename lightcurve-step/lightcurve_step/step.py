@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 from typing import List
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 from .database_mongo import (
     DatabaseConnection,
     _get_mongo_non_detections,
@@ -168,3 +169,11 @@ class LightcurveStep(GenericStep):
                 }
             )
         return output
+
+    def tear_down(self):
+        self.db_mongo.client.close()
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()
