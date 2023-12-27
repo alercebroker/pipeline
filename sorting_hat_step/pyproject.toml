@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sorting-hat-step"
-version = "23.12.25"
+version = "23.12.26a1"
 description = "Sorting hat step"
 authors = []
 readme = "README.md"
@@ -37,7 +37,7 @@ psycopg2-binary = "*"
 test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.black]
-line-length = 88
+line-length = 79
 
 [tool.pytest.ini_options]
 addopts = "-x"

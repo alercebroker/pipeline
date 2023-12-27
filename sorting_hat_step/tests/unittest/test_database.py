@@ -2,7 +2,6 @@ import math
 import unittest
 from unittest import mock
 
-from db_plugins.db.mongo.models import Object
 from sorting_hat_step.database import MongoConnection
 from sorting_hat_step.utils import database
 from pymongo.database import Database
@@ -37,7 +36,9 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_conesearch_query(self):
         self.mock_db.database["object"].find_one.return_value = {"_id": 1}
-        aid = database.conesearch_query(self.mock_db, 180, 0, math.degrees(3600))
+        aid = database.conesearch_query(
+            self.mock_db, 180, 0, math.degrees(3600)
+        )
         assert aid == 1
         self.mock_db.database["object"].find_one.assert_called_with(
             {
@@ -57,23 +58,24 @@ class DatabaseTestCase(unittest.TestCase):
         assert aid is None
 
     def test_update_query(self):
-        mock_find_and_update = self.mock_db.database["object"].find_one_and_update
-        mock_find_and_update.side_effect = [
-            {"oid": [10, 100], "_id": 0},
-            {"oid": [20, 30], "_id": 1},
+        self.mock_db.database["object"].find_one_and_update.side_effect = [
+            {"aid": 10, "_id": 0},
+            {"aid": 20, "_id": 1},
         ]
         records = [
-            {"oid": [10], "_id": 0},
-            {"oid": [20, 30], "_id": 1},
+            {"aid": 10, "_id": 0},
+            {"aid": 20, "_id": 1},
         ]
 
         database.update_query(self.mock_db, records)
 
-        assert mock_find_and_update.call_count == 2
+        assert (
+            self.mock_db.database["object"].find_one_and_update.call_count == 2
+        )
 
         query = {"_id": 0}
         new_value = {
-            "$addToSet": {"oid": {"$each": [10]}},
+            "$set": {"aid": 10},
         }
         self.mock_db.database["object"].find_one_and_update.assert_any_call(
             query, new_value, upsert=True, return_document=True
