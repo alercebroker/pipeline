@@ -81,6 +81,7 @@ def produce_messages(kafka_service):
         for message in messages:
             producer.produce(message)
         producer.producer.flush()
+        del producer
 
     yield _produce
     admin_client = AdminClient({"bootstrap.servers": "localhost:9092"})
