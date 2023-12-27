@@ -63,21 +63,20 @@ def env_variables():
 def produce_messages(kafka_service):
     topic_to_delete = ""
 
-    def _produce(topic: str, nmessages: int, detections: list = [], aids=[]):
+    def _produce(topic: str, nmessages: int, detections: list = [], oids=[]):
         nonlocal topic_to_delete
         topic_to_delete = topic
-        schema = load_schema("../schemas/prv_candidate_step/output.avsc")
+        schema_path = "../schemas/prv_candidate_step/output.avsc"
         producer = KafkaProducer(
             {
                 "PARAMS": {"bootstrap.servers": "localhost:9092"},
                 "TOPIC": topic,
-                "SCHEMA_PATH": os.path.join(
-                    os.path.dirname(__file__), "input_schema.avsc"
-                ),
+                "SCHEMA_PATH": schema_path,
             }
         )
-        messages = generate_message(schema, nmessages, detections, aids)
-        producer.set_key_field("aid")
+        schema = load_schema(schema_path)
+        messages = generate_message(schema, nmessages, detections, oids)
+        producer.set_key_field("oid")
 
         for message in messages:
             producer.produce(message)

@@ -94,7 +94,7 @@ def test_alert_first_time(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 
@@ -166,7 +166,7 @@ def test_alert_reprocess(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 
@@ -242,7 +242,7 @@ def test_alert_prv_detection(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 
@@ -336,7 +336,7 @@ def test_alert_prv_detection_alert(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 
@@ -441,7 +441,7 @@ def test_alert_prv_detection_alert_reprocess(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 

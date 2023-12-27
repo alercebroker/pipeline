@@ -13,10 +13,10 @@ class DatabaseConnection:
         self.database = self.client[_database]
 
 
-def _get_mongo_detections(aids, db_mongo, parser) -> list:
+def _get_mongo_detections(oids, db_mongo, parser) -> list:
     db_detections = db_mongo.database[DETECTION].aggregate(
         [
-            {"$match": {"aid": {"$in": aids}}},
+            {"$match": {"oid": {"$in": oids}}},
             {
                 "$addFields": {
                     "candid": "$_id",
@@ -42,19 +42,19 @@ def _get_mongo_detections(aids, db_mongo, parser) -> list:
     return db_detections
 
 
-def _get_mongo_non_detections(aids, db_mongo, parser):
+def _get_mongo_non_detections(oids, db_mongo, parser):
     db_non_detections = db_mongo.database[NON_DETECTION].find(
-        {"aid": {"$in": aids}},
+        {"oid": {"$in": oids}},
         {"_id": False, "evilDocDbHack": False},
     )
     db_non_detections = parser(db_non_detections)
     return db_non_detections
 
 
-def _get_mongo_forced_photometries(aids, db_mongo, parser):
+def _get_mongo_forced_photometries(oids, db_mongo, parser):
     db_forced_photometries = db_mongo.database[FORCED_PHOTOMETRY].aggregate(
         [
-            {"$match": {"aid": {"$in": aids}}},
+            {"$match": {"oid": {"$in": oids}}},
             {
                 "$addFields": {
                     "candid": "$_id",

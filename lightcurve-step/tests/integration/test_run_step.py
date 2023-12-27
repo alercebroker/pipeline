@@ -55,7 +55,7 @@ def test_step_start(
         },
     ]
     produce_messages(
-        "correction", 1, detections=detections, aids=["AL00XYZ00"]
+        "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
 

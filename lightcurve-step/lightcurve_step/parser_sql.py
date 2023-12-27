@@ -54,7 +54,7 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
                 parsed_det[field] = value
         parsed = MongoDetection(
             **parsed_det,
-            aid=oids[det["oid"]],
+            aid=det.get("aid", None),
             sid="ZTF",
             tid="ZTF",
             mag=det["magpsf"],
@@ -78,7 +78,6 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
 
 
 def parse_sql_non_detection(ztf_models: list, *, oids) -> list:
-    FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
     non_dets = []
     for non_det in ztf_models:
         non_det = non_det[0].__dict__
@@ -86,10 +85,10 @@ def parse_sql_non_detection(ztf_models: list, *, oids) -> list:
             _id="jej",
             tid="ZTF",
             sid="ZTF",
-            aid=oids[non_det["oid"]],
+            aid=non_det.get("aid"),
             oid=non_det["oid"],
             mjd=non_det["mjd"],
-            fid=FID[non_det["fid"]],
+            fid=get_fid(non_det["fid"]),
             diffmaglim=non_det.get("diffmaglim", None),
         )
         mongo_non_detection.pop("_id")
@@ -100,8 +99,7 @@ def parse_sql_non_detection(ztf_models: list, *, oids) -> list:
 
 def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
     def format_as_detection(fp):
-        FID = {1: "g", 2: "r", 0: None, 12: "gr", 3: "i"}
-        fp["fid"] = FID[fp["fid"]]
+        fp["fid"] = get_fid(fp["fid"])
         fp["e_ra"] = 0
         fp["e_dec"] = 0
         fp["candid"] = fp.pop("_id")
@@ -128,7 +126,7 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
         {
             **MongoForcedPhotometry(
                 **forced[0].__dict__,
-                aid=oids[forced[0].__dict__["oid"]],
+                aid=forced[0].__dict__.get("aid"),
                 sid="ZTF",
                 tid="ZTF",
                 candid=forced[0].__dict__["oid"]
