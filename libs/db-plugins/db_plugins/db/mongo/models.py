@@ -63,6 +63,7 @@ class Object(BaseModel):
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
+        IndexModel([("oid", ASCENDING)], name="oid"),
         IndexModel([("aid", ASCENDING)], name="aid"),
         IndexModel([("sid", ASCENDING)], name="sid"),
         IndexModel([("lastmjd", DESCENDING)], name="lastmjd"),
