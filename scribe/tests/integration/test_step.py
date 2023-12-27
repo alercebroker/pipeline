@@ -314,7 +314,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -329,7 +328,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -346,7 +344,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -358,8 +355,8 @@ class MongoIntegrationTest(unittest.TestCase):
         self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["non_detection"]
-        result = collection.find_one({"aid": "ALX534311"})
-        print(result)
+        result = collection.find_one({"oid": "ZTF12345"})
+        assert result
 
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
