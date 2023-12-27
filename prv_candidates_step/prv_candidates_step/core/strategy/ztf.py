@@ -64,7 +64,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         model.pop("stamps", None)
         model.update(
             {
-                "aid": acopy["aid"],
+                "oid": acopy["oid"],
                 "has_stamp": False,
                 "forced": False,
                 "parent_candid": acopy["candid"],
@@ -127,7 +127,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
 
         model.update(
             {
-                "aid": acopy["aid"],
+                "oid": acopy["oid"],
                 "has_stamp": False,
                 "forced": True,
                 "parent_candid": acopy["candid"],
@@ -200,7 +200,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     ]
 
     return {
-        "aid": acopy["aid"],
+        "oid": acopy["oid"],
         "detections": detections,
         "non_detections": non_detections,
     }
