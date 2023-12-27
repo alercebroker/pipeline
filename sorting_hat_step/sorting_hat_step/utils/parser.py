@@ -19,5 +19,7 @@ def parse_output(alert: pd.Series) -> dict:
     """
     alert = alert.replace({np.nan: None})
     alert_dict = alert.to_dict()
-    alert_dict["extra_fields"] = _parse_extra_fields(alert_dict["extra_fields"])
+    alert_dict["extra_fields"] = _parse_extra_fields(
+        alert_dict["extra_fields"]
+    )
     return alert_dict

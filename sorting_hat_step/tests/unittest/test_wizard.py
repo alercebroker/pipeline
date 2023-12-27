@@ -152,8 +152,41 @@ class SortingHatTestCase(unittest.TestCase):
         wizard.insert_empty_objects(self.mock_db, alerts)
 
         updated_records = [
-            {"oid": [10, 30], "_id": 0},
-            {"oid": [20], "_id": 1},
-            {"oid": [40], "_id": 2},
+            {
+                "_id": 10,
+                "aid": 0,
+                "sid": "ZTF",
+                "extra_fields": {},
+                "ra": 0,
+                "dec": 0,
+                "mjd": 0,
+            },
+            {
+                "_id": 20,
+                "aid": 1,
+                "sid": "ZTF",
+                "extra_fields": {},
+                "ra": 0,
+                "dec": 0,
+                "mjd": 0,
+            },
+            {
+                "_id": 30,
+                "aid": 0,
+                "sid": "ZTF",
+                "extra_fields": {},
+                "ra": 0,
+                "dec": 0,
+                "mjd": 0,
+            },
+            {
+                "_id": 40,
+                "aid": 2,
+                "sid": "ZTF",
+                "extra_fields": {},
+                "ra": 0,
+                "dec": 0,
+                "mjd": 0,
+            },
         ]
         insert_mock.assert_called_with(self.mock_db, updated_records)
