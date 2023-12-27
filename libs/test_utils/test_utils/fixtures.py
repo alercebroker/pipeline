@@ -57,6 +57,7 @@ def kafka_consumer():
                     "enable.partition.eof": "true",
                 },
                 "TOPICS": topics,
+                "exit_on_consume": True,
             }
         )
         return consumer
