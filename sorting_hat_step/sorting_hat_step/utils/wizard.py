@@ -2,16 +2,16 @@ import time
 import string
 import logging
 
-import numpy as np
 import pandas as pd
 
-from ..database import MongoConnection, PsqlConnection
+from ..database import MongoConnection
 from .database import (
     oid_query,
     conesearch_query,
     update_query,
     insert_empty_objects_to_sql,
 )
+from copy import deepcopy
 
 
 CHARACTERS = string.ascii_lowercase
@@ -116,13 +116,13 @@ def find_existing_id(db: MongoConnection, alerts: pd.DataFrame):
         1   B      aid2
         2   C      None
     """
-    alerts = alerts.copy()
-    if "aid" not in alerts:
-        alerts["aid"] = None
-    alerts_wo_aid = alerts[alerts["aid"].isna()]
+    alertscopy = deepcopy(alerts)
+    if "aid" not in alertscopy:
+        alertscopy["aid"] = None
+    alerts_wo_aid = alertscopy[alertscopy["aid"].isna()]
     if not len(alerts_wo_aid.index):
         logger.debug("0 alerts assigned AID via OID matching")
-        return alerts
+        return alertscopy
 
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
@@ -131,8 +131,8 @@ def find_existing_id(db: MongoConnection, alerts: pd.DataFrame):
         alerts_wo_aid.loc[group.index, "aid"] = aid
     logger.debug(f"{count} alerts assigned AID via OID matching")
 
-    alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
-    return alerts
+    alertscopy.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
+    return alertscopy
 
 
 def find_id_by_conesearch(db: MongoConnection, alerts: pd.DataFrame):
@@ -155,12 +155,14 @@ def find_id_by_conesearch(db: MongoConnection, alerts: pd.DataFrame):
         alerts["aid"] = None
     alerts_wo_aid = alerts[alerts["aid"].isna()]
     if not len(alerts_wo_aid.index):
-        logger.debug(f"0 alerts assigned AID via cone-search")
+        logger.debug("0 alerts assigned AID via cone-search")
         return alerts
 
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
-        aid = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
+        aid = conesearch_query(
+            db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS
+        )
         count += group.index.size if aid else 0
         alerts_wo_aid.loc[group.index, "aid"] = aid
     logger.debug(f"{count} alerts assigned AID via cone-search")
@@ -191,21 +193,27 @@ def generate_new_id(alerts: pd.DataFrame):
         alerts["aid"] = None
     alerts_wo_aid = alerts[alerts["aid"].isna()]
     if not len(alerts_wo_aid.index):
-        logger.debug(f"No new AIDs created")
+        logger.debug("No new AIDs created")
         return alerts
 
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
         id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
-        alerts_wo_aid.loc[group.index, "aid"] = f"AL{time.strftime('%y')}{encode(id_)}"
+        alerts_wo_aid.loc[
+            group.index, "aid"
+        ] = f"AL{time.strftime('%y')}{encode(id_)}"
         count += 1
 
-    logger.debug(f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts")
+    logger.debug(
+        f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts"
+    )
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
 
-def insert_empty_objects(mongodb: MongoConnection, alerts: pd.DataFrame, psql=None):
+def insert_empty_objects(
+    mongodb: MongoConnection, alerts: pd.DataFrame, psql=None
+):
     """
     Inserts an empty entry to the database for every unique _id in the
     alerts dataframe
@@ -213,11 +221,10 @@ def insert_empty_objects(mongodb: MongoConnection, alerts: pd.DataFrame, psql=No
     :alerts: Dataframe with alerts.
     """
     objects = alerts[["oid", "aid", "sid", "extra_fields", "ra", "dec", "mjd"]]
-    objects = objects.rename(columns={"aid": "_id"})
-    mongo_objects = objects.groupby("_id").oid.apply(list).reset_index()
+    objects = objects.rename(columns={"oid": "_id"}).to_dict("records")
     logger.debug(
-        f"Inserting or updating {len(objects)} entries into the Objects collection"
+        f"Upserting {len(objects)} entries into the Objects collection"
     )
-    update_query(mongodb, mongo_objects.to_dict("records"))
+    update_query(mongodb, objects)
     if psql:
-        insert_empty_objects_to_sql(psql, objects.to_dict("records"))
+        insert_empty_objects_to_sql(psql, objects)

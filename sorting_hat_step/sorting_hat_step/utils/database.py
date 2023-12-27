@@ -69,7 +69,7 @@ def update_query(db: MongoConnection, records: List[dict]):
     for record in records:
         query = {"_id": record["_id"]}
         new_value = {
-            "$addToSet": {"oid": {"$each": record["oid"]}},
+            "$set": {"aid": record["aid"]},
         }
         db.database["object"].find_one_and_update(
             query, new_value, upsert=True, return_document=True
@@ -94,10 +94,14 @@ def insert_empty_objects_to_sql(db: PsqlConnection, records: List[Dict]):
         }
 
     oids = {
-        r["oid"]: format_extra_fields(r) for r in records if r["sid"].lower() == "ztf"
+        r["_id"]: format_extra_fields(r)
+        for r in records
+        if r["sid"].lower() == "ztf"
     }
     with db.session() as session:
-        to_insert = [{"oid": oid, **extra_fields} for oid, extra_fields in oids.items()]
+        to_insert = [
+            {"oid": oid, **extra_fields} for oid, extra_fields in oids.items()
+        ]
         statement = insert(Object).values(to_insert)
         statement = statement.on_conflict_do_update(
             "object_pkey",

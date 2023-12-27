@@ -32,14 +32,14 @@ class SortingHatStep(GenericStep):
         Step lifecycle method.
         Format output that will be taken by the producer and set the producer key.
 
-        Calling self.set_producer_key_field("aid") will make that each message produced has the
-        aid value as key.
+        Calling self.set_producer_key_field("oid") will make that each message produced has the
+        oid value as key.
 
         For example if message looks like this:
 
-        message = {"aid": "ALabc123"}
+        message = {"oid": "abc123"}
 
-        Then, the produced kafka message will have "ALabc123" as key.
+        Then, the produced kafka message will have "abc123" as key.
 
         Parameters
         ----------
@@ -51,8 +51,10 @@ class SortingHatStep(GenericStep):
         output_result: pd.DataFrame
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
-        output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
-        self.set_producer_key_field("aid")
+        output_result = [
+            parser.parse_output(alert) for _, alert in result.iterrows()
+        ]
+        self.set_producer_key_field("oid")
         return output_result
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -100,7 +102,9 @@ class SortingHatStep(GenericStep):
         psql_driver = None
         if self.use_psql:
             psql_driver = self.psql_driver
-        wizard.insert_empty_objects(self.mongo_driver, alerts, psql=psql_driver)
+        wizard.insert_empty_objects(
+            self.mongo_driver, alerts, psql=psql_driver
+        )
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:

@@ -9,7 +9,9 @@ from apf.consumers import KafkaConsumer
 from sorting_hat_step.step import SortingHatStep
 from ..unittest.data.batch import generate_alerts_batch
 from prometheus_client import start_http_server
-from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
+from db_plugins.db.mongo._connection import (
+    MongoConnection as DBPMongoConnection,
+)
 from db_plugins.db.sql._connection import PsqlDatabase as DBPPsqlConnection
 from sorting_hat_step.database import MongoConnection, PsqlConnection
 import pandas as pd
@@ -145,10 +147,12 @@ class DbIntegrationTest(unittest.TestCase):
         # Check that there are no duplicates inserted
         cursor = self.mongo_database.database["object"].find()
         inserted_objects = list(cursor)
-        unique_count = pd.DataFrame(messages).aid.nunique()
+        unique_count = pd.DataFrame(messages).oid.nunique()
         assert len(inserted_objects) == unique_count
         unique_count = pd.DataFrame(messages)
-        unique_count = unique_count[unique_count.sid == "ZTF"].oid.explode().nunique()
+        unique_count = (
+            unique_count[unique_count.sid == "ZTF"].oid.explode().nunique()
+        )
         with self.psql_database.session() as session:
             result = session.execute(text("SELECT * FROM object"))
             result = list(result)
@@ -161,7 +165,6 @@ class DbIntegrationTest(unittest.TestCase):
         consumer = KafkaConsumer(config)
         messages = []
         for message in consumer.consume():
-            assert consumer.messages[0].key().startswith(b"AL")
             messages.append(message)
         return messages
 
@@ -181,8 +184,14 @@ class DbIntegrationTest(unittest.TestCase):
         assert message["stamps"]["difference"] == b"difference"
 
     def assert_message_timestamps(self, message: dict):
-        assert message.get("extra_fields").get("brokerIngestTimestamp") is not None
-        assert message.get("extra_fields").get("surveyPublishTimestamp") is not None
+        assert (
+            message.get("extra_fields").get("brokerIngestTimestamp")
+            is not None
+        )
+        assert (
+            message.get("extra_fields").get("surveyPublishTimestamp")
+            is not None
+        )
         assert (
             message["extra_fields"]["surveyPublishTimestamp"]
             <= message["extra_fields"]["brokerIngestTimestamp"]
