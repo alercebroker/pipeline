@@ -25,8 +25,8 @@ def test_compute_ztf():
     result = PreviousCandidatesExtractor([alert]).extract_all()
     assert len(result[0]["detections"]) == 4
     assert len(result[0]["non_detections"]) == 2
-    assert result[0]["detections"][1]["aid"] == alert["aid"]
-    assert result[0]["detections"][2]["aid"] == alert["aid"]
+    assert result[0]["detections"][1]["oid"] == alert["oid"]
+    assert result[0]["detections"][2]["oid"] == alert["oid"]
     assert result[0]["detections"][0]["parent_candid"] is None
     assert result[0]["detections"][1]["parent_candid"] == alert["candid"]
     assert result[0]["detections"][2]["parent_candid"] == alert["candid"]

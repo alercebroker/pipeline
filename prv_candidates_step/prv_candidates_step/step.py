@@ -39,7 +39,7 @@ class PrvCandidatesStep(GenericStep):
         return message
 
     def pre_produce(self, result: List[dict]):
-        self.set_producer_key_field("aid")
+        self.set_producer_key_field("oid")
         result = list(map(self._extract_timestamp, result))
         return result
 
@@ -63,7 +63,6 @@ class PrvCandidatesStep(GenericStep):
                 "type": "update",
                 "criteria": {
                     "oid": non_detection["oid"],
-                    "aid": non_detection["aid"],
                     "fid": non_detection["fid"],
                     "mjd": non_detection["mjd"],
                 },

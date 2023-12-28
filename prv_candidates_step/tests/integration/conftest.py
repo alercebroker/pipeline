@@ -113,7 +113,7 @@ def produce_messages(topic):
     )
     schema = load_schema(str(schema_path))
     messages = generate_many(schema, 10)
-    producer.set_key_field("aid")
+    producer.set_key_field("oid")
     random.seed(42)
 
     for message in messages:

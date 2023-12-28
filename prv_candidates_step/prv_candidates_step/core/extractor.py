@@ -26,13 +26,13 @@ class PreviousCandidatesExtractor:
             except AttributeError:
                 messages.append(
                     {
-                        "aid": alert["aid"],
+                        "oid": alert["oid"],
                         "detections": [alert],
                         "non_detections": [],
                         "candid": alert["candid"],
                     }
                 )
-                self.logger.debug(msg.format(0, 0, alert["aid"]))
+                self.logger.debug(msg.format(0, 0, alert["oid"]))
             else:
                 out = module.extract_detections_and_non_detections(alert)
                 messages.append({"candid": alert["candid"], **out})
@@ -40,7 +40,7 @@ class PreviousCandidatesExtractor:
                     msg.format(
                         len(out["detections"]) - 1,
                         len(out["non_detections"]),
-                        alert["aid"],
+                        alert["oid"],
                     )
                 )
         return messages
