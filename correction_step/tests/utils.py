@@ -47,7 +47,7 @@ def ztf_alert(**kwargs):
         "dec": 1,
         "e_dec": 1,
         "isdiffpos": 1,
-        "aid": "AID1",
+        "oid": "OID1",
         "fid": "g",
         "mjd": 1.0,
         "has_stamp": True,
@@ -87,7 +87,7 @@ def atlas_alert(**kwargs):
         "dec": 1,
         "e_dec": 1,
         "isdiffpos": 1,
-        "aid": "AID1",
+        "oid": "OID1",
         "fid": "c",
         "mjd": 1.0,
         "has_stamp": True,
@@ -100,7 +100,7 @@ def atlas_alert(**kwargs):
 
 def non_detection(**kwargs):
     alert = {
-        "aid": "AID1",
+        "oid": "OID1",
     }
     alert.update(kwargs)
     return alert

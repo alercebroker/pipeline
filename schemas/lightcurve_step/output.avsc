@@ -4,7 +4,7 @@
   "name": "Lightcurve",
   "fields": [
     {
-      "name": "aid",
+      "name": "oid",
       "type": "string"
     },
     {
@@ -22,10 +22,6 @@
           "type": "record",
           "name": "alert",
           "fields": [
-            {
-              "name": "aid",
-              "type": "string"
-            },
             {
               "name": "oid",
               "type": "string"
@@ -133,10 +129,6 @@
           "type": "record",
           "name": "non_detection",
           "fields": [
-            {
-              "name": "aid",
-              "type": "string"
-            },
             {
               "name": "oid",
               "type": "string"
