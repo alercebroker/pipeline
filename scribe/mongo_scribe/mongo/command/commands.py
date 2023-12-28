@@ -86,10 +86,12 @@ class UpdateCommand(Command):
         if not criteria:
             raise UpdateWithNoCriteriaException()
         if collection == "forced_photometry":
-            self.criteria = { "_id": criteria["_id"] }
+            self.criteria = {"_id": criteria["_id"]}
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"
+        print("criteria", self.criteria)
+        print("data", self.data)
         return [
             UpdateOne(
                 self.criteria, {op: self.data}, upsert=self.options.upsert

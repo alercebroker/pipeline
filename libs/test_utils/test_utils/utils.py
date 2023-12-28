@@ -2,7 +2,6 @@ from db_plugins.db.mongo.initialization import init_mongo_database
 from pymongo import MongoClient
 import psycopg2
 from confluent_kafka.admin import AdminClient, NewTopic
-import os
 
 
 def is_responsive_mongo():
@@ -30,8 +29,7 @@ def is_responsive_mongo():
         "AUTH_SOURCE": "test_db",
     }
     init_mongo_database(settings)
-    cols = [col for col in db.list_collections()]
-    print(cols)
+    db.list_collections()
     return True
 
 
