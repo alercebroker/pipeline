@@ -55,7 +55,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
 
     detections = [alert.copy()]
 
-    oid, parent = alert["oid"], alert["candid"]
+    oid, aid, parent = alert["oid"], alert["aid"], alert["candid"]
     ra, dec = alert["ra"], alert["dec"]
 
     if "parent_candid" in alert["extra_fields"]:
@@ -66,6 +66,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         candidate = LSSTPreviousDetectionsParser.parse(candidate)
         candidate.update(
             {
+                "aid": aid,
                 "oid": oid,
                 "has_stamp": False,
                 "forced": False,
@@ -81,6 +82,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         candidate = LSSTForcedPhotometryParser.parse(candidate, ra, dec)
         candidate.update(
             {
+                "aid": aid,
                 "oid": oid,
                 "has_stamp": False,
                 "forced": True,

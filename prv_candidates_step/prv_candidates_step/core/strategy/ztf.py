@@ -12,7 +12,7 @@ _ZERO_MAG = 100.0
 
 def prv_non_detections_mapper() -> dict:
     mapping = copy.deepcopy(ZTFParser._mapping)
-    preserve = ["oid", "sid", "tid", "fid", "mjd"]
+    preserve = ["oid", "sid", "tid", "fid", "mjd", "aid"]
 
     mapping = {k: v for k, v in mapping.items() if k in preserve}
     mapping.update({"diffmaglim": Mapper(origin="diffmaglim")})
@@ -64,6 +64,7 @@ class ZTFPreviousDetectionsParser(SurveyParser):
         model.pop("stamps", None)
         model.update(
             {
+                "aid": acopy["aid"],
                 "oid": acopy["oid"],
                 "has_stamp": False,
                 "forced": False,
@@ -127,6 +128,7 @@ class ZTFForcedPhotometryParser(SurveyParser):
 
         model.update(
             {
+                "aid": acopy["aid"],
                 "oid": acopy["oid"],
                 "has_stamp": False,
                 "forced": True,
@@ -164,6 +166,7 @@ class ZTFNonDetectionsParser(SurveyParser):
         }
         model = cls._Model(**generic, stamps=stamps, extra_fields=extra_fields)
         model = model.to_dict()
+        model.update({"aid": acopy["aid"]})
         model.update({"oid": acopy["oid"]})
         model.pop("stamps", None)
         model.pop("extra_fields", None)
