@@ -28,7 +28,7 @@ pytest-cov = "^4.1.0"
 black = "^23.0.0"
 
 [tool.black]
-line-length = 88
+line-length = 79
 
 [build-system]
 requires = ["poetry-core"]

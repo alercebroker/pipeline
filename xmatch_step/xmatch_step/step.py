@@ -58,7 +58,9 @@ class XmatchStep(GenericStep):
         result["catid"] = "allwise"
         allwise = result.drop(["dist"], axis=1)
         allwise = allwise.to_dict(orient="records")
-        result.rename(columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True)
+        result.rename(
+            columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True
+        )
 
         data = result[["aid", "catoid", "dist", "catid"]]
         object_list = data.to_dict(orient="records")
@@ -76,7 +78,9 @@ class XmatchStep(GenericStep):
     def pre_produce(self, result: List[dict]):
         def _add_non_detection(message):
             message["non_detections"] = (
-                [] if message["non_detections"] is None else message["non_detections"]
+                []
+                if message["non_detections"] is None
+                else message["non_detections"]
             )
             return message
 
@@ -106,7 +110,9 @@ class XmatchStep(GenericStep):
                 return result
 
             except Exception as e:
-                self.logger.warning(f"CDS xmatch client returned with error {e}")
+                self.logger.warning(
+                    f"CDS xmatch client returned with error {e}"
+                )
                 time.sleep(self.retry_interval)
                 self.logger.warning("Retrying request")
                 return self.request_xmatch(input_catalog, retries_count - 1)
@@ -156,11 +162,15 @@ class XmatchStep(GenericStep):
             return [], pd.DataFrame.from_records([])
 
         # rename columns of meanra and meandec to (ra, dec)
-        input_catalog.rename(columns={"meanra": "ra", "meandec": "dec"}, inplace=True)
+        input_catalog.rename(
+            columns={"meanra": "ra", "meandec": "dec"}, inplace=True
+        )
 
         if self.config.get("FEATURE_FLAGS", {}).get("SKIP_XMATCH", False):
             self.logger.info("Skip xmatches")
-            xmatches = pd.DataFrame(columns=["ra_in", "dec_in", "col1", "aid_in"])
+            xmatches = pd.DataFrame(
+                columns=["ra_in", "dec_in", "col1", "aid_in"]
+            )
         else:
             self.logger.info("Getting xmatches")
             xmatches = self.request_xmatch(input_catalog, self.retries)
@@ -170,11 +180,17 @@ class XmatchStep(GenericStep):
             if msg["aid"] not in candids:
                 candids[msg["aid"]] = []
             candids[msg["aid"]].extend(msg["candid"])
-        output_messages = parse_output(light_curves, xmatches, lc_hash, candids)
+        output_messages = parse_output(
+            light_curves, xmatches, lc_hash, candids
+        )
         del messages
         del light_curves
         del input_catalog
-        return output_messages, xmatches, {k: v["oid"] for k, v in lc_hash.items()}
+        return (
+            output_messages,
+            xmatches,
+            {k: v["oid"] for k, v in lc_hash.items()},
+        )
 
     def post_execute(self, result: Tuple[List[dict], pd.DataFrame, Dict]):
         self.produce_scribe(result[1], result[2])
