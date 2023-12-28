@@ -67,7 +67,6 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         candidate.update(
             {
                 "aid": aid,
-                "oid": oid,
                 "has_stamp": False,
                 "forced": False,
                 "parent_candid": parent,
@@ -83,7 +82,6 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         candidate.update(
             {
                 "aid": aid,
-                "oid": oid,
                 "has_stamp": False,
                 "forced": True,
                 "parent_candid": parent,
