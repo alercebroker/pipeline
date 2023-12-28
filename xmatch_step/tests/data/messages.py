@@ -116,7 +116,7 @@ def generate_input_batch(n: int) -> List[dict]:
         candid = int(str(m + 1).ljust(8, "0"))
         detections[-1]["candid"] = candid
         msg = {
-            "aid": f"AL2X{str(m).zfill(5)}",
+            "oid": f"XX{str(m).zfill(5)}",
             "candid": [candid],
             "sid": ["ATLAS", "ZTF"],
             "meanra": random.uniform(0, 360),
@@ -137,7 +137,7 @@ def generate_non_ztf_batch(n: int) -> List[dict]:
         candid = int(str(m + 1).ljust(8, "0"))
         detections[-1]["candid"] = candid
         msg = {
-            "aid": f"AL2X{str(m).zfill(5)}",
+            "oid": f"XX{str(m).zfill(5)}",
             "candid": [candid],
             "sid": ["ATLAS"],
             "meanra": random.uniform(0, 360),
@@ -177,7 +177,7 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "aid_in": f["aid"],
+            "oid_in": f["oid"],
             "ra_in": round(f["meanra"], 6),
             "dec_in": round(f["meandec"], 6),
             "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
@@ -203,4 +203,6 @@ def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
 
 
 def get_fake_empty_xmatch(messages: List[dict]) -> pd.DataFrame:
-    return pd.DataFrame(columns=["oid_in", "ra_in", "dec_in", "col1", "aid_in"])
+    return pd.DataFrame(
+        columns=["oid_in", "ra_in", "dec_in", "col1", "oid_in"]
+    )

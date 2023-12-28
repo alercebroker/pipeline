@@ -102,11 +102,19 @@ class StepXmatchTest(unittest.TestCase):
         self.step.producer.set_key_field = mock.MagicMock()
         xmatch_client.return_value = get_fake_xmatch(self.batch)
         self.step.scribe_producer = mock.MagicMock()
-        result = self.step.execute(self.batch)
-        assert isinstance(result, tuple)
-        output = self.step.post_execute(result)
-        messages_with_nd = self.step.pre_produce(output)
-        assert isinstance(messages_with_nd, list)
+        xmatches, lightcurves_by_oid, candids = self.step.execute(self.batch)
+        xmatches, lightcurves_by_oid, candids = self.step.post_execute(
+            (xmatches, lightcurves_by_oid, candids)
+        )
+        output = self.step.pre_produce((xmatches, lightcurves_by_oid, candids))
+        assert isinstance(output, dict)
+        assert len(output) == 20
+        for oid in output:
+            assert "xmatches" in output[oid]
+            assert "allwise" in output[oid]["xmatches"]
+            assert "candids" in output[oid]
+            assert output[oid]["candids"] is not None
+            assert output[oid]["xmatches"]["allwise"] is not None
 
     # Just for coverage (btw, now accepts non ztf objects)
     @mock.patch.object(XmatchClient, "execute")

@@ -8,6 +8,7 @@ from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
 from xmatch_step.core.utils.extract_info import (
     extract_detections_from_messages,
+    get_candids_from_messages,
 )
 from xmatch_step.core.parsing import parse_output
 
@@ -50,7 +51,7 @@ class XmatchStep(GenericStep):
         messages = list(map(remove_timestamp, messages))
         return messages
 
-    def produce_scribe(self, xmatches: pd.DataFrame, oid_hash: Dict):
+    def produce_scribe(self, xmatches: pd.DataFrame):
         if len(xmatches) == 0:
             return
 
@@ -59,33 +60,27 @@ class XmatchStep(GenericStep):
         allwise = result.drop(["dist"], axis=1)
         allwise = allwise.to_dict(orient="records")
         result.rename(
-            columns={"oid_catalog": "catoid", "aid_in": "aid"}, inplace=True
+            columns={"oid_catalog": "catoid", "oid_in": "oid"}, inplace=True
         )
 
-        data = result[["aid", "catoid", "dist", "catid"]]
+        data = result[["oid", "catoid", "dist", "catid"]]
         object_list = data.to_dict(orient="records")
 
         for obj in object_list:
-            aid = obj.pop("aid")
+            oid = obj.pop("oid")
             scribe_data = {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": aid, "oid": oid_hash[aid]},
+                "criteria": {"_id": oid},
                 "data": {"xmatch": obj, "allwise": allwise},
             }
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
-    def pre_produce(self, result: List[dict]):
-        def _add_non_detection(message):
-            message["non_detections"] = (
-                []
-                if message["non_detections"] is None
-                else message["non_detections"]
-            )
-            return message
-
+    def pre_produce(self, result: Tuple[pd.DataFrame, Dict, Dict]):
         self.set_producer_key_field("aid")
-        return list(map(_add_non_detection, result))
+        xmatches, lightcurves_by_oid, candids = result
+        output_messages = parse_output(xmatches, lightcurves_by_oid, candids)
+        return output_messages
 
     def request_xmatch(
         self, input_catalog: pd.DataFrame, retries_count: int
@@ -137,61 +132,30 @@ class XmatchStep(GenericStep):
         return oid
 
     def execute(self, messages: List[dict]) -> None:
-        """
-        Execute method. Contains the logic of the xmatch step, it does the following:
-        - Parse messages to a dataframe (and remove duplicated data)
-        - Generate an input catalog
-        - Do a xmatch between input catalog and CDS
-        - Join matches with input message
-        - Produce
-        :param messages: Input messages from stream
-        :return: None
-        """
+        """Perform xmatch against CDS."""
         self.logger.info(f"Processing {len(messages)} light curves")
+        xmatches = pd.DataFrame(columns=["ra_in", "dec_in", "col1", "aid_in"])
 
-        lc_hash = extract_detections_from_messages(messages)
+        lightcurves_by_oid = extract_detections_from_messages(messages)
+        candids = get_candids_from_messages(messages)
 
-        light_curves = pd.DataFrame.from_records(
+        messages_df = pd.DataFrame.from_records(
             messages, exclude=["detections", "non_detections"]
+        ).drop_duplicates(["oid"], keep="last")
+
+        input_catalog = messages_df[["oid", "meanra", "meandec"]].rename(
+            columns={"meanra": "ra", "meandec": "dec"}
         )
-        light_curves.drop_duplicates(["aid"], keep="last", inplace=True)
-
-        input_catalog = light_curves[["aid", "meanra", "meandec"]]
-
-        if len(input_catalog) == 0:
-            return [], pd.DataFrame.from_records([])
-
-        # rename columns of meanra and meandec to (ra, dec)
-        input_catalog.rename(
-            columns={"meanra": "ra", "meandec": "dec"}, inplace=True
-        )
-
-        if self.config.get("FEATURE_FLAGS", {}).get("SKIP_XMATCH", False):
-            self.logger.info("Skip xmatches")
-            xmatches = pd.DataFrame(
-                columns=["ra_in", "dec_in", "col1", "aid_in"]
-            )
-        else:
+        if (
+            not self.config.get("FEATURE_FLAGS", {}).get("SKIP_XMATCH", False)
+            and len(input_catalog) > 0
+        ):
             self.logger.info("Getting xmatches")
             xmatches = self.request_xmatch(input_catalog, self.retries)
-        # Get output format
-        candids = {}
-        for msg in messages:
-            if msg["aid"] not in candids:
-                candids[msg["aid"]] = []
-            candids[msg["aid"]].extend(msg["candid"])
-        output_messages = parse_output(
-            light_curves, xmatches, lc_hash, candids
-        )
-        del messages
-        del light_curves
-        del input_catalog
-        return (
-            output_messages,
-            xmatches,
-            {k: v["oid"] for k, v in lc_hash.items()},
-        )
 
-    def post_execute(self, result: Tuple[List[dict], pd.DataFrame, Dict]):
-        self.produce_scribe(result[1], result[2])
-        return result[0]
+        return xmatches, lightcurves_by_oid, candids
+
+    def post_execute(self, result: Tuple[pd.DataFrame, Dict, Dict]):
+        xmatches, lightcurves_by_oid, candids = result
+        self.produce_scribe(xmatches)
+        return xmatches, lightcurves_by_oid, candids
