@@ -40,7 +40,7 @@ class PreviousCandidatesExtractor:
                     msg.format(
                         len(out["detections"]) - 1,
                         len(out["non_detections"]),
-                        alert["aid"],
+                        alert["oid"],
                     )
                 )
         return messages
