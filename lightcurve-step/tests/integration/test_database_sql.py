@@ -65,5 +65,5 @@ def test_get_detections(psql_conn: PsqlDatabase):
         session.commit()
         session.add(det)
         session.commit()
-    detections = _get_sql_detections({"1": "aid"}, psql_conn)
+    detections = _get_sql_detections(["1"], psql_conn)
     assert len(detections) == 1

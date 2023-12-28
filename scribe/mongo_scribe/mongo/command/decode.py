@@ -20,10 +20,6 @@ def validate(message: dict) -> dict:
     if "options" not in message:
         message["options"] = {}
 
-    # WARNING: this one is hard to assume
-    if "oid" in message["criteria"]:
-        message["criteria"].pop("oid")
-
     return message
 
 

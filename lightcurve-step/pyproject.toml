@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lightcurve-step"
-version = "23.12.26a1"
+version = "23.12.26a2"
 description = "Lightcurve Step"
 authors = []
 readme = "README.md"
@@ -24,7 +24,7 @@ pytest-cov = "^4.1.0"
 test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.black]
-line-length = 88
+line-length = 79
 
 [tool.pytest.ini_options]
 addopts = "-x --cov lightcurve_step --cov-report xml"

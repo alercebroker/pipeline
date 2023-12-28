@@ -64,6 +64,7 @@ class Object(BaseModel):
 
     __table_args__ = [
         IndexModel([("oid", ASCENDING)], name="oid"),
+        IndexModel([("aid", ASCENDING)], name="aid"),
         IndexModel([("sid", ASCENDING)], name="sid"),
         IndexModel([("lastmjd", DESCENDING)], name="lastmjd"),
         IndexModel([("firstmjd", DESCENDING)], name="firstmjd"),
@@ -113,7 +114,8 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
+        IndexModel([("oid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING)]),
         IndexModel([("sid", ASCENDING)]),
     ]
     __tablename__ = "detection"
@@ -150,7 +152,8 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
+        IndexModel([("oid", ASCENDING)], name="oid"),
+        IndexModel([("aid", ASCENDING)], name="aid"),
         IndexModel([("sid", ASCENDING)], name="sid"),
     ]
     __tablename__ = "forced_photometry"
@@ -174,7 +177,7 @@ class NonDetection(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel(
-            [("aid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
+            [("oid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
             name="unique",
             unique=True,
         ),

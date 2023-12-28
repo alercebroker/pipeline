@@ -10,8 +10,8 @@ from _generator import CommandGenerator
 DB_CONFIG = {
     "MONGO": {
         "host": "localhost",
-        "username": "mongo",
-        "password": "mongo",
+        "username": "",
+        "password": "",
         "port": 27017,
         "database": "test",
     }

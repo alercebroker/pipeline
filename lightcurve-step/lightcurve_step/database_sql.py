@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Callable, ContextManager
 
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from db_plugins.db.sql.models import Detection, NonDetection, ForcedPhotometry
 
@@ -34,7 +34,7 @@ def default_parser(data, **kwargs):
 
 
 def _get_sql_detections(
-    oids: dict, db_sql: PSQLConnection, parser: Callable = default_parser
+    oids: list, db_sql: PSQLConnection, parser: Callable = default_parser
 ):
     if db_sql is None:
         return []
@@ -53,7 +53,9 @@ def _get_sql_non_detections(oids, db_sql, parser: Callable = default_parser):
         return parser(detections, oids=oids)
 
 
-def _get_sql_forced_photometries(oids, db_sql, parser: Callable = default_parser):
+def _get_sql_forced_photometries(
+    oids, db_sql, parser: Callable = default_parser
+):
     if db_sql is None:
         return []
     with db_sql.session() as session:

@@ -9,8 +9,8 @@ from db_plugins.db.mongo._connection import MongoConnection
 DB_CONFIG = {
     "MONGO": {
         "host": "localhost",
-        "username": "mongo",
-        "password": "mongo",
+        "username": "",
+        "password": "",
         "port": 27017,
         "database": "test",
     }
@@ -59,10 +59,12 @@ class MongoIntegrationTest(unittest.TestCase):
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
     def tearDown(self):
-        object_collection = self.db.database["object"]
-        object_collection.delete_many({})
-        object_detection = self.db.database["detection"]
-        object_detection.delete_many({})
+        collection = self.db.database["object"]
+        collection.delete_many({})
+        collection = self.db.database["detection"]
+        collection.delete_many({})
+        collection = self.db.database["non_detection"]
+        collection.delete_many({})
 
     def test_insert_into_database(self):
         command = json.dumps(
@@ -314,7 +316,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -329,7 +330,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -346,7 +346,6 @@ class MongoIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "oid": "ZTF12345",
-                    "aid": "ALX534311",
                     "fid": "g",
                     "mjd": 55500,
                 },
@@ -358,8 +357,8 @@ class MongoIntegrationTest(unittest.TestCase):
         self.producer.producer.flush(1)
         self.step.start()
         collection = self.step.db_client.connection.database["non_detection"]
-        result = collection.find_one({"aid": "ALX534311"})
-        print(result)
+        result = collection.find_one({"oid": "ZTF12345"})
+        assert result
 
     def test_print_into_console(self):
         os.environ["MOCK_DB_COLLECTION"] = "True"
