@@ -137,7 +137,7 @@ class Corrector:
         return values / 3600.0
 
     def _calculate_coordinates(self, label: Literal["ra", "dec"]) -> dict:
-        """Calculate weighted mean value for the given coordinates for each AID.
+        """Calculate weighted mean value for the given coordinates for each OID.
 
         Args:
             label: Label for the coordinate to calculate
@@ -151,14 +151,14 @@ class Corrector:
             return self.weighted_mean(series, sigmas.loc[series.index])
 
         sigmas = self.arcsec2dec(non_forced[f"e_{label}"])
-        return {f"mean{label}": non_forced.groupby("aid")[label].agg(_average)}
+        return {f"mean{label}": non_forced.groupby("oid")[label].agg(_average)}
 
     def mean_coordinates(self) -> pd.DataFrame:
-        """Dataframe with weighted mean coordinates for each AID"""
+        """Dataframe with weighted mean coordinates for each OID"""
         coords = self._calculate_coordinates("ra")
         coords.update(self._calculate_coordinates("dec"))
         return pd.DataFrame(coords)
 
     def coordinates_as_records(self) -> dict:
-        """Weighted mean coordinates as records (mapping from AID to a mapping of mean coordinates)"""
+        """Weighted mean coordinates as records (mapping from OID to a mapping of mean coordinates)"""
         return self.mean_coordinates().to_dict("index")

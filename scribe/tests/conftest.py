@@ -16,7 +16,7 @@ def docker_compose_file(pytestconfig):
 
 
 def is_mongo_responsive(ip, port):
-    client = MongoClient(f"mongodb://mongo:mongo@{ip}:{port}")
+    client = MongoClient(f"mongodb://{ip}:{port}")
     try:
         client.admin.command("ismaster")
         return True

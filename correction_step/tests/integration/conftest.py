@@ -88,12 +88,12 @@ def produce_messages(topic):
     )
     lightcurve_schema = load_schema(lightcurve_schema)
     messages = generate_many(lightcurve_schema, 15)
-    producer.set_key_field("aid")
+    producer.set_key_field("oid")
     random.seed(42)
 
     for message in messages:
         for detection in message["detections"]:
-            detection["aid"] = message["aid"]
+            detection["oid"] = message["oid"]
             detection["forced"] = False
             detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
             if str(detection["tid"]).lower() == "ztf":

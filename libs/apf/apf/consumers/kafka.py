@@ -154,10 +154,14 @@ class KafkaConsumer(GenericConsumer):
         else:
             raise Exception("No topics o topic strategy set. ")
 
-    def __del__(self):
+    def teardown(self):
         self.logger.info("Shutting down Consumer")
         if hasattr(self, "consumer"):
+            self.consumer.unsubscribe()
             self.consumer.close()
+
+    def __del__(self):
+        self.teardown()
 
     def _deserialize_message(self, message):
         bytes_io = io.BytesIO(message.value())
@@ -275,6 +279,9 @@ class KafkaConsumer(GenericConsumer):
                     yield deserialized
             if eof:
                 break
+        if self.config.get("exit_on_consume", False):
+            self.logger.info("Exiting on consume")
+            self.teardown()
 
     def commit(self):
         retries = 0
