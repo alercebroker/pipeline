@@ -9,8 +9,8 @@ from db_plugins.db.mongo._connection import MongoConnection
 DB_CONFIG = {
     "MONGO": {
         "host": "localhost",
-        "username": "mongo",
-        "password": "mongo",
+        "username": "",
+        "password": "",
         "port": 27017,
         "database": "test",
     }
@@ -59,10 +59,12 @@ class MongoIntegrationTest(unittest.TestCase):
         cls.producer = KafkaProducer(config=PRODUCER_CONFIG)
 
     def tearDown(self):
-        object_collection = self.db.database["object"]
-        object_collection.delete_many({})
-        object_detection = self.db.database["detection"]
-        object_detection.delete_many({})
+        collection = self.db.database["object"]
+        collection.delete_many({})
+        collection = self.db.database["detection"]
+        collection.delete_many({})
+        collection = self.db.database["non_detection"]
+        collection.delete_many({})
 
     def test_insert_into_database(self):
         command = json.dumps(
