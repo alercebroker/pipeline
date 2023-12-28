@@ -10,32 +10,32 @@ from tests.utils import ztf_alert, atlas_alert, non_detection, elasticc_alert
 
 messages = [
     {
-        "aid": "AID1",
+        "oid": "OID1",
         "candid": "a",
         "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, new=False, forced=True)],
         "non_detections": [],
     },
     {
-        "aid": "AID2",
+        "oid": "OID2",
         "candid": "c",
         "detections": [
-            ztf_alert(aid="AID2", candid="c", new=True),
-            ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
+            ztf_alert(oid="OID2", candid="c", new=True),
+            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
         ],
-        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
+        "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
-    {"aid": "AID3", "candid": "e", "detections": [atlas_alert(aid="AID3", candid="e", new=True)], "non_detections": []},
+    {"oid": "OID3", "candid": "e", "detections": [atlas_alert(oid="OID3", candid="e", new=True)], "non_detections": []},
     {
-        "aid": "AID4",
+        "oid": "OID4",
         "candid": "hehe",
-        "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
+        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True)],
         "non_detections": [],
     },
 ]
 
 message4produce = [
     {
-        "aid": "AID1",
+        "oid": "OID1",
         "candid": "a",
         "meanra": 1,
         "meandec": 1,
@@ -43,52 +43,52 @@ message4produce = [
         "non_detections": [],
     },
     {
-        "aid": "AID2",
+        "oid": "OID2",
         "candid": "c",
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(aid="AID2", candid="c", new=True),
-            ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
+            ztf_alert(oid="OID2", candid="c", new=True),
+            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
         ],
-        "non_detections": [non_detection(aid="AID2", mjd=1, oid="oid1", fid=1)],
+        "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
     {
-        "aid": "AID3",
+        "oid": "OID3",
         "candid": "e",
         "meanra": 1,
         "meandec": 1,
-        "detections": [atlas_alert(aid="AID3", candid="e", new=True)],
+        "detections": [atlas_alert(oid="OID3", candid="e", new=True)],
         "non_detections": [],
     },
     {
-        "aid": "AID4",
+        "oid": "OID4",
         "candid": "hehe",
         "meanra": 1,
         "meandec": 1,
-        "detections": [elasticc_alert(aid="AID4", candid="hehe", new=True)],
+        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True)],
         "non_detections": [],
     },
 ]
 
 message4execute = {
-    "candids": {"AID1": "a", "AID2": "c", "AID3": "e", "AID4": "hehe"},
+    "candids": {"OID1": "a", "OID2": "c", "OID3": "e", "OID4": "hehe"},
     "detections": [
-        ztf_alert(aid="AID1", candid="a", new=True),
-        ztf_alert(aid="AID1", candid="b", has_stamp=False, new=False, forced=True),
-        ztf_alert(aid="AID2", candid="c", new=True),
-        ztf_alert(aid="AID2", candid="d", has_stamp=False, new=True),
-        atlas_alert(aid="AID3", candid="e", new=True),
-        elasticc_alert(aid="AID4", candid="hehe", new=True),
+        ztf_alert(oid="OID1", candid="a", new=True),
+        ztf_alert(oid="OID1", candid="b", has_stamp=False, new=False, forced=True),
+        ztf_alert(oid="OID2", candid="c", new=True),
+        ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
+        atlas_alert(oid="OID3", candid="e", new=True),
+        elasticc_alert(oid="OID4", candid="hehe", new=True),
     ],
     "non_detections": [
-        non_detection(aid="AID2", mjd=1, oid="oid1", fid=1),
+        non_detection(oid="OID2", mjd=1, fid=1),
     ],
     "coords": {
-        "AID1": {"meanra": 1, "meandec": 1},
-        "AID2": {"meanra": 1, "meandec": 1},
-        "AID3": {"meanra": 1, "meandec": 1},
-        "AID4": {"meanra": 1, "meandec": 1},
+        "OID1": {"meanra": 1, "meandec": 1},
+        "OID2": {"meanra": 1, "meandec": 1},
+        "OID3": {"meanra": 1, "meandec": 1},
+        "OID4": {"meanra": 1, "meandec": 1},
     },
 }
 
@@ -169,7 +169,7 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
 
 
-def test_pre_produce_unpacks_detections_and_non_detections_by_aid():
+def test_pre_produce_unpacks_detections_and_non_detections_by_oid():
     # Input with the "new" flag is removed
     message4execute_copy = copy.deepcopy(message4execute)
     message4execute_copy["detections"] = [{k: v for k, v in det.items()} for det in message4execute_copy["detections"]]

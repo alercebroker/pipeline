@@ -21,8 +21,8 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     """A correction/non-correction is dubious if,
 
     * the flux difference is negative and there is no nearby source, or
-    * the first detection for its AID and FID has a nearby source, but the detection doesn't, or
-    * the first detection for its AID and FID doesn't have a nearby source, but the detection does.
+    * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
+    * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
     """
     negative = detections["isdiffpos"] == -1
     corrected = is_corrected(detections)
@@ -84,7 +84,7 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
 
 
 def is_first_corrected(detections: pd.DataFrame) -> pd.Series:
-    """Whether the first detection for each AID and FID has a nearby source"""
+    """Whether the first detection for each OID and FID has a nearby source"""
     corrected = is_corrected(detections)
-    idxmin = detections.groupby(["aid", "fid"])["mjd"].transform("idxmin")
+    idxmin = detections.groupby(["oid", "fid"])["mjd"].transform("idxmin")
     return corrected[idxmin].set_axis(idxmin.index)

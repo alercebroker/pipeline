@@ -8,7 +8,7 @@ from pprint import pprint
 def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
     CorrectionStep.create_step().start()
     for message in kafka_consumer.consume():
-        assert "aid" in message
+        assert "oid" in message
         assert "detections" in message
         assert "non_detections" in message
         assert "meanra" in message
