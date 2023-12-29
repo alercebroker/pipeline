@@ -54,7 +54,7 @@ def kafka_consumer():
                     "bootstrap.servers": "localhost:9092",
                     "group.id": "test_step",
                     "auto.offset.reset": "earliest",
-                    "enable.partition.eof": "true",
+                    "enable.partition.eof": True,
                 },
                 "TOPICS": topics,
                 "exit_on_consume": True,
