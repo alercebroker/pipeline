@@ -55,7 +55,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
 
     detections = [alert.copy()]
 
-    aid, parent = alert["aid"], alert["candid"]
+    oid, aid, parent = alert["oid"], alert["aid"], alert["candid"]
     ra, dec = alert["ra"], alert["dec"]
 
     if "parent_candid" in alert["extra_fields"]:
@@ -91,4 +91,4 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         candidate.pop("stamps", None)
         detections.append(candidate)
 
-    return {"aid": alert["aid"], "detections": detections, "non_detections": []}
+    return {"oid": alert["oid"], "detections": detections, "non_detections": []}

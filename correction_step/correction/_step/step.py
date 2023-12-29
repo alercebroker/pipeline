@@ -26,7 +26,7 @@ class CorrectionStep(GenericStep):
         super().__init__(config=config, **step_args)
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
-        self.set_producer_key_field("aid")
+        self.set_producer_key_field("oid")
 
     @staticmethod
     def create_step() -> CorrectionStep:
@@ -73,23 +73,23 @@ class CorrectionStep(GenericStep):
 
     @classmethod
     def pre_produce(cls, result: dict):
-        detections = pd.DataFrame(result["detections"]).groupby("aid")
+        detections = pd.DataFrame(result["detections"]).groupby("oid")
         try:  # At least one non-detection
-            non_detections = pd.DataFrame(result["non_detections"]).groupby("aid")
+            non_detections = pd.DataFrame(result["non_detections"]).groupby("oid")
         except KeyError:  # to reproduce expected error for missing non-detections in loop
-            non_detections = pd.DataFrame(columns=["aid"]).groupby("aid")
+            non_detections = pd.DataFrame(columns=["oid"]).groupby("oid")
         output = []
-        for aid, dets in detections:
+        for oid, dets in detections:
             try:
-                nd = non_detections.get_group(aid).to_dict("records")
+                nd = non_detections.get_group(oid).to_dict("records")
             except KeyError:
                 nd = []
             output.append(
                 {
-                    "aid": aid,
-                    "candid": result["candids"][aid],
-                    "meanra": result["coords"][aid]["meanra"],
-                    "meandec": result["coords"][aid]["meandec"],
+                    "oid": oid,
+                    "candid": result["candids"][oid],
+                    "meanra": result["coords"][oid]["meanra"],
+                    "meandec": result["coords"][oid]["meandec"],
                     "detections": dets.to_dict("records"),
                     "non_detections": nd,
                 }
@@ -101,9 +101,9 @@ class CorrectionStep(GenericStep):
         detections, non_detections = [], []
         candids = {}
         for msg in messages:
-            if msg["aid"] not in candids:
-                candids[msg["aid"]] = []
-            candids[msg["aid"]].extend(msg["candid"])
+            if msg["oid"] not in candids:
+                candids[msg["oid"]] = []
+            candids[msg["oid"]].extend(msg["candid"])
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections, "candids": candids}

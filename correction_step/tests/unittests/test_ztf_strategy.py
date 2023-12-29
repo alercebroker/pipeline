@@ -16,7 +16,7 @@ def test_ztf_strategy_corrected_is_based_on_distance():
 
 
 @mock.patch("correction.core.strategy.ztf.is_corrected")
-def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mock_corrected):
+def test_ztf_strategy_first_detection_with_close_source_splits_by_oid_and_fid(mock_corrected):
     candids = ["fn", "fy", "sy", "sn", "fy2", "fy3", "fn2", "fn3", "sy2", "sy3", "sn2", "sn3"]
     mock_corrected.return_value = pd.Series(
         [False, True, True, False, True, False, True, False, True, False, True, False], index=candids
@@ -24,7 +24,7 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_aid_and_fid(mo
     detections = pd.DataFrame.from_records(
         {
             "candid": candids,
-            "aid": ["AID1", "AID1", "AID2", "AID2", "AID1", "AID1", "AID1", "AID1", "AID2", "AID2", "AID2", "AID2"],
+            "oid": ["OID1", "OID1", "OID2", "OID2", "OID1", "OID1", "OID1", "OID1", "OID2", "OID2", "OID2", "OID2"],
             "fid": [1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2],
             "mjd": [1, 1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3],
         },

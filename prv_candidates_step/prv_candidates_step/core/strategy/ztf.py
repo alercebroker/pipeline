@@ -12,7 +12,7 @@ _ZERO_MAG = 100.0
 
 def prv_non_detections_mapper() -> dict:
     mapping = copy.deepcopy(ZTFParser._mapping)
-    preserve = ["oid", "sid", "tid", "fid", "mjd"]
+    preserve = ["oid", "sid", "tid", "fid", "mjd", "aid"]
 
     mapping = {k: v for k, v in mapping.items() if k in preserve}
     mapping.update({"diffmaglim": Mapper(origin="diffmaglim")})
@@ -200,7 +200,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     ]
 
     return {
-        "aid": acopy["aid"],
+        "oid": acopy["oid"],
         "detections": detections,
         "non_detections": non_detections,
     }

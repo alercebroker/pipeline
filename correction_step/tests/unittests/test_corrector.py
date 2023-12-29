@@ -156,35 +156,35 @@ def test_arcsec2deg_applies_proper_conversion():
 def test_calculate_coordinates_with_equal_weights_is_same_as_ordinary_mean():
     wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=5)]
     corrector = Corrector(wdetections)
-    assert corrector._calculate_coordinates("ra")["meanra"].loc["AID1"] == 150
+    assert corrector._calculate_coordinates("ra")["meanra"].loc["OID1"] == 150
 
 
 def test_calculate_coordinates_with_a_very_high_error_does_not_consider_its_value_in_mean():
     wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=1e6)]
     corrector = Corrector(wdetections)
-    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 100)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 100)
 
 
 def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value_in_mean():
     wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=1e-6)]
     corrector = Corrector(wdetections)
-    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 200)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 200)
 
 
 def test_calculate_coordinates_ignores_forced_photometry():
     wdetections = [ztf_alert(candid="c1", ra=100, e_ra=1), atlas_alert(candid="c2", ra=200, forced=True, e_ra=1)]
     corrector = Corrector(wdetections)
-    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["AID1"], 100)
+    assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 100)
 
 
 def test_coordinates_dataframe_calculates_mean_for_each_aid():
     corrector = Corrector(detections)
-    assert corrector.mean_coordinates().index == ["AID1"]
+    assert corrector.mean_coordinates().index == ["OID1"]
 
     altered_detections = deepcopy(detections)
-    altered_detections[0]["aid"] = "AID2"
+    altered_detections[0]["oid"] = "OID2"
     corrector = Corrector(altered_detections)
-    assert corrector.mean_coordinates().index.isin(["AID1", "AID2"]).all()
+    assert corrector.mean_coordinates().index.isin(["OID1", "OID2"]).all()
 
 
 def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
@@ -194,17 +194,17 @@ def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
 
 def test_coordinates_records_has_one_entry_per_aid():
     corrector = Corrector(detections)
-    assert set(corrector.coordinates_as_records()) == {"AID1"}
+    assert set(corrector.coordinates_as_records()) == {"OID1"}
 
     altered_detections = deepcopy(detections)
-    altered_detections[0]["aid"] = "AID2"
+    altered_detections[0]["oid"] = "OID2"
     corrector = Corrector(altered_detections)
-    assert set(corrector.coordinates_as_records()) == {"AID1", "AID2"}
+    assert set(corrector.coordinates_as_records()) == {"OID1", "OID2"}
 
 
 def test_coordinates_records_has_mean_ra_and_mean_dec_for_each_record():
     altered_detections = deepcopy(detections)
-    altered_detections[0]["aid"] = "AID2"
+    altered_detections[0]["oid"] = "OID2"
     corrector = Corrector(altered_detections)
     for values in corrector.coordinates_as_records().values():
         assert set(values) == {"meanra", "meandec"}
