@@ -1,7 +1,7 @@
 from typing import List
 
 
-def extract_detections_from_messages(messages: List[dict]):
+def extract_lightcurve_from_messages(messages: List[dict]):
     """Extract detections and non detections from messages.
 
     Parameters

@@ -15,7 +15,6 @@ def get_extra_fields(telescope: str):
             "distnr": random.random(),
             "magnr": random.random(),
             "sigmagnr": random.random(),
-            "pid": random.randint(1, 999999),
             "diffmaglim": random.uniform(15, 21),
             "nid": random.randint(1, 999999),
             "magpsf": random.random(),  #
@@ -34,9 +33,10 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> List[dict]:
             "oid": f"ATLASoid{identifier}",
             "tid": "ATLAS-01a",
             "sid": "ATLAS",
-            "candid": random.randint(1000000, 9000000),
+            "pid": random.randint(1, 999999),
+            "candid": str(random.randint(1000000, 9000000)),
             "mjd": random.uniform(59000, 60000),
-            "fid": random.randint(1, 2),
+            "fid": random.choice(["o", "c"]),
             "ra": random.uniform(0, 360),
             "dec": random.uniform(-90, 90),
             "e_ra": random.random(),
@@ -45,8 +45,14 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> List[dict]:
             "e_mag": random.random(),
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.random(),
-            "rbversion": f"v7379812",
+            "rbversion": "v7379812",
             "aid": f"AL2X{random.randint(1000, 9990)}",
+            "corrected": random.choice([True, False]),
+            "dubious": random.choice([True, False]),
+            "stellar": False,
+            "has_stamp": random.choice([True, False]),
+            "forced": random.choice([True, False]),
+            "new": random.choice([True, False]),
             "extra_fields": get_extra_fields("ATLAS"),
         }
         alerts.append(alert)
@@ -61,9 +67,10 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
             "aid": f"ZTFaid{identifier}",
             "tid": "ZTF",
             "sid": "ZTF",
-            "candid": random.randint(1000000, 9000000),
+            "pid": random.randint(1, 999999),
+            "candid": str(random.randint(1000000, 9000000)),
             "mjd": random.uniform(59000, 60000),
-            "fid": random.randint(1, 2),
+            "fid": random.choice(["g", "r"]),
             "ra": random.uniform(0, 360),
             "dec": random.uniform(-90, 90),
             "e_ra": random.uniform(0, 1),
@@ -72,11 +79,14 @@ def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
             "e_mag": random.uniform(0, 1),
             "isdiffpos": random.choice([-1, 1]),
             "rb": random.uniform(0, 1),
-            "rbversion": f"v1",
+            "rbversion": "v1",
             "extra_fields": get_extra_fields("ZTF"),
             "corrected": random.choice([True, False]),
             "dubious": random.choice([True, False]),
+            "stellar": False,
             "has_stamp": random.choice([True, False]),
+            "forced": random.choice([True, False]),
+            "new": random.choice([True, False]),
             "step_id_corr": "test_version",
         }
         alerts.append(alert)
@@ -93,7 +103,7 @@ def generate_non_det(num: int, identifier: int) -> List[dict]:
             "aid": f"ZTFaid{identifier}",
             "mjd": random.uniform(59000, 60000),
             "diffmaglim": random.uniform(15, 20),
-            "fid": random.randint(1, 2),
+            "fid": random.choice(["g", "r"]),
         }
         non_det.append(nd)
     return non_det
@@ -113,12 +123,11 @@ def generate_input_batch(n: int) -> List[dict]:
             random.randint(1, 100), m
         ) + generate_alert_ztf(random.randint(1, 100), m)
         non_det = generate_non_det(random.randint(1, 20), m)
-        candid = int(str(m + 1).ljust(8, "0"))
+        candid = str(m + 1).ljust(8, "0")
         detections[-1]["candid"] = candid
         msg = {
             "oid": f"XX{str(m).zfill(5)}",
             "candid": [candid],
-            "sid": ["ATLAS", "ZTF"],
             "meanra": random.uniform(0, 360),
             "meandec": random.uniform(-90, 90),
             "detections": detections,
@@ -172,17 +181,16 @@ def get_default_object_values(identifier: int) -> dict:
 
 def get_fake_xmatch(messages: List[dict]) -> pd.DataFrame:
     fake = []
-    df = pd.DataFrame(messages)
-    for i, f in df.iterrows():
+    for m in messages:
         d = {
             "angDist": round(random.uniform(0, 1), 6),
             "col1": random.randint(7, 10),
-            "oid_in": f["oid"],
-            "ra_in": round(f["meanra"], 6),
-            "dec_in": round(f["meandec"], 6),
+            "oid_in": m["oid"],
+            "ra_in": round(m["meanra"], 6),
+            "dec_in": round(m["meandec"], 6),
             "AllWISE": f"J{random.randint(200000, 299999)}.32+240338.4",
-            "RAJ2000": round(f["meanra"], 6),
-            "DEJ2000": round(f["meandec"], 6),
+            "RAJ2000": round(m["meanra"], 6),
+            "DEJ2000": round(m["meandec"], 6),
             "W1mag": round(random.uniform(10, 15), 3),
             "W2mag": round(random.uniform(10, 15), 3),
             "W3mag": round(random.uniform(10, 15), 3),

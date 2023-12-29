@@ -7,6 +7,7 @@ from tests.data.messages import (
     generate_input_batch,
     get_fake_xmatch,
     generate_non_ztf_batch,
+    get_fake_empty_xmatch,
 )
 from unittest import mock
 
@@ -130,3 +131,14 @@ class StepXmatchTest(unittest.TestCase):
 
         self.step.post_execute(result)
         self.step.scribe_producer.produce.assert_called()
+
+    @mock.patch.object(XmatchClient, "execute")
+    def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
+        self.step.producer.set_key_field = mock.MagicMock()
+        self.step.scribe_producer = mock.MagicMock()
+        mock_xmatch.return_value = get_fake_empty_xmatch(self.batch)
+        xmatches, oids, candids = self.step.execute(self.batch)
+        for oid in oids.values():
+            assert isinstance(oid, dict)
+        assert len(oids) == 20
+        assert xmatches.shape == (0, 5)

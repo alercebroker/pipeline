@@ -10,8 +10,8 @@ packages = [{include = "xmatch_step"}]
 step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<3.11"
-astropy = "^4.0.0"
+python = ">=3.10,<3.11"
+astropy = "^6.0.0"
 requests = "^2.23.0"
 apf_base = { path = "../libs/apf", develop = true }
 
@@ -19,6 +19,7 @@ apf_base = { path = "../libs/apf", develop = true }
 pytest = "^7.3.1"
 pytest-docker = "^1.0.1"
 pytest-cov = "^4.1.0"
+test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"

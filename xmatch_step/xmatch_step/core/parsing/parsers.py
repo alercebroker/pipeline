@@ -15,7 +15,7 @@ def parse_output(
     ).replace({np.nan: None})
     xmatches = pd.DataFrame(
         {
-            "oid_in": oid_in,  # change to aid name for multi stream
+            "oid_in": oid_in,
             "xmatches": xmatches.apply(
                 lambda x: None if x is None else {"allwise": x.to_dict()},
                 axis=1,
@@ -23,7 +23,13 @@ def parse_output(
         }
     ).rename(columns={"oid_in": "oid"})
     xmatches = xmatches.set_index("oid")
-    for oid, xmatch in xmatches.iterrows():
-        lightcurve_by_oid[oid]["xmatches"] = xmatch["xmatches"]
-        lightcurve_by_oid[oid]["candids"] = candids[oid]
-    return lightcurve_by_oid
+    xmatches.index.drop_duplicates(keep="last")
+    result = []
+    for oid in lightcurve_by_oid:
+        lightcurve_by_oid[oid]["xmatches"] = xmatches.loc[oid][
+            "xmatches"
+        ].to_dict()[oid]
+        lightcurve_by_oid[oid]["candid"] = candids[oid]
+        lightcurve_by_oid[oid]["oid"] = oid
+        result.append(lightcurve_by_oid[oid])
+    return result

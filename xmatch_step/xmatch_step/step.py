@@ -7,7 +7,7 @@ from apf.core.step import GenericStep
 from xmatch_step.core.xmatch_client import XmatchClient
 from xmatch_step.core.utils.constants import ALLWISE_MAP
 from xmatch_step.core.utils.extract_info import (
-    extract_detections_from_messages,
+    extract_lightcurve_from_messages,
     get_candids_from_messages,
 )
 from xmatch_step.core.parsing import parse_output
@@ -77,7 +77,7 @@ class XmatchStep(GenericStep):
             self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
 
     def pre_produce(self, result: Tuple[pd.DataFrame, Dict, Dict]):
-        self.set_producer_key_field("aid")
+        self.set_producer_key_field("oid")
         xmatches, lightcurves_by_oid, candids = result
         output_messages = parse_output(xmatches, lightcurves_by_oid, candids)
         return output_messages
@@ -120,23 +120,12 @@ class XmatchStep(GenericStep):
                 f"Could not retrieve xmatch from CDS after {self.retries} retries."
             )
 
-    @classmethod
-    def get_last_oid(cls, light_curves: pd.DataFrame):
-        def _get_oid(series: pd.Series):
-            candid = series["candid"]
-            for det in series["detections"]:
-                if str(det["candid"]) == str(candid):
-                    return det["oid"]
-
-        oid = light_curves.apply(_get_oid, axis=1)
-        return oid
-
     def execute(self, messages: List[dict]) -> None:
         """Perform xmatch against CDS."""
         self.logger.info(f"Processing {len(messages)} light curves")
         xmatches = pd.DataFrame(columns=["ra_in", "dec_in", "col1", "aid_in"])
 
-        lightcurves_by_oid = extract_detections_from_messages(messages)
+        lightcurves_by_oid = extract_lightcurve_from_messages(messages)
         candids = get_candids_from_messages(messages)
 
         messages_df = pd.DataFrame.from_records(
