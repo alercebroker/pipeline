@@ -128,7 +128,7 @@ class PsqlIntegrationTest(unittest.TestCase):
             {
                 "collection": "detection",
                 "type": "update",
-                "criteria": {"_id": "932472823", "candid": "932472823"},
+                "criteria": {"_id": "932472823"},
                 "data": {
                     "aid": "XChGbTDJWt",
                     "corrected": False,
@@ -226,7 +226,6 @@ class PsqlIntegrationTest(unittest.TestCase):
             "collection": "non_detection",
             "type": "update",
             "criteria": {
-                "aid": "AL21XXX",
                 "oid": "ZTF04ululeea",
                 "mjd": 55000,
                 "fid": "g",
@@ -320,8 +319,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                         "collection": "object",
                         "type": "update_features",
                         "criteria": {
-                            "_id": "AL21XXX",
-                            "oid": ["ZTF04ululeea"],
+                            "_id": "ZTF04ululeea",
                         },
                         "data": {
                             "features_version": "1.0.0",
@@ -383,8 +381,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                         "collection": "object",
                         "type": "update_probabilities",
                         "criteria": {
-                            "_id": "AL21XXX",
-                            "oid": ["ZTF04ululeea"],
+                            "_id": "ZTF04ululeea",
                         },
                         "data": data,
                     }
@@ -428,7 +425,7 @@ class PsqlIntegrationTest(unittest.TestCase):
 
         command = {
             "collection": "magstats",
-            "criteria": {"oid": "ZTF04ululeea"},
+            "criteria": {"_id": "ZTF04ululeea"},
             "data": {
                 "corrected": False,
                 "firstmjd": 0.04650036190916984,
@@ -539,8 +536,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update",
                 "criteria": {
-                    "_id": "ALX123",
-                    "oid": ["ZTF04ululeea", "ZTF05ululeea"],
+                    "_id": "ZTF04ululeea",
                 },
                 "data": {
                     "xmatch": {
@@ -554,8 +550,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "collection": "object",
                 "type": "update",
                 "criteria": {
-                    "_id": "ALX134",
-                    "oid": ["ZTF05ululeea", "ZTF04ululeea"],
+                    "_id": "ZTF05ululeea",
                 },
                 "data": {
                     "xmatch": {
@@ -579,7 +574,15 @@ class PsqlIntegrationTest(unittest.TestCase):
                     """
                 )
             )
-        assert len(list(result)) > 0
+            assert len(list(result)) == 1
+            result = session.execute(
+                text(
+                    """
+                    SELECT * FROM xmatch WHERE oid = 'ZTF05ululeea'
+                    """
+                )
+            )
+            assert len(list(result)) == 1
 
     def test_forced_photometry_insertion(self):
         with self.db.session() as session:
@@ -600,7 +603,6 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "type": "update",
                 "criteria": {
                     "_id": "candid-pid",
-                    "candid": "candid-pid",
                 },
                 "data": {
                     "mag": 10.0,

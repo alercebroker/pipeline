@@ -115,7 +115,7 @@ class InsertDetectionsCommand(Command):
         )
         new_data["fid"] = fid_map[new_data["fid"]]
 
-        return {**new_data, "candid": int(self.criteria["candid"])}
+        return {**new_data, "candid": int(self.criteria["_id"])}
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -174,20 +174,18 @@ class UpdateObjectStatsCommand(Command):
     type = ValidCommands.update_object_stats
 
     def _check_inputs(self, data, criteria):
-        if "oid" not in criteria:
-            raise ValueError("Not oid provided in command")
         if "magstats" not in data:
             raise ValueError("Magstats not provided in the commands data")
 
     def _format_data(self, data):
         data = copy.deepcopy(data)
         magstats = data.pop("magstats")
-        data["oid"] = self.criteria["oid"]
+        data["oid"] = self.criteria["_id"]
         for magstat in magstats:
             magstat.pop("sid")
             fid_map = {"g": 1, "r": 2, "i": 3}
 
-            magstat["oid"] = self.criteria["oid"]
+            magstat["oid"] = self.criteria["_id"]
             magstat["fid"] = fid_map[magstat["fid"]]
             magstat["stellar"] = bool(magstat.get("stellar"))
             if "step_id_corr" not in magstat:
@@ -246,8 +244,6 @@ class UpsertFeaturesCommand(Command):
 
     def _check_inputs(self, data, criteria):
         super()._check_inputs(data, criteria)
-        if "oid" not in criteria:
-            raise ValueError("No oids were provided in command")
         if "features" not in data:
             raise ValueError("No features provided in command")
         if "features_version" not in data:
@@ -261,13 +257,12 @@ class UpsertFeaturesCommand(Command):
             {
                 **feat,
                 "version": data["features_version"],
-                "oid": i,
+                "oid": self.criteria["_id"],
                 "fid": FID_MAP[feat["fid"]]
                 if isinstance(feat["fid"], str) or feat["fid"] is None
                 else feat["fid"],
             }
             for feat in data["features"]
-            for i in self.criteria["oid"]
         ]
 
     @staticmethod
@@ -286,11 +281,6 @@ class UpsertFeaturesCommand(Command):
 class UpsertProbabilitiesCommand(Command):
     type = ValidCommands.upsert_probabilities
 
-    def _check_inputs(self, data, criteria):
-        super()._check_inputs(data, criteria)
-        if "oid" not in criteria:
-            raise ValueError("No oids were provided in command")
-
     def _format_data(self, data):
         classifier_name = data.pop("classifier_name")
         classifier_version = data.pop("classifier_version")
@@ -306,9 +296,7 @@ class UpsertProbabilitiesCommand(Command):
         ]
         parsed.sort(key=lambda e: e["probability"], reverse=True)
         parsed = [{**el, "ranking": i + 1} for i, el in enumerate(parsed)]
-        return [
-            {**el, "oid": oid} for el in parsed for oid in self.criteria["oid"]
-        ]
+        return [{**el, "oid": self.criteria["_id"]} for el in parsed]
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -332,20 +320,13 @@ class UpsertProbabilitiesCommand(Command):
 class UpsertXmatchCommand(Command):
     type = ValidCommands.upsert_xmatch
 
-    def _check_inputs(self, data, criteria):
-        super()._check_inputs(data, criteria)
-        if "oid" not in criteria or criteria["oid"] == []:
-            raise ValueError("No oids were provided in command")
-
     def _format_data(self, data):
         data["xmatch"]["oid_catalog"] = data["xmatch"].pop("catoid")
-        return [{**data["xmatch"], "oid": oid} for oid in self.criteria["oid"]]
+        return {**data["xmatch"], "oid": self.criteria["_id"]}
 
     @staticmethod
-    def db_operation(session: Session, data: List):
-        uniques = {el["oid"]: el for el in data}
-        uniques = list(uniques.values())
-        insert_stmt = insert(Xmatch)
+    def db_operation(session: Session, data: dict):
+        insert_stmt = insert(Xmatch).values(data)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="xmatch_pkey",
             set_=dict(
@@ -354,4 +335,4 @@ class UpsertXmatchCommand(Command):
             ),
         )
 
-        return session.execute(insert_stmt, uniques)
+        return session.execute(insert_stmt)
