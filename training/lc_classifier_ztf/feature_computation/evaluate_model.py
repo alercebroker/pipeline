@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import classification_report
+from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from itertools import product
@@ -106,20 +107,22 @@ def compute_stats(predictions_df, labels_df, ax, title):
     labels_df = labels_df.loc[predictions_df.index]
     true_astro_classes = labels_df['astro_class'].values
     predicted_class = predictions_df.idxmax(axis=1).values
+    print(title)
     print(classification_report(true_astro_classes, predicted_class))
     cm = confusion_matrix(true_astro_classes, predicted_class, labels=labels_figure_order)
     cm = cm / cm.sum(axis=1, keepdims=True)
     plot_cm_custom(ax, cm, labels_figure_order, title)
+    precision, recall, f1, support = precision_recall_fscore_support(
+        true_astro_classes, predicted_class, average='macro')
+    return f1
 
 
 all_shorten = predictions['shorten'].unique()
 all_shorten = np.sort(all_shorten)
 
+f1_dict = {}
 for shorten in all_shorten:
-    if np.isnan(shorten):
-        shorten_predictions = predictions[predictions['shorten'].isna()]
-    else:
-        shorten_predictions = predictions[predictions['shorten'] == shorten]
+    shorten_predictions = predictions[predictions['shorten'] == shorten]
 
     shorten_predictions = shorten_predictions[[c for c in shorten_predictions.columns if c != 'shorten']]
 
@@ -130,8 +133,24 @@ for shorten in all_shorten:
     compute_stats(shorten_predictions.loc[val_labels.index], val_labels, ax[0], 'validation')
 
     test_labels = labels[labels['partition'] == 'test']
-    compute_stats(shorten_predictions.loc[test_labels.index], test_labels, ax[1], 'test')
+    f1_test = compute_stats(shorten_predictions.loc[test_labels.index], test_labels, ax[1], 'test')
 
+    f1_dict[shorten] = f1_test
     plt.suptitle(str(shorten))
     plt.tight_layout()
     plt.show()
+
+f1_dict['1000'] = f1_dict['None']
+del f1_dict['None']
+
+lc_lengths = [float(i) for i in f1_dict.keys()]
+lc_f1 = f1_dict.values()
+
+print(lc_f1)
+print(lc_lengths)
+
+plt.scatter(lc_lengths, lc_f1)
+plt.semilogx()
+plt.xlabel('light curve max length [days]')
+plt.ylabel('F1-score (macro)')
+plt.show()

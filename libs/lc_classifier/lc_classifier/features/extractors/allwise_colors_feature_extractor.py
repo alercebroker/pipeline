@@ -24,7 +24,7 @@ class AllwiseColorsFeatureExtractor(FeatureExtractor):
 
         allwise_band_means = []
         for allwise_band in self.allwise_bands:
-            if allwise_band in astro_object.metadata['name']:
+            if allwise_band in astro_object.metadata['name'].values:
                 all_wise_band_mean = astro_object.metadata[
                     astro_object.metadata['name'] == allwise_band]['value'].values[0]
                 allwise_band_means.append(all_wise_band_mean)
@@ -49,7 +49,28 @@ class AllwiseColorsFeatureExtractor(FeatureExtractor):
             for band_mean in band_means:
                 deltas.append(band_mean - allwise_mean)
 
-        # TODO: finish this code
+        features = np.stack(
+            [self._feature_names(), deltas],
+            axis=-1)
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value']
+        )
+
+        features_df['fid'] = ','.join(self.bands)
+
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
 
     @lru_cache(1)
     def _feature_names(self):

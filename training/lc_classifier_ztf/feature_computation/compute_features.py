@@ -9,7 +9,6 @@ from dataset import save_batch
 folder = 'data_231130'
 astro_objects = pd.read_pickle(os.path.join(folder, 'astro_objects_without_features.pkl'))
 
-shorten_n_days = 128
 batch_size = 100
 n_batches = int(np.ceil(len(astro_objects) / batch_size))
 
@@ -30,15 +29,18 @@ def extract_features(batch_id, batch_astro_objects, shorten_n_days=None):
     save_batch(batch_astro_objects, filename)
 
 
-tasks = []
-for batch_id in range(n_batches):
-    batch_astro_objects = astro_objects[batch_id*batch_size:(batch_id+1)*batch_size]
-    tasks.append(
-        delayed(extract_features)(
-            batch_id,
-            batch_astro_objects,
-            shorten_n_days
+# n_days = [16, 32, 64, 128, 256, None]
+n_days = [None]
+for shorten_n_days in n_days:
+    tasks = []
+    for batch_id in range(n_batches):
+        batch_astro_objects = astro_objects[batch_id*batch_size:(batch_id+1)*batch_size]
+        tasks.append(
+            delayed(extract_features)(
+                batch_id,
+                batch_astro_objects,
+                shorten_n_days
+            )
         )
-    )
 
-Parallel(n_jobs=14, verbose=11, backend="loky")(tasks)
+    Parallel(n_jobs=14, verbose=11, backend="loky")(tasks)

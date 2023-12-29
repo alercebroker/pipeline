@@ -64,7 +64,8 @@ class TurboFatsExtractor(FeatureExtractor):
 
             feature_dfs.append(band_features_df)
 
+        all_features = [astro_object.features] + feature_dfs
         astro_object.features = pd.concat(
-            [astro_object.features] + feature_dfs,
+            [f for f in all_features if not f.empty],
             axis=0
         )

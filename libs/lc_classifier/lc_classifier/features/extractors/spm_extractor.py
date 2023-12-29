@@ -166,8 +166,9 @@ class SPMExtractor(FeatureExtractor):
         features_df['sid'] = sid
         features_df['version'] = self.version
 
+        all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [astro_object.features, features_df],
+            [f for f in all_features if not f.empty],
             axis=0
         )
 

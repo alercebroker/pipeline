@@ -6,9 +6,7 @@ from lc_classifier.classifiers.base import all_features_from_astro_objects
 
 def get_shorten(filename: str):
     possible_n_days = filename.split('_')[-2]
-    if possible_n_days == 'batch':
-        return None
-    return float(possible_n_days)
+    return possible_n_days
 
 
 if __name__ == '__main__':
