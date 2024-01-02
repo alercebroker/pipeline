@@ -35,12 +35,12 @@ class MagstatsStep(GenericStep):
         magstats = magstats_calculator.generate_statistics(
             self.excluded
         ).reset_index()
-        magstats = magstats.set_index("aid").replace({np.nan: None})
-        for aid in stats:
+        magstats = magstats.set_index("oid").replace({np.nan: None})
+        for oid in stats:
             try:
-                stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
+                stats[oid]["magstats"] = magstats.loc[oid].to_dict("records")
             except TypeError:
-                stats[aid]["magstats"] = [magstats.loc[aid].to_dict()]
+                stats[oid]["magstats"] = [magstats.loc[oid].to_dict()]
 
         return stats
 
@@ -63,12 +63,12 @@ class MagstatsStep(GenericStep):
         magstats = magstats_calculator.generate_statistics(
             self.excluded
         ).reset_index()
-        magstats = magstats.set_index("aid").replace({np.nan: None})
-        for aid in stats:
+        magstats = magstats.set_index("oid").replace({np.nan: None})
+        for oid in stats:
             try:
-                stats[aid]["magstats"] = magstats.loc[aid].to_dict("records")
+                stats[oid]["magstats"] = magstats.loc[oid].to_dict("records")
             except TypeError:
-                stats[aid]["magstats"] = [magstats.loc[aid].to_dict()]
+                stats[oid]["magstats"] = [magstats.loc[oid].to_dict()]
 
         return stats
 
@@ -80,11 +80,11 @@ class MagstatsStep(GenericStep):
 
     # it seems that we'll have to produce different commands in this
     def produce_scribe(self, result: dict):
-        for aid, stats in result.items():
+        for oid, stats in result.items():
             command = {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"_id": aid},
+                "criteria": {"oid": oid},
                 "data": stats
                 | {
                     "loc": {
