@@ -7,6 +7,7 @@ from test_utils.utils import (
 )
 from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient
+import uuid
 
 
 @pytest.fixture(scope="session")
@@ -52,7 +53,7 @@ def kafka_consumer():
             {
                 "PARAMS": {
                     "bootstrap.servers": "localhost:9092",
-                    "group.id": "test_step",
+                    "group.id": uuid.uuid4().hex,
                     "auto.offset.reset": "earliest",
                     "enable.partition.eof": True,
                 },
@@ -63,6 +64,7 @@ def kafka_consumer():
         return consumer
 
     yield consumer
+    print("Deleting topics: ", topics_to_delete)
     admin_client = AdminClient({"bootstrap.servers": "localhost:9092"})
     futures = admin_client.delete_topics(
         topics_to_delete, operation_timeout=30, request_timeout=30
