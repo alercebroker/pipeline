@@ -13,22 +13,23 @@ def parse_output(
     xmatches = xmatches.drop(
         columns=["ra_in", "dec_in", "col1", "oid_in"],
     ).replace({np.nan: None})
-    xmatches = pd.DataFrame(
-        {
-            "oid_in": oid_in,
-            "xmatches": xmatches.apply(
-                lambda x: None if x is None else {"allwise": x.to_dict()},
-                axis=1,
-            ),
-        }
-    ).rename(columns={"oid_in": "oid"})
-    xmatches = xmatches.set_index("oid")
-    xmatches.index.drop_duplicates(keep="last")
+    xmatches = (
+        pd.DataFrame(
+            {
+                "oid_in": oid_in,
+                "xmatches": xmatches.apply(
+                    lambda x: None if x is None else {"allwise": x.to_dict()},
+                    axis=1,
+                ),
+            }
+        )
+        .rename(columns={"oid_in": "oid", "aid_in": "aid"})
+        .drop_duplicates("oid", keep="last")
+        .set_index("oid")
+    )
     result = []
     for oid in lightcurve_by_oid:
-        lightcurve_by_oid[oid]["xmatches"] = xmatches.loc[oid][
-            "xmatches"
-        ].to_dict()[oid]
+        lightcurve_by_oid[oid]["xmatches"] = xmatches.loc[oid]["xmatches"]
         lightcurve_by_oid[oid]["candid"] = candids[oid]
         lightcurve_by_oid[oid]["oid"] = oid
         result.append(lightcurve_by_oid[oid])
