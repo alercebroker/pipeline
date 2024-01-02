@@ -52,7 +52,7 @@ def test_scribe_message_multistream(env_variables):
         command = {
             "collection": "object",
             "type": "update",
-            "criteria": {"oid": d["oid"]},
+            "criteria": {"_id": d["oid"]},
             "data": to_write,
             "options": {"upsert": True},
         }

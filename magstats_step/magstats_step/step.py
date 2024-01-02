@@ -84,7 +84,7 @@ class MagstatsStep(GenericStep):
             command = {
                 "collection": "object",
                 "type": "update",
-                "criteria": {"oid": oid},
+                "criteria": {"_id": oid},
                 "data": stats
                 | {
                     "loc": {
@@ -107,7 +107,7 @@ class MagstatsStep(GenericStep):
                 {
                     "collection": "magstats",
                     "type": "upsert",
-                    "criteria": {"oid": oid},
+                    "criteria": {"_id": oid},
                     "data": stats,
                 }
                 for oid in oids
