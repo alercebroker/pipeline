@@ -1,15 +1,15 @@
 import pathlib
 import unittest
+from unittest import mock
 
 from apf.producers import GenericProducer
-from xmatch_step import XmatchStep, XmatchClient
 from tests.data.messages import (
     generate_input_batch,
-    get_fake_xmatch,
     generate_non_ztf_batch,
     get_fake_empty_xmatch,
+    get_fake_xmatch,
 )
-from unittest import mock
+from xmatch_step import XmatchClient, XmatchStep
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -108,14 +108,14 @@ class StepXmatchTest(unittest.TestCase):
             (xmatches, lightcurves_by_oid, candids)
         )
         output = self.step.pre_produce((xmatches, lightcurves_by_oid, candids))
-        assert isinstance(output, dict)
+        assert isinstance(output, list)
         assert len(output) == 20
-        for oid in output:
-            assert "xmatches" in output[oid]
-            assert "allwise" in output[oid]["xmatches"]
-            assert "candids" in output[oid]
-            assert output[oid]["candids"] is not None
-            assert output[oid]["xmatches"]["allwise"] is not None
+        for obj in output:
+            assert "xmatches" in obj
+            assert "allwise" in obj["xmatches"]
+            assert "candid" in obj
+            assert obj["candid"] is not None
+            assert obj["xmatches"]["allwise"] is not None
 
     # Just for coverage (btw, now accepts non ztf objects)
     @mock.patch.object(XmatchClient, "execute")

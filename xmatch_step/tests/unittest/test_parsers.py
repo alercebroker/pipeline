@@ -44,13 +44,15 @@ def test_parse_output():
     result_json = parse_output(xmatch_dataframe, lightcurve_by_oid, candids)
 
     assert len(result_json) == 2
-    assert result_json["oid1"]["candids"] == ["aaa"]
-    assert result_json["oid2"]["candids"] == ["eee"]
-    assert result_json["oid1"]["detections"][0]["candid"] == "aaa"
-    assert result_json["oid2"]["detections"][0]["candid"] == "eee"
-    assert result_json["oid1"]["non_detections"] == []
-    assert result_json["oid2"]["non_detections"] == []
-    assert "xmatches" in result_json["oid1"].keys()
-    assert "xmatches" in result_json["oid2"].keys()
-    assert "allwise" in result_json["oid1"]["xmatches"].keys()
-    assert "allwise" in result_json["oid2"]["xmatches"].keys()
+    assert result_json[0]["candid"] == ["aaa"]
+    assert result_json[1]["candid"] == ["eee"]
+    assert result_json[0]["detections"][0]["candid"] == "aaa"
+    assert result_json[1]["detections"][0]["candid"] == "eee"
+    assert result_json[0]["non_detections"] == []
+    assert result_json[1]["non_detections"] == []
+    assert "xmatches" in result_json[0].keys()
+    assert "xmatches" in result_json[1].keys()
+    assert "allwise" in result_json[0]["xmatches"].keys()
+    assert "allwise" in result_json[1]["xmatches"].keys()
+    assert isinstance(result_json[0]["xmatches"]["allwise"], dict)
+    assert isinstance(result_json[1]["xmatches"]["allwise"], dict)
