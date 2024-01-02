@@ -23,6 +23,12 @@ os.environ["SCRIBE_SERVER"] = ""
 os.environ["SCRIBE_TOPIC"] = ""
 
 
+SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/xmatch_step",
+    "output.avsc",
+)
+
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     try:
@@ -63,29 +69,60 @@ def kafka_service(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
-    schema_path = pathlib.Path(
-        pathlib.Path(__file__).parent.parent.parent.parent,
-        "schemas/xmatch_step",
-        "output.avsc",
-    )
+    return server
+
+@pytest.fixture(scope="session")
+def elasticc_messages(kafka_service):
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "elasticc",
-        "SCHEMA_PATH": schema_path,
+        "SCHEMA_PATH": SCHEMA_PATH,
     }
     producer = KafkaProducer(config)
     data_elasticc = generate_elasticc_batch(5, ELASTICC_BANDS)
-    data_ztf = generate_input_batch(5)
     for data in data_elasticc:
         producer.produce(data)
-    producer.producer.flush(10)
+    producer.producer.flush(5)
+
+@pytest.fixture(scope="session")
+def ztf_messages(kafka_service):
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "ztf",
-        "SCHEMA_PATH": schema_path,
+        "SCHEMA_PATH": SCHEMA_PATH,
     }
+    data_ztf = generate_input_batch(5)
     producer = KafkaProducer(config)
     for data in data_ztf:
         producer.produce(data)
-    producer.producer.flush(10)
-    return server
+    producer.producer.flush(5)
+
+@pytest.fixture(scope="session")
+def atlas_messages(kafka_service):
+    # Produce messages for atlas test
+    config = {
+        "PARAMS": {"bootstrap.servers": "localhost:9092"},
+        "TOPIC": "atlas",
+        "SCHEMA_PATH": SCHEMA_PATH,
+    }
+    data_atlas = generate_input_batch(5)
+    producer = KafkaProducer(config)
+    for data in data_atlas:
+        data["tid"] = "atlas"
+        producer.produce(data)
+    producer.producer.flush(5)
+
+@pytest.fixture(scope="session")
+def atlas_messages_ztf_topic(kafka_service):
+    # Produce messages for atlas test
+    config = {
+        "PARAMS": {"bootstrap.servers": "localhost:9092"},
+        "TOPIC": "ztf",
+        "SCHEMA_PATH": SCHEMA_PATH,
+    }
+    data_atlas = generate_input_batch(5)
+    producer = KafkaProducer(config)
+    for data in data_atlas:
+        data["tid"] = "atlas"
+        producer.produce(data)
+    producer.producer.flush(5)

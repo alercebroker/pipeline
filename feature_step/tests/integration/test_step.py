@@ -43,7 +43,7 @@ SCRIBE_PRODUCER_CONFIG = {
 }
 
 
-def test_step_ztf(kafka_service):
+def test_step_ztf(ztf_messages):
     CONSUMER_CONFIG["TOPICS"] = ["ztf"]
     step_config = {
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -54,11 +54,12 @@ def test_step_ztf(kafka_service):
     step = FeaturesComputer(
         extractor,
         config=step_config,
+
     )
     step.start()
 
 
-def test_step_elasticc(kafka_service):
+def test_step_elasticc(elasticc_messages):
     CONSUMER_CONFIG["TOPICS"] = ["elasticc"]
     step_config = {
         "PRODUCER_CONFIG": PRODUCER_CONFIG,
@@ -66,6 +67,34 @@ def test_step_elasticc(kafka_service):
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     }
     extractor = selector("elasticc")
+    step = FeaturesComputer(
+        extractor,
+        config=step_config,
+    )
+    step.start()
+
+def test_step_atlas(atlas_messages):
+    CONSUMER_CONFIG["TOPICS"] = ["atlas"]
+    step_config = {
+        "PRODUCER_CONFIG": PRODUCER_CONFIG,
+        "CONSUMER_CONFIG": CONSUMER_CONFIG,
+        "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+    }
+    extractor = selector("atlas")
+    step = FeaturesComputer(
+        extractor,
+        config=step_config,
+    )
+    step.start()
+
+def test_step_ztf_atlas_messages(atlas_messages_ztf_topic):
+    CONSUMER_CONFIG["TOPICS"] = ["ztf"]
+    step_config = {
+        "PRODUCER_CONFIG": PRODUCER_CONFIG,
+        "CONSUMER_CONFIG": CONSUMER_CONFIG,
+        "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+    }
+    extractor = selector("ztf")
     step = FeaturesComputer(
         extractor,
         config=step_config,

@@ -284,6 +284,7 @@ jobs:
           poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
           poetry run python main.py deploy add-package correction-step --values=correction_step-helm-values --chart-folder=correction_step
           poetry run python main.py deploy add-package early-classification-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
+          poetry run python main.py deploy add-package feature-step-atlas --values=feature_step_atlas-helm-values --chart-folder=feature_step
           poetry run python main.py deploy add-package feature-step --values=feature_step-helm-values --chart-folder=feature_step
           poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
