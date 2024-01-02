@@ -1,15 +1,14 @@
 import pathlib
-import pytest
+import uuid
+from copy import deepcopy
+from unittest import mock
 
+import pytest
+from apf.producers import KafkaProducer
+from confluent_kafka.admin import AdminClient
+from tests.data.messages import generate_input_batch, get_fake_xmatch
 from xmatch_step import XmatchStep
 from xmatch_step.core.xmatch_client import XmatchClient
-from unittest import mock
-from tests.data.messages import (
-    generate_input_batch,
-    get_fake_xmatch,
-)
-from apf.producers import KafkaProducer
-from copy import deepcopy
 
 PRODUCER_SCHEMA_PATH = pathlib.Path(
     pathlib.Path(__file__).parent.parent.parent.parent,
@@ -32,7 +31,7 @@ CONSUMER_CONFIG = {
     },
     "TOPICS": ["correction"],
     "consume.messages": 20,
-    "consume.timeout": 10,
+    "consume.timeout": 60,
 }
 
 PRODUCER_CONFIG = {
@@ -90,6 +89,7 @@ def setUp() -> None:
             "XMATCH_CONFIG": XMATCH_CONFIG,
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
+            "COMMIT": False,
         }
         step_config.update(extra_config)
         step = XmatchStep(config=step_config)
@@ -109,7 +109,14 @@ def setUp() -> None:
         producer.producer.flush()
         return step, batch
 
-    return _setUp
+    yield _setUp
+    print("Deleting topic correction")
+    admin_client = AdminClient({"bootstrap.servers": "localhost:9092"})
+    futures = admin_client.delete_topics(
+        ["correction"], operation_timeout=30, request_timeout=30
+    )
+    for f in futures.values():
+        f.result()
 
 
 def test_step(kafka_service, setUp, kafka_consumer):
@@ -128,7 +135,10 @@ def test_step_duplicate_objects(kafka_service, setUp, kafka_consumer):
         return batch + batch
 
     consumer_config = deepcopy(CONSUMER_CONFIG)
-    consumer_config["consume.messages"] = 40
+    consumer_config[
+        "consume.messages"
+    ] = 60  # higher than the number of messages
+    consumer_config["PARAMS"]["group.id"] = uuid.uuid4().hex
     step, batch = setUp(repeat_oids, {"CONSUMER_CONFIG": consumer_config})
     mock_xmatch = mock.Mock()
     mock_xmatch.return_value = get_fake_xmatch(batch)
