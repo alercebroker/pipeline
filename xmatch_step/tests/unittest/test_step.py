@@ -1,14 +1,15 @@
 import pathlib
 import unittest
+from unittest import mock
 
 from apf.producers import GenericProducer
-from xmatch_step import XmatchStep, XmatchClient
 from tests.data.messages import (
     generate_input_batch,
-    get_fake_xmatch,
     generate_non_ztf_batch,
+    get_fake_empty_xmatch,
+    get_fake_xmatch,
 )
-from unittest import mock
+from xmatch_step import XmatchClient, XmatchStep
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
@@ -102,11 +103,19 @@ class StepXmatchTest(unittest.TestCase):
         self.step.producer.set_key_field = mock.MagicMock()
         xmatch_client.return_value = get_fake_xmatch(self.batch)
         self.step.scribe_producer = mock.MagicMock()
-        result = self.step.execute(self.batch)
-        assert isinstance(result, tuple)
-        output = self.step.post_execute(result)
-        messages_with_nd = self.step.pre_produce(output)
-        assert isinstance(messages_with_nd, list)
+        xmatches, lightcurves_by_oid, candids = self.step.execute(self.batch)
+        xmatches, lightcurves_by_oid, candids = self.step.post_execute(
+            (xmatches, lightcurves_by_oid, candids)
+        )
+        output = self.step.pre_produce((xmatches, lightcurves_by_oid, candids))
+        assert isinstance(output, list)
+        assert len(output) == 20
+        for obj in output:
+            assert "xmatches" in obj
+            assert "allwise" in obj["xmatches"]
+            assert "candid" in obj
+            assert obj["candid"] is not None
+            assert obj["xmatches"]["allwise"] is not None
 
     # Just for coverage (btw, now accepts non ztf objects)
     @mock.patch.object(XmatchClient, "execute")
@@ -122,3 +131,14 @@ class StepXmatchTest(unittest.TestCase):
 
         self.step.post_execute(result)
         self.step.scribe_producer.produce.assert_called()
+
+    @mock.patch.object(XmatchClient, "execute")
+    def test_execute_empty_xmatch(self, mock_xmatch: mock.Mock):
+        self.step.producer.set_key_field = mock.MagicMock()
+        self.step.scribe_producer = mock.MagicMock()
+        mock_xmatch.return_value = get_fake_empty_xmatch(self.batch)
+        xmatches, oids, candids = self.step.execute(self.batch)
+        for oid in oids.values():
+            assert isinstance(oid, dict)
+        assert len(oids) == 20
+        assert xmatches.shape == (0, 5)

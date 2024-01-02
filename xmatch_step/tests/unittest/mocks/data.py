@@ -23,7 +23,7 @@ mock_lightcurve = [
 
 mock_lightcurves_list = [
     {
-        "aid": "aid1",
+        "oid": "oid1",
         "meanra": 10.0,
         "meandec": 50.0,
         "detections": [
@@ -42,7 +42,7 @@ mock_lightcurves_list = [
         "non_detections": [],
     },
     {
-        "aid": "aid2",
+        "oid": "oid2",
         "meanra": 50.0,
         "meandec": 68.9,
         "detections": [

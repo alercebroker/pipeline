@@ -29,13 +29,6 @@ def validate(message: dict) -> dict:
     if "options" not in message:
         message["options"] = {}
 
-    # Removing multistream keys
-    if "aid" in message["criteria"]:
-        message["criteria"].pop("aid")
-
-    if "_id" in message["criteria"]:
-        message["criteria"].pop("_id")
-
     return message
 
 
