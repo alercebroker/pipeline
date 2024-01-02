@@ -10,6 +10,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag": 2,
@@ -18,6 +19,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag": 2,
@@ -26,6 +28,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag": 5,
@@ -34,6 +37,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mag": 1,
@@ -42,6 +46,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mag": 1,
@@ -50,6 +55,7 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mag": 2,
@@ -67,13 +73,13 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "magmax": [5, 1, 2],
             "magmin": [2, 1, 1],
             "magsigma": [np.sqrt(2), 0, 0.5],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -81,6 +87,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag_corr": 2,
@@ -90,6 +97,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag_corr": 2,
@@ -99,6 +107,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag_corr": 5,
@@ -108,6 +117,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mag_corr": 5,
@@ -117,6 +127,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mag_corr": 1,
@@ -126,6 +137,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mag_corr": 1,
@@ -135,6 +147,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mag_corr": 2,
@@ -144,6 +157,7 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 2,
             "mag_corr": 2,
@@ -162,13 +176,13 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "magmax_corr": [5, 1, 2],
             "magmin_corr": [2, 1, 1],
             "magsigma_corr": [np.sqrt(2), 0, 0.5],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -176,6 +190,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -185,6 +200,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         },  # last
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -194,6 +210,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         },  # first
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -203,6 +220,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -212,6 +230,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         },  # last and first
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -221,6 +240,7 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         },  # first
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -236,13 +256,13 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
         {
             "magfirst": [2, 1, 1],
             "maglast": [1, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -250,6 +270,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -260,6 +281,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -270,6 +292,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -280,6 +303,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 4,
@@ -290,6 +314,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -300,6 +325,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -310,6 +336,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -320,6 +347,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         },
         {
             "aid": "AID2",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 0,
@@ -336,13 +364,13 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
         {
             "magfirst_corr": [2, 1, 1],
             "maglast_corr": [1, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -364,6 +392,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -372,6 +401,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 0,
@@ -380,6 +410,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -388,6 +419,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 0.5,
@@ -396,6 +428,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -404,6 +437,7 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -417,13 +451,13 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
     expected = pd.DataFrame(
         {
             "firstmjd": [0, 0.5, 1],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -431,6 +465,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -439,6 +474,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -447,6 +483,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -455,6 +492,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -463,6 +501,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -471,6 +510,7 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -484,13 +524,13 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
     expected = pd.DataFrame(
         {
             "lastmjd": [3, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -498,6 +538,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -507,6 +548,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -516,6 +558,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -525,6 +568,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -534,6 +578,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -543,6 +588,7 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -557,13 +603,13 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
     expected = pd.DataFrame(
         {
             "corrected": [False, True, True],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -571,6 +617,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 3,
@@ -580,6 +627,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -589,6 +637,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 2,
@@ -598,6 +647,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "mjd": 1,
@@ -607,6 +657,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 1,
@@ -616,6 +667,7 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "mjd": 2,
@@ -630,13 +682,13 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
     expected = pd.DataFrame(
         {
             "stellar": [False, True, True],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -644,6 +696,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "candid": "a",
@@ -651,6 +704,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "candid": "b",
@@ -658,6 +712,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "candid": "c",
@@ -665,6 +720,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "candid": "d",
@@ -672,6 +728,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "candid": "e",
@@ -679,6 +736,7 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "candid": "f",
@@ -691,13 +749,13 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
     expected = pd.DataFrame(
         {
             "ndet": [3, 1, 2],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -705,6 +763,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "dubious": True,
@@ -713,6 +772,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "dubious": True,
@@ -721,6 +781,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
             "dubious": False,
@@ -729,6 +790,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
             "dubious": False,
@@ -737,6 +799,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "dubious": True,
@@ -745,6 +808,7 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
             "dubious": False,
@@ -758,13 +822,13 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
     expected = pd.DataFrame(
         {
             "ndubious": [2, 0, 1],
-            "aid": ["AID1", "AID2", "AID1"],
+            "oid": ["OID1", "OID2", "OID1"],
             "sid": ["SURVEY", "SURVEY", "SURVEY"],
             "fid": [1, 1, 2],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 
@@ -772,6 +836,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
             "corrected": True,
@@ -781,6 +846,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
             "corrected": True,
@@ -790,6 +856,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
             "corrected": True,
@@ -799,6 +866,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
             "corrected": True,
@@ -808,6 +876,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "ZTF",
             "fid": 2,
             "corrected": False,
@@ -817,6 +886,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "ZTF",
             "fid": 3,
             "corrected": False,
@@ -826,6 +896,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "ZTF",
             "fid": 3,
             "corrected": True,
@@ -835,6 +906,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 10,
             "corrected": True,
@@ -844,6 +916,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },  # No threshold
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "fid": 10,
             "corrected": True,
@@ -853,6 +926,7 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
         },  # No threshold
         {
             "aid": "AID3",
+            "oid": "OID3",
             "sid": "SURVEY",
             "fid": 1,
             "corrected": False,
@@ -867,13 +941,13 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
     expected = pd.DataFrame(
         {
             "saturation_rate": [0.5, np.nan, 0, np.nan, np.nan],
-            "aid": ["AID1", "AID2", "AID2", "AID1", "AID3"],
+            "oid": ["OID1", "OID2", "OID2", "OID1", "OID3"],
             "sid": ["ZTF", "ZTF", "ZTF", "SURVEY", "SURVEY"],
             "fid": [1, 2, 3, 10, 1],
         }
     )
     assert_frame_equal(
-        result, expected.set_index(["aid", "sid", "fid"]), check_like=True
+        result, expected.set_index(["oid", "sid", "fid"]), check_like=True
     )
 
 

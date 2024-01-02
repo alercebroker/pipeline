@@ -9,7 +9,7 @@ def assert_message_schema(command):
         assert "oid" in command["criteria"]
     elif command["collection"] == "object":
         assert command["type"] == "update"
-        assert "_id" in command["criteria"]
+        assert "oid" in command["criteria"]
     else:
         assert False
     assert "data" in command
