@@ -6,7 +6,7 @@ from apf.consumers import KafkaConsumer
 def assert_message_schema(command):
     if command["collection"] == "magstats":
         assert command["type"] == "upsert"
-        assert "oid" in command["criteria"]
+        assert "_id" in command["criteria"]
     elif command["collection"] == "object":
         assert command["type"] == "update"
         assert "_id" in command["criteria"]

@@ -73,9 +73,9 @@ def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_
 
 def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_aid():
     detections = [
-        {"aid": "AID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
-        {"aid": "AID2", "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
-        {"aid": "AID1", "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "ra": 10, "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "ra": 10, "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -130,9 +130,9 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
 
 def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_aid():
     detections = [
-        {"aid": "AID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
-        {"aid": "AID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
-        {"aid": "AID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "AID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "AID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "AID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -187,10 +187,10 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
 
 def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
     detections = [
-        {"aid": "AID1", "candid": "a", "extra": "A", "forced": False},
-        {"aid": "AID2", "candid": "c", "extra": "A", "forced": False},
-        {"aid": "AID1", "candid": "b", "extra": "A", "forced": False},
-        {"aid": "AID1", "candid": "d", "extra": "B", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "a", "extra": "A", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "candid": "c", "extra": "A", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "b", "extra": "A", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "d", "extra": "B", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator._calculate_unique("extra")
@@ -200,7 +200,7 @@ def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
         result["extra"],
         pd.Series(
             [["A", "B"], ["A"]],
-            index=pd.Index(["AID1", "AID2"], name="aid"),
+            index=pd.Index(["OID1", "OID2"], name="oid"),
             name="extra",
         ),
     )
@@ -228,10 +228,10 @@ def test_calculate_dec_uses_calculate_coordinates():
 
 def test_calculate_ndet_gives_number_of_detections_per_aid():
     detections = [
-        {"aid": "AID1", "candid": "a", "forced": False},
-        {"aid": "AID2", "candid": "c", "forced": False},
-        {"aid": "AID1", "candid": "b", "forced": False},
-        {"aid": "AID1", "candid": "d", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_ndet()
@@ -240,17 +240,17 @@ def test_calculate_ndet_gives_number_of_detections_per_aid():
     assert_series_equal(
         result["ndet"],
         pd.Series(
-            [3, 1], index=pd.Index(["AID1", "AID2"], name="aid"), name="ndet"
+            [3, 1], index=pd.Index(["OID1", "OID2"], name="oid"), name="ndet"
         ),
     )
 
 
 def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
     detections = [
-        {"aid": "AID1", "mjd": 1, "candid": "a", "forced": False},
-        {"aid": "AID2", "mjd": 2, "candid": "c", "forced": False},
-        {"aid": "AID1", "mjd": 3, "candid": "b", "forced": False},
-        {"aid": "AID1", "mjd": 2, "candid": "d", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_firstmjd()
@@ -260,7 +260,7 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
         result["firstmjd"],
         pd.Series(
             [1, 2],
-            index=pd.Index(["AID1", "AID2"], name="aid"),
+            index=pd.Index(["OID1", "OID2"], name="oid"),
             name="firstmjd",
         ),
     )
@@ -268,10 +268,10 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
 
 def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
     detections = [
-        {"aid": "AID1", "mjd": 1, "candid": "a", "forced": False},
-        {"aid": "AID2", "mjd": 2, "candid": "c", "forced": False},
-        {"aid": "AID1", "mjd": 3, "candid": "b", "forced": False},
-        {"aid": "AID1", "mjd": 2, "candid": "d", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_lastmjd()
@@ -281,7 +281,7 @@ def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
         result["lastmjd"],
         pd.Series(
             [3, 2],
-            index=pd.Index(["AID1", "AID2"], name="aid"),
+            index=pd.Index(["OID1", "OID2"], name="oid"),
             name="lastmjd",
         ),
     )
@@ -311,6 +311,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
             "corrected": False,
@@ -319,6 +320,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         },  # Should ignore
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 2,
             "corrected": True,
@@ -327,6 +329,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         },  # True for AID1
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 3,
             "corrected": False,
@@ -335,6 +338,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
             "corrected": True,
@@ -343,6 +347,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         },  # Should ignore
         {
             "aid": "AID3",
+            "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 2,
             "corrected": False,
@@ -351,6 +356,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         },  # False for AID3
         {
             "aid": "AID3",
+            "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 3,
             "corrected": True,
@@ -367,7 +373,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
         result["corrected"],
         pd.Series(
             [True, False],
-            index=pd.Index(["AID1", "AID3"], name="aid"),
+            index=pd.Index(["OID1", "OID3"], name="oid"),
             name="corrected",
         ),
     )
@@ -377,6 +383,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
             "stellar": False,
@@ -385,6 +392,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         },  # Should ignore
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 2,
             "stellar": True,
@@ -393,6 +401,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         },  # True for AID1
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 3,
             "stellar": False,
@@ -401,6 +410,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         },
         {
             "aid": "AID2",
+            "oid": "OID2",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
             "stellar": True,
@@ -409,6 +419,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         },  # Should ignore
         {
             "aid": "AID3",
+            "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 2,
             "stellar": False,
@@ -417,6 +428,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         },  # False for AID3
         {
             "aid": "AID3",
+            "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 3,
             "stellar": True,
@@ -433,7 +445,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
         result["stellar"],
         pd.Series(
             [True, False],
-            index=pd.Index(["AID1", "AID3"], name="aid"),
+            index=pd.Index(["OID1", "OID3"], name="oid"),
             name="stellar",
         ),
     )
@@ -458,6 +470,7 @@ def test_object_statistics_deltajd():
     detections = [
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 1,
             "stellar": False,
@@ -466,6 +479,7 @@ def test_object_statistics_deltajd():
         },
         {
             "aid": "AID1",
+            "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 5,
             "stellar": True,
@@ -477,5 +491,5 @@ def test_object_statistics_deltajd():
     result = calculator.calculate_deltajd()
     assert_series_equal(
         result["deltajd"],
-        pd.Series([4], index=pd.Index(["AID1"], name="aid"), name="deltajd"),
+        pd.Series([4], index=pd.Index(["OID1"], name="oid"), name="deltajd"),
     )

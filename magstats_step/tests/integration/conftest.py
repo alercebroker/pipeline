@@ -1,6 +1,7 @@
 import pytest
 import uuid
 import os
+import pathlib
 
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
@@ -56,7 +57,7 @@ def env_variables():
     env_variables_dict = {
         "PRODUCER_SCHEMA_PATH": "",
         "CONSUMER_SCHEMA_PATH": "",
-        "METRIS_SCHEMA_PATH": "../schemas/magstats_step//metrics.json",
+        "METRIS_SCHEMA_PATH": "../schemas/magstats_step/metrics.json",
         "SCRIBE_SCHEMA_PATH": "../schemas/scribe_step/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
@@ -95,8 +96,12 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA_PATH": os.path.join(
-                os.path.dirname(__file__), "../../schema.avsc"
+            "SCHEMA_PATH": str(
+                pathlib.Path(
+                    pathlib.Path(__file__).parent.parent.parent.parent,
+                    "schemas/correction_step",
+                    "output.avsc",
+                )
             ),
         }
     )

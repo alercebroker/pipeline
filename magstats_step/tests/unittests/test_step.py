@@ -12,18 +12,19 @@ def test_execute_multistream(env_variables):
     formatted_data = step.pre_execute(data)
     result = step.execute(formatted_data)
     result = result["multistream"]
+    print(result.keys())
     for d in data:
-        assert d["aid"] in result
-        assert "meanra" in result[d["aid"]]
-        assert "meandec" in result[d["aid"]]
-        assert "magstats" in result[d["aid"]]
-        assert "oid" in result[d["aid"]]
-        assert "tid" in result[d["aid"]]
-        assert "firstmjd" in result[d["aid"]]
-        assert "lastmjd" in result[d["aid"]]
-        assert "ndet" in result[d["aid"]]
-        assert "sigmara" in result[d["aid"]]
-        assert "sigmadec" in result[d["aid"]]
+        assert d["oid"] in result
+        assert "meanra" in result[d["oid"]]
+        assert "meandec" in result[d["oid"]]
+        assert "magstats" in result[d["oid"]]
+        assert "oid" in result[d["oid"]]
+        assert "tid" in result[d["oid"]]
+        assert "firstmjd" in result[d["oid"]]
+        assert "lastmjd" in result[d["oid"]]
+        assert "ndet" in result[d["oid"]]
+        assert "sigmara" in result[d["oid"]]
+        assert "sigmadec" in result[d["oid"]]
 
 
 def test_scribe_message_multistream(env_variables):
@@ -36,7 +37,7 @@ def test_scribe_message_multistream(env_variables):
     step.post_execute(result)
     result = result["multistream"]
     for d in data:
-        to_write = result[d["aid"]]
+        to_write = result[d["oid"]]
         to_write.update(
             {
                 "loc": {
@@ -51,7 +52,7 @@ def test_scribe_message_multistream(env_variables):
         command = {
             "collection": "object",
             "type": "update",
-            "criteria": {"_id": d["aid"]},
+            "criteria": {"_id": d["oid"]},
             "data": to_write,
             "options": {"upsert": True},
         }
@@ -68,14 +69,14 @@ def test_execute_ztf(env_variables):
     for d in data:
         if not any([det["sid"] == "ZTF" for det in d["detections"]]):
             continue
-        assert d["aid"] in result
-        assert "meanra" in result[d["aid"]]
-        assert "meandec" in result[d["aid"]]
-        assert "magstats" in result[d["aid"]]
-        assert "oid" in result[d["aid"]]
-        assert "tid" in result[d["aid"]]
-        assert "firstmjd" in result[d["aid"]]
-        assert "lastmjd" in result[d["aid"]]
-        assert "ndet" in result[d["aid"]]
-        assert "sigmara" in result[d["aid"]]
-        assert "sigmadec" in result[d["aid"]]
+        assert d["oid"] in result
+        assert "meanra" in result[d["oid"]]
+        assert "meandec" in result[d["oid"]]
+        assert "magstats" in result[d["oid"]]
+        assert "oid" in result[d["oid"]]
+        assert "tid" in result[d["oid"]]
+        assert "firstmjd" in result[d["oid"]]
+        assert "lastmjd" in result[d["oid"]]
+        assert "ndet" in result[d["oid"]]
+        assert "sigmara" in result[d["oid"]]
+        assert "sigmadec" in result[d["oid"]]
