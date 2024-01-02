@@ -2,10 +2,14 @@ from ..core.base import FeatureExtractor
 from lc_classifier.base import AstroObject
 import numpy as np
 import pandas as pd
+from scipy.optimize import curve_fit
+import jax.numpy as jnp
+from jax import jit as jax_jit
+
 from typing import List
 
 
-class TDEExtractor(FeatureExtractor):
+class TDETailExtractor(FeatureExtractor):
     version = '1.0.0'
     unit = 'magnitude'
 
@@ -25,12 +29,8 @@ class TDEExtractor(FeatureExtractor):
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
-        observations = pd.concat([
-            astro_object.detections,
-            astro_object.forced_photometry],
-            axis=0
-        )
-        observations = observations[observations['unit'] == 'magnitude']
+        observations = self.get_observations(astro_object)
+
         features = []
         for band in self.bands:
             band_observations = observations[observations['fid'] == band]
@@ -70,6 +70,123 @@ class TDEExtractor(FeatureExtractor):
 
             features.append(('TDE_decay', coeffs[1], band))
             features.append(('TDE_decay_chi', chi_per_degree, band))
+
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
+        )
+
+        sids = astro_object.detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
+
+
+def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
+    original_length = len(x_array)
+    pad_length = 25 - (original_length % 25)
+    pad_array = np.array([fill_value]*pad_length, dtype=np.float32)
+    return np.concatenate([x_array, pad_array])
+
+
+def fleet_model(t, a, w, m_0, t0):
+    n_obs = len(t)
+    t = pad(t, fill_value=0.0)
+    func = fleet_model_jax(t, a, w, m_0, t0)
+    func = func[:n_obs]
+    return func
+
+
+@jax_jit
+def fleet_model_jax(t, a, w, m_0, t0):
+    t = t - t0
+    func = jnp.exp(w * t) - a * w * t + m_0
+    return func
+
+
+def flux2mag(flux):
+    return -2.5 * np.log10(flux) + 23.9
+
+
+def flux_err_2_mag_err(flux_err, flux):
+    return (2.5*flux_err)/(np.log(10.0)*flux)
+
+
+class FleetExtractor(FeatureExtractor):
+    version = '1.0.0'
+    unit = 'diff_flux'
+
+    def __init__(self, bands: List[str]):
+        self.bands = bands
+
+    def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
+        observations = astro_object.detections
+        if astro_object.forced_photometry is not None:
+            observations = pd.concat([
+                observations,
+                astro_object.forced_photometry], axis=0)
+        observations = observations[observations['unit'] == self.unit]
+        observations = observations[observations['brightness'].notna()]
+        observations = observations[observations['brightness'] > 1]  # at least 1uJy positive detection
+        observations = observations[observations['e_brightness'] > 0.0]
+        return observations
+
+    def compute_features_single_object(self, astro_object: AstroObject):
+        observations = self.get_observations(astro_object)
+
+        features = []
+        for band in self.bands:
+            band_observations = observations[observations['fid'] == band]
+            if len(band_observations) < 4:
+                features.append(('fleet_a', np.nan, band))
+                features.append(('fleet_w', np.nan, band))
+                features.append(('fleet_chi', np.nan, band))
+                continue
+
+            first_mjd = band_observations.sort_values('mjd').iloc[0]['mjd']
+            y = flux2mag(band_observations.brightness)
+            y_err = flux_err_2_mag_err(
+                band_observations.e_brightness,
+                band_observations.brightness) + 1e-2
+
+            try:
+                # noinspection PyTupleAssignmentBalance
+                parameters, _ = curve_fit(
+                    fleet_model,
+                    band_observations['mjd'] - first_mjd,
+                    y,
+                    sigma=y_err,
+                    p0=[0.6, -0.05, np.mean(y), 0],
+                    bounds=([0.0, -100.0, 0, -50], [10, 0, 30, 10000])
+                )
+
+                model_prediction = fleet_model(
+                    band_observations['mjd'] - first_mjd,
+                    *parameters
+                )
+
+                chi = np.sum((model_prediction - y) ** 2 / y_err ** 2)
+                chi_den = len(model_prediction) - 4
+                if chi_den >= 1:
+                    chi_per_degree = chi / chi_den
+                else:
+                    chi_per_degree = np.nan
+
+                features.append(('fleet_a', parameters[0], band))
+                features.append(('fleet_w', parameters[1], band))
+                features.append(('fleet_chi', chi_per_degree, band))
+            except RuntimeError:
+                features.append(('fleet_a', np.nan, band))
+                features.append(('fleet_w', np.nan, band))
+                features.append(('fleet_chi', np.nan, band))
 
         features_df = pd.DataFrame(
             data=features,

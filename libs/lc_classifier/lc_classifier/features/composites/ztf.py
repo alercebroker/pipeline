@@ -13,7 +13,8 @@ from ..extractors.sn_extractor import SNExtractor
 from ..extractors.timespan_extractor import TimespanExtractor
 from ..extractors.coordinate_extractor import CoordinateExtractor
 from ..extractors.gp_drw_extractor import GPDRWExtractor
-from ..extractors.tde_extractor import TDEExtractor
+from ..extractors.tde_extractor import TDETailExtractor
+from ..extractors.tde_extractor import FleetExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
@@ -46,7 +47,8 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
                 extinction_color_excess=None,
                 forced_phot_prelude=30.0
             ),
-            TDEExtractor(bands),
+            TDETailExtractor(bands),
+            FleetExtractor(bands),
             SNExtractor(
                 bands, unit='diff_flux', use_forced_photo=True
             ),

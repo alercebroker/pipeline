@@ -33,8 +33,16 @@ def plot_astro_object(astro_object: AstroObject, unit: str, use_forced_phot: boo
 
         available_bands = available_bands.union(forced_phot_bands)
 
-    color_map = {'g': 'tab:green', 'r': "tab:red", 'i': "tab:purple", 'z': "tab:brown"}
+    color_map = {
+        'u': 'blue',
+        'g': 'tab:green',
+        'r': "tab:red",
+        'i': "tab:purple",
+        'z': "tab:brown",
+        'Y': 'black'
+    }
 
+    available_bands = [b for b in list('ugrizY') if b in available_bands]
     for band in available_bands:
         band_detections = detections[detections['fid'] == band]
         band_time = band_detections['mjd']
