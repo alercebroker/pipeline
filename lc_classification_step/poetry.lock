@@ -1150,7 +1150,7 @@ files = [
 ]
 
 [[package]]
-name = "lc-classifier"
+name = "lc_classifier"
 version = "2.1.0"
 description = "ALeRCE light curve classifier"
 optional = false
@@ -1182,7 +1182,7 @@ wget = ">=3.2"
 type = "git"
 url = "https://github.com/alercebroker/lc_classifier"
 reference = "main"
-resolved_reference = "97b4b6ca0a1ddd02c881c24c0cd38b322ec159a6"
+resolved_reference = "3fdeba3bf82e8f5d1e64fd6f1b37b3bb622d1c04"
 
 [[package]]
 name = "libclang"

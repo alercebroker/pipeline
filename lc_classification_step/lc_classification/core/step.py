@@ -81,19 +81,7 @@ class LateClassifier(GenericStep):
             self.scribe_producer.produce({"payload": json.dumps(command)})
         self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
-    def execute(self, messages):
-        """Run the classification.
-
-        Parameters
-        ----------
-        messages : dict-like
-            Current object data, it must have the features and object id.
-
-        """
-        self.logger.info("Processing %i messages.", len(messages))
-        self.logger.debug("Messages received:\n", messages)
-        model_input = create_input_dto(messages)
-        self.oids = {}
+    def log_data(self, model_input):
         forced = []
         prv_candidates = []
         dia_object = []
@@ -106,80 +94,86 @@ class LateClassifier(GenericStep):
                     prv_candidates.append(det[0])
                 if "diaObject" in det[1].index:
                     dia_object.append(det[0])
-            # oid hack for ztf
-            if self.isztf:
-                oids = self.oids.get(det[0], [])
-                if det[1]["oid"] not in oids:
-                    oids.append(det[1]["oid"])
-                    self.oids[det[0]] = oids
-
-        if not self.model.can_predict(model_input):
-            self.logger.info("No data to process")
-            return (
-                OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
-                messages,
-                model_input.features,
-            )
         self.logger.info(
-            "The number of detections is: %i", len(model_input.detections)
+            "The number of detections is: %i",
+            len(model_input.detections),
         )
         self.logger.debug(f"The forced photometry detections are: {forced}")
         self.logger.debug(
             f"The prv candidates detections are: {prv_candidates}"
         )
         self.logger.debug(
-            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_object}"
+            f"The oids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_object}"
         )
         self.logger.info(
             "The number of features is: %i", len(model_input.features)
         )
-        self.logger.info("Doing inference")
-        if self.isztf:
-            try:
-                probabilities = self.model.predict_in_pipeline(
-                    model_input.features,
-                )
-                probabilities = OutputDTO(
-                    probabilities["probabilities"],
-                    probabilities["hierarchical"],
-                )
-            except Exception as e:
-                self.logger.error(e)
-                return (
-                    OutputDTO(
-                        DataFrame(), {"top": DataFrame(), "children": {}}
-                    ),
-                    messages,
-                    model_input.features,
-                )
 
-        else:
-            try:
-                probabilities = self.model.predict(model_input)
-            except ValueError as e:
-                self.logger.error(e)
-                probabilities = OutputDTO(
-                    DataFrame(), {"top": DataFrame(), "children": {}}
-                )
-        # after the former line, probabilities must be an OutputDTO
+    def predict_ztf(self, model_input):
+        try:
+            probabilities = self.model.predict_in_pipeline(
+                model_input.features,
+            )
+            probabilities = OutputDTO(
+                probabilities["probabilities"],
+                probabilities["hierarchical"],
+            )
+            return probabilities
+        except Exception as e:
+            self.log_data(model_input)
+            raise e
 
-        self.logger.info("Processing results")
+    def log_class_distribution(self, probabilities: OutputDTO):
+        if not self.config.get("FEATURE_FLAGS", {}).get(
+            "LOG_CLASS_DISTRIBUTION", False
+        ):
+            return
         df = probabilities.probabilities
-        if "aid" in df.columns:
-            df.set_index("aid", inplace=True)
+        if "oid" in df.columns:
+            df.set_index("oid", inplace=True)
         if "classifier_name" in df.columns:
             df = df.drop(["classifier_name"], axis=1)
 
         distribution = df.eq(df.where(df != 0).max(1), axis=0).astype(int)
         distribution = distribution.sum(axis=0)
         self.logger.debug("Class distribution:\n", distribution)
+
+    def predict(self, model_input):
+        if self.isztf:
+            return self.predict_ztf(model_input)
+        try:
+            return self.model.predict(model_input)
+        except ValueError as e:
+            self.log_data(model_input)
+            raise e
+
+    def execute(self, messages):
+        """Run the classification.
+
+        Parameters
+        ----------
+        messages : List[dict-like]
+            Current object data, it must have the features and object id.
+
+        """
+        self.logger.info("Processing %i messages.", len(messages))
+        model_input = create_input_dto(messages)
+        probabilities = OutputDTO(
+            DataFrame(), {"top": DataFrame(), "children": {}}
+        )
+        if not self.model.can_predict(model_input):
+            # TODO add reason
+            self.logger.info("Can't predict")
+            return probabilities, messages, model_input.features
+        probabilities = self.predict(model_input)
+        self.log_class_distribution(probabilities)
         return probabilities, messages, model_input.features
 
-    def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
+    def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        probabilities = result[0]
         parsed_result = self.scribe_parser.parse(
-            result[0],
+            probabilities,
             classifier_version=self.classifier_version,
-            oids=self.oids,
         )
         self.produce_scribe(parsed_result.value)
         return result

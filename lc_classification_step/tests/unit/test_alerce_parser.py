@@ -8,15 +8,15 @@ probabilities = DataFrame(
         "Ia": [0.5, 0.5, 0.5],
         "AGN": [0.4, 0.4, 0.4],
         "Meta/Other": [0.1, 0.1, 0.1],
-        "aid": ["aid1", "aid2", "aid3"],
+        "oid": ["oid1", "oid2", "oid3"],
         "classifier_name": ["test", "test", "test"],
     }
 )
-probabilities.set_index("aid", inplace=True)
+probabilities.set_index("oid", inplace=True)
 hierarchical = {
     "top": DataFrame(
         {
-            "aid": ["aid1", "aid2", "aid3"],
+            "oid": ["oid1", "oid2", "oid3"],
             "Periodic": [0.434, 0.434, 0.434],
             "Stochastic": [0.21, 0.21, 0.21],
             "Transient": [0.356, 0.356, 0.356],
@@ -25,19 +25,19 @@ hierarchical = {
     "children": {
         "Transient": DataFrame(
             {
-                "aid": ["aid1", "aid2", "aid3"],
+                "oid": ["oid1", "oid2", "oid3"],
                 "Ia": [0.5, 0.5, 0.5],
             }
         ),
         "Stochastic": DataFrame(
             {
-                "aid": ["aid1", "aid2", "aid3"],
+                "oid": ["oid1", "oid2", "oid3"],
                 "AGN": [0.4, 0.4, 0.4],
             }
         ),
         "Periodic": DataFrame(
             {
-                "aid": ["aid1", "aid2", "aid3"],
+                "oid": ["oid1", "oid2", "oid3"],
                 "Meta/Other": [0.1, 0.1, 0.1],
             }
         ),
@@ -49,8 +49,8 @@ messages = [
     {
         "detections": [
             {
-                "aid": "aid1",
                 "oid": 1,
+                "aid": "aid1",
                 "candid": 1,
                 "new": True,
                 "has_stamp": True,
@@ -61,14 +61,14 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid1",
+        "oid": "oid1",
         "features": {"feature1": 1},
     },
     {
         "detections": [
             {
                 "aid": "aid2",
-                "oid": 2,
+                "oid": 1,
                 "candid": 2,
                 "new": True,
                 "has_stamp": True,
@@ -79,7 +79,7 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid2",
+        "oid": "oid2",
         "features": {"feature1": 1},
     },
     {
@@ -97,7 +97,7 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid3",
+        "oid": "oid3",
         "features": {"feature1": 1},
     },
 ]

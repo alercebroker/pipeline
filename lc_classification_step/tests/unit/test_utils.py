@@ -1,7 +1,7 @@
 import pathlib
 import random
-from typing import List
 import unittest
+from typing import List
 
 import pandas as pd
 from fastavro import schema, utils
@@ -26,11 +26,11 @@ def generate_messages_elasticc() -> List[dict]:
     input_schema = schema.load_schema(schema_path)
     messages_elasticc = list(utils.generate_many(input_schema, 2))
 
-    for message in messages_elasticc:
+    for idx, message in enumerate(messages_elasticc):
+        message["oid"] = f"oid{idx+1}"
         for det in message["detections"]:
-            det["aid"] = message["aid"]
+            det["oid"] = message["oid"]
             det["candid"] = random.randint(0, 100000)
-            det["oid"] = random.randint(0, 100000)
             det["extra_fields"] = generate_extra_fields()
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
@@ -50,7 +50,7 @@ def generate_messages_ztf() -> List[dict]:
 
     for message in messages_ztf:
         for det in message["detections"]:
-            det["aid"] = message["aid"]
+            det["oid"] = message["oid"]
             det["extra_fields"] = {}
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
@@ -58,7 +58,7 @@ def generate_messages_ztf() -> List[dict]:
 
 
 class NoClassifiedPostProcessorTestCase(unittest.TestCase):
-    def test_all_aid_classified(self):
+    def test_all_oid_classified(self):
         expected_df = pd.DataFrame(
             [
                 [0.1, 0.2, 0.7, 0],
@@ -68,15 +68,15 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
                 [0.6, 0.2, 0.2, 0],
             ],
             index=[
-                "aid1",
-                "aid2",
-                "aid3",
-                "aid4",
-                "aid5",
+                "oid1",
+                "oid2",
+                "oid3",
+                "oid4",
+                "oid5",
             ],
             columns=["class1", "class2", "class3", "NotClassified"],
         )
-        expected_df.index.name = "aid"
+        expected_df.index.name = "oid"
 
         procesor = NoClassifiedPostProcessor(
             messages_df, complete_classifications_df
@@ -85,7 +85,7 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-    def test_some_aid_not_classified(self):
+    def test_some_oid_not_classified(self):
         expected_df = pd.DataFrame(
             [
                 [0.1, 0.2, 0.7, 0],
@@ -95,15 +95,15 @@ class NoClassifiedPostProcessorTestCase(unittest.TestCase):
                 [0.6, 0.2, 0.2, 0],
             ],
             index=[
-                "aid1",
-                "aid2",
-                "aid3",
-                "aid4",
-                "aid5",
+                "oid1",
+                "oid2",
+                "oid3",
+                "oid4",
+                "oid5",
             ],
             columns=["class1", "class2", "class3", "NotClassified"],
         )
-        expected_df.index.name = "aid"
+        expected_df.index.name = "oid"
 
         procesor = NoClassifiedPostProcessor(
             messages_df, incomplete_classifications_df

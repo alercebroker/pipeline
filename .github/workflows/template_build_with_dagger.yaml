@@ -30,7 +30,6 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
-          ref: main
           submodules: ${{ inputs.submodules}}
           token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry

@@ -1,16 +1,19 @@
 import json
 import time
 from typing import Dict, List, Tuple
+
 import pandas as pd
+from apf.consumers import KafkaConsumer
 from apf.core import get_class
 from apf.core.step import GenericStep
-from xmatch_step.core.xmatch_client import XmatchClient
+
+from xmatch_step.core.parsing import parse_output
 from xmatch_step.core.utils.constants import ALLWISE_MAP
 from xmatch_step.core.utils.extract_info import (
     extract_lightcurve_from_messages,
     get_candids_from_messages,
 )
-from xmatch_step.core.parsing import parse_output
+from xmatch_step.core.xmatch_client import XmatchClient
 
 
 class XmatchStep(GenericStep):
@@ -148,3 +151,10 @@ class XmatchStep(GenericStep):
         xmatches, lightcurves_by_oid, candids = result
         self.produce_scribe(xmatches)
         return xmatches, lightcurves_by_oid, candids
+
+    def tear_down(self):
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()

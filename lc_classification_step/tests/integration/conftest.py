@@ -243,15 +243,13 @@ def _produce_messages(
     )
     random.seed(42)
     messages = generate_many(SCHEMA, 2)
-    producer.set_key_field("aid")
+    producer.set_key_field("oid")
 
     for message in messages:
         for det in message["detections"]:
-            det["aid"] = message["aid"]
+            det["oid"] = message["oid"]
             det["candid"] = random.randint(0, 100000)
             det["extra_fields"] = generate_extra_fields()
-            if topic == "features_elasticc":
-                det["oid"] = random.randint(0, 100000)
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         if topic == "features_ztf":
