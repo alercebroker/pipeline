@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 
 from features.core.elasticc import ELAsTiCCFeatureExtractor
 from features.core.ztf import ZTFFeatureExtractor
@@ -86,3 +87,10 @@ class FeaturesComputer(GenericStep):
     def post_execute(self, result):
         self.metrics["sid"] = get_sid(result)
         return result
+
+    def tear_down(self):
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()
