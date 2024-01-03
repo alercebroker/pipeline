@@ -4,9 +4,7 @@ import pandas as pd
 from features.core.utils.functions import collapse_fid_columns
 
 
-def parse_scribe_payload(
-    features: pd.DataFrame, extractor_class
-):
+def parse_scribe_payload(features: pd.DataFrame, extractor_class):
     """Create the json with the messages for the scribe produccer fron the
     features dataframe. It adds the fid and correct the name.
 
@@ -18,9 +16,7 @@ def parse_scribe_payload(
 
     features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
     if extractor_class.NAME == "ztf_lc_features":
-        return _parse_scribe_payload_ztf(
-            features, extractor_class
-        )
+        return _parse_scribe_payload_ztf(features, extractor_class)
     if extractor_class.NAME == "elasticc_lc_features":
         return _parse_scribe_payload_elasticc(features, extractor_class)
     else:
@@ -60,9 +56,7 @@ def _parse_scribe_payload_elasticc(features, extractor_class):
     return commands_list
 
 
-def _parse_scribe_payload_ztf(
-    features, extractor_class
-):
+def _parse_scribe_payload_ztf(features, extractor_class):
     commands_list = []
     for oid, features_df in features.iterrows():
         FID_MAP = {"g": 1, "r": 2, "gr": 12, "rg": 12}

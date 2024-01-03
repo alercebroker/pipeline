@@ -40,12 +40,8 @@ class FeaturesComputer(GenericStep):
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
 
-    def produce_to_scribe(
-        self, features: pd.DataFrame
-    ):
-        commands = parse_scribe_payload(
-            features, self.features_extractor
-        )
+    def produce_to_scribe(self, features: pd.DataFrame):
+        commands = parse_scribe_payload(features, self.features_extractor)
 
         count = 0
         flush = False
