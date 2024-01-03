@@ -7,7 +7,7 @@ from ._base import BaseStatistics
 
 
 class ObjectStatistics(BaseStatistics):
-    _JOIN = "aid"
+    _JOIN = "oid"
 
     def __init__(self, detections: List[dict]):
         super().__init__(detections)
@@ -47,7 +47,7 @@ class ObjectStatistics(BaseStatistics):
             return self._weighted_mean(series, sigmas.loc[series.index])
 
         sigmas = self._arcsec2deg(self._detections[f"e_{label}"])
-        grouped_sigmas = self._group(sigmas.set_axis(self._detections["aid"]))
+        grouped_sigmas = self._group(sigmas.set_axis(self._detections["oid"]))
         return pd.DataFrame(
             {
                 f"mean{label}": self._grouped_detections()[label].agg(average),

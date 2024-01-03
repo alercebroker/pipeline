@@ -17,7 +17,7 @@ class BaseHandler(abc.ABC):
     This provides the general base methods for extracting statistics and applying functions to the alerts
     considered.
 
-    Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the latter will be renamed to `id`).
+    Alerts require at the very least fields `sid`, `fid`, `mjd` and `oid` (the latter will be renamed to `id`).
     Usually, a subclass will define additional fields that are required, but missing one of the aforementioned fields
     will result in an initialization error, unless the initialization methods are adapted as well. These always
     required fields are defined the class attribute `COLUMNS`.
@@ -73,7 +73,7 @@ class BaseHandler(abc.ABC):
             )
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
-        self._alerts = self._alerts.rename(columns={"aid": "id"})
+        self._alerts = self._alerts.rename(columns={"oid": "id"})
         if self._alerts.size == 0:
             index = (
                 {self.INDEX}

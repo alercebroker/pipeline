@@ -27,119 +27,119 @@
       "type": {
         "type": "array",
         "items": {
-        "type": "record",
-        "name": "alert",
-        "fields": [
-          {
-            "name": "aid",
-            "type": "string"
-          },
-          {
-            "name": "oid",
-            "type": "string"
-          },
-          {
-            "name": "sid",
-            "type": "string"
-          },
-          {
-            "name": "pid",
-            "type": "long"
-          },
-          {
-            "name": "tid",
-            "type": "string"
-          },
-          {
-            "name": "fid",
-            "type": "string"
-          },
-          {
-            "name": "candid",
-            "type": ["string", "long"]
-          },
-          {
-            "name": "mjd",
-            "type": "double"
-          },
-          {
-            "name": "ra",
-            "type": "double"
-          },
-          {
-            "name": "e_ra",
-            "type": "float"
-          },
-          {
-            "name": "dec",
-            "type": "double"
-          },
-          {
-            "name": "e_dec",
-            "type": "float"
-          },
-          {
-            "name": "mag",
-            "type": "float"
-          },
-          {
-            "name": "e_mag",
-            "type": "float"
-          },
-          {
-            "name": "mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "e_mag_corr_ext",
-            "type": ["float", "null"]
-          },
-          {
-            "name": "isdiffpos",
-            "type": "int"
-          },
-          {
-            "name": "corrected",
-            "type": "boolean"
-          },
-          {
-            "name": "dubious",
-            "type": "boolean"
-          },
-          {
-            "name": "stellar",
-            "type": "boolean"
-          },
-          {
-            "name": "has_stamp",
-            "type": "boolean"
-          },
-          {
-            "name": "forced",
-            "type": "boolean"
-          },
-          {
-            "name": "new",
-            "type": "boolean"
-          },
-          {
-            "name": "parent_candid",
-            "type": ["string", "long", "null"]
-          },
-          {
-            "name": "extra_fields",
-            "type": {
-              "default": {},
-              "type": "map",
-              "values": ["null", "int", "float", "string", "bytes", "boolean"]
+          "type": "record",
+          "name": "alert",
+          "fields": [
+            {
+              "name": "aid",
+              "type": ["string", "null"]
+            },
+            {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "sid",
+              "type": "string"
+            },
+            {
+              "name": "pid",
+              "type": "long"
+            },
+            {
+              "name": "tid",
+              "type": "string"
+            },
+            {
+              "name": "fid",
+              "type": "string"
+            },
+            {
+              "name": "candid",
+              "type": ["string", "long"]
+            },
+            {
+              "name": "mjd",
+              "type": "double"
+            },
+            {
+              "name": "ra",
+              "type": "double"
+            },
+            {
+              "name": "e_ra",
+              "type": "float"
+            },
+            {
+              "name": "dec",
+              "type": "double"
+            },
+            {
+              "name": "e_dec",
+              "type": "float"
+            },
+            {
+              "name": "mag",
+              "type": "float"
+            },
+            {
+              "name": "e_mag",
+              "type": "float"
+            },
+            {
+              "name": "mag_corr",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "e_mag_corr",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "e_mag_corr_ext",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "isdiffpos",
+              "type": "int"
+            },
+            {
+              "name": "corrected",
+              "type": "boolean"
+            },
+            {
+              "name": "dubious",
+              "type": "boolean"
+            },
+            {
+              "name": "stellar",
+              "type": "boolean"
+            },
+            {
+              "name": "has_stamp",
+              "type": "boolean"
+            },
+            {
+              "name": "forced",
+              "type": "boolean"
+            },
+            {
+              "name": "new",
+              "type": "boolean"
+            },
+            {
+              "name": "parent_candid",
+              "type": ["string", "long", "null"]
+            },
+            {
+              "name": "extra_fields",
+              "type": {
+                "default": {},
+                "type": "map",
+                "values": ["null", "int", "float", "string", "bytes", "boolean"]
+              }
             }
-          }
-        ]
-      },
+          ]
+        },
         "default": []
       }
     },
@@ -153,7 +153,7 @@
           "fields": [
             {
               "name": "aid",
-              "type": "string"
+              "type": ["string", "null"]
             },
             {
               "name": "oid",

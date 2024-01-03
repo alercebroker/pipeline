@@ -13,7 +13,7 @@ def test_create_lightcurve_dataframe():
     preprocessor = ElasticcPreprocessor(stream=True)
     lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
     detections = generate_alert(
-        aid="aid1", band="u", num_messages=1, identifier="1"
+        oid="oid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
         preprocessor, lc_classifier_extractor, detections
@@ -21,8 +21,8 @@ def test_create_lightcurve_dataframe():
     lightcurve_dataframe = step_extractor._create_lightcurve_dataframe(
         detections
     )
-    assert len(lightcurve_dataframe.loc["aid1"]) == 25
-    assert lightcurve_dataframe.iloc[0]["oid"] == "oid1"
+    assert len(lightcurve_dataframe.loc["oid1"]) == 25
+    assert lightcurve_dataframe.iloc[0]["aid"] == "aid1"
     assert lightcurve_dataframe.iloc[0]["BAND"] == "u"
     assert lightcurve_dataframe.iloc[0]["FLUXCAL"] >= 15
     assert lightcurve_dataframe.iloc[0]["FLUXCAL"] <= 20
@@ -36,7 +36,7 @@ def test_create_metadata_dataframe():
     preprocessor = ElasticcPreprocessor(stream=True)
     lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
     detections = generate_alert(
-        aid="aid1", band="u", num_messages=1, identifier="1"
+        oid="oid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
         preprocessor, lc_classifier_extractor, detections
@@ -54,7 +54,7 @@ def test_preprocessor_can_run_with_parsed_data():
     preprocessor = ElasticcPreprocessor(stream=True)
     lc_classifier_extractor = ElasticcFeatureExtractor(round=2)
     detections = generate_alert(
-        aid="aid1", band="u", num_messages=1, identifier="1"
+        oid="oid1", band="u", num_messages=1, identifier="1"
     )
     step_extractor = ELAsTiCCFeatureExtractor(
         preprocessor, lc_classifier_extractor, detections

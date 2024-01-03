@@ -173,7 +173,7 @@ class BaseFeatureExtractor(abc.ABC):
         self.detections.not_enough(self.MIN_DETS_FID, by_fid=True)
 
     def _create_xmatches(self, xmatches: list[dict]) -> pd.DataFrame:
-        """Ensures cross-matches contain `aid` in detections and selects required columns."""
+        """Ensures cross-matches contain `oid` in detections and selects required columns."""
 
         def expand_catalogues(xm):
             return {
@@ -188,12 +188,12 @@ class BaseFeatureExtractor(abc.ABC):
             ]
 
         xmatches = [
-            {"aid": xm["aid"]} | expand_catalogues(xm) for xm in xmatches
+            {"oid": xm["oid"]} | expand_catalogues(xm) for xm in xmatches
         ]
         xmatches = pd.DataFrame(
-            xmatches, columns=["aid"] + get_required_columns()
+            xmatches, columns=["oid"] + get_required_columns()
         )
-        xmatches = xmatches.rename(columns={"aid": "id"}).drop_duplicates(
+        xmatches = xmatches.rename(columns={"oid": "id"}).drop_duplicates(
             subset=["id"]
         )
         return xmatches[xmatches["id"].isin(self.detections.ids())].set_index(

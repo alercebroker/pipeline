@@ -24,7 +24,7 @@
           "fields": [
             {
               "name": "aid",
-              "type": "string"
+              "type": ["string", "null"]
             },
             {
               "name": "oid",
@@ -121,7 +121,7 @@
           "fields": [
             {
               "name": "aid",
-              "type": "string"
+              "type": ["string", "null"]
             },
             {
               "name": "oid",

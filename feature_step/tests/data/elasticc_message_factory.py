@@ -30,7 +30,7 @@ def get_extra_fields():
 
 
 def generate_alert(
-    aid: str, band: str, num_messages: int, identifier: int, **kwargs
+    oid: str, band: str, num_messages: int, identifier: int, **kwargs
 ) -> list[dict]:
     alerts = []
     survey_id = kwargs.get("survey", "LSST")
@@ -40,8 +40,8 @@ def generate_alert(
         extra_fields["diaObject"] = diaObject
         alert = {
             "candid": str(random.randint(1000000, 9000000)),
-            "oid": f"oid{identifier}",
-            "aid": aid,
+            "oid": oid,
+            "aid": f"aid{identifier}",
             "tid": survey_id,
             "mjd": random.uniform(59000, 60000),
             "sid": survey_id,
@@ -104,20 +104,20 @@ def generate_input_batch(
     """
     batch = []
     for m in range(1, n + 1):
-        aid = f"AL2X{str(m+offset).zfill(5)}"
+        oid = f"AL2X{str(m+offset).zfill(5)}"
         meanra = random.uniform(0, 360)
         meandec = random.uniform(-90, 90)
         detections = []
         for band in bands:
             detections.extend(
                 generate_alert(
-                    aid, band, random.randint(6, 10), m, survey=survey
+                    oid, band, random.randint(6, 10), m, survey=survey
                 )
             )
-        non_det = generate_non_det(aid, random.randint(0, 1), m)
+        non_det = generate_non_det(oid, random.randint(0, 1), m)
         xmatch = {}
         msg = {
-            "aid": aid,
+            "oid": oid,
             "candid": [det["candid"] for det in detections],
             "meanra": meanra,
             "meandec": meandec,
