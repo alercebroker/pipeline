@@ -51,7 +51,7 @@ def add_fid(fid: Any):
 
 
 def fill_in_every_fid(counters: str = None):
-    """Decorated method must produce a multi-indexed data frame with two levels, `aid` and `fid` (in that order)"""
+    """Decorated method must produce a multi-indexed data frame with two levels, `oid` and `fid` (in that order)"""
 
     def decorator(method):
         @functools.wraps(method)

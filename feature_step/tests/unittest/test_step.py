@@ -73,10 +73,8 @@ class StepTestCase(unittest.TestCase):
     def test_execute(self):
         expected_output = [
             {
-                "aid": "aid1",
+                "oid": "oid1",
                 "candid": ["1_candid_aid_1", "2_candid_aid_1"],
-                "meanra": 888,
-                "meandec": 999,
                 "detections": [
                     {
                         "candid": "1_candid_aid_1",
@@ -163,10 +161,8 @@ class StepTestCase(unittest.TestCase):
                 },
             },
             {
-                "aid": "aid2",
+                "oid": "oid2",
                 "candid": ["1_candid_aid_2"],
-                "meanra": 444,
-                "meandec": 555,
                 "detections": [
                     {
                         "candid": "1_candid_aid_2",
@@ -327,13 +323,13 @@ class StepTestCase(unittest.TestCase):
         ]
         expected_xmatches_for_extractor = [
             {
-                "aid": "aid1",
+                "oid": "oid1",
                 "W1mag": 123,
                 "W2mag": 456,
                 "W3mag": 789,
             },
             {
-                "aid": "aid2",
+                "oid": "oid2",
                 "W1mag": 123,
                 "W2mag": 456,
                 "W3mag": 789,

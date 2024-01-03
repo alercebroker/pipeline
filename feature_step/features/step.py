@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable
 import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 
 from features.core.elasticc import ELAsTiCCFeatureExtractor
 from features.core.ztf import ZTFFeatureExtractor
@@ -40,12 +41,8 @@ class FeaturesComputer(GenericStep):
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
 
-    def produce_to_scribe(
-        self, messages_aid_oid: dict, features: pd.DataFrame
-    ):
-        commands = parse_scribe_payload(
-            messages_aid_oid, features, self.features_extractor
-        )
+    def produce_to_scribe(self, features: pd.DataFrame):
+        commands = parse_scribe_payload(features, self.features_extractor)
 
         count = 0
         flush = False
@@ -58,35 +55,29 @@ class FeaturesComputer(GenericStep):
             )
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
-        self.set_producer_key_field("aid")
+        self.set_producer_key_field("oid")
         return result
 
     def execute(self, messages):
-        detections, non_detections, xmatch, messages_aid_oid = [], [], [], {}
+        detections, non_detections, xmatch = [], [], []
         candids = {}
 
         for message in messages:
-            if not message["aid"] in candids:
-                candids[message["aid"]] = []
-            candids[message["aid"]].extend(message["candid"])
+            if not message["oid"] in candids:
+                candids[message["oid"]] = []
+            candids[message["oid"]].extend(message["candid"])
             detections.extend(message.get("detections", []))
             non_detections.extend(message.get("non_detections", []))
             xmatch.append(
-                {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
+                {"oid": message["oid"], **(message.get("xmatches", {}) or {})}
             )
-            oids_of_aid = []
-            oids_of_aid = [
-                message_detection["oid"]
-                for message_detection in message["detections"]
-            ]
-            messages_aid_oid[message["aid"]] = list(set(oids_of_aid))
 
         features_extractor = self.features_extractor(
             detections, non_detections, xmatch
         )
         features = features_extractor.generate_features()
         if len(features) > 0:
-            self.produce_to_scribe(messages_aid_oid, features)
+            self.produce_to_scribe(features)
 
         output = parse_output(
             features, messages, self.features_extractor, candids
@@ -96,3 +87,10 @@ class FeaturesComputer(GenericStep):
     def post_execute(self, result):
         self.metrics["sid"] = get_sid(result)
         return result
+
+    def tear_down(self):
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()

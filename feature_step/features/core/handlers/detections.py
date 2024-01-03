@@ -11,7 +11,7 @@ class DetectionsHandler(BaseHandler):
 
     Indexed by `candid`.
 
-    Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
+    Criteria for uniqueness is based on `id` (`oid`, depending on use of `legacy`), `fid` and `mjd`.
 
     Required fields are: `id`, `sid`, `fid`, `mjd`, `mag` and `e_mag`.
 
