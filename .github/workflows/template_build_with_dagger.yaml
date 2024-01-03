@@ -14,6 +14,10 @@ on:
         required: false
         type: boolean
         default: false
+      ref:
+        required: false
+        type: string
+        default: "main"
     secrets:
       GH_TOKEN:
         required: true
@@ -30,6 +34,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           submodules: ${{ inputs.submodules}}
           token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry

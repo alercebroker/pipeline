@@ -5,40 +5,40 @@ on:
     branches:
       - main
     paths:
-      - 'sorting_hat_step/**'
-      - '!sorting_hat_step/README.md'
+      - "sorting_hat_step/**"
+      - "!sorting_hat_step/README.md"
 
 jobs:
   sorting_hat_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      base-folder: 'sorting_hat_step'
-      sources-folder: 'sorting_hat_step'
+      base-folder: "sorting_hat_step"
+      sources-folder: "sorting_hat_step"
   sorting_hat_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'sorting_hat_step'
-      python-version: '3.8'
-      sources-folder: 'sorting_hat_step'
-      test-folder: 'tests/unittest'
+      base-folder: "sorting_hat_step"
+      python-version: "3.8"
+      sources-folder: "sorting_hat_step"
+      test-folder: "tests/unittest"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   sorting_hat_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'sorting_hat_step'
-      python-version: '3.8'
-      sources-folder: 'sorting_hat_step'
-      test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      base-folder: "sorting_hat_step"
+      python-version: "3.8"
+      sources-folder: "sorting_hat_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
 
   build-sorting-hat-dagger:
-    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: sorting_hat_step --dry-run
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: sorting_hat_step --dry-run
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

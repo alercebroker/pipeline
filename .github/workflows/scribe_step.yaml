@@ -5,35 +5,35 @@ on:
     branches:
       - main
     paths:
-      - 'scribe/**'
-      - '!scribe/README.md'
+      - "scribe/**"
+      - "!scribe/README.md"
 
 jobs:
   scribe_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.9'
-      sources-folder: 'mongo_scribe'
-      base-folder: 'scribe'
-      test-folder: 'tests/unittest'
-      codecov-flags: ''  # Do not upload
+      python-version: "3.9"
+      sources-folder: "mongo_scribe"
+      base-folder: "scribe"
+      test-folder: "tests/unittest"
+      codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   scribe_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.9'
-      sources-folder: 'mongo_scribe'
-      base-folder: 'scribe'
-      test-folder: 'tests/integration'
+      python-version: "3.9"
+      sources-folder: "mongo_scribe"
+      base-folder: "scribe"
+      test-folder: "tests/integration"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
 
   build-scribe-dagger:
-    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: scribe --dry-run
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: scribe --dry-run
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

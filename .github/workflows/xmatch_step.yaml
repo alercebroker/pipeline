@@ -36,6 +36,7 @@ jobs:
   build-xmatch-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
+      ref: ${{ github.ref }}
       stage: staging
       extra-args: xmatch_step --dry-run
     secrets:

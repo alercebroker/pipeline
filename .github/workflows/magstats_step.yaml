@@ -5,39 +5,39 @@ on:
     branches:
       - main
     paths:
-      - 'magstats_step/**'
-      - '!magstats_step/README.md'
+      - "magstats_step/**"
+      - "!magstats_step/README.md"
 
 jobs:
   magstats_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'magstats_step'
-      base-folder: 'magstats_step'
+      sources-folder: "magstats_step"
+      base-folder: "magstats_step"
   magstats_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'magstats_step'
-      python-version: '3.9'
-      sources-folder: 'magstats_step'
-      test-folder: 'tests/unittests'
+      base-folder: "magstats_step"
+      python-version: "3.9"
+      sources-folder: "magstats_step"
+      test-folder: "tests/unittests"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   magstats_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'magstats_step'
-      python-version: '3.9'
-      sources-folder: 'magstats_step'
-      test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      base-folder: "magstats_step"
+      python-version: "3.9"
+      sources-folder: "magstats_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   build-magstats-dagger:
-    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: magstats_step --dry-run
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: magstats_step --dry-run
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

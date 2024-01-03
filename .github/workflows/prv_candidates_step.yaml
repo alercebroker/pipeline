@@ -5,38 +5,38 @@ on:
     branches:
       - main
     paths:
-      - 'prv_candidates_step/**'
-      - '!prv_candidates_step/README.md'
+      - "prv_candidates_step/**"
+      - "!prv_candidates_step/README.md"
 
 jobs:
   prv_candidates_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      base-folder: 'prv_candidates_step'
+      base-folder: "prv_candidates_step"
       sources-folder: "prv_candidates_step"
   prv_candidates_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'prv_candidates_step'
+      base-folder: "prv_candidates_step"
       python-version: "3.8"
       test-folder: "tests/unit"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   prv_candidates_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 'prv_candidates_step'
-      python-version: '3.8'
-      sources-folder: 'prv_candidates_step'
-      test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      base-folder: "prv_candidates_step"
+      python-version: "3.8"
+      sources-folder: "prv_candidates_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   build-prv-candidates-dagger:
-    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: prv_candidates_step --dry-run
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: prv_candidates_step --dry-run
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

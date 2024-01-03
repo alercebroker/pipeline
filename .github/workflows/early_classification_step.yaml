@@ -5,44 +5,44 @@ on:
     branches:
       - main
     paths:
-      - 'early_classification_step/**'
-      - '!early_classification_step/README.md'
+      - "early_classification_step/**"
+      - "!early_classification_step/README.md"
 
 jobs:
   early_classification_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      base-folder: 'early_classification_step'
-      sources-folder: 'earlyclassifier'
+      base-folder: "early_classification_step"
+      sources-folder: "earlyclassifier"
   early_classification_step_unittest:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'early_classification_step'
-      python-version: '3.7'
-      sources-folder: 'earlyclassifier'
-      requirements-file: 'requirements.txt -r model/requirements.txt'
-      test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml'
+      base-folder: "early_classification_step"
+      python-version: "3.7"
+      sources-folder: "earlyclassifier"
+      requirements-file: "requirements.txt -r model/requirements.txt"
+      test-folder: "tests/unittest"
+      test-dependencies: "pytest pytest-cov"
+      test-command: "python -m pytest -x tests/unittest --cov earlyclassifier --cov-report xml"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   early_classification_step_integration:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'early_classification_step'
-      python-version: '3.7'
-      sources-folder: 'earlyclassifier'
-      requirements-file: 'requirements.txt -r model/requirements.txt'
-      test-folder: 'tests/integration'
-      test-dependencies: 'pytest pytest-docker'
-      test-command: 'python -m pytest -x tests/integration'
+      base-folder: "early_classification_step"
+      python-version: "3.7"
+      sources-folder: "earlyclassifier"
+      requirements-file: "requirements.txt -r model/requirements.txt"
+      test-folder: "tests/integration"
+      test-dependencies: "pytest pytest-docker"
+      test-command: "python -m pytest -x tests/integration"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   build-early-classification-dagger:
-    
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-        stage: staging
-        extra-args: early_classification_step --dry-run
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: early_classification_step --dry-run
     secrets:
-        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
