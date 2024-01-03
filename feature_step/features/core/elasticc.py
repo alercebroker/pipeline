@@ -49,7 +49,7 @@ class ELAsTiCCFeatureExtractor:
 
     def _create_lightcurve_dataframe(self, detections: List[dict]):
         self._rename_detections_columns(detections)
-        return pd.DataFrame.from_records(detections).set_index("aid")
+        return pd.DataFrame.from_records(detections).set_index("oid")
 
     def _rename_detections_columns(self, detections: List[dict]):
         for det in detections:

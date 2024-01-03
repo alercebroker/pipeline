@@ -19,10 +19,8 @@ class ParsersTestCase(unittest.TestCase):
     def test_parse_output(self):
         expected_payload = [
             {
-                "aid": "aid1",
+                "oid": "oid1",
                 "candid": "candid1",
-                "meanra": 888,
-                "meandec": 999,
                 "detections": [],
                 "non_detections": [],
                 "xmatches": {},
@@ -35,10 +33,8 @@ class ParsersTestCase(unittest.TestCase):
                 },
             },
             {
-                "aid": "aid2",
+                "oid": "oid2",
                 "candid": "candid2",
-                "meanra": 444,
-                "meandec": 555,
                 "detections": [],
                 "non_detections": [],
                 "xmatches": {},
@@ -52,7 +48,7 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
-        candids = {"aid1": "candid1", "aid2": "candid2"}
+        candids = {"oid1": "candid1", "oid2": "candid2"}
         parsed_result = parse_output(
             test_features_df,
             messages_for_parsing,
@@ -67,7 +63,7 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid1", "oid": ["oid1", "oid6", "oid7"]},
+                "criteria": {"_id": "oid1"},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
@@ -84,7 +80,7 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid2", "oid": ["oid2", "oid5", "oid8"]},
+                "criteria": {"_id": "oid2"},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
@@ -100,13 +96,8 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
-        messages_aid_oid = {
-            "aid1": ["oid1", "oid6", "oid7"],
-            "aid2": ["oid2", "oid5", "oid8"],
-            "aid3": ["oid3", "oid4", "oid9"],
-        }
         parsed_result = parse_scribe_payload(
-            messages_aid_oid, test_features_df, self.mock_extractor_class
+            test_features_df, self.mock_extractor_class
         )
 
         self.assertEqual(parsed_result, expected_payload)

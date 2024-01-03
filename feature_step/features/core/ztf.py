@@ -93,11 +93,11 @@ class ZTFFeatureExtractor(BaseFeatureExtractor):
             non_detections["fid"].replace(
                 {v: k for k, v in cls.BANDS_MAPPING.items()}, inplace=True
             )
-            non_detections = non_detections.rename(columns={"oid": "aid"})
+            #non_detections = non_detections.rename(columns={"oid": "aid"})
 
         if isinstance(xmatches, pd.DataFrame):
             xmatches = xmatches.reset_index()
-            xmatches = xmatches.rename(columns={"oid": "aid"})
+            #xmatches = xmatches.rename(columns={"oid": "aid"})
 
         return detections, non_detections, xmatches
 

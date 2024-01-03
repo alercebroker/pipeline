@@ -11,7 +11,7 @@ from ._base import BaseHandler
 class NonDetectionsHandler(BaseHandler):
     """Class for handling non-detections.
 
-    Criteria for uniqueness is based on `id` (`aid` or `oid`, depending on use of `legacy`), `fid` and `mjd`.
+    Criteria for uniqueness is based on `id` (or `oid`, depending on use of `legacy`), `fid` and `mjd`.
 
     Required fields are `id`, `sid`, `fid`, `mjd` and `diffmaglim`.
 

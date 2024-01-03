@@ -13,14 +13,14 @@ feature_multi_index_for_parse = pd.MultiIndex.from_tuples(
 
 features_df_for_parse = pd.DataFrame(
     [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
-    index=["aid1", "aid2"],
+    index=["oid1", "oid2"],
     columns=feature_multi_index_for_parse,
 )
-features_df_for_parse.index.name = "aid"
+features_df_for_parse.index.name = "oid"
 
 messages_for_parsing = [
     {
-        "aid": "aid1",
+        "oid": "oid1",
         "candid": "candid1",
         "meanra": 888,
         "meandec": 999,
@@ -29,7 +29,7 @@ messages_for_parsing = [
         "xmatches": {},
     },
     {
-        "aid": "aid2",
+        "oid": "oid2",
         "candid": "candid2",
         "meanra": 444,
         "meandec": 555,
@@ -52,14 +52,14 @@ feature_multi_index_for_execute = pd.MultiIndex.from_tuples(
 
 features_df_for_execute = pd.DataFrame(
     [[123, 456, 741, 963, None], [321, 654, 147, 369, 888]],
-    index=["aid1", "aid2"],
+    index=["oid1", "oid2"],
     columns=feature_multi_index_for_execute,
 )
-features_df_for_execute.index.name = "aid"
+features_df_for_execute.index.name = "oid"
 
 messages_for_execute = [
     {
-        "aid": "aid1",
+        "oid": "oid1",
         "candid": ["1_candid_aid_1", "2_candid_aid_1"],
         "meanra": 888,
         "meandec": 999,
@@ -142,7 +142,7 @@ messages_for_execute = [
         },
     },
     {
-        "aid": "aid2",
+        "oid": "oid2",
         "candid": ["1_candid_aid_2"],
         "meanra": 444,
         "meandec": 555,
