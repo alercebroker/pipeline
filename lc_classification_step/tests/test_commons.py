@@ -2,7 +2,7 @@ from pytest import approx
 
 
 def assert_ztf_object_is_correct(obj):
-    assert "aid" in obj
+    assert "oid" in obj
     assert "features" in obj
     assert "lc_classification" in obj
     assert "class" in obj["lc_classification"]
@@ -35,5 +35,4 @@ def assert_command_is_correct(command):
     assert command["collection"] == "object"
     assert command["type"] == "update_probabilities"
     assert command["criteria"]["_id"] is not None
-    assert "aid" not in command["data"]
     assert not command["options"]["set_on_insert"]

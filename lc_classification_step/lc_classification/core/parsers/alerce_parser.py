@@ -18,14 +18,14 @@ class AlerceParser(KafkaParser):
         parsed = []
         features.replace({np.nan: None}, inplace=True)
         messages_df = pd.DataFrame(
-            [{"aid": message.get("aid")} for message in messages]
+            [{"oid": message.get("oid")} for message in messages]
         )
 
         # maybe this won't be enough
         probs_copy = model_output.probabilities.copy()
         probs_copy.pop("classifier_name")
         try:
-            probs_copy.set_index("aid", inplace=True)
+            probs_copy.set_index("oid", inplace=True)
         except KeyError:
             pass
         tree_output = {
@@ -34,43 +34,43 @@ class AlerceParser(KafkaParser):
             "class": probs_copy.idxmax(axis=1),
         }
 
-        messages_df.drop_duplicates("aid", inplace=True)
+        messages_df.drop_duplicates("oid", inplace=True)
         for _, row in messages_df.iterrows():
-            aid = row.aid
+            oid = row.oid
             try:
-                features_aid = features.loc[aid].to_dict()
+                features_oid = features.loc[oid].to_dict()
             except KeyError:
                 continue
 
-            tree_aid = self._get_aid_tree(tree_output, aid)
+            tree_oid = self._get_oid_tree(tree_output, oid)
             write = {
-                "aid": aid,
-                "features": features_aid,
-                "lc_classification": tree_aid,
+                "oid": oid,
+                "features": features_oid,
+                "lc_classification": tree_oid,
             }
             parsed.append(write)
 
         return KafkaOutput(parsed)
 
-    def _get_aid_tree(self, tree, aid):
-        tree_aid = {}
+    def _get_oid_tree(self, tree, oid):
+        tree_oid = {}
         for key in tree:
             data = tree[key]
             if isinstance(data, pd.DataFrame):
                 try:
-                    data_cpy = data.set_index("aid")
-                    tree_aid[key] = data_cpy.loc[aid].to_dict()
-                    if "classifier_name" in tree_aid[key]:
-                        tree_aid[key].pop("classifier_name")
+                    data_cpy = data.set_index("oid")
+                    tree_oid[key] = data_cpy.loc[oid].to_dict()
+                    if "classifier_name" in tree_oid[key]:
+                        tree_oid[key].pop("classifier_name")
                 except KeyError as e:
-                    if not data.index.name == "aid":
+                    if not data.index.name == "oid":
                         raise e
                     else:
-                        tree_aid[key] = data.loc[aid].to_dict()
-                        if "classifier_name" in tree_aid[key]:
-                            tree_aid[key].pop("classifier_name")
+                        tree_oid[key] = data.loc[oid].to_dict()
+                        if "classifier_name" in tree_oid[key]:
+                            tree_oid[key].pop("classifier_name")
             elif isinstance(data, pd.Series):
-                tree_aid[key] = data.loc[aid]
+                tree_oid[key] = data.loc[oid]
             elif isinstance(data, dict):
-                tree_aid[key] = self._get_aid_tree(data, aid)
-        return tree_aid
+                tree_oid[key] = self._get_oid_tree(data, oid)
+        return tree_oid

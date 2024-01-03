@@ -132,8 +132,8 @@ def step_factory(messages, config, model):
 @pytest.fixture
 def ztf_model_output():
     def output_factory(messages_ztf, model):
-        aids = [
-            message["aid"]
+        oids = [
+            message["oid"]
             for message in messages_ztf
             if message.get("features") is not None
         ]
@@ -141,28 +141,28 @@ def ztf_model_output():
             "hierarchical": {
                 "top": DataFrame(
                     {
-                        "aid": aids,
-                        "CLASS": [1] * len(aids),
-                        "CLASS2": [0] * len(aids),
+                        "oid": oids,
+                        "CLASS": [1] * len(oids),
+                        "CLASS2": [0] * len(oids),
                     }
                 ),
                 "children": {
                     "Transient": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                     "Stochastic": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                     "Periodic": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                 },
             },
             "probabilities": DataFrame(
                 {
-                    "aid": aids,
-                    "CLASS": [1] * len(aids),
-                    "CLASS2": [0] * len(aids),
+                    "oid": oids,
+                    "CLASS": [1] * len(oids),
+                    "CLASS2": [0] * len(oids),
                 }
             ),
         }
@@ -173,8 +173,8 @@ def ztf_model_output():
 @pytest.fixture
 def elasticc_model_output():
     def factory(_, model):
-        aids = ["aid1", "aid2"]
-        df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=aids)
+        oids = ["oid1", "oid2"]
+        df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=oids)
         model.predict.return_value = OutputDTO(
             df, {"top": DataFrame(), "children": {}}
         )

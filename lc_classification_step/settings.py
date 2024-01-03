@@ -155,5 +155,8 @@ def config():
         "FEATURE_FLAGS": {
             "PROMETHEUS": bool(os.getenv("USE_PROMETHEUS", True)),
             "USE_PROFILING": bool(os.getenv("USE_PROFILING", False)),
+            "LOG_CLASS_DISTRIBUTION": bool(
+                os.getenv("LOG_CLASS_DISTRIBUTION", False)
+            ),
         },
     }

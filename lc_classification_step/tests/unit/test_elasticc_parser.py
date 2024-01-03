@@ -7,10 +7,10 @@ probabilities = DataFrame(
         "Ia": ["0.5", "0.5", "0.5"],
         "AGN": ["0.4", "0.4", "0.4"],
         "Meta/Other": ["0.1", "0.1", "0.1"],
-        "aid": ["aid1", "aid2", "aid3"],
+        "oid": ["oid1", "oid2", "oid3"],
     }
 )
-probabilities.set_index("aid", inplace=True)
+probabilities.set_index("oid", inplace=True)
 hierarchical = {"top": DataFrame(), "children": {}}
 output_dto = OutputDTO(probabilities, hierarchical)
 
@@ -18,8 +18,8 @@ messages = [
     {
         "detections": [
             {
-                "aid": "aid1",
-                "oid": 11,
+                "oid": "oid1",
+                "aid": "11",
                 "candid": 1,
                 "mjd": 11,
                 "new": True,
@@ -30,8 +30,8 @@ messages = [
                 },
             },
             {
-                "aid": "aid1",
-                "oid": 1,
+                "oid": "oid1",
+                "aid": "1",
                 "candid": 22,
                 "mjd": 22,
                 "new": False,
@@ -43,13 +43,13 @@ messages = [
             },
         ],
         "non_detections": [],
-        "aid": "aid1",
+        "oid": "oid1",
     },
     {
         "detections": [
             {
-                "aid": "aid2",
-                "oid": 2,
+                "oid": "oid2",
+                "aid": "2",
                 "candid": 2,
                 "mjd": 2,
                 "new": True,
@@ -61,13 +61,13 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid2",
+        "oid": "oid2",
     },
     {
         "detections": [
             {
-                "aid": "aid3",
-                "oid": 3,
+                "oid": "oid3",
+                "aid": "3",
                 "candid": 3,
                 "mjd": 3,
                 "new": True,
@@ -79,13 +79,13 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid3",
+        "oid": "oid3",
     },
     {
         "detections": [
             {
-                "aid": "aid4",
-                "oid": 4,
+                "oid": "oid4",
+                "aid": "4",
                 "candid": 4,
                 "mjd": 4,
                 "new": True,
@@ -97,7 +97,7 @@ messages = [
             }
         ],
         "non_detections": [],
-        "aid": "aid4",
+        "oid": "oid4",
     },
 ]
 
