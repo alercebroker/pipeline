@@ -1,6 +1,5 @@
 from typing import Callable, Dict, List
 
-from db_plugins.db.sql.models import Base
 
 from .connection import PSQLConnection, Session
 from mongo_scribe.sql.command.commands import (
