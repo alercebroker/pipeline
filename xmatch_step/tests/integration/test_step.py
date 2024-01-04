@@ -4,7 +4,7 @@ from copy import deepcopy
 from unittest import mock
 
 import pytest
-from apf.producers import KafkaProducer
+from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from confluent_kafka.admin import AdminClient
 from tests.data.messages import generate_input_batch, get_fake_xmatch
 from xmatch_step import XmatchStep
@@ -20,9 +20,14 @@ SCRIBE_SCHEMA_PATH = pathlib.Path(
     "schemas/scribe_step",
     "scribe.avsc",
 )
+CONSUMER_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/correction_step",
+    "output.avsc",
+)
 
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": "apf.consumers.KafkaSchemalessConsumer",
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
         "group.id": "group_id",
@@ -30,6 +35,7 @@ CONSUMER_CONFIG = {
         "enable.partition.eof": True,
     },
     "TOPICS": ["correction"],
+    "SCHEMA_PATH": CONSUMER_SCHEMA_PATH,
     "consume.messages": 20,
     "consume.timeout": 60,
 }
@@ -103,7 +109,7 @@ def setUp() -> None:
             },
             "SCHEMA_PATH": "../schemas/correction_step/output.avsc",
         }
-        producer = KafkaProducer(config=producer_config)
+        producer = KafkaSchemalessProducer(config=producer_config)
         for item in batch:
             producer.produce(item)
         producer.producer.flush()

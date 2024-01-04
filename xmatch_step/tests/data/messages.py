@@ -26,35 +26,44 @@ def get_extra_fields(telescope: str):
         }
 
 
+def generate_alert(sid, tid, identifier):
+    alert = {
+        "oid": f"{sid}oid{identifier}",
+        "tid": tid,
+        "sid": sid,
+        "pid": random.randint(1, 999999),
+        "candid": str(random.randint(1000000, 9000000)),
+        "mjd": random.uniform(59000, 60000),
+        "fid": random.choice(["o", "c"]),
+        "ra": random.uniform(0, 360),
+        "dec": random.uniform(-90, 90),
+        "e_ra": random.random(),
+        "e_dec": random.random(),
+        "mag": random.uniform(15, 20),
+        "e_mag": random.random(),
+        "mag_corr": random.uniform(15, 20),
+        "e_mag_corr": random.random(),
+        "e_mag_corr_ext": random.random(),
+        "isdiffpos": random.choice([-1, 1]),
+        "aid": f"AL2X{random.randint(1000, 9990)}",
+        "corrected": random.choice([True, False]),
+        "dubious": random.choice([True, False]),
+        "stellar": random.choice([True, False]),
+        "has_stamp": random.choice([True, False]),
+        "forced": random.choice([True, False]),
+        "new": random.choice([True, False]),
+        "extra_fields": get_extra_fields(sid),
+        "parent_candid": random.choice(
+            [None, random.randint(1000000, 9000000)]
+        ),
+    }
+    return alert
+
+
 def generate_alert_atlas(num_messages: int, identifier: int) -> List[dict]:
     alerts = []
     for i in range(num_messages):
-        alert = {
-            "oid": f"ATLASoid{identifier}",
-            "tid": "ATLAS-01a",
-            "sid": "ATLAS",
-            "pid": random.randint(1, 999999),
-            "candid": str(random.randint(1000000, 9000000)),
-            "mjd": random.uniform(59000, 60000),
-            "fid": random.choice(["o", "c"]),
-            "ra": random.uniform(0, 360),
-            "dec": random.uniform(-90, 90),
-            "e_ra": random.random(),
-            "e_dec": random.random(),
-            "mag": random.uniform(15, 20),
-            "e_mag": random.random(),
-            "isdiffpos": random.choice([-1, 1]),
-            "rb": random.random(),
-            "rbversion": "v7379812",
-            "aid": f"AL2X{random.randint(1000, 9990)}",
-            "corrected": random.choice([True, False]),
-            "dubious": random.choice([True, False]),
-            "stellar": False,
-            "has_stamp": random.choice([True, False]),
-            "forced": random.choice([True, False]),
-            "new": random.choice([True, False]),
-            "extra_fields": get_extra_fields("ATLAS"),
-        }
+        alert = generate_alert("ATLAS", "ATLAS-01a", identifier)
         alerts.append(alert)
     return alerts
 
@@ -62,33 +71,7 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> List[dict]:
 def generate_alert_ztf(num_messages: int, identifier: int) -> List[dict]:
     alerts = []
     for i in range(num_messages):
-        alert = {
-            "oid": f"ZTFoid{identifier}",
-            "aid": f"ZTFaid{identifier}",
-            "tid": "ZTF",
-            "sid": "ZTF",
-            "pid": random.randint(1, 999999),
-            "candid": str(random.randint(1000000, 9000000)),
-            "mjd": random.uniform(59000, 60000),
-            "fid": random.choice(["g", "r"]),
-            "ra": random.uniform(0, 360),
-            "dec": random.uniform(-90, 90),
-            "e_ra": random.uniform(0, 1),
-            "e_dec": random.uniform(0, 1),
-            "mag": random.uniform(15, 20),
-            "e_mag": random.uniform(0, 1),
-            "isdiffpos": random.choice([-1, 1]),
-            "rb": random.uniform(0, 1),
-            "rbversion": "v1",
-            "extra_fields": get_extra_fields("ZTF"),
-            "corrected": random.choice([True, False]),
-            "dubious": random.choice([True, False]),
-            "stellar": False,
-            "has_stamp": random.choice([True, False]),
-            "forced": random.choice([True, False]),
-            "new": random.choice([True, False]),
-            "step_id_corr": "test_version",
-        }
+        alert = generate_alert("ZTF", "ZTF", identifier)
         alerts.append(alert)
     return alerts
 
