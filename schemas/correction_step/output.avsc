@@ -32,7 +32,7 @@
           "fields": [
             {
               "name": "aid",
-              "type": ["string", "null"]
+              "type": ["null", "string"]
             },
             {
               "name": "oid",
@@ -153,7 +153,7 @@
           "fields": [
             {
               "name": "aid",
-              "type": ["string", "null"]
+              "type": ["null", "string"]
             },
             {
               "name": "oid",
