@@ -29,7 +29,10 @@ def parse_output(
     )
     result = []
     for oid in lightcurve_by_oid:
-        lightcurve_by_oid[oid]["xmatches"] = xmatches.loc[oid]["xmatches"]
+        try:
+            lightcurve_by_oid[oid]["xmatches"] = xmatches.loc[oid]["xmatches"]
+        except KeyError:
+            lightcurve_by_oid[oid]["xmatches"] = None
         lightcurve_by_oid[oid]["candid"] = candids[oid]
         lightcurve_by_oid[oid]["oid"] = oid
         result.append(lightcurve_by_oid[oid])
