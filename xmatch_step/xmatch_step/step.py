@@ -57,7 +57,6 @@ class XmatchStep(GenericStep):
     def produce_scribe(self, xmatches: pd.DataFrame):
         if len(xmatches) == 0:
             return
-
         result = xmatches.rename(ALLWISE_MAP, axis="columns")
         result["catid"] = "allwise"
         allwise = result.drop(["dist"], axis=1)
@@ -65,11 +64,10 @@ class XmatchStep(GenericStep):
         result.rename(
             columns={"oid_catalog": "catoid", "oid_in": "oid"}, inplace=True
         )
-
-        data = result[["oid", "catoid", "dist", "catid"]]
-        object_list = data.to_dict(orient="records")
-
-        for obj in object_list:
+        result = result[["oid", "catoid", "dist", "catid"]]
+        result = result.to_dict(orient="records")
+        flush = False
+        for idx, obj in enumerate(result):
             oid = obj.pop("oid")
             scribe_data = {
                 "collection": "object",
@@ -77,7 +75,11 @@ class XmatchStep(GenericStep):
                 "criteria": {"_id": oid},
                 "data": {"xmatch": obj, "allwise": allwise},
             }
-            self.scribe_producer.produce({"payload": json.dumps(scribe_data)})
+            if idx == len(result) - 1:
+                flush = True
+            self.scribe_producer.produce(
+                {"payload": json.dumps(scribe_data)}, flush=flush
+            )
 
     def pre_produce(self, result: Tuple[pd.DataFrame, Dict, Dict]):
         self.set_producer_key_field("oid")
