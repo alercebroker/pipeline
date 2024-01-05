@@ -326,7 +326,9 @@ class UpsertXmatchCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: dict):
-        insert_stmt = insert(Xmatch).values(data)
+        unique = {(data["oid"], data["catid"]): data}
+        unique = list(unique.values())
+        insert_stmt = insert(Xmatch)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="xmatch_pkey",
             set_=dict(
@@ -335,4 +337,4 @@ class UpsertXmatchCommand(Command):
             ),
         )
 
-        return session.execute(insert_stmt)
+        return session.execute(insert_stmt, unique)
