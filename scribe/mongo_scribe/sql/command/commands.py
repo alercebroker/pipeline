@@ -325,8 +325,8 @@ class UpsertXmatchCommand(Command):
         return {**data["xmatch"], "oid": self.criteria["_id"]}
 
     @staticmethod
-    def db_operation(session: Session, data: dict):
-        unique = {(data["oid"], data["catid"]): data}
+    def db_operation(session: Session, data: list):
+        unique = {(d["oid"], d["catid"]): d for d in data}
         unique = list(unique.values())
         insert_stmt = insert(Xmatch)
         insert_stmt = insert_stmt.on_conflict_do_update(
