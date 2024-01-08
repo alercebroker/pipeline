@@ -161,9 +161,10 @@ class LateClassifier(GenericStep):
         probabilities = OutputDTO(
             DataFrame(), {"top": DataFrame(), "children": {}}
         )
-        if not self.model.can_predict(model_input):
-            # TODO add reason
-            self.logger.info("Can't predict")
+        
+        can, error = self.model.can_predict(model_input)
+        if not can:
+            self.logger.info(f"Can't predict\nError: {error}")
             return probabilities, messages, model_input.features
         probabilities = self.predict(model_input)
         self.log_class_distribution(probabilities)
