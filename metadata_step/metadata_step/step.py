@@ -33,7 +33,6 @@ class MetadataStep(GenericStep):
 
         with self.db.session() as session:
             insert_metadata(session, result, ps1_updates)
-            session.commit()
 
     # Output format: [{oid: OID, ss: SS_DATA, ...}]
     def execute(self, messages: List[Dict]):
