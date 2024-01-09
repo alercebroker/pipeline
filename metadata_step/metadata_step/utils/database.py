@@ -99,11 +99,13 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
         constraint="reference_pkey", set_=dict(oid=reference_stmt.excluded.oid)
     )
     session.execute(reference_stmt, accumulated_metadata["reference"])
+    session.commit()
 
     # SS
     ss_stmt = insert(Ss_ztf)
     ss_stmt = ss_stmt.on_conflict_do_update(constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid))
     session.execute(ss_stmt, accumulated_metadata["ss"])
+    session.commit()
 
     # Dataquality
     dataquality_stmt = insert(Dataquality)
@@ -111,6 +113,7 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
         constraint="dataquality_pkey", set_=dict(oid=dataquality_stmt.excluded.oid)
     )
     session.execute(dataquality_stmt, accumulated_metadata["dataquality"])
+    session.commit()
 
     # GAIA
     gaia_stmt = insert(Gaia_ztf)
@@ -118,12 +121,14 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
         constraint="gaia_ztf_pkey", set_=dict(unique1=gaia_stmt.excluded.unique1)
     )
     session.execute(gaia_stmt, accumulated_metadata["gaia"])
+    session.commit()
 
     # PS1
     ps1_data = list({el["candid"]: el for el in accumulated_metadata["ps1"]}.values())
     ps1_stmt = insert(Ps1_ztf)
     ps1_stmt = ps1_stmt.on_conflict_do_update(constraint="ps1_ztf_pkey", set_=dict(oid=ps1_stmt.excluded.oid))
     session.execute(ps1_stmt, ps1_data)
+    session.commit()
 
     for el in ps1_updates:
         stmt = update(Ps1_ztf).where(Ps1_ztf.candid == el["candid"])
@@ -133,8 +138,4 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
             "unique3": el["unique3"],
         }
         session.execute(stmt, values)
-        # session.execute(
-        #     update(Ps1_ztf)
-        #     .where(Ps1_ztf.candid == el["candid"])
-        #     .values(unique1=el["unique1"], unique2=el["unique2"], unique3=el["unique3"])
-        # )
+        session.commit()
