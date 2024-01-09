@@ -10,7 +10,7 @@ from db_plugins.db.sql.models import Reference, Gaia_ztf, Ss_ztf, Dataquality, P
 
 
 class PSQLConnection:
-    def __init__(self, config: dict, echo: bool) -> None:
+    def __init__(self, config: dict, echo: bool = False) -> None:
         url = self.__format_db_url(config)
         self._engine = create_engine(url, echo=echo)
         self._session_factory = sessionmaker(
@@ -94,40 +94,47 @@ def _accumulate(data: List):
 def insert_metadata(session: Session, data: List, ps1_updates: List):
     accumulated_metadata = _accumulate(data)
     # Reference
-    reference_stmt = insert(Reference).values(accumulated_metadata["reference"])
+    reference_stmt = insert(Reference)
     reference_stmt = reference_stmt.on_conflict_do_update(
         constraint="reference_pkey", set_=dict(oid=reference_stmt.excluded.oid)
     )
-    session.connection().execute(reference_stmt)
+    session.execute(reference_stmt, accumulated_metadata["reference"])
 
     # SS
-    ss_stmt = insert(Ss_ztf).values(accumulated_metadata["ss"])
+    ss_stmt = insert(Ss_ztf)
     ss_stmt = ss_stmt.on_conflict_do_update(constraint="ss_ztf_pkey", set_=dict(oid=ss_stmt.excluded.oid))
-    session.connection().execute(ss_stmt)
+    session.execute(ss_stmt, accumulated_metadata["ss"])
 
     # Dataquality
-    dataquality_stmt = insert(Dataquality).values(accumulated_metadata["dataquality"])
+    dataquality_stmt = insert(Dataquality)
     dataquality_stmt = dataquality_stmt.on_conflict_do_update(
         constraint="dataquality_pkey", set_=dict(oid=dataquality_stmt.excluded.oid)
     )
-    session.connection().execute(dataquality_stmt)
+    session.execute(dataquality_stmt, accumulated_metadata["dataquality"])
 
     # GAIA
-    gaia_stmt = insert(Gaia_ztf).values(accumulated_metadata["gaia"])
+    gaia_stmt = insert(Gaia_ztf)
     gaia_stmt = gaia_stmt.on_conflict_do_update(
         constraint="gaia_ztf_pkey", set_=dict(unique1=gaia_stmt.excluded.unique1)
     )
-    session.connection().execute(gaia_stmt)
+    session.execute(gaia_stmt, accumulated_metadata["gaia"])
 
     # PS1
     ps1_data = list({el["candid"]: el for el in accumulated_metadata["ps1"]}.values())
-    ps1_stmt = insert(Ps1_ztf).values(ps1_data)
+    ps1_stmt = insert(Ps1_ztf)
     ps1_stmt = ps1_stmt.on_conflict_do_update(constraint="ps1_ztf_pkey", set_=dict(oid=ps1_stmt.excluded.oid))
-    session.connection().execute(ps1_stmt)
+    session.execute(ps1_stmt, ps1_data)
 
     for el in ps1_updates:
-        session.connection().execute(
-            update(Ps1_ztf)
-            .where(Ps1_ztf.candid == el["candid"])
-            .values(unique1=el["unique1"], unique2=el["unique2"], unique3=el["unique3"])
-        )
+        stmt = update(Ps1_ztf).where(Ps1_ztf.candid == el["candid"])
+        values = {
+            "unique1": el["unique1"],
+            "unique2": el["unique2"],
+            "unique3": el["unique3"],
+        }
+        session.execute(stmt, values)
+        # session.execute(
+        #     update(Ps1_ztf)
+        #     .where(Ps1_ztf.candid == el["candid"])
+        #     .values(unique1=el["unique1"], unique2=el["unique2"], unique3=el["unique3"])
+        # )
