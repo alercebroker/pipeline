@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "prv-candidates-step"
-version = "23.12.26a21"
+version = "23.12.26a22"
 description = "Previous Detections Step"
 authors = []
 readme = "README.md"
