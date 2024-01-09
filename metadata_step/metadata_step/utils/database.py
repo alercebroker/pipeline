@@ -130,11 +130,15 @@ def insert_metadata(session: Session, data: List, ps1_updates: List):
     session.execute(ps1_stmt, ps1_data)
     session.commit()
 
-    ps1_updates = {el["candid"]: el for el in ps1_updates}
-    for el in ps1_updates:
+    ps1_updates = {(el["candid"], el["oid"]): el for el in ps1_updates}
+    for el in ps1_updates.values():
         session.execute(
             update(Ps1_ztf)
-            .where(Ps1_ztf.candid == el)
-            .values(unique1=ps1_updates[el]["unique1"], unique2=ps1_updates[el]["unique2"], unique3=ps1_updates[el]["unique3"])
+            .where(Ps1_ztf.candid == el["candid"])
+            .values(
+                unique1=el["unique1"],
+                unique2=el["unique2"],
+                unique3=el["unique3"],
+            )
         )
         session.commit()
