@@ -18,7 +18,7 @@ class DatabaseTestCase(unittest.TestCase):
         aid = database.oid_query(self.mock_db, ["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_db.database["object"].find_one.assert_called_with(
-            {"oid": {"$in": ["x", "y", "z"]}}, {"_id": 1}
+            {"_id": {"$in": ["x", "y", "z"]}}, {"_id": 1}
         )
 
     def test_oid_query_with_no_elements(self):
