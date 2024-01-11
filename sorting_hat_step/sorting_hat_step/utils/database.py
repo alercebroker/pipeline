@@ -19,7 +19,7 @@ def oid_query(db: MongoConnection, oid: list) -> Union[str, None]:
 
     :return: existing aid if exists else is None
     """
-    found = db.database["object"].find_one({"oid": {"$in": oid}}, {"_id": 1})
+    found = db.database["object"].find_one({"_id": {"$in": oid}}, {"_id": 1})
     if found:
         return found["_id"]
     return None
