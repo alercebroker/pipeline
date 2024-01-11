@@ -6,9 +6,9 @@ Helper function to create or update the probabilities for an object
 """
 
 
-def get_probabilities(database: Database, aids: list):
+def get_probabilities(database: Database, oids: list):
     probabilities = database["object"].find(
-        {"_id": {"$in": aids}}, {"probabilities": True}
+        {"_id": {"$in": oids}}, {"probabilities": True}
     )
     return {item["_id"]: item["probabilities"] for item in probabilities}
 
@@ -16,7 +16,7 @@ def get_probabilities(database: Database, aids: list):
 def get_db_operations(
     classifier: str,
     version: str,
-    aid: str,
+    oid: str,
     object_probabilities: list,
     probabilities: dict,
 ):
@@ -50,7 +50,7 @@ def get_db_operations(
     )
 
     operation = UpdateOne(
-        {"_id": aid}, {"$set": {"probabilities": object_probabilities}}
+        {"_id": oid}, {"$set": {"probabilities": object_probabilities}}
     )
 
     return operation
@@ -60,13 +60,17 @@ def create_or_update_probabilities(
     database: Database,
     classifier: str,
     version: str,
-    aid: str,
+    oids: str,
     probabilities: dict,
 ):
-    object_probs = get_probabilities(database, [aid])
+    object_probs = get_probabilities(database, [oids])
 
     database["object"].bulk_write(
-        [get_db_operations(classifier, version, aid, object_probs[aid], probabilities)],
+        [
+            get_db_operations(
+                classifier, version, oids, object_probs[oids], probabilities
+            )
+        ],
         ordered=False,
     )
 
@@ -75,7 +79,7 @@ def create_or_update_probabilities_bulk(
     database: Database,
     classifier: str,
     version: str,
-    aids: list,
+    oids: list,
     probabilities: list,
 ):
     """
@@ -83,13 +87,13 @@ def create_or_update_probabilities_bulk(
     """
     db_operations = []
 
-    # no warrants that probs will have the same aid order
-    object_probabilities = get_probabilities(database, aids)
+    # no warrants that probs will have the same oid order
+    object_probabilities = get_probabilities(database, oids)
 
-    for aid, probs in zip(aids, probabilities):
+    for oid, probs in zip(oids, probabilities):
         db_operations.append(
             get_db_operations(
-                classifier, version, aid, object_probabilities[aid], probs
+                classifier, version, oid, object_probabilities[oid], probs
             )
         )
 
