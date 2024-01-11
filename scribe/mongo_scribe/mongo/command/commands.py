@@ -42,7 +42,7 @@ class Command(abc.ABC):
         self.criteria = criteria if criteria else {}
         self._check_inputs(collection, data, criteria)
         self.collection = collection
-        self.data = data
+        self.data = self._format_data(data)
 
         try:
             options = options if options else {}
@@ -52,6 +52,9 @@ class Command(abc.ABC):
                 "Some of the options provided are not supported. Using default values."
             )
             self.options = Options()
+
+    def _format_data(self, data):
+        return data
 
     def _check_inputs(self, collection, data, criteria):
         if not collection:
@@ -81,12 +84,31 @@ class UpdateCommand(Command):
 
     type = ValidCommands.update
 
+    def __get_forced_photometry_criteria(self, candid):
+        return {"_id": candid}
+
+    def __format_forced_photometry(self, data, candid, oid):
+        if isinstance(data, list):
+            new_data = []
+            for d in data:
+                data.append({"oid": oid, **d})
+        else:
+            new_data = {**data, "oid": oid}
+        return new_data
+
+    def _format_data(self, data):
+        if self.collection == "forced_photometry":
+            candid = self.criteria.get("candid")
+            oid = self.criteria.get("oid")
+            data = self.__format_forced_photometry(data, candid, oid)
+            self.criteria = self.__get_forced_photometry_criteria(candid)
+
+        return data
+
     def _check_inputs(self, collection, data, criteria):
         super()._check_inputs(collection, data, criteria)
         if not criteria:
             raise UpdateWithNoCriteriaException()
-        if collection == "forced_photometry":
-            self.criteria = {"_id": criteria["_id"]}
 
     def get_operations(self) -> list:
         op = "$setOnInsert" if self.options.set_on_insert else "$set"

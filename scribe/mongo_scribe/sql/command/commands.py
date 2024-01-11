@@ -115,7 +115,7 @@ class InsertDetectionsCommand(Command):
         )
         new_data["fid"] = fid_map[new_data["fid"]]
 
-        return {**new_data, "candid": int(self.criteria["_id"])}
+        return {**new_data, **self.criteria}
 
     @staticmethod
     def db_operation(session: Session, data: List):
