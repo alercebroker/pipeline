@@ -113,7 +113,7 @@ class Detection(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel([("aid", ASCENDING), ("sid", ASCENDING)]),
-        IndexModel([("candid", ASCENDING), ("oid", ASCENDING)], unique=True),
+        IndexModel([("oid", ASCENDING), ("candid", ASCENDING)], unique=True),
     ]
     __tablename__ = "detection"
 
