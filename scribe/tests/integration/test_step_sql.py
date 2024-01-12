@@ -128,7 +128,7 @@ class PsqlIntegrationTest(unittest.TestCase):
             {
                 "collection": "detection",
                 "type": "update",
-                "criteria": {"_id": "932472823"},
+                "criteria": {"candid": "932472823", "oid": "ZTF04ululeea"},
                 "data": {
                     "aid": "XChGbTDJWt",
                     "corrected": False,
@@ -602,7 +602,8 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "collection": "forced_photometry",
                 "type": "update",
                 "criteria": {
-                    "_id": "candid-pid",
+                    "oid": "ZTF04ululeea",
+                    "candid": "ZTF04ululeea423432",
                 },
                 "data": {
                     "mag": 10.0,

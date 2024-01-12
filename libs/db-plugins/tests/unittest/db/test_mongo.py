@@ -46,7 +46,6 @@ class MongoConnectionTest(unittest.TestCase):
             "detection",
             "forced_photometry",
             "non_detection",
-            "taxonomy",
         ]
         self.assertEqual(collections, expected)
 

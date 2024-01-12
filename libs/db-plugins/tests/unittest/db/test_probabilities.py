@@ -121,7 +121,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         fl = list(f)
         self.assertIsNotNone(f)
         self.assertEqual(len(fl), 1)
-        self.assertEqual(fl[0]["_id"], "aid1")
+        self.assertEqual(fl[0]["_id"], "oid1")
 
         # find object 2
         f = self.obj_collection.find(
@@ -140,7 +140,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         fl = list(f)
         self.assertIsNotNone(f)
         self.assertEqual(len(fl), 1)
-        self.assertEqual(fl[0]["_id"], "aid2")
+        self.assertEqual(fl[0]["_id"], "oid2")
 
     def test_query_with_probabilities_find_none(self):
         self.create_2_objects()
@@ -185,14 +185,14 @@ class MongoProbabilitiesTest(unittest.TestCase):
     def test_update_probability(self):
         """
         According to my documentation reading, to update an object we must first check if the
-        probability we desire to update exist (a filter for the aid and a elemMatch for the probabilitie).
+        probability we desire to update exist (a filter for the oid and a elemMatch for the probabilitie).
         If it does we can update it, if it doesn't we need to push it.
         """
         self.create_2_objects()
 
         self.obj_collection.update_one(
             {
-                "_id": "aid1",
+                "_id": "oid1",
                 "probabilities": {
                     "$elemMatch": {
                         "classifier_name": "stamp_classifier",
@@ -204,7 +204,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
             {"$set": {"probabilities.$.probability": 1.0}},
         )
 
-        f1 = self.obj_collection.find_one({"_id": "aid1"})
+        f1 = self.obj_collection.find_one({"_id": "oid1"})
         expected_object_1_probabilities = [
             {
                 "classifier_name": "stamp_classifier",
@@ -223,7 +223,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
         ]
         self.assertEqual(f1["probabilities"], expected_object_1_probabilities)
 
-        f2 = self.obj_collection.find_one({"_id": "aid2"})
+        f2 = self.obj_collection.find_one({"_id": "oid2"})
         expected_object_2_probabilities = [
             {
                 "classifier_name": "stamp_classifier",
@@ -250,7 +250,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
 
         self.obj_collection.update_one(
             {
-                "_id": "aid3",
+                "_id": "oid3",
             },
             {
                 "$push": {
@@ -265,7 +265,7 @@ class MongoProbabilitiesTest(unittest.TestCase):
             },
         )
 
-        f = self.obj_collection.find_one({"_id": "aid3"})
+        f = self.obj_collection.find_one({"_id": "oid3"})
         expected_object_probabilities = [
             {
                 "classifier_name": "stamp_classifier",

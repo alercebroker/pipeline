@@ -127,7 +127,7 @@ def test_upsert_into_database_with_existing_document(setUp):
         {
             "collection": "object",
             "type": "update",
-            "criteria": {"_id": "upserted_id", "x": "y"},
+            "criteria": {"_id": "upserted_id"},
             "data": {"field": "value1"},
             "options": {"upsert": True},
         }
@@ -353,6 +353,158 @@ def test_update_features_into_database(setUp):
         "value": 741,
         "fid": "g",
     } in features["features"]
+
+
+def test_insert_detections(setUp):
+    step, producer = setUp
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF12345", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 55500,
+                # only some data is needed for the test
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF45678", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 56500,
+                # only some data is needed for the test
+                # this is a different oid
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    producer.producer.flush()
+    step.start()
+    collection = step.db_client.connection.database["detection"]
+    result = collection.find({"candid": "12345"})
+    result = list(result)
+    assert len(result) == 2
+    assert result[0]["oid"] == "ZTF12345"
+    assert result[1]["oid"] == "ZTF45678"
+
+
+def test_insert_detections_with_conflict(setUp):
+    step, producer = setUp
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF12345", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 55500,
+                # only some data is needed for the test
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF45678", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 56500,
+                # only some data is needed for the test
+                # this is a different oid
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    producer.producer.flush()
+    collection = step.db_client.connection.database["detection"]
+    collection.insert_one({"oid": "ZTF12345", "candid": "12345", "mjd": 55500})
+    step.start()
+    result = collection.find({"candid": "12345"})
+    result = list(result)
+    assert len(result) == 2
+    assert result[0]["oid"] == "ZTF12345"
+    assert result[1]["oid"] == "ZTF45678"
+
+
+def test_set_on_insert_detections(setUp):
+    step, producer = setUp
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF12345", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 55500,
+                "has_stamp": True
+                # only some data is needed for the test
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    command = json.dumps(
+        {
+            "collection": "detection",
+            "type": "update",
+            "criteria": {"oid": "ZTF12345", "candid": "12345"},
+            "data": {
+                "fid": "g",
+                "mjd": 56500,
+                "has_stamp": False
+                # only some data is needed for the test
+                # this is a different oid
+            },
+            "options": {"upsert": True, "set_on_insert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    producer.producer.flush()
+    step.start()
+    collection = step.db_client.connection.database["detection"]
+    result = collection.find({"candid": "12345"})
+    result = list(result)
+    assert len(result) == 1
+    assert result[0]["mjd"] == 55500
+
+
+def test_insert_forced_photometry(setUp):
+    step, producer = setUp
+    command = json.dumps(
+        {
+            "collection": "forced_photometry",
+            "type": "update",
+            "criteria": {"oid": "ZTF12345", "candid": "ZTF1111"},
+            "data": {
+                "fid": "g",
+                "mjd": 55500,
+                "has_stamp": False,
+                "pid": 1111
+                # only some data is needed for the test
+            },
+            "options": {"upsert": True},
+        }
+    )
+    producer.produce({"payload": command})
+    producer.producer.flush()
+    step.start()
+    collection = step.db_client.connection.database["forced_photometry"]
+    result = collection.find({"oid": "ZTF12345"})
+    result = list(result)
+    assert len(result) == 1
+    assert "candid" not in result[0]
 
 
 def test_update_non_detections_into_database(setUp):

@@ -33,8 +33,8 @@ class TestMongoProbabilities(unittest.TestCase):
 
     def create_2_objects(self):
         model_1 = Object(
-            _id="aid1",
-            oid="oid1",
+            _id="oid1",
+            aid="aid1",
             sid="sid",
             tid="tid1",
             corrected=False,
@@ -79,8 +79,8 @@ class TestMongoProbabilities(unittest.TestCase):
             ],
         )
         model_2 = Object(
-            _id="aid2",
-            oid="oid2",
+            _id="oid2",
+            aid="aid2",
             sid="sid",
             tid="tid2",
             corrected=False,
@@ -119,14 +119,14 @@ class TestMongoProbabilities(unittest.TestCase):
             self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
-            "aid2",
+            "oid2",
             {
                 "CLASS1": 0.3,
                 "CLASS2": 0.7,
             },
         )
 
-        f1 = self.obj_collection.find_one({"_id": "aid2"})
+        f1 = self.obj_collection.find_one({"_id": "oid2"})
 
         expected_probabilities = [
             {
@@ -168,14 +168,14 @@ class TestMongoProbabilities(unittest.TestCase):
             self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
-            "aid1",
+            "oid1",
             {
                 "CLASS1": 0.3,
                 "CLASS2": 0.7,
             },
         )
 
-        f1 = self.obj_collection.find_one({"_id": "aid1"})
+        f1 = self.obj_collection.find_one({"_id": "oid1"})
 
         # Mind that the update don't change the order
         expected_probabilities = [
@@ -218,7 +218,7 @@ class TestMongoProbabilities(unittest.TestCase):
             self.mongo_connection.database,
             "stamp_classifier",
             "stamp_classifier_1.0.0",
-            ["aid1", "aid2"],
+            ["oid1", "oid2"],
             [
                 {
                     "CLASS1": 0.3,
@@ -231,8 +231,8 @@ class TestMongoProbabilities(unittest.TestCase):
             ],
         )
 
-        f1 = self.obj_collection.find_one({"_id": "aid1"})
-        f2 = self.obj_collection.find_one({"_id": "aid2"})
+        f1 = self.obj_collection.find_one({"_id": "oid1"})
+        f2 = self.obj_collection.find_one({"_id": "oid2"})
 
         expected_probabilities_1 = [
             {
