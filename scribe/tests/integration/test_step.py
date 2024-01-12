@@ -389,11 +389,14 @@ def test_insert_detections(setUp):
     producer.producer.flush()
     step.start()
     collection = step.db_client.connection.database["detection"]
-    result = collection.find({"candid": "12345"})
+    result = collection.find({"candid": "12345", "oid": "ZTF12345"})
     result = list(result)
-    assert len(result) == 2
+    assert len(result) == 1
     assert result[0]["oid"] == "ZTF12345"
-    assert result[1]["oid"] == "ZTF45678"
+    result = collection.find({"candid": "12345", "oid": "ZTF45678"})
+    result = list(result)
+    assert len(result) == 1
+    assert result[0]["oid"] == "ZTF45678"
 
 
 def test_insert_detections_with_conflict(setUp):
@@ -431,11 +434,14 @@ def test_insert_detections_with_conflict(setUp):
     collection = step.db_client.connection.database["detection"]
     collection.insert_one({"oid": "ZTF12345", "candid": "12345", "mjd": 55500})
     step.start()
-    result = collection.find({"candid": "12345"})
+    result = collection.find({"candid": "12345", "oid": "ZTF12345"})
     result = list(result)
-    assert len(result) == 2
+    assert len(result) == 1
     assert result[0]["oid"] == "ZTF12345"
-    assert result[1]["oid"] == "ZTF45678"
+    result = collection.find({"candid": "12345", "oid": "ZTF45678"})
+    result = list(result)
+    assert len(result) == 1
+    assert result[0]["oid"] == "ZTF45678"
 
 
 def test_set_on_insert_detections(setUp):
@@ -474,7 +480,7 @@ def test_set_on_insert_detections(setUp):
     producer.producer.flush()
     step.start()
     collection = step.db_client.connection.database["detection"]
-    result = collection.find({"candid": "12345"})
+    result = collection.find({"candid": "12345", "oid": "ZTF12345"})
     result = list(result)
     assert len(result) == 1
     assert result[0]["mjd"] == 55500
