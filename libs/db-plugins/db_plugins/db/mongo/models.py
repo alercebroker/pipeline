@@ -63,7 +63,7 @@ class Object(BaseModel):
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)], name="aid"),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)], name="aid_sid"),
         IndexModel([("lastmjd", DESCENDING)], name="lastmjd"),
         IndexModel([("firstmjd", DESCENDING)], name="firstmjd"),
         IndexModel([("loc", GEOSPHERE)], name="radec"),
@@ -148,8 +148,8 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("oid", ASCENDING), ("sid", ASCENDING)]),
-        IndexModel([("pid", ASCENDING), ("oid", ASCENDING)], unique=True),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)]),
+        IndexModel([("oid", ASCENDING), ("pid", ASCENDING)], unique=True),
     ]
     __tablename__ = "forced_photometry"
 
@@ -175,6 +175,6 @@ class NonDetection(BaseModelWithExtraFields):
             name="unique",
             unique=True,
         ),
-        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)], name="aid_sid"),
     ]
     __tablename__ = "non_detection"
