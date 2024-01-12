@@ -116,7 +116,7 @@ class LightcurveStep(GenericStep):
         # so this will drop alerts coming from the database if they are also in the stream
         detections = detections.sort_values(
             ["has_stamp", "new"], ascending=[False, False]
-        ).drop_duplicates("candid", keep="first")
+        ).drop_duplicates(["candid", "oid"], keep="first")
 
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
         self.logger.debug(

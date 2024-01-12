@@ -135,6 +135,7 @@ class CorrectionStep(GenericStep):
             if not detection.pop("new"):
                 continue
             candid = detection.pop("candid")
+            oid = detection.get("oid")
             is_forced = detection.pop("forced")
             set_on_insert = not detection.get("has_stamp", False)
             extra_fields = detection["extra_fields"].copy()
@@ -150,7 +151,7 @@ class CorrectionStep(GenericStep):
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
                 "type": "update",
-                "criteria": {"_id": candid},
+                "criteria": {"candid": candid, "oid": oid},
                 "data": detection,
                 "options": {"upsert": True, "set_on_insert": set_on_insert},
             }

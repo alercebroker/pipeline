@@ -26,11 +26,11 @@ class Corrector:
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
-        self._detections = self._detections.drop_duplicates("candid").set_index("candid")
+        self._detections = self._detections.drop_duplicates(["candid", "oid"]).set_index("candid")
 
         self.__extras = {alert["candid"]: alert["extra_fields"] for alert in detections}
         extras = pd.DataFrame.from_dict(self.__extras, orient="index", columns=self._EXTRA_FIELDS)
-        extras = extras.reset_index(names=["candid"]).drop_duplicates("candid").set_index("candid")
+        extras = extras.reset_index(names=["candid"]).drop_duplicates(["candid", "oid"]).set_index("candid")
 
         self._detections = self._detections.join(extras)
 
