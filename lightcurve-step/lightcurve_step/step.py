@@ -48,7 +48,6 @@ class LightcurveStep(GenericStep):
         last_mjds = {}
         candids = {}
         for msg in messages:
-            print(msg)
             oid = msg["oid"]
             oids.add(oid)
             if oid not in candids:
