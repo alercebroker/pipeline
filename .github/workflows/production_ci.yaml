@@ -39,7 +39,7 @@ jobs:
           alert_archiving_step correction_step early_classification_step feature_step \
           lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
           s3_step scribe sorting_hat_step watchlist_step xmatch_step \
-          --stage=production --version=${{ inputs.tag }}
+          libs/db-plugins libs/lc_classifier --stage=production --version=${{ inputs.tag }}
 
   build-alert-archiving-dagger:
     needs: update_versions
@@ -197,6 +197,26 @@ jobs:
       extra-args: xmatch_step
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  build-db-plugins:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: libs/db-plugins
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+  build-lc-classifier:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: libs/lc_classifier
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
   release-chart:
     needs:
