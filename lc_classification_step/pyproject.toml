@@ -47,25 +47,25 @@ optional = true
 optional = true
 
 [tool.poetry.group.ztf.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["ztf"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
 
 [tool.poetry.group.toretto.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true,  extras = ["toretto"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true,  extras = ["toretto"] }
 
 [tool.poetry.group.messi.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["messi", "balto"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["messi", "balto"] }
 
 [tool.poetry.group.balto.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["balto"]}
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["balto"]}
 
 [tool.poetry.group.barney.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney"] }
 
 [tool.poetry.group.mlp.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["mlp"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mlp"] }
 
 [tool.poetry.group.elasticc.dependencies]
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
