@@ -47,8 +47,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.ztf.dependencies]
-lc_classifier = {git = "https://github.com/alercebroker/lc_classifier", branch = "main" }
-alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true }
+alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true, extras = ["ztf"] }
 
 [tool.poetry.group.toretto.dependencies]
 alerce_classifiers = { path = "../libs/alerce_classifiers", develop = true,  extras = ["toretto"] }
