@@ -32,7 +32,7 @@ jobs:
           alert_archiving_step correction_step early_classification_step feature_step \
           lc_classification_step lightcurve-step magstats_step metadata_step \
           prv_candidates_step s3_step scribe sorting_hat_step watchlist_step xmatch_step \
-          libs/db-plugins libs/lc_classifier --stage=staging
+          libs/db-plugins lc_classifier --stage=staging
 
   build-alert-archiving-dagger:
     needs: update-packages-dagger
