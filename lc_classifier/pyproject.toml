@@ -7,17 +7,14 @@ readme = "README.md"
 packages = [{include = "lc_classifier"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "~3.8"
 astropy = "^4.0"
-click = "^7.1"
-Cython = "^0.29"
 imbalanced-learn = "^0.7"
 numba = "^0.51"
 numpy = "^1.16"
 pyarrow = "*"
 requests = "^2.24"
 scipy = "^1.4"
-setuptools = "^49.6"
 scikit-learn = "^1.2"
 statsmodels = "*"
 tensorflow = "^2.3"
@@ -28,6 +25,7 @@ extinction = "*"
 jax = {version = "*", extras = ["cpu"]}
 mhps = {path = "../mhps", develop = true}
 P4J = {path = "../P4J", develop = true}
+tensorflow-io-gcs-filesystem = { version = "~0.33" }
 
 [build-system]
 requires = ["poetry-core"]
