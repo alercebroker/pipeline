@@ -1166,7 +1166,7 @@ files = [
 
 [[package]]
 name = "lc-classifier"
-version = "23.12.26a29"
+version = "23.12.26a32"
 description = "Lightcurve classifiers and feature computation"
 optional = false
 python-versions = ">=3.8,<3.12"
@@ -1179,10 +1179,10 @@ celerite2 = "^0.2"
 extinction = "*"
 imbalanced-learn = "^0.10"
 jax = {version = "*", extras = ["cpu"]}
-mhps = {path = "../mhps", develop = true}
+mhps = {path = "../mhps"}
 numba = "~0.56"
 numpy = "^1.16"
-P4J = {path = "../P4J", develop = true}
+P4J = {path = "../P4J"}
 pandas = "2.0.1"
 pyarrow = "*"
 requests = "^2.24"
@@ -1338,7 +1338,7 @@ description = "Mexican Hat Power Spectra https://arxiv.org/abs/1207.5825"
 optional = false
 python-versions = "*"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 Cython = ">=0.29.12"
@@ -1555,7 +1555,7 @@ description = "Periodic light curve analysis tools based on Information Theory"
 optional = false
 python-versions = "*"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 numpy = ">=1.9.0"
