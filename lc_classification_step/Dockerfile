@@ -26,6 +26,9 @@ COPY lc_classification_step/poetry.lock \
     /app/
 COPY alerce_classifiers /alerce_classifiers
 COPY libs/apf /libs/apf
+COPY lc_classifier /lc_classifier
+COPY mhps /mhps
+COPY P4J /P4J
 COPY schemas/lc_classification_step /schemas/lc_classification_step
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/scribe_step /schemas/scribe_step
