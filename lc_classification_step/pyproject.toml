@@ -15,9 +15,10 @@ packages = [{include = "lc_classification"}]
 step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9"
+python = ">=3.9,<3.11"
 apf-base = { path = "../libs/apf", develop = true }
 pandas = { version = "2.0.1" }
+numexpr = "^2.8.8"
 
 [tool.poetry.group.ztf]
 optional = true
