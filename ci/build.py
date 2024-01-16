@@ -5,6 +5,20 @@ import pathlib
 from utils import build, update_version, git_push, publish_lib
 
 
+def is_library(package: str):
+    libs = [
+        "lc_classifier",
+        "mhps",
+        "P4J",
+        "alerce_classifiers",
+        "libs/db-plugins",
+        "apf",
+        "survey_parser_plugins",
+        "test_utils",
+    ]
+    return package in libs
+
+
 async def _build_package(packages: dict, dry_run: bool):
     config = dagger.Config(log_output=sys.stdout)
 
@@ -15,7 +29,7 @@ async def _build_package(packages: dict, dry_run: bool):
                 build_args = []
                 for arg, value in z:
                     build_args.append((arg, value))
-                if not pkg.startswith("libs"):
+                if not is_library(pkg):
                     tg.start_soon(
                         build,
                         client,
