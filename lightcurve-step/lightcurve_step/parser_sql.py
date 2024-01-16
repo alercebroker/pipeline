@@ -66,7 +66,7 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
             e_ra=-999,
             e_dec=-999,
         )
-        parsed["candid"] = parsed.pop("_id")
+        parsed.pop("_id", None)
 
         for field in FIELDS_TO_REMOVE:
             parsed.pop(field, None)

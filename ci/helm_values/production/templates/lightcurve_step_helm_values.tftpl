@@ -10,9 +10,9 @@ affinity:
 
 autoscaling:
   enabled: true
-  maxReplicas: 8
+  maxReplicas: 32
   minReplicas: 1
-  targetCPUUtilizationPercentage: 80
+  targetCPUUtilizationPercentage: 50
 
 image:
   repository: ghcr.io/alercebroker/lightcurve-step
@@ -34,8 +34,8 @@ namespace: lightcurve-step
 
 resources:
   requests:
-    cpu: 100m
-    memory: 250M
+    cpu: 500m
+    memory: 1000M
 
 configYaml:
   enabled: true
