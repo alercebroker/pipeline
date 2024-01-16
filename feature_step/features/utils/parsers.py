@@ -43,7 +43,7 @@ def _parse_scribe_payload_elasticc(features, extractor_class):
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"_id": oid},
+            "criteria": {"_id": oid}, #esto esta mal, deberia ser oid: oid, candid:candid? habria que pasar el candid
             "data": {
                 "features_version": extractor_class.VERSION,
                 "features_group": extractor_class.NAME,
@@ -71,7 +71,7 @@ def _parse_scribe_payload_ztf(features, extractor_class):
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"_id": oid},
+            "criteria": {"oid": oid},
             "data": {
                 "features_version": extractor_class.VERSION,
                 "features_group": extractor_class.NAME,
@@ -128,7 +128,7 @@ def _parse_output_elasticc(features, alert_data, extractor_class, candids):
         oid = message["oid"]
         candid = candids[oid]
         try:
-            features_dict = features.loc[oid].to_dict()
+            features_dict = features.loc[oid].iloc[0].to_dict()
         except KeyError:  # No feature for the object
             logger = logging.getLogger("alerce")
             logger.info("Could not calculate features of object %s", oid)
@@ -161,7 +161,7 @@ def _parse_output_ztf(features, alert_data, extractor_class, candids):
         oid = message["oid"]
         candid = candids[oid]
         try:
-            features_dict = features.loc[oid].to_dict()
+            features_dict = features.loc[oid].iloc[0].to_dict()            
         except KeyError:  # No feature for the object
             logger = logging.getLogger("alerce")
             logger.info("Could not calculate features of object %s", oid)

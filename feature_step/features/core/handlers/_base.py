@@ -95,10 +95,14 @@ class BaseHandler(abc.ABC):
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
             self.logger.debug(
+                f"{len(self._alerts)} {self._NAME} remain after unque removal"
+            )
+        if self.NON_DUPLICATE:
+            self._alerts.drop_duplicates(self.NON_DUPLICATE, inplace=True)
+            self.logger.debug(
                 f"{len(self._alerts)} {self._NAME} remain after duplicate removal"
             )
         if self.INDEX:
-            self._alerts.drop_duplicates(self.INDEX, inplace=True)
             self._alerts.set_index(self.INDEX, inplace=True)
             self.logger.debug(f"Using column(s) {self.INDEX} for indexing")
 
@@ -309,7 +313,7 @@ class BaseHandler(abc.ABC):
             )
             df = (
                 df.reset_index(names=[self.INDEX])
-                .drop_duplicates(self.INDEX)
+                .drop_duplicates(self.NON_DUPLICATE)
                 .set_index(self.INDEX)
             )
             self._alerts = self._alerts.join(df)
