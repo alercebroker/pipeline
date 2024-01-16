@@ -1301,7 +1301,7 @@ numpy = ">=1.17.4"
 
 [package.source]
 type = "directory"
-url = ".venv/src/pipeline/mhps"
+url = "../mhps"
 
 [[package]]
 name = "ml-dtypes"
@@ -1461,7 +1461,7 @@ numpy = ">=1.9.0"
 
 [package.source]
 type = "directory"
-url = ".venv/src/pipeline/P4J"
+url = "../P4J"
 
 [[package]]
 name = "packaging"
