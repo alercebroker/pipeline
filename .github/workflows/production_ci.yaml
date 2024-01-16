@@ -208,16 +208,6 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-  build-lc-classifier:
-    needs: update-packages-dagger
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      stage: production
-      extra-args: lc_classifier
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-
   release-chart:
     needs:
       - build-alert-archiving-dagger
