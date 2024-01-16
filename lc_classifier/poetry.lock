@@ -850,7 +850,7 @@ description = "Mexican Hat Power Spectra https://arxiv.org/abs/1207.5825"
 optional = false
 python-versions = "*"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 Cython = ">=0.29.12"
@@ -1017,7 +1017,7 @@ description = "Periodic light curve analysis tools based on Information Theory"
 optional = false
 python-versions = "*"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 numpy = ">=1.9.0"
@@ -1935,4 +1935,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "6a8480d76940181458b7b301623723da0d0ee4e1c82fb9c076b3e7d2f3318de5"
+content-hash = "291d2a5514cacf13489e45e2b3b396e854f8bce4ebf64bff7db7e42902496c0a"

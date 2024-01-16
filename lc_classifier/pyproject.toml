@@ -23,8 +23,8 @@ wget = "^3.2"
 celerite2 = "^0.2"
 extinction = "*"
 jax = {version = "*", extras = ["cpu"]}
-mhps = {path = "../mhps", develop = true}
-P4J = {path = "../P4J", develop = true}
+mhps = {path = "../mhps" }
+P4J = {path = "../P4J" }
 tensorflow-io-gcs-filesystem = { version = "~0.33" }
 
 [tool.poetry.group.test.dependencies]
