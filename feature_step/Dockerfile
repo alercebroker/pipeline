@@ -27,8 +27,9 @@ COPY libs/apf /libs/apf
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/xmatch_step /schemas/xmatch_step
 COPY schemas/scribe_step /schemas/scribe_step
-RUN poetry install --without=dev,test --no-root
+RUN poetry run python -m pip install setuptools wheel
 RUN poetry run python -m pip install ../mhps --no-use-pep517
+RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
 COPY feature_step/features /app/features
