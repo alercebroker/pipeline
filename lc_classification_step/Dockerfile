@@ -29,6 +29,7 @@ COPY schemas/lc_classification_step /schemas/lc_classification_step
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/scribe_step /schemas/scribe_step
 WORKDIR /app
+RUN poetry run python -m pip install ../mhps --no-use-pep517
 RUN poetry install --no-root --without=dev --without=test --with=${model}
 
 
