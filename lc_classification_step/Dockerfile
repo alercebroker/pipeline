@@ -24,7 +24,7 @@ RUN pip install poetry
 COPY lc_classification_step/poetry.lock \
     lc_classification_step/pyproject.toml \
     /app/
-COPY libs/alerce_classifiers /libs/alerce_classifiers
+COPY alerce_classifiers /alerce_classifiers
 COPY libs/apf /libs/apf
 COPY schemas/lc_classification_step /schemas/lc_classification_step
 COPY schemas/feature_step /schemas/feature_step
