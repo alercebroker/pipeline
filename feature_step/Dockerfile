@@ -34,7 +34,9 @@ COPY feature_step/features /app/features
 
 FROM python:3.10-slim
 COPY --from=builder /app /app
-COPY --from=builder /libs /libs
+COPY --from=builder /libs/apf /libs/apf
+COPY --from=builder /mhps /mhps
+COPY --from=builder /P4J /P4J
 COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/
