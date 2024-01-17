@@ -35,6 +35,7 @@ class BaseHandler(abc.ABC):
     _NAME: str  # Only used in logging
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
+    NON_DUPLICATE: str | list[str] = []
     COLUMNS = ["id", "sid", "fid", "mjd"]
 
     def __init__(
@@ -306,17 +307,17 @@ class BaseHandler(abc.ABC):
         ]
         if extras and self._alerts.size:
             records = {
-                alert[self.INDEX]: alert["extra_fields"] for alert in alerts
+                alert[self.INDEX]: {**alert["extra_fields"], "id": alert["oid"]} for alert in alerts
             }
             df = pd.DataFrame.from_dict(
-                records, orient="index", columns=extras
+                records, orient="index", columns=extras + ["id"]
             )
             df = (
                 df.reset_index(names=[self.INDEX])
                 .drop_duplicates(self.NON_DUPLICATE)
                 .set_index(self.INDEX)
             )
-            self._alerts = self._alerts.join(df)
+            self._alerts = self._alerts.join(df, how="left", rsuffix="_extra").drop("id_extra", axis=1)
         elif extras:  # Add extra (empty) columns to empty dataframe
             self._alerts[[extras]] = None
 

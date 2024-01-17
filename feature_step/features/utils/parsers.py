@@ -71,7 +71,7 @@ def _parse_scribe_payload_ztf(features, extractor_class):
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"oid": oid},
+            "criteria": {"_id": oid},
             "data": {
                 "features_version": extractor_class.VERSION,
                 "features_group": extractor_class.NAME,
@@ -128,18 +128,19 @@ def _parse_output_elasticc(features, alert_data, extractor_class, candids):
         oid = message["oid"]
         candid = candids[oid]
         try:
-            features_dict = features.loc[oid].iloc[0].to_dict()
+            features_for_oid = features.loc[oid].to_dict()
+            features_for_oid = features_for_oid if isinstance(features_for_oid, dict) else features_for_oid[0]
         except KeyError:  # No feature for the object
             logger = logging.getLogger("alerce")
             logger.info("Could not calculate features of object %s", oid)
-            features_dict = None
+            features_for_oid = None
         out_message = {
             "oid": oid,
             "candid": candid,
             "detections": message["detections"],
             "non_detections": message["non_detections"],
             "xmatches": message["xmatches"],
-            "features": features_dict,
+            "features": features_for_oid,
         }
         output_messages.append(out_message)
 

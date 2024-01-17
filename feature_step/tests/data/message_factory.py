@@ -53,14 +53,14 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> list[dict]:
 
 
 def generate_alert_ztf(
-    aid: str, band: str, num_messages: int, identifier: int
+    oid: str, band: str, num_messages: int, identifier: int
 ) -> list[dict]:
     alerts = []
     for i in range(num_messages):
         alert = {
             "candid": str(random.randint(1000000, 9000000)),
-            "oid": f"ZTFoid{identifier}",
-            "aid": aid,
+            "aid": f"ZTFaid{identifier}",
+            "oid": oid,
             "tid": "ZTF",
             "mjd": random.uniform(59000, 60000),
             "sid": "ZTF",
@@ -88,11 +88,11 @@ def generate_alert_ztf(
     return alerts
 
 
-def generate_non_det(aid: str, num: int, identifier: int) -> list[dict]:
+def generate_non_det(oid: str, num: int, identifier: int) -> list[dict]:
     non_det = []
     for i in range(num):
         nd = {
-            "aid": aid,
+            "oid": oid,
             "tid": "ztf",
             "oid": f"ZTFoid{identifier}",
             "sid": "ZTF",
