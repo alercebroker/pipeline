@@ -38,9 +38,11 @@ class MagstatsStep(GenericStep):
         magstats = magstats.set_index("oid").replace({np.nan: None})
         for oid in stats:
             try:
-                stats[oid]["magstats"] = magstats.loc[oid].to_dict("records")
+                stats[oid]["magstats"] = (
+                    magstats.loc[oid].iloc[0].to_dict("records")
+                )
             except TypeError:
-                stats[oid]["magstats"] = [magstats.loc[oid].to_dict()]
+                stats[oid]["magstats"] = [magstats.loc[oid].iloc[0].to_dict()]
 
         return stats
 
@@ -66,9 +68,12 @@ class MagstatsStep(GenericStep):
         magstats = magstats.set_index("oid").replace({np.nan: None})
         for oid in stats:
             try:
-                stats[oid]["magstats"] = magstats.loc[oid].to_dict("records")
+                stats[oid]["magstats"] = (
+                    magstats.loc[oid].iloc[0].to_dict("records")
+                )
+                # el primero o uno por par oid_candid?
             except TypeError:
-                stats[oid]["magstats"] = [magstats.loc[oid].to_dict()]
+                stats[oid]["magstats"] = [magstats.loc[oid].iloc[0].to_dict()]
 
         return stats
 

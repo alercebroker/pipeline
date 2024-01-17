@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 from correction import Corrector
 from tests.utils import ztf_alert, atlas_alert
 
-detections = [ztf_alert(candid="c1"), atlas_alert(candid="c2")]
+detections = [ztf_alert(candid="c1", oid="oid_ztf"), atlas_alert(candid="c2", oid="oid_atlas")]
 MAG_CORR_COLS = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
 ALL_NEW_COLS = MAG_CORR_COLS + ["dubious", "stellar", "corrected"]
 
@@ -178,11 +178,12 @@ def test_calculate_coordinates_ignores_forced_photometry():
 
 
 def test_coordinates_dataframe_calculates_mean_for_each_aid():
-    corrector = Corrector(detections)
+    detections_duplicate = [ztf_alert(candid="c"), atlas_alert(candid="c")]
+    corrector = Corrector(detections_duplicate)
     assert corrector.mean_coordinates().index == ["OID1"]
 
-    altered_detections = deepcopy(detections)
-    altered_detections[0]["oid"] = "OID2"
+    altered_detections = deepcopy(detections_duplicate)
+    altered_detections[0]["oid"] = "OID1"
     corrector = Corrector(altered_detections)
     assert corrector.mean_coordinates().index.isin(["OID1", "OID2"]).all()
 
@@ -193,10 +194,11 @@ def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
 
 
 def test_coordinates_records_has_one_entry_per_aid():
-    corrector = Corrector(detections)
+    test_detections = [ztf_alert(candid="c1"), atlas_alert(candid="c2")]
+    corrector = Corrector(test_detections)
     assert set(corrector.coordinates_as_records()) == {"OID1"}
 
-    altered_detections = deepcopy(detections)
+    altered_detections = deepcopy(test_detections)
     altered_detections[0]["oid"] = "OID2"
     corrector = Corrector(altered_detections)
     assert set(corrector.coordinates_as_records()) == {"OID1", "OID2"}

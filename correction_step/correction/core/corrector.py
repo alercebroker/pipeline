@@ -26,13 +26,16 @@ class Corrector:
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
-        self._detections = self._detections.drop_duplicates("candid").set_index("candid")
+        self._detections = self._detections.drop_duplicates(["candid", "oid"]).set_index("candid")
 
-        self.__extras = {alert["candid"]: alert["extra_fields"] for alert in detections}
-        extras = pd.DataFrame.from_dict(self.__extras, orient="index", columns=self._EXTRA_FIELDS)
-        extras = extras.reset_index(names=["candid"]).drop_duplicates("candid").set_index("candid")
+        self.__extras = [
+            {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]} for alert in detections
+        ]
+        extras = pd.DataFrame(self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
+        extras = extras.drop_duplicates(["candid", "oid"]).set_index("candid")
 
-        self._detections = self._detections.join(extras)
+        self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
+        self._detections = self._detections.drop("oid_extra", axis=1)
 
     def _survey_mask(self, survey: str):
         """Creates boolean mask of detections whose `sid` matches the given survey name (case-insensitive)
@@ -102,6 +105,16 @@ class Corrector:
 
         The records are a list of mappings with the original input pairs and the new pairs together.
         """
+
+        def find_extra_fields(oid, candid):
+            for extra in self.__extras:
+                if extra["oid"] == oid and extra["candid"] == candid:
+                    result = {**extra}
+                    result.pop("oid")
+                    result.pop("candid")
+                    return result
+            return None
+
         self.logger.debug(f"Correcting {len(self._detections)} detections...")
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
@@ -109,7 +122,8 @@ class Corrector:
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug(f"Corrected {corrected['corrected'].sum()}")
         corrected = corrected.reset_index().to_dict("records")
-        return [{**record, "extra_fields": self.__extras[record["candid"]]} for record in corrected]
+
+        return [{**record, "extra_fields": find_extra_fields(record["oid"], record["candid"])} for record in corrected]
 
     @staticmethod
     def weighted_mean(values: pd.Series, sigmas: pd.Series) -> float:

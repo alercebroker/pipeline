@@ -43,7 +43,7 @@ def assert_scribe_has_detections(message):
     data = json.loads(message["payload"])
     assert "collection" in data and data["collection"] == "detection"
     assert "type" in data and data["type"] == "update"
-    assert "criteria" in data and "_id" in data["criteria"]
+    assert "criteria" in data and "candid" in data["criteria"] and "oid" in data["criteria"]
     assert "data" in data and len(data["data"]) > 0
     assert "options" in data and "upsert" in data["options"] and "set_on_insert" in data["options"]
     assert data["options"]["upsert"] is True

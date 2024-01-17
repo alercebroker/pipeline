@@ -207,7 +207,7 @@ def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
 
 
 def test_calculate_ra_uses_calculate_coordinates():
-    detections = [{"candid": "a", "forced": False}]
+    detections = [{"oid": "OIDa", "candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_coordinates = mock.Mock()
@@ -217,7 +217,7 @@ def test_calculate_ra_uses_calculate_coordinates():
 
 
 def test_calculate_dec_uses_calculate_coordinates():
-    detections = [{"candid": "a", "forced": False}]
+    detections = [{"oid": "OIDa", "candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_coordinates = mock.Mock()
@@ -288,7 +288,7 @@ def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
 
 
 def test_calculate_oid_uses_calculate_unique_with_oid():
-    detections = [{"candid": "a", "forced": False}]
+    detections = [{"oid": "OIDa", "candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_unique = mock.Mock()
@@ -298,7 +298,7 @@ def test_calculate_oid_uses_calculate_unique_with_oid():
 
 
 def test_calculate_tid_uses_calculate_unique_with_tid():
-    detections = [{"candid": "a", "forced": False}]
+    detections = [{"oid": "OIDa", "candid": "a", "forced": False}]
     calculator = ObjectStatistics(detections)
 
     calculator._calculate_unique = mock.Mock()
@@ -453,8 +453,8 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
 
 def test_object_statistics_ignores_forced_photometry():
     detections = [
-        {"candid": "a", "check": "this", "forced": False},
-        {"candid": "b", "check": "that", "forced": True},
+        {"oid": "OIDa", "candid": "a", "check": "this", "forced": False},
+        {"oid": "OIDb", "candid": "b", "check": "that", "forced": True},
     ]
     calculator = ObjectStatistics(detections)
 

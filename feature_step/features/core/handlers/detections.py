@@ -28,6 +28,7 @@ class DetectionsHandler(BaseHandler):
 
     _NAME = "detections"
     INDEX = "candid"
+    NON_DUPLICATE = ["oid", "candid"]
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + [
         "mag",
