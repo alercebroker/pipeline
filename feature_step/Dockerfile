@@ -19,14 +19,16 @@ WORKDIR /app/
 RUN pip install poetry
 COPY feature_step/poetry.lock feature_step/pyproject.toml /app/
 COPY feature_step/README.md /app/README.md
-COPY libs/turbo-fats /libs/turbo-fats
-COPY libs/P4J /libs/P4J
-COPY libs/mhps /libs/mhps
+COPY turbo-fats /turbo-fats
+COPY P4J /P4J
+COPY mhps /mhps
 COPY lc_classifier /lc_classifier
 COPY libs/apf /libs/apf
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/xmatch_step /schemas/xmatch_step
 COPY schemas/scribe_step /schemas/scribe_step
+RUN poetry run python -m pip install setuptools wheel
+RUN poetry run python -m pip install ../mhps --no-use-pep517
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
 COPY feature_step/settings.py /app/settings.py
@@ -34,7 +36,9 @@ COPY feature_step/features /app/features
 
 FROM python:3.10-slim
 COPY --from=builder /app /app
-COPY --from=builder /libs /libs
+COPY --from=builder /libs/apf /libs/apf
+COPY --from=builder /mhps /mhps
+COPY --from=builder /P4J /P4J
 COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/

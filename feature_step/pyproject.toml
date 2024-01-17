@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "feature-step"
-version = "23.12.26a28"
+version = "23.12.26a37"
 description = ""
 authors = []
 readme = "README.md"
@@ -21,9 +21,7 @@ jaxlib = ">=0.4.10,<0.5.0"
 apf-base = { path = "../libs/apf", develop = true }
 matplotlib = "3.7.1"
 GPy = { git = "https://github.com/SheffieldML/GPy.git", rev = "v1.10.0" } # Poetry requires scipy<1.5  if installed from PyPI # Requirement for turbo-fats, even though it is unused
-P4J = { path = "../libs/P4J", develop = true }
-turbofats = { path = "../libs/turbo-fats", develop = true }
-mhps = { path = "../libs/mhps", develop = true }
+turbofats = { path = "../turbo-fats" }
 lc_classifier = { path = "../lc_classifier", develop = true }
 pyroscope-io = "^0.8.4"
 
