@@ -91,7 +91,7 @@ def parse_sql_non_detection(ztf_models: list, *, oids) -> list:
             fid=get_fid(non_det["fid"]),
             diffmaglim=non_det.get("diffmaglim", None),
         )
-        mongo_non_detection.pop("_id")
+        mongo_non_detection.pop("_id", None)
         mongo_non_detection.pop("extra_fields", None)
         non_dets.append(mongo_non_detection)
     return non_dets
@@ -102,7 +102,7 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
         fp["fid"] = get_fid(fp["fid"])
         fp["e_ra"] = 0
         fp["e_dec"] = 0
-        fp["candid"] = fp.pop("_id")
+        fp["candid"] = fp.pop("_id", None)
         fp["extra_fields"] = {
             k: v
             for k, v in fp["extra_fields"].items()
