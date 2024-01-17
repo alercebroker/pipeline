@@ -21,7 +21,7 @@ class BaseStatistics(abc.ABC):
         except KeyError:  # extra_fields is not present
             self._detections = pd.DataFrame.from_records(detections)
         self._detections = self._detections.drop_duplicates(
-           ["candid", "oid"]
+            ["candid", "oid"]
         ).set_index("candid")
         # Select only non-forced detections
         self._detections = self._detections[~self._detections["forced"]]
