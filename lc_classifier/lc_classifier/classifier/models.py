@@ -421,7 +421,7 @@ class HierarchicalRandomForest(BaseClassifier):
             return False, f"Missing Features: \n{missing}"
 
         try:
-            detections_ok = (data.detections["tid"] == "ztf").any()
+            detections_ok = (data.detections["tid"].str.lower() == "ztf").any()
             if not detections_ok:
                 return False, "No ztf detections found"
         except Exception as e:
