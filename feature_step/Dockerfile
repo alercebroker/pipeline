@@ -27,7 +27,7 @@ COPY libs/apf /libs/apf
 COPY schemas/feature_step /schemas/feature_step
 COPY schemas/xmatch_step /schemas/xmatch_step
 COPY schemas/scribe_step /schemas/scribe_step
-RUN poetry run python -m pip install setuptools wheel
+RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
 RUN poetry run python -m pip install ../mhps --no-use-pep517
 RUN poetry install --without=dev,test --no-root
 COPY feature_step/scripts /app/scripts
