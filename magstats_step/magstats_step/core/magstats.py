@@ -18,7 +18,7 @@ class MagnitudeStatistics(BaseStatistics):
         if non_detections:
             self._non_detections = pd.DataFrame.from_records(
                 non_detections
-            ).drop_duplicates(["oid", "candid"]) # "fid", "mjd" como se correlaciona esto con el candid?
+            ).drop_duplicates(["oid", "fid", "mjd"])
         else:
             self._non_detections = pd.DataFrame()
 

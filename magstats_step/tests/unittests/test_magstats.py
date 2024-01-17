@@ -375,7 +375,7 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
 
 
 def test_calculate_statistics_calls_stats_and_stats_over_time_with_both_corrected_and_full_magnitudes():
-    detections = [{"candid": "a", "forced": False}]
+    detections = [{"oid": "OIDa", "candid": "a", "forced": False}]
     calculator = MagnitudeStatistics(detections)
 
     calculator._calculate_stats = mock.Mock()
@@ -953,12 +953,12 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
 
 def test_magnitude_statistics_ignores_forced_photometry():
     detections = [
-        {"candid": "a", "forced": False},
-        {"candid": "b", "forced": True},
+        {"oid": "OIDa", "candid": "a", "forced": False},
+        {"oid": "OIDb", "candid": "b", "forced": True},
     ]
     calculator = MagnitudeStatistics(detections)
 
     assert_frame_equal(
         calculator._detections,
-        pd.DataFrame({"forced": False}, index=pd.Index(["a"], name="candid")),
+        pd.DataFrame({"oid": "OIDa", "forced": False}, index=pd.Index(["a"], name="candid")),
     )
