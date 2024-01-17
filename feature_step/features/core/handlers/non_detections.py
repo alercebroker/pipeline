@@ -21,7 +21,7 @@ class NonDetectionsHandler(BaseHandler):
 
     _NAME = "non-detections"
     UNIQUE = ["id", "fid", "mjd"]
-    NON_DUPLICATE = ("oid", "candid")
+    NON_DUPLICATE = ["oid", "candid"]
     COLUMNS = BaseHandler.COLUMNS + ["diffmaglim"]
 
     def _post_process(self, **kwargs):
