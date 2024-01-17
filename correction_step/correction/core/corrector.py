@@ -30,9 +30,9 @@ class Corrector:
 
         self.__extras = {alert["candid"]: alert["extra_fields"] for alert in detections}
         extras = pd.DataFrame.from_dict(self.__extras, orient="index", columns=self._EXTRA_FIELDS)
-        extras = extras.reset_index(names=["candid"]).drop_duplicates(["candid", "oid"]).set_index(["candid", "oid"])
+        extras = extras.reset_index(names=["candid"]).drop_duplicates("candid").set_index("candid")
 
-        self._detections = self._detections.join(extras)
+        self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
 
     def _survey_mask(self, survey: str):
         """Creates boolean mask of detections whose `sid` matches the given survey name (case-insensitive)

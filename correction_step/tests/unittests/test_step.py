@@ -160,12 +160,13 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         data = {
             "collection": "detection" if not det["forced"] else "forced_photometry",
             "type": "update",
-            "criteria": {"_id": det["candid"]},
+            "criteria": {"candid": det["candid"], "oid": det["oid"]},
             "data": {k: v for k, v in det.items() if k not in ["candid", "forced", "new"]},
             "options": {"upsert": True, "set_on_insert": not det["has_stamp"]},
         }
         if count == len(message4execute_copy["detections"]):
             flush = True
+
         step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
 
 
