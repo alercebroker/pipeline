@@ -39,6 +39,8 @@ COPY --from=builder /app /app
 COPY --from=builder /libs/apf /libs/apf
 COPY --from=builder /mhps /mhps
 COPY --from=builder /P4J /P4J
+COPY --from=builder /lc_classifier /lc_classifier
+COPY --from=builder /turbo-fats /turbo-fats
 COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/
