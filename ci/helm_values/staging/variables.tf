@@ -82,6 +82,40 @@ variable "scribe_kafka_password" {
   type = string
 }
 
+variable "early_classifier_kafka_username" {
+  type = string
+}
+variable "early_classifier_kafka_password" {
+  type = string
+}
+
+variable "s3_kafka_username" {
+  type = string
+}
+variable "s3_kafka_password" {
+  type = string
+}
+
+variable "watchlist_kafka_username" {
+  type = string
+}
+variable "watchlist_kafka_password" {
+  type = string
+}
+
+variable "alerts_psql_username" {
+  type = string
+}
+variable "alerts_psql_password" {
+  type = string
+}
+variable "users_psql_username" {
+  type = string
+}
+variable "users_psql_password" {
+  type = string
+}
+
 variable "ghcr_username" {
   type = string
 }

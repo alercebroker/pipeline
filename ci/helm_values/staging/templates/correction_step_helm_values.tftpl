@@ -50,3 +50,6 @@ configYaml:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true

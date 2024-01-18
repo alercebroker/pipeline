@@ -34,6 +34,30 @@ resource "aws_ssm_parameter" "logstash_step" {
   })
 }
 
+resource "aws_ssm_parameter" "s3_step" {
+  name = "s3_step-helm-values"
+  type = "String"
+  value = templatefile("templates/s3_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_production.bootstrap_brokers_sasl_scram
+    kafka_username = var.s3_kafka_username
+    kafka_password = var.s3_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "early_classifier_step" {
+  name      = "early_classifier_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/early_classifier_step_helm_values.tftpl", {
+    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_username = var.early_classifier_kafka_username
+    kafka_password = var.early_classifier_kafka_password
+    ghcr_username  = var.ghcr_username
+    ghcr_password  = var.ghcr_password
+  })
+}
 resource "aws_ssm_parameter" "sorting_hat_step_ztf" {
   name      = "sorting_hat_step_ztf-helm-values"
   type      = "String"
@@ -181,5 +205,24 @@ resource "aws_ssm_parameter" "scribe_step_sql" {
     kafka_password = var.scribe_kafka_password
     ghcr_username  = var.ghcr_username
     ghcr_password  = var.ghcr_password
+  })
+}
+
+resource "aws_ssm_parameter" "watchlist_step" {
+  name      = "watchlist_step-helm-values"
+  type      = "String"
+  overwrite = true
+  value = templatefile("templates/watchlist_step_helm_values.tftpl", {
+    kafka_server       = data.aws_msk_cluster.msk_production.bootstrap_brokers_sasl_scram
+    kafka_username     = var.watchlist_kafka_username
+    kafka_password     = var.watchlist_kafka_password
+    ghcr_username      = var.ghcr_username
+    ghcr_password      = var.ghcr_password
+    alerts_db_host     = data.aws_instance.psql-alerts.private_ip
+    users_db_host      = data.aws_instance.psql-users.private_ip
+    alerts_db_password = var.alerts_psql_password
+    alerts_db_username = var.alerts_psql_username
+    users_db_password  = var.users_psql_password
+    users_db_username  = var.users_psql_username
   })
 }
