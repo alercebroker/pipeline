@@ -15,6 +15,7 @@ from ..extractors.coordinate_extractor import CoordinateExtractor
 from ..extractors.gp_drw_extractor import GPDRWExtractor
 from ..extractors.tde_extractor import TDETailExtractor
 from ..extractors.tde_extractor import FleetExtractor
+from ..extractors.tde_extractor import ColorVariationExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
@@ -49,6 +50,11 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             ),
             TDETailExtractor(bands),
             FleetExtractor(bands),
+            ColorVariationExtractor(
+                window_len=20,
+                band_1='g',
+                band_2='r'
+            ),
             SNExtractor(
                 bands, unit='diff_flux', use_forced_photo=True
             ),

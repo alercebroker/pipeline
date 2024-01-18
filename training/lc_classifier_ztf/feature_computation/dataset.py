@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import numpy as np
@@ -96,24 +97,40 @@ def save_batch(astro_objects: List[AstroObject], filename: str):
 if __name__ == '__main__':
     # Build AstroObjects
 
-    lightcurves = pd.read_parquet('data_231130/lightcurves_231130.parquet')
-    object_df = pd.read_parquet('data_231130/objects_231130_with_wise.parquet')
+    data_dir = 'data_231206'
+    lightcurve_filenames = os.listdir(data_dir)
+    lightcurve_filenames = [f for f in lightcurve_filenames if 'lightcurves_batch' in f]
 
-    lightcurves.set_index('oid', inplace=True)
+    object_df = pd.read_parquet(
+        os.path.join(data_dir, 'objects_with_wise_20240105.parquet'))
     object_df.set_index('oid', inplace=True)
 
-    oids = np.unique(object_df.index.values)
+    for lc_filename in tqdm(lightcurve_filenames):
+        batch_i_str = lc_filename.split('.')[0].split('_')[2]
 
-    astro_objects_list = []
-    for oid in tqdm(oids):
-        lc = lightcurves.loc[[oid]]
-        object_info = object_df.loc[oid]
-        try:
-            astro_object = create_astro_object(lc, object_info)
-            # plot_astro_object(astro_object, unit='diff_flux')
-            astro_objects_list.append(astro_object)
-        except NoDetections:
-            print(object_info)
-            print('Object with no detections')
+        lightcurves = pd.read_parquet(
+            os.path.join(
+                data_dir, lc_filename))
 
-    save_batch(astro_objects_list, 'data_231130/astro_objects_without_features.pkl')
+        lightcurves.set_index('oid', inplace=True)
+        batch_oids = lightcurves.index.unique()
+
+        astro_objects_list = []
+        for oid in batch_oids:
+            lc = lightcurves.loc[[oid]]
+            object_info = object_df.loc[oid]
+            try:
+                astro_object = create_astro_object(lc, object_info)
+                # plot_astro_object(astro_object, unit='diff_flux')
+                astro_objects_list.append(astro_object)
+            except NoDetections:
+                print(object_info)
+                print('Object with no detections')
+
+        save_batch(
+            astro_objects_list,
+            os.path.join(
+                data_dir,
+                f'astro_objects_batch_{batch_i_str}.pkl'
+            )
+        )

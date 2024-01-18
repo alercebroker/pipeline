@@ -1,3 +1,5 @@
+# Based on the work of Manuel Pavez
+
 from ..core.base import FeatureExtractor
 from lc_classifier.base import AstroObject
 import numpy as np
@@ -190,6 +192,74 @@ class FleetExtractor(FeatureExtractor):
 
         features_df = pd.DataFrame(
             data=features,
+            columns=['name', 'value', 'fid']
+        )
+
+        sids = astro_object.detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
+
+
+class ColorVariationExtractor(FeatureExtractor):
+    version = '1.0.0'
+    unit = 'magnitude'
+
+    def __init__(self, window_len: float, band_1: str, band_2: str):
+        self.window_len = window_len
+        self.band_1 = band_1
+        self.band_2 = band_2
+
+    def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
+        observations = astro_object.detections
+        if astro_object.forced_photometry is not None:
+            observations = pd.concat([
+                observations,
+                astro_object.forced_photometry], axis=0)
+        observations = observations[observations['unit'] == self.unit]
+        observations = observations[observations['brightness'].notna()]
+        observations = observations[observations['e_brightness'] > 0.0]
+        observations = observations[observations['e_brightness'] < 1.0]
+        observations = observations[observations['fid'].isin([self.band_1, self.band_2])]
+        return observations
+
+    def compute_features_single_object(self, astro_object: AstroObject):
+        observations = self.get_observations(astro_object).copy()
+        observations['mjd'] -= observations['mjd'].min()
+        observations['window'] = (observations['mjd'] // self.window_len).astype(int)
+
+        def compute_color(df):
+            fid_count = df[['fid', 'brightness']].groupby('fid').count()
+
+            if len(fid_count) < 2:
+                return
+
+            if not np.all(fid_count.values >= 3):
+                return
+
+            fid_means = df[['fid', 'brightness']].groupby('fid').mean()
+
+            color = fid_means.loc[self.band_1] - fid_means.loc[self.band_2]
+            return color
+
+        window_colors = observations.groupby('window').apply(compute_color)
+        window_colors.dropna(inplace=True)
+
+        if len(window_colors) > 1:
+            color_std = np.std(window_colors.values, ddof=1)
+        else:
+            color_std = np.nan
+
+        features_df = pd.DataFrame(
+            data=[['color_variation', color_std, f'{self.band_1},{self.band_2}']],
             columns=['name', 'value', 'fid']
         )
 
