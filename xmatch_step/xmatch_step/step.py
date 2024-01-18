@@ -73,7 +73,7 @@ class XmatchStep(GenericStep):
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": oid},
-                "data": {"xmatch": obj, "allwise": allwise},
+                "data": {"xmatch": obj},
             }
             if idx == len(result) - 1:
                 flush = True
