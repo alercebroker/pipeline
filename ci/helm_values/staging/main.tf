@@ -13,11 +13,24 @@ terraform {
   }
 }
 
-data "aws_msk_cluster" "msk_internal" {
+data "aws_msk_cluster" "msk_staging" {
   cluster_name = "internal-staging"
 }
 data "aws_opensearch_domain" "opensearch" {
   domain_name = "staging"
+}
+
+data "aws_instance" "psql-alerts" {
+  filter {
+    name   = "tag:Name"
+    values = ["psql-alerts-staging"]
+  }
+}
+data "aws_instance" "psql-users" {
+  filter {
+    name   = "tag:Name"
+    values = ["psql-users-staging"]
+  }
 }
 
 resource "aws_ssm_parameter" "logstash_step" {
@@ -25,7 +38,7 @@ resource "aws_ssm_parameter" "logstash_step" {
   overwrite = true
   type      = "String"
   value = templatefile("templates/logstash_helm_values.tftpl", {
-    kafka_server           = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server           = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username         = var.logstash_kafka_username
     kafka_password         = var.logstash_kafka_password
     elasticsearch_username = var.elasticsearch_username
@@ -37,8 +50,9 @@ resource "aws_ssm_parameter" "logstash_step" {
 resource "aws_ssm_parameter" "s3_step" {
   name = "s3_step-helm-values"
   type = "String"
+  overwrite = true
   value = templatefile("templates/s3_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_production.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.s3_kafka_username
     kafka_password = var.s3_kafka_password
     ghcr_username  = var.ghcr_username
@@ -51,11 +65,14 @@ resource "aws_ssm_parameter" "early_classifier_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/early_classifier_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.early_classifier_kafka_username
     kafka_password = var.early_classifier_kafka_password
     ghcr_username  = var.ghcr_username
     ghcr_password  = var.ghcr_password
+    db_host        = data.aws_instance.psql-alerts.private_ip
+    db_username    = var.alerts_psql_username
+    db_password    = var.alerts_psql_password
   })
 }
 resource "aws_ssm_parameter" "sorting_hat_step_ztf" {
@@ -63,7 +80,7 @@ resource "aws_ssm_parameter" "sorting_hat_step_ztf" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/sorting_hat_step_ztf_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.sorting_hat_kafka_username
     kafka_password = var.sorting_hat_kafka_password
     ghcr_username  = var.ghcr_username
@@ -76,7 +93,7 @@ resource "aws_ssm_parameter" "metadata_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/metadata_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.metadata_kafka_username
     kafka_password = var.metadata_kafka_password
     ghcr_username  = var.ghcr_username
@@ -89,7 +106,7 @@ resource "aws_ssm_parameter" "prv_candidates_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/prv_candidates_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.prv_candidates_kafka_username
     kafka_password = var.prv_candidates_kafka_password
     ghcr_username  = var.ghcr_username
@@ -102,7 +119,7 @@ resource "aws_ssm_parameter" "lightcurve_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/lightcurve_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.lightcurve_kafka_username
     kafka_password = var.lightcurve_kafka_password
     ghcr_username  = var.ghcr_username
@@ -115,7 +132,7 @@ resource "aws_ssm_parameter" "correction_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/correction_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.correction_kafka_username
     kafka_password = var.correction_kafka_password
     ghcr_username  = var.ghcr_username
@@ -128,7 +145,7 @@ resource "aws_ssm_parameter" "magstats_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/magstats_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.magstats_kafka_username
     kafka_password = var.magstats_kafka_password
     ghcr_username  = var.ghcr_username
@@ -141,7 +158,7 @@ resource "aws_ssm_parameter" "xmatch_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/xmatch_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.xmatch_kafka_username
     kafka_password = var.xmatch_kafka_password
     ghcr_username  = var.ghcr_username
@@ -154,7 +171,7 @@ resource "aws_ssm_parameter" "features_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/features_step_helm_values.tftpl", {
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.features_kafka_username
     kafka_password = var.features_kafka_password
     ghcr_username  = var.ghcr_username
@@ -167,8 +184,8 @@ resource "aws_ssm_parameter" "lc_classification_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/lc_classification_step_helm_values.tftpl", {
-    kafka_internal_server = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
-    kafka_public_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_internal_server = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
+    kafka_public_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username        = var.lc_classification_kafka_username
     kafka_password        = var.lc_classification_kafka_password
     ghcr_username         = var.ghcr_username
@@ -184,7 +201,7 @@ resource "aws_ssm_parameter" "scribe_step_mongo" {
     namespace      = "scribe-step-mongo"
     db_type        = "mongo"
     group_id       = "scribe_consumer_mongo"
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.scribe_kafka_username
     kafka_password = var.scribe_kafka_password
     ghcr_username  = var.ghcr_username
@@ -200,7 +217,7 @@ resource "aws_ssm_parameter" "scribe_step_sql" {
     namespace      = "scribe-step-sql"
     db_type        = "sql"
     group_id       = "scribe_consumer_psql"
-    kafka_server   = data.aws_msk_cluster.msk_internal.bootstrap_brokers_sasl_scram
+    kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username = var.scribe_kafka_username
     kafka_password = var.scribe_kafka_password
     ghcr_username  = var.ghcr_username
@@ -213,7 +230,7 @@ resource "aws_ssm_parameter" "watchlist_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/watchlist_step_helm_values.tftpl", {
-    kafka_server       = data.aws_msk_cluster.msk_production.bootstrap_brokers_sasl_scram
+    kafka_server       = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
     kafka_username     = var.watchlist_kafka_username
     kafka_password     = var.watchlist_kafka_password
     ghcr_username      = var.ghcr_username
