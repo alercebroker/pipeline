@@ -81,7 +81,7 @@ jobs:
         with:
           submodules: 'true'
           token: ${{secrets.GH_TOKEN}}
-          persist_credentials: false
+          persist-credentials: false
       - name: Install poetry
         run: |
           pipx install poetry==${{ inputs.poetry-version }}
