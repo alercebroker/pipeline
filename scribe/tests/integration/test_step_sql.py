@@ -540,9 +540,10 @@ class PsqlIntegrationTest(unittest.TestCase):
                 },
                 "data": {
                     "xmatch": {
-                        "catoid": "J239263.32+240338.4",
-                        "dist": 0.009726,
-                        "catid": "allwise",
+                        "allwise": {
+                            "catoid": "J239263.32+240338.4",
+                            "dist": 0.009726,
+                        }
                     }
                 },
             },
@@ -554,9 +555,10 @@ class PsqlIntegrationTest(unittest.TestCase):
                 },
                 "data": {
                     "xmatch": {
-                        "catoid": "J239263.32+240338.4",
-                        "dist": 0.615544,
-                        "catid": "allwise",
+                        "allwise": {
+                            "catoid": "J239263.32+240338.4",
+                            "dist": 0.615544,
+                        }
                     }
                 },
             },
