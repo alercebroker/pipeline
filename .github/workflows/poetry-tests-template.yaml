@@ -92,7 +92,6 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
-          git config --global url."https://${{secrets.GH_TOKEN}}@github.com/".insteadOf "https://github.com/"
           poetry install ${{ inputs.poetry-install }}
       - name: Tests with pytest
         run: |
