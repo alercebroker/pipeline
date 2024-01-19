@@ -321,8 +321,16 @@ class UpsertXmatchCommand(Command):
     type = ValidCommands.upsert_xmatch
 
     def _format_data(self, data):
-        data["xmatch"]["oid_catalog"] = data["xmatch"].pop("catoid")
-        return {**data["xmatch"], "oid": self.criteria["_id"]}
+        formatted_data = []
+        for catalog in data["xmatch"]:
+            catalog_data = {
+                "oid": self.criteria["_id"],
+                "catid": catalog,
+                "oid_catalog": data["xmatch"][catalog]["catoid"],
+                "dist": data["xmatch"][catalog]["dist"]
+            }
+            formatted_data.append(catalog_data)
+        return formatted_data
 
     @staticmethod
     def db_operation(session: Session, data: list):

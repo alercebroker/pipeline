@@ -69,11 +69,12 @@ class XmatchStep(GenericStep):
         flush = False
         for idx, obj in enumerate(result):
             oid = obj.pop("oid")
+            obj = {"allwise": {"catoid": obj["catoid"], "dist": obj["dist"]}}
             scribe_data = {
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": oid},
-                "data": {"xmatch": obj, "allwise": allwise},
+                "data": {"xmatch": obj},
             }
             if idx == len(result) - 1:
                 flush = True
