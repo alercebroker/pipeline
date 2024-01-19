@@ -19,7 +19,7 @@ on:
         type: string
         default: "main"
     secrets:
-      ADMIN_TOKEN:
+      GH_TOKEN:
         required: true
       PYPI_TOKEN:
         required: false
@@ -28,7 +28,7 @@ jobs:
   build-package:
     runs-on: ubuntu-latest
     env:
-      GHCR_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GHCR_TOKEN: ${{ secrets.GH_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
     steps:
       - name: Check out repository code
@@ -36,7 +36,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           submodules: ${{ inputs.submodules}}
-          token: ${{ secrets.ADMIN_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
