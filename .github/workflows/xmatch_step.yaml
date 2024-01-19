@@ -21,7 +21,7 @@ jobs:
       python-version: "3.10"
       test-folder: "tests/unittest"
     secrets:
-      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      ADMIN_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   xmatch_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -31,7 +31,7 @@ jobs:
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      ADMIN_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
 
   build-xmatch-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -40,4 +40,4 @@ jobs:
       stage: staging
       extra-args: xmatch_step --dry-run
     secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
