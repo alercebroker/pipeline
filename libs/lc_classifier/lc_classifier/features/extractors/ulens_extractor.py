@@ -51,6 +51,7 @@ class MicroLensExtractor(FeatureExtractor):
         observations = observations[observations['unit'] == self.unit]
         observations = observations[observations['brightness'].notna()]
         observations = observations[observations['e_brightness'] < 1.0]
+        observations['mjd'] -= np.min(observations['mjd'])
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -66,8 +67,7 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(('ulens_chi', np.nan, band))
                 continue
 
-            first_mjd = band_observations.sort_values('mjd').iloc[0]['mjd']
-            mjd_max_flux = band_observations.sort_values('brightness').iloc[-1]['mjd']
+            mjd_max_flux = band_observations.sort_values('brightness').iloc[0]['mjd']
             y = band_observations.brightness
             y_err = band_observations.e_brightness + 1e-2
 
@@ -75,15 +75,15 @@ class MicroLensExtractor(FeatureExtractor):
                 # noinspection PyTupleAssignmentBalance
                 parameters, _ = curve_fit(
                     ulens_model,
-                    band_observations['mjd'] - first_mjd,
+                    band_observations['mjd'],
                     y,
                     sigma=y_err,
-                    p0=[0.6, 5.0, 0.5, mjd_max_flux, np.median(y)],
+                    p0=[0.6, 20.0, 0.5, mjd_max_flux, np.median(y)],
                     bounds=([0.0, 0.0, 0.0, -50, 10], [1.5, 100.0, 1.0, 10000, 25])
                 )
 
                 model_prediction = ulens_model(
-                    band_observations['mjd'] - first_mjd,
+                    band_observations['mjd'],
                     *parameters
                 )
 

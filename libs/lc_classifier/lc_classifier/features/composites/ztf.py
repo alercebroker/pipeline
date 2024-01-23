@@ -3,6 +3,7 @@ from typing import List
 from ..core.base import FeatureExtractorComposite, FeatureExtractor
 from ..extractors.color_feature_extractor import ColorFeatureExtractor
 from ..extractors.allwise_colors_feature_extractor import AllwiseColorsFeatureExtractor
+from ..extractors.panstarrs_feature_extractor import PanStarrsFeatureExtractor
 from ..extractors.period_extractor import PeriodExtractor
 from ..extractors.folded_kim_extractor import FoldedKimExtractor
 from ..extractors.harmonics_extractor import HarmonicsExtractor
@@ -16,6 +17,7 @@ from ..extractors.gp_drw_extractor import GPDRWExtractor
 from ..extractors.tde_extractor import TDETailExtractor
 from ..extractors.tde_extractor import FleetExtractor
 from ..extractors.tde_extractor import ColorVariationExtractor
+from ..extractors.ulens_extractor import MicroLensExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
@@ -25,6 +27,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
         feature_extractors = [
             ColorFeatureExtractor(bands, unit='magnitude'),
             AllwiseColorsFeatureExtractor(bands),
+            PanStarrsFeatureExtractor(),
             MHPSExtractor(bands, unit='diff_flux'),
             GPDRWExtractor(bands, unit='diff_flux'),
 
@@ -58,6 +61,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             SNExtractor(
                 bands, unit='diff_flux', use_forced_photo=True
             ),
+            MicroLensExtractor(bands),
             TimespanExtractor(),
             CoordinateExtractor()
         ]

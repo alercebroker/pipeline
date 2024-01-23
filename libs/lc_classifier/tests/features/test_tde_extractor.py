@@ -4,7 +4,7 @@ import numpy as np
 
 from lc_classifier.features.extractors.tde_extractor import TDETailExtractor, FleetExtractor
 from lc_classifier.examples.data import get_ztf_example, get_ztf_forced_training_examples, get_elasticc_example
-from lc_classifier.utils import plot_astro_object
+# from lc_classifier.utils import plot_astro_object
 from lc_classifier.features.extractors.tde_extractor import ColorVariationExtractor
 
 
@@ -37,7 +37,7 @@ class TestFleetExtractor(unittest.TestCase):
 
     def test_ztf_forced_phot_not_transient(self):
         astro_objects = get_ztf_forced_training_examples()
-        plot_astro_object(astro_objects[0], unit='diff_flux', use_forced_phot=True)
+        # plot_astro_object(astro_objects[0], unit='diff_flux', use_forced_phot=True)
         feature_extractor = FleetExtractor(
             bands=list('gr'))
         astro_object = astro_objects[0]

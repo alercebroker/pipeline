@@ -3,7 +3,7 @@ from lc_classifier.features.extractors.allwise_colors_feature_extractor import A
 from lc_classifier.examples.data import get_ztf_forced_phot_cepheid
 
 
-class TestPeriodFeatureExtractor(unittest.TestCase):
+class TestAllWiseFeatureExtractor(unittest.TestCase):
     def test_ztf_forced_phot(self):
         astro_object = get_ztf_forced_phot_cepheid()
 

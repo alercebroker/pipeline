@@ -77,6 +77,10 @@ def create_astro_object(
             ["W2", object_info['W2mag']],
             ["W3", object_info['W3mag']],
             ["W4", object_info['W4mag']],
+            ["sgscore1", object_info['sgscore1']],
+            ["distpsnr1", object_info['distpsnr1']],
+            ["sgmag1", object_info['sgmag1']],
+            ["srmag1", object_info['srmag1']],
         ],
         columns=["name", "value"]
     )
