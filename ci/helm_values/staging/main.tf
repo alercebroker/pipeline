@@ -197,7 +197,7 @@ resource "aws_ssm_parameter" "scribe_step_mongo" {
   name      = "scribe-helm-values"
   type      = "String"
   overwrite = true
-  value = templatefile("templates/scribe_helm_values.tftpl", {
+  value = templatefile("templates/scribe_mongo_helm_values.tftpl", {
     namespace      = "scribe-step-mongo"
     db_type        = "mongo"
     group_id       = "scribe_consumer_mongo"
@@ -213,7 +213,7 @@ resource "aws_ssm_parameter" "scribe_step_sql" {
   name      = "scribe-psql-helm-values"
   type      = "String"
   overwrite = true
-  value = templatefile("templates/scribe_helm_values.tftpl", {
+  value = templatefile("templates/scribe_psql_helm_values.tftpl", {
     namespace      = "scribe-step-sql"
     db_type        = "sql"
     group_id       = "scribe_consumer_psql"
