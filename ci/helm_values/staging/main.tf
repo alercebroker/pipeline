@@ -48,8 +48,8 @@ resource "aws_ssm_parameter" "logstash_step" {
 }
 
 resource "aws_ssm_parameter" "s3_step" {
-  name = "s3_step-helm-values"
-  type = "String"
+  name      = "s3_step-helm-values"
+  type      = "String"
   overwrite = true
   value = templatefile("templates/s3_step_helm_values.tftpl", {
     kafka_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
