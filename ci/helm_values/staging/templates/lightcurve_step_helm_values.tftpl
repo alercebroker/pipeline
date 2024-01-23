@@ -41,7 +41,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
   PRODUCER_CONFIG:
-    CLASS: "apf.producers.KafkaProducer"
+    CLASS: "apf.producers.KafkaSchemalessProducer"
     PARAMS:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
