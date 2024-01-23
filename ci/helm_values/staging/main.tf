@@ -184,12 +184,12 @@ resource "aws_ssm_parameter" "lc_classification_step" {
   type      = "String"
   overwrite = true
   value = templatefile("templates/lc_classification_step_helm_values.tftpl", {
-    kafka_internal_server = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
-    kafka_public_server   = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
-    kafka_username        = var.lc_classification_kafka_username
-    kafka_password        = var.lc_classification_kafka_password
-    ghcr_username         = var.ghcr_username
-    ghcr_password         = var.ghcr_password
+    kafka_server        = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
+    kafka_public_server = data.aws_msk_cluster.msk_staging.bootstrap_brokers_sasl_scram
+    kafka_username      = var.lc_classification_kafka_username
+    kafka_password      = var.lc_classification_kafka_password
+    ghcr_username       = var.ghcr_username
+    ghcr_password       = var.ghcr_password
   })
 }
 
