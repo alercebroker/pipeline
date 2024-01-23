@@ -34,8 +34,7 @@ envVariables:
 
 configYaml:
   CONSUMER_CONFIG:
-    # CLASS: "apf.consumers.KafkaSchemalessConsumer"
-    CLASS: "apf.consumers.KafkaConsumer"
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
     SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
@@ -53,3 +52,5 @@ configYaml:
         bootstrap.servers: ${kafka_server}
         sasl.username: ${kafka_username}
         sasl.password: ${kafka_password}
+  MONGO_SECRET_NAME: "mongodb-alerts/reader"
+  SQL_SECRET_NAME: "psql-users-staging/reader"
