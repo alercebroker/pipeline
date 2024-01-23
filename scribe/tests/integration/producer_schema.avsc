@@ -1,8 +1,0 @@
-{
-    "namespace": "db_operation",
-    "type": "record",
-    "name": "Command",
-    "fields": [
-        {"name": "payload", "type": "string"}
-    ]
-}
