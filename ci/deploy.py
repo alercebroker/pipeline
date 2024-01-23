@@ -26,8 +26,10 @@ def get_values(client: dagger.Client, path: str, ssm_parameter_name: str):
                     exclude=[
                         ".venv/",
                         "**/.venv/",
-                        ".terraform",
-                        "**/.terraform",
+                        ".terraform/",
+                        "**/.terraform/",
+                        "**/tests/",
+                        "tests/"
                     ],
                 ),
             )

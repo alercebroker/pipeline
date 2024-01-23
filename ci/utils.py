@@ -52,7 +52,8 @@ async def git_push(dry_run: bool):
                 "/pipeline",
                 client.host().directory(
                     str(path),
-                    exclude=[".venv/", "**/.venv/", "*/.venv/", "*.venv"],
+                    exclude=[".venv/", "**/.venv/", ".terraform/",
+                             "**/.terraform", "tests/", "**/tests/",]
                 ),
             )
             .with_workdir("/pipeline")
@@ -106,7 +107,9 @@ async def build(
     path = pathlib.Path().cwd().parent.absolute()
     # get build context directory
     context_dir = client.host().directory(
-        str(path), exclude=[".venv/", "**/.venv/"]
+        str(path),
+        exclude=[".venv/", "**/.venv/", ".terraform/",
+                 "**/.terraform", "tests/", "**/tests/"]
     )
     # build using Dockerfile
     bargs = []
@@ -151,7 +154,8 @@ async def publish_lib(client: dagger.Client, package_dir, dry_run: bool):
             f"/pipeline/{package_dir}",
             client.host().directory(
                 str(path / package_dir),
-                exclude=[".venv/", "**/.venv/", "*.venv", "*/.venv/"],
+                exclude=[".venv/", "**/.venv/", ".terraform/",
+                         "**/.terraform", "tests/", "**/tests/"]
             ),
         )
         .with_workdir(f"/pipeline/{package_dir}")
@@ -174,7 +178,9 @@ async def get_tags(client: dagger.Client, package_dir: str) -> list:
         .with_directory(
             "/pipeline",
             client.host().directory(
-                str(path), exclude=[".venv/", "**/.venv/"]
+                str(path),
+                exclude=[".venv/", "**/.venv/", ".terraform/",
+                         "**/.terraform", "tests/", "**/tests/",]
             ),
         )
     )
