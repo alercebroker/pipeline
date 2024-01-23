@@ -1,0 +1,61 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 8
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+image:
+  repository: ghcr.io/alercebroker/scribe
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: ${namespace}
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'scribe-psql'
+  - name: METRICS_SURVEY
+    value: ZTF,ATLAS
+
+configYaml:
+  DB_TYPE: ${db_type}
+  DB_SECRET_NAME: "mongodb-alerts/writer"
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "scribe-mongo"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["w_object", "w_detection", "w_non_detections"]
+    NUM_MESSAGES: 500
+    TIMEOUT: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
+      TOPIC: "metrics"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+  USE_PROFILING: true
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
