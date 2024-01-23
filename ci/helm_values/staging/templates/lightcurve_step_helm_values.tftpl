@@ -35,7 +35,7 @@ envVariables:
 configYaml:
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaSchemalessConsumer"
-    SCHEMA_PATH: "/schemas/prv_candidates_step/output.avsc"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
