@@ -512,12 +512,28 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = session.execute(
                 text(
                     """
-                    SELECT object.oid as oid, fid, meanra, meandec, magstat.ndet as ndet
-                    FROM object JOIN magstat on object.oid = magstat.oid
+                    SELECT oid, meanra, meandec, ndet
+                    FROM object
+                    WHERE oid = 'ZTF04ululeea'
                     """
                 )
             )
-            assert len(list(result))
+            result = list(result)
+            assert len(result)
+            assert result[0][-1] == 20
+            result = session.execute(
+                text(
+                    """
+                    SELECT *
+                    FROM magstat
+                    WHERE oid = 'ZTF04ululeea'
+                    """
+                )
+            )
+            result = list(result)
+            assert len(result) == 2
+            assert result[0][4] == 11
+            assert result[1][4] == 9
 
     def test_upsert_xmatch(self):
         with self.db.session() as session:
