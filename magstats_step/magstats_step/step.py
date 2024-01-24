@@ -40,7 +40,9 @@ class MagstatsStep(GenericStep):
             self.parse_magstats_result(magstats, oid, stats)
         return stats
 
-    def parse_magstats_result(self, magstats: pd.DataFrame, oid: str, stats: dict) -> dict:
+    def parse_magstats_result(
+        self, magstats: pd.DataFrame, oid: str, stats: dict
+    ) -> dict:
         """Adds magstats in the correct format for the oid
         **Note**: Updates stats dictionary in place
         """
@@ -49,15 +51,11 @@ class MagstatsStep(GenericStep):
             # when calling to_dict on a series
             # the result is a single dict
             # we then ensure that it is always a list of dict
-            stats[oid]["magstats"] = [(
-                magstats_by_oid.to_dict()
-            )]
+            stats[oid]["magstats"] = [(magstats_by_oid.to_dict())]
         elif isinstance(magstats_by_oid, pd.DataFrame):
             # when calling to_dict on a dataframe with orient=records
             # the result should be already a list of dicts
-            stats[oid]["magstats"] = (
-                magstats_by_oid.to_dict(orient="records")
-            )
+            stats[oid]["magstats"] = magstats_by_oid.to_dict(orient="records")
         else:
             raise TypeError(f"Unknown magstats type {type(magstats_by_oid)}")
 
