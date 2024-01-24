@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version
 
 from db_plugins.db.sql.models import (
     Detection,
@@ -19,10 +19,7 @@ from sqlalchemy.orm import Session
 
 from .commons import ValidCommands
 
-try:
-    step_version = version("srcibe")
-except PackageNotFoundError:
-    step_version = "23.12.x"
+step_version = version("scribe")
 
 
 class Command(ABC):
@@ -178,18 +175,16 @@ class UpdateObjectStatsCommand(Command):
             raise ValueError("Magstats not provided in the commands data")
 
     def _format_data(self, data):
-        data = copy.deepcopy(data)
+        fid_map = {"g": 1, "r": 2, "i": 3}
         magstats = data.pop("magstats")
         data["oid"] = self.criteria["_id"]
         for magstat in magstats:
             magstat.pop("sid")
-            fid_map = {"g": 1, "r": 2, "i": 3}
-
             magstat["oid"] = self.criteria["_id"]
             magstat["fid"] = fid_map[magstat["fid"]]
             magstat["stellar"] = bool(magstat.get("stellar"))
             if "step_id_corr" not in magstat:
-                magstat["step_id_corr"] = "ALeRCE ZTF"
+                magstat["step_id_corr"] = step_version
 
         return (data, magstats)
 

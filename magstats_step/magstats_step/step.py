@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import pandas as pd
 from typing import List
 from apf.core.step import GenericStep, get_class
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
@@ -30,21 +31,33 @@ class MagstatsStep(GenericStep):
             {np.nan: None}
         )
         stats = stats.to_dict("index")
-
         magstats_calculator = MagnitudeStatistics(**messages)
         magstats = magstats_calculator.generate_statistics(
             self.excluded
         ).reset_index()
         magstats = magstats.set_index("oid").replace({np.nan: None})
         for oid in stats:
-            try:
-                stats[oid]["magstats"] = (
-                    magstats.loc[oid].iloc[0].to_dict("records")
-                )
-            except TypeError:
-                stats[oid]["magstats"] = [magstats.loc[oid].iloc[0].to_dict()]
-
+            self.parse_magstats_result(magstats, oid, stats)
         return stats
+
+    def parse_magstats_result(
+        self, magstats: pd.DataFrame, oid: str, stats: dict
+    ) -> dict:
+        """Adds magstats in the correct format for the oid
+        **Note**: Updates stats dictionary in place
+        """
+        magstats_by_oid = magstats.loc[oid]
+        if isinstance(magstats_by_oid, pd.Series):
+            # when calling to_dict on a series
+            # the result is a single dict
+            # we then ensure that it is always a list of dict
+            stats[oid]["magstats"] = [(magstats_by_oid.to_dict())]
+        elif isinstance(magstats_by_oid, pd.DataFrame):
+            # when calling to_dict on a dataframe with orient=records
+            # the result should be already a list of dicts
+            stats[oid]["magstats"] = magstats_by_oid.to_dict(orient="records")
+        else:
+            raise TypeError(f"Unknown magstats type {type(magstats_by_oid)}")
 
     def _execute_ztf(self, messages: dict):
         ztf_detections = list(
@@ -57,7 +70,6 @@ class MagstatsStep(GenericStep):
             {np.nan: None}
         )
         stats = stats.to_dict("index")
-
         magstats_calculator = MagnitudeStatistics(
             detections=ztf_detections,
             non_detections=messages["non_detections"],
@@ -67,14 +79,7 @@ class MagstatsStep(GenericStep):
         ).reset_index()
         magstats = magstats.set_index("oid").replace({np.nan: None})
         for oid in stats:
-            try:
-                stats[oid]["magstats"] = (
-                    magstats.loc[oid].iloc[0].to_dict("records")
-                )
-                # el primero o uno por par oid_candid?
-            except TypeError:
-                stats[oid]["magstats"] = [magstats.loc[oid].iloc[0].to_dict()]
-
+            self.parse_magstats_result(magstats, oid, stats)
         return stats
 
     def execute(self, messages: dict):
@@ -83,7 +88,6 @@ class MagstatsStep(GenericStep):
         stats["ztf"] = self._execute_ztf(messages)
         return stats
 
-    # it seems that we'll have to produce different commands in this
     def produce_scribe(self, result: dict):
         for oid, stats in result.items():
             command = {
@@ -105,21 +109,18 @@ class MagstatsStep(GenericStep):
             self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def produce_scribe_ztf(self, result: dict):
-        for stats in result.values():
-            stats = {k: v for k, v in stats.items() if k not in ["tid", "sid"]}
-            oids = stats.pop("oid")
-            commands = [
+        commands = []
+        for oid, stats in result.items():
+            commands.append(
                 {
                     "collection": "magstats",
                     "type": "upsert",
                     "criteria": {"_id": oid},
                     "data": stats,
                 }
-                for oid in oids
-            ]
-
-            for command in commands:
-                self.scribe_producer.produce({"payload": json.dumps(command)})
+            )
+        for command in commands:
+            self.scribe_producer.produce({"payload": json.dumps(command)})
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["multistream"])
