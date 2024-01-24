@@ -61,7 +61,7 @@ async def git_push(dry_run: bool):
         )
         if not dry_run:
             await (
-                container.with_exec(["git", "add", "."])
+                container.with_exec(["git", "add", "--ignore-removal", "."])
                 .with_exec(["git", "commit", "-m", "chore: update version"])
                 .with_exec(["git", "push"])
             )
