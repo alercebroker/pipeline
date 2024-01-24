@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version
 
 from db_plugins.db.sql.models import (
     Detection,
@@ -19,10 +19,7 @@ from sqlalchemy.orm import Session
 
 from .commons import ValidCommands
 
-try:
-    step_version = version("srcibe")
-except PackageNotFoundError:
-    step_version = "23.12.x"
+step_version = version("scribe")
 
 
 class Command(ABC):
