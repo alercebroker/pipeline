@@ -29,10 +29,12 @@ def assert_command_data_schema(data):
     for field in expected_fields:
         assert field in data
 
+
 def assert_magstats_is_list(data):
     magstats = data["magstats"]
     assert isinstance(magstats, list)
     assert len(magstats)
+
 
 def test_step(kafka_service, env_variables, kafka_consumer):
     step = step_factory()
