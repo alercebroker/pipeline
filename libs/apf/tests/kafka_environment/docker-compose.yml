@@ -1,0 +1,48 @@
+version: '3'
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - APPLICATION_SECRET="random-secret"
+  kafka:
+    ports:
+      - "9092:9092"
+    image: 'bitnami/kafka:latest'
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - JMX_PORT=1099
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+    depends_on:
+      - zookeeper
+  postgres:
+    image: 'postgres'
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_PASSWORD=docker
+#  elasticsearch:
+    #image: "elasticsearch:7.5.0"
+    #ports:
+      #- "9200:9200"
+      #- "9300:9300"
+    #environment:
+      #- "discovery.type=single-node"
+    #volumes:
+      #- "./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+  #grafana:
+    #image: "grafana/grafana"
+    #ports:
+      #- "3000:3000"
+    #links:
+      #- elasticsearch
+  #kibana:
+    #image: "kibana:7.5.0"
+    #ports:
+      #- "5601:5601"
+    #links:
+#      - elasticsearch

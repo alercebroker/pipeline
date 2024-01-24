@@ -1,0 +1,10 @@
+{
+	"namespace": "test_schemaless_consumer",
+	"type": "record",
+	"name": "simple",
+	"doc": "Simple avro schema for testing the consumer",
+	"fields": [
+		{"name": "key", "type": "string"},
+		{"name": "value", "type": "int"}
+	]
+}
