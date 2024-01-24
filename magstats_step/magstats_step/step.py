@@ -50,13 +50,13 @@ class MagstatsStep(GenericStep):
             # the result is a single dict
             # we then ensure that it is always a list of dict
             stats[oid]["magstats"] = [(
-                magstats.loc[oid].to_dict()
+                magstats_by_oid.to_dict()
             )]
         elif isinstance(magstats_by_oid, pd.DataFrame):
             # when calling to_dict on a dataframe with orient=records
             # the result should be already a list of dicts
             stats[oid]["magstats"] = (
-                magstats.loc[oid].to_dict(orient="records")
+                magstats_by_oid.to_dict(orient="records")
             )
         else:
             raise TypeError(f"Unknown magstats type {type(magstats_by_oid)}")
