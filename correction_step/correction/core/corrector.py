@@ -49,6 +49,15 @@ class Corrector:
         """
         return self._detections["sid"].str.lower() == survey.lower()
 
+    def _forced_photometry_mask(self):
+        """Creates boolean mask of detections that are not marked as forced photometry
+
+        Returns:
+            pd.Series: Mask of detections that are not forced photometry
+
+        """
+        return self._detections["forced"] == False
+
     def _apply_all_surveys(self, function: str, *, default=None, columns=None, dtype=object):
         """Applies given function for all surveys defined in `strategy` module.
 
@@ -71,6 +80,7 @@ class Corrector:
             if name.startswith("_"):  # Skip protected/private modules/variables
                 continue
             mask = self._survey_mask(name)  # Module must match survey prefix uniquely
+            mask = mask & self._forced_photometry_mask()  # skip forced photometry
             if mask.any():  # Skip if there are no detections of the given survey
                 module = getattr(strategy, name)  # Get module containing strategy for survey
                 # Get function and call it over the detections belonging to the survey
