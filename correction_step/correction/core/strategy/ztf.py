@@ -65,7 +65,8 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
 
-    aux4 = (aux2 * detections["e_mag"]) ** 2 - (aux1 * detections["sigmagnr"].astype(float)) ** 2
+    aux4 = (aux2 * detections["e_mag"]) ** 2 - \
+        (aux1 * detections["sigmagnr"].astype(float)) ** 2
     with warnings.catch_warnings():
         # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -86,5 +87,9 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
 def is_first_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the first detection for each OID and FID has a nearby source"""
     corrected = is_corrected(detections)
-    idxmin = detections.groupby(["oid", "fid"])["mjd"].transform("idxmin")
-    return corrected[idxmin].set_axis(idxmin.index)
+    detections_cpy = detections.copy()
+    detections_cpy["corrected"] = corrected
+    detections_cpy.sort_values(by="mjd", inplace=True)
+    detections_cpy["corrected"] = detections_cpy.groupby(
+        ["oid", "fid"])["corrected"].transform(lambda x: x.iloc[0])
+    return detections_cpy["corrected"]
