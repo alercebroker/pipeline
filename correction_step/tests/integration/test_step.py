@@ -1,26 +1,12 @@
 import json
 from apf.consumers import KafkaConsumer
 from correction._step import CorrectionStep
-
-from pprint import pprint
-
-
-def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
-    CorrectionStep.create_step().start()
-    for message in kafka_consumer.consume():
-        assert "oid" in message
-        assert "detections" in message
-        assert "non_detections" in message
-        assert "meanra" in message
-        assert "meandec" in message
-        assert "candid" in message
-        assert_result_has_correction_fields(message)
-        assert_result_has_extra_fields(message)
-        kafka_consumer.commit()
+import logging
 
 
 def assert_result_has_correction_fields(message):
-    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "has_stamp", "corrected", "stellar"]
+    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext",
+              "has_stamp", "corrected", "stellar"]
     assert all(all(f in det for f in fields) for det in message["detections"])
 
 
@@ -29,14 +15,6 @@ def assert_result_has_extra_fields(message):
         assert "extra_fields" in det
         if det["tid"] == "LSST":
             assert "diaObject" in det["extra_fields"]
-
-
-def test_scribe_has_detections(kafka_service, env_variables, scribe_consumer):
-    CorrectionStep.create_step().start()
-
-    for message in scribe_consumer.consume():
-        assert_scribe_has_detections(message)
-        scribe_consumer.commit()
 
 
 def assert_scribe_has_detections(message):
@@ -57,12 +35,39 @@ def assert_scribe_has_detections(message):
         assert "diaObject" in data["data"]["extra_fields"]
 
 
-def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaConsumer):
+def test_result_has_everything(kafka_service, env_variables, kafka_consumer):
+    CorrectionStep.create_step().start()
+    for message in kafka_consumer.consume():
+        assert "oid" in message
+        assert "detections" in message
+        assert "non_detections" in message
+        assert "meanra" in message
+        assert "meandec" in message
+        assert "candid" in message
+        assert_result_has_correction_fields(message)
+        assert_result_has_extra_fields(message)
+        kafka_consumer.commit()
+
+
+def test_scribe_has_detections(kafka_service, env_variables, scribe_consumer):
+    CorrectionStep.create_step().start()
+
+    for message in scribe_consumer.consume():
+        assert_scribe_has_detections(message)
+        scribe_consumer.commit()
+
+
+def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaConsumer, caplog):
     import os
 
     os.environ["CONSUME_MESSAGES"] = "10"
+    os.environ["LOGGING_DEBUG"] = "yes"
+    caplog.set_level(logging.DEBUG)
     CorrectionStep.create_step().start()
-
+    processed = False
     for message in kafka_consumer.consume():
+        processed = True
         assert_result_has_correction_fields(message)
+        assert_result_has_extra_fields(message)
         kafka_consumer.commit()
+    assert processed
