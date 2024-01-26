@@ -87,9 +87,5 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
 def is_first_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the first detection for each OID and FID has a nearby source"""
     corrected = is_corrected(detections)
-    detections_cpy = detections.copy()
-    detections_cpy["corrected"] = corrected
-    detections_cpy.sort_values(by="mjd", inplace=True)
-    detections_cpy["corrected"] = detections_cpy.groupby(
-        ["oid", "fid"])["corrected"].transform(lambda x: x.iloc[0])
-    return detections_cpy["corrected"]
+    idxmin = detections.groupby(["oid", "fid"])["mjd"].transform("idxmin")
+    return corrected[idxmin].set_axis(idxmin.index)

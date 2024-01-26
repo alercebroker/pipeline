@@ -94,7 +94,7 @@ def produce_messages(topic):
     for message in messages:
         for detection in message["detections"]:
             detection["oid"] = message["oid"]
-            detection["forced"] = random.choice([True, False])
+            detection["forced"] = False
             detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
             detection["sid"] = detection["tid"]
             if detection["sid"] == "ZTF":
