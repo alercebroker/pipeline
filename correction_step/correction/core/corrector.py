@@ -26,6 +26,7 @@ class Corrector:
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
+        self._detections = self._detections[~self._detections.forced]
         self._detections = self._detections.drop_duplicates(["candid", "oid"]).set_index("candid")
 
         self.__extras = [
