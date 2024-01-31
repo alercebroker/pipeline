@@ -1,9 +1,10 @@
-import pandas as pd
 import os
-from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor, ShortenPreprocessor
-from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 from joblib import Parallel, delayed
-from dataset import save_batch
 
 folder = 'data_231206'
 output_folder = folder+'_features'
@@ -15,6 +16,11 @@ astro_objects_filenames = [f for f in astro_objects_filenames if 'astro_objects_
 
 
 def extract_features(batch_id, ao_filename, shorten_n_days=None):
+    import pandas as pd
+    from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor, ShortenPreprocessor
+    from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+    from dataset import save_batch
+
     batch_astro_objects = pd.read_pickle(
         os.path.join(folder, ao_filename))
 
@@ -33,8 +39,8 @@ def extract_features(batch_id, ao_filename, shorten_n_days=None):
     save_batch(batch_astro_objects, filename)
 
 
-n_days = [16, 32, 64, 128, 256, None]
-# n_days = [None]
+# n_days = [16, 32, 64, 128, 256, None]
+n_days = [None]
 for shorten_n_days in n_days:
     tasks = []
     for ao_filename in astro_objects_filenames:
@@ -47,4 +53,4 @@ for shorten_n_days in n_days:
             )
         )
 
-    Parallel(n_jobs=14, verbose=11, backend="loky")(tasks)
+    Parallel(n_jobs=6, verbose=11, backend="loky")(tasks)

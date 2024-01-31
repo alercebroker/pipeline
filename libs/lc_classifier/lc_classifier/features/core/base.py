@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from tqdm import tqdm
 
 from lc_classifier.base import AstroObject
+# import psutil
 
 
 class FeatureExtractor(ABC):
@@ -28,6 +29,9 @@ class FeatureExtractorComposite(FeatureExtractor, ABC):
     def compute_features_single_object(self, astro_object: AstroObject):
         for extractor in self.extractors:
             extractor.compute_features_single_object(astro_object)
+
+            # Getting usage of virtual_memory in GB ( 4th field)
+            # print('RAM Used (MB):', psutil.virtual_memory()[3] / 1000000, extractor)
 
 
 class LightcurvePreprocessor(ABC):

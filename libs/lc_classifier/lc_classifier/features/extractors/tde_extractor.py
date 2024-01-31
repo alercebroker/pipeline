@@ -103,7 +103,7 @@ def fleet_model(t, a, w, m_0, t0):
     n_obs = len(t)
     t = pad(t, fill_value=0.0)
     func = fleet_model_jax(t, a, w, m_0, t0)
-    func = func[:n_obs]
+    func = np.array(func)[:n_obs]
     return func
 
 
@@ -163,7 +163,7 @@ class FleetExtractor(FeatureExtractor):
                 # noinspection PyTupleAssignmentBalance
                 parameters, _ = curve_fit(
                     fleet_model,
-                    band_observations['mjd'] - first_mjd,
+                    band_observations['mjd'].values - first_mjd,
                     y,
                     sigma=y_err,
                     p0=[0.6, -0.05, np.mean(y), 0],
@@ -171,7 +171,7 @@ class FleetExtractor(FeatureExtractor):
                 )
 
                 model_prediction = fleet_model(
-                    band_observations['mjd'] - first_mjd,
+                    band_observations['mjd'].values - first_mjd,
                     *parameters
                 )
 

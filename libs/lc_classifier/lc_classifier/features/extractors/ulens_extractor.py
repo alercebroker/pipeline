@@ -22,7 +22,7 @@ def ulens_model(t, u0, tE, fs, t0, mag_0):
     n_obs = len(t)
     t = pad(t, fill_value=0.0)
     func = ulens_model_jax(t, u0, tE, fs, t0, mag_0)
-    func = func[:n_obs]
+    func = np.array(func)[:n_obs]
     return func
 
 

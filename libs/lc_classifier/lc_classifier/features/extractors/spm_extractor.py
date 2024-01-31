@@ -207,7 +207,7 @@ class SNModel:
         band_mask = bands == best_available_band
         t0_guess = times[band_mask][np.argmax(fluxpsf[band_mask])]
         t0_bounds = [-50.0, np.max(times)]
-        t0_guess = np.clip(t0_guess - 10, t0_bounds[0] + tol, t0_bounds[1] - tol)
+        t0_guess = np.clip(t0_guess - 10.0, t0_bounds[0] + tol, t0_bounds[1] - tol)
         gamma_guess = 14.0
         beta_guess = 0.5
         trise_guess = 7.0
@@ -243,7 +243,7 @@ class SNModel:
                   beta_guess, trise_guess, tfall_guess]
 
             initial_guess.append(p0)
-        initial_guess = np.concatenate(initial_guess, axis=0).astype(np.float64)
+        initial_guess = np.concatenate(initial_guess, axis=0).astype(np.float32)
         band_mapper = dict(zip('ugrizY', range(6)))
 
         # debugging
@@ -275,7 +275,7 @@ class SNModel:
 
         res = minimize(
             objective_function_jax,
-            initial_guess.astype(np.float32),
+            initial_guess,
             jac=grad_objective_function_jax,
             args=(
                 pad_times,
@@ -344,7 +344,7 @@ class SNModel:
 
 def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     original_length = len(x_array)
-    pad_length = 25 - (original_length % 25)
+    pad_length = 250 - (original_length % 250)
     pad_array = np.array([fill_value]*pad_length, dtype=np.float32)
     return np.concatenate([x_array, pad_array])
 
