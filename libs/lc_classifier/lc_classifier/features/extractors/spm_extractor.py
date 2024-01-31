@@ -243,7 +243,7 @@ class SNModel:
                   beta_guess, trise_guess, tfall_guess]
 
             initial_guess.append(p0)
-        initial_guess = np.concatenate(initial_guess, axis=0).astype(np.float32)
+        initial_guess = np.concatenate(initial_guess, axis=0)
         band_mapper = dict(zip('ugrizY', range(6)))
 
         # debugging
@@ -275,7 +275,7 @@ class SNModel:
 
         res = minimize(
             objective_function_jax,
-            initial_guess,
+            initial_guess.astype(np.float64),
             jac=grad_objective_function_jax,
             args=(
                 pad_times,
