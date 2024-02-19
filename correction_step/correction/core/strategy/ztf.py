@@ -65,8 +65,7 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
 
-    aux4 = (aux2 * detections["e_mag"]) ** 2 - \
-        (aux1 * detections["sigmagnr"].astype(float)) ** 2
+    aux4 = (aux2 * detections["e_mag"]) ** 2 - (aux1 * detections["sigmagnr"].astype(float)) ** 2
     with warnings.catch_warnings():
         # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
