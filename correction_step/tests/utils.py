@@ -1,11 +1,13 @@
 import pickle
+from random import random
 
 
 def ztf_extra_fields(**kwargs):
     extra_fields = {
         "magnr": 10.0,
         "sigmagnr": 1.0,
-        "distnr": 1.0,
+        # make some detections non correctible
+        "distnr": random() + 1 if random() < 0.5 else random(),
         "distpsnr1": 1.0,
         "sgscore1": 0.5,
         "chinr": 1,
@@ -52,7 +54,7 @@ def ztf_alert(**kwargs):
         "mjd": 1.0,
         "has_stamp": True,
         "forced": False,
-        "extra_fields": ztf_extra_fields(),
+        "extra_fields":  kwargs["extra_fields"] if kwargs.get("extra_fields", None) else ztf_extra_fields(),
     }
     alert.update(kwargs)
     return alert

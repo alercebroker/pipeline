@@ -94,8 +94,15 @@ def produce_messages(topic):
     for message in messages:
         for detection in message["detections"]:
             detection["oid"] = message["oid"]
-            detection["forced"] = False
+            detection["forced"] = random.choice([True, False])
             detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
+            detection["sid"] = detection["tid"]
+            if detection["sid"] == "ZTF":
+                detection["fid"] = random.choice(["g", "r", "i"])
+            if detection["sid"] == "ATLAS":
+                detection["fid"] = random.choice(["o", "c"])
+            if detection["sid"] == "LSST":
+                detection["fid"] = random.choice(["u", "g", "r", "i", "z", "y"])
             if str(detection["tid"]).lower() == "ztf":
                 detection["extra_fields"] = ztf_extra_fields()
             elif str(detection["tid"]).lower() == "lsst":
