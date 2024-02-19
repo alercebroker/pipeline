@@ -39,7 +39,10 @@ message4produce = [
         "candid": "a",
         "meanra": 1,
         "meandec": 1,
-        "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, forced=True, new=False)],
+        "detections": [
+            ztf_alert(candid="a", new=True, extra_fields=messages[0]["detections"][0]["extra_fields"]),
+            ztf_alert(candid="b", has_stamp=False, forced=True, new=False, extra_fields=messages[0]["detections"][1]["extra_fields"])
+        ],
         "non_detections": [],
     },
     {
@@ -48,8 +51,8 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(oid="OID2", candid="c", new=True),
-            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
+            ztf_alert(oid="OID2", candid="c", new=True, extra_fields=messages[1]["detections"][0]["extra_fields"]),
+            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, extra_fields=messages[1]["detections"][1]["extra_fields"]),
         ],
         "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
@@ -58,7 +61,9 @@ message4produce = [
         "candid": "e",
         "meanra": 1,
         "meandec": 1,
-        "detections": [atlas_alert(oid="OID3", candid="e", new=True)],
+        "detections": [
+            atlas_alert(oid="OID3", candid="e", new=True, extra_fields=messages[2]["detections"][0]["extra_fields"])
+        ],
         "non_detections": [],
     },
     {
@@ -66,7 +71,9 @@ message4produce = [
         "candid": "hehe",
         "meanra": 1,
         "meandec": 1,
-        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True)],
+        "detections": [
+            elasticc_alert(oid="OID4", candid="hehe", new=True, extra_fields=messages[3]["detections"][0]["extra_fields"])
+        ],
         "non_detections": [],
     },
 ]
@@ -74,12 +81,12 @@ message4produce = [
 message4execute = {
     "candids": {"OID1": "a", "OID2": "c", "OID3": "e", "OID4": "hehe"},
     "detections": [
-        ztf_alert(oid="OID1", candid="a", new=True),
-        ztf_alert(oid="OID1", candid="b", has_stamp=False, new=False, forced=True),
-        ztf_alert(oid="OID2", candid="c", new=True),
-        ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
-        atlas_alert(oid="OID3", candid="e", new=True),
-        elasticc_alert(oid="OID4", candid="hehe", new=True),
+        ztf_alert(oid="OID1", candid="a", new=True, extra_fields=messages[0]["detections"][0]["extra_fields"]),
+        ztf_alert(oid="OID1", candid="b", has_stamp=False, new=False, forced=True, extra_fields=messages[0]["detections"][1]["extra_fields"]),
+        ztf_alert(oid="OID2", candid="c", new=True, extra_fields=messages[1]["detections"][0]["extra_fields"]),
+        ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, extra_fields=messages[1]["detections"][1]["extra_fields"]),
+        atlas_alert(oid="OID3", candid="e", new=True, extra_fields=messages[2]["detections"][0]["extra_fields"]),
+        elasticc_alert(oid="OID4", candid="hehe", new=True, extra_fields=messages[3]["detections"][0]["extra_fields"]),
     ],
     "non_detections": [
         non_detection(oid="OID2", mjd=1, fid=1),
@@ -95,6 +102,7 @@ message4execute = {
 
 def test_pre_execute_formats_message_with_all_detections_and_non_detections():
     formatted = CorrectionStep.pre_execute(messages)
+    print(formatted)
     assert "detections" in formatted
     assert formatted["detections"] == message4execute["detections"]
     assert "non_detections" in formatted
