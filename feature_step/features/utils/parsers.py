@@ -19,6 +19,8 @@ def parse_scribe_payload(features: pd.DataFrame, extractor_class):
         return _parse_scribe_payload_ztf(features, extractor_class)
     if extractor_class.NAME == "elasticc_lc_features":
         return _parse_scribe_payload_elasticc(features, extractor_class)
+    if extractor_class.NAME == "atlas_lc_features":
+        return _parse_scribe_payload_atlas()
     else:
         raise Exception(
             'Cannot parse scribe payload for extractor "{}"'.format(
@@ -84,6 +86,10 @@ def _parse_scribe_payload_ztf(features, extractor_class):
     return commands_list
 
 
+def _parse_scribe_payload_atlas():
+    return []
+
+
 def parse_output(
     features: pd.DataFrame,
     alert_data: list[dict],
@@ -110,6 +116,8 @@ def parse_output(
         return _parse_output_elasticc(
             features, alert_data, extractor_class, candids
         )
+    elif extractor_class.NAME == "atlas_lc_features":
+        return _parse_output_atlas()
     else:
         raise Exception(
             'Cannot parse output for extractor "{}"'.format(
@@ -179,3 +187,7 @@ def _parse_output_ztf(features, alert_data, extractor_class, candids):
         output_messages.append(out_message)
 
     return output_messages
+
+
+def _parse_output_atlas():
+    return []

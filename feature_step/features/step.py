@@ -8,6 +8,7 @@ from apf.consumers import KafkaConsumer
 
 from features.core.elasticc import ELAsTiCCFeatureExtractor
 from features.core.ztf import ZTFFeatureExtractor
+from features.core.handlers.detections import NoDetectionsException
 from features.utils.metrics import get_sid
 from features.utils.parsers import parse_output, parse_scribe_payload
 
@@ -72,9 +73,13 @@ class FeaturesComputer(GenericStep):
                 {"oid": message["oid"], **(message.get("xmatches", {}) or {})}
             )
 
-        features_extractor = self.features_extractor(
-            detections, non_detections, xmatch
-        )
+        try:
+            features_extractor = self.features_extractor(
+                detections, non_detections, xmatch
+            )
+        except NoDetectionsException:
+            return []
+
         features = features_extractor.generate_features()
         if len(features) > 0:
             self.produce_to_scribe(features)

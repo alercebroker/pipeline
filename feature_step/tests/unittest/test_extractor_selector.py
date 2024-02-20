@@ -25,6 +25,15 @@ class ExtractorSelectorTestCase(unittest.TestCase):
         selected_extractor = selector(input_str)
         self.assertEqual(selected_extractor.NAME, "elasticc_lc_features")
 
+    def test_get_elasticc_extractor(self):
+        input_str = "atlas"
+        selected_extractor = selector(input_str)
+        self.assertEqual(selected_extractor.NAME, "atlas_lc_features")
+
+        input_str = "ATLAS"
+        selected_extractor = selector(input_str)
+        self.assertEqual(selected_extractor.NAME, "atlas_lc_features")
+
     def test_extractor_not_found(self):
         input_str = "dummy"
         with self.assertRaises(ExtractorNotFoundException):

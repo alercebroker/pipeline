@@ -6,6 +6,10 @@ from ..utils import functions
 from ._base import BaseHandler
 
 
+class NoDetectionsException(Exception):
+    pass
+
+
 class DetectionsHandler(BaseHandler):
     """Class for handling detections.
 
@@ -37,6 +41,19 @@ class DetectionsHandler(BaseHandler):
         "e_mag_ml",
         "forced",
     ]
+
+    def __init__(
+        self,
+        alerts: list[dict],
+        *,
+        surveys: str | tuple[str] = (),
+        bands: str | tuple[str] = (),
+        **kwargs,
+    ):
+        if len(alerts) == 0:
+            raise NoDetectionsException()
+
+        super().__init__(alerts, surveys=surveys, bands=bands, **kwargs)
 
     def _post_process(self, **kwargs):
         """Handles legacy alerts (renames old field names to the new conventions) and sets the
