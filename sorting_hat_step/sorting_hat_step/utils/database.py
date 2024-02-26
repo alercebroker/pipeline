@@ -19,9 +19,9 @@ def oid_query(db: MongoConnection, oid: list) -> Union[str, None]:
 
     :return: existing aid if exists else is None
     """
-    found = db.database["object"].find_one({"_id": {"$in": oid}}, {"_id": 1})
+    found = db.database["object"].find_one({"_id": {"$in": oid}}, {"aid": 1})
     if found:
-        return found["_id"]
+        return found["aid"]
     return None
 
 
@@ -51,10 +51,11 @@ def conesearch_query(
                 },
             },
         },
-        {"_id": 1},
+        {"aid": 1},
     )
     if found:
-        return found["_id"]
+        print(found)
+        return found["aid"]
     return None
 
 

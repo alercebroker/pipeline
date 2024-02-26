@@ -14,11 +14,11 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_oid_query(self):
         # Mock a response with elements in database
-        self.mock_db.database["object"].find_one.return_value = {"_id": 1}
+        self.mock_db.database["object"].find_one.return_value = {"_id": 1, "aid": 1}
         aid = database.oid_query(self.mock_db, ["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_db.database["object"].find_one.assert_called_with(
-            {"_id": {"$in": ["x", "y", "z"]}}, {"_id": 1}
+            {"_id": {"$in": ["x", "y", "z"]}}, {"aid": 1}
         )
 
     def test_oid_query_with_no_elements(self):
@@ -31,11 +31,11 @@ class DatabaseTestCase(unittest.TestCase):
             "field1": 1,
             "field2": 2,
         }
-        with self.assertRaisesRegex(KeyError, "_id"):
+        with self.assertRaisesRegex(KeyError, "aid"):
             database.oid_query(self.mock_db, ["x", "y", "z"])
 
     def test_conesearch_query(self):
-        self.mock_db.database["object"].find_one.return_value = {"_id": 1}
+        self.mock_db.database["object"].find_one.return_value = {"_id": 1, "aid": 1}
         aid = database.conesearch_query(
             self.mock_db, 180, 0, math.degrees(3600)
         )
@@ -49,7 +49,7 @@ class DatabaseTestCase(unittest.TestCase):
                     },
                 },
             },
-            {"_id": 1},  # only return alerce_id
+            {"aid": 1},
         )
 
     def test_conesearch_query_without_results(self):
