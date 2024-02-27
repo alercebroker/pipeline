@@ -24,7 +24,7 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
     * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
     """
-    detections_without_index = detections.reset_index()
+    detections_without_index = detections[["isdiffpos", "distnr", "oid", "fid", "mjd"]].reset_index()
     negative = detections_without_index["isdiffpos"] == -1
     corrected = is_corrected(detections_without_index)
     first = is_first_corrected(detections_without_index, corrected)
