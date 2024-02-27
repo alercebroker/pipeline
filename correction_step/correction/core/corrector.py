@@ -31,14 +31,12 @@ class Corrector:
             detections, exclude={"extra_fields"})
         self._detections = self._detections.drop_duplicates(
             ["candid", "oid"]).set_index("candid")
-
         self.__extras = [
             {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]} for alert in detections
         ]
         extras = pd.DataFrame(
             self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
         extras = extras.drop_duplicates(["candid", "oid"]).set_index("candid")
-
         self._detections = self._detections.join(
             extras, how="left", rsuffix="_extra")
         self._detections = self._detections.drop("oid_extra", axis=1)

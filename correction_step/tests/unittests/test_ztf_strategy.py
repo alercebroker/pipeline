@@ -30,8 +30,8 @@ def test_ztf_strategy_first_detection_with_close_source_splits_by_oid_and_fid(mo
         },
         index="candid",
     )
-
-    first_corrected = ztf.is_first_corrected(detections)
+    corrected = ztf.is_corrected(detections)
+    first_corrected = ztf.is_first_corrected(detections, corrected)
 
     assert first_corrected[first_corrected.index.str.startswith("fy")].all()
     assert ~first_corrected[first_corrected.index.str.startswith("fn")].all()
