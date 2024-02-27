@@ -110,10 +110,9 @@ class CorrectionStep(GenericStep):
 
     @classmethod
     def execute(cls, message: dict) -> dict:
-        message_copy = deepcopy(message)
-        corrector = Corrector(message_copy["detections"])
+        corrector = Corrector(message["detections"])
         detections = corrector.corrected_as_records()
-        non_detections = pd.DataFrame(message_copy["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
         coords = corrector.coordinates_as_records()
         return {
             "detections": detections,
