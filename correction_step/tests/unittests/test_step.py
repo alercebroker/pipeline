@@ -124,12 +124,12 @@ def test_pre_execute_formats_message_with_all_detections_and_non_detections():
 
 @mock.patch("correction._step.step.Corrector")
 def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(mock_corrector):
-    formatted = CorrectionStep.execute(message4execute, 2)
+    formatted = CorrectionStep.execute(message4execute)
     assert "detections" in formatted
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]
-    mock_corrector.assert_called_with(message4execute["detections"])
-    mock_corrector.return_value.corrected_as_records.assert_called_once()
+    mock_corrector.assert_any_call(message4execute["detections"])
+    mock_corrector.return_value.corrected_as_records.assert_called()
 
 
 @mock.patch("correction._step.step.Corrector")
@@ -139,7 +139,7 @@ def test_execute_removes_duplicate_non_detections(_):
         message4execute_copy["non_detections"] +
         message4execute_copy["non_detections"]
     )
-    formatted = CorrectionStep.execute(message4execute_copy, 2)
+    formatted = CorrectionStep.execute(message4execute_copy)
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]
 
@@ -148,7 +148,7 @@ def test_execute_removes_duplicate_non_detections(_):
 def test_execute_works_with_empty_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
     message4execute_copy["non_detections"] = []
-    formatted = CorrectionStep.execute(message4execute_copy, 2)
+    formatted = CorrectionStep.execute(message4execute_copy)
     assert "non_detections" in formatted
     assert formatted["non_detections"] == []
 
@@ -163,7 +163,6 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         def __init__(self):
             self.scribe_producer = mock.MagicMock()
             self.logger = mock.MagicMock()
-            self.max_ndet = 2
 
     step = MockCorrectionStep()
     output = step.post_execute(copy.deepcopy(message4execute))

@@ -36,6 +36,6 @@ jobs:
     with:
       ref: ${{ github.ref }}
       stage: staging
-      extra-args: correction_step --dry-run
+      extra-args: correction_step --build-args=without:dev,test --dry-run
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"

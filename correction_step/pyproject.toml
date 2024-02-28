@@ -7,13 +7,14 @@ readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.10,<4.0"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
 apf_base = { path = "../libs/apf", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
+memray = "^1.11.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -22,6 +23,7 @@ pytest-docker = "^1.0.1"
 
 [tool.poetry.scripts]
 step = { callable = "correction._step:run_step" }
+profile = { callable = "correction._step:memray_profile" }
 
 [tool.black]
 line-length = 120

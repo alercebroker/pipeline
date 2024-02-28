@@ -118,13 +118,10 @@ class Corrector:
         """
 
         def find_extra_fields(oid, candid):
-            for extra in self.__extras:
+            for i, extra in enumerate(self.__extras):
                 if extra["oid"] == oid and extra["candid"] == candid:
-                    result = {**extra}
-                    result.pop("oid")
-                    result.pop("candid")
-                    return result
-            return None
+                    return self.__extras.pop(i)
+            return {}
 
         self.logger.debug(f"Correcting {len(self._detections)} detections...")
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
@@ -135,8 +132,11 @@ class Corrector:
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug(f"Corrected {corrected['corrected'].sum()}")
         corrected = corrected.reset_index().to_dict("records")
-
-        return [{**record, "extra_fields": find_extra_fields(record["oid"], record["candid"])} for record in corrected]
+        for record in corrected:
+            record["extra_fields"] = find_extra_fields(record["oid"], record["candid"])
+            record["extra_fields"].pop("candid", None)
+            record["extra_fields"].pop("oid", None)
+        return corrected
 
     @staticmethod
     def weighted_mean(values: pd.Series, sigmas: pd.Series) -> float:

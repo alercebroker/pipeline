@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       stage: production
-      extra-args: correction_step
+      extra-args: correction_step --build-args=without:dev,test
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
