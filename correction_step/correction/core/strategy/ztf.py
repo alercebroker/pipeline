@@ -52,7 +52,6 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
     """
     near_ps1 = detections["distpsnr1"] < DISTANCE_THRESHOLD
     stellar_ps1 = detections["sgscore1"] > SCORE_THRESHOLD
-
     near_ztf = is_corrected(detections)
     sharpnr_in_range = (SHARPNR_MIN < detections["sharpnr"]) < SHARPNR_MAX
     stellar_ztf = (detections["chinr"] < CHINR_THRESHOLD) & sharpnr_in_range

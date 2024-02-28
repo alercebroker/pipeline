@@ -1,5 +1,5 @@
 import pickle
-from random import random
+from random import random, choice
 
 
 def ztf_extra_fields(**kwargs):
@@ -53,7 +53,7 @@ def ztf_alert(**kwargs):
         "fid": "g",
         "mjd": 1.0,
         "has_stamp": True,
-        "forced": False,
+        "forced": choice([True, False]),
         "extra_fields":  kwargs["extra_fields"] if kwargs.get("extra_fields", None) else ztf_extra_fields(),
     }
     alert.update(kwargs)

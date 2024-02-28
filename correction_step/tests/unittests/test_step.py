@@ -12,23 +12,25 @@ messages = [
     {
         "oid": "OID1",
         "candid": "a",
-        "detections": [ztf_alert(candid="a", new=True), ztf_alert(candid="b", has_stamp=False, new=False, forced=True)],
+        "detections": [ztf_alert(candid="a", new=True, forced=False), ztf_alert(candid="b", has_stamp=False, new=False, forced=True)],
         "non_detections": [],
     },
     {
         "oid": "OID2",
         "candid": "c",
         "detections": [
-            ztf_alert(oid="OID2", candid="c", new=True),
-            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True),
+            ztf_alert(oid="OID2", candid="c", new=True, forced=False),
+            ztf_alert(oid="OID2", candid="d", has_stamp=False,
+                      new=True, forced=False),
         ],
         "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
-    {"oid": "OID3", "candid": "e", "detections": [atlas_alert(oid="OID3", candid="e", new=True)], "non_detections": []},
+    {"oid": "OID3", "candid": "e", "detections": [atlas_alert(
+        oid="OID3", candid="e", new=True)], "non_detections": []},
     {
         "oid": "OID4",
         "candid": "hehe",
-        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True)],
+        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True, forced=False)],
         "non_detections": [],
     },
 ]
@@ -40,8 +42,10 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(candid="a", new=True, extra_fields=messages[0]["detections"][0]["extra_fields"]),
-            ztf_alert(candid="b", has_stamp=False, forced=True, new=False, extra_fields=messages[0]["detections"][1]["extra_fields"])
+            ztf_alert(candid="a", new=True, forced=False,
+                      extra_fields=messages[0]["detections"][0]["extra_fields"]),
+            ztf_alert(candid="b", has_stamp=False, forced=True, new=False,
+                      extra_fields=messages[0]["detections"][1]["extra_fields"])
         ],
         "non_detections": [],
     },
@@ -51,8 +55,10 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(oid="OID2", candid="c", new=True, extra_fields=messages[1]["detections"][0]["extra_fields"]),
-            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, extra_fields=messages[1]["detections"][1]["extra_fields"]),
+            ztf_alert(oid="OID2", candid="c", new=True, forced=False,
+                      extra_fields=messages[1]["detections"][0]["extra_fields"]),
+            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, forced=False,
+                      extra_fields=messages[1]["detections"][1]["extra_fields"]),
         ],
         "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
@@ -62,7 +68,8 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            atlas_alert(oid="OID3", candid="e", new=True, extra_fields=messages[2]["detections"][0]["extra_fields"])
+            atlas_alert(oid="OID3", candid="e", new=True,
+                        extra_fields=messages[2]["detections"][0]["extra_fields"])
         ],
         "non_detections": [],
     },
@@ -72,7 +79,8 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            elasticc_alert(oid="OID4", candid="hehe", new=True, extra_fields=messages[3]["detections"][0]["extra_fields"])
+            elasticc_alert(oid="OID4", candid="hehe", new=True, forced=False,
+                           extra_fields=messages[3]["detections"][0]["extra_fields"])
         ],
         "non_detections": [],
     },
@@ -81,12 +89,18 @@ message4produce = [
 message4execute = {
     "candids": {"OID1": "a", "OID2": "c", "OID3": "e", "OID4": "hehe"},
     "detections": [
-        ztf_alert(oid="OID1", candid="a", new=True, extra_fields=messages[0]["detections"][0]["extra_fields"]),
-        ztf_alert(oid="OID1", candid="b", has_stamp=False, new=False, forced=True, extra_fields=messages[0]["detections"][1]["extra_fields"]),
-        ztf_alert(oid="OID2", candid="c", new=True, extra_fields=messages[1]["detections"][0]["extra_fields"]),
-        ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, extra_fields=messages[1]["detections"][1]["extra_fields"]),
-        atlas_alert(oid="OID3", candid="e", new=True, extra_fields=messages[2]["detections"][0]["extra_fields"]),
-        elasticc_alert(oid="OID4", candid="hehe", new=True, extra_fields=messages[3]["detections"][0]["extra_fields"]),
+        ztf_alert(oid="OID1", candid="a", new=True, forced=False,
+                  extra_fields=messages[0]["detections"][0]["extra_fields"]),
+        ztf_alert(oid="OID1", candid="b", has_stamp=False, new=False, forced=True,
+                  extra_fields=messages[0]["detections"][1]["extra_fields"]),
+        ztf_alert(oid="OID2", candid="c", new=True, forced=False,
+                  extra_fields=messages[1]["detections"][0]["extra_fields"]),
+        ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, forced=False,
+                  extra_fields=messages[1]["detections"][1]["extra_fields"]),
+        atlas_alert(oid="OID3", candid="e", new=True,
+                    extra_fields=messages[2]["detections"][0]["extra_fields"]),
+        elasticc_alert(oid="OID4", candid="hehe", new=True, forced=False,
+                       extra_fields=messages[3]["detections"][0]["extra_fields"]),
     ],
     "non_detections": [
         non_detection(oid="OID2", mjd=1, fid=1),
@@ -102,7 +116,6 @@ message4execute = {
 
 def test_pre_execute_formats_message_with_all_detections_and_non_detections():
     formatted = CorrectionStep.pre_execute(messages)
-    print(formatted)
     assert "detections" in formatted
     assert formatted["detections"] == message4execute["detections"]
     assert "non_detections" in formatted
@@ -111,7 +124,7 @@ def test_pre_execute_formats_message_with_all_detections_and_non_detections():
 
 @mock.patch("correction._step.step.Corrector")
 def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(mock_corrector):
-    formatted = CorrectionStep.execute(message4execute)
+    formatted = CorrectionStep.execute(message4execute, 2)
     assert "detections" in formatted
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]
@@ -123,9 +136,10 @@ def test_execute_calls_corrector_for_detection_records_and_keeps_non_detections(
 def test_execute_removes_duplicate_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
     message4execute_copy["non_detections"] = (
-        message4execute_copy["non_detections"] + message4execute_copy["non_detections"]
+        message4execute_copy["non_detections"] +
+        message4execute_copy["non_detections"]
     )
-    formatted = CorrectionStep.execute(message4execute_copy)
+    formatted = CorrectionStep.execute(message4execute_copy, 2)
     assert "non_detections" in formatted
     assert formatted["non_detections"] == message4execute["non_detections"]
 
@@ -134,7 +148,7 @@ def test_execute_removes_duplicate_non_detections(_):
 def test_execute_works_with_empty_non_detections(_):
     message4execute_copy = deepcopy(message4execute)
     message4execute_copy["non_detections"] = []
-    formatted = CorrectionStep.execute(message4execute_copy)
+    formatted = CorrectionStep.execute(message4execute_copy, 2)
     assert "non_detections" in formatted
     assert formatted["non_detections"] == []
 
@@ -142,12 +156,14 @@ def test_execute_works_with_empty_non_detections(_):
 def test_post_execute_calls_scribe_producer_for_each_detection():
     # To check the "new" flag is removed
     message4execute_copy = copy.deepcopy(message4execute)
-    message4execute_copy["detections"] = [{k: v for k, v in det.items()} for det in message4execute_copy["detections"]]
+    message4execute_copy["detections"] = [
+        {k: v for k, v in det.items()} for det in message4execute_copy["detections"]]
 
     class MockCorrectionStep(CorrectionStep):
         def __init__(self):
             self.scribe_producer = mock.MagicMock()
             self.logger = mock.MagicMock()
+            self.max_ndet = 2
 
     step = MockCorrectionStep()
     output = step.post_execute(copy.deepcopy(message4execute))
@@ -163,7 +179,8 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         }
 
         if "diaObject" in det["extra_fields"]:
-            det["extra_fields"]["diaObject"] = pickle.loads(det["extra_fields"]["diaObject"])
+            det["extra_fields"]["diaObject"] = pickle.loads(
+                det["extra_fields"]["diaObject"])
 
         data = {
             "collection": "detection" if not det["forced"] else "forced_photometry",
@@ -175,13 +192,15 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         if count == len(message4execute_copy["detections"]):
             flush = True
 
-        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
+        step.scribe_producer.produce.assert_any_call(
+            {"payload": json.dumps(data)}, flush=flush)
 
 
 def test_pre_produce_unpacks_detections_and_non_detections_by_oid():
     # Input with the "new" flag is removed
     message4execute_copy = copy.deepcopy(message4execute)
-    message4execute_copy["detections"] = [{k: v for k, v in det.items()} for det in message4execute_copy["detections"]]
+    message4execute_copy["detections"] = [
+        {k: v for k, v in det.items()} for det in message4execute_copy["detections"]]
 
     formatted = CorrectionStep.pre_produce(message4execute_copy)
     assert formatted == message4produce
