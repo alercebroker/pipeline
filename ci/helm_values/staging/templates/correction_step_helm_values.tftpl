@@ -39,7 +39,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["lightcurve"]
-    consume.messages: 100
+    consume.messages: 50
     consume.timeout: 10
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
