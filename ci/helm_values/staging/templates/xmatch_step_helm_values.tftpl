@@ -42,6 +42,7 @@ configYaml:
       bootstrap.servers: ${kafka_server}
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
+      message.max.bytes: 67108864
   SCRIBE_PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaProducer"
     PARAMS:
