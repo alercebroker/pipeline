@@ -10,7 +10,7 @@ affinity:
 
 autoscaling:
   enabled: true
-  maxReplicas: 4
+  maxReplicas: 32
   minReplicas: 1
   targetCPUUtilizationPercentage: 80
 
@@ -23,8 +23,8 @@ namespace: xmatch-step
 
 resources:
   requests:
-    cpu: 500m
-    memory: 320M
+    cpu: 300m
+    memory: 1500M
 
 configYaml:
   CONSUMER_CONFIG:
@@ -35,7 +35,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     consume.timeout: 10
-    consume.messages: 1000
+    consume.messages: 250
   PRODUCER_CONFIG:
     CLASS: "apf.producers.KafkaSchemalessProducer"
     PARAMS:

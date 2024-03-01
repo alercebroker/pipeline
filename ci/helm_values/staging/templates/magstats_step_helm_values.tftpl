@@ -17,8 +17,8 @@ namespace: magstats-step
 
 resources:
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 300m
+    memory: 500Mi
 
 envVariables:
   - name: CONFIG_FROM_YAML
@@ -39,7 +39,7 @@ configYaml:
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["correction"]
-    consume.messages: 300
+    consume.messages: 100
     consume.timeout: 20
   METRICS_CONFIG:
     CLASS: "apf.metrics.KafkaMetricsProducer"
