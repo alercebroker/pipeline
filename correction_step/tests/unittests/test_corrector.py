@@ -16,12 +16,12 @@ ALL_NEW_COLS = MAG_CORR_COLS + ["dubious", "stellar", "corrected"]
 def test_corrector_removes_duplicate_candids():
     detections_duplicate = [ztf_alert(candid="c"), atlas_alert(candid="c")]
     corrector = Corrector(detections_duplicate)
-    assert (corrector._detections.index == ["c"]).all()
+    assert (corrector._detections.index == ["c_OID1"]).all()
 
 
 def test_mask_survey_returns_only_alerts_from_requested_survey():
     corrector = Corrector(detections)
-    expected_ztf = pd.Series([True, False], index=["c1", "c2"])
+    expected_ztf = pd.Series([True, False], index=["c1_oid_ztf", "c2_oid_atlas"])
     assert (corrector._survey_mask("ZtF") == expected_ztf).all()
     assert (corrector._survey_mask("ATlas") == ~expected_ztf).all()
 
@@ -37,7 +37,7 @@ def test_apply_all_calls_requested_function_to_masked_detections_for_each_submod
     corrector = Corrector(detections)
     corrector._apply_all_surveys("function")
     (called,) = mock_strategy.ztf.function.call_args.args
-    assert_frame_equal(called, corrector._detections.loc[["c1"]])
+    assert_frame_equal(called, corrector._detections.loc[["c1_oid_ztf"]])
     mock_strategy.dummy.function.assert_not_called()
 
 
@@ -49,7 +49,7 @@ def test_apply_all_returns_a_series_with_default_value_and_dtype_if_no_columns_a
     output = corrector._apply_all_surveys("function", default=-1, dtype=float)
     assert isinstance(output, pd.Series)
     assert output.dtype == float
-    assert (output.index == ["c1", "c2"]).all()
+    assert (output.index == ["c1_oid_ztf", "c2_oid_atlas"]).all()
     assert (output == -1).all()
 
 
@@ -60,7 +60,7 @@ def test_apply_all_returns_a_df_with_default_value_and_dtype_if_columns_are_give
     assert isinstance(output, pd.DataFrame)
     assert (output.dtypes == float).all()
     assert (output.columns == ["a", "b"]).all()
-    assert (output.index == ["c1", "c2"]).all()
+    assert (output.index == ["c1_oid_ztf", "c2_oid_atlas"]).all()
     assert (output == -1).all().all()
 
 
@@ -74,7 +74,7 @@ def test_corrected_calls_apply_all_with_function_is_corrected():
 def test_corrected_is_false_for_surveys_without_strategy():
     corrector = Corrector(detections)
     corrected = [x["extra_fields"].get("distnr", 99) < 1.4 for x in detections]
-    assert (corrector.corrected == pd.Series(corrected, index=["c1", "c2"])).all()
+    assert (corrector.corrected == pd.Series(corrected, index=["c1_oid_ztf", "c2_oid_atlas"])).all()
 
 
 def test_dubious_calls_apply_all_with_function_is_dubious():
@@ -86,7 +86,7 @@ def test_dubious_calls_apply_all_with_function_is_dubious():
 
 def test_dubious_is_false_for_surveys_without_strategy():
     corrector = Corrector(detections)
-    assert (corrector.dubious == pd.Series([False, False], index=["c1", "c2"])).all()
+    assert (corrector.dubious == pd.Series([False, False], index=["c1_oid_ztf", "c2_oid_atlas"])).all()
 
 
 def test_stellar_calls_apply_all_with_function_is_stellar():
@@ -98,9 +98,9 @@ def test_stellar_calls_apply_all_with_function_is_stellar():
 
 @mock.patch("correction.core.corrector.strategy.ztf.is_corrected")
 def test_stellar_is_false_for_surveys_without_strategy(is_corrected):
-    is_corrected.return_value = pd.Series([True], index=["c1"])
+    is_corrected.return_value = pd.Series([True], index=["c1_oid_ztf"])
     corrector = Corrector(detections)
-    assert (corrector.stellar == pd.Series([True, False], index=["c1", "c2"])).all()
+    assert (corrector.stellar == pd.Series([True, False], index=["c1_oid_ztf", "c2_oid_atlas"])).all()
 
 
 def test_corrected_magnitudes_calls_apply_all_with_function_correct():
@@ -113,17 +113,17 @@ def test_corrected_magnitudes_calls_apply_all_with_function_correct():
 def test_corrected_magnitudes_is_nan_for_surveys_without_strategy():
     corrector = Corrector(detections)
     if detections[0]["extra_fields"].get("distnr", 99) < 1.4:
-        assert ~corrector.corrected_magnitudes().loc["c1"].isna().any()
+        assert ~corrector.corrected_magnitudes().loc["c1_oid_ztf"].isna().any()
     else:
-        assert corrector.corrected_magnitudes().loc["c1"].isna().all()
-    assert corrector.corrected_magnitudes().loc["c2"].isna().all()
+        assert corrector.corrected_magnitudes().loc["c1_oid_ztf"].isna().all()
+    assert corrector.corrected_magnitudes().loc["c2_oid_atlas"].isna().all()
 
 
 def test_corrected_magnitudes_sets_non_corrected_detections_to_nan():
     altered_detections = deepcopy(detections)
     altered_detections[0]["extra_fields"]["distnr"] = 2
     corrector = Corrector(altered_detections)
-    assert corrector.corrected_magnitudes().loc["c1"][MAG_CORR_COLS].isna().all()
+    assert corrector.corrected_magnitudes().loc["c1_oid_ztf"][MAG_CORR_COLS].isna().all()
 
 
 def test_corrected_as_records_sets_infinite_values_to_zero_magnitude():

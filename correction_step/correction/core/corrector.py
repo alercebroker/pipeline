@@ -29,8 +29,9 @@ class Corrector:
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
         self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
-        self._detections = self._detections.drop_duplicates(["candid", "oid"]).set_index(
-            self._detections["candid"] + "_" + self._detections["oid"]
+        self._detections = self._detections.drop_duplicates(["candid", "oid"])
+        self._detections = self._detections.set_index(
+            self._detections["candid"].astype(str) + "_" + self._detections["oid"]
         )
         self.__extras = [
             {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]}
@@ -38,10 +39,11 @@ class Corrector:
         ]
         extras = pd.DataFrame(self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
         extras = extras.drop_duplicates(["candid", "oid"]).set_index(
-            self._detections["candid"] + "_" + self._detections["oid"]
+            self._detections["candid"].astype(str) + "_" + self._detections["oid"]
         )
         self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
         self._detections = self._detections.drop("oid_extra", axis=1)
+        self._detections = self._detections.drop("candid_extra", axis=1)
 
     def _survey_mask(self, survey: str):
         """Creates boolean mask of detections
@@ -139,7 +141,7 @@ class Corrector:
         )
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug("Corrected %s", corrected["corrected"].sum())
-        corrected = corrected.reset_index().to_dict("records")
+        corrected = corrected.reset_index(drop=True).to_dict("records")
         for record in corrected:
             record["extra_fields"] = find_extra_fields(record["oid"], record["candid"])
             record["extra_fields"].pop("candid", None)
