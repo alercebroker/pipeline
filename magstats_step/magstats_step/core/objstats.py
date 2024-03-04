@@ -1,4 +1,4 @@
-from typing import Union, Literal, List
+from typing import Union, Literal
 
 import numpy as np
 import pandas as pd
@@ -8,9 +8,6 @@ from ._base import BaseStatistics
 
 class ObjectStatistics(BaseStatistics):
     _JOIN = "oid"
-
-    def __init__(self, detections: List[dict]):
-        super().__init__(detections)
 
     @staticmethod
     def _arcsec2deg(

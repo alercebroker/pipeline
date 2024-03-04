@@ -24,6 +24,9 @@ pytest-docker = "^1.0.1"
 [tool.black]
 line-length = 79
 
+[tool.pylint.messages_control]
+disable = ["missing-module-docstring", "missing-function-docstring", "missing-class-docstring"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
