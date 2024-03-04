@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lc-classifier"
-version = "23.12.26a64"
+version = "23.12.26a65"
 description = "Lightcurve classifiers and feature computation"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
