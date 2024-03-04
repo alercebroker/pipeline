@@ -22,6 +22,10 @@ class HarmonicsExtractor(FeatureExtractor):
         self.use_forced_photo = use_forced_photo
         self.n_harmonics = n_harmonics
         self.degrees_of_freedom = self.n_harmonics * 2 + 1
+        if unit == 'magnitude':
+            self.error_tol = 1e-2
+        elif unit == 'diff_flux':
+            self.error_tol = 5
 
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
@@ -92,7 +96,7 @@ class HarmonicsExtractor(FeatureExtractor):
             mse = np.mean((fitted_magnitude - brightness) ** 2)
 
             # Calculate reduced chi-squared statistic
-            chi = np.sum((fitted_magnitude - brightness) ** 2 / (error + 5) ** 2)
+            chi = np.sum((fitted_magnitude - brightness) ** 2 / (error + self.error_tol) ** 2)
             chi_den = len(fitted_magnitude) - (1 + 2 * self.n_harmonics)
             if chi_den >= 1:
                 chi_per_degree = chi / chi_den

@@ -13,6 +13,7 @@ from ..core.base import LightcurvePreprocessor
 class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
     def preprocess_single_object(self, astro_object: AstroObject):
         self._helio_time_correction(astro_object)
+        self.drop_absurd_detections(astro_object)
 
     def _helio_time_correction(self, astro_object: AstroObject):
         detections = astro_object.detections
@@ -41,6 +42,11 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
         non_detections = astro_object.non_detections
         if non_detections is not None and len(non_detections) > 0:
             helio_correct_dataframe(non_detections)
+
+    def drop_absurd_detections(self, astro_object: AstroObject):
+        detections = astro_object.detections
+        mag_det = detections[detections['unit'] == 'magnitude']
+        astro_object.detections = mag_det[(mag_det['brightness'] < 30.0) & (mag_det['brightness'] > 6.0)]
 
 
 class ShortenPreprocessor(LightcurvePreprocessor):

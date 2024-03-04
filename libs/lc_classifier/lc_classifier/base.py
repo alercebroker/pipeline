@@ -47,3 +47,14 @@ def empty_normal_dataframe() -> pd.DataFrame:
         ]
     )
     return df
+
+
+def query_ao_table(table: pd.DataFrame, name: str, check_unique: bool = True):
+    ans_df = table[table['name'] == name]
+    if check_unique and len(ans_df) > 1:
+        raise Exception(f'Field {name} appears {len(ans_df)} times.')
+
+    if check_unique:
+        return ans_df['value'].values[0]
+    else:
+        return ans_df
