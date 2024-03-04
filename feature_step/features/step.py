@@ -26,8 +26,9 @@ class FeaturesComputer(GenericStep):
 
     def __init__(
         self,
-        extractor: type[ZTFFeatureExtractor]
-        | Callable[..., ELAsTiCCFeatureExtractor],
+        extractor: (
+            type[ZTFFeatureExtractor] | Callable[..., ELAsTiCCFeatureExtractor]
+        ),
         config=None,
         **step_args,
     ):
@@ -66,12 +67,15 @@ class FeaturesComputer(GenericStep):
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
             candids[message["oid"]].extend(message["candid"])
-            detections.extend(message.get("detections", []))
+            m = map(
+                lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
+                message.get("detections", []),
+            )
+            detections.extend(m)
             non_detections.extend(message.get("non_detections", []))
             xmatch.append(
                 {"oid": message["oid"], **(message.get("xmatches", {}) or {})}
             )
-
         features_extractor = self.features_extractor(
             detections, non_detections, xmatch
         )

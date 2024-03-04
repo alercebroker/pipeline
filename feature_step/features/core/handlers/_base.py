@@ -310,7 +310,7 @@ class BaseHandler(abc.ABC):
                 alert[self.INDEX]: {**alert["extra_fields"], "id": alert["oid"]} for alert in alerts
             }
             df = pd.DataFrame.from_dict(
-                records, orient="index", columns=extras + ["id"]
+                records, orient="index", columns=extras + ["id", "candid"]
             )
             df = (
                 df.reset_index(names=[self.INDEX])

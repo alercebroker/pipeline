@@ -10,8 +10,15 @@ class TestZTFExtractor(unittest.TestCase):
         detections = []
         input_batch = generate_input_batch(10, ["g", "r"], survey="ZTF")
         for msg in input_batch:
-            detections.extend(msg.get("detections", []))
-
+            detections.extend(
+                map(
+                    lambda x: {
+                        **x,
+                        "index_column": str(x["candid"]) + "_" + x["oid"],
+                    },
+                    msg.get("detections", []),
+                )
+            )
         extractor = ZTFFeatureExtractor(
             detections=detections, non_detections=[], xmatch=[]
         )

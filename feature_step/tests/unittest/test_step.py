@@ -240,6 +240,7 @@ class StepTestCase(unittest.TestCase):
                 "has_stamp": True,
                 "stellar": False,
                 "extra_fields": None,
+                "index_column": "1_candid_aid_1_oid1",
             },
             {
                 "candid": "2_candid_aid_1",
@@ -265,6 +266,7 @@ class StepTestCase(unittest.TestCase):
                 "has_stamp": True,
                 "stellar": False,
                 "extra_fields": None,
+                "index_column": "2_candid_aid_1_oid1",
             },
             {
                 "candid": "1_candid_aid_2",
@@ -290,6 +292,7 @@ class StepTestCase(unittest.TestCase):
                 "has_stamp": True,
                 "stellar": False,
                 "extra_fields": None,
+                "index_column": "1_candid_aid_2_oid2",
             },
         ]
         expected_non_detections_for_extractor = [

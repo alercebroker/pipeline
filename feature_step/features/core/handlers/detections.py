@@ -9,7 +9,7 @@ from ._base import BaseHandler
 class DetectionsHandler(BaseHandler):
     """Class for handling detections.
 
-    Indexed by `candid`.
+    Indexed by `index_column`: a made up column concatenating candid and oid.
 
     Criteria for uniqueness is based on `id` (`oid`, depending on use of `legacy`), `fid` and `mjd`.
 
@@ -27,7 +27,7 @@ class DetectionsHandler(BaseHandler):
     """
 
     _NAME = "detections"
-    INDEX = "candid"
+    INDEX = "index_column"
     NON_DUPLICATE = ["id", "candid"]
     UNIQUE = ["id", "fid", "mjd"]
     COLUMNS = BaseHandler.COLUMNS + [
@@ -55,8 +55,9 @@ class DetectionsHandler(BaseHandler):
         super()._post_process(**kwargs)
 
     def _use_corrected(self):
-        """Sets corrected magnitudes, based on whether the first alert for an object is corrected."""
-        idx = self._alerts[["id", "mjd"]].reset_index().groupby("id")["mjd"].idxmin()
+        """Sets corrected magnitudes, 
+        based on whether the first alert for an object is corrected."""
+        idx = self._alerts.groupby("id")["mjd"].idxmin()
         corrected = (
             self._alerts["corrected"][idx]
             .reindex(self._alerts["id"])
