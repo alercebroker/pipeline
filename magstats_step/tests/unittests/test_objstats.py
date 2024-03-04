@@ -71,7 +71,7 @@ def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_
     assert np.isclose(result, 4)
 
 
-def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_aid():
+def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_oid():
     detections = [
         {"aid": "AID1", "oid": "OID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
         {"aid": "AID2", "oid": "OID2", "ra": 10, "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
@@ -94,12 +94,12 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
     for call in calculator._weighted_mean.call_args_list:
         val, err = call.args
         assert call.kwargs == {}
-        if len(val) == 2:  # This is AID1, the order cannot be assured
+        if len(val) == 2:  # This is OID1, the order cannot be assured
             assert_series_equal(
                 val,
                 pd.Series(
                     [10, 20],
-                    index=pd.Index(["a", "b"], name="candid"),
+                    index=pd.Index(["a_OID1", "b_OID1"]),
                     name="ra",
                 ),
             )
@@ -107,32 +107,32 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
                 err,
                 pd.Series(
                     [2 / 3600, 4 / 3600],
-                    index=pd.Index(["a", "b"], name="candid"),
+                    index=pd.Index(["a_OID1", "b_OID1"]),
                     name="e_ra",
                 ),
             )
-        else:  # Should be AID2
+        else:  # Should be OID2
             assert_series_equal(
                 val,
                 pd.Series(
-                    [20], index=pd.Index(["c"], name="candid"), name="ra"
+                    [20], index=pd.Index(["c_OID2"], ), name="ra"
                 ),
             )
             assert_series_equal(
                 err,
                 pd.Series(
                     [4 / 3600],
-                    index=pd.Index(["c"], name="candid"),
+                    index=pd.Index(["c_OID2"]),
                     name="e_ra",
                 ),
             )
 
 
-def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_aid():
+def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "AID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "AID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "AID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
+        {"aid": "AID2", "oid": "OID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
+        {"aid": "AID1", "oid": "OID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -156,7 +156,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
                 val,
                 pd.Series(
                     [10, 20],
-                    index=pd.Index(["a", "b"], name="candid"),
+                    index=pd.Index(["a_OID1", "b_OID1"]),
                     name="dec",
                 ),
             )
@@ -164,7 +164,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
                 err,
                 pd.Series(
                     [2 / 3600, 4 / 3600],
-                    index=pd.Index(["a", "b"], name="candid"),
+                    index=pd.Index(["a_OID1", "b_OID1"]),
                     name="e_dec",
                 ),
             )
@@ -172,14 +172,14 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
             assert_series_equal(
                 val,
                 pd.Series(
-                    [20], index=pd.Index(["c"], name="candid"), name="dec"
+                    [20], index=pd.Index(["c_OID2"]), name="dec"
                 ),
             )
             assert_series_equal(
                 err,
                 pd.Series(
                     [4 / 3600],
-                    index=pd.Index(["c"], name="candid"),
+                    index=pd.Index(["c_OID2"]),
                     name="e_dec",
                 ),
             )
@@ -461,7 +461,7 @@ def test_object_statistics_ignores_forced_photometry():
     assert_series_equal(
         calculator._detections["check"],
         pd.Series(
-            ["this"], index=pd.Index(["a"], name="candid"), name="check"
+            ["this"], index=pd.Index(["a_OIDa"]), name="check"
         ),
     )
 

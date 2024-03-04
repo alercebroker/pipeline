@@ -23,8 +23,11 @@ class BaseStatistics(abc.ABC):
         # Select only non-forced detections
         self._detections = self._detections[~self._detections["forced"]]
         # drop duplicate detections (same candid and oid)
-        self._detections = self._detections.drop_duplicates(
-            ["candid", "oid"]
+        self._detections = self._detections.drop_duplicates(["candid", "oid"])
+        self._detections = self._detections.set_index(
+            self._detections["candid"].astype(str)
+            + "_"
+            + self._detections["oid"]
         )
 
     @classmethod
