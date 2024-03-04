@@ -5,8 +5,7 @@ import logging
 
 
 def assert_result_has_correction_fields(message):
-    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext",
-              "has_stamp", "corrected", "stellar"]
+    fields = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "has_stamp", "corrected", "stellar"]
     assert all(all(f in det for f in fields) for det in message["detections"])
 
 
@@ -20,13 +19,20 @@ def assert_result_has_extra_fields(message):
 def assert_scribe_has_detections(messages):
     for message in messages:
         assert "collection" in message and (
-            message["collection"] == "detection" or message["collection"] == "forced_photometry")
+            message["collection"] == "detection" or message["collection"] == "forced_photometry"
+        )
         assert "type" in message and message["type"] == "update"
-        assert "criteria" in message and "candid" in message[
-            "criteria"] and "oid" in message["criteria"]
+        assert (
+            "criteria" in message
+            and "candid" in message["criteria"]
+            and "oid" in message["criteria"]
+        )
         assert "data" in message and len(message["data"]) > 0
-        assert "options" in message and "upsert" in message[
-            "options"] and "set_on_insert" in message["options"]
+        assert (
+            "options" in message
+            and "upsert" in message["options"]
+            and "set_on_insert" in message["options"]
+        )
         assert message["options"]["upsert"] is True
         assert "has_stamp" in message["data"]
         # Prevent duplication with _id

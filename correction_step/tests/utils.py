@@ -54,7 +54,9 @@ def ztf_alert(**kwargs):
         "mjd": 1.0,
         "has_stamp": True,
         "forced": choice([True, False]),
-        "extra_fields":  kwargs["extra_fields"] if kwargs.get("extra_fields", None) else ztf_extra_fields(),
+        "extra_fields": kwargs["extra_fields"]
+        if kwargs.get("extra_fields", None)
+        else ztf_extra_fields(),
     }
     alert.update(kwargs)
     return alert

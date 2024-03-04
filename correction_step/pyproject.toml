@@ -26,7 +26,10 @@ step = { callable = "correction._step:run_step" }
 profile = { callable = "correction._step:memray_profile" }
 
 [tool.black]
-line-length = 120
+line-length = 100
+
+[tool.pylint.messages_control]
+disable = ["missing-module-docstring", "missing-function-docstring"]
 
 [build-system]
 requires = ["poetry-core"]

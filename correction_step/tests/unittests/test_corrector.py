@@ -42,7 +42,9 @@ def test_apply_all_calls_requested_function_to_masked_detections_for_each_submod
 
 
 @mock.patch("correction.core.corrector.strategy")
-def test_apply_all_returns_a_series_with_default_value_and_dtype_if_no_columns_are_given(mock_strategy):
+def test_apply_all_returns_a_series_with_default_value_and_dtype_if_no_columns_are_given(
+    mock_strategy,
+):
     corrector = Corrector(detections)
     output = corrector._apply_all_surveys("function", default=-1, dtype=float)
     assert isinstance(output, pd.Series)
@@ -127,9 +129,11 @@ def test_corrected_magnitudes_sets_non_corrected_detections_to_nan():
 def test_corrected_as_records_sets_infinite_values_to_zero_magnitude():
     altered_detections = deepcopy(detections)
     altered_detections[0]["isdiffpos"] = -1
-    altered_detections[0]["extra_fields"]["distnr"] = 1 # force is_corrected to be True
+    altered_detections[0]["extra_fields"]["distnr"] = 1  # force is_corrected to be True
     corrector = Corrector(altered_detections)
-    assert all(corrector.corrected_as_records()[0][col] == Corrector._ZERO_MAG for col in MAG_CORR_COLS)
+    assert all(
+        corrector.corrected_as_records()[0][col] == Corrector._ZERO_MAG for col in MAG_CORR_COLS
+    )
 
 
 def test_corrected_as_records_restores_original_input_with_new_corrected_fields():
@@ -161,25 +165,37 @@ def test_arcsec2deg_applies_proper_conversion():
 
 
 def test_calculate_coordinates_with_equal_weights_is_same_as_ordinary_mean():
-    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5, forced=False), atlas_alert(candid="c2", ra=200, e_ra=5)]
+    wdetections = [
+        ztf_alert(candid="c1", ra=100, e_ra=5, forced=False),
+        atlas_alert(candid="c2", ra=200, e_ra=5),
+    ]
     corrector = Corrector(wdetections)
     assert corrector._calculate_coordinates("ra")["meanra"].loc["OID1"] == 150
 
 
 def test_calculate_coordinates_with_a_very_high_error_does_not_consider_its_value_in_mean():
-    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5, forced=False), atlas_alert(candid="c2", ra=200, e_ra=1e6)]
+    wdetections = [
+        ztf_alert(candid="c1", ra=100, e_ra=5, forced=False),
+        atlas_alert(candid="c2", ra=200, e_ra=1e6),
+    ]
     corrector = Corrector(wdetections)
     assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 100)
 
 
 def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value_in_mean():
-    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=5), atlas_alert(candid="c2", ra=200, e_ra=1e-6)]
+    wdetections = [
+        ztf_alert(candid="c1", ra=100, e_ra=5),
+        atlas_alert(candid="c2", ra=200, e_ra=1e-6),
+    ]
     corrector = Corrector(wdetections)
     assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 200)
 
 
 def test_calculate_coordinates_ignores_forced_photometry():
-    wdetections = [ztf_alert(candid="c1", ra=100, e_ra=1, forced=False), atlas_alert(candid="c2", ra=200, forced=True, e_ra=1)]
+    wdetections = [
+        ztf_alert(candid="c1", ra=100, e_ra=1, forced=False),
+        atlas_alert(candid="c2", ra=200, forced=True, e_ra=1),
+    ]
     corrector = Corrector(wdetections)
     assert np.isclose(corrector._calculate_coordinates("ra")["meanra"].loc["OID1"], 100)
 

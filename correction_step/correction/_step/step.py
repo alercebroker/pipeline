@@ -49,7 +49,8 @@ class CorrectionStep(GenericStep):
         logger.setLevel(level)
 
         fmt = logging.Formatter(
-            "%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S")
+            "%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S"
+        )
         handler = logging.StreamHandler()
         handler.setFormatter(fmt)
         handler.setLevel(level)
@@ -65,8 +66,9 @@ class CorrectionStep(GenericStep):
             )
 
         prometheus_metrics = (
-            PrometheusMetrics(
-            ) if settings["FEATURE_FLAGS"]["PROMETHEUS"] else DefaultPrometheusMetrics()
+            PrometheusMetrics()
+            if settings["FEATURE_FLAGS"]["PROMETHEUS"]
+            else DefaultPrometheusMetrics()
         )
         if settings["FEATURE_FLAGS"]["PROMETHEUS"]:
             start_http_server(8000)
@@ -77,8 +79,7 @@ class CorrectionStep(GenericStep):
     def pre_produce(cls, result: dict):
         result["detections"] = pd.DataFrame(result["detections"]).groupby("oid")
         try:  # At least one non-detection
-            result["non_detections"] = pd.DataFrame(
-                result["non_detections"]).groupby("oid")
+            result["non_detections"] = pd.DataFrame(result["non_detections"]).groupby("oid")
         except KeyError:  # to reproduce expected error for missing non-detections in loop
             result["non_detections"] = pd.DataFrame(columns=["oid"]).groupby("oid")
         output = []
@@ -91,7 +92,9 @@ class CorrectionStep(GenericStep):
                 "detections": dets.to_dict("records"),
             }
             try:
-                output_message["non_detections"] = result["non_detections"].get_group(oid).to_dict("records")
+                output_message["non_detections"] = (
+                    result["non_detections"].get_group(oid).to_dict("records")
+                )
             except KeyError:
                 output_message["non_detections"] = []
             output.append(output_message)
@@ -114,8 +117,9 @@ class CorrectionStep(GenericStep):
         corrector = Corrector(message["detections"])
         detections = corrector.corrected_as_records()
         coords = corrector.coordinates_as_records()
-        non_detections = pd.DataFrame(
-            message["non_detections"]).drop_duplicates(["oid", "fid", "mjd"])
+        non_detections = pd.DataFrame(message["non_detections"]).drop_duplicates(
+            ["oid", "fid", "mjd"]
+        )
         return {
             "detections": detections,
             "non_detections": non_detections.to_dict("records"),
@@ -147,8 +151,7 @@ class CorrectionStep(GenericStep):
                     extra_fields.pop(to_remove)
 
             if "diaObject" in extra_fields:
-                extra_fields["diaObject"] = pickle.loads(
-                    extra_fields["diaObject"])
+                extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
 
             detection["extra_fields"] = extra_fields
             scribe_data = {

@@ -36,7 +36,9 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
+    )
     return server
 
 
@@ -45,14 +47,26 @@ def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
         "PRODUCER_SCHEMA_PATH": str(
-            pathlib.Path(pathlib.Path(__file__).parent.parent.parent.parent, "schemas/correction_step", "output.avsc")
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/correction_step",
+                "output.avsc",
+            )
         ),
         "CONSUMER_SCHEMA_PATH": "",
         "METRIS_SCHEMA_PATH": str(
-            pathlib.Path(pathlib.Path(__file__).parent.parent.parent.parent, "schemas/correction_step", "metrics.json")
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/correction_step",
+                "metrics.json",
+            )
         ),
         "SCRIBE_SCHEMA_PATH": str(
-            pathlib.Path(pathlib.Path(__file__).parent.parent.parent.parent, "schemas/scribe_step", "scribe.avsc")
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/scribe_step",
+                "scribe.avsc",
+            )
         ),
         "CONSUMER_SERVER": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",

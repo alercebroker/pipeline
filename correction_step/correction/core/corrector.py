@@ -12,9 +12,9 @@ from . import strategy
 class Corrector:
     """Class for applying corrections to a list of detections"""
 
-    # _EXTRA_FIELDS must include columns from all surveys that are needed in their respective strategy
-    _EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr",
-                     "distpsnr1", "sgscore1", "sharpnr", "chinr"]
+    # _EXTRA_FIELDS must include columns from all surveys that are needed
+    # in their respective strategy
+    _EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr", "distpsnr1", "sgscore1", "sharpnr", "chinr"]
     # Not really zero mag, but zero flux (very high magnitude)
     _ZERO_MAG = 100.0
 
@@ -24,25 +24,28 @@ class Corrector:
         Duplicate `candids` are dropped from all calculations and outputs.
 
         Args:
-            detections: List of mappings with all values from generic alert (must include `extra_fields`)
+            detections: List of mappings with all values
+                from generic alert (must include `extra_fields`)
         """
         self.logger = logging.getLogger(f"alerce.{self.__class__.__name__}")
-        self._detections = pd.DataFrame.from_records(
-            detections, exclude={"extra_fields"})
-        self._detections = self._detections.drop_duplicates(
-            ["candid", "oid"]).set_index("candid")
+        self._detections = pd.DataFrame.from_records(detections, exclude={"extra_fields"})
+        self._detections = self._detections.drop_duplicates(["candid", "oid"]).set_index(
+            self._detections["candid"] + "_" + self._detections["oid"]
+        )
         self.__extras = [
-            {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]} for alert in detections
+            {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]}
+            for alert in detections
         ]
-        extras = pd.DataFrame(
-            self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
-        extras = extras.drop_duplicates(["candid", "oid"]).set_index("candid")
-        self._detections = self._detections.join(
-            extras, how="left", rsuffix="_extra")
+        extras = pd.DataFrame(self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
+        extras = extras.drop_duplicates(["candid", "oid"]).set_index(
+            self._detections["candid"] + "_" + self._detections["oid"]
+        )
+        self._detections = self._detections.join(extras, how="left", rsuffix="_extra")
         self._detections = self._detections.drop("oid_extra", axis=1)
 
     def _survey_mask(self, survey: str):
-        """Creates boolean mask of detections whose `sid` matches the given survey name (case-insensitive)
+        """Creates boolean mask of detections
+        whose `sid` matches the given survey name (case-insensitive)
 
         Args:
             survey: Name of the survey of interest
@@ -58,9 +61,11 @@ class Corrector:
         Any survey without defined strategies will keep the default value.
 
         Args:
-            function: Name of the function to apply. It must exist as a function in all strategy modules
+            function: Name of the function to apply.
+                It must exist as a function in all strategy modules
             default (any): Default value for surveys without a defined strategy
-            columns (list[str]): Create a dataframe with these columns. If not provided, it will create a series
+            columns (list[str]): Create a dataframe with these columns.
+                If not provided, it will create a series
             dtype (dtype): Type of the output values
 
         Returns:
@@ -68,10 +73,10 @@ class Corrector:
         """
         if columns:
             basic = pd.DataFrame(
-                default, index=self._detections.index, columns=columns, dtype=dtype)
+                default, index=self._detections.index, columns=columns, dtype=dtype
+            )
         else:
-            basic = pd.Series(
-                default, index=self._detections.index, dtype=dtype)
+            basic = pd.Series(default, index=self._detections.index, dtype=dtype)
         # Will loop through the modules/variables imported in strategy
         for name in dir(strategy):
             if name.startswith("_"):  # Skip protected/private modules/variables
@@ -101,18 +106,19 @@ class Corrector:
         return self._apply_all_surveys("is_stellar", default=False, dtype=bool)
 
     def corrected_magnitudes(self) -> pd.DataFrame:
-        """Dataframe with corrected magnitudes and errors. Non-corrected magnitudes are set to NaN."""
+        """Dataframe with corrected magnitudes and errors.
+        Non-corrected magnitudes are set to NaN."""
         cols = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-        corrected = self._apply_all_surveys(
-            "correct", columns=cols, dtype=float)
+        corrected = self._apply_all_surveys("correct", columns=cols, dtype=float)
         # NaN for non-corrected magnitudes
         return corrected.where(self.corrected)
 
     def corrected_as_records(self) -> list[dict]:
         """Corrected alerts as records.
 
-        The output is the same as the input passed on creation, with additional generic fields corresponding to
-        the corrections (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
+        The output is the same as the input passed on creation,
+        with additional generic fields corresponding to the corrections
+        (`mag_corr`, `e_mag_corr`, `e_mag_corr_ext`, `corrected`, `dubious`, `stellar`).
 
         The records are a list of mappings with the original input pairs and the new pairs together.
         """
@@ -123,14 +129,16 @@ class Corrector:
                     return self.__extras.pop(i)
             return {}
 
-        self.logger.debug(f"Correcting {len(self._detections)} detections...")
+        self.logger.debug("Correcting %s detections...", len(self._detections))
         corrected = self.corrected_magnitudes().replace(np.inf, self._ZERO_MAG)
         corrected = corrected.assign(
-            corrected=self.corrected, dubious=self.dubious, stellar=self.stellar)
-        corrected = self._detections.join(corrected).replace(
-            np.nan, None).drop(columns=self._EXTRA_FIELDS)
+            corrected=self.corrected, dubious=self.dubious, stellar=self.stellar
+        )
+        corrected = (
+            self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
+        )
         corrected = corrected.replace(-np.inf, None)
-        self.logger.debug(f"Corrected {corrected['corrected'].sum()}")
+        self.logger.debug("Corrected %s", corrected["corrected"].sum())
         corrected = corrected.reset_index().to_dict("records")
         for record in corrected:
             record["extra_fields"] = find_extra_fields(record["oid"], record["candid"])
@@ -140,7 +148,8 @@ class Corrector:
 
     @staticmethod
     def weighted_mean(values: pd.Series, sigmas: pd.Series) -> float:
-        """Compute error weighted mean of values. The weights used are the inverse square of the errors.
+        """Compute error weighted mean of values.
+        The weights used are the inverse square of the errors.
 
         Args:
             values: Values for which to compute the mean
@@ -187,5 +196,6 @@ class Corrector:
         return pd.DataFrame(coords)
 
     def coordinates_as_records(self) -> dict:
-        """Weighted mean coordinates as records (mapping from OID to a mapping of mean coordinates)"""
+        """Weighted mean coordinates as records
+        (mapping from OID to a mapping of mean coordinates)"""
         return self.mean_coordinates().to_dict("index")

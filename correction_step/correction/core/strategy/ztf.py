@@ -24,7 +24,9 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
     * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
     """
-    detections_without_index = detections[["isdiffpos", "distnr", "oid", "fid", "mjd"]].reset_index()
+    detections_without_index = detections[
+        ["isdiffpos", "distnr", "oid", "fid", "mjd"]
+    ].reset_index()
     negative = detections_without_index["isdiffpos"] == -1
     corrected = is_corrected(detections_without_index)
     first = is_first_corrected(detections_without_index, corrected)
@@ -83,7 +85,9 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
 
-    return pd.DataFrame({"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext})
+    return pd.DataFrame(
+        {"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext}
+    )
 
 
 def is_first_corrected(detections: pd.DataFrame, corrected: pd.Series) -> pd.Series:
