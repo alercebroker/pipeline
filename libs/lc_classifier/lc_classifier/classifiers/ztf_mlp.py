@@ -81,13 +81,13 @@ class ZTFClassifier(Classifier):
             labels: pd.DataFrame,
             config: Dict):
         self.feature_list = features.columns.values
-        training_labels = labels[labels['partition'] == 'training']
+        training_labels = labels[labels['partition'] == 'training_0']
         training_features = features.loc[training_labels['aid'].values]
         self.preprocessor.fit(training_features)
         training_features = self.preprocessor.preprocess_features(
             training_features)
 
-        validation_labels = labels[labels['partition'] == 'validation']
+        validation_labels = labels[labels['partition'] == 'validation_0']
         validation_features = features.loc[validation_labels['aid'].values]
         validation_features = self.preprocessor.preprocess_features(
             validation_features)
