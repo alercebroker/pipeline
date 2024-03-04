@@ -26,4 +26,4 @@ if __name__ == '__main__':
 
     all_features = pd.concat(all_features, axis=0)
     print(all_features)
-    all_features.to_parquet(os.path.join(dir_name, 'consolidated_features.parquet'))
+    all_features.to_parquet(os.path.join(dir_name, 'data_231206_features/consolidated_features.parquet'))
