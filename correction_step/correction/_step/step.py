@@ -164,4 +164,4 @@ class CorrectionStep(GenericStep):
             scribe_payload = {"payload": json.dumps(scribe_data)}
             if count == len(detections):
                 flush = True
-            self.scribe_producer.produce(scribe_payload, flush=flush)
+            self.scribe_producer.produce(scribe_payload, flush=flush, key=oid)

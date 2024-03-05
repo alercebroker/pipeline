@@ -89,7 +89,10 @@ class MagstatsStep(GenericStep):
         return stats
 
     def produce_scribe(self, result: dict):
+        num_commands = len(result)
+        count = 0
         for oid, stats in result.items():
+            count += 1
             command = {
                 "collection": "object",
                 "type": "update",
@@ -106,21 +109,22 @@ class MagstatsStep(GenericStep):
                 },
                 "options": {"upsert": True},
             }
-            self.scribe_producer.produce({"payload": json.dumps(command)})
+            flush = count == num_commands
+            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush, key=oid)
 
     def produce_scribe_ztf(self, result: dict):
-        commands = []
+        num_commands = len(result)
+        count = 0
         for oid, stats in result.items():
-            commands.append(
-                {
+            count += 1
+            command = {
                     "collection": "magstats",
                     "type": "upsert",
                     "criteria": {"_id": oid},
                     "data": stats,
                 }
-            )
-        for command in commands:
-            self.scribe_producer.produce({"payload": json.dumps(command)})
+            flush = count == num_commands
+            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush, key=oid)
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["multistream"])

@@ -169,7 +169,7 @@ class KafkaProducer(GenericProducer):
 
         key = None
         if message:
-            key = message[self.key_field] if self.key_field else None
+            key = message[self.key_field] if self.key_field else kwargs.pop("key", None)
         message = self._serialize_message(message)
         if self.dynamic_topic:
             self.topic = self.topic_strategy.get_topics()
