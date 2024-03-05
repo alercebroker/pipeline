@@ -17,7 +17,7 @@ else:
     from settings import STEP_CONFIG
 
 level = logging.INFO
-if os.getenv("LOGGING_DEBUG"):
+if STEP_CONFIG.get("LOGGING_DEBUG", False):
     level = logging.DEBUG
 
 logging.basicConfig(
