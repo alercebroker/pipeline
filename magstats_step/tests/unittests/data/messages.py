@@ -42,5 +42,3 @@ for d in data:
         non_detection["oid"] = oid
         non_detection["sid"] = sid
         non_detection["fid"] = fid
-
-    print(d["oid"], sid, fid)
