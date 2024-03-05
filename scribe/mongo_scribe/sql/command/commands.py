@@ -2,6 +2,7 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List
 from importlib.metadata import version
+import logging
 
 from db_plugins.db.sql.models import (
     Detection,
@@ -49,6 +50,7 @@ class InsertObjectCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
+        logging.debug("Inserting %s objects", len(data))
         return session.connection().execute(
             insert(Object).values(data).on_conflict_do_nothing()
         )
@@ -118,6 +120,7 @@ class InsertDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["candid"], el["oid"]): el for el in data}
         unique = list(unique.values())
+        logging.debug("Inserting %s detections", len(unique))
         stmt = insert(Detection)
         return session.execute(
             stmt.on_conflict_do_update(
@@ -158,6 +161,7 @@ class InsertForcedPhotometryCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["pid"], el["oid"]): el for el in data}
         unique = list(unique.values())
+        logging.debug("Inserting %s forced photometry", len(unique))
         statement = insert(ForcedPhotometry)
         return session.execute(
             statement.on_conflict_do_update(
@@ -190,6 +194,7 @@ class UpdateObjectStatsCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: List):
+        logging.debug("Updating object stats")
         # data should be a tuple where idx 0 is objstats and 1 is magstats
         objstats, magstats = map(list, zip(*data))
         # list flatten
@@ -226,6 +231,7 @@ class UpsertNonDetectionsCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["oid"], el["fid"], el["mjd"]): el for el in data}
         unique = list(unique.values())
+        logging.debug("Updating or inserting %s non detections", len(unique))
         insert_stmt = insert(NonDetection)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="non_detection_pkey",
@@ -264,6 +270,7 @@ class UpsertFeaturesCommand(Command):
     def db_operation(session: Session, data: List):
         unique = {(el["oid"], el["name"], el["fid"]): el for el in data}
         unique = list(unique.values())
+        logging.debug("Upserting %s features", len(unique))
         insert_stmt = insert(Feature)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="feature_pkey",
@@ -300,6 +307,7 @@ class UpsertProbabilitiesCommand(Command):
             for el in data
         }
         unique = list(unique.values())
+        logging.debug("Upserting %s probabilities", len(unique))
         insert_stmt = insert(Probability)
         insert_stmt = insert_stmt.on_conflict_do_update(
             constraint="probability_pkey",
@@ -339,5 +347,5 @@ class UpsertXmatchCommand(Command):
                 dist=insert_stmt.excluded.dist,
             ),
         )
-
+        logging.debug("Upserting %s xmatches", len(unique))
         return session.execute(insert_stmt, unique)
