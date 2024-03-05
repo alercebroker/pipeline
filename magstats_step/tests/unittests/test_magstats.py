@@ -6,10 +6,9 @@ from pandas.testing import assert_frame_equal
 from magstats_step.core import MagnitudeStatistics
 
 
-def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and_fid():
+def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -18,7 +17,6 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -27,7 +25,6 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -36,7 +33,6 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -45,7 +41,6 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -54,7 +49,6 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -83,10 +77,9 @@ def test_calculate_uncorrected_stats_gives_statistics_for_magnitudes_per_aid_and
     )
 
 
-def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per_aid_and_fid():
+def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -96,7 +89,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -106,7 +98,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -116,7 +107,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -126,7 +116,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -136,7 +125,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -146,7 +134,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -156,7 +143,6 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 2,
@@ -186,10 +172,9 @@ def test_calculate_corrected_stats_gives_statistics_for_corrected_magnitudes_per
     )
 
 
-def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_per_aid_and_fid():
+def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -199,7 +184,6 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
             "forced": False,
         },  # last
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -209,7 +193,6 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
             "forced": False,
         },  # first
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -219,7 +202,6 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -229,7 +211,6 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
             "forced": False,
         },  # last and first
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -239,7 +220,6 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
             "forced": False,
         },  # first
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -266,10 +246,9 @@ def test_calculate_uncorrected_stats_over_time_gives_first_and_last_magnitude_pe
     )
 
 
-def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magnitude_per_aid_and_fid():
+def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magnitude_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -280,7 +259,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -291,7 +269,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -302,7 +279,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -313,7 +289,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -324,7 +299,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -335,7 +309,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -346,7 +319,6 @@ def test_calculate_corrected_stats_over_time_gives_first_and_last_corrected_magn
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -388,10 +360,9 @@ def test_calculate_statistics_calls_stats_and_stats_over_time_with_both_correcte
     calculator._calculate_stats_over_time.assert_any_call(corrected=False)
 
 
-def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
+def test_calculate_firstmjd_gives_first_date_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -400,7 +371,6 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -409,7 +379,6 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -418,7 +387,6 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -427,7 +395,6 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -436,7 +403,6 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -461,10 +427,9 @@ def test_calculate_firstmjd_gives_first_date_per_aid_and_fid():
     )
 
 
-def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
+def test_calculate_lastmjd_gives_last_date_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -473,7 +438,6 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -482,7 +446,6 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -491,7 +454,6 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -500,7 +462,6 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -509,7 +470,6 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -534,10 +494,9 @@ def test_calculate_lastmjd_gives_last_date_per_aid_and_fid():
     )
 
 
-def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_corrected():
+def test_calculate_corrected_gives_whether_first_detection_per_oid_and_fid_is_corrected():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -547,7 +506,6 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -557,7 +515,6 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -567,7 +524,6 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -577,7 +533,6 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -587,7 +542,6 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -613,10 +567,9 @@ def test_calculate_corrected_gives_whether_first_detection_per_aid_and_fid_is_co
     )
 
 
-def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stellar():
+def test_calculate_stellar_gives_whether_first_detection_per_oid_and_fid_is_stellar():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -626,7 +579,6 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -636,7 +588,6 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -646,7 +597,6 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -656,7 +606,6 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -666,7 +615,6 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -692,10 +640,9 @@ def test_calculate_stellar_gives_whether_first_detection_per_aid_and_fid_is_stel
     )
 
 
-def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
+def test_calculate_ndet_gives_number_of_detections_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -703,7 +650,6 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -711,7 +657,6 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -719,7 +664,6 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -727,7 +671,6 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -735,7 +678,6 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -759,10 +701,9 @@ def test_calculate_ndet_gives_number_of_detections_per_aid_and_fid():
     )
 
 
-def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid():
+def test_calculate_ndubious_gives_number_of_dubious_detections_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -771,7 +712,6 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -780,7 +720,6 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 1,
@@ -789,7 +728,6 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "SURVEY",
             "fid": 1,
@@ -798,7 +736,6 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -807,7 +744,6 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 2,
@@ -832,10 +768,9 @@ def test_calculate_ndubious_gives_number_of_dubious_detections_per_aid_and_fid()
     )
 
 
-def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
+def test_calculate_saturation_rate_gives_saturation_ratio_per_oid_and_fid():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
@@ -845,7 +780,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
@@ -855,7 +789,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
@@ -865,7 +798,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "ZTF",
             "fid": 1,
@@ -875,7 +807,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "ZTF",
             "fid": 2,
@@ -885,7 +816,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "ZTF",
             "fid": 3,
@@ -895,7 +825,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "ZTF",
             "fid": 3,
@@ -905,7 +834,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 10,
@@ -915,7 +843,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },  # No threshold
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "fid": 10,
@@ -925,7 +852,6 @@ def test_calculate_saturation_rate_gives_saturation_ratio_per_aid_and_fid():
             "forced": False,
         },  # No threshold
         {
-            "aid": "AID3",
             "oid": "OID3",
             "sid": "SURVEY",
             "fid": 1,
