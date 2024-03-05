@@ -40,7 +40,7 @@ configYaml:
     SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
     PARAMS:
       bootstrap.servers: ${kafka_server}
-      group.id: "scribe-mongo"
+      group.id: "scribe-psql"
       sasl.username: ${kafka_username}
       sasl.password: ${kafka_password}
     TOPICS: ["w_object", "w_detection", "w_non_detections"]
