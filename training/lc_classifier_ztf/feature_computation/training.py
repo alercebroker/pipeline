@@ -2,8 +2,8 @@ import pandas as pd
 from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
 
 
-features = pd.read_parquet('data_231206_features/consolidated_features.parquet')
-labels = pd.read_parquet('data_231206_features/partitions.parquet')
+features = pd.read_parquet('data_231206_ao_features/consolidated_features.parquet')
+labels = pd.read_parquet('data_231206_ao_features/partitions.parquet')
 
 # support for shortened lightcurves
 features.index = (features.index.values + '_' + features['shorten'].astype(str)).values
@@ -27,7 +27,7 @@ list_of_classes.sort()
 ztf_classifier = ZTFClassifier(list_of_classes)
 config = {
     'learning_rate': 1e-4,
-    'batch_size': 512
+    'batch_size': 4096
 }
 ztf_classifier.fit_from_features(features, labels, config)
 ztf_classifier.save_classifier('ztf_classifier_model_231206')

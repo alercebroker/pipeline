@@ -40,7 +40,8 @@ class ZTFClassifier(Classifier):
         features_df = features_df[self.feature_list]
         features_np = self.preprocessor.preprocess_features(
             features_df).values
-        probs_np = self.inference_model.inference(features_np).numpy()
+        with tf.device('/cpu:0'):
+            probs_np = self.inference_model.inference(features_np).numpy()
         for object_probs, astro_object in zip(probs_np, astro_objects):
             data = np.stack(
                 [
@@ -189,17 +190,17 @@ class MLPModel(tf.keras.Model):
         # simulate missing features
         self.input_dropout = tf.keras.layers.Dropout(0.1)
         self.dense_layer_1 = Dense(
-            1_100,
+            800,
             name='dense_layer_1',
         )
         self.dropout_1_2 = tf.keras.layers.Dropout(0.5)
         self.dense_layer_2 = Dense(
-            275,
+            450,
             name='dense_layer_2',
         )
-        self.dropout_2_3 = tf.keras.layers.Dropout(0.5)
+        self.dropout_2_3 = tf.keras.layers.Dropout(0.2)
         self.dense_layer_3 = Dense(
-            60,
+            80,
             name='dense_layer_3',
         )
 
@@ -211,9 +212,9 @@ class MLPModel(tf.keras.Model):
 
         lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
             initial_learning_rate=0.0,
-            decay_steps=45000,
+            decay_steps=45_000,
             warmup_target=learning_rate,
-            warmup_steps=2000,
+            warmup_steps=2_000,
             alpha=5e-2
         )
 
@@ -291,10 +292,11 @@ class MLPModel(tf.keras.Model):
             validation_features: pd.DataFrame,
             validation_labels: pd.DataFrame):
 
-        training_dataset = self._tf_dataset_from_dataframes(
-            training_features, training_labels, rebalance=True)
-        validation_dataset = self._tf_dataset_from_dataframes(
-            validation_features, validation_labels, rebalance=False)
+        with tf.device('/cpu:0'):
+            training_dataset = self._tf_dataset_from_dataframes(
+                training_features, training_labels, rebalance=True)
+            validation_dataset = self._tf_dataset_from_dataframes(
+                validation_features, validation_labels, rebalance=False)
 
         iteration = 0
 

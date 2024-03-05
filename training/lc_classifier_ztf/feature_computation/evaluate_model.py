@@ -11,18 +11,19 @@ from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
 from consolidate_features import get_shorten
 
 
-dir_name = 'data_231130'
-labels = pd.read_parquet(os.path.join(dir_name, 'labels_with_partitions.parquet'))
+dir_name = 'data_231206_ao_features'
+labels = pd.read_parquet(os.path.join(dir_name, 'partitions.parquet'))
+labels['aid'] = 'aid_' + labels['oid']
 labels.set_index('aid', inplace=True)
 
-list_of_classes = labels['astro_class'].unique()
+list_of_classes = labels['alerceclass'].unique()
 list_of_classes.sort()
 
 labels_figure_order = [
     'SNIa',
     'SNIbc',
-    'SNII',
     'SNIIb',
+    'SNII',
     'SNIIn',
     'SLSN',
     'TDE',
@@ -31,10 +32,10 @@ labels_figure_order = [
     'AGN',
     'Blazar',
     'YSO',
-    'CVNova',
+    'CV/Nova',
     'LPV',
     'EA',
-    'EBEW',
+    'EB/EW',
     'Periodic-Other',
     'RSCVn',
     'CEP',
@@ -47,7 +48,7 @@ assert set(list_of_classes) == set(labels_figure_order)
 compute_predictions = False
 if compute_predictions:
     ztf_classifier = ZTFClassifier(list_of_classes)
-    ztf_classifier.load_classifier('ztf_classifier_model_231130_v2')
+    ztf_classifier.load_classifier('ztf_classifier_model_231206')
 
     data_dir = os.listdir(dir_name)
     data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
@@ -64,9 +65,9 @@ if compute_predictions:
         predictions.append(prediction_df)
 
     predictions = pd.concat(predictions, axis=0)
-    predictions.to_parquet(os.path.join(dir_name, 'all_predictions_v2.parquet'))
+    predictions.to_parquet(os.path.join(dir_name, 'all_predictions.parquet'))
 
-predictions = pd.read_parquet(os.path.join(dir_name, 'all_predictions_v2.parquet'))
+predictions = pd.read_parquet(os.path.join(dir_name, 'all_predictions.parquet'))
 print(predictions)
 
 
@@ -105,7 +106,7 @@ def plot_cm_custom(ax, cm_mean, display_labels, title):
 def compute_stats(predictions_df, labels_df, ax, title):
     assert len(predictions_df) == len(labels_df)
     labels_df = labels_df.loc[predictions_df.index]
-    true_astro_classes = labels_df['astro_class'].values
+    true_astro_classes = labels_df['alerceclass'].values
     predicted_class = predictions_df.idxmax(axis=1).values
     print(title)
     print(classification_report(true_astro_classes, predicted_class))
@@ -129,7 +130,7 @@ for shorten in all_shorten:
     fig, ax = plt.subplots(1, 2, figsize=(15, 8), facecolor='white', dpi=100)
     plt.rcParams.update({'font.size': 8})
 
-    val_labels = labels[labels['partition'] == 'validation']
+    val_labels = labels[labels['partition'] == 'validation_0']
     compute_stats(shorten_predictions.loc[val_labels.index], val_labels, ax[0], 'validation')
 
     test_labels = labels[labels['partition'] == 'test']
@@ -140,7 +141,7 @@ for shorten in all_shorten:
     plt.tight_layout()
     plt.show()
 
-f1_dict['1000'] = f1_dict['None']
+f1_dict['2000'] = f1_dict['None']
 del f1_dict['None']
 
 lc_lengths = [float(i) for i in f1_dict.keys()]
