@@ -504,6 +504,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "stellar": False,
             }
         ]
+        command["data"]["ndet"] = 16
         self.producer.produce({"payload": json.dumps(command)})
         self.producer.producer.flush(1)
         self.step.start()
@@ -512,19 +513,19 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = session.execute(
                 text(
                     """
-                    SELECT oid, meanra, meandec, ndet
+                    SELECT ndet
                     FROM object
                     WHERE oid = 'ZTF04ululeea'
                     """
                 )
             )
             result = list(result)
-            assert len(result)
-            assert result[0][-1] == 20
+            assert len(result) == 1
+            assert result[0][0] == 16
             result = session.execute(
                 text(
                     """
-                    SELECT *
+                    SELECT ndet
                     FROM magstat
                     WHERE oid = 'ZTF04ululeea'
                     """
@@ -532,8 +533,9 @@ class PsqlIntegrationTest(unittest.TestCase):
             )
             result = list(result)
             assert len(result) == 2
-            assert result[0][4] == 11
-            assert result[1][4] == 9
+            assert result[0][0] == 11
+            assert result[1][0] == 9
+            assert False
 
     def test_upsert_xmatch(self):
         with self.db.session() as session:
