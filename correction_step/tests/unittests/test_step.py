@@ -221,9 +221,6 @@ def test_execute_works_with_empty_non_detections(_):
 def test_post_execute_calls_scribe_producer_for_each_detection():
     # To check the "new" flag is removed
     message4execute_copy = copy.deepcopy(message4execute)
-    message4execute_copy["detections"] = [
-        {k: v for k, v in det.items()} for det in message4execute_copy["detections"]
-    ]
 
     class MockCorrectionStep(CorrectionStep):
         def __init__(self):
@@ -231,10 +228,13 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
             self.logger = mock.MagicMock()
 
     step = MockCorrectionStep()
-    output = step.post_execute(copy.deepcopy(message4execute))
-    assert output == message4execute_copy
+    execute_output = step.execute(message4execute_copy)
+    output = step.post_execute(execute_output)
+    assert output == execute_output
+    # verify that there are new detections
+    assert len(list(filter(lambda x: x["new"], output["detections"]))) > 0
     count = 0
-    for det in message4execute_copy["detections"]:
+    for det in execute_output["detections"]:
         count += 1
         flush = False
         if not det["new"]:  # does not write
@@ -244,10 +244,8 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
             for k, v in det["extra_fields"].items()
             if k not in ["prvDiaSources", "prvDiaForcedSources"]
         }
-
         if "diaObject" in det["extra_fields"]:
             det["extra_fields"]["diaObject"] = pickle.loads(det["extra_fields"]["diaObject"])
-
         data = {
             "collection": "detection" if not det["forced"] else "forced_photometry",
             "type": "update",
@@ -255,10 +253,12 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
             "data": {k: v for k, v in det.items() if k not in ["candid", "forced", "new"]},
             "options": {"upsert": True, "set_on_insert": not det["has_stamp"]},
         }
-        if count == len(message4execute_copy["detections"]):
+        if count == len(execute_output["detections"]):
             flush = True
-
         step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
+    assert step.scribe_producer.produce.call_count == len(
+        list(filter(lambda x: x["new"], message4execute_copy["detections"]))
+    )
 
 
 def test_pre_produce_unpacks_detections_and_non_detections_by_oid():
