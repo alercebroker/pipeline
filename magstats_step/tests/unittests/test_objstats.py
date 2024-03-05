@@ -73,9 +73,9 @@ def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_
 
 def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "ra": 10, "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "ra": 10, "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
+        {"oid": "OID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
+        {"oid": "OID2", "ra": 10, "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
+        {"oid": "OID1", "ra": 10, "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -130,9 +130,9 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
 
 def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_error_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
+        {"oid": "OID1", "dec": 10, "e_dec": 2, "candid": "a", "forced": False},
+        {"oid": "OID2", "dec": 20, "e_dec": 4, "candid": "c", "forced": False},
+        {"oid": "OID1", "dec": 20, "e_dec": 4, "candid": "b", "forced": False},
     ]
     calculator = ObjectStatistics(detections)
 
@@ -151,7 +151,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
     for call in calculator._weighted_mean.call_args_list:
         val, err = call.args
         assert call.kwargs == {}
-        if len(val) == 2:  # This is AID1, the order cannot be assured
+        if len(val) == 2:  
             assert_series_equal(
                 val,
                 pd.Series(
@@ -168,7 +168,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
                     name="e_dec",
                 ),
             )
-        else:  # Should be AID2
+        else:  
             assert_series_equal(
                 val,
                 pd.Series(
@@ -185,12 +185,13 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
             )
 
 
-def test_calculate_unique_gives_list_of_unique_values_in_field_per_aid():
+def test_calculate_unique_gives_list_of_unique_values_in_field_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "candid": "a", "extra": "A", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "candid": "c", "extra": "A", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "candid": "b", "extra": "A", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "candid": "d", "extra": "B", "forced": False},
+        {"oid": "OID1", "candid": "a", "extra": "A", "forced": False},
+        {"oid": "OID2", "candid": "c", "extra": "A", "forced": False},
+        {"oid": "OID1", "candid": "b", "extra": "A", "forced": False},
+        {"oid": "OID1", "candid": "d", "extra": "B", "forced": False},
+        {"oid": "OID1", "candid": "e", "extra": "B", "forced": True},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator._calculate_unique("extra")
@@ -226,12 +227,13 @@ def test_calculate_dec_uses_calculate_coordinates():
     calculator._calculate_coordinates.assert_called_once_with("dec")
 
 
-def test_calculate_ndet_gives_number_of_detections_per_aid():
+def test_calculate_ndet_gives_number_of_detections_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "candid": "b", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "candid": "d", "forced": False},
+        {"oid": "OID1", "candid": "a", "forced": False},
+        {"oid": "OID2", "candid": "c", "forced": False},
+        {"oid": "OID1", "candid": "b", "forced": False},
+        {"oid": "OID1", "candid": "d", "forced": False},
+        {"oid": "OID1", "candid": "e", "forced": True},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_ndet()
@@ -245,12 +247,13 @@ def test_calculate_ndet_gives_number_of_detections_per_aid():
     )
 
 
-def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
+def test_calculate_firstmjd_gives_the_first_mjd_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
+        {"oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
+        {"oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
+        {"oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
+        {"oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
+        {"oid": "OID1", "mjd": 2, "candid": "e", "forced": True},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_firstmjd()
@@ -266,12 +269,13 @@ def test_calculate_firstmjd_gives_the_first_mjd_per_aid():
     )
 
 
-def test_calculate_lastmjd_gives_the_last_mjd_per_aid():
+def test_calculate_lastmjd_gives_the_last_mjd_per_oid():
     detections = [
-        {"aid": "AID1", "oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
-        {"aid": "AID2", "oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
-        {"aid": "AID1", "oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
+        {"oid": "OID1", "mjd": 1, "candid": "a", "forced": False},
+        {"oid": "OID2", "mjd": 2, "candid": "c", "forced": False},
+        {"oid": "OID1", "mjd": 3, "candid": "b", "forced": False},
+        {"oid": "OID1", "mjd": 2, "candid": "d", "forced": False},
+        {"oid": "OID1", "mjd": 2, "candid": "e", "forced": True},
     ]
     calculator = ObjectStatistics(detections)
     result = calculator.calculate_lastmjd()
@@ -310,7 +314,6 @@ def test_calculate_tid_uses_calculate_unique_with_tid():
 def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_correct_is_corrected():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
@@ -319,16 +322,14 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
             "forced": False,
         },  # Should ignore
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 2,
             "corrected": True,
             "candid": "b",
             "forced": False,
-        },  # True for AID1
+        },  
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 3,
@@ -337,7 +338,6 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
@@ -346,16 +346,14 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
             "forced": False,
         },  # Should ignore
         {
-            "aid": "AID3",
             "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 2,
             "corrected": False,
             "candid": "e",
             "forced": False,
-        },  # False for AID3
+        },  
         {
-            "aid": "AID3",
             "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 3,
@@ -382,7 +380,6 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
 def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar_is_corrected():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
@@ -391,16 +388,14 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
             "forced": False,
         },  # Should ignore
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 2,
             "stellar": True,
             "candid": "b",
             "forced": False,
-        },  # True for AID1
+        },  
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 3,
@@ -409,7 +404,6 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
             "forced": False,
         },
         {
-            "aid": "AID2",
             "oid": "OID2",
             "sid": "MOCK_SURVEY",
             "mjd": 1,
@@ -418,16 +412,14 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
             "forced": False,
         },  # Should ignore
         {
-            "aid": "AID3",
             "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 2,
             "stellar": False,
             "candid": "e",
             "forced": False,
-        },  # False for AID3
+        },  
         {
-            "aid": "AID3",
             "oid": "OID3",
             "sid": "SURVEY",
             "mjd": 3,
@@ -469,7 +461,6 @@ def test_object_statistics_ignores_forced_photometry():
 def test_object_statistics_deltajd():
     detections = [
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 1,
@@ -478,7 +469,6 @@ def test_object_statistics_deltajd():
             "forced": False,
         },
         {
-            "aid": "AID1",
             "oid": "OID1",
             "sid": "SURVEY",
             "mjd": 5,
