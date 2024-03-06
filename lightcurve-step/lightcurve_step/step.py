@@ -113,6 +113,7 @@ class LightcurveStep(GenericStep):
         # has_stamp true will be on top
         # new true will be on top
         # so this will drop alerts coming from the database if they are also in the stream
+        # but will also drop if they are previous detections
         detections = detections.sort_values(
             ["has_stamp", "new"], ascending=[False, False]
         ).drop_duplicates(["candid", "oid"], keep="first")
