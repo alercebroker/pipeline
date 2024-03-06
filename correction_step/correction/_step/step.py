@@ -147,12 +147,9 @@ class CorrectionStep(GenericStep):
             extra_fields = detection["extra_fields"]
             # remove possible elasticc extrafields
             for to_remove in ["prvDiaSources", "prvDiaForcedSources", "fp_hists"]:
-                if to_remove in extra_fields:
-                    extra_fields.pop(to_remove)
-
+                extra_fields.pop(to_remove, None)
             if "diaObject" in extra_fields:
                 extra_fields["diaObject"] = pickle.loads(extra_fields["diaObject"])
-
             detection["extra_fields"] = extra_fields
             scribe_data = {
                 "collection": "forced_photometry" if is_forced else "detection",
