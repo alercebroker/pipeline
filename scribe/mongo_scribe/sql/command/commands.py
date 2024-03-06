@@ -73,7 +73,6 @@ class InsertDetectionsCommand(Command):
             "stellar",
         ]
         fid_map = {"g": 1, "r": 2, "i": 3}
-
         field_mapping = {
             "mag": "magpsf",
             "e_mag": "sigmapsf",
@@ -99,12 +98,10 @@ class InsertDetectionsCommand(Command):
         # rename some fields
         for k, v in field_mapping.items():
             new_data[v] = new_data.pop(k)
-
         # add fields from extra_fields
         for field in _extra_fields:
             if field in new_data["extra_fields"]:
                 new_data[field] = new_data["extra_fields"][field]
-
         new_data = {k: v for k, v in new_data.items() if k not in exclude}
         new_data["step_id_corr"] = new_data.get("step_id_corr", step_version)
         new_data["parent_candid"] = (
@@ -113,7 +110,6 @@ class InsertDetectionsCommand(Command):
             else None
         )
         new_data["fid"] = fid_map[new_data["fid"]]
-
         return {**new_data, **self.criteria}
 
     @staticmethod
