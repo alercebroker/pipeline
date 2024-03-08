@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "delight-step"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "delight_step"}]
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+python = ">=3.8, <3.12"
+requests = "^2.23.0"
+apf_base = { path = "../libs/apf", develop = true }
+db-plugins = {path = "../libs/db-plugins"}
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-docker = "^1.0.1"
+pytest-cov = "^4.1.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.0.0"
+
+[tool.black]
+line-length = 79
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
