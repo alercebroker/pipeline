@@ -61,7 +61,9 @@ class MagstatsStep(GenericStep):
         **Note**: Updates stats dictionary in place
         """
         magstats_by_oid = magstats.loc[oid]
-        ## Why is magstats_by_oid not always a series ?
+        # magstats_by_oid could have multiple fid values,
+        # so the loc could potentially return a dataframe with a column
+        # for each fid
         if isinstance(magstats_by_oid, pd.Series):
             # when calling to_dict on a series
             # the result is a single dict
