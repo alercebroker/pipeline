@@ -30,18 +30,20 @@ class MagstatsStep(GenericStep):
         stats = obj_calculator.generate_statistics(self.excluded).replace(
             {np.nan: None}
         )
+        assert stats.index.name == "oid"
         return stats.to_dict("index")
 
-    def _calculate_magstats(self, detections, non_detections) -> dict:
+    def _calculate_magstats(self, detections, non_detections) -> pd.DataFrame:
         magstats_calculator = MagnitudeStatistics(
             detections=detections, non_detections=non_detections
         )
-        return (
+        stats = (
             magstats_calculator.generate_statistics(self.excluded)
             .reset_index()
             .set_index("oid")
             .replace({np.nan: None})
         )
+        return stats
 
     def execute(self, message: dict):
         stats = self._calculate_object_statistics(message["detections"])

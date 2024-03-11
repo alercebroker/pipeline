@@ -39,7 +39,7 @@ def assert_magstats_is_list(data):
 def assert_ndet(data, oid):
     dets_by_oid = {}
     for msg in input_data:
-        detections = msg["detections"]
+        detections = filter(lambda det: not det["forced"], msg["detections"])
         for det in detections:
             dets_by_oid[det["oid"]] = dets_by_oid.get(det["oid"], []) + [det]
     assert len(dets_by_oid[oid]) == data["ndet"]

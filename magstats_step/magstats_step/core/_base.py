@@ -14,12 +14,7 @@ class BaseStatistics(abc.ABC):
     _STELLAR = ("ZTF",)
 
     def __init__(self, detections: List[dict]):
-        try:
-            self._detections = pd.DataFrame.from_records(
-                detections, exclude=["extra_fields"]
-            )
-        except KeyError:  # extra_fields is not present
-            self._detections = pd.DataFrame.from_records(detections)
+        self._detections = pd.DataFrame.from_records(detections)
         # Select only non-forced detections
         self._detections = self._detections[~self._detections["forced"]]
         # drop duplicate detections (same candid and oid)
@@ -101,15 +96,6 @@ class BaseStatistics(abc.ABC):
             self._select_detections(surveys=surveys, corrected=corrected)
         )
 
-    def calculate_ndet(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {
-                "ndet": self._detections.value_counts(
-                    subset=self._JOIN, sort=False
-                )
-            }
-        )
-
     def generate_statistics(self, exclude: Set[str] = None) -> pd.DataFrame:
         exclude = exclude or set()  # Empty default
         # Add prefix to exclude, unless already provided
@@ -117,14 +103,12 @@ class BaseStatistics(abc.ABC):
             name if name.startswith(self._PREFIX) else f"{self._PREFIX}{name}"
             for name in exclude
         }
-
         # Select all methods that start with prefix unless excluded
         methods = {
             name
             for name in dir(self)
             if name.startswith(self._PREFIX) and name not in exclude
         }
-
         # Compute all statistics and join into single dataframe
         stats = [getattr(self, method)() for method in methods]
         return reduce(lambda left, right: left.join(right, how="outer"), stats)
