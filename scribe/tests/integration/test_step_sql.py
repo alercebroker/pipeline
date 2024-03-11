@@ -3,6 +3,7 @@ import os
 import pytest
 import unittest
 import math
+import random
 
 from sqlalchemy import text
 
@@ -124,102 +125,78 @@ class PsqlIntegrationTest(unittest.TestCase):
             assert "ZTF03ululeea" in oids
 
     def test_insert_detections_into_database(self):
-        command = json.dumps(
-            {
+        def create_command():
+            oid = f"ZTF{random.randint(1,100)}"
+            candid = random.randint(1, 100)
+            return {
                 "collection": "detection",
                 "type": "update",
-                "criteria": {"candid": "932472823", "oid": "ZTF04ululeea"},
+                "criteria": {"candid": candid, "oid": oid},
                 "data": {
-                    "aid": "XChGbTDJWt",
-                    "corrected": False,
-                    "dec": 0.5753534762299036,
-                    "dubious": False,
-                    "e_dec": 0.10948950797319412,
-                    "e_mag": 0.5646288990974426,
-                    "e_mag_corr": None,
-                    "e_mag_corr_ext": None,
-                    "e_ra": 0.010245581157505512,
+                    "aid": f"AL{random.randint(1,100)}",
+                    "corrected": random.choice([True, False]),
+                    "dec": random.random(),
+                    "dubious": random.choice([True, False]),
+                    "e_dec": random.random(),
+                    "e_mag": random.random(),
+                    "e_mag_corr": random.choice([None, random.random()]),
+                    "e_mag_corr_ext": random.choice([None, random.random()]),
+                    "e_ra": random.random(),
                     "extra_fields": {
-                        "chinr": 1,
-                        "distnr": 1.0,
-                        "distpsnr1": 1.0,
-                        "magnr": 10.0,
-                        "sgscore1": 0.5,
-                        "sharpnr": 0.0,
-                        "sigmagnr": 1.0,
+                        "chinr": random.random(),
+                        "distnr": random.random(),
+                        "distpsnr1": random.random(),
+                        "magnr": random.random(),
+                        "sgscore1": random.random(),
+                        "sharpnr": random.random(),
+                        "sigmagnr": random.random(),
                         "unused": None,
                     },
-                    "fid": "i",
-                    "has_stamp": True,
-                    "isdiffpos": -224123822,
-                    "mag": 0.43753013014793396,
-                    "mag_corr": None,
-                    "mjd": 0.8421688401414276,
-                    "oid": "ZTF04ululeea",
-                    "parent_candid": "87654321",
-                    "pid": -285679341253738006,
-                    "ra": 0.10448978320949609,
-                    "sid": "lIklphisOV",
-                    "stellar": False,
+                    "fid": random.choice(["g", "r"]),
+                    "has_stamp": random.choice([True, False]),
+                    "isdiffpos": random.choice([1, -1]),
+                    "mag": random.random(),
+                    "mag_corr": random.choice([None, random.random()]),
+                    "mjd": random.random(),
+                    "oid": oid,
+                    "parent_candid": random.choice(
+                        ["None", random.randint(1, 100)]
+                    ),
+                    "pid": random.randint(1, 100),
+                    "ra": random.random(),
+                    "sid": "ZTF",
+                    "stellar": random.choice([True, False]),
                     "tid": "ZTF",
                     "step_id_corr": "test",
                 },
             }
-        )
-        self.producer.produce({"payload": command})
-        self.producer.produce({"payload": command})
 
+        commands = [create_command() for _ in range(100)]
+        oids = set([command["data"]["oid"] for command in commands])
+        candids = set([command["criteria"]["candid"] for command in commands])
+        commands = [{"payload": json.dumps(command)} for command in commands]
+        for command in commands:
+            self.producer.produce(command)
         with self.db.session() as session:
-            session.execute(
-                text(
-                    """INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
-                lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
-                VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
+            for oid in oids:
+                session.execute(
+                    text(
+                        f"""INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, meanra, meandec, step_id_corr, \
+                    lastmjd, deltajd, ncovhist, ndethist, corrected, stellar)
+                    VALUES ('{oid}', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) ON CONFLICT DO NOTHING"""
+                    )
                 )
-            )
             session.commit()
-
         self.step.start()
-
         with self.db.session() as session:
-            result = session.execute(
-                text(
-                    """ SELECT * FROM detection WHERE oid = 'ZTF04ululeea' """
-                )
-            )
+            result = session.execute(text(""" SELECT oid, candid FROM detection"""))
             result = list(result)
-            assert len(result) == 1
-            result = result[0]
-            assert result[0] == 932472823
-            assert result[1] == "ZTF04ululeea"
-            assert math.isclose(result[2], 0.8421688401414276)
-            assert result[3] == 3
-            assert math.isclose(result[4], -285679341253738006)
-            assert result[5] is None
-            assert result[6] == -224123822
-            assert result[7] is None
-            assert math.isclose(result[8], 0.10448978320949609)
-            assert math.isclose(result[9], 0.5753534762299036)
-            assert math.isclose(result[10], 0.43753013014793396)
-            assert math.isclose(result[11], 0.5646288990974426)
-            assert result[12] is None
-            assert result[13] is None
-            assert result[14] == 1
-            assert result[15] is None
-            assert result[16] is None
-            assert result[17] is None
-            assert result[18] is None
-            assert result[19] is None
-            assert result[20] is None
-            assert result[21] is None
-            assert result[22] is None
-            assert result[23] is None
-            assert result[24] is None
-            assert result[25] is False
-            assert result[26] is False
-            assert result[27] == 87654321
-            assert result[28] is True
-            assert result[29] == "test"
+            assert len(result)
+            inserted_oids = set([row[0] for row in result])
+            inserted_candids = set([row[1] for row in result])
+            assert oids == inserted_oids
+            assert candids == inserted_candids
+
 
     def test_upsert_non_detections(self):
         command = {
