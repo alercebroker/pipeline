@@ -483,3 +483,67 @@ def test_object_statistics_deltajd():
         result["deltajd"],
         pd.Series([4], index=pd.Index(["OID1"], name="oid"), name="deltajd"),
     )
+
+def test_generate_stats():
+    detections = [
+        {
+            "oid": "OID1",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "mjd": 1,
+            "stellar": False,
+            "candid": "a",
+            "forced": False,
+            "corrected": True,
+            "e_ra": 1,
+            "ra": 10,
+            "e_dec": 1,
+            "dec": 10,
+        },
+        {
+            "oid": "OID1",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "mjd": 1,
+            "stellar": False,
+            "candid": "a",
+            "forced": False,
+            "corrected": True,
+            "e_ra": 1,
+            "ra": 10,
+            "e_dec": 1,
+            "dec": 10,
+        },
+        {
+            "oid": "OID2",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "mjd": 1,
+            "stellar": False,
+            "candid": "a",
+            "forced": False,
+            "corrected": True,
+            "e_ra": 1,
+            "ra": 10,
+            "e_dec": 1,
+            "dec": 10,
+        },
+        {
+            "oid": "OID1",
+            "sid": "ZTF",
+            "tid": "ZTF",
+            "mjd": 5,
+            "stellar": True,
+            "candid": "b",
+            "forced": False,
+            "corrected": False,
+            "e_ra": 1,
+            "ra": 10,
+            "e_dec": 1,
+            "dec": 10,
+        },
+    ]
+    calculator = ObjectStatistics(detections)
+    result = calculator.generate_statistics()
+    assert result["ndet"].loc["OID1"] == 2
+    assert result["ndet"].loc["OID2"] == 1

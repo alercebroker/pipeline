@@ -14,7 +14,6 @@ SCHEMA_PATH = str(
 
 SCHEMA = schema.load_schema(SCHEMA_PATH)
 
-aids_pool = [f"AID22X{i}" for i in range(3)]
 ztf_oids_pool = [f"ZTF{i}llmn" for i in range(5)]
 atlas_oids_pool = [f"{i}" for i in range(5)]
 
@@ -28,17 +27,13 @@ for d in data:
         sid = "ATLAS"
         oid = random.choice(atlas_oids_pool)
         fid = random.choice(["o", "c"])
-    aid = random.choice(aids_pool)
     d["oid"] = oid
     for detection in d["detections"]:
-        detection["aid"] = aid
         detection["oid"] = oid
         detection["sid"] = sid
         detection["fid"] = fid
-        detection["forced"] = False
 
     for non_detection in d["non_detections"]:
-        non_detection["aid"] = aid
         non_detection["oid"] = oid
         non_detection["sid"] = sid
         non_detection["fid"] = fid
