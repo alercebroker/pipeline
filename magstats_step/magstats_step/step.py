@@ -62,7 +62,7 @@ class MagstatsStep(GenericStep):
         """
         magstats_by_oid = magstats.loc[oid]
         # magstats_by_oid could have multiple fid values,
-        # so the loc could potentially return a dataframe with a column
+        # so the loc could potentially return a dataframe with a row
         # for each fid
         if isinstance(magstats_by_oid, pd.Series):
             # when calling to_dict on a series
