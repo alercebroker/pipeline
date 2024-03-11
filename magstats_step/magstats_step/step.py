@@ -44,9 +44,7 @@ class MagstatsStep(GenericStep):
         )
 
     def execute(self, message: dict):
-        stats = self._calculate_object_statistics(
-            message["detections"]
-        )
+        stats = self._calculate_object_statistics(message["detections"])
         magstats = self._calculate_magstats(
             message["detections"], message["non_detections"]
         )
