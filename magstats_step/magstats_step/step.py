@@ -32,10 +32,12 @@ class MagstatsStep(GenericStep):
         )
         stats = stats.to_dict("index")
         magstats_calculator = MagnitudeStatistics(**messages)
-        magstats = magstats_calculator.generate_statistics(
-            self.excluded
-        ).reset_index()
-        magstats = magstats.set_index("oid").replace({np.nan: None})
+        magstats = (
+            magstats_calculator.generate_statistics(self.excluded)
+            .reset_index()
+            .set_index("oid")
+            .replace({np.nan: None})
+        )
         for oid in stats:
             self.parse_magstats_result(magstats, oid, stats)
         return stats
@@ -51,7 +53,7 @@ class MagstatsStep(GenericStep):
             # when calling to_dict on a series
             # the result is a single dict
             # we then ensure that it is always a list of dict
-            stats[oid]["magstats"] = [(magstats_by_oid.to_dict())]
+            stats[oid]["magstats"] = [magstats_by_oid.to_dict()]
         elif isinstance(magstats_by_oid, pd.DataFrame):
             # when calling to_dict on a dataframe with orient=records
             # the result should be already a list of dicts
@@ -59,25 +61,40 @@ class MagstatsStep(GenericStep):
         else:
             raise TypeError(f"Unknown magstats type {type(magstats_by_oid)}")
 
-    def _execute_ztf(self, messages: dict):
-        ztf_detections = list(
-            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
-        )
-        if not len(ztf_detections):
+    def _calculate_ztf_object_statistics(self, detections) -> list:
+        if not len(detections):
             return {}
-        obj_calculator = ObjectStatistics(ztf_detections)
+        obj_calculator = ObjectStatistics(detections)
         stats = obj_calculator.generate_statistics(self.excluded).replace(
             {np.nan: None}
         )
-        stats = stats.to_dict("index")
+        return stats.to_dict("index")
+
+    def _calculate_ztf_magstats(
+        self, detections, non_detections
+    ) -> pd.DataFrame:
+        if not len(detections):
+            return pd.DataFrame(columns=["oid"]).set_index("oid")
         magstats_calculator = MagnitudeStatistics(
-            detections=ztf_detections,
-            non_detections=messages["non_detections"],
+            detections=detections,
+            non_detections=non_detections,
         )
         magstats = magstats_calculator.generate_statistics(
             self.excluded
         ).reset_index()
-        magstats = magstats.set_index("oid").replace({np.nan: None})
+        return magstats.set_index("oid").replace({np.nan: None})
+
+    def _execute_ztf(self, messages: dict):
+        ztf_detections = list(
+            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
+        )
+        ztf_non_detections = list(
+            filter(lambda d: d["sid"] == "ZTF", messages["non_detections"])
+        )
+        stats = self._calculate_ztf_object_statistics(ztf_detections)
+        magstats = self._calculate_ztf_magstats(
+            ztf_detections, ztf_non_detections
+        )
         for oid in stats:
             self.parse_magstats_result(magstats, oid, stats)
         return stats
@@ -110,7 +127,9 @@ class MagstatsStep(GenericStep):
                 "options": {"upsert": True},
             }
             flush = count == num_commands
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush, key=oid)
+            self.scribe_producer.produce(
+                {"payload": json.dumps(command)}, flush=flush, key=oid
+            )
 
     def produce_scribe_ztf(self, result: dict):
         num_commands = len(result)
@@ -118,13 +137,15 @@ class MagstatsStep(GenericStep):
         for oid, stats in result.items():
             count += 1
             command = {
-                    "collection": "magstats",
-                    "type": "upsert",
-                    "criteria": {"_id": oid},
-                    "data": stats,
-                }
+                "collection": "magstats",
+                "type": "upsert",
+                "criteria": {"_id": oid},
+                "data": stats,
+            }
             flush = count == num_commands
-            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush, key=oid)
+            self.scribe_producer.produce(
+                {"payload": json.dumps(command)}, flush=flush, key=oid
+            )
 
     def post_execute(self, result: dict):
         self.produce_scribe(result["multistream"])
