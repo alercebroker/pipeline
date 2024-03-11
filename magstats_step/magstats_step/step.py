@@ -25,18 +25,30 @@ class MagstatsStep(GenericStep):
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections}
 
-    def _execute(self, messages: dict):
-        obj_calculator = ObjectStatistics(messages["detections"])
+    def _calculate_object_statistics(self, detections) -> dict:
+        obj_calculator = ObjectStatistics(detections)
         stats = obj_calculator.generate_statistics(self.excluded).replace(
             {np.nan: None}
         )
-        stats = stats.to_dict("index")
-        magstats_calculator = MagnitudeStatistics(**messages)
-        magstats = (
+        return stats.to_dict("index")
+
+    def _calculate_magstats(self, detections, non_detections) -> dict:
+        magstats_calculator = MagnitudeStatistics(
+            detections=detections, non_detections=non_detections
+        )
+        return (
             magstats_calculator.generate_statistics(self.excluded)
             .reset_index()
             .set_index("oid")
             .replace({np.nan: None})
+        )
+
+    def execute(self, message: dict):
+        stats = self._calculate_object_statistics(
+            message["detections"]
+        )
+        magstats = self._calculate_magstats(
+            message["detections"], message["non_detections"]
         )
         for oid in stats:
             self.parse_magstats_result(magstats, oid, stats)
@@ -49,6 +61,7 @@ class MagstatsStep(GenericStep):
         **Note**: Updates stats dictionary in place
         """
         magstats_by_oid = magstats.loc[oid]
+        ## Why is magstats_by_oid not always a series ?
         if isinstance(magstats_by_oid, pd.Series):
             # when calling to_dict on a series
             # the result is a single dict
@@ -60,50 +73,6 @@ class MagstatsStep(GenericStep):
             stats[oid]["magstats"] = magstats_by_oid.to_dict(orient="records")
         else:
             raise TypeError(f"Unknown magstats type {type(magstats_by_oid)}")
-
-    def _calculate_ztf_object_statistics(self, detections) -> list:
-        if not len(detections):
-            return {}
-        obj_calculator = ObjectStatistics(detections)
-        stats = obj_calculator.generate_statistics(self.excluded).replace(
-            {np.nan: None}
-        )
-        return stats.to_dict("index")
-
-    def _calculate_ztf_magstats(
-        self, detections, non_detections
-    ) -> pd.DataFrame:
-        if not len(detections):
-            return pd.DataFrame(columns=["oid"]).set_index("oid")
-        magstats_calculator = MagnitudeStatistics(
-            detections=detections,
-            non_detections=non_detections,
-        )
-        magstats = magstats_calculator.generate_statistics(
-            self.excluded
-        ).reset_index()
-        return magstats.set_index("oid").replace({np.nan: None})
-
-    def _execute_ztf(self, messages: dict):
-        ztf_detections = list(
-            filter(lambda d: d["sid"] == "ZTF", messages["detections"])
-        )
-        ztf_non_detections = list(
-            filter(lambda d: d["sid"] == "ZTF", messages["non_detections"])
-        )
-        stats = self._calculate_ztf_object_statistics(ztf_detections)
-        magstats = self._calculate_ztf_magstats(
-            ztf_detections, ztf_non_detections
-        )
-        for oid in stats:
-            self.parse_magstats_result(magstats, oid, stats)
-        return stats
-
-    def execute(self, messages: dict):
-        stats = {}
-        stats["multistream"] = self._execute(messages)
-        stats["ztf"] = self._execute_ztf(messages)
-        return stats
 
     def produce_scribe(self, result: dict):
         num_commands = len(result)
@@ -148,6 +117,6 @@ class MagstatsStep(GenericStep):
             )
 
     def post_execute(self, result: dict):
-        self.produce_scribe(result["multistream"])
-        self.produce_scribe_ztf(result["ztf"])
+        self.produce_scribe(result)
+        self.produce_scribe_ztf(result)
         return {}
