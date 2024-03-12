@@ -443,6 +443,7 @@ class PsqlIntegrationTest(unittest.TestCase):
                 "sigmadec": 0.00568264450571807,
                 "sigmara": 0.0006830686562186637,
                 "stellar": False,
+                "step_id_corr": "updated",
             },
             "type": "upsert",
         }
@@ -489,7 +490,7 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = session.execute(
                 text(
                     """
-                    SELECT ndet
+                    SELECT ndet, step_id_corr
                     FROM object
                     WHERE oid = 'ZTF04ululeea'
                     """
@@ -498,6 +499,7 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = list(result)
             assert len(result) == 1
             assert result[0][0] == 16
+            assert result[0][1] == "updated"
             result = session.execute(
                 text(
                     """
@@ -511,7 +513,6 @@ class PsqlIntegrationTest(unittest.TestCase):
             assert len(result) == 2
             assert result[0][0] == 11
             assert result[1][0] == 9
-            assert False
 
     def test_upsert_xmatch(self):
         with self.db.session() as session:
@@ -746,6 +747,3 @@ class PsqlIntegrationTest(unittest.TestCase):
                 assert len(result) == 2
                 assert result[0][0] == 420
                 assert result[1][0] == 423432
-
-    def test_update_object():
-        pass
