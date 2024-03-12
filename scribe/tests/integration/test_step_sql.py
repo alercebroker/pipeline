@@ -2,7 +2,6 @@ import json
 import os
 import pytest
 import unittest
-import math
 import random
 
 from sqlalchemy import text
@@ -747,3 +746,6 @@ class PsqlIntegrationTest(unittest.TestCase):
                 assert len(result) == 2
                 assert result[0][0] == 420
                 assert result[1][0] == 423432
+
+    def test_update_object():
+        pass

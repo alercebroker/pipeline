@@ -54,27 +54,16 @@ def test_scribe_message_multistream(env_variables):
         if len(d["detections"]) > 0:
             dcopy.append(d)
     for i, d in enumerate(dcopy):
-        to_write = result[d["oid"]]
-        to_write.update(
-            {
-                "loc": {
-                    "type": "Point",
-                    "coordinates": [
-                        to_write["meanra"] - 180,
-                        to_write["meandec"],
-                    ],
-                }
-            }
-        )
-        command = {
-            "collection": "object",
-            "type": "update",
-            "criteria": {"_id": d["oid"]},
-            "data": to_write,
-            "options": {"upsert": True},
-        }
-        assert any(
-            call[0][0]["payload"] == json.dumps(command)
-            and call.kwargs["key"] == d["oid"]
-            for call in step.scribe_producer.produce.call_args_list
-        )
+        oid_calls = list(filter(
+            lambda call: call.kwargs["key"] == d["oid"],
+            step.scribe_producer.produce.call_args_list,
+        ))
+        assert len(oid_calls) == 2
+        parsed_commands = list(map(lambda call: json.loads(call[0][0]["payload"]), oid_calls))
+        assert len(parsed_commands) == 2
+        assert parsed_commands[0]["collection"] == "object"
+        assert parsed_commands[0]["type"] == "update"
+        assert parsed_commands[1]["collection"] == "magstats"
+        assert parsed_commands[1]["type"] == "upsert"
+        assert parsed_commands[0]["criteria"]["_id"] == d["oid"]
+        assert parsed_commands[1]["criteria"]["_id"] == d["oid"]

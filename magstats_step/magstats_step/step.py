@@ -4,6 +4,7 @@ import pandas as pd
 from typing import List
 from apf.core.step import GenericStep, get_class
 from magstats_step.core import MagnitudeStatistics, ObjectStatistics
+from importlib.metadata import version
 
 
 class MagstatsStep(GenericStep):
@@ -16,6 +17,7 @@ class MagstatsStep(GenericStep):
         self.excluded = set(config["EXCLUDED_CALCULATORS"])
         cls = get_class(config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(config["SCRIBE_PRODUCER_CONFIG"])
+        self.version = version("magstats-step")
 
     @classmethod
     def pre_execute(cls, messages: List[dict]) -> dict:
@@ -81,20 +83,16 @@ class MagstatsStep(GenericStep):
         count = 0
         for oid, stats in result.items():
             count += 1
+            stats["step_version"] = self.version
+            stats["loc"] = {
+                "type": "Point",
+                "coordinates": [stats["meanra"] - 180, stats["meandec"]],
+            }
             command = {
                 "collection": "object",
                 "type": "update",
                 "criteria": {"_id": oid},
-                "data": stats
-                | {
-                    "loc": {
-                        "type": "Point",
-                        "coordinates": [
-                            stats["meanra"] - 180,
-                            stats["meandec"],
-                        ],
-                    }
-                },
+                "data": stats,
                 "options": {"upsert": True},
             }
             flush = count == num_commands
@@ -107,6 +105,7 @@ class MagstatsStep(GenericStep):
         count = 0
         for oid, stats in result.items():
             count += 1
+            stats["step_id_corr"] = self.version
             command = {
                 "collection": "magstats",
                 "type": "upsert",
