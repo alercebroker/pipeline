@@ -8,6 +8,9 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from itertools import product
 from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
+from lc_classifier.classifiers.random_forest import RandomForestClassifier
+from lc_classifier.classifiers.lightgbm import LightGBMClassifier
+from lc_classifier.classifiers.xgboost import XGBoostClassifier
 from consolidate_features import get_shorten
 
 
@@ -45,10 +48,25 @@ labels_figure_order = [
 ]
 assert set(list_of_classes) == set(labels_figure_order)
 
-compute_predictions = False
+classifier_type = 'XGBoost'
+output_filename = 'xgboost_predictions.parquet'
+
+compute_predictions = True
 if compute_predictions:
-    ztf_classifier = ZTFClassifier(list_of_classes)
-    ztf_classifier.load_classifier('ztf_classifier_model_231206')
+    if classifier_type == 'MLP':
+        classifier = ZTFClassifier(list_of_classes)
+        classifier.load_classifier('ztf_classifier_model_231206')
+    elif classifier_type == 'RandomForest':
+        classifier = RandomForestClassifier(list_of_classes)
+        classifier.load_classifier('rf_classifier_240307')
+    elif classifier_type == 'LightGBM':
+        classifier = LightGBMClassifier(list_of_classes)
+        classifier.load_classifier('lightgbm_classifier_240311')
+    elif classifier_type == 'XGBoost':
+        classifier = XGBoostClassifier(list_of_classes)
+        classifier.load_classifier('xgboost_classifier_240312')
+    else:
+        raise ValueError('invalid classifier type')
 
     data_dir = os.listdir(dir_name)
     data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
@@ -60,14 +78,14 @@ if compute_predictions:
         full_filename = os.path.join(dir_name, batch_filename)
         shorten = get_shorten(full_filename)
         astro_objects_batch = pd.read_pickle(full_filename)
-        prediction_df = ztf_classifier.classify_batch(astro_objects_batch, return_dataframe=True)
+        prediction_df = classifier.classify_batch(astro_objects_batch, return_dataframe=True)
         prediction_df['shorten'] = shorten
         predictions.append(prediction_df)
 
     predictions = pd.concat(predictions, axis=0)
-    predictions.to_parquet(os.path.join(dir_name, 'all_predictions.parquet'))
+    predictions.to_parquet(os.path.join(dir_name, output_filename))
 
-predictions = pd.read_parquet(os.path.join(dir_name, 'all_predictions.parquet'))
+predictions = pd.read_parquet(os.path.join(dir_name, output_filename))
 print(predictions)
 
 
