@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from sklearn.preprocessing import QuantileTransformer
 import numpy as np
 import pickle
@@ -10,7 +11,13 @@ def inf_to_nan(features: pd.DataFrame) -> pd.DataFrame:
     return features
 
 
-class MLPFeaturePreprocessor:
+class FeaturePreprocessor(ABC):
+    @abstractmethod
+    def preprocess_features(self, features: pd.DataFrame) -> pd.DataFrame:
+        pass
+
+
+class MLPFeaturePreprocessor(FeaturePreprocessor):
     def __init__(self):
         self.transformer = QuantileTransformer(n_quantiles=1000, random_state=0)
         self.feature_list = None
@@ -51,7 +58,7 @@ class MLPFeaturePreprocessor:
         return features
 
 
-class RandomForestPreprocessor:
+class RandomForestPreprocessor(FeaturePreprocessor):
     def preprocess_features(self, features: pd.DataFrame) -> pd.DataFrame:
         features = inf_to_nan(features.astype(np.float64)).copy()
         features = features.fillna(-999.0)
