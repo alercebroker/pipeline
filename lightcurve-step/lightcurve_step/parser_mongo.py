@@ -14,7 +14,6 @@ def parse_mongo_detection(detections: Cursor):
         # to comply with the legacy schema
         {
             **det,
-            "candid": str(det.get("candid", det.get("_id"))),
             "fid": get_fid(det["fid"]),
         }
         for det in parsed_detections

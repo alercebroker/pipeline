@@ -149,6 +149,7 @@ def insert_detection():
         *,
         sql: PsqlDatabase = None,
         mongo: MongoConnection = None,
+        null_candid: bool = False,
     ):
         if sql:
             with sql.session() as session:
@@ -176,30 +177,30 @@ def insert_detection():
                 session.execute(statement)
                 session.commit()
         if mongo:
-            mongo.database["detection"].insert_one(
-                {
-                    "_id": detection["candid"],
-                    "candid": detection["candid"],
-                    "oid": detection["oid"],
-                    "tid": "ztf",
-                    "sid": "ztf",
-                    "aid": "AL00XYZ00",
-                    "pid": 1,
-                    "mjd": 1,
-                    "fid": 1,
-                    "isdiffpos": -1,
-                    "ra": 45,
-                    "dec": 45,
-                    "e_ra": 0.1,
-                    "e_dec": 0.1,
-                    "mag": 23.1,
-                    "e_mag": 0.9,
-                    "corrected": False,
-                    "dubious": False,
-                    "has_stamp": detection["has_stamp"],
-                    "extra_fields": {},
-                }
-            )
+            det = {
+                "candid": detection["candid"],
+                "oid": detection["oid"],
+                "tid": "ztf",
+                "sid": "ztf",
+                "aid": "AL00XYZ00",
+                "pid": 1,
+                "mjd": 1,
+                "fid": 1,
+                "isdiffpos": -1,
+                "ra": 45,
+                "dec": 45,
+                "e_ra": 0.1,
+                "e_dec": 0.1,
+                "mag": 23.1,
+                "e_mag": 0.9,
+                "corrected": False,
+                "dubious": False,
+                "has_stamp": detection["has_stamp"],
+                "extra_fields": {},
+            }
+            if null_candid:
+                det["_id"] = det.pop("candid")
+            mongo.database["detection"].insert_one(det)
 
     return _populate
 

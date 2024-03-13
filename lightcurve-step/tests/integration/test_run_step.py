@@ -31,6 +31,7 @@ def test_step_start(
         },
         sql=psql_conn,
         mongo=mongo_conn,
+        null_candid=True, # legacy schema
     )
     detections = [
         {
@@ -58,7 +59,6 @@ def test_step_start(
         "correction", 1, detections=detections, oids=["ZTF000llmn"]
     )
     step_creator().start()
-
     consumer = kafka_consumer(["lightcurve"])
     messages = list(consumer.consume())
     assert len(messages) == 1
@@ -66,6 +66,7 @@ def test_step_start(
         detections = msg["detections"]
         oids = set(map(lambda x: x["oid"], msg["detections"]))
         assert len(oids) == 1
+        print(list(map(lambda x: x["candid"], msg["detections"])))
         assert len(detections) == 2
         candids_are_string = list(map(lambda x: type(x) == str, msg["candid"]))
         assert all(candids_are_string)

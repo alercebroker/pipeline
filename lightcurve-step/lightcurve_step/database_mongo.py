@@ -19,14 +19,7 @@ def _get_mongo_detections(oids, db_mongo, parser) -> list:
             {"$match": {"oid": {"$in": oids}}},
             {
                 "$addFields": {
-                    "candid": {
-                        "$cond": {
-                            "if": {"$eq": ["$candid", None]},
-                            "then": "$_id",
-                            "else": "$candid",
-                        }
-                    
-                    },
+                    "candid": {"$ifNull": ["$candid", {"$toString": "$_id"}]},
                     "forced": False,
                     "new": False,
                 }
