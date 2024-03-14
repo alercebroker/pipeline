@@ -2,6 +2,16 @@
 #       early_classifier   Settings File
 ##################################################
 import os
+import json
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("PRODUCER_SCHEMA_PATH"))
+with open(PRODUCER_SCHEMA_PATH, "r") as f:
+    PRODUCER_SCHEMA = json.load(f)
+
+METRICS_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), os.getenv("METRICS_SCHEMA_PATH"))
+with open(METRICS_SCHEMA_PATH, "r") as f:
+    METRICS_SCHEMA = json.load(f)
 
 DB_CONFIG = {
     "SQL": {
@@ -26,37 +36,8 @@ METRICS_CONFIG = {
             "auto.offset.reset": "smallest",
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
+        "SCHEMA": METRICS_SCHEMA
     },
 }
 
@@ -100,29 +81,8 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
     },
-    "SCHEMA": {
-        "doc": "Early Classification",
-        "name": "stamp_probabilities",
-        "type": "record",
-        "fields": [
-            {"name": "objectId", "type": "string"},
-            {"name": "candid", "type": "long"},
-            {
-                "name": "probabilities",
-                "type": {
-                    "name": "probabilities",
-                    "type": "record",
-                    "fields": [
-                        {"name": "SN", "type": "float"},
-                        {"name": "AGN", "type": "float"},
-                        {"name": "VS", "type": "float"},
-                        {"name": "asteroid", "type": "float"},
-                        {"name": "bogus", "type": "float"},
-                    ],
-                },
-            },
-        ],
-    },
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+    "SCHEMA": PRODUCER_SCHEMA
 }
 
 if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):

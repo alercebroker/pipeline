@@ -1,0 +1,64 @@
+namespace: early-classifier
+
+resources:
+  requests:
+    memory: 400M
+    cpu: 500m
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: ['staging-pipeline']
+
+configmap:
+  consumerTopics: "ztf"
+  topicStrategy:
+    enabled: false
+    format: "ztf_%s_programid1"
+  consumerServer: "${kafka_server}"
+  consumerGroup: "stamp_classifier"
+  producerServer: "${kafka_server}"
+  metricsServer: "${kafka_server}"
+  metricsTopic: "metrics"
+  producerTopicFormat: "stamp_classifier_%s"
+  producerDateFormat: "%Y%m%d"
+  producerChangeHour: "23"
+  classifierVersion: "stamp_classifier_1.0.4"
+  producerSchemaPath: "/schemas/early_classification_step/output.avsc"
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+    producer:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+    metrics:
+      enabled: true
+      username: "${kafka_username}"
+      password: "${kafka_password}"
+  db:
+    host: ${db_host}
+    name: ztf
+    password: ${db_password}
+    port: "5432"
+    user: ${db_username}
+
+imageCredentials:
+  registry: "ghcr.io"
+  username: "${ghcr_username}"
+  password: "${ghcr_password}"

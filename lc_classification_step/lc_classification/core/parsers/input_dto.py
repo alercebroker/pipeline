@@ -32,39 +32,40 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
     >>> messages = [
             {
                 "detections": [
-                    {"aid": "aid1", "candid": "cand1"},
-                    {"aid": "aid1", "candid": "cand2"},
+                    {"oid": "oid1", "candid": "cand1"},
+                    {"oid": "oid1", "candid": "cand2"},
                 ]
             },
             {
                 "detections": [
-                    {"aid": "aid2", "candid": "cand3"},
+                    {"oid": "oid2", "candid": "cand3"},
                 ]
             },
         ]
     >>> create_detections_dto(messages)
                 candid
-        aid
-        aid1    cand1
-        aid2    cand3
+        oid
+        oid1    cand1
+        oid2    cand3
     """
     detections = [
         pd.DataFrame.from_records(msg["detections"]) for msg in messages
     ]
     detections = pd.concat(detections)
-    detections.drop_duplicates("aid", inplace=True)
-    detections = detections.set_index("aid")
+    detections.drop_duplicates(["candid", "oid"], inplace=True)
+    detections = detections.set_index("oid")
     detections["extra_fields"] = parse_extra_fields(detections)
+
     if detections is not None:
         return detections
     else:
-        raise ValueError("Could not set index aid on features dataframe")
+        raise ValueError("Could not set index oid on features dataframe")
 
 
 def parse_extra_fields(detections: pd.DataFrame) -> List[dict]:
     for ef in detections["extra_fields"]:
         for key in ef.copy():
-            if type(ef[key]) == bytes:
+            if type(ef[key]) is bytes:
                 extra_field = pickle.loads(ef[key])
                 # the loaded pickle is a list of one element
                 ef[key] = extra_field[0]
@@ -74,40 +75,40 @@ def parse_extra_fields(detections: pd.DataFrame) -> List[dict]:
 def create_features_dto(messages: List[dict]) -> pd.DataFrame:
     """Creates a pandas dataframe with all the features from all messages
 
-    The index is the aid and each feature is a column.
+    The index is the oid and each feature is a column.
 
     Parameters
     -------
     messages : list
-        a list of dictionaries with at least aid and features keys.
+        a list of dictionaries with at least oid and features keys.
     Returns
     -------
     pd.DataFrame
-        A dataframe where each feature is a column indexed by aid.
-        Duplicated aid are removed.
+        A dataframe where each feature is a column indexed by oid.
+        Duplicated oid are removed.
 
     Examples
     --------
     >>> messages = [
             {
-                'aid': 'aid1',
+                'oid': 'oid1',
                 'features': {'feat1': 1, 'feat2': 2}
             },
             {
-                'aid': 'aid1',
+                'oid': 'oid1',
                 'features': {'feat1': 2, 'feat2': 3}
             },
             {
-                'aid': 'aid2',
+                'oid': 'oid2',
                 'features': {'feat1': 4, 'feat2': 5}
             }
         ]
     >>> create_features_dto(messages)
 
         feat1  feat2
-    aid
-    aid2      4      5
-    aid1      2      3
+    oid
+    oid2      4      5
+    oid1      2      3
     """
     if len(messages) == 0 or "features" not in messages[0]:
         return pd.DataFrame()
@@ -118,15 +119,15 @@ def create_features_dto(messages: List[dict]) -> pd.DataFrame:
         entry = {
             feat: message["features"][feat] for feat in message["features"]
         }
-        entry["aid"] = message["aid"]
+        entry["oid"] = message["oid"]
         entries.append(entry)
     if len(entries) == 0:
         return pd.DataFrame()
 
     features = pd.DataFrame.from_records(entries)
-    features.drop_duplicates("aid", inplace=True, keep="last")
-    features = features.set_index("aid")
+    features.drop_duplicates("oid", inplace=True, keep="last")
+    features = features.set_index("oid")
     if features is not None:
         return features
     else:
-        raise ValueError("Could not set index aid on features dataframe")
+        raise ValueError("Could not set index oid on features dataframe")

@@ -1,7 +1,10 @@
 import logging
 from apf.core.step import GenericStep
-from .command.decode import db_command_factory
-from .db.executor import ScribeCommandExecutor
+from .mongo.command.decode import db_command_factory as mongo_command_factory
+from .mongo.db.executor import ScribeCommandExecutor
+
+from .sql.command.decode import command_factory as sql_command_factory
+from .sql.db.executor import SQLCommandExecutor
 
 
 class MongoScribe(GenericStep):
@@ -13,24 +16,28 @@ class MongoScribe(GenericStep):
         Description of parameter `consumer`.
     """
 
-    def __init__(self, consumer=None, config=None, **step_args):
+    def __init__(self, consumer=None, config=None, db="mongo", **step_args):
         super().__init__(consumer, config=config, **step_args)
-        self.db_client = ScribeCommandExecutor(config["DB_CONFIG"])
+        if db == "sql":
+            self.db_client = SQLCommandExecutor(config["DB_CONFIG"])
+            self.command_factory = sql_command_factory
+        else:
+            self.db_client = ScribeCommandExecutor(config["DB_CONFIG"])
+            self.command_factory = mongo_command_factory
 
     def execute(self, messages):
         """
         Transforms a batch of messages from a topic into Scribe
         DB Commands and executes them when they're valid.
-        NOTE: WE'RE ASSUMING THAT EVERY MESSAGE FROM THE BATCH GOES INTO THE SAME COLLECTION
         """
         logging.info("Processing messages...")
         valid_commands, n_invalid_commands = [], 0
         for message in messages:
             try:
-                new_command = db_command_factory(message["payload"])
+                new_command = self.command_factory(message["payload"])
                 valid_commands.append(new_command)
-            except Exception as exc:
-                logging.error(f"Error processing message: {exc}")
+            except ValueError as e:
+                self.logger.debug(e)
                 n_invalid_commands += 1
 
         logging.info(
@@ -39,7 +46,6 @@ class MongoScribe(GenericStep):
 
         if len(valid_commands) > 0:
             logging.info("Writing commands into database")
-            # collection = valid_commands[0].collection
             self.db_client.bulk_execute(valid_commands)
 
         return []

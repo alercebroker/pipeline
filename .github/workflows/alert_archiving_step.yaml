@@ -25,11 +25,3 @@ jobs:
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
 
-  alert_archiving_step_build:
-    uses: ./.github/workflows/build-template.yaml
-    with:
-      base-folder: "alert_archiving_step"
-      build-context: "alert_archiving_step"
-      step-name: "alert_archiving_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'

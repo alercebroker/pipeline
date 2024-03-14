@@ -1,0 +1,57 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 32
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: xmatch-step
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 1500M
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 250
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+      message.max.bytes: 67108864
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}

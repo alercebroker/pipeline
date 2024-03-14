@@ -15,8 +15,8 @@ def fill_index(
         raise ValueError(
             f"DataFrame has MultiIndex with {df.index.names}. Requested filling: {check}"
         )
-    aids = df.index.get_level_values("id").unique()
-    values = [aids] + [kwargs[k] for k in df.index.names if k != "id"]
+    oids = df.index.get_level_values("id").unique()
+    values = [oids] + [kwargs[k] for k in df.index.names if k != "id"]
 
     df = df.reindex(pd.MultiIndex.from_product(values, names=df.index.names))
     if counters is None:

@@ -53,14 +53,14 @@ def generate_alert_atlas(num_messages: int, identifier: int) -> list[dict]:
 
 
 def generate_alert_ztf(
-    aid: str, band: str, num_messages: int, identifier: int
+    oid: str, band: str, num_messages: int, identifier: int
 ) -> list[dict]:
     alerts = []
     for i in range(num_messages):
         alert = {
             "candid": str(random.randint(1000000, 9000000)),
-            "oid": f"ZTFoid{identifier}",
-            "aid": aid,
+            "aid": f"ZTFaid{identifier}",
+            "oid": oid,
             "tid": "ZTF",
             "mjd": random.uniform(59000, 60000),
             "sid": "ZTF",
@@ -88,11 +88,11 @@ def generate_alert_ztf(
     return alerts
 
 
-def generate_non_det(aid: str, num: int, identifier: int) -> list[dict]:
+def generate_non_det(oid: str, num: int, identifier: int) -> list[dict]:
     non_det = []
     for i in range(num):
         nd = {
-            "aid": aid,
+            "oid": oid,
             "tid": "ztf",
             "oid": f"ZTFoid{identifier}",
             "sid": "ZTF",
@@ -114,15 +114,16 @@ def generate_input_batch(n: int) -> list[dict]:
     """
     batch = []
     for m in range(1, n + 1):
-        aid = f"AL2X{str(m).zfill(5)}"
+        oid = f"AL2X{str(m).zfill(5)}"
         meanra = random.uniform(0, 360)
         meandec = random.uniform(-90, 90)
-        detections_g = generate_alert_ztf(aid, "g", random.randint(5, 10), m)
-        detections_r = generate_alert_ztf(aid, "r", random.randint(5, 10), m)
-        non_det = generate_non_det(aid, random.randint(1, 5), m)
-        xmatch = get_fake_xmatch(aid, meanra, meandec)
+        detections_g = generate_alert_ztf(oid, "g", random.randint(5, 10), m)
+        detections_r = generate_alert_ztf(oid, "r", random.randint(5, 10), m)
+        non_det = generate_non_det(oid, random.randint(1, 5), m)
+        xmatch = get_fake_xmatch(oid, meanra, meandec)
         msg = {
-            "aid": aid,
+            "oid": oid,
+            "candid": [det["candid"] for det in detections_g + detections_r],
             "meanra": meanra,
             "meandec": meandec,
             "detections": detections_g + detections_r,

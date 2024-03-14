@@ -17,7 +17,7 @@ class BaseHandler(abc.ABC):
     This provides the general base methods for extracting statistics and applying functions to the alerts
     considered.
 
-    Alerts require at the very least fields `sid`, `fid`, `mjd` and `aid` (the latter will be renamed to `id`).
+    Alerts require at the very least fields `sid`, `fid`, `mjd` and `oid` (the latter will be renamed to `id`).
     Usually, a subclass will define additional fields that are required, but missing one of the aforementioned fields
     will result in an initialization error, unless the initialization methods are adapted as well. These always
     required fields are defined the class attribute `COLUMNS`.
@@ -35,6 +35,7 @@ class BaseHandler(abc.ABC):
     _NAME: str  # Only used in logging
     INDEX: str | list[str] = []
     UNIQUE: str | list[str] = []
+    NON_DUPLICATE: str | list[str] = []
     COLUMNS = ["id", "sid", "fid", "mjd"]
 
     def __init__(
@@ -73,7 +74,7 @@ class BaseHandler(abc.ABC):
             )
         except KeyError:  # extra_fields is not present
             self._alerts = pd.DataFrame.from_records(alerts)
-        self._alerts = self._alerts.rename(columns={"aid": "id"})
+        self._alerts = self._alerts.rename(columns={"oid": "id"})
         if self._alerts.size == 0:
             index = (
                 {self.INDEX}
@@ -95,10 +96,14 @@ class BaseHandler(abc.ABC):
         if self.UNIQUE:
             self._alerts.drop_duplicates(self.UNIQUE, inplace=True)
             self.logger.debug(
+                f"{len(self._alerts)} {self._NAME} remain after unque removal"
+            )
+        if self.NON_DUPLICATE:
+            self._alerts.drop_duplicates(self.NON_DUPLICATE, inplace=True)
+            self.logger.debug(
                 f"{len(self._alerts)} {self._NAME} remain after duplicate removal"
             )
         if self.INDEX:
-            self._alerts.drop_duplicates(self.INDEX, inplace=True)
             self._alerts.set_index(self.INDEX, inplace=True)
             self.logger.debug(f"Using column(s) {self.INDEX} for indexing")
 
@@ -302,17 +307,17 @@ class BaseHandler(abc.ABC):
         ]
         if extras and self._alerts.size:
             records = {
-                alert[self.INDEX]: alert["extra_fields"] for alert in alerts
+                alert[self.INDEX]: {**alert["extra_fields"], "id": alert["oid"]} for alert in alerts
             }
             df = pd.DataFrame.from_dict(
-                records, orient="index", columns=extras
+                records, orient="index", columns=extras + ["id", "candid"]
             )
             df = (
                 df.reset_index(names=[self.INDEX])
-                .drop_duplicates(self.INDEX)
+                .drop_duplicates(self.NON_DUPLICATE)
                 .set_index(self.INDEX)
             )
-            self._alerts = self._alerts.join(df)
+            self._alerts = self._alerts.join(df, how="left", rsuffix="_extra").drop("id_extra", axis=1)
         elif extras:  # Add extra (empty) columns to empty dataframe
             self._alerts[[extras]] = None
 

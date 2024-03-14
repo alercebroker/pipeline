@@ -1,0 +1,83 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 60
+
+
+configYaml:
+  enabled: true
+  FEATURE_FLAGS:
+    RUN_CONESEARCH: false
+    USE_PROFILING: true
+    USE_PSQL: false
+    PROMETHEUS: false
+  MONGO_SECRET_NAME: mongo-elasticc-production/writer
+  PSQL_SECRET_NAME: ""
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+    TOPICS: ["elasticc-ddf", "elasticc-wfd"]
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "sorting-hat-elasticc"
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+      message.max.bytes: 6291456
+    CLASS: "apf.producers.kafka.KafkaProducer"
+    TOPIC: "sorting-hat-elasticc"
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/sorting_hat_step/metrics.json"
+  LOGGING_DEBUG: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: sorting-hat-elasticc
+  - name: METRICS_SURVEY
+    value: ATLAS
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: sorting-hat-elasticc
+resources:
+  requests:
+    cpu: 150m
+    memory: 128Mi

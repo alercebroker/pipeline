@@ -9,6 +9,7 @@ from sqlalchemy import (
     ARRAY,
     Index,
     DateTime,
+    JSON,
     ForeignKeyConstraint,
 )
 
@@ -38,25 +39,25 @@ class Object(Base):
     __tablename__ = "object"
 
     oid = Column(String, primary_key=True)
-    ndethist = Column(Integer)
-    ncovhist = Column(Integer)
+    ndethist = Column(Integer, nullable=False)
+    ncovhist = Column(Integer, nullable=False)
     mjdstarthist = Column(Float(precision=53))
     mjdendhist = Column(Float(precision=53))
-    corrected = Column(Boolean)
-    stellar = Column(Boolean)
-    ndet = Column(Integer)
+    corrected = Column(Boolean, nullable=False, default=False)
+    stellar = Column(Boolean, nullable=False, default=False)
+    ndet = Column(Integer, nullable=False, default=1)
     g_r_max = Column(Float)
     g_r_max_corr = Column(Float)
     g_r_mean = Column(Float)
     g_r_mean_corr = Column(Float)
-    meanra = Column(Float(precision=53))
-    meandec = Column(Float(precision=53))
+    meanra = Column(Float(precision=53), nullable=False)
+    meandec = Column(Float(precision=53), nullable=False)
     sigmara = Column(Float(precision=53))
     sigmadec = Column(Float(precision=53))
-    deltajd = Column(Float(precision=53))
-    firstmjd = Column(Float(precision=53))
-    lastmjd = Column(Float(precision=53))
-    step_id_corr = Column(String)
+    deltajd = Column(Float(precision=53), nullable=False)
+    firstmjd = Column(Float(precision=53), nullable=False)
+    lastmjd = Column(Float(precision=53), nullable=False)
+    step_id_corr = Column(String, nullable=False)
     diffpos = Column(Boolean)
     reference_change = Column(Boolean)
 
@@ -120,9 +121,7 @@ class Feature(Base):
     name = Column(String, primary_key=True, nullable=False)
     value = Column(Float(precision=53))
     fid = Column(Integer, primary_key=True)
-    version = Column(
-        String, ForeignKey("feature_version.version"), primary_key=True, nullable=False
-    )
+    version = Column(String, primary_key=True, nullable=False)
 
     __table_args__ = (Index("ix_feature_oid_2", "oid", postgresql_using="hash"),)
 
@@ -262,6 +261,58 @@ class Detection(Base, Commons):
             self.fid,
             self.oid,
         )
+
+
+class ForcedPhotometry(Base):
+    __tablename__ = "forced_photometry"
+
+    pid = Column(BigInteger, primary_key=True)
+    oid = Column(String, primary_key=True)
+    mjd = Column(Float(precision=53), nullable=False)
+    fid = Column(Integer, nullable=False)
+    ra = Column(Float(precision=53), nullable=False)
+    dec = Column(Float(precision=53), nullable=False)
+    e_ra = Column(Float)
+    e_dec = Column(Float)
+    mag = Column(Float)
+    e_mag = Column(Float)
+    mag_corr = Column(Float)
+    e_mag_corr = Column(Float)
+    e_mag_corr_ext = Column(Float)
+    isdiffpos = Column(Integer, nullable=False)
+    corrected = Column(Boolean, nullable=False)
+    dubious = Column(Boolean, nullable=False)
+    parent_candid = Column(String)
+    has_stamp = Column(Boolean, nullable=False)
+    # extra fields
+    field = Column(Integer)
+    rcid = Column(Integer)
+    rfid = Column(BigInteger)
+    sciinpseeing = Column(Float)
+    scibckgnd = Column(Float)
+    scisigpix = Column(Float)
+    magzpsci = Column(Float)
+    magzpsciunc = Column(Float)
+    magzpscirms = Column(Float)
+    clrcoeff = Column(Float)
+    clrcounc = Column(Float)
+    exptime = Column(Float)
+    adpctdif1 = Column(Float)
+    adpctdif2 = Column(Float)
+    diffmaglim = Column(Float)
+    programid = Column(Integer)
+    procstatus = Column(String)
+    distnr = Column(Float)
+    ranr = Column(Float(precision=53))
+    decnr = Column(Float(precision=53))
+    magnr = Column(Float)
+    sigmagnr = Column(Float)
+    chinr = Column(Float)
+    sharpnr = Column(Float)
+
+    __table_args__ = (
+        Index("ix_forced_photometry_oid", "oid", postgresql_using="hash"),
+    )
 
 
 class Dataquality(Base):

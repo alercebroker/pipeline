@@ -1,0 +1,193 @@
+{
+  "doc": "Multi stream light curve with xmatch",
+  "name": "alerce.light_curve_xmatched",
+  "type": "record",
+  "fields": [
+    {
+      "name": "oid",
+      "type": "string"
+    },
+    {
+      "name": "candid",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "detections",
+      "type": {
+        "type": "array",
+        "default": [],
+        "items": {
+          "name": "detections_record",
+          "type": "record",
+          "fields": [
+            {
+              "name": "candid",
+              "type": "string"
+            },
+            {
+              "name": "tid",
+              "type": "string"
+            },
+            {
+              "name": "aid",
+              "type": ["null", "string"]
+            },
+            {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "mjd",
+              "type": "double"
+            },
+            {
+              "name": "sid",
+              "type": "string"
+            },
+            {
+              "name": "fid",
+              "type": "string"
+            },
+            {
+              "name": "pid",
+              "type": "long"
+            },
+            {
+              "name": "ra",
+              "type": "double"
+            },
+            {
+              "name": "e_ra",
+              "type": "float"
+            },
+            {
+              "name": "dec",
+              "type": "double"
+            },
+            {
+              "name": "e_dec",
+              "type": "float"
+            },
+            {
+              "name": "mag",
+              "type": "float"
+            },
+            {
+              "name": "e_mag",
+              "type": "float"
+            },
+            {
+              "name": "mag_corr",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "e_mag_corr",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "e_mag_corr_ext",
+              "type": ["float", "null"]
+            },
+            {
+              "name": "isdiffpos",
+              "type": "int"
+            },
+            {
+              "name": "corrected",
+              "type": "boolean"
+            },
+            {
+              "name": "dubious",
+              "type": "boolean"
+            },
+            {
+              "name": "has_stamp",
+              "type": "boolean"
+            },
+            {
+              "name": "stellar",
+              "type": "boolean"
+            },
+            {
+              "name": "forced",
+              "type": "boolean"
+            },
+            {
+              "name": "new",
+              "type": "boolean"
+            },
+            {
+              "name": "parent_candid",
+              "type": ["long", "string", "null"]
+            },
+            {
+              "name": "extra_fields",
+              "type": {
+                "default": {},
+                "type": "map",
+                "values": ["null", "int", "float", "string", "bytes", "boolean"]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "non_detections",
+      "type": {
+        "type": "array",
+        "default": [],
+        "items": {
+          "name": "non_detections_record",
+          "type": "record",
+          "fields": [
+            {
+              "name": "aid",
+              "type": ["null", "string"]
+            },
+            {
+              "name": "tid",
+              "type": "string"
+            },
+            {
+              "name": "sid",
+              "type": "string"
+            },
+            {
+              "name": "oid",
+              "type": "string"
+            },
+            {
+              "name": "mjd",
+              "type": "double"
+            },
+            {
+              "name": "fid",
+              "type": "string"
+            },
+            {
+              "name": "diffmaglim",
+              "type": "float"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "xmatches",
+      "type": [
+        {
+          "type": "map",
+          "values": {
+            "type": "map",
+            "values": ["string", "float", "null", "int"]
+          }
+        },
+        "null"
+      ]
+    }
+  ]
+}

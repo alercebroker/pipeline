@@ -5,40 +5,40 @@ on:
     branches:
       - main
     paths:
-      - 's3_step/**'
-      - '!s3_step/README.md'
+      - "s3_step/**"
+      - "!s3_step/README.md"
 
 jobs:
   s3_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 's3_step'
-      base-folder: 's3_step'
+      sources-folder: "s3_step"
+      base-folder: "s3_step"
   s3_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 's3_step'
-      python-version: '3.9'
-      sources-folder: 's3_step'
-      test-folder: 'tests/unittest'
+      base-folder: "s3_step"
+      python-version: "3.9"
+      sources-folder: "s3_step"
+      test-folder: "tests/unittest"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   s3_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      base-folder: 's3_step'
-      python-version: '3.9'
-      sources-folder: 's3_step'
-      test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
-  s3_step_build:
-    uses: ./.github/workflows/build-template.yaml
-    with:
       base-folder: "s3_step"
-      build-context: "s3_step"
-      step-name: "s3_step"
+      python-version: "3.9"
+      sources-folder: "s3_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+
+  build-s3-step-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: s3_step --dry-run
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

@@ -32,7 +32,7 @@ class ElasticcParser(KafkaParser):
             ]
 
             if len(new_detection) == 0:
-                ## case when no new detections
+                # case when no new detections
                 new_detection = [
                     det for det in message["detections"] if det["has_stamp"]
                 ]
@@ -47,9 +47,13 @@ class ElasticcParser(KafkaParser):
 
             new_detection = new_detection[0]
 
-            detection_extra_info[new_detection["aid"]] = {
-                "candid": new_detection["candid"],
-                "oid": new_detection["oid"],
+            detection_extra_info[new_detection["oid"]] = {
+                "candid": new_detection["extra_fields"].get(
+                    "alertId", new_detection["candid"]
+                ),
+                "diaSourceId": new_detection["extra_fields"].get(
+                    "diaSourceId", new_detection["candid"]
+                ),
                 "elasticcPublishTimestamp": new_detection["extra_fields"].get(
                     "surveyPublishTimestamp"
                 ),
@@ -62,14 +66,14 @@ class ElasticcParser(KafkaParser):
         predictions = NoClassifiedPostProcessor(
             messages, predictions
         ).get_modified_classifications()
-        predictions["aid"] = predictions.index
+        predictions["oid"] = predictions.index
         for class_name in self.ClassMapper.get_class_names():
             if class_name not in predictions.columns:
                 predictions[class_name] = 0.0
         classifications = predictions.to_dict(orient="records")
         output = []
         for classification in classifications:
-            aid = classification.pop("aid")
+            oid = classification.pop("oid")
             if "classifier_name" in classification:
                 classification.pop("classifier_name")
 
@@ -80,14 +84,15 @@ class ElasticcParser(KafkaParser):
                 }
                 for predicted_class, prob in classification.items()
             ]
+            print(detection_extra_info)
             response = {
-                "alertId": int(detection_extra_info[aid]["candid"]),
-                "diaSourceId": int(detection_extra_info[aid]["oid"]),
+                "alertId": int(detection_extra_info[oid]["candid"]),
+                "diaSourceId": int(detection_extra_info[oid]["diaSourceId"]),
                 "elasticcPublishTimestamp": int(
-                    detection_extra_info[aid]["elasticcPublishTimestamp"]
+                    detection_extra_info[oid]["elasticcPublishTimestamp"]
                 ),
                 "brokerIngestTimestamp": int(
-                    detection_extra_info[aid]["brokerIngestTimestamp"]
+                    detection_extra_info[oid]["brokerIngestTimestamp"]
                 ),
                 "classifications": output_classification,
                 "brokerVersion": classifier_version,

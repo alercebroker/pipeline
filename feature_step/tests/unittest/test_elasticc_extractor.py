@@ -29,7 +29,7 @@ class TestElasticcExtractor(unittest.TestCase):
         """
         If there are many objects and some object have alerts in some bands but not other
         that where present in other objects, the result of calculating the features raises
-        an error
+        an error. (border case resolved)
         """
         bands_incomplete = ["r", "i", "z", "Y"]
         bands_incomplete_2 = ["u", "g"]
@@ -56,7 +56,7 @@ class TestElasticcExtractor(unittest.TestCase):
         There is a check to evaluate de correctnes of a detection in an object
         If theres is no correctly detected detection, the features still advance
         and at some point (calculating the sn features in particular) raises an
-        error
+        error. (border case resolved)
         """
         messages = generate_bad_emag_ratio(1, ELASTICC_BANDS)
 

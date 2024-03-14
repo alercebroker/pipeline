@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ include "s3-step.fullname" . }}-atlas'
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "s3-step.labels" . | nindent 4 }}
+    app.kubernetes.io/name: '{{ include "s3-step.name" . }}-atlas'
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  {{- if not .Values.autoscaling.atlas.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: '{{ include "s3-step.name" . }}-atlas'
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: '{{ include "s3-step.name" . }}-atlas'
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources.atlas | nindent 12 }}
+          env:
+            {{- if .Values.configmap.atlas.topicStrategy.enabled }}
+            - name: TOPIC_STRATEGY_FORMAT
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: topic-strategy-format
+            {{- end }}
+            - name: CONSUMER_TOPICS
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: consumer-topics
+            - name: CONSUMER_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: internal-server
+            - name: CONSUMER_GROUP_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: consumer-group-id
+            - name: METRICS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: internal-server
+            - name: METRICS_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: metrics-topic
+            - name: BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: bucket-name
+            - name: REGION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: region-name
+            - name: PRODUCER_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: producer-schema-path
+            - name: METRICS_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: metrics-schema-path
+            - name: SCRIBE_SCHEMA_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "s3-step.fullname" . }}-atlas'
+                  key: scribe-schema-path
+            {{- if .Values.secrets.kafkaAuth.consumer.enabled }}
+            - name: CONSUMER_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-username
+            - name: CONSUMER_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: consumer-password
+            {{- end }}
+            {{- if .Values.secrets.kafkaAuth.metrics.enabled }}
+            - name: METRICS_KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-username
+            - name: METRICS_KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-auth
+                  key: metrics-password
+            {{- end }}
+            - name: METRICS_SOURCE
+              value: {{ .Release.Name }}
+            - name: METRICS_SURVEY
+              value: ATLAS
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

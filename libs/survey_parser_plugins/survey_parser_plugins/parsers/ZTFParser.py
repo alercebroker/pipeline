@@ -1,3 +1,4 @@
+import math
 from ..core import GenericAlert, SurveyParser
 from ..core.mapper import Mapper
 
@@ -14,6 +15,13 @@ FILTER = {
 }
 
 
+def _e_ra(dec, fid):
+    try:
+        return ERRORS[fid] / abs(math.cos(math.radians(dec)))
+    except ZeroDivisionError:
+        return float("nan")
+
+
 class ZTFParser(SurveyParser):
     _source = "ZTF"
 
@@ -27,9 +35,9 @@ class ZTFParser(SurveyParser):
         "mjd": Mapper(lambda x: x - 2400000.5, origin="jd"),
         "ra": Mapper(origin="ra"),
         "e_ra": Mapper(
-            lambda x, y: x if x else ERRORS[y],
+            lambda x, y, z: x if x else _e_ra(y, z),
             origin="sigmara",
-            extras=["fid"],
+            extras=["dec", "fid"],
             required=False,
         ),
         "dec": Mapper(origin="dec"),
@@ -65,6 +73,7 @@ class ZTFParser(SurveyParser):
             "cutoutDifference",
             "brokerIngestTimestamp",
             "surveyPublishTimestamp",
+            "fp_hists",
         ]
         candidate.update({k: v for k, v in message.items() if k in fields_from_top})
         return super(ZTFParser, cls).parse_message(candidate)

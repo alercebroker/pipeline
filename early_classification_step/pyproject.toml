@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "early_classification_step"
-version = "6.1.1a30"
+version = "23.12.26a75"
 description = "Early Classification Step"
 authors = []
 readme = "README.md"
@@ -14,12 +14,41 @@ packages = [{include = "earlyclassifier"}]
 python = ">=3.7,<3.8"
 apf-base = "1.0.7"
 db-plugins = "4.2.7"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
 
 [tool.black]
 line-length = 88
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -192,10 +221,39 @@ pytest-docker = "^1.0.1"
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [tool.poetry.group.model.dependencies]
 ephem = "3.7.7.0"
 absl-py = "0.7.1"
 astor = "0.8.0"
+astropy = "3.2.1"
 bleach = "3.1.0"
 certifi = "2019.6.16"
 chardet = "3.0.4"

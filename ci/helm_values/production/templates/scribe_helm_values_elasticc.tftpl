@@ -1,0 +1,61 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'scribe-elasticc'
+  - name: METRICS_SURVEY
+    value: LSST
+
+image:
+  repository: ghcr.io/alercebroker/scribe
+
+namespace: scribe-elasticc
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 128Mi
+
+configYaml:
+  DB_TYPE: "mongo"
+  DB_SECRET_NAME: "mongo-elasticc-production/writer"
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "scribe_consumer_elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["w_object_elasticc","w_detection_elasticc"]
+    NUM_MESSAGES: 1000
+    TIMEOUT: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/scribe_step/metrics.json"
+      TOPIC: "metrics_elasticc"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+  USE_PROFILING: true
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"

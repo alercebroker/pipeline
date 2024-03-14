@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "test-utils"
-version = "6.1.1a30"
+version = "6.1.1a35"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
@@ -8,8 +8,22 @@ packages = [{include = "test_utils"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
+confluent_kafka = "2.0.2"
+pymongo = "^4.4.1"
+db-plugins = {path = "../db-plugins", develop = true}
+psycopg2-binary = "*"
+pytest-docker = "^1.0.1"
 
+[project]
+name = "test_utils"
+version = "1.0.0" # ignore this, we use [tool.poetry]->version
+classifiers = [
+    "Framework :: Pytest",
+]
+
+[project.entry-points.pytest11]
+test_utils = "test_utils.fixtures"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

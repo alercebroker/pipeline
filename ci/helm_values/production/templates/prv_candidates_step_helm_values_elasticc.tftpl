@@ -1,0 +1,79 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 16
+  targetCPUUtilizationPercentage: 20
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: prv-candidates-elasticc
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 900Mi
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: prv-candidates-elasticc
+  - name: METRICS_SURVEY
+    value: LSST
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "prv-candidates-step-elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["^sorting-hat.*"]
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "prv-candidates_elasticc"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_non_detections_elasticc"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/prv_candidate_step/metrics.json"
+      TOPIC: "metrics_elasticc"
+  LOGGING_DEBUG: false
+  USE_PROMETHEUS: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  USE_PROFILING: true

@@ -1,0 +1,42 @@
+{
+    "type": "record",
+    "doc": "Multi stream alert of any telescope/survey",
+    "name": "alerce.alert",
+    "fields": [
+        {"name": "aid", "type": "string"},
+        {"name": "oid", "type": "string"},
+        {"name": "sid", "type": "string"},
+        {"name": "tid", "type": "string"},
+        {"name": "pid", "type": "long"},
+        {"name": "candid", "type": "string"},
+        {"name": "mjd", "type": "double"},
+        {"name": "fid", "type": "string"},
+        {"name": "ra", "type": "double"},
+        {"name": "dec", "type": "double"},
+        {"name": "mag", "type": "float"},
+        {"name": "e_mag", "type": "float"},
+        {"name": "isdiffpos", "type": "int"},
+        {"name": "e_ra", "type": "float"},
+        {"name": "e_dec", "type": "float"},
+        {
+            "name": "extra_fields",
+            "type": {
+                "type": "map",
+                "values": ["null", "int", "float", "string", "bytes"],
+                "default": {}
+            }
+        },
+        {
+            "name": "stamps",
+            "type": {
+                "type": "record",
+                "name": "stamps",
+                "fields": [
+                    {"name": "science", "type": ["null", "bytes"], "default": null},
+                    {"name": "template", "type": ["null", "bytes"], "default": null},
+                    {"name": "difference", "type": ["null", "bytes"], "default": null}
+                ]
+            }
+        }
+    ]
+}

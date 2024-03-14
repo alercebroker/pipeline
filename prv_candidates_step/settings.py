@@ -1,10 +1,20 @@
+import pathlib
 import os
-from fastavro import schema
-from fastavro.repository.base import SchemaRepositoryError
 
 ##################################################
 #       prv_candidates_step   Settings File
 ##################################################
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/prv_candidate_step", "output.avsc"
+)
+METRICS_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/prv_candidate_step", "metrics.json"
+)
+SCRIBE_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 
 def settings_creator():
@@ -27,37 +37,31 @@ def settings_creator():
         "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", "10")),
     }
 
-    try:
-        the_schema = schema.load_schema("schema.avsc")
-    except SchemaRepositoryError:
-        the_schema = schema.load_schema("prv_candidates_step/schema.avsc")
     producer_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+        "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": the_schema,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH ", PRODUCER_SCHEMA_PATH),
     }
 
-    try:
-        the_schema = schema.load_schema("scribe_schema.avsc")
-    except SchemaRepositoryError:
-        the_schema = schema.load_schema("prv_candidates_step/scribe_schema.avsc")
     scribe_producer_config = {
         "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA": the_schema,
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", SCRIBE_SCHEMA_PATH),
     }
 
     metrics_config = {
         "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
         "EXTRA_METRICS": [
             {"key": "candid", "format": lambda x: str(x)},
+            {"key": "oid"},
+            {"key": "aid"},
         ],
         "PARAMS": {
             "PARAMS": {
@@ -65,37 +69,7 @@ def settings_creator():
                 "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "http://example.com/example.json",
-                "type": "object",
-                "title": "The root schema",
-                "description": "The root schema comprises the entire JSON document.",
-                "default": {},
-                "examples": [
-                    {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-                ],
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "$id": "#/properties/timestamp_sent",
-                        "type": "string",
-                        "title": "The timestamp_sent schema",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "$id": "#/properties/timestamp_received",
-                        "type": "string",
-                        "title": "The timestamp_received schema",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", METRICS_SCHEMA_PATH),
         },
     }
 
@@ -144,4 +118,6 @@ def settings_creator():
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
         "LOGGING_DEBUG": logging_debug,
         "USE_PROMETHEUS": prometheus,
+        "USE_PROFILING": os.getenv("USE_PROFILING", False),
+        "PYROSCOPE_SERVER": os.getenv("PYROSCOPE_SERVER"),
     }

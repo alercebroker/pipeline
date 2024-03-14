@@ -1,3 +1,8 @@
+import logging
+from typing import Generator, List
+import uuid
+
+from apf.producers.kafka import KafkaProducer
 from .test_core import GenericConsumerTest
 from apf.consumers.kafka import (
     KafkaJsonConsumer,
@@ -15,6 +20,7 @@ from .message_mock import (
 )
 import datetime
 import os
+import pytest
 
 
 def consume(num_messages=1):
@@ -238,3 +244,177 @@ class TestKafkaSchemalessConsumer(unittest.TestCase):
 
         with self.assertRaises(Exception):
             consumer._deserialize_message(schemaless_avro)
+
+
+@pytest.fixture
+def consumer():
+    def initialize_consumer(topic: List[str], extra_config: dict = {}):
+        params = {
+            "TOPICS": topic,
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+                "group.id": uuid.uuid4().hex,
+                "enable.partition.eof": True,
+                "auto.offset.reset": "earliest",
+            },
+        }
+        params.update(extra_config)
+        return KafkaConsumer(params)
+
+    yield initialize_consumer
+
+
+def test_consumer_with_offests(consumer, kafka_service, caplog):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema_woffset.avsc"
+    )
+    caplog.set_level(logging.DEBUG)
+    producer = KafkaProducer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+            },
+            "TOPIC": "offset_tests",
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        }
+    )
+    producer.produce({"id": 1}, timestamp=10)
+    producer.produce({"id": 3}, timestamp=15)
+    producer.produce({"id": 2}, timestamp=20)
+    producer.produce({"id": 4}, timestamp=30)
+    producer.producer.flush()
+    kconsumer = consumer(["offset_tests"], {"offsets": {"start": 10, "end": 20}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 2
+    assert messages[0]["id"] == 1
+    assert messages[1]["id"] == 3
+    kconsumer = consumer(["offset_tests"], {"offsets": {"start": 20}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 2
+    assert messages[0]["id"] == 2
+    assert messages[1]["id"] == 4
+    kconsumer = consumer(["offset_tests"])
+    messages = list(kconsumer.consume())
+    assert len(messages) == 4
+    kconsumer = consumer(["offset_tests"], {"offsets": {"start": 40}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 0
+    kconsumer = consumer(["offset_tests"], {"offsets": {"start": 1}})
+    messages = list(kconsumer.consume())
+    assert len(messages) == 4
+
+
+def test_consumer_with_offests_multi_topic(consumer, kafka_service, caplog):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema_woffset.avsc"
+    )
+    caplog.set_level(logging.DEBUG)
+    producer1 = KafkaProducer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+            },
+            "TOPIC": "offset_tests_1",
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        }
+    )
+    producer2 = KafkaProducer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+            },
+            "TOPIC": "offset_tests_2",
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        }
+    )
+    producer1.produce({"id": 1}, timestamp=10)
+    producer1.produce({"id": 3}, timestamp=15)
+    producer1.produce({"id": 2}, timestamp=20)
+    producer1.produce({"id": 4}, timestamp=30)
+    producer1.producer.flush()
+    producer2.produce({"id": 1}, timestamp=10)
+    producer2.produce({"id": 3}, timestamp=15)
+    producer2.produce({"id": 2}, timestamp=20)
+    producer2.produce({"id": 4}, timestamp=30)
+    producer2.producer.flush()
+    kconsumer = consumer(
+        ["offset_tests_1", "offset_tests_2"],
+        {"offsets": {"start": 10, "end": 20}},
+    )
+    messages = list(kconsumer.consume())
+    assert len(messages) == 4
+    kconsumer = consumer(
+        ["offset_tests_1", "offset_tests_2"],
+        {"offsets": {"start": 10}},
+    )
+    messages = list(kconsumer.consume())
+    assert len(messages) == 8
+    kconsumer = consumer(
+        ["offset_tests_1", "offset_tests_2"], {"offsets": {"start": 40}}
+    )
+    messages = list(kconsumer.consume())
+    assert len(messages) == 0
+
+
+def test_consumer_with_commit(consumer, kafka_service, caplog):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema_woffset.avsc"
+    )
+    caplog.set_level(logging.DEBUG)
+    producer = KafkaProducer(
+        {
+            "PARAMS": {
+                "bootstrap.servers": "localhost:9092",
+            },
+            "TOPIC": "offset_tests_commit",
+            "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
+        }
+    )
+    producer.produce({"id": 1}, timestamp=10)
+    producer.produce({"id": 3}, timestamp=15)
+    producer.produce({"id": 2}, timestamp=20)
+    producer.produce({"id": 4}, timestamp=30)
+    producer.producer.flush()
+    group_id = "test_consumer_with_commit"
+    kconsumer = consumer(
+        ["offset_tests_commit"],
+        {
+            "offsets": {"start": 10},
+            "PARAMS": {
+                "group.id": group_id,
+                "bootstrap.servers": "localhost:9092",
+                "enable.partition.eof": True,
+                "auto.offset.reset": "earliest",
+            },
+            "consume.timeout": 5,
+        },
+    )
+    messages = []
+    for msg in kconsumer.consume():
+        messages.append(msg)
+        kconsumer.commit()
+
+    print("First consumer finished")
+    assert len(messages) == 4
+    del kconsumer
+    producer.produce({"id": 5}, timestamp=40)
+    producer.producer.flush()
+    kconsumer = consumer(
+        ["offset_tests_commit"],
+        {
+            "offsets": {"start": 10},
+            "PARAMS": {
+                "group.id": group_id + "_1",
+                "bootstrap.servers": "localhost:9092",
+                "enable.partition.eof": True,
+                "auto.offset.reset": "earliest",
+            },
+            "consume.timeout": 5,
+        },
+    )
+    print("Second consumer starting")
+    messages = list(kconsumer.consume())
+    assert len(messages) == 5

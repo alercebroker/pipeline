@@ -1,0 +1,98 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: s3-step
+
+image:
+  repository: ghcr.io/alercebroker/s3_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+service:
+  ztf:
+    type: ClusterIP
+    port: 8000
+  atlas:
+    type: ClusterIP
+    port: 8000
+
+resources: {}
+
+autoscaling:
+  ztf:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+  atlas:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+configmap:
+  ztf:
+    consumerTopics: ""
+    topicStrategy:
+      enabled: false
+      format: ""
+    consumerGroupId: ""
+    internalServer: ""
+    metricsTopic: ""
+    bucketName: ""
+    regionName: ""
+  atlas:
+    consumerTopics: ""
+    topicStrategy:
+      enabled: false
+      format: ""
+    consumerGroupId: ""
+    internalServer: ""
+    metricsTopic: ""
+    bucketName: ""
+    regionName: ""
+  producerSchemaPath: ""
+  metricsSchemaPath: "/schemas/s3_step/metrics.json"
+  scribeSchemaPath: ""
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      username: ""
+      password: ""
+    metrics:
+      enabled: true
+      username: ""
+      password: ""
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+

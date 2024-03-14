@@ -1,0 +1,80 @@
+namespace: feature-step-elasticc
+resources:
+  requests:
+    cpu: 1500m
+    memory: 7000Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 16
+  targetCPUUtilizationPercentage: 60
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              values:
+                - elasticc-features
+
+imageCredentials:
+  registry: "ghcr.io"
+  username: "${ghcr_username}"
+  password: "${ghcr_password}"
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: FeatureStep
+  - name: METRICS_SURVEY
+    value: LSST
+
+configYaml:
+  enabled: true
+  EXTRACTOR: "elasticc"
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: "/schemas/xmatch_step/output.avsc"
+    TOPICS: ["xmatch_elasticc"]
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "feature_consumer"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.messages: 50
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    TOPIC: "features_elasticc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+      message.max.bytes: 67108864
+    SCHEMA_PATH: "/schemas/feature_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    TOPIC: "w_object_elasticc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      TOPIC: "metrics_elasticc"
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      SCHEMA_PATH: "/schemas/feature_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  FEATURE_FLAGS:
+    USE_PROFILING: true

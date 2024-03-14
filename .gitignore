@@ -132,6 +132,25 @@ __SUCCESS__
 
 flycheck*
 
-libs/lc_classifier/lc_classifier/examples/secrets
+# Charts values and builds
+values*.override.yaml
+values*.override.yml
+values.staging.yaml
+values.production.yaml
+values.staging.yml
+values.production.yml
+*.tgz
+.vscode/
+
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+
+.projectile
+
+*/.build_state.json
+*/.deploy_state.json
+
+lc_classifier/lc_classifier/examples/secrets
 training/lc_classifier_ztf/feature_computation/config.py
 training/lc_classifier_ztf/feature_computation/data

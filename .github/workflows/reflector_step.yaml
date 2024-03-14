@@ -35,12 +35,3 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-
-  reflector_step_build:
-    uses: ./.github/workflows/build-template.yaml
-    with:
-      base-folder: "reflector_step"
-      build-context: "reflector_step"
-      step-name: "reflector_step"
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'

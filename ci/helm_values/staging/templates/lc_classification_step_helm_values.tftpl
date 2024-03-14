@@ -1,0 +1,91 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 4
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+image:
+  repository: ghcr.io/alercebroker/lc_classification_step_ztf
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: lc-classifier-step
+
+resources:
+  requests:
+    cpu: 600m
+    memory: 600M
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/feature_step/output.avsc"
+    TOPICS: ["features"]
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lc_classifier_ztf"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    TOPIC_STRATEGY:
+      PARAMS:
+        topic_format: "lc_classifier_ztf_%s"
+        date_format: "%Y%m%d"
+        change_hour: 23
+        retention_days: 1
+      CLASS: "apf.core.topic_management.DailyTopicStrategy"
+    PARAMS:
+      bootstrap.servers: ${kafka_public_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_ztf.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  MODEL_VERSION: "lc_classifier_1.1.13"
+  MODEL_CONFIG:
+    CLASS: "lc_classifier.classifier.models.HierarchicalRandomForest"
+    NAME: "lc_classifier"
+  SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
+  STEP_PARSER_CLASS: "lc_classification.core.parsers.alerce_parser.AlerceParser"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true

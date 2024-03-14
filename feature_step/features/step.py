@@ -1,17 +1,15 @@
 import json
+from typing import Any, Callable, Dict, Iterable
 
 import pandas as pd
-
 from apf.core import get_class
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 
-from features.utils.parsers import parse_scribe_payload, parse_output
-from features.utils.metrics import get_sid
-
-from features.core.ztf import ZTFFeatureExtractor
 from features.core.elasticc import ELAsTiCCFeatureExtractor
-
-from typing import Callable
+from features.core.ztf import ZTFFeatureExtractor
+from features.utils.metrics import get_sid
+from features.utils.parsers import parse_output, parse_scribe_payload
 
 
 class FeaturesComputer(GenericStep):
@@ -28,8 +26,9 @@ class FeaturesComputer(GenericStep):
 
     def __init__(
         self,
-        extractor: type[ZTFFeatureExtractor]
-        | Callable[..., ELAsTiCCFeatureExtractor],
+        extractor: (
+            type[ZTFFeatureExtractor] | Callable[..., ELAsTiCCFeatureExtractor]
+        ),
         config=None,
         **step_args,
     ):
@@ -46,30 +45,56 @@ class FeaturesComputer(GenericStep):
     def produce_to_scribe(self, features: pd.DataFrame):
         commands = parse_scribe_payload(features, self.features_extractor)
 
+        count = 0
+        flush = False
         for command in commands:
-            self.scribe_producer.produce({"payload": json.dumps(command)})
+            count += 1
+            if count == len(commands):
+                flush = True
+            self.scribe_producer.produce(
+                {"payload": json.dumps(command)}, flush=flush
+            )
+
+    def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
+        self.set_producer_key_field("oid")
+        return result
 
     def execute(self, messages):
         detections, non_detections, xmatch = [], [], []
+        candids = {}
 
         for message in messages:
-            detections.extend(message.get("detections", []))
+            if not message["oid"] in candids:
+                candids[message["oid"]] = []
+            candids[message["oid"]].extend(message["candid"])
+            m = map(
+                lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
+                message.get("detections", []),
+            )
+            detections.extend(m)
             non_detections.extend(message.get("non_detections", []))
             xmatch.append(
-                {"aid": message["aid"], **(message.get("xmatches", {}) or {})}
+                {"oid": message["oid"], **(message.get("xmatches", {}) or {})}
             )
-
         features_extractor = self.features_extractor(
             detections, non_detections, xmatch
         )
         features = features_extractor.generate_features()
-
         if len(features) > 0:
             self.produce_to_scribe(features)
 
-        output = parse_output(features, messages, self.features_extractor)
+        output = parse_output(
+            features, messages, self.features_extractor, candids
+        )
         return output
 
     def post_execute(self, result):
         self.metrics["sid"] = get_sid(result)
         return result
+
+    def tear_down(self):
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()

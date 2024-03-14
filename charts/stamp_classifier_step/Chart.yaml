@@ -1,0 +1,6 @@
+apiVersion: v2
+name: stamp-classifier-step
+description: Stamp Classifier Step
+type: application
+version: 23.12.0
+appVersion: "rc-c9c0ace"

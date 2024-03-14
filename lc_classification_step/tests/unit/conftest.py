@@ -132,8 +132,8 @@ def step_factory(messages, config, model):
 @pytest.fixture
 def ztf_model_output():
     def output_factory(messages_ztf, model):
-        aids = [
-            message["aid"]
+        oids = [
+            message["oid"]
             for message in messages_ztf
             if message.get("features") is not None
         ]
@@ -141,28 +141,28 @@ def ztf_model_output():
             "hierarchical": {
                 "top": DataFrame(
                     {
-                        "aid": aids,
-                        "CLASS": [1] * len(aids),
-                        "CLASS2": [0] * len(aids),
+                        "oid": oids,
+                        "CLASS": [1] * len(oids),
+                        "CLASS2": [0] * len(oids),
                     }
                 ),
                 "children": {
                     "Transient": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                     "Stochastic": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                     "Periodic": DataFrame(
-                        {"aid": aids, "CLASS": [1] * len(aids)}
+                        {"oid": oids, "CLASS": [1] * len(oids)}
                     ),
                 },
             },
             "probabilities": DataFrame(
                 {
-                    "aid": aids,
-                    "CLASS": [1] * len(aids),
-                    "CLASS2": [0] * len(aids),
+                    "oid": oids,
+                    "CLASS": [1] * len(oids),
+                    "CLASS2": [0] * len(oids),
                 }
             ),
         }
@@ -173,8 +173,8 @@ def ztf_model_output():
 @pytest.fixture
 def elasticc_model_output():
     def factory(_, model):
-        aids = ["aid1", "aid2"]
-        df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=aids)
+        oids = ["oid1", "oid2"]
+        df = DataFrame({"C1": [0.5, 0.9], "C2": [0.5, 0.1]}, index=oids)
         model.predict.return_value = OutputDTO(
             df, {"top": DataFrame(), "children": {}}
         )
@@ -188,6 +188,7 @@ def step_factory_ztf(ztf_model_output):
         config = base_config.copy()
         config.update(ztf_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         ztf_model_output(messages_ztf, model_mock)
         return step_factory(messages_ztf, config, model=model_mock)
 
@@ -200,6 +201,7 @@ def step_factory_toretto(elasticc_model_output):
         config = base_config.copy()
         config.update(toretto_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping(
@@ -216,6 +218,7 @@ def step_factory_barney(elasticc_model_output):
         config = base_config.copy()
         config.update(barney_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping(
@@ -232,6 +235,7 @@ def step_factory_balto(elasticc_model_output):
         config = base_config.copy()
         config.update(balto_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping(
@@ -248,6 +252,7 @@ def step_factory_messi(elasticc_model_output):
         config = base_config.copy()
         config.update(messi_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping(
@@ -264,6 +269,7 @@ def step_factory_mlp(elasticc_model_output):
         config = base_config.copy()
         config.update(mlp_config())
         model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
         elasticc_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         step.step_parser.ClassMapper.set_mapping(

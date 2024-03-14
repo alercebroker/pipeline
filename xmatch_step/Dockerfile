@@ -1,4 +1,4 @@
-FROM python:3.7-slim as python-base
+FROM python:3.10-slim as python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -21,22 +21,24 @@ RUN pip install poetry
 
 COPY xmatch_step/poetry.lock xmatch_step/pyproject.toml /app/
 COPY libs/apf /libs/apf
+COPY schemas/correction_step /schemas/correction_step
+COPY schemas/xmatch_step /schemas/xmatch_step
+COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
 
 
-FROM python:3.7-slim as production
+FROM python:3.10-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY xmatch_step/xmatch_step /app/xmatch_step
 COPY xmatch_step/scripts /app/scripts
 COPY xmatch_step/README.md \
-  xmatch_step/schema.py \
-  xmatch_step/scribe_schema.avsc \
   xmatch_step/settings.py \
   /app/
 

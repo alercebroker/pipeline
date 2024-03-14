@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "lc-classifier"
+version = "23.12.26a74"
+description = "Lightcurve classifiers and feature computation"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "lc_classifier"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+astropy = "~5.2"
+imbalanced-learn = "^0.10"
+numba = "~0.56"
+numpy = "^1.16"
+pyarrow = "*"
+requests = "^2.24"
+scipy = "^1.4"
+scikit-learn = "~1.2"
+statsmodels = "*"
+tensorflow = "^2.3"
+pandas = "2.0.1"
+wget = "^3.2"
+celerite2 = "^0.2"
+extinction = "*"
+jax = {version = "*", extras = ["cpu"]}
+mhps = {path = "../mhps" }
+P4J = {path = "../P4J" }
+tensorflow-io-gcs-filesystem = { version = "~0.33" }
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

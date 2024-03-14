@@ -4,23 +4,21 @@ from unittest import mock
 import datetime
 
 import fastavro
+import os
 
 
 @mock.patch("apf.producers.kafka.Producer")
 class KafkaProducerTest(GenericProducerTest):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema.avsc"
+    )
+    
     def setUp(self) -> None:
         self.params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
-            "SCHEMA": {
-                "namespace": "test.avro",
-                "type": "record",
-                "name": "test",
-                "fields": [
-                    {"name": "key", "type": "string"},
-                    {"name": "int", "type": "int"},
-                ],
-            },
+            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH
         }
 
     def test_produce(self, producer_mock):
@@ -80,19 +78,16 @@ class KafkaProducerTest(GenericProducerTest):
 
 
 class TestKafkaSchemalessProducer(GenericProducerTest):
+    FILE_PATH = os.path.dirname(__file__)
+    PRODUCER_SCHEMA_PATH = os.path.join(
+        FILE_PATH, "../examples/kafka_producer_schema.avsc"
+    )
+
     def setUp(self) -> None:
         self.params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
-            "SCHEMA": {
-                "namespace": "test.avro",
-                "type": "record",
-                "name": "test",
-                "fields": [
-                    {"name": "key", "type": "string"},
-                    {"name": "int", "type": "int"},
-                ],
-            },
+            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH
         }
 
     def test_serialize_message(self):

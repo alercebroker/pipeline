@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 class PsqlDatabase:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
-        self._engine = engine or create_engine(db_url, echo=True)
+        self._engine = engine or create_engine(db_url, echo=False)
         self._session_factory = sessionmaker(
-            self._engine,
+            autocommit=False, autoflush=False, bind=self._engine
         )
 
     def create_db(self):
@@ -32,9 +32,10 @@ class PsqlDatabase:
         session: Session = self._session_factory()
         try:
             yield session
-        except Exception:
+        except Exception as e:
             logger.exception("Session rollback because of exception")
+            logger.exception(e)
             session.rollback()
-            raise
+            raise Exception(e)
         finally:
             session.close()

@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "metadata_step/**"
+      - "!metadata_step/README.md"
+
+jobs:
+  metadata_step_lint:
+    uses: ./.github/workflows/lint-template.yaml
+    with:
+      sources-folder: "metadata_step"
+      base-folder: "metadata_step"
+  metadata_step_unittest:
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: "metadata_step"
+      python-version: "3.10"
+      sources-folder: "metadata_step"
+      test-folder: "tests/unittests"
+    secrets:
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+  metadata_step_integration:
+    uses: ./.github/workflows/poetry-tests-template.yaml
+    with:
+      base-folder: "metadata_step"
+      python-version: "3.10"
+      sources-folder: "metadata_step"
+      test-folder: "tests/integration"
+      codecov-flags: "" # Do not upload
+    secrets:
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+  build-metadata-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: metadata_step --dry-run
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

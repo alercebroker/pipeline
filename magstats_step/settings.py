@@ -1,5 +1,10 @@
 import os
-from fastavro import schema
+import pathlib
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+producer_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "output.avsc")
+metrics_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/magstats_step", "metrics.json")
+scribe_schema_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc")
 
 
 def settings_factory():
@@ -28,49 +33,18 @@ def settings_factory():
             "bootstrap.servers": os.environ["SCRIBE_PRODUCER_SERVER"],
         },
         "TOPIC": os.environ["SCRIBE_PRODUCER_TOPIC"],
-        "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+        "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
     }
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
-        "EXTRA_METRICS": [
-            {"key": "aid"},
-        ],
+        "EXTRA_METRICS": [{"key": "aid"}, {"key": "candid"}],
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.getenv("METRICS_SERVER"),
-                "auto.offset.reset": "smallest",
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "http://example.com/example.json",
-                "type": "object",
-                "title": "The root schema",
-                "description": "The root schema comprises the entire JSON document.",
-                "default": {},
-                "examples": [{"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}],
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "$id": "#/properties/timestamp_sent",
-                        "type": "string",
-                        "title": "The timestamp_sent schema",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "$id": "#/properties/timestamp_received",
-                        "type": "string",
-                        "title": "The timestamp_received schema",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
         },
     }
 
@@ -95,7 +69,7 @@ def settings_factory():
         "METRICS_CONFIG": metrics_config,
         "LOGGING_DEBUG": logging_debug,
         "SCRIBE_PRODUCER_CONFIG": scribe_producer_config,
-        "EXCLUDED_CALCULATORS": filter(bool, excluded_calculators),
+        "EXCLUDED_CALCULATORS": excluded_calculators,
     }
 
     return step_config

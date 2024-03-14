@@ -1,0 +1,103 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: lightcurve-step
+
+image:
+  repository: ghcr.io/alercebroker/lightcurve_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: "lightcurve-step"
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPICS: ["prv-candidates"]
+    consume.messages: 100
+    consume.timeout: 15
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      message.max.bytes: 6291456
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "lightcurve"
+    SCHEMA_PATH: "/schemas/lightcurve_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: candid
+      - key: aid
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/lightcurve_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  LOGGING_DEBUG: false
+  MONGO_SECRET_NAME: ""
+  SQL_SECRET_NAME: ""
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_MJD_FILTER: true
+    USE_SQL: true

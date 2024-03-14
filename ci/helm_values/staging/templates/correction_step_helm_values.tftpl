@@ -1,0 +1,75 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 32
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: correction-step
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1500Mi
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/lightcurve_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "correction-step"
+      security.protocol: "SASL_SSL"
+      sasl.mechanisms: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["lightcurve"]
+    consume.messages: 50
+    consume.timeout: 10
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/correction_step/metrics.json"
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+      message.max.bytes: 67108864
+    TOPIC: "correction"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+    TOPIC: "w_detection"
+  LOGGING_DEBUG: false
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"

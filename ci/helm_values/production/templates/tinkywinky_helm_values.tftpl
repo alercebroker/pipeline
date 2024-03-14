@@ -1,0 +1,102 @@
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'tinkywinky-classifier'
+  - name: METRICS_SURVEY
+    value: LSST
+
+image:
+  repository: ghcr.io/alercebroker/lc_classification_step_mlp
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: mlp-classifier
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 600M
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    TOPICS: ["features_elasticc"]
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lc_classifier_mlp"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    TOPIC_STRATEGY:
+      PARAMS:
+        topic_format: "lc_classifier_tinkywinky_%s"
+        date_format: "%Y%m%d"
+        change_hour: 23
+        retention_days: 1
+      CLASS: "apf.core.topic_management.DailyTopicStrategy"
+    PARAMS:
+      bootstrap.servers: ${kafka_public_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_elasticc.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object_elasticc"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  MODEL_VERSION: "1.1.0"
+  MODEL_CONFIG:
+    CLASS: "alerce_classifiers.tinkywinky.model.TinkyWinkyClassifier"
+    NAME: "TinkyWinkyClassifier"
+    PARAMS:
+      path_to_model: ${model_path}
+      mapper: "alerce_classifiers.tinkywinky.mapper.TinkyWinkyMapper"
+  SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
+  STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true

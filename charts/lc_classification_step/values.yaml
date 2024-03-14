@@ -1,0 +1,127 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: lc-classifier-step
+
+image:
+  repository: ghcr.io/alercebroker/lc_classifier_step
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: eks.amazonaws.com/nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    TOPICS: ["features"]
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    TOPIC_STRATEGY:
+      PARAMS:
+        topic_format: "lc_classifier_%s"
+        date_format: "%Y%m%d"
+        change_hour: 23
+        retention_days: 1
+      CLASS: "apf.core.topic_management.DailyTopicStrategy"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    CLASS: "apf.producers.kafka.KafkaProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_ztf.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    EXTRA_METRICS:
+      - key: "aid"
+      - key: "candid"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    TOPIC: "w_object"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  MODEL_VERSION: ""
+  MODEL_CONFIG:
+    CLASS: ""
+    NAME: ""
+    PARAMS:
+      # model_path: ""
+      # mapper: ""
+      ## here go other settings like
+      ## header_quantiles_path: ""
+      ## feature_quantiles_path: ""
+      ## barney and toretto use path_to_model instead of model_path
+      ## path_to_model: ""
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
+  STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
+  FEATURE_FLAGS:
+    USE_PROFILING: true
+    PROMETHEUS: false
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS

@@ -72,6 +72,10 @@ def _generate_ztf_batch(n: int, nearest: int = 0) -> List[dict]:
             "cutoutDifference": {"stampData": b"difference"},
             "candidate": {
                 "jd": random.randrange(2458000, 2459000),
+                "ndethist": random.randint(5, 15),
+                "ncovhist": random.randint(5, 15),
+                "jdstarthist": random.randint(2458000, 2459000),
+                "jdendhist": random.randint(2458000, 2459000),
                 "ra": random.uniform(0, 360),
                 "dec": random.uniform(-90, 90),
                 "magpsf": random.uniform(15, 20),
@@ -173,7 +177,7 @@ def _generate_elasticc_batch(n: int, nearest: int = 0) -> List[dict]:
     def gen_elasticc_object():
         dia_source = {
             "diaSourceId": random.randint(1000000, 9000000),
-            "diaObjectId": random.choice([None, random.randint(1000000, 9000000)]),
+            "diaObjectId": random.randint(1000000, 9000000),
             "midPointTai": random.uniform(57000, 60000),
             "filterName": "fid",
             "ra": random.uniform(0, 360),
@@ -296,9 +300,15 @@ def generate_alerts_batch(n: int, nearest: int = 0) -> List[dict]:
     for generator, m, near in zip(generators, sub_samples, sub_nearest):
         b = generator(m, nearest=near)
         b = list(
-            map(lambda el: {**el, "timestamp": int(datetime.now().timestamp())}, b)
+            map(
+                lambda el: {
+                    **el,
+                    "timestamp": int(datetime.now().timestamp()),
+                    "topic": "topik",
+                },
+                b,
+            )
         )
-        print("BBBBBBB", b[0]["timestamp"])
         batch.append(b)
     batch = sum(batch, [])
     return batch

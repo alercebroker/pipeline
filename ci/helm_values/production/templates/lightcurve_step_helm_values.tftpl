@@ -1,0 +1,79 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 32
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 50
+
+image:
+  repository: ghcr.io/alercebroker/lightcurve-step
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  - name: METRICS_SOURCE
+    value: 'lightcurve-step'
+  - name: METRICS_SURVEY
+    value: ZTF,ATLAS
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: lightcurve-step
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1000M
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lightcurve-step"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["prv-candidates"]
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "lightcurve"
+    SCHEMA_PATH: "/schemas/lightcurve_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/lightcurve_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  LOGGING_DEBUG: false
+  MONGO_SECRET_NAME: "mongodb-alerts-production-writer"
+  SQL_SECRET_NAME: "psql-alerts-production/alerce"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_MJD_FILTER: true
+    USE_SQL: true

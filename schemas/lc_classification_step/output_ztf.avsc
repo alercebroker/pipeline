@@ -1,0 +1,52 @@
+{
+  "doc": "Late Classification",
+  "name": "probabilities_and_features",
+  "type": "record",
+  "fields": [
+    { "name": "oid", "type": "string" },
+    {
+      "name": "features",
+      "type": [
+        {
+          "type": "map",
+          "values": ["boolean", "float", "null", "int"]
+        },
+        "null"
+      ]
+    },
+    {
+      "name": "lc_classification",
+      "type": {
+        "type": "record",
+        "name": "late_record",
+        "fields": [
+          {
+            "name": "probabilities",
+            "type": {
+              "type": "map",
+              "values": ["float"]
+            }
+          },
+          { "name": "class", "type": "string" },
+          {
+            "name": "hierarchical",
+            "type": {
+              "name": "root",
+              "type": "map",
+              "values": [
+                { "type": "map", "values": "float" },
+                {
+                  "type": "map",
+                  "values": {
+                    "type": "map",
+                    "values": "float"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+namespace: alert-archive-step
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: eks.amazonaws.com/nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values:
+                - production-pipeline
+
+configmap:
+  consumerTopics: "ztf"
+  consumerGroupId: "alert-archive-step"
+  internalServer: ${kafka_server}
+  bucketName: "ztf-avro"
+
+secrets:
+  kafkaAuth:
+    enabled: true
+    username: ${kafka_username}
+    password: ${kafka_password}
+
+imageCredentials:
+  registry: "ghcr.io"
+  username: ${ghcr_username}
+  password: ${ghcr_password}
+
+extraEnvVariables:
+  - name: METRICS_SOURCE
+    value: alert-archiving-step
+  - name: METRICS_SURVEY
+    value: ZTF

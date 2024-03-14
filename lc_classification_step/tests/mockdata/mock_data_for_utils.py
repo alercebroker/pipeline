@@ -2,22 +2,22 @@ import pandas as pd
 
 messages_df = pd.DataFrame(
     [
-        "oid1",
-        "oid2",
-        "oid3",
-        "oid4",
-        "oid5",
-    ],
-    index=[
         "aid1",
         "aid2",
         "aid3",
         "aid4",
         "aid5",
     ],
-    columns=["oid"],
+    index=[
+        "oid1",
+        "oid2",
+        "oid3",
+        "oid4",
+        "oid5",
+    ],
+    columns=["aid"],
 )
-messages_df.index.name = "aid"
+messages_df.index.name = "oid"
 
 complete_classifications_df = pd.DataFrame(
     [
@@ -28,11 +28,11 @@ complete_classifications_df = pd.DataFrame(
         [0.6, 0.2, 0.2],
     ],
     index=[
-        "aid1",
-        "aid2",
-        "aid3",
-        "aid4",
-        "aid5",
+        "oid1",
+        "oid2",
+        "oid3",
+        "oid4",
+        "oid5",
     ],
     columns=[
         "class1",
@@ -40,7 +40,7 @@ complete_classifications_df = pd.DataFrame(
         "class3",
     ],
 )
-complete_classifications_df.index.name = "aid"
+complete_classifications_df.index.name = "oid"
 
 incomplete_classifications_df = pd.DataFrame(
     [
@@ -49,9 +49,9 @@ incomplete_classifications_df = pd.DataFrame(
         [0.6, 0.2, 0.2],
     ],
     index=[
-        "aid1",
-        "aid3",
-        "aid5",
+        "oid1",
+        "oid3",
+        "oid5",
     ],
     columns=[
         "class1",
@@ -59,4 +59,4 @@ incomplete_classifications_df = pd.DataFrame(
         "class3",
     ],
 )
-incomplete_classifications_df.index.name = "aid"
+incomplete_classifications_df.index.name = "oid"

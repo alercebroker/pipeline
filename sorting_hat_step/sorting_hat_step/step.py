@@ -4,35 +4,42 @@ from datetime import datetime
 from typing import List
 
 from .utils import wizard, parser
-from .database import DatabaseConnection
+from .database import MongoConnection, PsqlConnection
 import pandas as pd
 
 
 class SortingHatStep(GenericStep):
     def __init__(
         self,
-        db_connection: DatabaseConnection,
+        mongo_connection: MongoConnection,
         config: dict,
         **kwargs,
     ):
         super().__init__(config=config, **kwargs)
-        self.driver = db_connection
-        self.run_conesearch = config["RUN_CONESEARCH"] != "False"
+        self.mongo_driver = mongo_connection
         self.parser = ALeRCEParser()
+        # feature flags
+        self.use_psql = config["FEATURE_FLAGS"]["USE_PSQL"]
+        self.run_conesearch = config["FEATURE_FLAGS"]["RUN_CONESEARCH"]
+
+    def set_psql_driver(self, psql_connection: PsqlConnection):
+        if not self.use_psql:
+            raise ValueError("Cannot set psql driver when USE_PSQL is False")
+        self.psql_driver = psql_connection
 
     def pre_produce(self, result: pd.DataFrame):
         """
         Step lifecycle method.
         Format output that will be taken by the producer and set the producer key.
 
-        Calling self.set_producer_key_field("aid") will make that each message produced has the
-        aid value as key.
+        Calling self.set_producer_key_field("oid") will make that each message produced has the
+        oid value as key.
 
         For example if message looks like this:
 
-        message = {"aid": "ALabc123"}
+        message = {"oid": "abc123"}
 
-        Then, the produced kafka message will have "ALabc123" as key.
+        Then, the produced kafka message will have "abc123" as key.
 
         Parameters
         ----------
@@ -44,8 +51,10 @@ class SortingHatStep(GenericStep):
         output_result: pd.DataFrame
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
-        output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
-        self.set_producer_key_field("aid")
+        output_result = [
+            parser.parse_output(alert) for _, alert in result.iterrows()
+        ]
+        self.set_producer_key_field("oid")
         return output_result
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -63,6 +72,7 @@ class SortingHatStep(GenericStep):
                     **m,
                     "brokerIngestTimestamp": ingestion_timestamp,
                     "surveyPublishTimestamp": m["timestamp"],
+                    "source": m.get("topic", ""),
                 },
                 messages,
             )
@@ -76,7 +86,7 @@ class SortingHatStep(GenericStep):
         :return: Dataframe with the alerts
         """
         response = self.parser.parse(messages)
-        alerts = pd.DataFrame(response)
+        alerts = pd.DataFrame([r.to_dict() for r in response])
         self.logger.info(f"Processing {len(alerts)} alerts")
         # Put name of ALeRCE in alerts
         alerts = self.add_aid(alerts)
@@ -89,7 +99,12 @@ class SortingHatStep(GenericStep):
         Writes entries to the database with _id and oid only.
         :param alerts: Dataframe of alerts
         """
-        wizard.insert_empty_objects(self.driver, alerts)
+        psql_driver = None
+        if self.use_psql:
+            psql_driver = self.psql_driver
+        wizard.insert_empty_objects(
+            self.mongo_driver, alerts, psql=psql_driver
+        )
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
@@ -98,13 +113,11 @@ class SortingHatStep(GenericStep):
         :param alerts: Dataframe of alerts
         :return: Dataframe of alerts with a new column called `aid` (alerce_id)
         """
-        # Internal cross-match that identifies same objects in own batch: create a new column named 'tmp_id'
         self.logger.info(f"Assigning AID to {len(alerts)} alerts")
-        alerts = wizard.internal_cross_match(alerts)
-        # Interaction with database: group all alerts with the same tmp_id and find/create alerce_id
-        alerts = wizard.find_existing_id(self.driver, alerts)
+        alerts["aid"] = None
+        # Interaction with database: group all alerts with the same oid and find/create alerce_id
+        alerts = wizard.find_existing_id(self.mongo_driver, alerts)
         if self.run_conesearch:
-            alerts = wizard.find_id_by_conesearch(self.driver, alerts)
+            alerts = wizard.find_id_by_conesearch(self.mongo_driver, alerts)
         alerts = wizard.generate_new_id(alerts)
-        alerts.drop(columns=["tmp_id"], inplace=True)
         return alerts

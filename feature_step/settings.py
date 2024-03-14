@@ -2,14 +2,34 @@
 #       features   Settings File
 ##################################################
 import os
-from schema import SCHEMA
-from fastavro import schema
+import pathlib
 
 EXTRACTOR = os.environ["FEATURE_EXTRACTOR"]
 
+output_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/feature_step",
+        "output.avsc",
+    )
+)
+scribe_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/scribe_step",
+        "scribe.avsc",
+    )
+)
+metrics_schema_path = str(
+    pathlib.Path(
+        pathlib.Path(__file__).parent.parent,
+        "schemas/feature_step",
+        "metrics.json",
+    )
+)
 
 CONSUMER_CONFIG = {
-    "CLASS": "apf.consumers.KafkaConsumer",
+    "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
     "TOPICS": os.environ["CONSUMER_TOPICS"].strip().split(","),
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
@@ -23,69 +43,36 @@ CONSUMER_CONFIG = {
 }
 
 PRODUCER_CONFIG = {
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
+        "message.max.bytes": int(
+            os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)
+        ),
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", output_schema_path),
 }
 
 SCRIBE_PRODUCER_CONFIG = {
-    "CLASS": "apf.producers.KafkaProducer",
+    "CLASS": os.getenv("SCRIBE_PRODUCER_CLASS", "apf.producers.KafkaProducer"),
     "PARAMS": {
         "bootstrap.servers": os.environ["SCRIBE_SERVER"],
     },
     "TOPIC": os.environ["SCRIBE_TOPIC"],
-    "SCHEMA": schema.load_schema("scribe_schema.avsc"),
+    "SCHEMA_PATH": os.getenv("SCRIBE_SCHEMA_PATH", scribe_schema_path),
 }
 
 
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
-    "EXTRA_METRICS": [
-        {"key": "aid", "alias": "aid"},
-    ],
+    "EXTRA_METRICS": [{"key": "aid", "alias": "aid"}, {"key": "candid"}],
     "PARAMS": {
         "PARAMS": {
             "bootstrap.servers": os.environ["METRICS_HOST"],
         },
         "TOPIC": os.environ["METRICS_TOPIC"],
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {
-                    "timestamp_sent": "2020-09-01",
-                    "timestamp_received": "2020-09-01",
-                }
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
     },
 }
 
@@ -124,10 +111,13 @@ pyroscope_server = os.getenv(
 )
 
 STEP_CONFIG = {
+    "EXTRACTOR": EXTRACTOR,
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,
-    "USE_PROFILING": use_profiling,
+    "FEATURE_FLAGS": {
+        "USE_PROFILING": use_profiling,
+    },
     "PYROSCOPE_SERVER": pyroscope_server,
 }

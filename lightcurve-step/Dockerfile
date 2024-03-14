@@ -22,6 +22,9 @@ RUN pip install poetry
 COPY lightcurve-step/poetry.lock lightcurve-step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins libs/db-plugins
+COPY schemas/prv_candidate_step /schemas/prv_candidate_step
+COPY schemas/lightcurve_step /schemas/lightcurve_step
+COPY schemas/scribe_step /schemas/scribe_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
@@ -32,12 +35,12 @@ RUN pip install poetry
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
+COPY --from=builder /schemas /schemas
 
 COPY lightcurve-step/lightcurve_step /app/lightcurve_step
 COPY lightcurve-step/scripts /app/scripts
 COPY lightcurve-step/README.md \
   lightcurve-step/settings.py \
-  lightcurve-step/schema.avsc \
   lightcurve-step/credentials.py \
   /app/
 

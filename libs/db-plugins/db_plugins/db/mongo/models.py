@@ -36,15 +36,16 @@ class Object(BaseModel):
     """
 
     _id = SpecialField(
-        lambda **kwargs: kwargs.get("aid") or kwargs["_id"]
-    )  # ALeRCE object ID (unique ID in database)
-    oid = Field()  # List with all OIDs
+        lambda **kwargs: kwargs.get("oid") or kwargs["_id"]
+    )  # Survey object ID (unique ID in database)
+    aid = Field()  # Alerce object ID (groups objects from different surveys)
     tid = Field()  # List with all telescopes the object has been observed with
     sid = Field()  # List with all surveys which their telescopes observed this obj
     corrected = Field()
     stellar = Field()
     firstmjd = Field()
     lastmjd = Field()
+    deltajd = Field()
     ndet = Field()
     meanra = Field()
     sigmara = Field()
@@ -62,8 +63,7 @@ class Object(BaseModel):
     xmatch = SpecialField(lambda **kwargs: kwargs.get("xmatch", []))
 
     __table_args__ = [
-        IndexModel([("oid", ASCENDING)], name="oid"),
-        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)], name="aid_sid"),
         IndexModel([("lastmjd", DESCENDING)], name="lastmjd"),
         IndexModel([("firstmjd", DESCENDING)], name="firstmjd"),
         IndexModel([("loc", GEOSPHERE)], name="radec"),
@@ -88,11 +88,12 @@ class Detection(BaseModelWithExtraFields):
         kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
         return kwargs
 
-    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     tid = Field()  # Telescope ID
     sid = Field()  # Survey ID
-    aid = Field()
-    oid = Field()
+    aid = Field()  # object alerce identifier
+    pid = Field()
+    oid = Field()  # object survey identifier
+    candid = Field()  # alert identifier
     mjd = Field()
     fid = Field()
     ra = Field()
@@ -111,8 +112,8 @@ class Detection(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)]),
-        IndexModel([("sid", ASCENDING)]),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)]),
+        IndexModel([("oid", ASCENDING), ("candid", ASCENDING)], unique=True),
     ]
     __tablename__ = "detection"
 
@@ -124,10 +125,10 @@ class ForcedPhotometry(BaseModelWithExtraFields):
         kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
         return kwargs
 
-    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     tid = Field()  # Telescope ID
     sid = Field()  # Survey ID
     aid = Field()
+    pid = Field()
     oid = Field()
     mjd = Field()
     fid = Field()
@@ -147,8 +148,8 @@ class ForcedPhotometry(BaseModelWithExtraFields):
     has_stamp = Field()
 
     __table_args__ = [
-        IndexModel([("aid", ASCENDING), ("oid", ASCENDING)], name="aid_oid"),
-        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)]),
+        IndexModel([("oid", ASCENDING), ("pid", ASCENDING)], unique=True),
     ]
     __tablename__ = "forced_photometry"
 
@@ -160,7 +161,6 @@ class NonDetection(BaseModelWithExtraFields):
         kwargs.pop("candid", None)  # Prevents candid being duplicated in extra_fields
         return kwargs
 
-    _id = SpecialField(lambda **kwargs: kwargs.get("candid") or kwargs["_id"])
     aid = Field()
     tid = Field()
     sid = Field()
@@ -171,24 +171,10 @@ class NonDetection(BaseModelWithExtraFields):
 
     __table_args__ = [
         IndexModel(
-            [("aid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
+            [("oid", ASCENDING), ("fid", ASCENDING), ("mjd", ASCENDING)],
             name="unique",
             unique=True,
         ),
-        IndexModel([("sid", ASCENDING)], name="sid"),
+        IndexModel([("aid", ASCENDING), ("sid", ASCENDING)], name="aid_sid"),
     ]
     __tablename__ = "non_detection"
-
-
-class Taxonomy(BaseModel):
-    classifier_name = Field()
-    classifier_version = Field()
-    classes = Field()
-
-    __table_args__ = [
-        IndexModel(
-            [("classifier_name", ASCENDING), ("classifier_version", DESCENDING)],
-            name="name_version",
-        ),
-    ]
-    __tablename__ = "taxonomy"

@@ -8,7 +8,7 @@ ERROR = 0.1  # UPDATE ME: Dummy value for elasticc tests
 
 def _e_ra(dec):
     try:
-        return ERROR / abs(math.cos(dec))
+        return ERROR / abs(math.cos(math.radians(dec)))
     except ZeroDivisionError:
         return float("nan")
 
@@ -17,7 +17,7 @@ class LSSTParser(SurveyParser):
     _source = "LSST"
 
     _mapping = {
-        "candid": Mapper(str, origin="diaSourceId"),
+        "candid": Mapper(str, origin="alertId"),
         "oid": Mapper(str, origin="diaObjectId"),
         "tid": Mapper(lambda: LSSTParser._source),
         "sid": Mapper(lambda: LSSTParser._source),

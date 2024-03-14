@@ -5,17 +5,36 @@ import pytest
 import unittest
 from unittest import mock
 from sorting_hat_step.step import SortingHatStep
-from schemas.output_schema import SCHEMA
-from db_plugins.db.mongo._connection import MongoConnection
-from fastavro.repository.base import SchemaRepositoryError
+from db_plugins.db.mongo._connection import MongoConnection as DBPMongoConnection
+from sorting_hat_step.database import MongoConnection
+import os
 
-DB_CONFIG = {
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+PRODUCER_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/output.avsc"
+)
+METRICS_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../schemas/sorting_hat_step/metrics.json"
+)
+SCRIBE_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__),
+)
+
+MONGO_CONFIG = {
+    "host": "localhost",
+    "username": "test_user",
+    "password": "test_password",
+    "port": 27017,
+    "database": "test_db",
+    "authSource": "test_db",
+}
+
+PSQL_CONFIG = {
     "HOST": "localhost",
-    "USERNAME": "test_user",
-    "PASSWORD": "test_password",
-    "PORT": 27017,
-    "DATABASE": "test_db",
-    "AUTH_SOURCE": "test_db",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5432,
+    "DB_NAME": "postgres",
 }
 
 PRODUCER_CONFIG = {
@@ -24,7 +43,7 @@ PRODUCER_CONFIG = {
     "PARAMS": {
         "bootstrap.servers": "localhost:9092",
     },
-    "SCHEMA": SCHEMA,
+    "SCHEMA_PATH": PRODUCER_SCHEMA_PATH,
 }
 
 CONSUMER_CONFIG = {
@@ -39,7 +58,9 @@ CONSUMER_CONFIG = {
     "consume.timeout": 10,
     "consume.messages": 1,
     "TOPICS": ["survey_stream_schemaless"],
-    "SCHEMA_PATH": "schemas/elasticc/elasticc.v0_9_1.alert.avscs",
+    "SCHEMA_PATH": os.path.join(
+        os.path.dirname(__file__), "../../schemas/elasticc/elasticc.v0_9_1.alert.avscs"
+    ),
 }
 
 METRICS_CONFIG = {
@@ -53,37 +74,7 @@ METRICS_CONFIG = {
             "auto.offset.reset": "smallest",
         },
         "TOPIC": "metrics",
-        "SCHEMA": {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "http://example.com/example.json",
-            "type": "object",
-            "title": "The root schema",
-            "description": "The root schema comprises the entire JSON document.",
-            "default": {},
-            "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-            ],
-            "required": ["timestamp_sent", "timestamp_received"],
-            "properties": {
-                "timestamp_sent": {
-                    "$id": "#/properties/timestamp_sent",
-                    "type": "string",
-                    "title": "The timestamp_sent schema",
-                    "description": "Timestamp sent refers to the time at which a message is sent.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-                "timestamp_received": {
-                    "$id": "#/properties/timestamp_received",
-                    "type": "string",
-                    "title": "The timestamp_received schema",
-                    "description": "Timestamp received refers to the time at which a message is received.",
-                    "default": "",
-                    "examples": ["2020-09-01"],
-                },
-            },
-            "additionalProperties": True,
-        },
+        "SCHEMA_PATH": METRICS_SCHEMA_PATH,
     },
 }
 
@@ -93,19 +84,21 @@ METRICS_CONFIG = {
 class SchemalessConsumeIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.database = MongoConnection(DB_CONFIG)
+        cls.mongo_database = DBPMongoConnection(MONGO_CONFIG)
 
     def setUp(self):
         self.step_config = {
-            "DB_CONFIG": DB_CONFIG,
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
             "METRICS_CONFIG": METRICS_CONFIG,
-            "RUN_CONESEARCH": "True",
+            "FEATURE_FLAGS": {
+                "RUN_CONESEARCH": True,
+                "USE_PSQL": False,
+            },
         }
 
     def tearDown(self):
-        self.database.database["object"].delete_many({})
+        self.mongo_database.database["object"].delete_many({})
 
     def test_step(self):
         # publicar los mensajes generados a kafka consumer topic
@@ -116,17 +109,12 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             producer.produce("survey_stream_schemaless", value=message, key=None)
 
         # ejecutar start_step
+        mongo_db = MongoConnection(MONGO_CONFIG)
         with mock.patch.object(SortingHatStep, "_write_success"):
-            try:
-                step = SortingHatStep(
-                    db_connection=self.database, config=self.step_config
-                )
-            except SchemaRepositoryError:
-                config = self.step_config.copy()
-                config["CONSUMER_CONFIG"][
-                    "SCHEMA_PATH"
-                ] = "sorting_hat_step/schemas/elasticc/elasticc.v0_9_1.alert.avscs"
-                step = SortingHatStep(db_connection=self.database, config=config)
+            step = SortingHatStep(
+                mongo_connection=mongo_db,
+                config=self.step_config,
+            )
             step.start()
             step.producer.producer.flush()
 

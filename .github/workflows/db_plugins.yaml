@@ -64,14 +64,14 @@ jobs:
       codecov-flags: ''  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  sorting_hat_step_build:
-    uses: ./.github/workflows/build-template.yaml
+  build-sorting-hat-dagger:
+    
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "sorting_hat_step"
-      build-context: "."
-      step-name: "sorting_hat_step"
+        stage: staging
+        extra-args: sorting_hat_step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   scribe_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -92,14 +92,14 @@ jobs:
       test-folder: 'tests/integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  scribe_build:
-    uses: ./.github/workflows/build-template.yaml
+  build-scribe-dagger:
+    
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "scribe"
-      build-context: "."
-      step-name: "scribe"
+        stage: staging
+        extra-args: scribe --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   lightcurve_step_lint:
     uses: ./.github/workflows/lint-template.yaml
@@ -123,11 +123,12 @@ jobs:
       codecov-flags: "" # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  lightcurve_step_build:
-    uses: ./.github/workflows/build-template.yaml
+
+  build-lightcurve-dagger:
+    
+    uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
-      base-folder: "lightcurve-step"
-      build-context: "."
-      step-name: "lightcurve-step"
+        stage: staging
+        extra-args: lightcurve-step --dry-run
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+        GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

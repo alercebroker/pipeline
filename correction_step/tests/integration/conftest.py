@@ -1,6 +1,5 @@
 import os
 import pathlib
-import pickle
 import logging
 import random
 import uuid
@@ -10,9 +9,8 @@ from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.utils import generate_many
-
-from tests.integration.schema import SCHEMA
-from tests.utils import ztf_extra_fields
+from fastavro.schema import load_schema
+from tests.utils import atlas_extra_fields, lsst_extra_fields, ztf_extra_fields
 
 
 @pytest.fixture(scope="session")
@@ -22,14 +20,14 @@ def docker_compose_file(pytestconfig):
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    futures = client.create_topics([NewTopic("prv-candidates", num_partitions=1)])
+    futures = client.create_topics([NewTopic("lightcurve", num_partitions=1)])
     for topic, future in futures.items():
         try:
             future.result()
         except Exception as e:
             logging.error(f"Can't create topic {topic}: {e}")
             return False
-    produce_messages("prv-candidates")
+    produce_messages("lightcurve")
     return True
 
 
@@ -38,7 +36,9 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
+    )
     return server
 
 
@@ -46,11 +46,33 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/correction_step",
+                "output.avsc",
+            )
+        ),
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/correction_step",
+                "metrics.json",
+            )
+        ),
+        "SCRIBE_SCHEMA_PATH": str(
+            pathlib.Path(
+                pathlib.Path(__file__).parent.parent.parent.parent,
+                "schemas/scribe_step",
+                "scribe.avsc",
+            )
+        ),
         "CONSUMER_SERVER": "localhost:9092",
         "PRODUCER_SERVER": "localhost:9092",
         "SCRIBE_SERVER": "localhost:9092",
         "METRICS_SERVER": "localhost:9092",
-        "CONSUMER_TOPICS": "prv-candidates",
+        "CONSUMER_TOPICS": "lightcurve",
         "PRODUCER_TOPIC": "corrections",
         "SCRIBE_TOPIC": "w_detections",
         "CONSUME_MESSAGES": "1",
@@ -64,31 +86,45 @@ def env_variables():
 
 
 def produce_messages(topic):
+    lightcurve_schema = str(
+        pathlib.Path(
+            pathlib.Path(__file__).parent.parent.parent.parent,
+            "schemas/lightcurve_step",
+            "output.avsc",
+        )
+    )
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": lightcurve_schema,
         }
     )
-    messages = generate_many(SCHEMA, 15)
-    producer.set_key_field("aid")
+    lightcurve_schema = load_schema(lightcurve_schema)
+    messages = generate_many(lightcurve_schema, 15)
+    producer.set_key_field("oid")
     random.seed(42)
 
     for message in messages:
         for detection in message["detections"]:
-            detection["forced"] = False
+            detection["oid"] = message["oid"]
+            detection["forced"] = random.choice([True, False])
             detection["tid"] = random.choice(["ZTF", "ATLAS", "LSST"])
+            detection["sid"] = detection["tid"]
+            if detection["sid"] == "ZTF":
+                detection["fid"] = random.choice(["g", "r", "i"])
+            if detection["sid"] == "ATLAS":
+                detection["fid"] = random.choice(["o", "c"])
+            if detection["sid"] == "LSST":
+                detection["fid"] = random.choice(["u", "g", "r", "i", "z", "y"])
             if str(detection["tid"]).lower() == "ztf":
                 detection["extra_fields"] = ztf_extra_fields()
             elif str(detection["tid"]).lower() == "lsst":
-                detection["extra_fields"] = {
-                    "field": "value",
-                    "prvDiaForcedSources": b"bainari",
-                    "prvDiaSources": b"bainari2",
-                    "diaObject": pickle.dumps("bainari2"),
-                }
+                detection["extra_fields"] = lsst_extra_fields()
+            elif str(detection["tid"]).lower() == "atlas":
+                detection["extra_fields"] = atlas_extra_fields()
         producer.produce(message)
+
 
 @pytest.fixture(scope="session")
 def kafka_consumer():
@@ -101,7 +137,7 @@ def kafka_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["corrections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer
@@ -119,7 +155,7 @@ def scribe_consumer():
                 "enable.partition.eof": True,
             },
             "TOPICS": ["w_detections"],
-            "TIMEOUT": 5
+            "TIMEOUT": 0,
         }
     )
     yield consumer

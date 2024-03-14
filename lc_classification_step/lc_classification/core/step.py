@@ -47,6 +47,10 @@ class LateClassifier(GenericStep):
                 self.model.download_model()
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
             else:
+                mapper = get_class(
+                    config["MODEL_CONFIG"]["PARAMS"]["mapper"]
+                )()
+                config["MODEL_CONFIG"]["PARAMS"]["mapper"] = mapper
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
@@ -77,78 +81,101 @@ class LateClassifier(GenericStep):
             self.scribe_producer.produce({"payload": json.dumps(command)})
         self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
-    def execute(self, messages):
-        """Run the classification.
-
-        Parameters
-        ----------
-        messages : dict-like
-            Current object data, it must have the features and object id.
-
-        """
-        self.logger.info("Processing %i messages.", len(messages))
-        self.logger.debug("Messages received:\n", messages)
-        self.logger.info("Getting batch alert data")
-        model_input = create_input_dto(messages)
+    def log_data(self, model_input):
         forced = []
         prv_candidates = []
-        dia_objet = []
+        dia_object = []
         for det in model_input._detections._value.iterrows():
             if det[1]["forced"]:
                 forced.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
                 if det[1]["parent_candid"] is not None:
                     prv_candidates.append(det[0])
-                if "diaObjet" in det[1].index:
-                    dia_objet.append(det[0])
-        if not self.model.can_predict(model_input):
-            self.logger.info("No data to process")
-            return (
-                OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
-                messages,
-                model_input.features,
-            )
+                if "diaObject" in det[1].index:
+                    dia_object.append(det[0])
         self.logger.info(
-            "The number of detections is: %i", len(model_input.detections)
+            "The number of detections is: %i",
+            len(model_input.detections),
         )
         self.logger.debug(f"The forced photometry detections are: {forced}")
         self.logger.debug(
             f"The prv candidates detections are: {prv_candidates}"
         )
         self.logger.debug(
-            f"The aids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_objet}"
+            f"The oids for detections that are forced photometry or prv candidates and do not have the diaObjet field are:{dia_object}"
         )
         self.logger.info(
             "The number of features is: %i", len(model_input.features)
         )
-        self.logger.info("Doing inference")
-        if self.isztf:
+
+    def predict_ztf(self, model_input):
+        try:
             probabilities = self.model.predict_in_pipeline(
                 model_input.features,
             )
             probabilities = OutputDTO(
-                probabilities["probabilities"], probabilities["hierarchical"]
+                probabilities["probabilities"],
+                probabilities["hierarchical"],
             )
-        else:
-            probabilities = self.model.predict(model_input)
-        # after the former line, probabilities must be an OutputDTO
+            return probabilities
+        except Exception as e:
+            self.log_data(model_input)
+            raise e
 
-        self.logger.info("Processing results")
+    def log_class_distribution(self, probabilities: OutputDTO):
+        if not self.config.get("FEATURE_FLAGS", {}).get(
+            "LOG_CLASS_DISTRIBUTION", False
+        ):
+            return
         df = probabilities.probabilities
-        if "aid" in df.columns:
-            df.set_index("aid", inplace=True)
+        if "oid" in df.columns:
+            df.set_index("oid", inplace=True)
         if "classifier_name" in df.columns:
             df = df.drop(["classifier_name"], axis=1)
 
         distribution = df.eq(df.where(df != 0).max(1), axis=0).astype(int)
         distribution = distribution.sum(axis=0)
         self.logger.debug("Class distribution:\n", distribution)
+
+    def predict(self, model_input):
+        if self.isztf:
+            return self.predict_ztf(model_input)
+        try:
+            return self.model.predict(model_input)
+        except ValueError as e:
+            self.log_data(model_input)
+            raise e
+
+    def execute(self, messages):
+        """Run the classification.
+
+        Parameters
+        ----------
+        messages : List[dict-like]
+            Current object data, it must have the features and object id.
+
+        """
+        self.logger.info("Processing %i messages.", len(messages))
+        model_input = create_input_dto(messages)
+        probabilities = OutputDTO(
+            DataFrame(), {"top": DataFrame(), "children": {}}
+        )
+
+        can, error = self.model.can_predict(model_input)
+        if not can:
+            self.logger.info(f"Can't predict\nError: {error}")
+            return probabilities, messages, model_input.features
+
+        probabilities = self.predict(model_input)
+        self.log_class_distribution(probabilities)
         return probabilities, messages, model_input.features
 
-    def post_execute(self, result: Tuple[OutputDTO, List[dict]]):
+    def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        probabilities = result[0]
         parsed_result = self.scribe_parser.parse(
-            result[0], classifier_version=self.classifier_version
+            probabilities,
+            classifier_version=self.classifier_version,
         )
         self.produce_scribe(parsed_result.value)
         return result

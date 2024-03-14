@@ -6,6 +6,7 @@ from fastavro import writer
 import boto3
 from botocore.exceptions import ClientError
 from uuid import uuid4
+from .jd import jd_to_date
 
 
 class AlertArchivingStep(GenericStep):
@@ -54,6 +55,11 @@ class AlertArchivingStep(GenericStep):
         schema = reader.writer_schema
         return data, schema
 
+    def get_date(self, message: dict):
+        jd = message["candidate"]["jd"]
+        year, month, day = jd_to_date(jd)
+        return f"{int( year )}{int( month )}{int( day )}"
+
     def deserialize_messages(self, messages):
         deserialized = {}
         for message in messages:
@@ -64,13 +70,13 @@ class AlertArchivingStep(GenericStep):
                 self.logger.exception(f"Error in kafka stream: {message.error()}")
                 continue
             else:
-                topic = message.topic()
                 message, schema = self.deserialize_message(message)
+                date = self.get_date(message)
                 self.schema = schema
-                if topic in deserialized:
-                    deserialized[topic].append(message)
+                if date in deserialized:
+                    deserialized[date].append(message)
                 else:
-                    deserialized[topic] = [message]
+                    deserialized[date] = [message]
 
         self.messages = messages
         return deserialized
@@ -80,17 +86,14 @@ class AlertArchivingStep(GenericStep):
         #   Here comes the Step Logic  #
         ################################
         clean_messages = self.deserialize_messages(messages)
-        for topic in clean_messages:
-            topic_date = topic.split("_")[1]  # yyyymmdd
-            survey = topic.split("_")[0].lower()  # ztf
+        for date in clean_messages:
             partition_name = str(uuid4())  # count
-
-            file_name = topic_date + "_" + partition_name + ".avro"
+            file_name = date + "_" + partition_name + ".avro"
             fo = io.BytesIO()
-            writer(fo, self.schema, clean_messages[topic], codec="snappy")
-            object_name = "{}_{}/{}".format(self.formatt, topic_date, file_name)
+            writer(fo, self.schema, clean_messages[date], codec="snappy")
+            object_name = "{}_{}/{}".format(self.formatt, date, file_name)
 
             # Reset read pointer. DOT NOT FORGET THIS, else all uploaded files will be empty!
             fo.seek(0)
 
-            self.upload_file(fo, self.bucket_name[survey], object_name)
+            self.upload_file(fo, self.bucket_name["ztf"], object_name)

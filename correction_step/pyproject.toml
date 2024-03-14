@@ -1,25 +1,20 @@
 [tool.poetry]
 name = "correction"
-version = "6.1.1a30"
+version = "23.12.26a75"
 description = "Correction library for ALeRCE pipeline."
 authors = ["ALeRCE Broker <alercebroker@gmail.com>"]
 readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.10,<4.0"
 numpy = "~1.24.2"
 pandas = "~1.5.3"
-fastavro = { version = "~1.4.12", optional = true }
-prometheus-client = { version = "~0.16.0", optional = true }
-confluent-kafka = { version = "~2.0.2", optional = true }
 apf_base = { path = "../libs/apf", develop = true }
-
-[tool.poetry.extras]
-apf = ["fastavro", "prometheus-client", "confluent-kafka", "apf_base"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
+memray = "^1.11.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -27,10 +22,14 @@ pytest-cov = "^4.0.0"
 pytest-docker = "^1.0.1"
 
 [tool.poetry.scripts]
-step = { callable = "correction._step:run_step", extras = ["apf"] }
+step = { callable = "correction._step:run_step" }
+profile = { callable = "correction._step:memray_profile" }
 
 [tool.black]
-line-length = 120
+line-length = 100
+
+[tool.pylint.messages_control]
+disable = ["missing-module-docstring", "missing-function-docstring"]
 
 [build-system]
 requires = ["poetry-core"]

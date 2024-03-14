@@ -16,12 +16,15 @@ def generate_features_df(messages: pd.DataFrame):
     ]
     feature_multi_index = pd.MultiIndex.from_tuples(feature_columns)
 
-    aids = messages["aid"].to_list()
+    oids = messages["oid"].to_list()
     features_data = map(
-        lambda x: numpy.random.uniform(1000.0, 9999.9, len(feature_columns)), aids
+        lambda x: numpy.random.uniform(1000.0, 9999.9, len(feature_columns)),
+        oids,
     )
 
-    features_df = pd.DataFrame(features_data, index=aids, columns=feature_multi_index)
-    features_df.index.name = "aid"
+    features_df = pd.DataFrame(
+        features_data, index=oids, columns=feature_multi_index
+    )
+    features_df.index.name = "oid"
 
     return features_df

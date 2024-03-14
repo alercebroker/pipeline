@@ -24,7 +24,7 @@ def test_produce_scribe(env_variables):
         "collection": "non_detection",
         "type": "update",
         "criteria": {
-            "aid": non_detection["aid"],
+            "oid": non_detection["oid"],
             "fid": non_detection["fid"],
             "mjd": non_detection["mjd"],
         },
@@ -56,7 +56,7 @@ def test_post_execute(env_variables):
         "collection": "non_detection",
         "type": "update",
         "criteria": {
-            "aid": non_detection["aid"],
+            "oid": non_detection["oid"],
             "fid": non_detection["fid"],
             "mjd": non_detection["mjd"],
         },

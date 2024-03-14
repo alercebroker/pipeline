@@ -11,28 +11,28 @@ class NoClassifiedPostProcessor(object):
         self.classifications = classifications
 
     def get_modified_classifications(self) -> pd.DataFrame:
-        if self.messages.index.name != "aid":
-            self.messages.set_index("aid", inplace=True)
+        if self.messages.index.name != "oid":
+            self.messages.set_index("oid", inplace=True)
         classifications_columns = self.classifications.columns.values.tolist()
         result_columns_names = classifications_columns + [self.class_name]
         classifications_cloumns_length = len(classifications_columns)
         no_classified_data = ([0] * classifications_cloumns_length) + [1]
 
         result_data = []
-        result_aids = []
+        result_oids = []
 
-        for aid, _ in self.messages.iterrows():
+        for oid, _ in self.messages.iterrows():
             try:
-                aid_classifications = list(self.classifications.loc[aid]) + [0]
+                oid_classifications = list(self.classifications.loc[oid]) + [0]
             except KeyError:
-                aid_classifications = no_classified_data
+                oid_classifications = no_classified_data
 
-            result_aids.append(aid)
-            result_data.append(aid_classifications)
+            result_oids.append(oid)
+            result_data.append(oid_classifications)
 
         result_df = pd.DataFrame(
-            result_data, index=result_aids, columns=result_columns_names
+            result_data, index=result_oids, columns=result_columns_names
         )
-        result_df.index.name = "aid"
+        result_df.index.name = "oid"
 
         return result_df

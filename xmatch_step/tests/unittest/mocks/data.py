@@ -8,12 +8,13 @@ mock_lightcurve = [
                 "candid": "aaa",
                 "tid": "ZTF",
                 "oid": "oid",
+                "sid": "ZTF",
                 "aid": "aid",
                 "mag": 0.1,
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa", "tid": "ATLAS-01a"},
+            {"candid": "aaa", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [],
         "magstats": [],
@@ -22,12 +23,13 @@ mock_lightcurve = [
 
 mock_lightcurves_list = [
     {
-        "aid": "aid1",
+        "oid": "oid1",
         "meanra": 10.0,
         "meandec": 50.0,
         "detections": [
             {
                 "candid": "aaa",
+                "sid": "ZTF",
                 "tid": "ZTF",
                 "oid": "oid1",
                 "aid": "aid1",
@@ -35,17 +37,18 @@ mock_lightcurves_list = [
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa", "tid": "ATLAS-01a"},
+            {"candid": "aaa", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [],
     },
     {
-        "aid": "aid2",
+        "oid": "oid2",
         "meanra": 50.0,
         "meandec": 68.9,
         "detections": [
             {
                 "candid": "eee",
+                "sid": "ZTF",
                 "tid": "ZTF",
                 "oid": "oid2",
                 "aid": "aid2",
@@ -53,11 +56,12 @@ mock_lightcurves_list = [
                 "e_mag": 0.01,
                 "extra_fields": {"field1": "f", "field2": "f2"},
             },
-            {"candid": "aaa2", "tid": "ATLAS-01a"},
+            {"candid": "aaa2", "tid": "ATLAS-01a", "sid": "ATLAS"},
         ],
         "non_detections": [
             {
                 "tid": "ZTF",
+                "sid": "ZTF",
                 "oid": "oid2",
                 "aid": "aid2",
                 "mjd": 599000,

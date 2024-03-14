@@ -1,0 +1,75 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+autoscaling:
+  atlas:
+    enabled: true
+    maxReplicas: 8
+    minReplicas: 1
+    targetCPUUtilizationPercentage: 80
+  ztf:
+    enabled: true
+    maxReplicas: 4
+    minReplicas: 1
+    targetCPUUtilizationPercentage: 80
+
+configmap:
+  atlas:
+    bucketName: atlas-stream:ATLAS
+    consumerGroupId: s3_step_atlas
+    consumerTopics: atlas
+    internalServer: ${kafka_server}
+    metricsTopic: metrics
+    producerSchemaPath: /schemas/s3_step/output.avsc
+    regionName: us-east-1
+    topicStrategy:
+      enabled: false
+      format: ^ATLAS_%s_.*
+  ztf:
+    bucketName: ztf-stream:ztf
+    consumerGroupId: s3_step_ztf
+    consumerTopics: ztf
+    internalServer: ${kafka_server}
+    metricsTopic: metrics
+    regionName: us-east-1
+    topicStrategy:
+      enabled: false
+      format: ztf_%s_programid1
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+imagePullSecrets:
+- name: image-pull-access
+
+namespace: s3-step
+
+resources:
+  atlas:
+    requests:
+      cpu: 60m
+      memory: 128M
+  ztf:
+    requests:
+      cpu: 60m
+      memory: 128M
+
+secrets:
+  kafkaAuth:
+    consumer:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}
+    metrics:
+      enabled: true
+      password: ${kafka_password}
+      username: ${kafka_username}

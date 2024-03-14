@@ -1,0 +1,106 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    TOPICS: ["correction_elasticc"]
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lc_classifier_balto"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    consume.timeout: 10
+    consume.messages: 50
+  PRODUCER_CONFIG:
+    TOPIC_STRATEGY:
+      PARAMS:
+        topic_format: "lc_classifier_balto_%s"
+        date_format: "%Y%m%d"
+        change_hour: 23
+        retention_days: 1
+      CLASS: "apf.core.topic_management.DailyTopicStrategy"
+    PARAMS:
+      bootstrap.servers: ${kafka_public_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    CLASS: "apf.producers.kafka.KafkaSchemalessProducer"
+    SCHEMA_PATH: "/schemas/lc_classification_step/output_elasticc.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/lc_classification_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object_elasticc"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  MODEL_VERSION: "6.1.0"
+  MODEL_CONFIG:
+    CLASS: "alerce_classifiers.balto.model.BaltoClassifier"
+    NAME: "BaltoClassifier"
+    PARAMS:
+      model_path: ${model_path}
+      mapper: "alerce_classifiers.balto.mapper.BaltoMapper"
+      ## here go other settings like
+      header_quantiles_path: ${quantiles_path}
+      ## feature_quantiles_path: ""
+      ## barney and toretto use path_to_model instead of model_path
+      ## path_to_model: ""
+  SCRIBE_PARSER_CLASS: "lc_classification.core.parsers.scribe_parser.ScribeParser"
+  STEP_PARSER_CLASS: "lc_classification.core.parsers.elasticc_parser.ElasticcParser"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'balto-classifier'
+  - name: METRICS_SURVEY
+    value: LSST
+
+image:
+  repository: ghcr.io/alercebroker/lc_classification_step_balto
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: balto-classifier
+
+resources:
+  requests:
+    cpu: 2000m
+    memory: 600M

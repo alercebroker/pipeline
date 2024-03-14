@@ -24,9 +24,23 @@ class PrvCandidatesStep(GenericStep):
         super().__init__(config=config, **step_args)
         producer_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = producer_class(self.config["SCRIBE_PRODUCER_CONFIG"])
+        # monitoring
+        self.candid_found = False
+
+    def _extract_timestamp(self, message):
+        def __extract_timestamp(detection):
+            detection.pop("timestamp", None)
+            return detection
+
+        dets = message["detections"]
+        dets = list(map(__extract_timestamp, dets))
+        message["detections"] = dets
+
+        return message
 
     def pre_produce(self, result: List[dict]):
-        self.set_producer_key_field("aid")
+        self.set_producer_key_field("oid")
+        result = list(map(self._extract_timestamp, result))
         return result
 
     def execute(self, messages):
@@ -48,7 +62,7 @@ class PrvCandidatesStep(GenericStep):
                 "collection": "non_detection",
                 "type": "update",
                 "criteria": {
-                    "aid": non_detection["aid"],
+                    "oid": non_detection["oid"],
                     "fid": non_detection["fid"],
                     "mjd": non_detection["mjd"],
                 },

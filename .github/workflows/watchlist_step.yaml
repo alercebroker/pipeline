@@ -5,43 +5,44 @@ on:
     branches:
       - main
     paths:
-      - 'watchlist_step/**'
-      - '!watchlist_step/README.md'
+      - "watchlist_step/**"
+      - "!watchlist_step/README.md"
 
 jobs:
   watchlist_step_lint:
     uses: ./.github/workflows/lint-template.yaml
     with:
-      sources-folder: 'watchlist_step'
-      base-folder: 'watchlist_step'
+      sources-folder: "watchlist_step"
+      base-folder: "watchlist_step"
   watchlist_step_unittest:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'watchlist_step'
-      python-version: '3.8'
-      sources-folder: 'watchlist_step'
-      test-folder: 'tests/unittest'
-      test-dependencies: 'pytest pytest-cov'
-      test-command: 'python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml'
+      base-folder: "watchlist_step"
+      python-version: "3.8"
+      sources-folder: "watchlist_step"
+      test-folder: "tests/unittest"
+      test-dependencies: "pytest pytest-cov"
+      test-command: "python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   watchlist_step_integration:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
-      base-folder: 'watchlist_step'
-      python-version: '3.9'
-      sources-folder: 'watchlist_step'
-      test-folder: 'tests/integration'
-      test-dependencies: 'pytest==7.2.0 pytest-docker'
-      codecov-flags: ''  # Do not upload
-      test-command: 'python -m pytest -x tests/integration'
-    secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
-  watchlist_step_build:
-    uses: ./.github/workflows/build-template.yaml
-    with:
       base-folder: "watchlist_step"
-      build-context: "."
-      step-name: "watchlist_step"
+      python-version: "3.9"
+      sources-folder: "watchlist_step"
+      test-folder: "tests/integration"
+      test-dependencies: "pytest==7.2.0 pytest-docker"
+      codecov-flags: "" # Do not upload
+      test-command: "python -m pytest -x tests/integration"
     secrets:
-      GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+
+  build-watchlist-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: watchlist_step --dry-run
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}

@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "build"
+version = "0.1.1a7"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+dagger-io = "^0.8.4"
+boto3 = "^1.28.41"
+pyyaml = "^6.0.1"
+typer = "^0.9.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+
+[tool.black]
+line-length = 79
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

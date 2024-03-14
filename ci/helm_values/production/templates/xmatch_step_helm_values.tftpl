@@ -1,0 +1,80 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 8
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 50
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'xmatch-step'
+  - name: METRICS_SURVEY
+    value: ZTF,ATLAS
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: xmatch-step
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 500Mi
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "xmatch"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["correction"]
+    consume.timeout: 10
+    consume.messages: 200
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    TOPIC: "xmatch"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    SCHEMA_PATH: "/schemas/xmatch_step/output.avsc"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/xmatch_step/metrics.json"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_XMATCH: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"

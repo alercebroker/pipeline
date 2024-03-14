@@ -15,11 +15,14 @@ def test_result_has_everything(
     from scripts.run_step import step_creator
 
     step_creator().start()
+    count = 0
     for message in kafka_consumer.consume():
+        count += 1
         assert_result_has_non_detections(message)
         assert_result_has_prv_detections(message)
         assert_result_has_alert(message)
         kafka_consumer.commit()
+    assert count == 10
 
 
 def assert_result_has_prv_detections(message):
@@ -27,7 +30,7 @@ def assert_result_has_prv_detections(message):
     if message["detections"][0]["sid"].lower() == "atlas":
         assert len(message["detections"]) == 1
     else:
-        assert len(message["detections"]) == 3
+        assert len(message["detections"]) == 4
 
 
 def assert_result_has_non_detections(message):
@@ -59,7 +62,6 @@ def assert_scribe_has_non_detections(message):
     data = json.loads(message["payload"])
     assert data["collection"] == "non_detection"
     assert data["type"] == "update"
-    assert "aid" in data["criteria"]
     assert "fid" in data["criteria"]
     assert "mjd" in data["criteria"]
     assert len(data["data"]) > 0
@@ -77,3 +79,12 @@ def test_works_with_batch(kafka_service, env_variables, kafka_consumer: KafkaCon
         assert_result_has_prv_detections(message)
         assert_result_has_alert(message)
         kafka_consumer.commit()
+
+
+def test_works_with_schemaless_producer(kafka_service, env_variables):
+    from scripts.run_step import step_creator
+    import os
+
+    os.environ["PRODUCER_CLASS"] = "apf.producers.KafkaSchemalessProducer"
+
+    step_creator().start()

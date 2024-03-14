@@ -1,16 +1,19 @@
 import pytest
 import uuid
 import os
+import pathlib
 
 from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers import KafkaProducer
 from apf.consumers import KafkaConsumer
-from tests.unittests import SCHEMA, data as messages
+from tests.unittests import data as messages
 
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return os.path.join(str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml")
+    return os.path.join(
+        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -42,7 +45,9 @@ def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     port = docker_services.port_for("kafka", 9092)
     server = f"{docker_ip}:{port}"
-    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server))
+    docker_services.wait_until_responsive(
+        timeout=60.0, pause=1, check=lambda: is_responsive_kafka(server)
+    )
     return server
 
 
@@ -50,6 +55,10 @@ def kafka_service(docker_ip, docker_services):
 def env_variables():
     random_string = uuid.uuid4().hex
     env_variables_dict = {
+        "PRODUCER_SCHEMA_PATH": "",
+        "CONSUMER_SCHEMA_PATH": "",
+        "METRIS_SCHEMA_PATH": "../schemas/magstats_step/metrics.json",
+        "SCRIBE_SCHEMA_PATH": "../schemas/scribe_step/scribe.avsc",
         "CONSUMER_SERVER": "localhost:9092",
         "CONSUMER_TOPICS": "correction",
         "CONSUMER_GROUP_ID": random_string,
@@ -87,7 +96,13 @@ def produce_messages(topic):
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
-            "SCHEMA": SCHEMA,
+            "SCHEMA_PATH": str(
+                pathlib.Path(
+                    pathlib.Path(__file__).parent.parent.parent.parent,
+                    "schemas/correction_step",
+                    "output.avsc",
+                )
+            ),
         }
     )
 

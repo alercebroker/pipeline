@@ -1,0 +1,56 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - staging-pipeline
+autoscaling:
+  enabled: true
+  maxReplicas: 8
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+image:
+  repository: ghcr.io/alercebroker/lightcurve-step
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+namespace: lightcurve-step
+resources:
+  requests:
+    cpu: 100m
+    memory: 250M
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  - name: METRICS_SOURCE
+    value: lightcurve
+  - name: METRICS_SURVEY
+    value: ATLAS,ZTF
+
+configYaml:
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/prv_candidate_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaSchemalessProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+  METRICS_CONFIG:
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+  MONGO_SECRET_NAME: "mongodb-alerts/reader"
+  SQL_SECRET_NAME: "psql-users-staging/reader"

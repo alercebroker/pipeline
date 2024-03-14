@@ -1,0 +1,68 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - production-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 8
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  - name: METRICS_SOURCE
+    value: 'magstats-step'
+  - name: METRICS_SURVEY
+    value: ZTF,ATLAS
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: magstats-step
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 128Mi
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaSchemalessConsumer"
+    SCHEMA_PATH: "/schemas/correction_step/output.avsc"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "magstats-step"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["correction"]
+    consume.messages: 300
+    consume.timeout: 20
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/magstats_step/metrics.json"
+  SCRIBE_PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "w_object"
+    SCHEMA_PATH: "/schemas/scribe_step/scribe.avsc"
+  EXCLUDED_CALCULATORS: ["dmdt", "stellar"]

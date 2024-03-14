@@ -19,9 +19,8 @@ class ParsersTestCase(unittest.TestCase):
     def test_parse_output(self):
         expected_payload = [
             {
-                "aid": "aid1",
-                "meanra": 888,
-                "meandec": 999,
+                "oid": "oid1",
+                "candid": "candid1",
                 "detections": [],
                 "non_detections": [],
                 "xmatches": {},
@@ -34,9 +33,8 @@ class ParsersTestCase(unittest.TestCase):
                 },
             },
             {
-                "aid": "aid2",
-                "meanra": 444,
-                "meandec": 555,
+                "oid": "oid2",
+                "candid": "candid2",
                 "detections": [],
                 "non_detections": [],
                 "xmatches": {},
@@ -50,8 +48,12 @@ class ParsersTestCase(unittest.TestCase):
             },
         ]
         test_features_df = features_df_for_parse.copy()
+        candids = {"oid1": "candid1", "oid2": "candid2"}
         parsed_result = parse_output(
-            test_features_df, messages_for_parsing, self.mock_extractor_class
+            test_features_df,
+            messages_for_parsing,
+            self.mock_extractor_class,
+            candids,
         )
 
         self.assertEqual(parsed_result, expected_payload)
@@ -61,16 +63,16 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid1"},
+                "criteria": {"_id": "oid1"},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
                     "features": [
-                        {"name": "feat1", "fid": "g", "value": 123},
-                        {"name": "feat1", "fid": "r", "value": 456},
-                        {"name": "feat2", "fid": "gr", "value": 741},
-                        {"name": "feat3", "fid": None, "value": 963},
-                        {"name": "feat4", "fid": None, "value": None},
+                        {"name": "feat1", "fid": 1, "value": 123},
+                        {"name": "feat1", "fid": 2, "value": 456},
+                        {"name": "feat2", "fid": 12, "value": 741},
+                        {"name": "feat3", "fid": 0, "value": 963},
+                        {"name": "feat4", "fid": 0, "value": None},
                     ],
                 },
                 "options": {"upsert": True},
@@ -78,16 +80,16 @@ class ParsersTestCase(unittest.TestCase):
             {
                 "collection": "object",
                 "type": "update_features",
-                "criteria": {"_id": "aid2"},
+                "criteria": {"_id": "oid2"},
                 "data": {
                     "features_version": metadata.version("feature-step"),
                     "features_group": "ztf_lc_features",
                     "features": [
-                        {"name": "feat1", "fid": "g", "value": 321},
-                        {"name": "feat1", "fid": "r", "value": 654},
-                        {"name": "feat2", "fid": "gr", "value": 147},
-                        {"name": "feat3", "fid": None, "value": 369},
-                        {"name": "feat4", "fid": None, "value": 888},
+                        {"name": "feat1", "fid": 1, "value": 321},
+                        {"name": "feat1", "fid": 2, "value": 654},
+                        {"name": "feat2", "fid": 12, "value": 147},
+                        {"name": "feat3", "fid": 0, "value": 369},
+                        {"name": "feat4", "fid": 0, "value": 888},
                     ],
                 },
                 "options": {"upsert": True},

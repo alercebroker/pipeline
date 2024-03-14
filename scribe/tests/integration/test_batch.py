@@ -1,16 +1,17 @@
+import os
 from random import choice
-from mongo_scribe.step import MongoScribe
-from apf.producers.kafka import KafkaProducer
-from _generator import CommandGenerator
-from db_plugins.db.mongo._connection import MongoConnection
 
-from pprint import pprint
+from apf.producers.kafka import KafkaProducer
+from db_plugins.db.mongo._connection import MongoConnection
+from mongo_scribe.step import MongoScribe
+
+from _generator import CommandGenerator
 
 DB_CONFIG = {
     "MONGO": {
         "host": "localhost",
-        "username": "mongo",
-        "password": "mongo",
+        "username": "",
+        "password": "",
         "port": 27017,
         "database": "test",
     }
@@ -32,14 +33,9 @@ CONSUMER_CONFIG = {
 PRODUCER_CONFIG = {
     "TOPIC": "test_topic_2",
     "PARAMS": {"bootstrap.servers": "localhost:9092"},
-    "SCHEMA": {
-        "namespace": "db_operation",
-        "type": "record",
-        "name": "Command",
-        "fields": [
-            {"name": "payload", "type": "string"},
-        ],
-    },
+    "SCHEMA_PATH": os.path.join(
+        os.path.dirname(__file__), "producer_schema.avsc"
+    ),
 }
 
 
@@ -67,14 +63,19 @@ commands.extend([generator.generate_random_command() for _ in range(125)])
 generator.set_offset(125)
 commands.append(generator.generate_insert())
 commands.extend(
-    [generator.generate_random_command({"upsert": True}, 125) for _ in range(125)]
+    [
+        generator.generate_random_command({"upsert": True}, 125)
+        for _ in range(125)
+    ]
 )
 # 1000 - 1000 + X (upsert and set_on_insert)
 generator.set_offset(250)
 commands.append(generator.generate_insert())
 commands.extend(
     [
-        generator.generate_random_command({"upsert": True, "set_on_insert": True}, 250)
+        generator.generate_random_command(
+            {"upsert": True, "set_on_insert": True}, 250
+        )
         for _ in range(125)
     ]
 )
@@ -93,7 +94,9 @@ def test_bulk(kafka_service, mongo_service):
 
     # get any element that have features (obtained from the tracker)
     updated_feats = {
-        key: val for key, val in generator.get_updated_features().items() if val != []
+        key: val
+        for key, val in generator.get_updated_features().items()
+        if val != []
     }
     sample_id = choice(list(updated_feats.keys()))
     result = collection.find_one({"_id": f"ID{sample_id}"})

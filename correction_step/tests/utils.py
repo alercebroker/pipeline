@@ -1,15 +1,37 @@
 import pickle
+from random import random, choice
+
 
 def ztf_extra_fields(**kwargs):
     extra_fields = {
         "magnr": 10.0,
         "sigmagnr": 1.0,
-        "distnr": 1.0,
+        # make some detections non correctible
+        "distnr": random() + 1 if random() < 0.5 else random(),
         "distpsnr1": 1.0,
         "sgscore1": 0.5,
         "chinr": 1,
         "sharpnr": 0.0,
         "unused": None,
+    }
+    extra_fields.update(kwargs)
+    return extra_fields
+
+
+def lsst_extra_fields(**kwargs):
+    extra_fields = {
+        "field": "value",
+        "prvDiaForcedSources": b"bainari",
+        "prvDiaSources": b"bainari2",
+        "diaObject": pickle.dumps("bainari2"),
+    }
+    extra_fields.update(kwargs)
+    return extra_fields
+
+
+def atlas_extra_fields(**kwargs):
+    extra_fields = {
+        "field": "value",
     }
     extra_fields.update(kwargs)
     return extra_fields
@@ -27,15 +49,18 @@ def ztf_alert(**kwargs):
         "dec": 1,
         "e_dec": 1,
         "isdiffpos": 1,
-        "aid": "AID1",
+        "oid": "OID1",
         "fid": "g",
         "mjd": 1.0,
         "has_stamp": True,
-        "forced": False,
-        "extra_fields": ztf_extra_fields(),
+        "forced": choice([True, False]),
+        "extra_fields": kwargs["extra_fields"]
+        if kwargs.get("extra_fields", None)
+        else ztf_extra_fields(),
     }
     alert.update(kwargs)
     return alert
+
 
 def elasticc_extra_fields():
     extra_fields = {
@@ -45,12 +70,14 @@ def elasticc_extra_fields():
     }
     return extra_fields
 
+
 def elasticc_alert(**kwargs):
     alert = ztf_alert(**kwargs)
     alert["tid"] = "LSST"
     alert["sid"] = "LSST"
     alert["extra_fields"] = elasticc_extra_fields()
     return alert
+
 
 def atlas_alert(**kwargs):
     alert = {
@@ -64,7 +91,7 @@ def atlas_alert(**kwargs):
         "dec": 1,
         "e_dec": 1,
         "isdiffpos": 1,
-        "aid": "AID1",
+        "oid": "OID1",
         "fid": "c",
         "mjd": 1.0,
         "has_stamp": True,
@@ -77,7 +104,7 @@ def atlas_alert(**kwargs):
 
 def non_detection(**kwargs):
     alert = {
-        "aid": "AID1",
+        "oid": "OID1",
     }
     alert.update(kwargs)
     return alert

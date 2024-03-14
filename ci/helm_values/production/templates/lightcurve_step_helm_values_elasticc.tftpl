@@ -1,0 +1,77 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: nodegroup
+          operator: In
+          values:
+          - elasticc-pipeline
+
+autoscaling:
+  enabled: true
+  maxReplicas: 16
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 20
+
+image:
+  repository: ghcr.io/alercebroker/lightcurve-step
+
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "True"
+  - name: METRICS_SOURCE
+    value: 'lightcurve-step-elasticc'
+  - name: METRICS_SURVEY
+    value: LSST
+
+imageCredentials:
+  password: ${ghcr_password}
+  registry: ghcr.io
+  username: ${ghcr_username}
+
+namespace: lightcurve-step-elasticc
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 4500Mi
+
+configYaml:
+  enabled: true
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      group.id: "lightcurve-step-elasticc"
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPICS: ["prv-candidates_elasticc"]
+    consume.messages: 100
+    consume.timeout: 10
+  PRODUCER_CONFIG:
+    CLASS: "apf.producers.KafkaProducer"
+    PARAMS:
+      bootstrap.servers: ${kafka_server}
+      message.max.bytes: 67108864
+      sasl.username: ${kafka_username}
+      sasl.password: ${kafka_password}
+    TOPIC: "lightcurve_elasticc"
+    SCHEMA_PATH: "/schemas/lightcurve_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ${kafka_server}
+        sasl.username: ${kafka_username}
+        sasl.password: ${kafka_password}
+      TOPIC: "metrics_elasticc"
+      SCHEMA_PATH: "/schemas/lightcurve_step/metrics.json"
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+  LOGGING_DEBUG: false
+  MONGO_SECRET_NAME: "mongo-elasticc-production/reader"
+  FEATURE_FLAGS:
+    PROMETHEUS: false
+    USE_PROFILING: true
+    SKIP_MJD_FILTER: false
+    USE_SQL: false

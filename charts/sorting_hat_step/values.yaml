@@ -1,0 +1,108 @@
+# Default values for step_starter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: sorting-hat
+
+image:
+  repository: ghcr.io/alercebroker/sorting_hat_step
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets:
+  - name: "image-pull-access"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+resources:
+  requests:
+    memory: 750M
+    cpu: 750m
+
+autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 90
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodegroup
+              operator: In
+              ## Override this value with the NodeGroup tag accordingly
+              values: []
+
+configYaml:
+  enabled: true
+  FEATURE_FLAGS:
+    RUN_CONESEARCH: true
+    USE_PROFILING: true
+    USE_PSQL: true
+    PROMETHEUS: false
+  MONGO_SECRET_NAME: ""
+  PSQL_SECRET_NAME: ""
+  CONSUMER_CONFIG:
+    CLASS: "apf.consumers.KafkaConsumer"
+    SCHEMA_PATH: ""
+    TOPICS: [""]
+    PARAMS:
+      bootstrap.servers: ""
+      group.id: ""
+      auto.offset.reset: "beginning"
+      enable.partition.eof: false
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+    consume.timeout: 10
+    consume.messages: 100
+  PRODUCER_CONFIG:
+    PARAMS:
+      bootstrap.servers: ""
+      security.protocol: "SASL_SSL"
+      sasl.mechanism: "SCRAM-SHA-512"
+      sasl.username: ""
+      sasl.password: ""
+      message.max.bytes: 6291456
+    CLASS: "apf.producers.kafka.KafkaProducer"
+    TOPIC: ""
+    SCHEMA_PATH: "/schemas/sorting_hat_step/output.avsc"
+  METRICS_CONFIG:
+    CLASS: "apf.metrics.KafkaMetricsProducer"
+    PARAMS:
+      PARAMS:
+        bootstrap.servers: ""
+        security.protocol: "SASL_SSL"
+        sasl.mechanism: "SCRAM-SHA-512"
+        sasl.username: ""
+        sasl.password: ""
+      TOPIC: "metrics"
+      SCHEMA_PATH: "/schemas/sorting_hat_step/metrics.json"
+  LOGGING_DEBUG: false
+  PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+
+
+imageCredentials:
+  registry: ""
+  username: ""
+  password: ""
+  email: ""
+
+# Variables to add to deployment template
+# These are yaml formatted as received by `env` field of the container spec
+envVariables:
+  - name: CONFIG_FROM_YAML
+    value: "yes"
+  ## - name: METRICS_SOURCE
+  ##   value: {{ .Release.Name }}
+  ## - name: METRICS_SURVEY
+  ##   value: ATLAS

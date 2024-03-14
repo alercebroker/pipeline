@@ -2,24 +2,23 @@ import math
 import unittest
 from unittest import mock
 
-from db_plugins.db.mongo.models import Object
-from sorting_hat_step.database import DatabaseConnection
+from sorting_hat_step.database import MongoConnection
 from sorting_hat_step.utils import database
 from pymongo.database import Database
 
 
 class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_db = mock.create_autospec(DatabaseConnection)
+        self.mock_db = mock.create_autospec(MongoConnection)
         self.mock_db.database = mock.create_autospec(Database)
 
     def test_oid_query(self):
         # Mock a response with elements in database
-        self.mock_db.database["object"].find_one.return_value = {"_id": 1}
+        self.mock_db.database["object"].find_one.return_value = {"_id": 1, "aid": 1}
         aid = database.oid_query(self.mock_db, ["x", "y", "z"])
         self.assertEqual(aid, 1)
         self.mock_db.database["object"].find_one.assert_called_with(
-            {"oid": {"$in": ["x", "y", "z"]}}, {"_id": 1}
+            {"_id": {"$in": ["x", "y", "z"]}}, {"aid": 1}
         )
 
     def test_oid_query_with_no_elements(self):
@@ -32,23 +31,25 @@ class DatabaseTestCase(unittest.TestCase):
             "field1": 1,
             "field2": 2,
         }
-        with self.assertRaisesRegex(KeyError, "_id"):
+        with self.assertRaisesRegex(KeyError, "aid"):
             database.oid_query(self.mock_db, ["x", "y", "z"])
 
     def test_conesearch_query(self):
-        self.mock_db.database["object"].find_one.return_value = {"_id": 1}
-        aid = database.conesearch_query(self.mock_db, 180, 0, math.degrees(3600))
+        self.mock_db.database["object"].find_one.return_value = {"_id": 1, "aid": 1}
+        aid = database.conesearch_query(
+            self.mock_db, 180, 0, math.degrees(3600)
+        )
         assert aid == 1
         self.mock_db.database["object"].find_one.assert_called_with(
             {
                 "loc": {
                     "$nearSphere": {
                         "$geometry": {"type": "Point", "coordinates": [0, 0]},
-                        "$maxDistance": 1,
+                        "$maxDistance": 6.3781e6,
                     },
                 },
             },
-            {"_id": 1},  # only return alerce_id
+            {"aid": 1},
         )
 
     def test_conesearch_query_without_results(self):
@@ -57,23 +58,24 @@ class DatabaseTestCase(unittest.TestCase):
         assert aid is None
 
     def test_update_query(self):
-        mock_find_and_update = self.mock_db.database["object"].find_one_and_update
-        mock_find_and_update.side_effect = [
-            {"oid": [10, 100], "_id": 0},
-            {"oid": [20, 30], "_id": 1},
+        self.mock_db.database["object"].find_one_and_update.side_effect = [
+            {"aid": 10, "_id": 0},
+            {"aid": 20, "_id": 1},
         ]
         records = [
-            {"oid": [10], "_id": 0},
-            {"oid": [20, 30], "_id": 1},
+            {"aid": 10, "_id": 0},
+            {"aid": 20, "_id": 1},
         ]
 
         database.update_query(self.mock_db, records)
 
-        assert mock_find_and_update.call_count == 2
+        assert (
+            self.mock_db.database["object"].find_one_and_update.call_count == 2
+        )
 
         query = {"_id": 0}
         new_value = {
-            "$addToSet": {"oid": {"$each": [10]}},
+            "$set": {"aid": 10},
         }
         self.mock_db.database["object"].find_one_and_update.assert_any_call(
             query, new_value, upsert=True, return_document=True

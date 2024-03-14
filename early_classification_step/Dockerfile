@@ -18,20 +18,17 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry
-
 COPY early_classification_step/poetry.lock early_classification_step/pyproject.toml /app/
-COPY libs/db-plugins libs/db-plugins
-
+COPY early_classification_step/model /app/model
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
-
 
 FROM python:3.7-slim as production
 RUN pip install poetry
 
 COPY --from=builder /app /app
-COPY --from=builder /libs /libs
 
+COPY schemas/early_classification_step /schemas/early_classification_step
 COPY early_classification_step/earlyclassifier /app/earlyclassifier
 COPY early_classification_step/scripts /app/scripts
 COPY early_classification_step/model /app/model
@@ -42,4 +39,4 @@ COPY early_classification_step/README.md \
 WORKDIR /app
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "step"]
+CMD ["poetry", "run", "python", "scripts/run_step.py"]

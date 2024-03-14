@@ -1,23 +1,33 @@
 import os
+import pathlib
 from fastavro import schema
 from fastavro.repository.base import SchemaRepositoryError
-from credentials import get_mongodb_credentials
+from credentials import get_credentials
 
 ##################################################
 #       lightcurve_step   Settings File
 ##################################################
+
+# SCHEMA PATH RELATIVE TO THE SETTINGS FILE
+producer_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/lightcurve_step", "output.avsc"
+)
+metrics_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/lightcurve_step", "metrics.json"
+)
+scribe_schema_path = pathlib.Path(
+    pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
+)
 
 
 def settings_creator():
     # Set the global logging level to debug
     logging_debug = bool(os.getenv("LOGGING_DEBUG"))
 
-    db_config = get_mongodb_credentials(os.environ["MONGODB_SECRET_NAME"])
-
     # Consumer configuration
     # Each consumer has different parameters and can be found in the documentation
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaConsumer",
+        "CLASS": os.getenv("CONSUMER_CLASS", "apf.consumers.KafkaConsumer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["CONSUMER_SERVER"],
             "group.id": os.environ["CONSUMER_GROUP_ID"],
@@ -28,66 +38,31 @@ def settings_creator():
         },
         "TOPICS": os.environ["CONSUMER_TOPICS"].split(","),
         "consume.messages": int(os.getenv("CONSUME_MESSAGES", 50)),
-        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
+        "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 15)),
     }
 
-    try:
-        the_schema = schema.load_schema("schema.avsc")
-    except SchemaRepositoryError:
-        # in case it is running from the root of the repository
-        the_schema = schema.load_schema("lightcurve-step/schema.avsc")
-
     producer_config = {
-        "CLASS": "apf.producers.KafkaProducer",
+        "CLASS": os.getenv("PRODUCER_CLASS", "apf.producers.KafkaProducer"),
         "PARAMS": {
             "bootstrap.servers": os.environ["PRODUCER_SERVER"],
             "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
         },
         "TOPIC": os.environ["PRODUCER_TOPIC"],
-        "SCHEMA": the_schema,
+        "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", producer_schema_path),
     }
 
     metrics_config = {
         "CLASS": "apf.metrics.KafkaMetricsProducer",
         "EXTRA_METRICS": [
             {"key": "aid", "format": lambda x: str(x)},
+            {"key": "candid"},
         ],
         "PARAMS": {
             "PARAMS": {
                 "bootstrap.servers": os.environ["METRICS_SERVER"],
             },
             "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-            "SCHEMA": {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "http://example.com/example.json",
-                "type": "object",
-                "title": "The root schema",
-                "description": "The root schema comprises the entire JSON document.",
-                "default": {},
-                "examples": [
-                    {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
-                ],
-                "required": ["timestamp_sent", "timestamp_received"],
-                "properties": {
-                    "timestamp_sent": {
-                        "$id": "#/properties/timestamp_sent",
-                        "type": "string",
-                        "title": "The timestamp_sent schema",
-                        "description": "Timestamp sent refers to the time at which a message is sent.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                    "timestamp_received": {
-                        "$id": "#/properties/timestamp_received",
-                        "type": "string",
-                        "title": "The timestamp_received schema",
-                        "description": "Timestamp received refers to the time at which a message is received.",
-                        "default": "",
-                        "examples": ["2020-09-01"],
-                    },
-                },
-                "additionalProperties": True,
-            },
+            "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", metrics_schema_path),
         },
     }
 
@@ -128,10 +103,31 @@ def settings_creator():
         "CONSUMER_CONFIG": consumer_config,
         "PRODUCER_CONFIG": producer_config,
         "METRICS_CONFIG": metrics_config,
-        "PROMETHEUS": prometheus,
-        "DB_CONFIG": db_config,
+        "MONGO_SECRET_NAME": os.getenv("MONGO_SECRET_NAME"),
+        "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
+        "MONGO_CONFIG": {
+            "host": os.getenv("MONGO_HOST"),
+            "username": os.getenv("MONGO_USERNAME"),
+            "password": os.getenv("MONGO_PASSWORD"),
+            "port": int(os.getenv("MONGO_PORT", 27017)),
+            "database": os.getenv("MONGO_DATABASE"),
+            "authSource": os.getenv("MONGO_AUTH_SOURCE"),
+        },
+        "PSQL_CONFIG": {
+            "ENGINE": "postgres",
+            "HOST": os.getenv("PSQL_HOST"),
+            "USER": os.getenv("PSQL_USERNAME"),
+            "PASSWORD": os.getenv("PSQL_PASSWORD"),
+            "PORT": int(os.getenv("PSQL_PORT", 5432)),
+            "DB_NAME": os.getenv("PSQL_DATABASE"),
+        },
         "LOGGING_DEBUG": logging_debug,
-        "USE_PROFILING": use_profiling,
         "PYROSCOPE_SERVER": pyroscope_server,
+        "FEATURE_FLAGS": {
+            "USE_PROFILING": use_profiling,
+            "PROMETHEUS": prometheus,
+            "USE_SQL": bool(os.getenv("USE_SQL", True)),
+            "SKIP_MJD_FILTER": bool(os.getenv("SKIP_MJD_FILTER", False)),
+        },
     }
     return step_config

@@ -30,20 +30,21 @@ def get_extra_fields():
 
 
 def generate_alert(
-    aid: str, band: str, num_messages: int, identifier: int, **kwargs
+    oid: str, band: str, num_messages: int, identifier: int, **kwargs
 ) -> list[dict]:
     alerts = []
+    survey_id = kwargs.get("survey", "LSST")
     diaObject = get_extra_fields()["diaObject"]
     for i in range(num_messages):
         extra_fields = get_extra_fields()
         extra_fields["diaObject"] = diaObject
         alert = {
             "candid": str(random.randint(1000000, 9000000)),
-            "oid": f"oid{identifier}",
-            "aid": aid,
-            "tid": "LSST",
+            "oid": oid,
+            "aid": f"aid{identifier}",
+            "tid": survey_id,
             "mjd": random.uniform(59000, 60000),
-            "sid": "LSST",
+            "sid": survey_id,
             "fid": band,
             "pid": random.randint(1000000, 9000000),
             "ra": random.uniform(-90, 90),
@@ -91,7 +92,9 @@ def generate_non_det(aid: str, num: int, identifier: int) -> list[dict]:
     return non_det
 
 
-def generate_input_batch(n: int, bands: list[str], offset=0) -> list[dict]:
+def generate_input_batch(
+    n: int, bands: list[str], offset=0, survey="LSST"
+) -> list[dict]:
     """
     Parameters
     ----------
@@ -101,18 +104,21 @@ def generate_input_batch(n: int, bands: list[str], offset=0) -> list[dict]:
     """
     batch = []
     for m in range(1, n + 1):
-        aid = f"AL2X{str(m+offset).zfill(5)}"
+        oid = f"AL2X{str(m+offset).zfill(5)}"
         meanra = random.uniform(0, 360)
         meandec = random.uniform(-90, 90)
         detections = []
         for band in bands:
             detections.extend(
-                generate_alert(aid, band, random.randint(6, 10), m)
+                generate_alert(
+                    oid, band, random.randint(6, 10), m, survey=survey
+                )
             )
-        non_det = generate_non_det(aid, random.randint(0, 1), m)
+        non_det = generate_non_det(oid, random.randint(0, 1), m)
         xmatch = {}
         msg = {
-            "aid": aid,
+            "oid": oid,
+            "candid": [det["candid"] for det in detections],
             "meanra": meanra,
             "meandec": meandec,
             "detections": detections,
