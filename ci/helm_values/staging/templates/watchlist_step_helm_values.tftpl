@@ -11,8 +11,8 @@ affinity:
 configmap:
   alertsDb:
     host: ${alerts_db_host}
-    name: ztf
-  consumeMessages: "10"
+    name: alercedb
+  consumeMessages: "100"
   consumerGroup: watchlist_consumer_k8
   consumerTopics: ztf
   internalServer: ${kafka_server}
