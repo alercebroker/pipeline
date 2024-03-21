@@ -1,6 +1,6 @@
 {
   "doc": "Multi stream light curve with xmatch",
-  "name": "alerce.light_curve_xmatched",
+  "name": "features_output",
   "type": "record",
   "fields": [
     { "name": "oid", "type": "string" },
@@ -87,11 +87,9 @@
     {
       "name": "features",
       "type": [
-        {
-          "type": "map",
-          "values": ["boolean", "float", "null", "int"]
-        },
-        "null"
+        "null",
+        "features_record_ztf",
+        "features_record_elasticc"
       ]
     }
   ]
