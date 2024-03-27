@@ -73,8 +73,8 @@ class BaseFeatureExtractor(abc.ABC):
     N_HARMONICS: int = 7
     # Elements can only be composed of numbers and "/"
     POWER_RATE_FACTORS: tuple[str, ...] = ("1/4", "1/3", "1/2", "2", "3", "4")
-    MIN_DETS: int = 0
-    MIN_DETS_FID: int = 5
+    MIN_DETS: int = 5
+    MIN_DETS_FID: int = 0
     T1: float = 100
     T2: float = 10
     FATS_FEATURES: tuple[str, ...] = (
