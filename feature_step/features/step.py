@@ -46,7 +46,9 @@ class FeaturesComputer(GenericStep):
         )
 
     def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(features, self.features_extractor_factory)
+        commands = parse_scribe_payload(
+            features, self.features_extractor_factory
+        )
         count = 0
         flush = False
         for command in commands:
@@ -61,7 +63,9 @@ class FeaturesComputer(GenericStep):
         self.set_producer_key_field("oid")
         return result
 
-    def preprare_candids(self, message: dict, candids: Dict[str, List[Candid]]):
+    def preprare_candids(
+        self, message: dict, candids: Dict[str, List[Candid]]
+    ):
         """Prepares a dict where each key is the oid and value is a list of candid.
 
         Note: This method modifies the candids dictionary in place.
@@ -95,7 +99,9 @@ class FeaturesComputer(GenericStep):
         )
         detections.extend(m)
 
-    def prepare_non_detections(self, message: dict, non_detections: List[dict]):
+    def prepare_non_detections(
+        self, message: dict, non_detections: List[dict]
+    ):
         """Gets non-detections from a message and adds them to a list.
 
         Note: This method modifies the non_detections list in place.
@@ -127,7 +133,7 @@ class FeaturesComputer(GenericStep):
 
     def prepare_input(self, messages: Iterable[Dict[str, Any]]) -> tuple:
         """Prepares the input for the features extractor.
-        
+
         Parameters
         ----------
         messages : Iterable[Dict[str, Any]]
@@ -148,7 +154,9 @@ class FeaturesComputer(GenericStep):
         return detections, non_detections, xmatch, candids
 
     def execute(self, messages):
-        detections, non_detections, xmatch, candids = self.prepare_input(messages)
+        detections, non_detections, xmatch, candids = self.prepare_input(
+            messages
+        )
         features_extractor = self.features_extractor_factory(
             detections, non_detections, xmatch
         )

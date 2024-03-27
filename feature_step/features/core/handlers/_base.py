@@ -307,7 +307,11 @@ class BaseHandler(abc.ABC):
         ]
         if extras and self._alerts.size:
             records = {
-                alert[self.INDEX]: {**alert["extra_fields"], "id": alert["oid"]} for alert in alerts
+                alert[self.INDEX]: {
+                    **alert["extra_fields"],
+                    "id": alert["oid"],
+                }
+                for alert in alerts
             }
             df = pd.DataFrame.from_dict(
                 records, orient="index", columns=extras + ["id", "candid"]
@@ -317,7 +321,9 @@ class BaseHandler(abc.ABC):
                 .drop_duplicates(self.NON_DUPLICATE)
                 .set_index(self.INDEX)
             )
-            self._alerts = self._alerts.join(df, how="left", rsuffix="_extra").drop("id_extra", axis=1)
+            self._alerts = self._alerts.join(
+                df, how="left", rsuffix="_extra"
+            ).drop("id_extra", axis=1)
         elif extras:  # Add extra (empty) columns to empty dataframe
             self._alerts[[extras]] = None
 
