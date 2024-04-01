@@ -252,7 +252,7 @@ class UpdateFeaturesCommand(UpdateCommand):
     """Update Features for a given object.
 
     The `data` must contain the features version, features group name and an amount of keys that correspond
-    to the names of the features, the values for this keys correspond to the value of the
+    to the names of the features, the values for these keys correspond to the value of the
     feature.
 
     Example `data`:
@@ -268,8 +268,8 @@ class UpdateFeaturesCommand(UpdateCommand):
            ]
        }
 
-    When using the option `set_on_insert`, the features will be added to the object featurs only
-    if there wasnt any feature with the same version and name found.
+    When using the option `set_on_insert`, the features will be added to the object features only
+    if there wasn't any feature with the same version and name found.
 
     Using the `upsert` option will create the object if it doesn't already exist.
     """

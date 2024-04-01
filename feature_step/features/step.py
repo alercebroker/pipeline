@@ -1,19 +1,22 @@
+import logging
 import json
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable, Dict, Iterable, List
 
-import pandas as pd
 from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.consumers import KafkaConsumer
 
-from features.core.elasticc import ELAsTiCCFeatureExtractor
-from features.core.ztf import ZTFFeatureExtractor
-from features.utils.metrics import get_sid
-from features.utils.parsers import parse_output, parse_scribe_payload
+from lc_classifier.base import AstroObject
+from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
+from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+
+from .utils.metrics import get_sid
+from .utils.parsers import parse_output, parse_scribe_payload
+from .utils.parsers import detections_to_astro_objects
 
 
-class FeaturesComputer(GenericStep):
-    """FeaturesComputer Description
+class FeatureStep(GenericStep):
+    """FeatureStep Description
 
     Parameters
     ----------
@@ -25,15 +28,14 @@ class FeaturesComputer(GenericStep):
     """
 
     def __init__(
-        self,
-        extractor: (
-            type[ZTFFeatureExtractor] | Callable[..., ELAsTiCCFeatureExtractor]
-        ),
-        config=None,
-        **step_args,
+            self,
+            config=None,
+            **step_args,
     ):
+
         super().__init__(config=config, **step_args)
-        self.features_extractor = extractor
+        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()
+        self.feature_extractor = ZTFFeatureExtractor()
 
         scribe_class = get_class(
             self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
@@ -42,8 +44,8 @@ class FeaturesComputer(GenericStep):
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
 
-    def produce_to_scribe(self, features: pd.DataFrame):
-        commands = parse_scribe_payload(features, self.features_extractor)
+    def produce_to_scribe(self, astro_objects: List[AstroObject]):
+        commands = parse_scribe_payload(astro_objects, self.feature_extractor.version)
 
         count = 0
         flush = False
@@ -60,9 +62,8 @@ class FeaturesComputer(GenericStep):
         return result
 
     def execute(self, messages):
-        detections, non_detections, xmatch = [], [], []
         candids = {}
-
+        astro_objects = []
         for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
@@ -71,21 +72,17 @@ class FeaturesComputer(GenericStep):
                 lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
                 message.get("detections", []),
             )
-            detections.extend(m)
-            non_detections.extend(message.get("non_detections", []))
-            xmatch.append(
-                {"oid": message["oid"], **(message.get("xmatches", {}) or {})}
-            )
-        features_extractor = self.features_extractor(
-            detections, non_detections, xmatch
-        )
-        features = features_extractor.generate_features()
-        if len(features) > 0:
-            self.produce_to_scribe(features)
 
-        output = parse_output(
-            features, messages, self.features_extractor, candids
-        )
+            xmatch_data = message['xmatches']
+            ao = detections_to_astro_objects(list(m), xmatch_data)
+            astro_objects.append(ao)
+
+        self.lightcurve_preprocessor.preprocess_batch(astro_objects)
+        self.feature_extractor.compute_features_batch(
+            astro_objects, progress_bar=False)
+
+        self.produce_to_scribe(astro_objects)
+        output = parse_output(astro_objects, messages, candids)
         return output
 
     def post_execute(self, result):

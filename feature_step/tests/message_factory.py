@@ -24,6 +24,9 @@ def get_extra_fields():
             "sigmagapbig": random.random(),
             "rb": random.uniform(0.55, 1),
             "sgscore1": random.uniform(0, 1),
+            "sgmag1": random.random()*4 + 15,
+            "srmag1": random.random()*4 + 15,
+            "distpsnr1": random.random()
         }
     )
     return extra_fields
@@ -115,7 +118,14 @@ def generate_input_batch(
                 )
             )
         non_det = generate_non_det(oid, random.randint(0, 1), m)
-        xmatch = {}
+        xmatch = {
+            'allwise': {
+                'W1mag': 15.0,
+                'W2mag': 15.0,
+                'W3mag': 15.0,
+                'W4mag': 15.0,
+            }
+        }
         msg = {
             "oid": oid,
             "candid": [det["candid"] for det in detections],

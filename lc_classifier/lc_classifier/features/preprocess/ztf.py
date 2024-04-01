@@ -45,8 +45,13 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
 
     def drop_absurd_detections(self, astro_object: AstroObject):
         detections = astro_object.detections
-        mag_det = detections[detections['unit'] == 'magnitude']
-        astro_object.detections = mag_det[(mag_det['brightness'] < 30.0) & (mag_det['brightness'] > 6.0)]
+        magnitude_mask = detections['unit'] == 'magnitude'
+        mag_det = detections[magnitude_mask]
+        astro_object.detections = pd.concat(
+            [
+                mag_det[(mag_det['brightness'] < 30.0) & (mag_det['brightness'] > 6.0)],
+                detections[~magnitude_mask]
+            ], axis=0)
 
 
 class ShortenPreprocessor(LightcurvePreprocessor):

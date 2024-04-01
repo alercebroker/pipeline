@@ -1,8 +1,0 @@
-[project]
-name = "lc-classifier"
-version = "7.0"
-description = "Lightcurve classifiers and feature computation"
-authors = [
-    {name = "Ignacio Reyes Jainaga", email = "ireyes@cmm.uchile.cl"}
-]
-readme = "README.md"

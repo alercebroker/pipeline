@@ -21,6 +21,8 @@ from ..extractors.ulens_extractor import MicroLensExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
+    version = "1.0.0"
+
     def _instantiate_extractors(self) -> List[FeatureExtractor]:
         bands = list('gr')
 
