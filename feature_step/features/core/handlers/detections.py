@@ -36,7 +36,7 @@ class DetectionsHandler(BaseHandler):
         "mag_ml",
         "e_mag_ml",
         "forced",
-        "rb"
+        "rb",
     ]
 
     def _post_process(self, **kwargs):

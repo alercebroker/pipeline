@@ -100,7 +100,7 @@ class FeaturesComputer(GenericStep):
             lambda x: {
                 **x,
                 "index_column": str(x["candid"]) + "_" + x["oid"],
-                "rb": x["extra_fields"].get("rb", 0.0)
+                "rb": x["extra_fields"].get("rb", 0.0),
             },
             message.get("detections", []),
         )
