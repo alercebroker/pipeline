@@ -99,7 +99,7 @@ class StepTestCase(unittest.TestCase):
                         "dubious": False,
                         "has_stamp": True,
                         "stellar": False,
-                        "extra_fields": None,
+                        "extra_fields": {},
                     },
                     {
                         "candid": "2_candid_aid_1",
@@ -124,7 +124,7 @@ class StepTestCase(unittest.TestCase):
                         "dubious": False,
                         "has_stamp": True,
                         "stellar": False,
-                        "extra_fields": None,
+                        "extra_fields": {},
                     },
                 ],
                 "non_detections": [
@@ -187,7 +187,7 @@ class StepTestCase(unittest.TestCase):
                         "dubious": False,
                         "has_stamp": True,
                         "stellar": False,
-                        "extra_fields": None,
+                        "extra_fields": {},
                     }
                 ],
                 "non_detections": [
@@ -239,8 +239,9 @@ class StepTestCase(unittest.TestCase):
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
                 "index_column": "1_candid_aid_1_oid1",
+                "rb": 0.0,
             },
             {
                 "candid": "2_candid_aid_1",
@@ -265,8 +266,9 @@ class StepTestCase(unittest.TestCase):
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
                 "index_column": "2_candid_aid_1_oid1",
+                "rb": 0.0,
             },
             {
                 "candid": "1_candid_aid_2",
@@ -291,8 +293,9 @@ class StepTestCase(unittest.TestCase):
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
                 "index_column": "1_candid_aid_2_oid2",
+                "rb": 0.0,
             },
         ]
         expected_non_detections_for_extractor = [

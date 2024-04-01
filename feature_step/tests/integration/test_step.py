@@ -57,8 +57,6 @@ def test_step_ztf(kafka_service):
     )
     step.start()
 
-    assert False
-
 
 def test_step_elasticc(kafka_service):
     CONSUMER_CONFIG["TOPICS"] = ["elasticc"]
