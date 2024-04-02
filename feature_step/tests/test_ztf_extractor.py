@@ -7,6 +7,7 @@ import pandas as pd
 
 
 messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
+
 astro_objects = []
 candids = {}
 for message in messages:
