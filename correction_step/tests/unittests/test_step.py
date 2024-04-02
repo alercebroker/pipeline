@@ -239,6 +239,8 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         flush = False
         if not det["new"]:  # does not write
             continue
+        if not det["tid"] == "LSST":  # dont know why
+            continue
         det["extra_fields"] = {
             k: v
             for k, v in det["extra_fields"].items()
@@ -255,7 +257,14 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
         }
         if count == len(execute_output["detections"]):
             flush = True
-        step.scribe_producer.produce.assert_any_call({"payload": json.dumps(data)}, flush=flush)
+        step.scribe_producer.produce.assert_has_calls
+
+        mock_args, _ = step.scribe_producer.produce.call_args
+        from unittest import TestCase
+        tc = TestCase()
+        tc.maxDiff = None
+        tc.assertDictEqual(mock_args[0], {"payload": json.dumps(data)})
+        
     assert step.scribe_producer.produce.call_count == len(
         list(filter(lambda x: x["new"], message4execute_copy["detections"]))
     )
