@@ -61,9 +61,6 @@ class FeaturesComputer(GenericStep):
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
-        for obj in result:
-            for det in obj["detections"]:
-                det.pop("rb", None)
         return result
 
     def preprare_candids(
