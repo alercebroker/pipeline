@@ -1,7 +1,6 @@
+import logging
 import os
 import sys
-
-import logging
 from multiprocessing import Process
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -20,8 +19,9 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-from watchlist_step import WatchlistStep
 from apf.core import get_class
+
+from watchlist_step import WatchlistStep
 
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
@@ -34,7 +34,9 @@ n_process = STEP_CONFIG.get("N_PROCESS", 1)
 def create_and_run(idx, Consumer):
     CONSUMER_CONFIG["ID"] = idx
     consumer = Consumer(config=CONSUMER_CONFIG)
-    step = WatchlistStep(consumer, config=STEP_CONFIG, level=level)
+    step = WatchlistStep(
+        consumer, config=STEP_CONFIG, level=level, strategy_name=UPDATE_STRATEGY
+    )
     step.start()
 
 

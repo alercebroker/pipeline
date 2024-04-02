@@ -1,45 +1,96 @@
-from typing import List, Tuple
+from psycopg.sql import SQL, Literal
 
 
-def format_values_for_query(coordinates: List[Tuple]) -> str:
-    """
-    Transforms a list of tuples into a string that can be
-    concatenated as the VALUES of a SQL Query
-    """
-    return ",\n".join(map(str, coordinates))
-
-
-def create_match_query(values: str, base_radius=30 / 3600):
+def create_match_query(len, base_radius=30 / 3600):
     """
     Returns a SQL Query that selects all targets found within
     the coordinates provided as values
     """
-    return (
-        f"""
-        WITH positions (ra, dec, oid, candid) AS (
-                VALUES
-                %s
-        )
+
+    return SQL(
+        """
         SELECT
-        positions.oid,
-        positions.candid,
-        watchlist_target.id
-        FROM watchlist_target, positions
-        WHERE q3c_join(positions.ra, positions.dec,watchlist_target.ra, \
-            watchlist_target.dec, {base_radius})
-        AND q3c_dist(positions.ra, positions.dec, watchlist_target.ra, \
-            watchlist_target.dec) < watchlist_target.radius
-    """
-        % values
+            positions.oid,
+            positions.candid,
+            watchlist_target.id,
+            watchlist_target.filter
+        FROM
+            watchlist_target,
+            (VALUES {}) AS positions(ra, dec, oid, candid)
+        WHERE
+            q3c_join(
+                watchlist_target.ra,
+                watchlist_target.dec,
+                positions.ra,
+                positions.dec,
+                {}
+            )
+            AND q3c_dist(
+                watchlist_target.ra,
+                watchlist_target.dec,
+                positions.ra,
+                positions.dec
+            ) < watchlist_target.radius
+        """
+    ).format(
+        SQL(", ").join(SQL("(%s, %s, %s, %s)") for _ in range(len)),
+        Literal(base_radius),
     )
 
 
-def create_insertion_query(values):
+def create_insertion_query():
     """
     Returns a SQL Query that inserts all targets provided in
     the values string into the watchlist matches
     """
 
-    return f"""
-    INSERT INTO watchlist_match (target_id, object_id, candid, date) VALUES {values};
+    return SQL(
+        """
+        INSERT INTO
+            watchlist_match(target_id, object_id, candid, values, date)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+    )
+
+
+def update_match_query():
     """
+    Returns a SQL Query that updates the filter values from the provided match
+    """
+
+    return SQL(
+        """
+        UPDATE
+            watchlist_match AS wl_match
+        SET
+            values = wl_match.values || %(values)s
+        WHERE
+            wl_match.object_id = %(oid)s
+            AND wl_match.candid = %(candid)s
+            AND wl_match.target_id = %(target_id)s
+        RETURNING
+            wl_match.object_id,
+            wl_match.candid,
+            wl_match.target_id,
+            wl_match.values
+        """
+    )
+
+
+def update_for_notification():
+    """
+    Returns a SQL Query that marks the provided match as ready to notify
+    """
+
+    return SQL(
+        """
+        UPDATE
+            watchlist_match AS wl_match
+        SET
+            ready_to_notify = true
+        WHERE
+            wl_match.object_id = %(oid)s
+            AND wl_match.candid = %(candid)s
+            AND wl_match.target_id = %(target_id)s
+        """
+    )

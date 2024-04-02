@@ -1,4 +1,4 @@
-from wl_match_step.strategies.sorting_hat import SortingHatStrategy
+from watchlist_step.strategies.sorting_hat import SortingHatStrategy
 
 
 class TestSortingHatStrategy:

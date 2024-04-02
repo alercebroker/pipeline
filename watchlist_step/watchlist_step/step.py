@@ -1,14 +1,20 @@
-import logging
 import datetime
+import itertools
+import logging
+from typing import List
+
 from apf.core.step import GenericStep
-from typing import Any, List, Tuple
-from db_plugins.db.sql.models import Detection
-from db_plugins.db.sql.connection import SQLConnection
+from psycopg.types.json import Jsonb
+
+from . import filters
+from .db.connection import PsqlDatabase
 from .db.match import (
-    format_values_for_query,
     create_insertion_query,
     create_match_query,
+    update_for_notification,
+    update_match_query,
 )
+from .strategies import get_strategy
 
 BASE_RADIUS = 30 / 3600
 
@@ -27,57 +33,110 @@ class WatchlistStep(GenericStep):
 
     def __init__(
         self,
-        consumer=None,
-        alerts_db_connection: SQLConnection = None,
-        users_db_connection: SQLConnection = None,
-        config=None,
+        consumer,
+        config: dict,
+        strategy_name: str = "",
         level=logging.INFO,
         **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
-        self.alerts_db_connection = alerts_db_connection or SQLConnection()
-        self.alerts_db_connection.connect(config["alert_db_config"]["SQL"])
-        self.users_db_connection = users_db_connection or SQLConnection()
-        self.users_db_connection.connect(config["users_db_config"]["SQL"])
+        self.users_db = PsqlDatabase(config["PSQL_CONFIG"])
+        self.strategy = get_strategy(strategy_name)
 
-    def execute(self, messages: list):
-        candids = [message["candid"] for message in messages]
-        coordinates = self.get_coordinates(candids)
+    def insert_matches(self, matches: List[tuple]):
+        values = [
+            (m[2], m[0], m[1], Jsonb({}), datetime.datetime.now()) for m in matches
+        ]
 
-        if len(coordinates) == 0:
-            print(candids)
-            raise ValueError(
-                "The objects have not been inserted in the database yet.\
-                             No further action required."
-            )
+        query = create_insertion_query()
+
+        with self.users_db.conn() as conn:
+            with conn.cursor() as cursor:
+                cursor.executemany(query, values)
+
+    def match_user_targets(self, coordinates: List[tuple]) -> List[tuple]:
+        query = create_match_query(len(coordinates), BASE_RADIUS)
+
+        res = []
+        with self.users_db.conn() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, [item for coord in coordinates for item in coord])
+                res = cursor.fetchall()
+        return res
+
+    def update_match_values(self, new_values: List[tuple]) -> List[tuple]:
+        values = [
+            {
+                "oid": oid,
+                "candid": candid,
+                "target_id": target_id,
+                "values": Jsonb(values),
+            }
+            for oid, candid, target_id, values in new_values
+        ]
+
+        query = update_match_query()
+
+        res = []
+        with self.users_db.conn() as conn:
+            with conn.cursor() as cursor:
+                cursor.executemany(query, values, returning=True)
+                while True:
+                    res.append(cursor.fetchone())
+                    if not cursor.nextset():
+                        break
+        return res
+
+    def satisfies_filter(self, values: dict, type: str, params: dict) -> bool:
+        match type:
+            case "constant":
+                return filters.constant(values, **params)
+            case _:
+                raise Exception("invalid filter type")
+
+    def get_to_notify(
+        self, updated_values: list[tuple], filters: list[dict]
+    ) -> list[tuple]:
+        to_notify = []
+        for (oid, candid, target_id, values), filter in zip(updated_values, filters):
+            available_fields = set(values.keys())
+            requiered_fields = set(itertools.chain(*filter["fields"].values()))
+
+            if available_fields.issuperset(requiered_fields):
+                satisfies_all_filters = all(
+                    map(
+                        lambda f: self.satisfies_filter(values, f["type"], f["params"]),
+                        filter["filters"],
+                    )
+                )
+                if satisfies_all_filters:
+                    to_notify.append((oid, candid, target_id))
+
+        return to_notify
+
+    def mark_for_notification(self, to_notify: list[tuple]):
+        values = [
+            {"oid": oid, "candid": candid, "target_id": target_id}
+            for oid, candid, target_id in to_notify
+        ]
+
+        query = update_for_notification()
+
+        with self.users_db.conn() as conn:
+            with conn.cursor() as cursor:
+                cursor.executemany(query, values)
+
+    def execute(self, messages: List[dict]):
+        alerts = {(message["oid"], message["candid"]): message for message in messages}
+        coordinates = self.strategy.get_coordinates(alerts)
 
         matches = self.match_user_targets(coordinates)
         if len(matches) > 0:
             self.insert_matches(matches)
 
-    def get_coordinates(self, candids: List[int]) -> List[Tuple]:
-        radecs = (
-            self.alerts_db_connection.query(
-                Detection.ra, Detection.dec, Detection.oid, Detection.candid
-            )
-            .filter(Detection.candid.in_(candids))
-            .all()
-        )
-        return radecs
+        new_values, filters = self.strategy.get_new_values(matches, alerts)
+        updated_values = self.update_match_values(new_values)
 
-    def match_user_targets(self, coordinates: List[Tuple]) -> List[Tuple]:
-        str_values = format_values_for_query(coordinates)
-        query = create_match_query(str_values, BASE_RADIUS)
-        res = self.users_db_connection.session.execute(query).fetchall()
-        return res
-
-    def insert_matches(self, matches: List[Tuple]):
-        def tuple_swap(tpl):
-            return (tpl[2], tpl[0], tpl[1])
-
-        str_values = format_values_for_query(
-            [(*tuple_swap(val), f"{datetime.datetime.now()}") for val in matches]
-        )
-        query = create_insertion_query(str_values)
-        self.users_db_connection.session.execute(query)
-        self.users_db_connection.session.commit()
+        to_notify = self.get_to_notify(updated_values, filters)
+        if len(to_notify) > 0:
+            self.mark_for_notification(to_notify)

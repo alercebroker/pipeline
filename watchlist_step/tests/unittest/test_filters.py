@@ -1,6 +1,6 @@
 import pytest
 
-import wl_match_step.filters as filters
+import watchlist_step.filters as filters
 
 
 def test_constant_filter():

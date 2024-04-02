@@ -1,15 +1,14 @@
-import pytest
-from confluent_kafka.admin import AdminClient, NewTopic
-from confluent_kafka import Producer, Consumer
-from db_plugins.db.sql.connection import SQLConnection
-from db_plugins.db.sql.models import Detection, Object, Probability
-from apf.consumers import KafkaConsumer
-from confluent_kafka import KafkaError, KafkaException, Consumer
-from fastavro import writer, parse_schema, reader
 import os
-import glob
-import psycopg2
 from io import BytesIO
+
+import psycopg
+import pytest
+from apf.consumers import KafkaConsumer
+from confluent_kafka import Producer
+from confluent_kafka.admin import AdminClient, NewTopic
+from fastavro import writer
+
+from watchlist_step import PsqlDatabase
 
 
 @pytest.fixture(scope="session")
@@ -21,22 +20,42 @@ def docker_compose_file(pytestconfig):
 
 def produce_message(config):
     schema = {
-        "doc": "Late Classification",
-        "name": "probabilities_and_features",
+        "doc": "Multi stream alert of any telescope/survey",
+        "name": "alerce.alert",
         "type": "record",
         "fields": [
             {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
+            {"name": "mag", "type": "float"},
+            {"name": "pid", "type": "long"},
+            {"name": "mjd", "type": "double"},
+            {"name": "fid", "type": "string"},
+            {"name": "ra", "type": "double"},
+            {"name": "dec", "type": "double"},
+            {"name": "mag", "type": "float"},
+            {"name": "e_mag", "type": "float"},
+            {"name": "isdiffpos", "type": "int"},
         ],
     }
-    parsed_schema = parse_schema(schema)
+    # parsed_schema = parse_schema(schema)
     records = [
-        {"oid": "ZTF19aaapkto", "candid": 1000151433015015013},
+        {
+            "oid": "ZTF19aaapkto",
+            "candid": 1000151433015015013,
+            "pid": 0.5,
+            "mjd": 123,
+            "fid": "1",
+            "ra": 252.6788662886394,
+            "dec": 53.34521158573315,
+            "mag": 0.5,
+            "e_mag": 0.5,
+            "isdiffpos": 1,
+        },
     ]
     producer = Producer(config)
     topics = ["test"]
     fo = BytesIO()
-    writer(fo, parsed_schema, records)
+    writer(fo, schema, records, "null", 16000, None, None, None, None)
     fo.seek(0)
     try:
         for topic in topics:
@@ -87,80 +106,9 @@ def kafka_service(docker_ip, docker_services):
     return server
 
 
-def is_responsive_alerts_database(url):
-    try:
-        conn = psycopg2.connect(
-            dbname="postgres",
-            user="postgres",
-            host="localhost",
-            password="postgres",
-        )
-        conn.close()
-        return True
-    except:
-        return False
-
-
-def init_db(insert: bool, config: dict):
-    db = SQLConnection()
-    db.connect(config)
-    db.create_db()
-    if insert:
-        obj = Object(oid="ZTF19aaapkto", firstmjd=100000000)
-        db.session.add(obj)
-        det = Detection(
-            candid=1000151433015015013,
-            oid="ZTF19aaapkto",
-            mjd=123,
-            fid=1,
-            pid=0.5,
-            isdiffpos=1,
-            ra=252.6788662886394,
-            dec=53.34521158573315,
-            magpsf=0.5,
-            sigmapsf=0.5,
-            corrected=False,
-            dubious=False,
-            has_stamp=False,
-            step_id_corr="test",
-        )
-        db.session.add(det)
-        db.session.commit()
-
-
-def remove_db(config: dict):
-    db = SQLConnection()
-    db.connect(config)
-    db.drop_db()
-
-
-@pytest.fixture(scope="session")
-def alerts_database(docker_ip, docker_services):
-    """Ensure that Kafka service is up and responsive."""
-    # `port_for` takes a container port and returns the corresponding host port
-    port = docker_services.port_for("alerts_db", 5432)
-    server = "{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_alerts_database(server)
-    )
-    config = {
-        "SQL": {
-            "ENGINE": "postgresql",
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "postgres",
-            "PORT": 5432,  # postgresql tipically runs on port 5432. Notice that we use an int here.
-            "DB_NAME": "postgres",
-        },
-        "SQLALCHEMY_DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/postgres",
-    }
-    init_db(insert=True, config=config)
-    return server
-
-
 def is_responsive_users_database(docker_ip, port):
     try:
-        conn = psycopg2.connect(
+        conn = psycopg.connect(
             dbname="postgres",
             user="postgres",
             host=docker_ip,
@@ -174,7 +122,7 @@ def is_responsive_users_database(docker_ip, port):
 
 
 @pytest.fixture(scope="session")
-def users_database(docker_ip, docker_services):
+def users_db(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("users_db", 5432)
@@ -184,4 +132,13 @@ def users_database(docker_ip, docker_services):
         pause=0.1,
         check=lambda: is_responsive_users_database(docker_ip, port),
     )
-    return server
+    users_db = PsqlDatabase(
+        {
+            "HOST": docker_ip,
+            "USER": "postgres",
+            "PASSWORD": "password",
+            "PORT": port,
+            "DB_NAME": "postgres",
+        }
+    )
+    return users_db

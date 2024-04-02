@@ -1,6 +1,6 @@
 __all__ = ["get_strategy"]
 
-from wl_match_step.strategies.base import BaseStrategy
+from watchlist_step.strategies.base import BaseStrategy
 
 
 def get_strategy(name: str) -> BaseStrategy:

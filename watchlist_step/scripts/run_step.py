@@ -1,7 +1,6 @@
+import logging
 import os
 import sys
-
-import logging
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -21,8 +20,9 @@ logging.basicConfig(
 )
 
 
-from watchlist_step import WatchlistStep
 from apf.core import get_class
+
+from watchlist_step import WatchlistStep
 
 if "CLASS" in CONSUMER_CONFIG:
     Consumer = get_class(CONSUMER_CONFIG["CLASS"])
@@ -31,5 +31,7 @@ else:
 
 consumer = Consumer(config=CONSUMER_CONFIG)
 
-step = WatchlistStep(consumer, config=STEP_CONFIG, level=level)
+step = WatchlistStep(
+    consumer, config=STEP_CONFIG, level=level, strategy_name=UPDATE_STRATEGY
+)
 step.start()
