@@ -87,7 +87,7 @@ messages_for_execute = [
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
             },
             {
                 "candid": "2_candid_aid_1",
@@ -112,7 +112,7 @@ messages_for_execute = [
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
             },
         ],
         "non_detections": [
@@ -170,7 +170,7 @@ messages_for_execute = [
                 "dubious": False,
                 "has_stamp": True,
                 "stellar": False,
-                "extra_fields": None,
+                "extra_fields": {},
             }
         ],
         "non_detections": [
