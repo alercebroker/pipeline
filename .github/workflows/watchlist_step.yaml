@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: "watchlist_step"
-      python-version: "3.8"
+      python-version: "3.11"
       sources-folder: "watchlist_step"
       test-folder: "tests/unittest"
       test-dependencies: "pytest pytest-cov"
@@ -29,7 +29,7 @@ jobs:
     uses: ./.github/workflows/pip-tests-template.yaml
     with:
       base-folder: "watchlist_step"
-      python-version: "3.9"
+      python-version: "3.11"
       sources-folder: "watchlist_step"
       test-folder: "tests/integration"
       test-dependencies: "pytest==7.2.0 pytest-docker"
