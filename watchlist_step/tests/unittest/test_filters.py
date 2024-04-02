@@ -9,5 +9,5 @@ def test_constant_filter():
     assert filters.constant({"mag": 15}, "mag", 10, "greater")
     assert not filters.constant({"mag": 5}, "mag", 10, "greater")
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception):
         filters.constant({"mag": 1}, "mag", 10, "l")

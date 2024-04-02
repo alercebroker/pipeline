@@ -140,3 +140,7 @@ class WatchlistStep(GenericStep):
         to_notify = self.get_to_notify(updated_values, filters)
         if len(to_notify) > 0:
             self.mark_for_notification(to_notify)
+
+        to_notify = self.get_to_notify(updated_values, filters)
+        if len(to_notify) > 0:
+            self.mark_for_notification(to_notify)

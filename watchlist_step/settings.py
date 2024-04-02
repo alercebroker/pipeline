@@ -107,4 +107,5 @@ STEP_CONFIG = {
         "DB_NAME": os.environ["USERS_DB_NAME"],
     },
     "METRICS_CONFIG": METRICS_CONFIG,
+    "N_PROCESS": os.getenv("N_PROCESS", 1),
 }

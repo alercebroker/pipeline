@@ -22,6 +22,7 @@ pytest-cov = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"
+ruff = "^0.3.5"
 
 [tool.black]
 line-length = 88

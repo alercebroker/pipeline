@@ -1,10 +1,7 @@
-import datetime
-from unittest import mock
-
 import pytest
 from apf.consumers import KafkaConsumer
 
-from watchlist_step import WatchlistStep
+from watchlist_step.step import WatchlistStep
 
 
 @pytest.fixture
@@ -60,15 +57,10 @@ class TestStep:
         step.start()
 
         matches = []
-        targets = []
         with users_db.conn() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM watchlist_match")
                 matches = cursor.fetchall()
 
                 cursor.execute("SELECT * FROM watchlist_target")
-                targets = cursor.fetchall()
-
-
-        print
         assert len(matches) == 1
