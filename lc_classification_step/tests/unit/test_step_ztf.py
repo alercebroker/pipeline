@@ -32,6 +32,7 @@ def test_step(step_factory_ztf):
 @pytest.mark.ztf
 def test_step_empty_features(step_factory_ztf):
     from lc_classifier.classifier.models import HierarchicalRandomForest
+
     model = HierarchicalRandomForest()
     model.download_model()
     model.load_model(model.MODEL_PICKLE_PATH)

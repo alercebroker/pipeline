@@ -1,4 +1,5 @@
 from apf.core import get_class
+from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
@@ -179,7 +180,7 @@ class LateClassifier(GenericStep):
         )
         self.produce_scribe(parsed_result.value)
         return result
-    
+
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
