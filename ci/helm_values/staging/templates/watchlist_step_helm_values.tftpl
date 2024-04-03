@@ -11,15 +11,15 @@ affinity:
 configmap:
   alertsDb:
     host: ${alerts_db_host}
-    name: ztf
-  consumeMessages: "10"
+    name: alercedb
+  consumeMessages: "100"
   consumerGroup: watchlist_consumer_k8
   consumerTopics: ztf
   internalServer: ${kafka_server}
   metricsTopic: metrics
   usersDb:
     host: ${users_db_host}
-    name: users
+    name: alercedb
 
 imageCredentials:
   password: ${ghcr_password}
