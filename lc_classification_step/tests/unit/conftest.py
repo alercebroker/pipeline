@@ -295,9 +295,10 @@ def test_elasticc_model():
 
         # Test producer produces correct data
         calls = step.producer.mock_calls
-        assert len(calls) == len(messages_elasticc)
+        assert len(calls) == len(messages_elasticc) + 1 # beause call __del__
         for call in calls:
-            obj = call.args[0]
-            assert_elasticc_object_is_correct(obj)
+            if len(call.args) > 1: # because of __del__
+                obj = call.args[0]
+                assert_elasticc_object_is_correct(obj)
 
     return test_model

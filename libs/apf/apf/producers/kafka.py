@@ -192,8 +192,9 @@ class KafkaProducer(GenericProducer):
 class KafkaSchemalessProducer(KafkaProducer):
     def _serialize_message(self, message):
         try:
+            strict = self.config.get("STRICT", True)
             out = io.BytesIO()
-            fastavro.schemaless_writer(out, self.schema, message, strict=True)
+            fastavro.schemaless_writer(out, self.schema, message, strict=strict)
             return out.getvalue()
         except Exception as e:
             self.logger.error(f"Error serializing message: {message}")
