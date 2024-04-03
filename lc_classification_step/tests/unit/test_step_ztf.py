@@ -25,8 +25,9 @@ def test_step(step_factory_ztf):
     calls = step.producer.mock_calls
     assert len(calls) > 0
     for call in calls:
-        obj = call.args[0]
-        assert_ztf_object_is_correct(obj)
+        if len(call.args) > 1: # because of __del__
+            obj = call.args[0]
+            assert_ztf_object_is_correct(obj)
 
 
 @pytest.mark.ztf
@@ -46,4 +47,4 @@ def test_step_empty_features(step_factory_ztf):
     scribe_calls = step.scribe_producer.mock_calls
     assert scribe_calls == []
     calls = step.producer.mock_calls
-    assert calls == []
+    assert len(calls) == 1 # because of __del__
