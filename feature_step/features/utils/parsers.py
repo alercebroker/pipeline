@@ -136,17 +136,20 @@ def parse_output(
 
         ao_features = astro_object.features[['name', 'fid', 'value']].copy()
         fid_map = {
-            "g": 1,
-            "r": 2,
-            "g,r": 12
+            "g": '_1',
+            "r": '_2',
+            "g,r": '_12',
+            None: ''
         }
-        ao_features['fid'] = ao_features['fid'].apply(
-            lambda x: 0 if x is None else fid_map[x])
+        ao_features['name'] += ao_features['fid'].map(
+            fid_map)
+        ao_features = ao_features.sort_values('name')
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
         oid_ao = query_ao_table(astro_object.metadata, 'oid')
         assert oid_ao == oid
+        feature_names = [f.replace('-', '_') for f in ao_features['name'].values]
 
-        features_for_oid = ao_features.to_dict('records')
+        features_for_oid = dict(zip(feature_names, ao_features['value'].astype(np.double)))
         out_message = {
             "oid": oid,
             "candid": candid,

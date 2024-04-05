@@ -88,8 +88,7 @@
       "name": "features",
       "type": [
         "null",
-        "features_record_ztf",
-        "features_record_elasticc"
+        "features_record_ztf"
       ]
     }
   ]

@@ -2,7 +2,7 @@ import unittest
 from unittest import mock
 from apf.producers import GenericProducer
 from features.step import FeatureStep
-from .message_factory import generate_input_batch
+from ..message_factory import generate_input_batch
 
 
 CONSUMER_CONFIG = {
