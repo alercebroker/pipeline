@@ -199,7 +199,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-db-plugins:
-    needs: update-versions
+    needs: update_versions
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       stage: production
