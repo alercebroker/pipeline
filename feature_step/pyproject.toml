@@ -1,5 +1,6 @@
 [tool.poetry]
 name = "feature-step"
+
 version = "24.03.19a1"
 description = "Feature step"
 authors = ["Ignacio Reyes"]

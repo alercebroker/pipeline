@@ -11,7 +11,6 @@ on:
 concurrency: ci
 
 jobs:
-  # cada job necesita el anterior
   update_versions:
     runs-on: ubuntu-latest
     env:
@@ -40,6 +39,7 @@ jobs:
           lc_classification_step lightcurve-step magstats_step metadata_step prv_candidates_step \
           s3_step scribe sorting_hat_step watchlist_step xmatch_step \
           libs/db-plugins lc_classifier --stage=production --version=${{ inputs.tag }}
+
 
   build-alert-archiving-dagger:
     needs: update_versions
@@ -199,7 +199,7 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-db-plugins:
-    needs: update-packages-dagger
+    needs: update_versions
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       stage: production
@@ -280,7 +280,10 @@ jobs:
           poetry run python main.py deploy add-package alert-archive-step --chart=alert-archive-step --values=alert_archive_step-helm-values --chart-folder=alert_archiving_step
           poetry run python main.py deploy add-package correction-step --chart=correction-step --values=correction_step-helm-values --chart-folder=correction_step
           poetry run python main.py deploy add-package early-classifier-step --chart=early-classifier --values=early_classification_step-helm-values --chart-folder=early_classification_step
+          # feature step from main
           poetry run python main.py deploy add-package feature-step --chart=feature-step --values=feature_step-helm-values --chart-folder=feature_step
+          # feature step freezed 23.x version
+          poetry run python main.py deploy add-package feature-step-23.x --chart=feature-step --values=feature_step-helm-values:9 --chart-folder=feature_step
           poetry run python main.py deploy add-package lc-classifier-step --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --chart=lightcurve-step --values=lightcurve-step-helm-values --chart-folder=lightcurve-step
           poetry run python main.py deploy add-package magstats-step --chart=magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
