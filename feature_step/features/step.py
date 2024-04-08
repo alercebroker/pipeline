@@ -14,6 +14,7 @@ from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
 from .utils.parsers import detections_to_astro_objects
 
+from importlib.metadata import version
 
 class FeatureStep(GenericStep):
     """FeatureStep Description
@@ -43,9 +44,16 @@ class FeatureStep(GenericStep):
         self.scribe_producer = scribe_class(
             self.config["SCRIBE_PRODUCER_CONFIG"]
         )
+        self.extractor_version = version("classifiers")
+        self.extractor_group = ZTFFeatureExtractor.__name__
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
-        commands = parse_scribe_payload(astro_objects, self.feature_extractor.version)
+        commands = parse_scribe_payload(
+            astro_objects,
+            self.extractor_version,
+            self.extractor_group,
+        )
+
 
         count = 0
         flush = False

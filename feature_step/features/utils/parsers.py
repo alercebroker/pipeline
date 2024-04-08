@@ -75,7 +75,11 @@ def detections_to_astro_objects(detections: List[Dict], xmatches: Dict) -> Astro
     return astro_object
 
 
-def parse_scribe_payload(astro_objects: List[AstroObject], features_version):
+def parse_scribe_payload(
+        astro_objects: List[AstroObject],
+        features_version,
+        features_group
+    ):
     """Create the json with the messages for the scribe producer from the
     features dataframe. It adds the fid and correct the name.
 
@@ -84,31 +88,46 @@ def parse_scribe_payload(astro_objects: List[AstroObject], features_version):
     :return: a list of json with Alerce Scribe commands
     """
 
+    def get_fid(band: str):
+        """
+        Parses the number used to reference the fid in the ztf alerts
+        to the string value corresponding
+        """
+        fid_map = {
+            "g": 1,
+            "r": 2,
+            "g,r": 12
+        }
+        if band in fid_map:
+            return fid_map[band]
+        return 0
+    
     # features = features.replace({np.nan: None, np.inf: None, -np.inf: None})
     commands_list = []
-    fid_map = {
-        "g": 1,
-        "r": 2,
-        "g,r": 12
-    }
+
     for astro_object in astro_objects:
         ao_features = astro_object.features[['name', 'fid', 'value']].copy()
-        ao_features['fid'] = ao_features['fid'].apply(
-            lambda x: 0 if x is None else fid_map[x])
+        ao_features['fid'] = ao_features['fid'].apply(get_fid)
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
         oid = query_ao_table(astro_object.metadata, 'oid')
+        
+        features_list = ao_features.to_dict('records')
+
         command = {
             "collection": "object",
             "type": "update_features",
-            "criteria": {"_id": oid},
+            "criteria": {
+                "_id": oid
+            },
             "data": {
                 "features_version": features_version,
-                "features_group": "ztf",
-                "features": ao_features.to_dict('records'),
+                "features_group": features_group,
+                "features": features_list,
             },
             "options": {"upsert": True},
         }
         commands_list.append(command)
+        
     return commands_list
 
 
