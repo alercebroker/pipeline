@@ -283,7 +283,7 @@ jobs:
           # feature step from main
           poetry run python main.py deploy add-package feature-step --chart=feature-step --values=feature_step-helm-values --chart-folder=feature_step
           # feature step freezed 23.x version
-          poetry run python main.py deploy add-package feature-step --chart=feature-step-23.x --values=feature_step-helm-values:24 --chart-folder=feature_step
+          poetry run python main.py deploy add-package feature-step --chart=feature-step-23.x --values=feature_step-helm-values:5 --chart-folder=feature_step
           poetry run python main.py deploy add-package lc-classifier-step --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --chart=lightcurve-step --values=lightcurve-step-helm-values --chart-folder=lightcurve-step
           poetry run python main.py deploy add-package magstats-step --chart=magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
