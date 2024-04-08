@@ -19,7 +19,6 @@ WORKDIR /app/
 RUN pip install poetry
 COPY feature_step/poetry.lock feature_step/pyproject.toml /app/
 COPY feature_step/README.md /app/README.md
-COPY turbo-fats /turbo-fats
 COPY P4J /P4J
 COPY mhps /mhps
 COPY lc_classifier /lc_classifier
@@ -40,7 +39,6 @@ COPY --from=builder /libs/apf /libs/apf
 COPY --from=builder /mhps /mhps
 COPY --from=builder /P4J /P4J
 COPY --from=builder /lc_classifier /lc_classifier
-COPY --from=builder /turbo-fats /turbo-fats
 COPY --from=builder /schemas /schemas
 RUN pip install poetry
 WORKDIR /app/
