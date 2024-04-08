@@ -16,6 +16,7 @@ from .utils.parsers import detections_to_astro_objects
 
 from importlib.metadata import version
 
+
 class FeatureStep(GenericStep):
     """FeatureStep Description
 
@@ -29,21 +30,17 @@ class FeatureStep(GenericStep):
     """
 
     def __init__(
-            self,
-            config=None,
-            **step_args,
+        self,
+        config=None,
+        **step_args,
     ):
 
         super().__init__(config=config, **step_args)
         self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()
         self.feature_extractor = ZTFFeatureExtractor()
 
-        scribe_class = get_class(
-            self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
-        )
-        self.scribe_producer = scribe_class(
-            self.config["SCRIBE_PRODUCER_CONFIG"]
-        )
+        scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
+        self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
         self.extractor_version = version("feature-step")
         self.extractor_group = ZTFFeatureExtractor.__name__
 
@@ -54,16 +51,13 @@ class FeatureStep(GenericStep):
             self.extractor_group,
         )
 
-
         count = 0
         flush = False
         for command in commands:
             count += 1
             if count == len(commands):
                 flush = True
-            self.scribe_producer.produce(
-                {"payload": json.dumps(command)}, flush=flush
-            )
+            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
 
     def pre_produce(self, result: Iterable[Dict[str, Any]] | Dict[str, Any]):
         self.set_producer_key_field("oid")
@@ -81,13 +75,12 @@ class FeatureStep(GenericStep):
                 message.get("detections", []),
             )
 
-            xmatch_data = message['xmatches']
+            xmatch_data = message["xmatches"]
             ao = detections_to_astro_objects(list(m), xmatch_data)
             astro_objects.append(ao)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
-        self.feature_extractor.compute_features_batch(
-            astro_objects, progress_bar=False)
+        self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
         self.produce_to_scribe(astro_objects)
         output = parse_output(astro_objects, messages, candids)
