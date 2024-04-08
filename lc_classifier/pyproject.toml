@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "lc_classifier"}]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.9,<3.12"
 astropy = "~5.2"
 imbalanced-learn = "^0.10"
 numba = ">=0.56"
@@ -26,6 +26,8 @@ jax = {version = "*", extras = ["cpu"]}
 mhps = {path = "../mhps" }
 P4J = {path = "../P4J" }
 tensorflow-io-gcs-filesystem = { version = "~0.33" }
+tqdm = "^4.66.2"
+matplotlib = "^3.8.4"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
