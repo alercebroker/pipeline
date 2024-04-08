@@ -11,11 +11,12 @@ python = ">=3.9,<3.12"
 numpy = "^1.16"
 pandas = "^2.0.1"
 lc-classifier = { path = "../lc_classifier", develop = true}
-test_utils = {path = "../libs/test_utils", develop = true}
 apf_base = { path = "../libs/apf", develop = true }
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
+pytest-cov = "^4.1.0"
+test_utils = {path = "../libs/test_utils", develop = true}  
 
 [build-system]
 requires = ["poetry-core"]
