@@ -100,12 +100,12 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-anomaly-detector-dagger:
+  build-lc-classification-anomaly-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
       stage: staging
-      extra-args: anomaly_detection_step --build-args=model:anomaly_detection --package-dir=lc_classification_step
+      extra-args: lc_classification_step_anomaly --build-args=model:anomaly --package-dir=lc_classification_step
       submodules: true
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -229,7 +229,7 @@ jobs:
       - build-lc-classification-balto-dagger
       - build-lc-classification-mlp-dagger
       - build-lc-classification-messi-dagger
-      - build-anomaly-detector-dagger
+      - build-lc-classification-anomaly-dagger
       - build-lc-classification-ztf-dagger
       - build-lightcurve-dagger
       - build-magstats-dagger
