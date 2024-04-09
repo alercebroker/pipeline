@@ -19,7 +19,7 @@ configYaml:
   CONSUMER_CONFIG:
     CLASS: "apf.consumers.KafkaSchemalessConsumer"
     SCHEMA_PATH: "/schemas/feature_step/output.avsc"
-    TOPICS: ["features"]
+    TOPICS: ["features_23.x"]
     PARAMS:
       bootstrap.servers: ${kafka_server}
       group.id: "lc_classifier_ztf"
@@ -86,6 +86,7 @@ envVariables:
 
 image:
   repository: ghcr.io/alercebroker/lc_classification_step_ztf
+  tag: 23.12.26a89
 
 imageCredentials:
   password: ${ghcr_password}
