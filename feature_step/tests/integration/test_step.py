@@ -1,5 +1,4 @@
-from features.step import FeaturesComputer
-from features.utils.selector import selector
+from features.step import FeatureStep
 import pathlib
 
 
@@ -11,7 +10,7 @@ CONSUMER_CONFIG = {
         "auto.offset.reset": "beginning",
         "enable.partition.eof": True,
     },
-    "TOPICS": ["elasticc"],
+    "TOPICS": ["ztf"],
     "consume.messages": 1,
     "consume.timeout": 0,
 }
@@ -50,24 +49,5 @@ def test_step_ztf(kafka_service):
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     }
-    extractor = selector("ztf")
-    step = FeaturesComputer(
-        extractor,
-        config=step_config,
-    )
-    step.start()
-
-
-def test_step_elasticc(kafka_service):
-    CONSUMER_CONFIG["TOPICS"] = ["elasticc"]
-    step_config = {
-        "PRODUCER_CONFIG": PRODUCER_CONFIG,
-        "CONSUMER_CONFIG": CONSUMER_CONFIG,
-        "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-    }
-    extractor = selector("elasticc")
-    step = FeaturesComputer(
-        extractor,
-        config=step_config,
-    )
+    step = FeatureStep(config=step_config)
     step.start()

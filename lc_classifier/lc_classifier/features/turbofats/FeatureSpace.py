@@ -14,14 +14,11 @@ def is_sorted(a):
 
 
 class FeatureSpace(object):
-    def __init__(self, feature_list, data_column_names=None, extra_arguments: dict = {}):
+    def __init__(self, feature_list, extra_arguments: dict = {}):
         self.feature_objects = []
         self.feature_names = []
         self.shared_data = {}
-        if data_column_names is None:
-            self.data_column_names = ['magnitude', 'time', 'error']
-        else:
-            self.data_column_names = data_column_names
+        self.data_column_names = ['brightness', 'mjd', 'e_brightness']
 
         for feature_name in feature_list:
             feature_class = getattr(FeatureFunctionLib, feature_name)
@@ -33,45 +30,29 @@ class FeatureSpace(object):
             else:
                 feature_instance = feature_class(self.shared_data)
             self.feature_objects.append(feature_instance)
-            if feature_instance.is1d():
-                self.feature_names.append(feature_name)
-            else:
-                self.feature_names += feature_instance.get_feature_names()
+            self.feature_names.append(feature_name)
 
     def __lightcurve_to_array(self, lightcurve):
         return lightcurve[self.data_column_names].values.T
 
-    def calculate_features(self, lightcurve):
-        n_objects = len(lightcurve.index.unique())
-        if n_objects > 1:
-            raise Exception('TurboFATS cannot handle more than one lightcurve simultaneously')
-        elif n_objects == 0 or len(lightcurve) <= 5:
-            df = pd.DataFrame(columns=self.feature_names)
-            df.index.name = 'oid'
-            return df
+    def calculate_features(self, observations: pd.DataFrame):
+        if len(observations) <= 5:
+            features = []
+            for name in self.feature_names:
+                features.append((name, np.nan))
 
-        oid = lightcurve.index.values[0]
-        if not is_sorted(lightcurve[self.data_column_names[1]].values):
-            lightcurve = lightcurve.sort_values(self.data_column_names[1])
-            
-        lightcurve_array = self.__lightcurve_to_array(lightcurve)
+            return features
+
+        lightcurve_array = self.__lightcurve_to_array(observations)
                     
-        results = []
+        features = []
         self.shared_data.clear()
-        for feature in self.feature_objects:
+        for name, feature_object in zip(self.feature_names, self.feature_objects):
             try:
-                result = feature.fit(lightcurve_array)
+                result = feature_object.fit(lightcurve_array)
             except Exception as e:
-                warnings.warn('Exception when computing turbo-fats feature: '+str(e))
-                if feature.is1d():
-                    result = np.NaN
-                else:
-                    result = [np.NaN] * len(feature.get_feature_names())
-            if feature.is1d():
-                results.append(result)
-            else:
-                results += result
-        results = np.array(results).reshape(1, -1).astype(float)
-        df = pd.DataFrame(results, columns=self.feature_names, index=[oid])
-        df.index.name = 'oid'
-        return df
+                warnings.warn(f'Exception when computing turbo-fats feature: {e}')
+                result = np.NaN
+
+            features.append((name, result))
+        return features

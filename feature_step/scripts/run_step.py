@@ -29,8 +29,7 @@ handler.setLevel(level)
 
 logger.addHandler(handler)
 
-from features import FeaturesComputer
-from features.utils.selector import selector
+from features.step import FeatureStep
 
 if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
     from pyroscope import configure
@@ -40,7 +39,5 @@ if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
         server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
     )
 
-
-extractor = selector(STEP_CONFIG.get("EXTRACTOR", ""))
-step = FeaturesComputer(extractor, config=STEP_CONFIG)
+step = FeatureStep(config=STEP_CONFIG)
 step.start()

@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "test_utils"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.9,<3.12"
 confluent_kafka = "2.0.2"
 pymongo = "^4.4.1"
 db-plugins = {path = "../db-plugins", develop = true}

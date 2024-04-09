@@ -1,23 +1,23 @@
-from typing import Tuple, List
-from functools import lru_cache
-
-from ..core.base import FeatureExtractorSingleBand
-from ..turbofats import FeatureSpace
+import numpy as np
 import pandas as pd
-import logging
+
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
+from ..turbofats import FeatureSpace
+from typing import List
 
 
-class TurboFatsFeatureExtractor(FeatureExtractorSingleBand):
-    def __init__(self, bands: List):
-        super().__init__(bands)
-        self.feature_space = FeatureSpace(
-            self._feature_keys_for_new_feature_space())
-        self.feature_space.data_column_names = [
-            'magnitude', 'time', 'error']
+class TurboFatsExtractor(FeatureExtractor):
+    def __init__(self, bands: List[str], unit: str):
+        self.version = '1.0.0'
+        self.bands = bands
 
-    @lru_cache(1)
-    def _feature_keys_for_new_feature_space(self):
-        return (
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
+
+        feature_names = [
             'Amplitude', 'AndersonDarling', 'Autocor_length',
             'Beyond1Std',
             'Con', 'Eta_e',
@@ -31,56 +31,41 @@ class TurboFatsFeatureExtractor(FeatureExtractorSingleBand):
             'SF_ML_amplitude', 'SF_ML_gamma',
             'IAR_phi',
             'LinearTrend',
+        ]
+        self.feature_space = FeatureSpace(feature_names)
+
+    def get_observations(self, astro_object: AstroObject):
+        observations = astro_object.detections
+        observations = observations[observations['unit'] == self.unit]
+        observations = observations[observations['brightness'].notna()]
+        observations = observations.drop_duplicates('mjd')
+        return observations
+
+    def compute_features_single_object(self, astro_object: AstroObject):
+        observations = self.get_observations(astro_object)
+
+        sids = observations['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        feature_dfs = []
+        for band in self.bands:
+            band_detections = observations[observations['fid'] == band].copy()
+            band_detections.sort_values('mjd', inplace=True)
+            band_features = self.feature_space.calculate_features(band_detections)
+
+            band_features_df = pd.DataFrame(
+                data=band_features,
+                columns=['name', 'value']
+            )
+            band_features_df['fid'] = band
+            band_features_df['sid'] = sid
+            band_features_df['version'] = self.version
+
+            feature_dfs.append(band_features_df)
+
+        all_features = [astro_object.features] + feature_dfs
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
         )
-
-    @lru_cache(1)
-    def get_features_keys_without_band(self) -> Tuple[str, ...]:
-        features_keys = self._feature_keys_for_new_feature_space()
-        return features_keys
-
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'time', 'magnitude', 'band', 'error'
-
-    def compute_feature_in_one_band(self, detections, band, **kwargs):
-        grouped_detections = detections.groupby(level=0)
-        return self.compute_feature_in_one_band_from_group(grouped_detections, band, **kwargs)
-
-    def compute_feature_in_one_band_from_group(self, detections, band, **kwargs):
-        """
-        Compute features from turbo-fats.
-        Parameters
-        ----------
-        detections : 
-            Light curve from a single band and a single object.
-        band : int
-            Number of the band of the light curve.
-        kwargs
-        Returns
-        ------
-        pd.DataFrame
-            turbo-fats features (one-row dataframe).
-        """
-        columns = self.get_features_keys_with_band(band)
-
-        def aux_function(oid_detections, **kwargs):
-            if band not in oid_detections['band'].values:
-                oid = oid_detections.index.values[0]
-                logging.debug(
-                    f'extractor=TURBOFATS object={oid} required_cols={self.get_required_keys()} band={band}')
-                return self.nan_series_in_band(band)
-
-            oid_band_detections = oid_detections[oid_detections['band'] == band]
-
-            object_features = self.feature_space.calculate_features(
-                oid_band_detections)
-            if len(object_features) == 0:
-                return self.nan_series_in_band(band)
-            out = pd.Series(
-                data=object_features.values.flatten(),
-                index=columns)
-            return out
-
-        features = detections.apply(aux_function)
-        features.index.rename("oid", inplace=True)
-        return features

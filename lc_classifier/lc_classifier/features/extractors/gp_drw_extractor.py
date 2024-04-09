@@ -1,48 +1,48 @@
-from typing import Tuple
-from functools import lru_cache
-
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
+from typing import List, Dict
 import numpy as np
 import pandas as pd
-import logging
-
-from ..core.base import FeatureExtractorSingleBand
-from ...utils import is_sorted
-
 import celerite2
 from celerite2 import terms
-
 from scipy.optimize import minimize
 
 
-class GPDRWExtractor(FeatureExtractorSingleBand):
-    def compute_feature_in_one_band(self, detections, band, **kwargs):
-        grouped_detections = detections.groupby(level=0)
-        return self.compute_feature_in_one_band_from_group(grouped_detections, band, **kwargs)
+class GPDRWExtractor(FeatureExtractor):
+    def __init__(self, bands: List[str], unit: str):
+        self.version = '1.0.0'
+        self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
+        self.detections_min_len = 5
 
-    def compute_feature_in_one_band_from_group(
-            self, detections, band, **kwargs) -> pd.DataFrame:
-        def aux_function(oid_detections, band, **kwargs):
-            bands = oid_detections['band'].values
-            if band not in bands:
-                logging.info(
-                    "extractor=GP DRW extractor object=%s required_cols=%s band=%s",
-                    oid_detections.index.values[0],
-                    self.get_required_keys(),
-                    band)
-                return self.nan_series_in_band(band)
+    def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['brightness'].notna()]
+        detections = detections[detections['unit'] == self.unit]
 
-            oid_band_detections = oid_detections[bands == band]
+        return detections
 
-            if not is_sorted(oid_band_detections['time'].values):
-                oid_band_detections.sort_values('time', inplace=True)
+    def compute_features_single_object(self, astro_object: AstroObject):
+        detections = astro_object.detections
+        detections = self.preprocess_detections(detections)
 
-            time = oid_band_detections['time'].values
-            mag = oid_band_detections['magnitude'].values
-            err = oid_band_detections['error'].values
+        features = []
+        for band in self.bands:
+            detections_band = detections[detections['fid'] == band].copy()
+            band_features = {
+                'GP_DRW_sigma': np.nan,
+                'GP_DRW_tau': np.nan,
+            }
+            if len(detections_band) < self.detections_min_len:
+                features += self._dict_to_features(band_features, band)
+                continue
 
-            time = time - time.min()
-            mag = mag - mag.mean()
-            sq_error = err ** 2
+            detections_band['mjd'] -= np.min(detections_band['mjd'])
+            detections_band.sort_values('mjd', inplace=True)
+
+            detections_band['brightness'] -= np.mean(detections_band['brightness'])
 
             kernel = terms.RealTerm(a=1.0, c=10.0)
             gp = celerite2.GaussianProcess(kernel, mean=0.0)
@@ -60,33 +60,43 @@ class GPDRWExtractor(FeatureExtractorSingleBand):
                 initial_params,
                 bounds=[[-10.0, 19.0], [-6.0, 6.0]],
                 method="L-BFGS-B",
-                args=(gp, time, mag, sq_error),
+                args=(
+                    gp,
+                    detections_band['mjd'].values,
+                    detections_band['brightness'].values,
+                    detections_band['e_brightness'].values ** 2
+                ),
                 # options={'iprint': 99}
             )
 
             optimal_params = np.exp(sol.x)
-            out_data = [
-                optimal_params[0],
-                1.0 / optimal_params[1]
-            ]
-            out = pd.Series(
-                data=out_data, index=self.get_features_keys_with_band(band))
-            return out
 
-        features = detections.apply(lambda det: aux_function(det, band))
-        features.index.name = 'oid'
-        return features
+            band_features['GP_DRW_sigma'] = optimal_params[0]
+            band_features['GP_DRW_tau'] = 1.0/optimal_params[1]
 
-    @lru_cache(1)
-    def get_features_keys_without_band(self) -> Tuple[str, ...]:
-        feature_names = 'GP_DRW_sigma', 'GP_DRW_tau'
-        return feature_names
+            features += self._dict_to_features(band_features, band)
 
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return (
-            'time',
-            'magnitude',
-            'band',
-            'error'
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
         )
+
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
+
+    def _dict_to_features(self, band_features: Dict[str, float], band: str) -> List:
+        features = []
+        for k, v in band_features.items():
+            features.append((k, v, band))
+
+        return features

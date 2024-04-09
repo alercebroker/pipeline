@@ -1,44 +1,23 @@
 [tool.poetry]
 name = "feature-step"
-version = "24.4.1"
-description = ""
-authors = []
+version = "24.03.19a1"
+description = "Feature step"
+authors = ["Ignacio Reyes"]
 readme = "README.md"
 packages = [{include = "features"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
-pandas = ">=2.0.0,<2.1.0"
-numpy = ">=1.23.5,<1.24.0"
-astropy = ">=5.2.2,<5.3.0"
-extinction = ">=0.4.6,<0.5.0"
-methodtools = ">=0.4.7,<0.5.0"
-scipy = ">=1.10.1,<1.11.0"
-numba = ">=0.56.4,<0.57.0"
-celerite2 = ">=0.2.1,<0.3.0"
-jax = ">=0.4.10,<0.5.0"
-jaxlib = ">=0.4.10,<0.5.0"
-apf-base = { path = "../libs/apf", develop = true }
-matplotlib = "3.7.1"
-GPy = { git = "https://github.com/SheffieldML/GPy.git", rev = "v1.10.0" } # Poetry requires scipy<1.5  if installed from PyPI # Requirement for turbo-fats, even though it is unused
-turbofats = { path = "../turbo-fats" }
-lc_classifier = { path = "../lc_classifier", develop = true }
-pyroscope-io = "^0.8.4"
-
-[tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
+python = ">=3.9,<3.12"
+numpy = "^1.16"
+pandas = "^2.0.1"
+lc-classifier = { path = "../lc_classifier", develop = true}
+apf_base = { path = "../libs/apf", develop = true }
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.1"
-pytest-docker = "^1.0.1"
+pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
-test_utils = { path = "../libs/test_utils", develop = true }
-
-[tool.black]
-line-length = 79
-
-[tool.pylint.messages_control]
-disable = ["missing-module-docstring", "missing-function-docstring", "missing-class-docstring"]
+test_utils = {path = "../libs/test_utils", develop = true}  
 
 [build-system]
-requires = ["setuptools", "wheel", "Cython", "numpy"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

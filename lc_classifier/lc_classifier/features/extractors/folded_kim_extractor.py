@@ -1,83 +1,75 @@
-from typing import Tuple
-from functools import lru_cache
-import logging
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
 import numpy as np
 import pandas as pd
-
-from ..core.base import FeatureExtractorSingleBand
-from ..extractors import PeriodExtractor
+from typing import List
 
 
-class FoldedKimExtractor(FeatureExtractorSingleBand):
-    """https://github.com/dwkim78/upsilon/blob/
-    64b2b7f6e3b3991a281182549959aabd385a6f28/
-    upsilon/extract_features/extract_features.py#L151"""
+class FoldedKimExtractor(FeatureExtractor):
+    def __init__(self, bands: List[str], unit: str):
+        self.version = '1.0.0'
+        self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
 
-    @lru_cache(1)
-    def get_features_keys_without_band(self) -> Tuple[str, ...]:
-        return 'Psi_CS', 'Psi_eta'
+    def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['unit'] == self.unit]
+        detections = detections[detections['brightness'].notna()]
+        return detections
 
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'time', 'magnitude'
+    def compute_features_single_object(self, astro_object: AstroObject):
+        period_feature_name = 'Multiband_period'
+        if period_feature_name not in astro_object.features['name'].values:
+            raise Exception(
+                'Folded Kim extractor was not provided with period data')
+        period = astro_object.features[astro_object.features['name'] == period_feature_name]
+        period = period['value'][0]
+        detections = astro_object.detections
+        detections = self.preprocess_detections(detections)
 
-    def compute_feature_in_one_band(self, detections, band, **kwargs):
-        grouped_detections = detections.groupby(level=0)
-        return self.compute_feature_in_one_band_from_group(grouped_detections, band, **kwargs)
-    
-    def compute_feature_in_one_band_from_group(
-            self, detections, band, **kwargs) -> pd.DataFrame:
-        
-        if ('shared_data' in kwargs.keys() and
-                'period' in kwargs['shared_data'].keys()):
-            periods = kwargs['shared_data']['period']
-        else:
-            raise Exception('Folded Kim extractor was not provided '
-                            'with period data')
-
-        columns = self.get_features_keys_with_band(band)
-
-        def aux_function(oid_detections, band, **kwargs):
-            oid = oid_detections.index.values[0]
-            if band not in oid_detections['band'].values:
-                logging.debug(
-                    f'extractor=Folded Kim extractor object={oid} '
-                    f'required_cols={self.get_required_keys()}  band={band}')
-                return self.nan_series_in_band(band)
-
-            try:
-                oid_period = periods[['Multiband_period']].loc[[oid]].values.flatten()
-            except KeyError as e:
-                logging.error(f'KeyError in FoldedKimExtractor, period is not '
-                              f'available: oid {oid}\n{e}')
-                return self.nan_series_in_band(band)
-
-            oid_band_detections = oid_detections[oid_detections['band'] == band]
-            lc_len = len(oid_band_detections)
-            if lc_len <= 2:
-                psi_cumsum = psi_eta = np.nan
+        features = []
+        for band in self.bands:
+            band_detections = detections[detections['fid'] == band]
+            if len(band_detections) <= 2 or np.isnan(period):
+                features.append((f'Psi_CS', np.nan, band))
+                features.append((f'Psi_eta', np.nan, band))
             else:
-                time = oid_band_detections['time'].values
-                magnitude = oid_band_detections['magnitude'].values
+                time = band_detections['mjd'].values
+                brightness = band_detections['brightness'].values
 
-                folded_time = np.mod(time, 2 * oid_period) / (2 * oid_period)
-                sorted_mags = magnitude[np.argsort(folded_time)]
-                sigma = np.std(sorted_mags)
+                folded_time = np.mod(time, 2 * period) / (2 * period)
+                sorted_brightness = brightness[np.argsort(folded_time)]
+                sigma = np.std(sorted_brightness)
                 if sigma != 0.0:
-                    m = np.mean(sorted_mags)
-                    s = np.cumsum(sorted_mags - m) * 1.0 / (lc_len * sigma)
+                    m = np.mean(sorted_brightness)
+                    lc_len = len(band_detections)
+                    s = np.cumsum(sorted_brightness - m) * 1.0 / (lc_len * sigma)
                     psi_cumsum = np.max(s) - np.min(s)
                     sigma_squared = sigma ** 2
                     psi_eta = (1.0 / ((lc_len - 1) * sigma_squared) *
-                               np.sum(np.power(sorted_mags[1:] - sorted_mags[:-1], 2)))
+                               np.sum(np.power(sorted_brightness[1:] - sorted_brightness[:-1], 2)))
                 else:
                     psi_cumsum = psi_eta = np.nan
 
-            out = pd.Series(
-                data=[psi_cumsum, psi_eta],
-                index=columns)
-            return out
-        
-        features = detections.apply(lambda det: aux_function(det, band))
-        features.index.name = 'oid'
-        return features
+                features.append((f'Psi_CS', psi_cumsum, band))
+                features.append((f'Psi_eta', psi_eta, band))
+
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
+        )
+
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
+
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )

@@ -5,13 +5,8 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from apf.producers.kafka import KafkaProducer
 import os
 import pathlib
-from tests.data.message_factory import (
-    generate_input_batch,
-)
-from tests.data.elasticc_message_factory import (
-    generate_input_batch as generate_elasticc_batch,
-    ELASTICC_BANDS,
-)
+from ..message_factory import generate_input_batch
+
 
 os.environ["FEATURE_EXTRACTOR"] = ""
 os.environ["CONSUMER_TOPICS"] = ""
@@ -43,7 +38,7 @@ def docker_compose_file(pytestconfig):
 
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
-    topics = ["elasticc", "ztf"]
+    topics = ["ztf"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
     for topic, f in fs.items():
@@ -65,20 +60,13 @@ def kafka_service(docker_ip, docker_services):
     )
     schema_path = pathlib.Path(
         pathlib.Path(__file__).parent.parent.parent.parent,
-        "schemas/xmatch_step",
+        "schemas/feature_step",  # TODO: repair this
         "output.avsc",
     )
-    config = {
-        "PARAMS": {"bootstrap.servers": "localhost:9092"},
-        "TOPIC": "elasticc",
-        "SCHEMA_PATH": schema_path,
-    }
-    producer = KafkaProducer(config)
-    data_elasticc = generate_elasticc_batch(5, ELASTICC_BANDS)
-    data_ztf = generate_input_batch(5)
-    for data in data_elasticc:
-        producer.produce(data)
-    producer.producer.flush(10)
+    data_ztf = generate_input_batch(
+        10,
+        ["g", "r"],
+        survey="ZTF")
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "ztf",

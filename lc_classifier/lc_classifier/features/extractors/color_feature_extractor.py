@@ -1,177 +1,114 @@
-from typing import Tuple, List
-from functools import lru_cache
+import pandas as pd
 
 from ..core.base import FeatureExtractor
-import pandas as pd
+from lc_classifier.base import AstroObject
 import numpy as np
-import logging
+from typing import List, Tuple
 
 
-class ZTFColorFeatureExtractor(FeatureExtractor):
-    @lru_cache(1)
-    def get_features_keys(self) -> Tuple[str, ...]:
-        return 'g-r_max', 'g-r_mean', 'g-r_max_corr', 'g-r_mean_corr'
-
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'band', 'magpsf', 'magnitude'
-
-    def _compute_features(self, detections, **kwargs):
-        return self._compute_features_from_df_groupby(
-            detections.groupby(level=0),
-            **kwargs)
-
-    def _compute_features_from_df_groupby(self, detections, **kwargs):
-        """
-        Parameters
-        ----------
-        detections 
-        DataFrame with detections of an object.
-        kwargs Not required.
-        Returns :class:pandas.`DataFrame`
-        -------
-        """
-        # pd.options.display.precision = 10
-        def aux_function(oid_detections):
-            oid = oid_detections.index.values[0]
-            bands = oid_detections['band'].values
-            unique_fids = np.unique(bands)
-            if 1 not in unique_fids or 2 not in unique_fids:
-                logging.debug(
-                    f'extractor=COLOR  object={oid}  required_cols={self.get_required_keys()}  filters_qty=2')
-                return self.nan_series()
-
-            mag_corr = oid_detections['magnitude'].values
-            g_band_mag_corr = mag_corr[bands == 1]
-            r_band_mag_corr = mag_corr[bands == 2]
-
-            mag = oid_detections['magpsf'].values
-            g_band_mag = mag[bands == 1]
-            r_band_mag = mag[bands == 2]
-
-            g_r_max = g_band_mag.min() - r_band_mag.min()
-            g_r_mean = g_band_mag.mean() - r_band_mag.mean()
-
-            g_r_max_corr = g_band_mag_corr.min() - r_band_mag_corr.min()
-            g_r_mean_corr = g_band_mag_corr.mean() - r_band_mag_corr.mean()
-
-            if g_r_max == g_r_max_corr and g_r_mean == g_r_mean_corr:
-                data = [g_r_max, g_r_mean, np.nan, np.nan]
-            else:
-                data = [g_r_max, g_r_mean, g_r_max_corr, g_r_mean_corr]
-            oid_color = pd.Series(data=data, index=self.get_features_keys())
-            return oid_color
-        
-        colors = detections.apply(aux_function)
-        colors.index.name = 'oid'
-        return colors
-
-
-class ZTFColorForcedFeatureExtractor(FeatureExtractor):
-    @lru_cache(1)
-    def get_features_keys(self) -> Tuple[str, ...]:
-        return 'g-r_max', 'g-r_mean'
-
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'band', 'magnitude'
-
-    def _compute_features(self, detections, **kwargs):
-        return self._compute_features_from_df_groupby(
-            detections.groupby(level=0),
-            **kwargs)
-
-    def _compute_features_from_df_groupby(self, detections, **kwargs):
-        """
-        Parameters
-        ----------
-        detections
-        DataFrame with detections of an object.
-        kwargs Not required.
-        Returns :class:pandas.`DataFrame`
-        -------
-        """
-
-        def aux_function(oid_detections):
-            oid = oid_detections.index.values[0]
-            bands = oid_detections['band'].values
-            unique_fids = np.unique(bands)
-            if 1 not in unique_fids or 2 not in unique_fids:
-                logging.debug(
-                    f'extractor=COLOR  object={oid}  required_cols={self.get_required_keys()}  filters_qty=2')
-                return self.nan_series()
-
-            mag = oid_detections['magnitude'].values
-            g_band_mag = mag[bands == 1]
-            r_band_mag = mag[bands == 2]
-
-            g_r_max = g_band_mag.min() - r_band_mag.min()
-            g_r_mean = g_band_mag.mean() - r_band_mag.mean()
-
-            data = [g_r_max, g_r_mean]
-            oid_color = pd.Series(data=data, index=self.get_features_keys())
-            return oid_color
-
-        colors = detections.apply(aux_function)
-        colors.index.name = 'oid'
-        return colors
-
-
-class ElasticcColorFeatureExtractor(FeatureExtractor):
-    def __init__(self, bands: List[str]) -> None:
-        super().__init__()
-        if len(bands) < 2:
-            raise ValueError('Elasticc color feature extractor needs at least two bands')
+class ColorFeatureExtractor(FeatureExtractor):
+    def __init__(self, bands: List[str], unit: str):
+        self.version = '1.0.0'
         self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
 
-    @lru_cache(1)
-    def get_features_keys(self) -> Tuple[str, ...]:
-        return [f'{self.bands[i]}-{self.bands[i+1]}'for i in range(len(self.bands)-1)]
+    def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['brightness'].notna()]
+        detections = detections[detections['unit'] == self.unit]
+        if self.unit == 'magnitude':
+            detections = detections[detections['e_brightness'] < 1.0]
+        elif self.unit == 'diff_flux':
+            pass
 
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'band', 'difference_flux'
+        return detections
 
-    def _compute_features(self, detections, **kwargs):
-        return self._compute_features_from_df_groupby(
-            detections.groupby(level=0),
-            **kwargs)
+    def compute_features_single_object(self, astro_object: AstroObject):
+        detections = astro_object.detections
+        detections = self.preprocess_detections(detections)
 
-    def _compute_features_from_df_groupby(self, detections, **kwargs):
-        """
-        Parameters
-        ----------
-        detections
-        DataFrame with detections of an object.
-        kwargs Not required.
-        Returns :class:pandas.`DataFrame`
-        -------
-        """
+        fid = ','.join(self.bands)
 
-        def aux_function(oid_detections):
-            oid = oid_detections.index.values[0]
-            bands = oid_detections['band'].values
-            fluxes = oid_detections['difference_flux'].values
-            available_bands = np.unique(bands)
-            d = {}
-            for band in available_bands:
-                band_mask = bands == band
-                band_fluxes = fluxes[band_mask]
-                band_fluxes_abs = np.abs(band_fluxes)
-                band_90p = np.percentile(band_fluxes_abs, 90)
-                d[band] = band_90p
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
 
-            output = []
-            for i in range(len(self.bands)-1):
-                if (self.bands[i] not in available_bands 
-                or self.bands[i+1] not in available_bands):
-                    output.append(np.nan)
-                    continue
-                output.append(d[self.bands[i]]/(d[self.bands[i+1]] + 1))
+        if self.unit == 'magnitude':
+            features = self._magnitude_colors(detections)
+        elif self.unit == 'diff_flux':
+            features = self._diff_flux_colors(detections)
 
-            oid_color = pd.Series(data=output, index=self.get_features_keys())
-            return oid_color
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value']
+        )
 
-        colors = detections.apply(aux_function)
-        colors.index.name = 'oid'
-        return colors
+        features_df['fid'] = fid
+        features_df['sid'] = sid
+        features_df['version'] = self.version
+
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
+
+    def _diff_flux_colors(self, detections: pd.DataFrame) -> List[Tuple[str, float]]:
+        # compute mean and max of each band
+        band_p90_list = []
+        for band in self.bands:
+            band_detections = detections[detections['fid'] == band]
+            if len(band_detections) == 0:
+                band_p90_list.append(np.nan)
+            else:
+                band_flux_abs = np.abs(band_detections['brightness'])
+                band_p90 = np.percentile(band_flux_abs, 90)
+                band_p90_list.append(band_p90)
+
+        features = []
+        for i in range(len(self.bands)-1):
+            feature_name = f'{self.bands[i]}-{self.bands[i+1]}'
+            feature_value = band_p90_list[i] / (band_p90_list[i+1] + 1)
+            features.append((
+                feature_name,
+                feature_value
+            ))
+
+        return features
+
+    def _magnitude_colors(self, detections: pd.DataFrame) -> List[Tuple[str, float]]:
+        # compute mean and max of each band
+        band_means = []
+        band_maxima = []
+        for band in self.bands:
+            band_detections = detections[detections['fid'] == band]
+            if len(band_detections) == 0:
+                band_means.append(np.nan)
+                band_maxima.append(np.nan)
+            else:
+                band_mean = np.mean(band_detections['brightness'])
+                band_means.append(band_mean)
+
+                # max brightness, min magnitude
+                band_max = np.min(band_detections['brightness'])
+                band_maxima.append(band_max)
+
+        features = []
+        for i in range(len(self.bands)-1):
+            feature_name = f'{self.bands[i]}-{self.bands[i+1]}_mean'
+            feature_value = band_means[i] - band_means[i+1]
+            features.append([
+                feature_name,
+                feature_value
+            ])
+
+            feature_name = f'{self.bands[i]}-{self.bands[i+1]}_max'
+            feature_value = band_maxima[i] - band_maxima[i+1]
+            features.append((
+                feature_name,
+                feature_value
+            ))
+
+        return features

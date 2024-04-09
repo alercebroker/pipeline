@@ -1,121 +1,97 @@
-from typing import Tuple, List
-from functools import lru_cache
-
-from ..core.base import FeatureExtractorSingleBand
-import pandas as pd
+from ..core.base import FeatureExtractor
+from lc_classifier.base import AstroObject
 import numpy as np
-import logging
+import pandas as pd
+from typing import List
 import mhps
 
 
-class MHPSExtractor(FeatureExtractorSingleBand):
-    def __init__(self, bands: List, t1=100, t2=10, dt=3.0, mag0=19.0, epsilon=1.0):
-        super().__init__(bands)
+class MHPSExtractor(FeatureExtractor):
+    def __init__(
+            self,
+            bands: List[str],
+            unit: str,
+            t1: float = 100.0,
+            t2: float = 10.0,
+            dt: float = 3.0
+    ):
+        self.version = '1.0.0'
+
         self.t1 = t1
         self.t2 = t2
         self.dt = dt
-        self.mag0 = mag0
-        self.epsilon = epsilon
 
-    @lru_cache(1)
-    def get_features_keys_without_band(self) -> Tuple[str, ...]:
-        return (
-            'MHPS_ratio',
-            'MHPS_low',
-            'MHPS_high',
-            'MHPS_non_zero',
-            'MHPS_PN_flag')
+        self.bands = bands
+        valid_units = ['magnitude', 'diff_flux']
+        if unit not in valid_units:
+            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+        self.unit = unit
 
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'time', 'magnitude', 'error', 'band'
+    def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
+        detections = detections[detections['unit'] == self.unit]
+        detections = detections[detections['brightness'].notna()]
+        return detections
 
-    def compute_feature_in_one_band(self, detections, band, **kwargs):
-        grouped_detections = detections.groupby(level=0)
-        return self.compute_feature_in_one_band_from_group(grouped_detections, band, **kwargs)
+    def compute_features_single_object(self, astro_object: AstroObject):
+        detections = astro_object.detections
+        detections = self.preprocess_detections(detections)
 
-    def compute_feature_in_one_band_from_group(
-            self, detections, band, **kwargs):
-        columns = self.get_features_keys_with_band(band)
+        features = []
+        for band in self.bands:
+            band_detections = detections[detections['fid'] == band].copy()
+            if len(band_detections) == 0:
+                ratio = low = high = non_zero = pn_flag = np.nan
+            else:
+                band_detections.sort_values('mjd', inplace=True)
 
-        def aux_function(oid_detections, band, **kwargs):
-            if band not in oid_detections['band'].values:
-                oid = oid_detections.index.values[0]
-                logging.debug(
-                    f'extractor=MHPS object={oid} required_cols={self.get_required_keys()} band={band}')
-                return self.nan_series_in_band(band)
-            
-            oid_band_detections = oid_detections[oid_detections['band'] == band].sort_values('time')
+                time = band_detections['mjd'].values
+                brightness = band_detections['brightness'].values
+                e_brightness = band_detections['e_brightness'].values
 
-            mag = oid_band_detections['magnitude'].values.astype(np.double)
-            magerr = oid_band_detections['error'].values.astype(np.double)
-            time = oid_band_detections['time'].values.astype(np.double)
-            ratio, low, high, non_zero, pn_flag = mhps.statistics(
-                mag,
-                magerr,
-                time,
-                self.t1,
-                self.t2)
-            return pd.Series(
-                data=[ratio, low, high, non_zero, pn_flag],
-                index=columns)
-        
-        mhps_results = detections.apply(lambda det: aux_function(det, band))
-        mhps_results.index.name = 'oid'
-        return mhps_results
+                if self.unit == 'magnitude':
+                    brightness = brightness.astype(np.double)
+                    e_brightness = e_brightness.astype(np.double)
+                    time = time.astype(np.double)
 
+                    # TODO: check extra params of mhps.statistics
+                    ratio, low, high, non_zero, pn_flag = mhps.statistics(
+                        brightness,
+                        e_brightness,
+                        time,
+                        self.t1,
+                        self.t2)
+                elif self.unit == 'diff_flux':
+                    brightness = brightness.astype(np.float32)
+                    e_brightness = e_brightness.astype(np.float32)
+                    time = time.astype(np.float32)
 
-class MHPSFluxExtractor(FeatureExtractorSingleBand):
-    def __init__(self, bands: List, t1=100, t2=10, dt=3.0, epsilon=1.0):
-        super().__init__(bands)
-        self.t1 = t1
-        self.t2 = t2
-        self.dt = dt
-        self.epsilon = epsilon
+                    ratio, low, high, non_zero, pn_flag = mhps.flux_statistics(
+                        brightness,
+                        e_brightness,
+                        time,
+                        self.t1,
+                        self.t2)
 
-    @lru_cache(1)
-    def get_features_keys_without_band(self) -> Tuple[str, ...]:
-        return (
-            'MHPS_ratio',
-            'MHPS_low',
-            'MHPS_high',
-            'MHPS_non_zero',
-            'MHPS_PN_flag')
+            features.append((f'MHPS_ratio', ratio, band))
+            features.append((f'MHPS_low', low, band))
+            features.append((f'MHPS_high', high, band))
+            features.append((f'MHPS_non_zero', non_zero, band))
+            features.append((f'MHPS_PN_flag', pn_flag, band))
 
-    @lru_cache(1)
-    def get_required_keys(self) -> Tuple[str, ...]:
-        return 'time', 'difference_flux', 'difference_flux_error', 'band'
+        features_df = pd.DataFrame(
+            data=features,
+            columns=['name', 'value', 'fid']
+        )
 
-    def compute_feature_in_one_band(self, detections, band, **kwargs):
-        grouped_detections = detections.groupby(level=0)
-        return self.compute_feature_in_one_band_from_group(grouped_detections, band, **kwargs)
+        sids = detections['sid'].unique()
+        sids = np.sort(sids)
+        sid = ','.join(sids)
 
-    def compute_feature_in_one_band_from_group(
-            self, detections, band, **kwargs):
-        columns = self.get_features_keys_with_band(band)
+        features_df['sid'] = sid
+        features_df['version'] = self.version
 
-        def aux_function(oid_detections, band, **kwargs):
-            if band not in oid_detections['band'].values:
-                oid = oid_detections.index.values[0]
-                logging.debug(
-                    f'extractor=MHPS object={oid} required_cols={self.get_required_keys()} band={band}')
-                return self.nan_series_in_band(band)
-            
-            oid_band_detections = oid_detections[oid_detections['band'] == band].sort_values('time')
-
-            flux = oid_band_detections['difference_flux'].values.astype(np.float32)
-            fluxerr = oid_band_detections['difference_flux_error'].values.astype(np.float32)
-            time = oid_band_detections['time'].values.astype(np.float32)
-            ratio, low, high, non_zero, pn_flag = mhps.flux_statistics(
-                flux,
-                fluxerr,
-                time,
-                self.t1,
-                self.t2)
-            return pd.Series(
-                data=[ratio, low, high, non_zero, pn_flag],
-                index=columns)
-        
-        mhps_results = detections.apply(lambda det: aux_function(det, band))
-        mhps_results.index.name = 'oid'
-        return mhps_results
+        all_features = [astro_object.features, features_df]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty],
+            axis=0
+        )
