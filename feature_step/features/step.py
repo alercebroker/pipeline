@@ -68,19 +68,20 @@ class FeatureStep(GenericStep):
         astro_objects = []
         messages_to_process = []
         for message in messages:
-            if not message["oid"] in candids:
-                candids[message["oid"]] = []
-            candids[message["oid"]].extend(message["candid"])
-            m = map(
-                lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
-                message.get("detections", []),
-            )
+            if len(message["detections"]) > 6:
+                if not message["oid"] in candids:
+                    candids[message["oid"]] = []
+                candids[message["oid"]].extend(message["candid"])
+                m = map(
+                    lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
+                    message.get("detections", []),
+                )
 
-            xmatch_data = message["xmatches"]
-            if xmatch_data:
-                ao = detections_to_astro_objects(list(m), xmatch_data)
-                astro_objects.append(ao)
-                messages_to_process.append(message)
+                xmatch_data = message["xmatches"]
+                if xmatch_data:
+                    ao = detections_to_astro_objects(list(m), xmatch_data)
+                    astro_objects.append(ao)
+                    messages_to_process.append(message)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
