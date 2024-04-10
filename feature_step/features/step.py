@@ -76,8 +76,9 @@ class FeatureStep(GenericStep):
             )
 
             xmatch_data = message["xmatches"]
-            ao = detections_to_astro_objects(list(m), xmatch_data)
-            astro_objects.append(ao)
+            if xmatch_data:
+                ao = detections_to_astro_objects(list(m), xmatch_data)
+                astro_objects.append(ao)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
