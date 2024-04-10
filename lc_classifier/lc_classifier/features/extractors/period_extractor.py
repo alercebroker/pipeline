@@ -99,17 +99,23 @@ class PeriodExtractor(FeatureExtractor):
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
-        detections = self.get_observations(astro_object)
+        observations = self.get_observations(astro_object)
 
         period_candidate = np.nan
         significance = np.nan
         power_rates = None  # was successfully computed?
 
         band_periods = dict()
+        useful_bands = []
         for band in self.bands:
             band_periods[band] = (np.nan, np.nan)
+            n_obs_band = len(observations[observations['fid'] == band])
+            if n_obs_band >= self.min_length:
+                useful_bands.append(band)
 
-        if len(detections) < self.min_length:
+        observations = observations[observations['fid'].isin(useful_bands)]
+
+        if len(observations) < self.min_length:
             # don't compute the period if the lightcurve
             # is too short
             self._add_period_to_astroobject(
@@ -119,10 +125,10 @@ class PeriodExtractor(FeatureExtractor):
         aid = astro_object.metadata[astro_object.metadata['name'] == 'aid']
         aid = aid['value'].values[0]
         self.periodogram_computer.set_data(
-            mjds=detections['mjd'].values,
-            mags=detections['brightness'].values,
-            errs=detections['e_brightness'].values,
-            fids=detections['fid'].values)
+            mjds=observations['mjd'].values,
+            mags=observations['brightness'].values,
+            errs=observations['e_brightness'].values,
+            fids=observations['fid'].values)
 
         try:
             self.periodogram_computer.optimal_frequency_grid_evaluation(
@@ -156,7 +162,7 @@ class PeriodExtractor(FeatureExtractor):
 
         period_candidate = 1.0 / best_freq[0]
 
-        available_bands = np.unique(detections['fid'].values)
+        available_bands = np.unique(observations['fid'].values)
         for band in self.bands:
             if band not in available_bands:
                 continue
