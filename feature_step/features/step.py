@@ -66,6 +66,7 @@ class FeatureStep(GenericStep):
     def execute(self, messages):
         candids = {}
         astro_objects = []
+        messages_to_process = []
         for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
@@ -79,12 +80,13 @@ class FeatureStep(GenericStep):
             if xmatch_data:
                 ao = detections_to_astro_objects(list(m), xmatch_data)
                 astro_objects.append(ao)
+                messages_to_process.append(message)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
         self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
         self.produce_to_scribe(astro_objects)
-        output = parse_output(astro_objects, messages, candids)
+        output = parse_output(astro_objects, messages_to_process, candids)
         return output
 
     def post_execute(self, result):
