@@ -83,8 +83,7 @@ class FeatureStep(GenericStep):
             messages_to_process.append(message)
 
         self.lightcurve_preprocessor.preprocess_batch(astro_objects)
-        self.feature_extractor.compute_features_batch(
-            astro_objects, progress_bar=False)
+        self.feature_extractor.compute_features_batch(astro_objects, progress_bar=False)
 
         self.produce_to_scribe(astro_objects)
         output = parse_output(astro_objects, messages_to_process, candids)
