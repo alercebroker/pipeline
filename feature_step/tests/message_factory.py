@@ -114,7 +114,7 @@ def generate_input_batch(
         for band in bands:
             detections.extend(
                 generate_alert(
-                    oid, band, random.randint(6, 10), m, survey=survey
+                    oid, band, random.randint(60, 100), m, survey=survey
                 )
             )
         non_det = generate_non_det(oid, random.randint(0, 1), m)

@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 from lc_classifier.base import AstroObject, query_ao_table
 from features.core.utils.functions import collapse_fid_columns
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
-def detections_to_astro_objects(detections: List[Dict], xmatches: Dict) -> AstroObject:
+def detections_to_astro_objects(detections: List[Dict], xmatches: Optional[Dict]) -> AstroObject:
     detection_keys = [
         "oid",
         "candid",
@@ -47,14 +47,21 @@ def detections_to_astro_objects(detections: List[Dict], xmatches: Dict) -> Astro
     aid_forced = a[a["forced"]]
     aid_detections = a[~a["forced"]]
 
+    w1 = w2 = w3 = w4 = np.nan
+    if xmatches is not None and 'allwise' in xmatches.keys():
+        w1 = xmatches['allwise']['W1mag']
+        w2 = xmatches['allwise']['W2mag']
+        w3 = xmatches['allwise']['W3mag']
+        w4 = xmatches['allwise']['W4mag']
+
     metadata = pd.DataFrame(
         [
             ["aid", aid],
             ["oid", oid],
-            ["W1", xmatches["allwise"]["W1mag"]],
-            ["W2", xmatches["allwise"]["W2mag"]],
-            ["W3", xmatches["allwise"]["W3mag"]],
-            ["W4", xmatches["allwise"]["W4mag"]],
+            ["W1", w1],
+            ["W2", w2],
+            ["W3", w3],
+            ["W4", w4],
             ["sgscore1", detections[0]["extra_fields"]["sgscore1"]],
             ["sgmag1", detections[0]["extra_fields"]["sgmag1"]],
             ["srmag1", detections[0]["extra_fields"]["srmag1"]],
