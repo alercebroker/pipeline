@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "early_classification_step"
-version = "24.4.2a4"
+version = "24.4.2a5"
 description = "Early Classification Step"
 authors = []
 readme = "README.md"
@@ -153,10 +153,12 @@ line-length = 88
 
 
 
+
 [tool.poetry.group.test.dependencies]
 coverage = "^7.2.7"
 pytest = "^7.4.0"
 pytest-docker = "^1.0.1"
+
 
 
 
