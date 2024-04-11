@@ -48,10 +48,10 @@ labels_figure_order = [
 ]
 assert set(list_of_classes) == set(labels_figure_order)
 
-classifier_type = 'XGBoost'
-output_filename = 'xgboost_predictions.parquet'
+classifier_type = 'RandomForest'
+output_filename = 'rf_predictions.parquet'
 
-compute_predictions = True
+compute_predictions = False
 if compute_predictions:
     if classifier_type == 'MLP':
         classifier = ZTFClassifier(list_of_classes)

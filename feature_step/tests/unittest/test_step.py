@@ -3,6 +3,7 @@ from unittest import mock
 from apf.producers import GenericProducer
 from features.step import FeatureStep
 from ..message_factory import generate_input_batch
+from .message_example import messages as spm_messages
 
 
 CONSUMER_CONFIG = {
@@ -59,6 +60,27 @@ class StepTestCase(unittest.TestCase):
             10,
             ["g", "r"],
             survey="ZTF")
+        result_messages = self.step.execute(messages)
+
+        self.assertEqual(len(messages), len(result_messages))
+        n_features_prev = -1
+        for result_message in result_messages:
+            n_features = len(result_message['features'])
+            self.assertTrue(n_features > 0)
+
+            # Check all messages have the same number of features
+            if n_features_prev != -1:
+                self.assertEqual(n_features, n_features_prev)
+                n_features_prev = n_features
+
+        self.step.scribe_producer.produce.assert_called()
+        scribe_producer_call_count = (
+            self.step.scribe_producer.produce.call_count
+        )
+        self.assertEqual(scribe_producer_call_count, len(messages))
+
+    def test_spm_error(self):
+        messages = spm_messages
         result_messages = self.step.execute(messages)
 
         self.assertEqual(len(messages), len(result_messages))
