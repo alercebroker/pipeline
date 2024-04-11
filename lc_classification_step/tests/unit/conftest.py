@@ -92,13 +92,13 @@ def anomaly_config():
         "MODEL_CONFIG": {
             "PARAMS": {
                 "model_path": mock.MagicMock(),
-                "quantiles_path": mock.MagicMock(),
+                "feature_quantiles_path": mock.MagicMock(),
             },
             "CLASS": "alerce_classifiers.anomaly.model.AnomalyDetector",
             "MAPPER_CLASS": "alerce_classifiers.anomaly.mapper.AnomalyMapper",
             "NAME": "anomaly",
         },
-        "STEP_PARSER_CLASS": "lc_classification.core.parsers.elasticc_parser.ElasticcParser",
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.anomaly_parser.AnomalyParser",
     }
 
 
@@ -189,40 +189,19 @@ def ztf_model_output():
 @pytest.fixture
 def ztf_anomaly_model_output():
     def output_factory(messages_ztf, model):
-        oids = [
-            message["oid"]
-            for message in messages_ztf
-            if message.get("features") is not None
-        ]
-        model.predict_in_pipeline.return_value = {
-            "hierarchical": {
-                "top": DataFrame(
-                    {
-                        "oid": oids,
-                        "CLASS": [1] * len(oids),
-                        "CLASS2": [0] * len(oids),
-                    }
-                ),
-                "children": {
-                    "Transient": DataFrame(
-                        {"oid": oids, "CLASS": [1] * len(oids)}
-                    ),
-                    "Stochastic": DataFrame(
-                        {"oid": oids, "CLASS": [1] * len(oids)}
-                    ),
-                    "Periodic": DataFrame(
-                        {"oid": oids, "CLASS": [1] * len(oids)}
-                    ),
-                },
+        oids = [message["oid"] for message in messages_ztf]
+        df = DataFrame(
+            {
+                "C1": [1.0] * len(oids),
+                "C2": [0.0] * len(oids),
+                "NotClassified": [0.0] * len(oids),
+                "oid": oids,
             },
-            "probabilities": DataFrame(
-                {
-                    "oid": oids,
-                    "CLASS": [1] * len(oids),
-                    "CLASS2": [0] * len(oids),
-                }
-            ),
-        }
+        )
+        df.set_index("oid", inplace=True)
+        model.predict.return_value = OutputDTO(
+            df, {"top": DataFrame(), "children": {}}
+        )
 
     return output_factory
 
@@ -338,17 +317,14 @@ def step_factory_mlp(elasticc_model_output):
 
 
 @pytest.fixture
-def step_factory_anomaly(ztf_model_output):
+def step_factory_anomaly(ztf_anomaly_model_output):
     def factory(messages):
         config = base_config.copy()
         config.update(anomaly_config())
         model_mock = mock.MagicMock()
         model_mock.can_predict.return_value = (True, "")
-        ztf_model_output(messages, model_mock)
+        ztf_anomaly_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
-        step.step_parser.ClassMapper.set_mapping(
-            {"C1": 1, "C2": 2, "NotClassified": 3}
-        )
         return step
 
     return factory
@@ -385,7 +361,6 @@ def test_anomaly_model():
         step.start()
         predictor_calls = step.model.predict.mock_calls
         assert len(predictor_calls) > 0
-        # Tests scribe produces correct commands
         scribe_calls = step.scribe_producer.mock_calls
         for call in scribe_calls:
             message = loads(call.args[0]["payload"])
