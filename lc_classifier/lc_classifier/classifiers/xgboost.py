@@ -7,7 +7,7 @@ import pickle
 
 import xgboost as xgb
 
-from base import AstroObject
+from lc_classifier.base import AstroObject
 from .base import all_features_from_astro_objects
 from .base import Classifier, NotTrainedException
 from .preprocess import RandomForestPreprocessor

@@ -21,6 +21,8 @@ def detections_to_astro_objects(
         "mjd",
         "mag_corr",
         "e_mag_corr",
+        "mag",
+        "e_mag",
         "fid",
         "isdiffpos",
         "forced",
@@ -37,8 +39,8 @@ def detections_to_astro_objects(
     )
     a["unit"] = "magnitude"
     a_flux = a.copy()
-    a_flux["brightness"] = 10.0 ** (-0.4 * (a["brightness"] - 23.9)) * a["isdiffpos"]
-    a_flux["e_brightness"] *= 0.4 * np.log(10) * np.abs(a_flux["brightness"])
+    a_flux["brightness"] = 10.0 ** (-0.4 * (a["mag"] - 23.9)) * a["isdiffpos"]
+    a_flux["e_brightness"] = a_flux["e_mag"] * 0.4 * np.log(10) * np.abs(a_flux["mag"])
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
