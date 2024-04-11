@@ -44,14 +44,24 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
             helio_correct_dataframe(non_detections)
 
     def drop_absurd_detections(self, astro_object: AstroObject):
-        detections = astro_object.detections
-        magnitude_mask = detections['unit'] == 'magnitude'
-        mag_det = detections[magnitude_mask]
-        astro_object.detections = pd.concat(
-            [
-                mag_det[(mag_det['brightness'] < 30.0) & (mag_det['brightness'] > 6.0)],
-                detections[~magnitude_mask]
-            ], axis=0)
+        def drop_absurd(table):
+            magnitude_mask = table['unit'] == 'magnitude'
+            mag_det = table[magnitude_mask]
+            table = pd.concat(
+                [
+                    mag_det[
+                        (
+                            (mag_det['brightness'] < 30.0)
+                            & (mag_det['brightness'] > 6.0)
+                            & (mag_det['e_brightness'] < 1.0)
+                        )
+                    ],
+                    table[~magnitude_mask]
+                ], axis=0)
+            return table
+
+        astro_object.detections = drop_absurd(astro_object.detections)
+        astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry)
 
 
 class ShortenPreprocessor(LightcurvePreprocessor):

@@ -79,7 +79,7 @@ class StepTestCase(unittest.TestCase):
         )
         self.assertEqual(scribe_producer_call_count, len(messages))
 
-    def test_spm_error(self):
+    def test_tough_examples(self):
         messages = spm_messages
         result_messages = self.step.execute(messages)
 
