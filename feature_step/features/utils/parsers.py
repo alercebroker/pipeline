@@ -73,7 +73,7 @@ def detections_to_astro_objects(
             ["distpsnr1", detections[0]["extra_fields"]["distpsnr1"]],
         ],
         columns=["name", "value"],
-    )
+    ).fillna(value=np.nan)
 
     astro_object = AstroObject(
         detections=aid_detections, forced_photometry=aid_forced, metadata=metadata
