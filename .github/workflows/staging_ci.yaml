@@ -68,7 +68,7 @@ jobs:
       stage: staging
       extra-args: feature_step
     secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}lc-classifier-step-ztf
 
   build-lc-classification-balto-dagger:
     needs: update-packages-dagger
@@ -300,6 +300,7 @@ jobs:
           # feature step freezed 23.x version
           poetry run python main.py deploy add-package feature-step-23.x --values=feature_step-helm-values:28 --chart-folder=feature_step --chart=feature-step
           poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classification-step-anomaly --chart=lc-classifier-step --values=anomaly-detector-step-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
           poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
           poetry run python main.py deploy add-package magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
