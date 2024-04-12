@@ -62,6 +62,9 @@ alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = 
 [tool.poetry.group.elasticc.dependencies]
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
 
+[tool.poetry.group.anomaly.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["anomaly"] }
+
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
  
