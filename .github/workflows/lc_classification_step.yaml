@@ -19,7 +19,7 @@ jobs:
     with:
       base-folder: "lc_classification_step"
       python-version: "3.8"
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly"
       test-folder: "tests/unit"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -39,7 +39,7 @@ jobs:
       base-folder: "lc_classification_step"
       python-version: "3.8"
       codecov-flags: "" # Do not upload
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly"
       test-folder: "tests/integration"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
