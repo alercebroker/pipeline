@@ -27,13 +27,16 @@ joblib = {version = "^1.3.1", optional = true}
 lc-classifier = {path = "../lc_classifier", develop = true, optional = true}
 numpy = {version = ">=1.16", optional = true}
 pandas = "2.0.1"
-torch = {version = "1.11.0", optional = true}
+scikit-learn = "*"
+torch = {version = ">=1.11.0", optional = true}
 validators = "0.20.0"
+wget = "*"
 
 [package.extras]
-balto = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "torch (==1.11.0)"]
+anomaly = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "scikit-learn", "torch (>=1.11.0)", "wget"]
+balto = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "scikit-learn", "torch (>=1.11.0)"]
 barney = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ file:///home/alex-note/Projects/Alerce/pipeline/lc_classifier", "numpy (>=1.16)"]
-messi = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "torch (==1.11.0)"]
+messi = ["joblib (>=1.3.1,<2.0.0)", "numpy (>=1.16)", "scikit-learn", "torch (>=1.11.0)"]
 mlp = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ file:///home/alex-note/Projects/Alerce/pipeline/lc_classifier", "numpy (>=1.16)"]
 toretto = ["GPy @ git+https://github.com/SheffieldML/GPy.git@v1.10.0", "cython (>=0.29)", "lc-classifier @ file:///home/alex-note/Projects/Alerce/pipeline/lc_classifier", "numpy (>=1.16)"]
 ztf = ["lc-classifier @ file:///home/alex-note/Projects/Alerce/pipeline/lc_classifier"]
@@ -1440,7 +1443,7 @@ files = [
 
 [[package]]
 name = "lc-classifier"
-version = "24.4.2a0"
+version = "24.4.2a12"
 description = "Lightcurve classifiers and feature computation"
 optional = false
 python-versions = ">=3.9,<3.12"
