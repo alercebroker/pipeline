@@ -37,7 +37,7 @@ class PeriodExtractor(FeatureExtractor):
         self.return_power_rates = return_power_rates
 
         self.factors = [0.25, 1 / 3, 0.5, 2.0, 3.0, 4.0]
-        pr_names = ['1/4', '1/3', '1/2', '2', '3', '4']
+        pr_names = ['1_4', '1_3', '1_2', '2', '3', '4']
         self.pr_names = ['Power_rate_' + n for n in pr_names]
 
     def _trim_lightcurve(self, observations: pd.DataFrame):
