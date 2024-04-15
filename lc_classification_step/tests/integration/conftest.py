@@ -181,7 +181,7 @@ def env_variables_anomaly():
         )
         env_variables_dict = {
             "PRODUCER_SCHEMA_PATH": str(
-                step_schema_path / "output_elasticc.avsc"
+                step_schema_path / "output_ztf.avsc"
             ),
             "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
             "SCRIBE_SCHEMA_PATH": str(

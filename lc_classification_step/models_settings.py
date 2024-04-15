@@ -56,7 +56,6 @@ def ztf_params(model_class: str):
     }
 
 def anomaly_params(model_class: str):
-    print("---------------HERE------------")
     return {
             "PARAMS": {
                 "model_path": os.getenv("MODEL_PATH"),
