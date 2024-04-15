@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{ include = "watchlist_step" }]
 
 [tool.poetry.scripts]
-step = { callable = "scripts.run_step:step" }
+step = "scripts.run_step:step"
 
 [tool.poetry.dependencies]
 python = "~3.11"

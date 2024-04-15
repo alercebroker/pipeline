@@ -6,7 +6,6 @@ from typing import List
 from apf.core.step import GenericStep
 from psycopg.types.json import Jsonb
 
-from . import filters
 from .db.connection import PsqlDatabase
 from .db.match import (
     create_insertion_query,
@@ -14,6 +13,7 @@ from .db.match import (
     update_for_notification,
     update_match_query,
 )
+from .filters import satisfies_filter
 from .strategies import get_strategy
 
 BASE_RADIUS = 30 / 3600
@@ -87,13 +87,6 @@ class WatchlistStep(GenericStep):
                         break
         return res
 
-    def satisfies_filter(self, values: dict, type: str, params: dict) -> bool:
-        match type:
-            case "constant":
-                return filters.constant(values, **params)
-            case _:
-                raise Exception("invalid filter type")
-
     def get_to_notify(
         self, updated_values: list[tuple], filters: list[dict]
     ) -> list[tuple]:
@@ -103,11 +96,8 @@ class WatchlistStep(GenericStep):
             requiered_fields = set(itertools.chain(*filter["fields"].values()))
 
             if available_fields.issuperset(requiered_fields):
-                satisfies_all_filters = all(
-                    map(
-                        lambda f: self.satisfies_filter(values, f["type"], f["params"]),
-                        filter["filters"],
-                    )
+                satisfies_all_filters = satisfies_filter(
+                    values, "all", {"filters": filter["filters"]}
                 )
                 if satisfies_all_filters:
                     to_notify.append((oid, candid, target_id))
