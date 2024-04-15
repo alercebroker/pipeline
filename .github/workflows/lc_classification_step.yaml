@@ -32,6 +32,7 @@ jobs:
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
       TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
       TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
