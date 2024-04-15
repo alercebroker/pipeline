@@ -13,3 +13,87 @@ def test_constant_filter():
 
     with pytest.raises(Exception):
         filters.constant({"mag": 1}, "mag", 10, "l")
+
+
+def test_all_filter():
+    assert filters._all(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 25, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 1, "op": "eq"},
+            },
+        ],
+    )
+    assert not filters._all(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 25, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 2, "op": "eq"},
+            },
+        ],
+    )
+    assert not filters._all(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 100, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 2, "op": "eq"},
+            },
+        ],
+    )
+
+
+def test_any_filter():
+    assert filters._any(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 25, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 1, "op": "eq"},
+            },
+        ],
+    )
+    assert filters._any(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 25, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 2, "op": "eq"},
+            },
+        ],
+    )
+    assert not filters._any(
+        {"mag": 50, "fid": 1},
+        [
+            {
+                "type": "constant",
+                "params": {"field": "mag", "constant": 100, "op": "greater eq"},
+            },
+            {
+                "type": "constant",
+                "params": {"field": "fid", "constant": 2, "op": "eq"},
+            },
+        ],
+    )
