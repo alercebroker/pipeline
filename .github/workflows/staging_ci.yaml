@@ -68,7 +68,7 @@ jobs:
       stage: staging
       extra-args: feature_step
     secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}lc-classifier-step-ztf
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-balto-dagger:
     needs: update-packages-dagger
