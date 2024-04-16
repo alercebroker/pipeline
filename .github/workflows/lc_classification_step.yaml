@@ -19,7 +19,7 @@ jobs:
     with:
       base-folder: "lc_classification_step"
       python-version: "3.8"
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly"
       test-folder: "tests/unit"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -30,13 +30,16 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: "lc_classification_step"
       python-version: "3.8"
       codecov-flags: "" # Do not upload
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly"
       test-folder: "tests/integration"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -47,6 +50,8 @@ jobs:
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
 
   build-lc-classification-balto-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -84,6 +89,16 @@ jobs:
       ref: ${{ github.ref }}
       stage: staging
       extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step --dry-run
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  build-lc-classification-anomaly-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: lc_classification_step_anomaly --build-args=model:anomaly --package-dir=lc_classification_step --dry-run
       submodules: true
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
