@@ -95,7 +95,6 @@ class UpdateObjectCommand(Command):
     
     @staticmethod
     def db_operation(session: Session, data: List):
-        print("\n...........\n object\n")
         #upsert_stmt = update(Object)
         logging.debug("Updating or inserting %s objects", len(data))
         return session.bulk_update_mappings(
@@ -378,7 +377,6 @@ class UpsertXmatchCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: list):
-        print("\n...........\nxmatch\n")
         unique = {(d["oid"], d["catid"]): d for d in data}
         unique = list(unique.values())
         insert_stmt = insert(Xmatch)
