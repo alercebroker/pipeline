@@ -1,7 +1,6 @@
 # Based on the work of Vicente Pedreros
 
-from ..core.base import FeatureExtractor
-from lc_classifier.base import AstroObject
+from ..core.base import FeatureExtractor, AstroObject
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit

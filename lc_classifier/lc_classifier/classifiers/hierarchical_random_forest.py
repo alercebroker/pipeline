@@ -1,19 +1,46 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Union, Tuple
 
-import numpy as np
 import pandas as pd
 import os
 import pickle
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-from lc_classifier.base import AstroObject
-from .base import all_features_from_astro_objects
 from .base import Classifier, NotTrainedException
 from .preprocess import RandomForestPreprocessor
 
 
 class HierarchicalRandomForestClassifier(Classifier):
     version = '2.0.0'
+    class_hierarchy = {
+        'transient': [
+            'SNIa',
+            'SNIbc',
+            'SNIIb',
+            'SNII',
+            'SNIIn',
+            'SLSN',
+            'TDE'
+        ],
+        'periodic': [
+            'LPV',
+            'EA',
+            'EB/EW',
+            'Periodic-Other',
+            'RSCVn',
+            'CEP',
+            'RRLab',
+            'RRLc',
+            'DSCT'
+        ],
+        'stochastic': [
+            'QSO',
+            'AGN',
+            'Blazar',
+            'YSO',
+            'CV/Nova',
+            'Microlensing'  # ulens get confused with stochastic classes
+        ]
+    }
 
     def __init__(self, list_of_classes: List[str]):
         self.list_of_classes = list_of_classes
@@ -23,85 +50,53 @@ class HierarchicalRandomForestClassifier(Classifier):
 
     def classify_batch(
             self,
-            astro_objects: List[AstroObject],
-            return_dataframe: bool = False) -> Optional[pd.DataFrame]:
+            features: pd.DataFrame,
+            return_hierarchy: bool = False
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame]]:
 
         if self.feature_list is None or self.model is None:
             raise NotTrainedException(
                 'This classifier is not trained or has not been loaded')
-        features_df = all_features_from_astro_objects(astro_objects)
-        features_df = features_df[self.feature_list]
+        features_df = features[self.feature_list]
         features_np = self.preprocessor.preprocess_features(
             features_df).values
-        probs_np = self.model.predict_proba(features_np)
-        for object_probs, astro_object in zip(probs_np, astro_objects):
-            data = np.stack(
-                [
-                    self.list_of_classes,
-                    object_probs.flatten()
-                ],
-                axis=-1
-            )
-            object_probs_df = pd.DataFrame(
-                data=data,
-                columns=[['name', 'value']]
-            )
-            object_probs_df['fid'] = None
-            object_probs_df['sid'] = 'ztf'
-            object_probs_df['version'] = self.version
-            astro_object.predictions = object_probs_df
 
-        if return_dataframe:
-            dataframe = pd.DataFrame(
+        predictions = {}
+        for classifier_name, classifier in self.model.items():
+            probs_np = classifier.predict_proba(features_np)
+            df = pd.DataFrame(
                 data=probs_np,
-                columns=self.list_of_classes,
+                columns=classifier.classes_,
                 index=features_df.index
             )
-            return dataframe
+            predictions[classifier_name] = df
 
-    def classify_batch_from_features(self, features_df: pd.DataFrame) -> pd.DataFrame:
-        if self.feature_list is None or self.model is None:
-            raise NotTrainedException(
-                'This classifier is not trained or has not been loaded')
-        features_df = features_df[self.feature_list]
-        features_np = self.preprocessor.preprocess_features(
-            features_df).values
-        probs_np = self.model.predict_proba(features_np)
+        full_probs = pd.concat([
+            predictions['top']['transient'].values.reshape(-1, 1) * predictions['transient'],
+            predictions['top']['stochastic'].values.reshape(-1, 1) * predictions['stochastic'],
+            predictions['top']['periodic'].values.reshape(-1, 1) * predictions['periodic'],
+        ], axis=1)
 
-        dataframe = pd.DataFrame(
-            data=probs_np,
-            columns=self.list_of_classes,
-            index=features_df.index
-        )
-        return dataframe
-
-    def classify_single_object(self, astro_object: AstroObject) -> None:
-        self.classify_batch([astro_object])
+        full_probs = full_probs[self.list_of_classes]
+        if return_hierarchy:
+            return full_probs, predictions
+        else:
+            return full_probs
 
     def fit(
-            self,
-            astro_objects: List[AstroObject],
-            labels: pd.DataFrame,
-            config: Dict):
-
-        assert len(astro_objects) == len(labels)
-        all_features_df = all_features_from_astro_objects(astro_objects)
-        self.fit_from_features(all_features_df, labels, config)
-
-    def fit_from_features(
             self,
             features: pd.DataFrame,
             labels: pd.DataFrame,
             config: Dict):
         self.feature_list = features.columns.values
         training_labels = labels[labels['partition'] == 'training_0']
-        training_features = features.loc[training_labels['aid'].values]
+        training_features = features.loc[training_labels.index]
         training_features = self.preprocessor.preprocess_features(
             training_features)
 
         top_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
-            max_depth=None,
+            max_depth=config["max_depth"],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
@@ -109,15 +104,15 @@ class HierarchicalRandomForestClassifier(Classifier):
 
         stochastic_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
-            max_depth=None,
-            max_features=0.2,
+            max_depth=config["max_depth"],
+            max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
         )
 
-        periodic_classifier = BalancedRandomForestClassifier(
+        periodic_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
-            max_depth=None,
+            max_depth=config["max_depth"],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
@@ -125,23 +120,51 @@ class HierarchicalRandomForestClassifier(Classifier):
 
         transient_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
-            max_depth=None,
+            max_depth=config["max_depth"],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
         )
 
+        transient_mask = training_labels['astro_class'].isin(
+            self.class_hierarchy['transient'])
+        transient_model.fit(
+            training_features[transient_mask].values,
+            training_labels['astro_class'][transient_mask].values
+        )
+
+        periodic_mask = training_labels['astro_class'].isin(
+            self.class_hierarchy['periodic'])
+        periodic_model.fit(
+            training_features[periodic_mask].values,
+            training_labels['astro_class'][periodic_mask].values
+        )
+
+        stochastic_mask = training_labels['astro_class'].isin(
+            self.class_hierarchy['stochastic'])
+        stochastic_model.fit(
+            training_features[stochastic_mask].values,
+            training_labels['astro_class'][stochastic_mask].values
+        )
+
+        inverse_class_hierarchy = {}
+        for k, v in self.class_hierarchy.items():
+            for astro_class in v:
+                inverse_class_hierarchy[astro_class] = k
+
+        top_labels = training_labels['astro_class'].map(
+            inverse_class_hierarchy)
+        top_model.fit(
+            training_features.values,
+            top_labels.values
+        )
+
         self.model = {
             'top': top_model,
             'stochastic': stochastic_model,
-            'periodic': periodic_classifier,
+            'periodic': periodic_model,
             'transient': transient_model
         }
-        # TODO work in progress
-
-        self.model.fit(
-            training_features.values,
-            training_labels['astro_class'].values)
 
     def save_classifier(self, directory: str):
         if self.model is None:
@@ -154,19 +177,19 @@ class HierarchicalRandomForestClassifier(Classifier):
         with open(
                 os.path.join(
                     directory,
-                    'random_forest_model.pkl'),
+                    'hierarchical_random_forest_model.pkl'),
                 'wb') as f:
             pickle.dump(
                 {
                     'feature_list': self.feature_list,
                     'list_of_classes': self.list_of_classes,
-                    'random_forest': self.model
+                    'model': self.model
                 },
                 f
             )
 
     def load_classifier(self, directory: str):
-        loaded_data = pd.read_pickle(os.path.join(directory, 'random_forest_model.pkl'))
+        loaded_data = pd.read_pickle(os.path.join(directory, 'hierarchical_random_forest_model.pkl'))
         self.feature_list = loaded_data['feature_list']
         self.list_of_classes = loaded_data['list_of_classes']
-        self.model = loaded_data['random_forest']
+        self.model = loaded_data['model']

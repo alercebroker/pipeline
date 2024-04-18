@@ -1,17 +1,17 @@
 import os
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from sklearn.metrics import classification_report
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from itertools import product
-from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
+from lc_classifier.classifiers.mlp import MLPClassifier
 from lc_classifier.classifiers.random_forest import RandomForestClassifier
+from lc_classifier.classifiers.hierarchical_random_forest import HierarchicalRandomForestClassifier
 from lc_classifier.classifiers.lightgbm import LightGBMClassifier
 from lc_classifier.classifiers.xgboost import XGBoostClassifier
-from consolidate_features import get_shorten
+# from training import rename_feature
 
 
 dir_name = 'data_231206_ao_features'
@@ -48,44 +48,44 @@ labels_figure_order = [
 ]
 assert set(list_of_classes) == set(labels_figure_order)
 
-classifier_type = 'RandomForest'
-output_filename = 'rf_predictions.parquet'
+classifier_type = 'HierarchicalRandomForest'
 
-compute_predictions = False
+if classifier_type == 'MLP':
+    classifier = MLPClassifier(list_of_classes)
+    classifier.load_classifier('models/mlp_240416_wo_input_drop')
+    predictions_filename = 'mlp_predictions.parquet'
+elif classifier_type == 'RandomForest':
+    classifier = RandomForestClassifier(list_of_classes)
+    classifier.load_classifier('rf_classifier_240307')
+elif classifier_type == 'HierarchicalRandomForest':
+    classifier = HierarchicalRandomForestClassifier(list_of_classes)
+    model_dir = 'models/hrf_classifier_20240418-163923'
+    classifier.load_classifier(model_dir)
+    predictions_filename = os.path.join(
+        model_dir, 'predictions.parquet')
+elif classifier_type == 'LightGBM':
+    classifier = LightGBMClassifier(list_of_classes)
+    classifier.load_classifier('lightgbm_classifier_240311')
+elif classifier_type == 'XGBoost':
+    classifier = XGBoostClassifier(list_of_classes)
+    classifier.load_classifier('xgboost_classifier_240312')
+else:
+    raise ValueError('invalid classifier type')
+
+compute_predictions = True
 if compute_predictions:
-    if classifier_type == 'MLP':
-        classifier = ZTFClassifier(list_of_classes)
-        classifier.load_classifier('ztf_classifier_model_231206')
-    elif classifier_type == 'RandomForest':
-        classifier = RandomForestClassifier(list_of_classes)
-        classifier.load_classifier('rf_classifier_240307')
-    elif classifier_type == 'LightGBM':
-        classifier = LightGBMClassifier(list_of_classes)
-        classifier.load_classifier('lightgbm_classifier_240311')
-    elif classifier_type == 'XGBoost':
-        classifier = XGBoostClassifier(list_of_classes)
-        classifier.load_classifier('xgboost_classifier_240312')
-    else:
-        raise ValueError('invalid classifier type')
+    consolidated_features = pd.read_parquet(
+        os.path.join(dir_name, 'consolidated_features.parquet'))
 
-    data_dir = os.listdir(dir_name)
-    data_dir = [filename for filename in data_dir if 'astro_objects_batch' in filename]
-    # data_dir = [filename for filename in data_dir if len(filename.split('_')) == 4]
-    data_dir = sorted(data_dir)
+    shorten = consolidated_features['shorten']
+    consolidated_features = consolidated_features[[c for c in consolidated_features.columns if c != 'shorten']]
+    # consolidated_features.rename(columns=rename_feature, inplace=True)
+    prediction_df = classifier.classify_batch(consolidated_features)
+    prediction_df['shorten'] = shorten
 
-    predictions = []
-    for batch_filename in tqdm(data_dir):
-        full_filename = os.path.join(dir_name, batch_filename)
-        shorten = get_shorten(full_filename)
-        astro_objects_batch = pd.read_pickle(full_filename)
-        prediction_df = classifier.classify_batch(astro_objects_batch, return_dataframe=True)
-        prediction_df['shorten'] = shorten
-        predictions.append(prediction_df)
+    prediction_df.to_parquet(predictions_filename)
 
-    predictions = pd.concat(predictions, axis=0)
-    predictions.to_parquet(os.path.join(dir_name, output_filename))
-
-predictions = pd.read_parquet(os.path.join(dir_name, output_filename))
+predictions = pd.read_parquet(predictions_filename)
 print(predictions)
 
 

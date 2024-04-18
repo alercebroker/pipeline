@@ -6,8 +6,8 @@ import os
 import pickle
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-from lc_classifier.base import AstroObject
-from .base import all_features_from_astro_objects
+from ..features.core.base import AstroObject
+from ..utils import all_features_from_astro_objects
 from .base import Classifier, NotTrainedException
 from .preprocess import RandomForestPreprocessor
 

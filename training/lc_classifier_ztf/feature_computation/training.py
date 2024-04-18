@@ -1,91 +1,135 @@
+import os
 import pandas as pd
-from lc_classifier.classifiers.ztf_mlp import ZTFClassifier
+import time
+from lc_classifier.classifiers.mlp import MLPClassifier
 from lc_classifier.classifiers.random_forest import RandomForestClassifier
+from lc_classifier.classifiers.hierarchical_random_forest import HierarchicalRandomForestClassifier
 from lc_classifier.classifiers.lightgbm import LightGBMClassifier
 from lc_classifier.classifiers.xgboost import XGBoostClassifier
 
 
-features = pd.read_parquet('data_231206_ao_features/consolidated_features.parquet')
-labels = pd.read_parquet('data_231206_ao_features/partitions.parquet')
+# def rename_feature(feature_name: str):
+#     split_feature_name = feature_name.split('_')
+#     fid_map = {"g": "_1", "r": "_2", "g,r": "_12", 'nan': ""}
+#     band_suffix = fid_map[split_feature_name[-1]]
+#     feature_name = '_'.join(split_feature_name[:-1]) + band_suffix
+#     feature_name = feature_name.replace('-', '_')
+#     feature_name = feature_name.replace('/', '_')
+#     return feature_name
 
-# support for shortened lightcurves
-features.index = (features.index.values + '_' + features['shorten'].astype(str)).values
 
-label_suffixes = features['shorten'].astype(str).unique()
-features = features[[c for c in features.columns if c != 'shorten']]
+if __name__ == '__main__':
 
-label_list = []
-for suffix in label_suffixes:
-    labels_copy = labels.copy()
-    # labels_copy['aid'] += '_' + suffix
-    labels_copy['aid'] = 'aid_' + labels_copy['oid'] + '_' + suffix
-    label_list.append(labels_copy)
+    features = pd.read_parquet('data_231206_ao_features/consolidated_features.parquet')
+    labels = pd.read_parquet('data_231206_ao_features/partitions.parquet')
 
-labels = pd.concat(label_list, axis=0)
+    # support for shortened lightcurves
+    features.index = (features.index.values + '_' + features['shorten'].astype(str)).values
 
-labels.rename(columns={'alerceclass': 'astro_class'}, inplace=True)
-list_of_classes = labels['astro_class'].unique()
-list_of_classes.sort()
+    label_suffixes = features['shorten'].astype(str).unique()
+    features = features[[c for c in features.columns if c != 'shorten']]
 
-classifier_type = 'XGBoost'
-if classifier_type == 'MLP':
-    ztf_classifier = ZTFClassifier(list_of_classes)
-    config = {
-        'learning_rate': 1e-4,
-        'batch_size': 4096
-    }
-    ztf_classifier.fit_from_features(features, labels, config)
-    ztf_classifier.save_classifier('ztf_classifier_model_231206')
-elif classifier_type == 'RandomForest':
-    classifier = RandomForestClassifier(list_of_classes)
-    config = {
-        'n_trees': 500,
-        'n_jobs': 8,
-        'verbose': 11
-    }
-    classifier.fit_from_features(features, labels, config)
+    # rename features to match avro schema
+    # features.rename(columns=rename_feature, inplace=True)
 
-    test_labels = labels[labels['partition'] == 'test']
-    test_features = features.loc[test_labels['aid'].values]
+    label_list = []
+    for suffix in label_suffixes:
+        labels_copy = labels.copy()
+        # labels_copy['aid'] += '_' + suffix
+        labels_copy['aid'] = 'aid_' + labels_copy['oid'] + '_' + suffix
+        label_list.append(labels_copy)
 
-    test_probs = classifier.classify_batch_from_features(test_features)
-    test_labels.set_index('aid', inplace=True)
-    a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
-    acc = a.groupby('astro_class').apply(
-        lambda x: (x['astro_class'] == x[0]).astype(float).mean()
-    )
-    print(acc)
+    labels = pd.concat(label_list, axis=0)
 
-    classifier.save_classifier('rf_classifier_240307')
-elif classifier_type == 'LightGBM':
-    classifier = LightGBMClassifier(list_of_classes)
-    config = {}
-    classifier.fit_from_features(features, labels, config)
+    labels.rename(columns={'alerceclass': 'astro_class'}, inplace=True)
+    labels.set_index('aid', inplace=True)
+    list_of_classes = labels['astro_class'].unique()
+    list_of_classes.sort()
 
-    test_labels = labels[labels['partition'] == 'test']
-    test_features = features.loc[test_labels['aid'].values]
+    classifier_type = 'HierarchicalRandomForest'
+    models_dir = "models"
+    timestr = time.strftime("%Y%m%d-%H%M%S")
 
-    test_probs = classifier.classify_batch_from_features(test_features)
-    test_labels.set_index('aid', inplace=True)
-    a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
-    acc = a.groupby('astro_class').apply(
-        lambda x: (x['astro_class'] == x[0]).astype(float).mean()
-    )
-    print(acc)
-    classifier.save_classifier('lightgbm_classifier_240311')
-elif classifier_type == 'XGBoost':
-    classifier = XGBoostClassifier(list_of_classes)
-    config = {}
-    classifier.fit_from_features(features, labels, config)
+    if classifier_type == 'MLP':
+        ztf_classifier = MLPClassifier(list_of_classes)
+        config = {
+            'learning_rate': 1e-4,
+            'batch_size': 4096
+        }
+        ztf_classifier.fit(features, labels, config)
+        ztf_classifier.save_classifier(
+            os.path.join(models_dir, f'mlp_{timestr}'))
+    elif classifier_type == 'RandomForest':
+        classifier = RandomForestClassifier(list_of_classes)
+        config = {
+            'n_trees': 500,
+            'n_jobs': 8,
+            'verbose': 11
+        }
+        classifier.fit_from_features(features, labels, config)
 
-    test_labels = labels[labels['partition'] == 'test']
-    test_features = features.loc[test_labels['aid'].values]
+        test_labels = labels[labels['partition'] == 'test']
+        test_features = features.loc[test_labels['aid'].values]
 
-    test_probs = classifier.classify_batch_from_features(test_features)
-    test_labels.set_index('aid', inplace=True)
-    a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
-    acc = a.groupby('astro_class').apply(
-        lambda x: (x['astro_class'] == x[0]).astype(float).mean()
-    )
-    print(acc)
-    classifier.save_classifier('xgboost_classifier_240312')
+        test_probs = classifier.classify_batch_from_features(test_features)
+        test_labels.set_index('aid', inplace=True)
+        a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
+        acc = a.groupby('astro_class').apply(
+            lambda x: (x['astro_class'] == x[0]).astype(float).mean()
+        )
+        print(acc)
+
+        classifier.save_classifier('rf_classifier_240307')
+    elif classifier_type == 'HierarchicalRandomForest':
+        classifier = HierarchicalRandomForestClassifier(list_of_classes)
+        config = {
+            'n_trees': 500,
+            'max_depth': 10,
+            'n_jobs': 8,
+            'verbose': 11
+        }
+        classifier.fit(features, labels, config)
+
+        test_labels = labels[labels['partition'] == 'test']
+        test_features = features.loc[test_labels.index]
+
+        test_probs = classifier.classify_batch(test_features)
+        a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
+        acc = a.groupby('astro_class').apply(
+            lambda x: (x['astro_class'] == x[0]).astype(float).mean()
+        )
+        print(acc)
+        classifier.save_classifier(
+            os.path.join(models_dir, f'hrf_classifier_{timestr}'))
+    elif classifier_type == 'LightGBM':
+        classifier = LightGBMClassifier(list_of_classes)
+        config = {}
+        classifier.fit_from_features(features, labels, config)
+
+        test_labels = labels[labels['partition'] == 'test']
+        test_features = features.loc[test_labels['aid'].values]
+
+        test_probs = classifier.classify_batch_from_features(test_features)
+        test_labels.set_index('aid', inplace=True)
+        a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
+        acc = a.groupby('astro_class').apply(
+            lambda x: (x['astro_class'] == x[0]).astype(float).mean()
+        )
+        print(acc)
+        classifier.save_classifier('lightgbm_classifier_240311')
+    elif classifier_type == 'XGBoost':
+        classifier = XGBoostClassifier(list_of_classes)
+        config = {}
+        classifier.fit_from_features(features, labels, config)
+
+        test_labels = labels[labels['partition'] == 'test']
+        test_features = features.loc[test_labels['aid'].values]
+
+        test_probs = classifier.classify_batch_from_features(test_features)
+        test_labels.set_index('aid', inplace=True)
+        a = pd.concat([test_labels, test_probs.idxmax(axis=1)], axis=1)
+        acc = a.groupby('astro_class').apply(
+            lambda x: (x['astro_class'] == x[0]).astype(float).mean()
+        )
+        print(acc)
+        classifier.save_classifier('xgboost_classifier_240312')

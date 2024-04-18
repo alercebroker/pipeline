@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
-from lc_classifier.base import AstroObject, empty_normal_dataframe
+from lc_classifier.features.core.base import AstroObject, empty_normal_dataframe
 from typing import List
 
 
