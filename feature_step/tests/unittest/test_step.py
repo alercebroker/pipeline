@@ -77,7 +77,8 @@ class StepTestCase(unittest.TestCase):
         scribe_producer_call_count = (
             self.step.scribe_producer.produce.call_count
         )
-        self.assertEqual(scribe_producer_call_count, len(messages))
+        # 2 times the len of messages 1 for objects and 1 for features
+        self.assertEqual(scribe_producer_call_count, len(messages) * 2)
 
     def test_tough_examples(self):
         messages = spm_messages
@@ -98,4 +99,5 @@ class StepTestCase(unittest.TestCase):
         scribe_producer_call_count = (
             self.step.scribe_producer.produce.call_count
         )
-        self.assertEqual(scribe_producer_call_count, len(messages))
+        # 2 times the len of messages 1 for objects and 1 for features
+        self.assertEqual(scribe_producer_call_count, len(messages) * 2)
