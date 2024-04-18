@@ -60,7 +60,7 @@ class FeatureStep(GenericStep):
             if count_objs == len(update_object_cmds):
                 flush = True
             self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
-        
+
         count_fatures = 0
         flush = False
         for command in update_features_cmds:
