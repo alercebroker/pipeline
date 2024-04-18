@@ -3,6 +3,7 @@ from .exceptions import WrongFormatCommandException
 from .commands import (
     Command,
     InsertObjectCommand,
+    UpdateObjectCommand,
     InsertDetectionsCommand,
     InsertForcedPhotometryCommand,
     UpdateObjectStatsCommand,
@@ -49,6 +50,8 @@ def command_factory(msg: str) -> Command:
     # here it comes
     if type_ == "insert" and table == "object":
         return InsertObjectCommand(**message)
+    if type_ == "update" and table == "object" and "xmatch" not in message["data"]:
+        return UpdateObjectCommand(**message)
     if type_ == "update" and table == "detection":
         return InsertDetectionsCommand(**message)
     if type_ == "upsert" and table == "magstats":

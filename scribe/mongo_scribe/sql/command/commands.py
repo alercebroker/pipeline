@@ -55,6 +55,52 @@ class InsertObjectCommand(Command):
             insert(Object).values(data).on_conflict_do_nothing()
         )
 
+class UpdateObjectCommand(Command):
+    type = ValidCommands.update_object
+    valid_attributes = set([
+        "ndethist",
+        "ncovhist",
+        "mjdstarthist",
+        "mjdendhist",
+        "corrected",
+        "stellar",
+        "ndet",
+        "g_r_max",
+        "g_r_max_corr",
+        "g_r_mean",
+        "g_r_mean_corr",
+        "meanra",
+        "meandec",
+        "sigmara",
+        "sigmadec",
+        "deltajd",
+        "firstmjd",
+        "lastmjd",
+        "step_id_corr", 
+        "diffpos",
+    ])
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+
+        if not set(data.keys()).issubset(self.valid_attributes):
+            bad_inputs = set(data.keys()).difference(self.valid_attributes)
+            raise ValueError(f"Invalid keys provided {bad_inputs}")
+        
+    def _format_data(self, data):
+        return {
+            "oid": self.criteria["oid"],
+            **data
+        }
+    
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        print("\n...........\n object\n")
+        #upsert_stmt = update(Object)
+        logging.debug("Updating or inserting %s objects", len(data))
+        return session.bulk_update_mappings(
+            Object, data
+        )
 
 class InsertDetectionsCommand(Command):
     type = ValidCommands.insert_detections
@@ -332,6 +378,7 @@ class UpsertXmatchCommand(Command):
 
     @staticmethod
     def db_operation(session: Session, data: list):
+        print("\n...........\nxmatch\n")
         unique = {(d["oid"], d["catid"]): d for d in data}
         unique = list(unique.values())
         insert_stmt = insert(Xmatch)
