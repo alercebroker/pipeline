@@ -70,8 +70,8 @@ def mbappe_params(model_class: str):
     return {
             "PARAMS": {
                 "model_path": os.getenv("MODEL_PATH"),
-                "feature_quantiles_path": os.getenv("FEATURE_QUANTILES_PATH"),
-                "header_quantiles_path": os.getenv("HEADER_QUANTILES_PATH"),
+                "features_quantiles_path": os.getenv("FEATURE_QUANTILES_PATH"),
+                "metadata_quantiles_path": os.getenv("HEADER_QUANTILES_PATH"),
                 "mapper": os.getenv("MAPPER_CLASS"),
             },
             "CLASS": model_class,

@@ -25,12 +25,12 @@ def test_step_mbappe_result(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_ANOMALY_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_ANOMALY_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
             ),
             "HEADER_QUANTILES_PATH": os.getenv(
-                "HEADER_QUANTILES_PATH"
+                "TEST_MBAPPE_HEADER_QUANTILES_PATH"
             ),
             "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
         },
@@ -38,7 +38,7 @@ def test_step_mbappe_result(
 
     from settings import config
 
-    kconsumer = kafka_consumer("anomaly")
+    kconsumer = kafka_consumer("mbappe")
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=config())
@@ -67,12 +67,12 @@ def test_step_mbappe_no_features_result(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_ANOMALY_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_ANOMALY_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
             ),
             "HEADER_QUANTILES_PATH": os.getenv(
-                "HEADER_QUANTILES_PATH"
+                "TEST_MBAPPE_HEADER_QUANTILES_PATH"
             ),
             "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
         },
@@ -80,7 +80,7 @@ def test_step_mbappe_no_features_result(
 
     from settings import config
 
-    kconsumer = kafka_consumer("anomaly")
+    kconsumer = kafka_consumer("mbappe")
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=config())
