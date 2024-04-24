@@ -72,7 +72,7 @@ elif classifier_type == 'XGBoost':
 else:
     raise ValueError('invalid classifier type')
 
-compute_predictions = True
+compute_predictions = False
 if compute_predictions:
     consolidated_features = pd.read_parquet(
         os.path.join(dir_name, 'consolidated_features.parquet'))

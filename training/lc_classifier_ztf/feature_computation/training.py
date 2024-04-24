@@ -82,11 +82,24 @@ if __name__ == '__main__':
         classifier.save_classifier('rf_classifier_240307')
     elif classifier_type == 'HierarchicalRandomForest':
         classifier = HierarchicalRandomForestClassifier(list_of_classes)
+
+        sampling_strategy = {
+            'Top': dict(zip(
+                ['transient', 'periodic', 'stochastic'],
+                [1_000*len(label_suffixes)]*3)),
+            'Transient': 'auto',
+            'Periodic': dict(zip(
+                classifier.class_hierarchy['periodic'],
+                [200*len(label_suffixes)]*len(classifier.class_hierarchy['periodic']))),
+            'Stochastic': 'auto'
+        }
+
         config = {
             'n_trees': 500,
             'max_depth': 10,
             'n_jobs': 8,
-            'verbose': 11
+            'verbose': 11,
+            'sampling': sampling_strategy
         }
         classifier.fit(features, labels, config)
 

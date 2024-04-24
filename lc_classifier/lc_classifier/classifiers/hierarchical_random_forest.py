@@ -97,6 +97,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         top_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
             max_depth=config["max_depth"],
+            sampling_strategy=config['sampling']['Top'],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
@@ -105,6 +106,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         stochastic_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
             max_depth=config["max_depth"],
+            sampling_strategy=config['sampling']['Stochastic'],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
@@ -113,6 +115,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         periodic_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
             max_depth=config["max_depth"],
+            sampling_strategy=config['sampling']['Periodic'],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
@@ -121,6 +124,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         transient_model = BalancedRandomForestClassifier(
             n_estimators=config['n_trees'],
             max_depth=config["max_depth"],
+            sampling_strategy=config['sampling']['Transient'],
             max_features="sqrt",
             n_jobs=config['n_jobs'],
             verbose=config['verbose']
