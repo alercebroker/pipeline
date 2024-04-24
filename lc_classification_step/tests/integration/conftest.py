@@ -329,6 +329,7 @@ def produce_messages():
 def _produce_messages(
     topic, SCHEMA, SCHEMA_PATH, force_empty_features, force_missing_features
 ):
+    BANDS = ["g", "r"]
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -345,6 +346,7 @@ def _produce_messages(
             det["oid"] = message["oid"]
             det["candid"] = random.randint(0, 100000)
             det["extra_fields"] = generate_extra_fields()
+            det["fid"] = random.choice(BANDS)
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         if topic == "features_ztf":
