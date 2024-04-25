@@ -214,7 +214,7 @@ def env_variables_anomaly():
     os.environ = env_copy
 
 @pytest.fixture
-def env_variables_anomaly():
+def env_variables_mbappe():
     env_copy = os.environ.copy()
 
     def set_env_variables(
@@ -239,7 +239,7 @@ def env_variables_anomaly():
             "CONSUMER_TOPICS": "features_mbappe",
             "CONSUMER_GROUP_ID": random_string,
             "PRODUCER_SERVER": "localhost:9092",
-            "PRODUCER_TOPIC_FORMAT": f"lc_classifier_{model}%s",
+            "PRODUCER_TOPIC_FORMAT": "lc_classifier_mbappe%s",
             "PRODUCER_DATE_FORMAT": "%Y%m%d",
             "PRODUCER_CHANGE_HOUR": "23",
             "PRODUCER_RETENTION_DAYS": "1",

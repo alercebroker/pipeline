@@ -16,12 +16,12 @@ from tests.test_commons import (
 def test_step_mbappe_result(
     kafka_service,
     produce_messages,
-    env_variables_anomaly,
+    env_variables_mbappe,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     produce_messages("features_mbappe")
-    env_variables_anomaly(
+    env_variables_mbappe(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
@@ -58,12 +58,12 @@ def test_step_mbappe_result(
 def test_step_mbappe_no_features_result(
     kafka_service,
     produce_messages,
-    env_variables_anomaly,
+    env_variables_mbappe,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     produce_messages("features_mbappe", force_missing_features=True)
-    env_variables_anomaly(
+    env_variables_mbappe(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
@@ -78,7 +78,7 @@ def test_step_mbappe_no_features_result(
         },
     )
 
-    from settings import config
+    from settings import config 
 
     kconsumer = kafka_consumer("mbappe")
     sconsumer = scribe_consumer()
