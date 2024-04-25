@@ -214,54 +214,6 @@ def env_variables_anomaly():
     os.environ = env_copy
 
 @pytest.fixture
-def env_variables_mbappe():
-    env_copy = os.environ.copy()
-
-    def set_env_variables(
-        model: str,
-        model_class: str,
-        extra_env_vars: dict = {},
-    ):
-        random_string = uuid.uuid4().hex
-        step_schema_path = pathlib.Path(
-            pathlib.Path(__file__).parent.parent.parent.parent,
-            "schemas/lc_classification_step",
-        )
-        env_variables_dict = {
-            "PRODUCER_SCHEMA_PATH": str(
-                step_schema_path / "output_ztf.avsc"
-            ),
-            "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
-            "SCRIBE_SCHEMA_PATH": str(
-                step_schema_path / "../scribe_step/scribe.avsc"
-            ),
-            "CONSUMER_SERVER": "localhost:9092",
-            "CONSUMER_TOPICS": "features_mbappe",
-            "CONSUMER_GROUP_ID": random_string,
-            "PRODUCER_SERVER": "localhost:9092",
-            "PRODUCER_TOPIC_FORMAT": "lc_classifier_mbappe%s",
-            "PRODUCER_DATE_FORMAT": "%Y%m%d",
-            "PRODUCER_CHANGE_HOUR": "23",
-            "PRODUCER_RETENTION_DAYS": "1",
-            "SCRIBE_SERVER": "localhost:9092",
-            "METRICS_HOST": "localhost:9092",
-            "METRICS_TOPIC": "metrics",
-            "SCRIBE_TOPIC": "w_object",
-            "CONSUME_MESSAGES": "5",
-            "ENABLE_PARTITION_EOF": "True",
-            "STREAM": "elasticc",
-            "MODEL_CLASS": model_class,
-            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
-            "STEP_PARSER_CLASS": "lc_classification.core.parsers.anomaly_parser.AnomalyParser",
-        }
-        env_variables_dict.update(extra_env_vars)
-        for key, value in env_variables_dict.items():
-            os.environ[key] = value
-
-    yield set_env_variables
-    os.environ = env_copy
-
-@pytest.fixture
 def env_variables_elasticc():
     env_copy = os.environ.copy()
 
@@ -329,7 +281,6 @@ def produce_messages():
 def _produce_messages(
     topic, SCHEMA, SCHEMA_PATH, force_empty_features, force_missing_features
 ):
-    BANDS = ["g", "r"]
     producer = KafkaProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
@@ -346,7 +297,6 @@ def _produce_messages(
             det["oid"] = message["oid"]
             det["candid"] = random.randint(0, 100000)
             det["extra_fields"] = generate_extra_fields()
-            det["fid"] = random.choice(BANDS)
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         if topic == "features_ztf":
