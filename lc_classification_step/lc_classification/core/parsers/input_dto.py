@@ -52,14 +52,8 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
         pd.DataFrame.from_records(msg["detections"]) for msg in messages
     ]
     detections = pd.concat(detections)
-    print("---------------- creando input dto")
-    print(detections.columns)
-    print("-------------- fin------")
     detections.drop_duplicates(["candid", "oid"], inplace=True)
     detections = detections.set_index("oid")
-    print("---------------- 2 step input dto")
-    print(detections.index)
-    print("-------------- fin------")
     detections["extra_fields"] = parse_extra_fields(detections)
 
     if detections is not None:
