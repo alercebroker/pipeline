@@ -1,6 +1,5 @@
 # LC Classifier
 
-
 ## Description
 - Classification with Lightcurve Features
 - There are 4 models that can be run in this step
