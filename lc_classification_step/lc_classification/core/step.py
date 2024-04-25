@@ -10,10 +10,10 @@ from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
 
+
 ZTF_CLASSIFIER_CLASS = (
     "lc_classifier.classifier.models.HierarchicalRandomForest"
 )
-
 
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used
