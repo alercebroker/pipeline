@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "24.4.2a7"
+version = "24.4.2a21"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
@@ -41,6 +41,12 @@ optional = true
 [tool.poetry.group.elasticc]
 optional = true
 
+[tool.poetry.group.anomaly]
+optional = true
+
+[tool.poetry.group.mbappe]
+optional = true
+
 [tool.poetry.group.ztf.dependencies]
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
 
@@ -61,6 +67,12 @@ alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = 
 
 [tool.poetry.group.elasticc.dependencies]
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
+
+[tool.poetry.group.anomaly.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["anomaly"] }
+
+[tool.poetry.group.mbappe.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mbappe"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"

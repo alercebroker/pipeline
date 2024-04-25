@@ -184,6 +184,7 @@ class LateClassifier(GenericStep):
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
+
         else:
             self.consumer.__del__()
         self.producer.__del__()
