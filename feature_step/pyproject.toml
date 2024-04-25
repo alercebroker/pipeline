@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "feature-step"
-version = "24.3.19a24"
+version = "24.3.19a25"
 description = "Feature step"
 authors = ["Ignacio Reyes"]
 readme = "README.md"
