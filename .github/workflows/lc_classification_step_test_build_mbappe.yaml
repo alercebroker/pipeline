@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "lc_classification_step/**"
+      - "!lc_classification_step/README.md"
+
+jobs:
+
+  # build-lc-classification-balto-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  # build-lc-classification-mlp-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  # build-lc-classification-messi-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  # build-lc-classification-ztf-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+
+  build-lc-classification-mbappe-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: lc_classification_step_mbappe --build-args=model:mbappe --package-dir=lc_classification_step
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
