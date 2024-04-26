@@ -69,15 +69,15 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-mlp-dagger:
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      ref: ${{ github.ref }}
-      stage: staging
-      extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step --dry-run
-      submodules: true
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # build-lc-classification-mlp-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step --dry-run
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-messi-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -89,15 +89,15 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-ztf-dagger:
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      ref: ${{ github.ref }}
-      stage: staging
-      extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step --dry-run
-      submodules: true
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # build-lc-classification-ztf-dagger:
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     ref: ${{ github.ref }}
+  #     stage: staging
+  #     extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step --dry-run
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-anomaly-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
