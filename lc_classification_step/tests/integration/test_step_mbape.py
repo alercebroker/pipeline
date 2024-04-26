@@ -25,7 +25,7 @@ def test_step_mbappe_result(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
             "FEATURE_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
             ),
@@ -67,7 +67,7 @@ def test_step_mbappe_no_features_result(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
             "FEATURE_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
             ),
@@ -78,7 +78,7 @@ def test_step_mbappe_no_features_result(
         },
     )
 
-    from settings import config 
+    from settings import config
 
     kconsumer = kafka_consumer("mbappe")
     sconsumer = scribe_consumer()

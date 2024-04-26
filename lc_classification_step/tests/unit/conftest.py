@@ -102,6 +102,20 @@ def anomaly_config():
     }
 
 
+def squidward_config():
+    return {
+        "MODEL_CONFIG": {
+            "PARAMS": {
+                "model_path": mock.MagicMock(),
+            },
+            "CLASS": "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
+            "MAPPER_CLASS": "alerce_classifiers.squidward.mapper.SquidwardMapper",
+            "NAME": "squidward",
+        },
+        "STEP_PARSER_CLASS": "lc_classification.core.parsers.anomaly_parser.AnomalyParser",
+    }
+
+
 def messi_config():
     return {
         "MODEL_CONFIG": {
@@ -188,6 +202,26 @@ def ztf_model_output():
 
 @pytest.fixture
 def ztf_anomaly_model_output():
+    def output_factory(messages_ztf, model):
+        oids = [message["oid"] for message in messages_ztf]
+        df = DataFrame(
+            {
+                "C1": [1.0] * len(oids),
+                "C2": [0.0] * len(oids),
+                "NotClassified": [0.0] * len(oids),
+                "oid": oids,
+            },
+        )
+        df.set_index("oid", inplace=True)
+        model.predict.return_value = OutputDTO(
+            df, {"top": DataFrame(), "children": {}}
+        )
+
+    return output_factory
+
+
+@pytest.fixture
+def ztf_squidward_model_output():
     def output_factory(messages_ztf, model):
         oids = [message["oid"] for message in messages_ztf]
         df = DataFrame(
@@ -324,6 +358,20 @@ def step_factory_anomaly(ztf_anomaly_model_output):
         model_mock = mock.MagicMock()
         model_mock.can_predict.return_value = (True, "")
         ztf_anomaly_model_output(messages, model_mock)
+        step = step_factory(messages, config, model=model_mock)
+        return step
+
+    return factory
+
+
+@pytest.fixture
+def step_factory_squidward(ztf_squidward_model_output):
+    def factory(messages):
+        config = base_config.copy()
+        config.update(anomaly_config())
+        model_mock = mock.MagicMock()
+        model_mock.can_predict.return_value = (True, "")
+        ztf_squidward_model_output(messages, model_mock)
         step = step_factory(messages, config, model=model_mock)
         return step
 

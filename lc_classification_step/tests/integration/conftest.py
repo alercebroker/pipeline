@@ -165,6 +165,7 @@ def env_variables_ztf():
     yield set_env_variables
     os.environ = env_copy
 
+
 @pytest.fixture
 def env_variables_anomaly():
     env_copy = os.environ.copy()
@@ -180,9 +181,7 @@ def env_variables_anomaly():
             "schemas/lc_classification_step",
         )
         env_variables_dict = {
-            "PRODUCER_SCHEMA_PATH": str(
-                step_schema_path / "output_ztf.avsc"
-            ),
+            "PRODUCER_SCHEMA_PATH": str(step_schema_path / "output_ztf.avsc"),
             "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
             "SCRIBE_SCHEMA_PATH": str(
                 step_schema_path / "../scribe_step/scribe.avsc"
@@ -213,6 +212,7 @@ def env_variables_anomaly():
     yield set_env_variables
     os.environ = env_copy
 
+
 @pytest.fixture
 def env_variables_mbappe():
     env_copy = os.environ.copy()
@@ -228,9 +228,7 @@ def env_variables_mbappe():
             "schemas/lc_classification_step",
         )
         env_variables_dict = {
-            "PRODUCER_SCHEMA_PATH": str(
-                step_schema_path / "output_ztf.avsc"
-            ),
+            "PRODUCER_SCHEMA_PATH": str(step_schema_path / "output_ztf.avsc"),
             "METRICS_SCHEMA_PATH": str(step_schema_path / "metrics.json"),
             "SCRIBE_SCHEMA_PATH": str(
                 step_schema_path / "../scribe_step/scribe.avsc"
@@ -260,6 +258,7 @@ def env_variables_mbappe():
 
     yield set_env_variables
     os.environ = env_copy
+
 
 @pytest.fixture
 def env_variables_elasticc():
