@@ -51,8 +51,4 @@ jobs:
       - name: Run dagger pipeline
         run: |
           cd ci
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           poetry run python main.py build direct ${{ inputs.extra-args }} --stage=${{ inputs.stage }}
