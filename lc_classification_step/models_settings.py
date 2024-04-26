@@ -66,6 +66,18 @@ def anomaly_params(model_class: str):
             "NAME": model_class.split(".")[-1],
         }
 
+def mbappe_params(model_class: str):
+    return {
+            "PARAMS": {
+                "model_path": os.getenv("MODEL_PATH"),
+                "features_quantiles_path": os.getenv("FEATURE_QUANTILES_PATH"),
+                "metadata_quantiles_path": os.getenv("HEADER_QUANTILES_PATH"),
+                "mapper": os.getenv("MAPPER_CLASS"),
+            },
+            "CLASS": model_class,
+            "NAME": model_class.split(".")[-1],
+        }
+
 def configurator(model_class: str):
     if model_class.endswith("BaltoClassifier"):
         return balto_params(model_class)
@@ -75,6 +87,8 @@ def configurator(model_class: str):
         return toretto_params(model_class)
     if model_class.endswith("AnomalyDetector"):
         return anomaly_params(model_class)
+    if model_class.endswith("MbappeClassifier"):
+        return mbappe_params(model_class)
     if model_class.endswith(
         "RandomForestFeaturesHeaderClassifier"
     ) or model_class.endswith("TinkyWinkyClassifier"):
