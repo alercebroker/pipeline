@@ -14,7 +14,6 @@ ZTF_CLASSIFIER_CLASS = (
     "lc_classifier.classifier.models.HierarchicalRandomForest"
 )
 
-
 class LateClassifier(GenericStep):
     """Light Curve Classification Step, for a description of the algorithm used
     to process check the `execute()` method.

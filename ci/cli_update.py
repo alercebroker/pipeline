@@ -2,7 +2,7 @@ import typer
 from typing_extensions import Annotated
 from typing import List, Optional
 
-from build import update_packages
+from builder import update_packages
 from utils import Stage
 
 app = typer.Typer(
