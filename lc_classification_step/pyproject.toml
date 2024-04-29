@@ -68,6 +68,9 @@ alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = 
 [tool.poetry.group.mbappe.dependencies]
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mbappe"] }
 
+[tool.poetry.group.squidward.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
+
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"
  

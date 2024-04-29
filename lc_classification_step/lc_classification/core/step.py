@@ -66,6 +66,8 @@ class LateClassifier(GenericStep):
             config["STEP_PARSER_CLASS"]
         )()
 
+        print("HERE")
+
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
             result[0],

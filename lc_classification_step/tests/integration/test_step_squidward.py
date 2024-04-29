@@ -16,12 +16,12 @@ from tests.test_commons import (
 def test_step_squidward_result(
     kafka_service,
     produce_messages,
-    env_variables_anomaly,
+    env_variables_squidward,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     produce_messages("features_squidward")
-    env_variables_anomaly(
+    env_variables_squidward(
         "squidward",
         "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
         {
@@ -52,12 +52,12 @@ def test_step_squidward_result(
 def test_step_squidward_no_features_result(
     kafka_service,
     produce_messages,
-    env_variables_anomaly,
+    env_variables_squidward,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
     produce_messages("features_squidward", force_missing_features=True)
-    env_variables_anomaly(
+    env_variables_squidward(
         "squidward",
         "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
         {

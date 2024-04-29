@@ -86,6 +86,7 @@ def squidward_params(model_class: str):
     return {
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),
+            "mapper": os.getenv("MAPPER_CLASS"),
         },
         "CLASS": model_class,
         "NAME": model_class.split(".")[-1],
