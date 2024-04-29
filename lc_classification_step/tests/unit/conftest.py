@@ -423,3 +423,26 @@ def test_anomaly_model():
                 assert_ztf_object_is_correct(obj)
 
     return test_model
+
+
+@pytest.fixture
+def test_squidward_model():
+    def test_model(factory, messages_ztf):
+        step = factory(messages_ztf)
+        step.start()
+        predictor_calls = step.model.predict.mock_calls
+        assert len(predictor_calls) > 0
+        scribe_calls = step.scribe_producer.mock_calls
+        for call in scribe_calls:
+            message = loads(call.args[0]["payload"])
+            assert_command_is_correct(message)
+
+        # Test producer produces correct data
+        calls = step.producer.mock_calls
+        assert len(calls) == len(messages_ztf) + 1  # beause call __del__
+        for call in calls:
+            if len(call.args) > 1:  # because of __del__
+                obj = call.args[0]
+                assert_ztf_object_is_correct(obj)
+
+    return test_model

@@ -13,32 +13,26 @@ from tests.test_commons import (
 
 
 @pytest.mark.ztf
-def test_step_mbappe_result(
+def test_step_squidward_result(
     kafka_service,
     produce_messages,
-    env_variables_mbappe,
+    env_variables_anomaly,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    produce_messages("features_mbappe")
-    env_variables_mbappe(
-        "mbape",
-        "alerce_classifiers.mbappe.model.MbappeClassifier",
+    produce_messages("features_squidward")
+    env_variables_anomaly(
+        "squidward",
+        "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
-            "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
-            ),
-            "HEADER_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_METADATA_QUANTILES_PATH"
-            ),
-            "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
+            "MODEL_PATH": os.getenv("TEST_SQUIDWARD_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.squidward.mapper.SquidwardMapper",
         },
     )
 
     from settings import config
 
-    kconsumer = kafka_consumer("mbappe")
+    kconsumer = kafka_consumer("squidward")
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=config())
@@ -55,32 +49,26 @@ def test_step_mbappe_result(
 
 
 @pytest.mark.ztf
-def test_step_mbappe_no_features_result(
+def test_step_squidward_no_features_result(
     kafka_service,
     produce_messages,
-    env_variables_mbappe,
+    env_variables_anomaly,
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-    produce_messages("features_mbappe", force_missing_features=True)
-    env_variables_mbappe(
-        "mbape",
-        "alerce_classifiers.mbappe.model.MbappeClassifier",
+    produce_messages("features_squidward", force_missing_features=True)
+    env_variables_anomaly(
+        "squidward",
+        "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
-            "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
-            ),
-            "HEADER_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_METADATA_QUANTILES_PATH"
-            ),
-            "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
+            "MODEL_PATH": os.getenv("TEST_SQUIDWARD_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.squidward.mapper.SquidwardMapper",
         },
     )
 
     from settings import config
 
-    kconsumer = kafka_consumer("mbappe")
+    kconsumer = kafka_consumer("squidward")
     sconsumer = scribe_consumer()
 
     step = LateClassifier(config=config())
