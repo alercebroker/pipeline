@@ -6,8 +6,7 @@ from astropy.coordinates import get_body_barycentric
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 
-from lc_classifier.base import AstroObject
-from ..core.base import LightcurvePreprocessor
+from ..core.base import LightcurvePreprocessor, AstroObject
 
 
 class ZTFLightcurvePreprocessor(LightcurvePreprocessor):

@@ -6,7 +6,7 @@ from apf.core import get_class
 from apf.core.step import GenericStep
 from apf.consumers import KafkaConsumer
 
-from lc_classifier.base import AstroObject
+from lc_classifier.features.core.base import AstroObject
 from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 
