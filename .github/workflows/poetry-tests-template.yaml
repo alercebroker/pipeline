@@ -73,7 +73,10 @@ on:
       TEST_MBAPPE_FEATURE_QUANTILES_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
-      TEST_MBAPPE_HEADER_QUANTILES_PATH:
+      TEST_MBAPPE_METADATA_QUANTILES_PATH:
+        required: false
+        description: 'A path to a folder containing .pkl file'
+      TEST_SQUIDWARD_MODEL_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
 
@@ -94,7 +97,8 @@ jobs:
       TEST_ANOMALY_MODEL_PATH: ${{ secrets.TEST_ANOMALY_MODEL_PATH }}
       TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
       TEST_MBAPPE_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURE_QUANTILES_PATH }}"
-      TEST_MBAPPE_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_HEADER_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
