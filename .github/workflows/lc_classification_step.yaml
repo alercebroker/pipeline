@@ -34,7 +34,8 @@ jobs:
       TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
       TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
       TEST_MBAPPE_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURE_QUANTILES_PATH }}"
-      TEST_MBAPPE_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_HEADER_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
 
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -42,7 +43,7 @@ jobs:
       base-folder: "lc_classification_step"
       python-version: "3.10"
       codecov-flags: "" # Do not upload
-      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe"
+      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe --with squidward"
       test-folder: "tests/integration"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -57,7 +58,8 @@ jobs:
       TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
       TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
       TEST_MBAPPE_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURE_QUANTILES_PATH }}"
-      TEST_MBAPPE_HEADER_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_HEADER_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
 
   build-lc-classification-balto-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -115,6 +117,16 @@ jobs:
       ref: ${{ github.ref }}
       stage: staging
       extra-args: lc_classification_step_mbappe --build-args=model:mbappe --package-dir=lc_classification_step --dry-run
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  build-lc-classification-squidward-dagger:
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      ref: ${{ github.ref }}
+      stage: staging
+      extra-args: lc_classification_step_squidward --build-args=model:squidward --package-dir=lc_classification_step --dry-run
       submodules: true
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
