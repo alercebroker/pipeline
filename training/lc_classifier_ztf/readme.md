@@ -1,6 +1,6 @@
 # Development of lightcurve classifier for ZTF
 
-Last update: 20231102
+Last update: 20240502
 
 ## Data
 
@@ -9,7 +9,11 @@ It has to be adapted to run with ZTF alert schema v4 (with forced photometry).
 
 ## Model
 
-Feature computation (libs/lc_classifier) + MLP
+Feature computation (libs/lc_classifier) + classifier
+
+# Hierarchical Random Forest, codename "Squidward"
+
+Very similar model to the light curve classifier from Sánchez-Saez et al. 2021. 
 
 ## Steps:
  * Run download_training_set_ff.ipynb to download the data

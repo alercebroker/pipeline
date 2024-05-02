@@ -19,10 +19,13 @@ def extract_features(batch_id, ao_filename, shorten_n_days=None):
     import pandas as pd
     from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor, ShortenPreprocessor
     from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
+    from lc_classifier.features.core.base import astro_object_from_dict
     from dataset import save_batch
 
     batch_astro_objects = pd.read_pickle(
         os.path.join(folder, ao_filename))
+    batch_astro_objects = [
+        astro_object_from_dict(d) for d in batch_astro_objects]
 
     lightcurve_preprocessor = ZTFLightcurvePreprocessor()
     lightcurve_preprocessor.preprocess_batch(batch_astro_objects)
@@ -39,7 +42,7 @@ def extract_features(batch_id, ao_filename, shorten_n_days=None):
     save_batch(batch_astro_objects, filename)
 
 
-# n_days = [16, 32, 64, 128, 256, None]
+# n_days = [16, 32, 64, 128, 256, 512, 1024, None]
 n_days = [None]
 for shorten_n_days in n_days:
     tasks = []
@@ -53,4 +56,4 @@ for shorten_n_days in n_days:
             )
         )
 
-    Parallel(n_jobs=6, verbose=11, backend="loky")(tasks)
+    Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)

@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from tqdm import tqdm
-from lc_classifier.classifiers.base import all_features_from_astro_objects
+from lc_classifier.utils import all_features_from_astro_objects
 
 
 def get_shorten(filename: str):

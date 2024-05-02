@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -9,13 +9,11 @@ import pickle
 
 from sklearn.metrics import precision_recall_fscore_support
 
-from lc_classifier.base import AstroObject
-from .base import all_features_from_astro_objects
 from .base import Classifier, NotTrainedException
 from .preprocess import MLPFeaturePreprocessor
 
 
-class ZTFClassifier(Classifier):
+class MLPClassifier(Classifier):
     version = '1.0.0'
 
     def __init__(self, list_of_classes: List[str]):
@@ -25,71 +23,36 @@ class ZTFClassifier(Classifier):
         self.inference_model = None
         self.feature_list = None
 
-    def classify_single_object(self, astro_object: AstroObject) -> None:
-        self.classify_batch([astro_object])
-
     def classify_batch(
             self,
-            astro_objects: List[AstroObject],
-            return_dataframe: bool = False) -> Optional[pd.DataFrame]:
+            features: pd.DataFrame) -> pd.DataFrame:
 
         if self.feature_list is None or self.inference_model is None:
             raise NotTrainedException(
                 'This classifier is not trained or has not been loaded')
-        features_df = all_features_from_astro_objects(astro_objects)
-        features_df = features_df[self.feature_list]
+        features_df = features[self.feature_list]
         features_np = self.preprocessor.preprocess_features(
             features_df).values
         with tf.device('/cpu:0'):
             probs_np = self.inference_model.inference(features_np).numpy()
-        for object_probs, astro_object in zip(probs_np, astro_objects):
-            data = np.stack(
-                [
-                    self.list_of_classes,
-                    object_probs.flatten()
-                ],
-                axis=-1
-            )
-            object_probs_df = pd.DataFrame(
-                data=data,
-                columns=[['name', 'value']]
-            )
-            object_probs_df['fid'] = None
-            object_probs_df['sid'] = 'ztf'
-            object_probs_df['version'] = self.version
-            astro_object.predictions = object_probs_df
 
-        if return_dataframe:
-            dataframe = pd.DataFrame(
-                data=probs_np,
-                columns=self.list_of_classes,
-                index=features_df.index
-            )
-            return dataframe
+        dataframe = pd.DataFrame(
+            data=probs_np,
+            columns=self.list_of_classes,
+            index=features_df.index
+        )
+        return dataframe
 
-    def fit(
-            self,
-            astro_objects: List[AstroObject],
-            labels: pd.DataFrame,
-            config: Dict):
-        assert len(astro_objects) == len(labels)
-        all_features_df = all_features_from_astro_objects(astro_objects)
-        self.fit_from_features(all_features_df, labels, config)
-
-    def fit_from_features(
-            self,
-            features: pd.DataFrame,
-            labels: pd.DataFrame,
-            config: Dict):
+    def fit(self, features: pd.DataFrame, labels: pd.DataFrame, config: Dict):
         self.feature_list = features.columns.values
         training_labels = labels[labels['partition'] == 'training_0']
-        training_features = features.loc[training_labels['aid'].values]
+        training_features = features.loc[training_labels.index]
         self.preprocessor.fit(training_features)
         training_features = self.preprocessor.preprocess_features(
             training_features)
 
         validation_labels = labels[labels['partition'] == 'validation_0']
-        validation_features = features.loc[validation_labels['aid'].values]
+        validation_features = features.loc[validation_labels.index]
         validation_features = self.preprocessor.preprocess_features(
             validation_features)
 
@@ -188,7 +151,7 @@ class MLPModel(tf.keras.Model):
         self.batch_size = batch_size
 
         # simulate missing features
-        self.input_dropout = tf.keras.layers.Dropout(0.1)
+        # self.input_dropout = tf.keras.layers.Dropout(0.1)
         self.dense_layer_1 = Dense(
             800,
             name='dense_layer_1',
@@ -226,7 +189,7 @@ class MLPModel(tf.keras.Model):
         self.max_validations_without_improvement = 3
 
     def call(self, x, training=False, logits=True):
-        x = self.input_dropout(x, training=training)
+        # x = self.input_dropout(x, training=training)
         x = self.dense_layer_1(x)
         x = self.activation(x)
         x = self.dropout_1_2(x, training=training)
