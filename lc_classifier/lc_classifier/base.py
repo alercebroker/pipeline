@@ -35,6 +35,19 @@ class AstroObject:
         if self.predictions is None:
             self.predictions = empty_normal_dataframe()
 
+    def to_dict(self) -> Dict:
+        d = {
+            'metadata': self.metadata,
+            'detections': self.detections,
+            'non_detections': self.non_detections,
+            'forced_photometry': self.forced_photometry,
+            'xmatch': self.xmatch,
+            'stamps': self.stamps,
+            'features': self.features,
+            'predictions': self.predictions
+        }
+        return d
+
 
 def empty_normal_dataframe() -> pd.DataFrame:
     df = pd.DataFrame(
@@ -58,3 +71,17 @@ def query_ao_table(table: pd.DataFrame, name: str, check_unique: bool = True):
         return ans_df['value'].values[0]
     else:
         return ans_df
+
+
+def astro_object_from_dict(d: Dict) -> AstroObject:
+    astro_object = AstroObject(
+        metadata=d['metadata'],
+        detections=d['detections'],
+        non_detections=d['non_detections'],
+        forced_photometry=d['forced_photometry'],
+        xmatch=d['xmatch'],
+        stamps=d['stamps'],
+        features=d['features'],
+        predictions=d['predictions']
+    )
+    return astro_object

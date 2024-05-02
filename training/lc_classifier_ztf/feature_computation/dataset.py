@@ -94,8 +94,9 @@ def create_astro_object(
 
 
 def save_batch(astro_objects: List[AstroObject], filename: str):
+    astro_objects_dicts = [ao.to_dict() for ao in astro_objects]
     with open(filename, 'wb') as f:
-        pickle.dump(astro_objects, f)
+        pickle.dump(astro_objects_dicts, f)
 
 
 if __name__ == '__main__':
