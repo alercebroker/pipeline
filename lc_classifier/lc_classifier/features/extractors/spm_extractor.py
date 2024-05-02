@@ -14,8 +14,7 @@ from jax.nn import sigmoid as jax_sigmoid
 from jax import grad
 from jax import jit as jax_jit
 
-from ..core.base import FeatureExtractor
-from lc_classifier.base import AstroObject
+from ..core.base import FeatureExtractor, AstroObject
 from typing import List, Optional
 
 

@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from lc_classifier.base import AstroObject, query_ao_table
+from lc_classifier.features.core.base import AstroObject, query_ao_table
 from features.core.utils.functions import collapse_fid_columns
 from typing import List, Dict, Optional
 

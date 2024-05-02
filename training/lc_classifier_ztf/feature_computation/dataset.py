@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from lc_classifier.base import AstroObject
+from lc_classifier.features.core.base import AstroObject
 from tqdm import tqdm
 from typing import List
 
