@@ -38,6 +38,19 @@ class AstroObject:
         if self.predictions is None:
             self.predictions = empty_normal_dataframe()
 
+    def to_dict(self) -> Dict:
+        d = {
+            'metadata': self.metadata,
+            'detections': self.detections,
+            'non_detections': self.non_detections,
+            'forced_photometry': self.forced_photometry,
+            'xmatch': self.xmatch,
+            'stamps': self.stamps,
+            'features': self.features,
+            'predictions': self.predictions
+        }
+        return d
+
 
 class FeatureExtractor(ABC):
     @abstractmethod
@@ -84,6 +97,20 @@ def empty_normal_dataframe() -> pd.DataFrame:
         ]
     )
     return df
+
+
+def astro_object_from_dict(d: Dict) -> AstroObject:
+    astro_object = AstroObject(
+        metadata=d['metadata'],
+        detections=d['detections'],
+        non_detections=d['non_detections'],
+        forced_photometry=d['forced_photometry'],
+        xmatch=d['xmatch'],
+        stamps=d['stamps'],
+        features=d['features'],
+        predictions=d['predictions']
+    )
+    return astro_object
 
 
 def query_ao_table(table: pd.DataFrame, name: str, check_unique: bool = True):

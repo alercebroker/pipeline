@@ -19,7 +19,7 @@ def extract_features(batch_id, ao_filename, shorten_n_days=None):
     import pandas as pd
     from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor, ShortenPreprocessor
     from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
-    from lc_classifier.base import astro_object_from_dict
+    from lc_classifier.features.core.base import astro_object_from_dict
     from dataset import save_batch
 
     batch_astro_objects = pd.read_pickle(
