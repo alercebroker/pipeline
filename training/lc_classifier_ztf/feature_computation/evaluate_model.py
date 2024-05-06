@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import classification_report
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import confusion_matrix
+import matplotlib
 import matplotlib.pyplot as plt
 from itertools import product
 from lc_classifier.classifiers.mlp import MLPClassifier
@@ -14,8 +15,7 @@ from lc_classifier.classifiers.xgboost import XGBoostClassifier
 # from training import rename_feature
 
 
-dir_name = 'data_231206_ao_features'
-labels = pd.read_parquet(os.path.join(dir_name, 'partitions.parquet'))
+labels = pd.read_parquet(os.path.join('data_231206_ao_features', 'partitions.parquet'))
 labels['aid'] = 'aid_' + labels['oid']
 labels.set_index('aid', inplace=True)
 
@@ -49,6 +49,7 @@ labels_figure_order = [
 assert set(list_of_classes) == set(labels_figure_order)
 
 classifier_type = 'HierarchicalRandomForest'
+compute_predictions = False
 
 if classifier_type == 'MLP':
     classifier = MLPClassifier(list_of_classes)
@@ -59,7 +60,7 @@ elif classifier_type == 'RandomForest':
     classifier.load_classifier('rf_classifier_240307')
 elif classifier_type == 'HierarchicalRandomForest':
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = 'models/hrf_classifier_20240418-163923'
+    model_dir = 'models/hrf_classifier_20240506-155647'
     classifier.load_classifier(model_dir)
     predictions_filename = os.path.join(
         model_dir, 'predictions.parquet')
@@ -72,10 +73,10 @@ elif classifier_type == 'XGBoost':
 else:
     raise ValueError('invalid classifier type')
 
-compute_predictions = False
+
 if compute_predictions:
     consolidated_features = pd.read_parquet(
-        os.path.join(dir_name, 'consolidated_features.parquet'))
+        os.path.join('data_231206_features', 'consolidated_features.parquet'))
 
     shorten = consolidated_features['shorten']
     consolidated_features = consolidated_features[[c for c in consolidated_features.columns if c != 'shorten']]
@@ -93,7 +94,7 @@ def plot_cm_custom(ax, cm_mean, display_labels, title):
     n_classes = cm_mean.shape[0]
     im_kw = dict(
         interpolation="nearest",
-        cmap=plt.cm.get_cmap('Blues'))
+        cmap=matplotlib.colormaps['Blues'])
 
     im_ = ax.imshow(cm_mean, **im_kw)
     cmap_min, cmap_max = im_.cmap(0), im_.cmap(1.0)

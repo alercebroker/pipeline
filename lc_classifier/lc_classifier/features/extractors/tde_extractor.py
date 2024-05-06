@@ -249,7 +249,8 @@ class ColorVariationExtractor(FeatureExtractor):
             color = fid_means.loc[self.band_1] - fid_means.loc[self.band_2]
             return color
 
-        window_colors = observations.groupby('window').apply(compute_color)
+        window_colors = observations.groupby('window').apply(
+            compute_color, include_groups=False)
         window_colors.dropna(inplace=True)
 
         if len(window_colors) > 1:

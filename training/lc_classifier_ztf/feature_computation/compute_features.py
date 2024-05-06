@@ -15,12 +15,19 @@ astro_objects_filenames = os.listdir(folder)
 astro_objects_filenames = [f for f in astro_objects_filenames if 'astro_objects_batch' in f]
 
 
-def extract_features(batch_id, ao_filename, shorten_n_days=None):
+def extract_features(batch_id, ao_filename, shorten_n_days=None, skip_if_output_exists=False):
     import pandas as pd
     from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor, ShortenPreprocessor
     from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
     from lc_classifier.features.core.base import astro_object_from_dict
     from dataset import save_batch
+
+    output_filename = os.path.join(
+        output_folder,
+        f'astro_objects_batch_{shorten_n_days}_{batch_id:04}.pkl')
+
+    if skip_if_output_exists and os.path.exists(output_filename):
+        return
 
     batch_astro_objects = pd.read_pickle(
         os.path.join(folder, ao_filename))
@@ -36,10 +43,7 @@ def extract_features(batch_id, ao_filename, shorten_n_days=None):
     feature_extractor = ZTFFeatureExtractor()
     feature_extractor.compute_features_batch(batch_astro_objects, progress_bar=False)
 
-    filename = os.path.join(
-        output_folder,
-        f'astro_objects_batch_{shorten_n_days}_{batch_id:04}.pkl')
-    save_batch(batch_astro_objects, filename)
+    save_batch(batch_astro_objects, output_filename)
 
 
 # n_days = [16, 32, 64, 128, 256, 512, 1024, None]
