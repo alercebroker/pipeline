@@ -9,9 +9,7 @@ class NotTrainedException(Exception):
 
 class Classifier(ABC):
     @abstractmethod
-    def classify_batch(
-            self,
-            features: pd.DataFrame) -> pd.DataFrame:
+    def classify_batch(self, features: pd.DataFrame) -> pd.DataFrame:
         pass
 
     @abstractmethod
@@ -25,5 +23,3 @@ class Classifier(ABC):
     @abstractmethod
     def load_classifier(self, directory: str):
         pass
-
-

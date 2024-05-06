@@ -28,29 +28,27 @@ class MLPFeaturePreprocessor(FeaturePreprocessor):
         self.feature_list = features.columns.values
 
     def save(self, filename: str):
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             pickle.dump(
-                {
-                    'feature_list': self.feature_list,
-                    'transformer': self.transformer
-                },
-                f
+                {"feature_list": self.feature_list, "transformer": self.transformer}, f
             )
 
     def load(self, filename: str):
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             attributes_dict = pickle.load(f)
 
-        self.feature_list = attributes_dict['feature_list']
-        self.transformer = attributes_dict['transformer']
+        self.feature_list = attributes_dict["feature_list"]
+        self.transformer = attributes_dict["transformer"]
 
     def preprocess_features(self, features: pd.DataFrame) -> pd.DataFrame:
         if self.feature_list is None:
             raise NotTrainedException(
-                'fit method must be called before preprocess_features')
+                "fit method must be called before preprocess_features"
+            )
         features = inf_to_nan(features).copy()
         transformed_values = self.transformer.transform(
-            features[self.feature_list].values)
+            features[self.feature_list].values
+        )
         features[:] = transformed_values
         features += 0.1
 

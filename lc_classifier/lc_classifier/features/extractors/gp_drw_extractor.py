@@ -9,17 +9,17 @@ from scipy.optimize import minimize
 
 class GPDRWExtractor(FeatureExtractor):
     def __init__(self, bands: List[str], unit: str):
-        self.version = '1.0.0'
+        self.version = "1.0.0"
         self.bands = bands
-        valid_units = ['magnitude', 'diff_flux']
+        valid_units = ["magnitude", "diff_flux"]
         if unit not in valid_units:
-            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+            raise ValueError(f"{unit} is not a valid unit ({valid_units})")
         self.unit = unit
         self.detections_min_len = 5
 
     def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
-        detections = detections[detections['brightness'].notna()]
-        detections = detections[detections['unit'] == self.unit]
+        detections = detections[detections["brightness"].notna()]
+        detections = detections[detections["unit"] == self.unit]
 
         return detections
 
@@ -29,19 +29,19 @@ class GPDRWExtractor(FeatureExtractor):
 
         features = []
         for band in self.bands:
-            detections_band = detections[detections['fid'] == band].copy()
+            detections_band = detections[detections["fid"] == band].copy()
             band_features = {
-                'GP_DRW_sigma': np.nan,
-                'GP_DRW_tau': np.nan,
+                "GP_DRW_sigma": np.nan,
+                "GP_DRW_tau": np.nan,
             }
             if len(detections_band) < self.detections_min_len:
                 features += self._dict_to_features(band_features, band)
                 continue
 
-            detections_band['mjd'] -= np.min(detections_band['mjd'])
-            detections_band.sort_values('mjd', inplace=True)
+            detections_band["mjd"] -= np.min(detections_band["mjd"])
+            detections_band.sort_values("mjd", inplace=True)
 
-            detections_band['brightness'] -= np.mean(detections_band['brightness'])
+            detections_band["brightness"] -= np.mean(detections_band["brightness"])
 
             kernel = terms.RealTerm(a=1.0, c=10.0)
             gp = celerite2.GaussianProcess(kernel, mean=0.0)
@@ -61,36 +61,32 @@ class GPDRWExtractor(FeatureExtractor):
                 method="L-BFGS-B",
                 args=(
                     gp,
-                    detections_band['mjd'].values,
-                    detections_band['brightness'].values,
-                    detections_band['e_brightness'].values ** 2
+                    detections_band["mjd"].values,
+                    detections_band["brightness"].values,
+                    detections_band["e_brightness"].values ** 2,
                 ),
                 # options={'iprint': 99}
             )
 
             optimal_params = np.exp(sol.x)
 
-            band_features['GP_DRW_sigma'] = optimal_params[0]
-            band_features['GP_DRW_tau'] = 1.0/optimal_params[1]
+            band_features["GP_DRW_sigma"] = optimal_params[0]
+            band_features["GP_DRW_tau"] = 1.0 / optimal_params[1]
 
             features += self._dict_to_features(band_features, band)
 
-        features_df = pd.DataFrame(
-            data=features,
-            columns=['name', 'value', 'fid']
-        )
+        features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
-        sids = detections['sid'].unique()
+        sids = detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )
 
     def _dict_to_features(self, band_features: Dict[str, float], band: str) -> List:

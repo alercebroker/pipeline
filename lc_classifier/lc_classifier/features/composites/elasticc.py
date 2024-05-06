@@ -15,15 +15,12 @@ from ..extractors.coordinate_extractor import CoordinateExtractor
 
 class ElasticcFeatureExtractor(FeatureExtractorComposite):
     def _instantiate_extractors(self) -> List[FeatureExtractor]:
-        bands = list('ugrizY')
-        unit = 'diff_flux'
+        bands = list("ugrizY")
+        unit = "diff_flux"
 
         feature_extractors = [
             ColorFeatureExtractor(bands, unit),
-            MHPSExtractor(
-                bands,
-                unit
-            ),
+            MHPSExtractor(bands, unit),
             PeriodExtractor(
                 bands,
                 unit,
@@ -32,21 +29,20 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
                 trim_lightcurve_to_n_days=500.0,
                 min_length=15,
                 use_forced_photo=True,
-                return_power_rates=True
+                return_power_rates=True,
             ),
             FoldedKimExtractor(bands, unit),
             HarmonicsExtractor(bands, unit, use_forced_photo=True),
             TurboFatsExtractor(bands, unit),
             SPMExtractor(
-                bands, unit,
-                redshift='REDSHIFT_HELIO',
-                extinction_color_excess='MWEBV',
-                forced_phot_prelude=30.0
+                bands,
+                unit,
+                redshift="REDSHIFT_HELIO",
+                extinction_color_excess="MWEBV",
+                forced_phot_prelude=30.0,
             ),
-            SNExtractor(
-                bands, unit, use_forced_photo=True
-            ),
+            SNExtractor(bands, unit, use_forced_photo=True),
             TimespanExtractor(),
-            CoordinateExtractor()
+            CoordinateExtractor(),
         ]
         return feature_extractors

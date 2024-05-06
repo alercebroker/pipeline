@@ -16,22 +16,24 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
 
     def _helio_time_correction(self, astro_object: AstroObject):
         detections = astro_object.detections
-        ra_deg, dec_deg = detections[['ra', 'dec']].mean().values
+        ra_deg, dec_deg = detections[["ra", "dec"]].mean().values
         star_pos = SkyCoord(
             ra=ra_deg * u.degree,
             dec=dec_deg * u.degree,
             distance=1 * u.au,
-            frame='icrs'
+            frame="icrs",
         )
         if np.isnan(ra_deg) or np.isnan(dec_deg):
             return
 
         def helio_correct_dataframe(dataframe: pd.DataFrame):
-            times = Time(dataframe['mjd'], format='mjd')
-            earth_pos = get_body_barycentric('earth', times)
+            times = Time(dataframe["mjd"], format="mjd")
+            earth_pos = get_body_barycentric("earth", times)
             dots = earth_pos.dot(star_pos.cartesian)
-            time_corrections = dots.value * (u.au.to(u.lightsecond)*u.second).to(u.day)
-            dataframe['mjd'] += time_corrections.value
+            time_corrections = dots.value * (u.au.to(u.lightsecond) * u.second).to(
+                u.day
+            )
+            dataframe["mjd"] += time_corrections.value
 
         helio_correct_dataframe(astro_object.detections)
         forced_photometry = astro_object.forced_photometry
@@ -44,19 +46,21 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
 
     def drop_absurd_detections(self, astro_object: AstroObject):
         def drop_absurd(table):
-            magnitude_mask = table['unit'] == 'magnitude'
+            magnitude_mask = table["unit"] == "magnitude"
             mag_det = table[magnitude_mask]
             table = pd.concat(
                 [
                     mag_det[
                         (
-                            (mag_det['brightness'] < 30.0)
-                            & (mag_det['brightness'] > 6.0)
-                            & (mag_det['e_brightness'] < 1.0)
+                            (mag_det["brightness"] < 30.0)
+                            & (mag_det["brightness"] > 6.0)
+                            & (mag_det["e_brightness"] < 1.0)
                         )
                     ],
-                    table[~magnitude_mask]
-                ], axis=0)
+                    table[~magnitude_mask],
+                ],
+                axis=0,
+            )
             return table
 
         astro_object.detections = drop_absurd(astro_object.detections)
@@ -68,10 +72,12 @@ class ShortenPreprocessor(LightcurvePreprocessor):
         self.n_days = n_days
 
     def preprocess_single_object(self, astro_object: AstroObject):
-        first_mjd = np.min(astro_object.detections['mjd'])
+        first_mjd = np.min(astro_object.detections["mjd"])
         max_mjd = first_mjd + self.n_days
         astro_object.detections = astro_object.detections[
-            astro_object.detections['mjd'] <= max_mjd]
-        last_detection_mjd = np.max(astro_object.detections['mjd'])
+            astro_object.detections["mjd"] <= max_mjd
+        ]
+        last_detection_mjd = np.max(astro_object.detections["mjd"])
         astro_object.forced_photometry = astro_object.forced_photometry[
-            astro_object.forced_photometry['mjd'] < last_detection_mjd]
+            astro_object.forced_photometry["mjd"] < last_detection_mjd
+        ]
