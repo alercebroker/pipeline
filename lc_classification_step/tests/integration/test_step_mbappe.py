@@ -25,9 +25,9 @@ def test_step_mbappe_result(
         "mbape",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
             ),
             "METADATA_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_METADATA_QUANTILES_PATH"
@@ -64,12 +64,12 @@ def test_step_mbappe_no_features_result(
 ):
     produce_messages("features_mbappe", force_missing_features=True)
     env_variables_mbappe(
-        "mbape",
+        "mbappe",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
             ),
             "METADATA_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_METADATA_QUANTILES_PATH"
@@ -78,11 +78,10 @@ def test_step_mbappe_no_features_result(
         },
     )
 
-    from settings import config 
+    from settings import config
 
     kconsumer = kafka_consumer("mbappe")
     sconsumer = scribe_consumer()
-
     step = LateClassifier(config=config())
     step.start()
 
