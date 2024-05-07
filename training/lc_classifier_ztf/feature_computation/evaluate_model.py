@@ -50,7 +50,7 @@ labels_figure_order = [
 assert set(list_of_classes) == set(labels_figure_order)
 
 classifier_type = 'HierarchicalRandomForest'
-compute_predictions = False
+compute_predictions = True
 
 if classifier_type == 'MLP':
     classifier = MLPClassifier(list_of_classes)
@@ -61,7 +61,7 @@ elif classifier_type == 'RandomForest':
     classifier.load_classifier('rf_classifier_240307')
 elif classifier_type == 'HierarchicalRandomForest':
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = 'models/hrf_classifier_20240506-155647'
+    model_dir = 'models/hrf_classifier_20240507-153735'
     classifier.load_classifier(model_dir)
     predictions_filename = os.path.join(
         model_dir, 'predictions.parquet')

@@ -36,26 +36,27 @@ class HierarchicalRandomForestClassifier(Classifier):
 
     def __init__(self, list_of_classes: List[str]):
         self.list_of_classes = list_of_classes
-        self.model = None
+        self.dict_of_rf = None
         self.feature_list = None
         self.preprocessor = RandomForestPreprocessor()
 
     def classify_batch(
         self, features: pd.DataFrame, return_hierarchy: bool = False
-    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame]]:
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
 
-        if self.feature_list is None or self.model is None:
+        if self.feature_list is None or self.dict_of_rf is None:
             raise NotTrainedException(
                 "This classifier is not trained or has not been loaded"
             )
-        features_df = features[self.feature_list]
-        features_np = self.preprocessor.preprocess_features(features_df).values
+
+        features = self.preprocessor.preprocess_features(features)
+        features_np = features[self.feature_list].values
 
         predictions = {}
-        for classifier_name, classifier in self.model.items():
+        for classifier_name, classifier in self.dict_of_rf.items():
             probs_np = classifier.predict_proba(features_np)
             df = pd.DataFrame(
-                data=probs_np, columns=classifier.classes_, index=features_df.index
+                data=probs_np, columns=classifier.classes_, index=features.index
             )
             predictions[classifier_name] = df
 
@@ -78,10 +79,12 @@ class HierarchicalRandomForestClassifier(Classifier):
             return full_probs
 
     def fit(self, features: pd.DataFrame, labels: pd.DataFrame, config: Dict):
-        self.feature_list = features.columns.values
+        self.feature_list = self.preprocessor.preprocess_feature_names(
+            features.columns.values)
         training_labels = labels[labels["partition"] == "training_0"]
         training_features = features.loc[training_labels.index]
-        training_features = self.preprocessor.preprocess_features(training_features)
+        training_features = self.preprocessor.preprocess_features(
+            training_features)
 
         top_model = BalancedRandomForestClassifier(
             n_estimators=config["n_trees"],
@@ -151,7 +154,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         top_labels = training_labels["astro_class"].map(inverse_class_hierarchy)
         top_model.fit(training_features.values, top_labels.values)
 
-        self.model = {
+        self.dict_of_rf = {
             "top": top_model,
             "stochastic": stochastic_model,
             "periodic": periodic_model,
@@ -159,7 +162,7 @@ class HierarchicalRandomForestClassifier(Classifier):
         }
 
     def save_classifier(self, directory: str):
-        if self.model is None:
+        if self.dict_of_rf is None:
             raise NotTrainedException("Cannot save model that has not been trained")
 
         if not os.path.exists(directory):
@@ -172,15 +175,19 @@ class HierarchicalRandomForestClassifier(Classifier):
                 {
                     "feature_list": self.feature_list,
                     "list_of_classes": self.list_of_classes,
-                    "model": self.model,
+                    "model": self.dict_of_rf,
                 },
                 f,
             )
 
-    def load_classifier(self, directory: str):
-        loaded_data = pd.read_pickle(
-            os.path.join(directory, "hierarchical_random_forest_model.pkl")
-        )
+    def load_classifier(self, model_path: str):
+        if model_path.split('.')[-1] == 'pkl':
+            filename = model_path
+        else:
+            filename = os.path.join(
+                model_path,
+                "hierarchical_random_forest_model.pkl")
+        loaded_data = pd.read_pickle(filename)
         self.feature_list = loaded_data["feature_list"]
         self.list_of_classes = loaded_data["list_of_classes"]
-        self.model = loaded_data["model"]
+        self.dict_of_rf = loaded_data["model"]
