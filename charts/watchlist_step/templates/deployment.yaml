@@ -36,26 +36,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: ALERTS_DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: alerts-database
-                  key: host
-            - name: ALERTS_DB_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: alerts-database
-                  key: name
-            - name: ALERTS_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: alerts-database
-                  key: password
-            - name: ALERTS_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: alerts-database
-                  key: username
             - name: USERS_DB_HOST
               valueFrom:
                 configMapKeyRef:

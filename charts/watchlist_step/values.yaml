@@ -50,9 +50,6 @@ configmap:
   consumeMessages: ""
   internalServer: ""
   metricsTopic: ""
-  alertsDb:
-    host: ""
-    name: ""
   usersDb:
     host: ""
     name: ""
@@ -67,9 +64,6 @@ secrets:
       enabled: false
       username: ""
       password: ""
-  alertsDb:
-    username: ""
-    password: ""
   usersDb:
     username: ""
     password: ""
