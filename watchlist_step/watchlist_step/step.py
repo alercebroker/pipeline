@@ -116,8 +116,8 @@ class WatchlistStep(GenericStep):
             with conn.cursor() as cursor:
                 cursor.executemany(query, values)
 
-    def execute(self, messages: List[dict]):
-        alerts = {(message["oid"], message["candid"]): message for message in messages}
+    def execute(self, message: List[dict]):
+        alerts = {(m["oid"], m["candid"]): m for m in message}
         coordinates = self.strategy.get_coordinates(alerts)
 
         matches = self.match_user_targets(coordinates)

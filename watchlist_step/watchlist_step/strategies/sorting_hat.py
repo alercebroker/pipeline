@@ -13,7 +13,7 @@ class SortingHatStrategy(BaseStrategy):
         new_values = []
         filters = []
         for oid, candid, target_id, filter in matches:
-            if "sorting_hat" not in filter["fields"].keys():
+            if len(filter.keys()) == 0 or "sorting_hat" not in filter["fields"].keys():
                 continue
 
             fields = {
