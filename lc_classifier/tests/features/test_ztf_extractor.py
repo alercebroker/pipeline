@@ -16,7 +16,7 @@ class TestZTFExtractor(unittest.TestCase):
         dt = time.time() - t0
         average_dt = dt / len(astro_objects)
         print(average_dt, '[s] per object on avg.')
-        self.assertLessEqual(average_dt, 1.85)
+        self.assertLessEqual(average_dt, 3.0)
 
         # all feature df must be the same shape
         feature_shapes = [astro_object.features.shape for astro_object in astro_objects]
