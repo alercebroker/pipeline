@@ -24,9 +24,9 @@ def get_extra_fields():
             "sigmagapbig": random.random(),
             "rb": random.uniform(0.55, 1),
             "sgscore1": random.uniform(0, 1),
-            "sgmag1": random.random()*4 + 15,
-            "srmag1": random.random()*4 + 15,
-            "distpsnr1": random.random()
+            "sgmag1": random.random() * 4 + 15,
+            "srmag1": random.random() * 4 + 15,
+            "distpsnr1": random.random(),
         }
     )
     return extra_fields
@@ -56,17 +56,23 @@ def generate_alert(
             "e_dec": random.uniform(-90, 90),
             "mag": random.uniform(15, 20),
             "e_mag": random.uniform(0, 1),
-            "mag_corr": kwargs.get("mag_corr")
-            if "mag_corr" in kwargs.keys()
-            else random.uniform(15, 20),
+            "mag_corr": (
+                kwargs.get("mag_corr")
+                if "mag_corr" in kwargs.keys()
+                else random.uniform(15, 20)
+            ),
             "e_mag_corr": random.uniform(0, 1),
-            "e_mag_corr_ext": kwargs.get("e_mag_corr_ext")
-            if "e_mag_corr_ext" in kwargs
-            else random.uniform(0, 1),
+            "e_mag_corr_ext": (
+                kwargs.get("e_mag_corr_ext")
+                if "e_mag_corr_ext" in kwargs
+                else random.uniform(0, 1)
+            ),
             "isdiffpos": random.choice([-1, 1]),
-            "corrected": kwargs.get("corrected")
-            if "corrected" in kwargs
-            else random.choice([True, False]),
+            "corrected": (
+                kwargs.get("corrected")
+                if "corrected" in kwargs
+                else random.choice([True, False])
+            ),
             "dubious": random.choice([True, False]),
             "has_stamp": random.choice([True, False]),
             "stellar": random.choice([True, False]),
@@ -113,17 +119,15 @@ def generate_input_batch(
         detections = []
         for band in bands:
             detections.extend(
-                generate_alert(
-                    oid, band, random.randint(60, 100), m, survey=survey
-                )
+                generate_alert(oid, band, random.randint(60, 100), m, survey=survey)
             )
         non_det = generate_non_det(oid, random.randint(0, 1), m)
         xmatch = {
-            'allwise': {
-                'W1mag': 15.0,
-                'W2mag': 15.0,
-                'W3mag': 15.0,
-                'W4mag': 15.0,
+            "allwise": {
+                "W1mag": 15.0,
+                "W2mag": 15.0,
+                "W3mag": 15.0,
+                "W4mag": 15.0,
             }
         }
         msg = {

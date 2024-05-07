@@ -20,7 +20,7 @@ class TestAstroObject(unittest.TestCase):
                     0.011,
                     15.9,
                     0.3,
-                    "magnitude"
+                    "magnitude",
                 ],
                 [
                     "candid_example2",
@@ -35,7 +35,7 @@ class TestAstroObject(unittest.TestCase):
                     0.011,
                     15.4,
                     0.2,
-                    "magnitude"
+                    "magnitude",
                 ],
             ],
             columns=[
@@ -51,37 +51,28 @@ class TestAstroObject(unittest.TestCase):
                 "e_dec",
                 "brightness",
                 "e_brightness",
-                "unit"
-            ]
+                "unit",
+            ],
         )
 
         self.metadata = pd.DataFrame(
-            [["aid", "aid_example"]],
-            columns=["name", "value"]
+            [["aid", "aid_example"]], columns=["name", "value"]
         )
 
     def test_aid_in_metadata(self):
-        astro_object = AstroObject(
-            detections=self.detections,
-            metadata=self.metadata
-        )
+        astro_object = AstroObject(detections=self.detections, metadata=self.metadata)
 
         incomplete_metadata = pd.DataFrame(
-            [
-                ["oid", "oid_example"]
-            ],
-            columns=["name", "value"]
+            [["oid", "oid_example"]], columns=["name", "value"]
         )
 
         with self.assertRaises(ValueError) as cm:
             astro_object = AstroObject(
-                detections=self.detections,
-                metadata=incomplete_metadata
+                detections=self.detections, metadata=incomplete_metadata
             )
 
     def test_detections_missing_columns(self):
         with self.assertRaises(ValueError) as cm:
             astro_object = AstroObject(
-                detections=self.detections[['candid', 'mjd']],
-                metadata=self.metadata
+                detections=self.detections[["candid", "mjd"]], metadata=self.metadata
             )

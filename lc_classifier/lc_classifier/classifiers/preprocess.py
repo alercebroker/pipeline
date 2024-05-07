@@ -67,27 +67,27 @@ class RandomForestPreprocessor(FeaturePreprocessor):
     def preprocess_feature_names(self, feature_names: List[str]):
         new_features = []
         for feature in feature_names:
-            feature = feature.replace('-', '_')
-            if feature == 'ps_g_r':
+            feature = feature.replace("-", "_")
+            if feature == "ps_g_r":
                 new_features.append(feature)
                 continue
 
-            splitted_feature = feature.split('_')
+            splitted_feature = feature.split("_")
             if len(splitted_feature) == 1:
                 new_features.append(feature)
                 continue
 
-            feature_root = '_'.join(splitted_feature[:-1])
+            feature_root = "_".join(splitted_feature[:-1])
             feature_ending = splitted_feature[-1]
-            if feature_ending == 'g':
-                feature_root += '_1'
-            elif feature_ending == 'r':
-                feature_root += '_2'
-            elif feature_ending == 'g,r':
-                feature_root += '_12'
-            elif feature_ending == 'nan':
+            if feature_ending == "g":
+                feature_root += "_1"
+            elif feature_ending == "r":
+                feature_root += "_2"
+            elif feature_ending == "g,r":
+                feature_root += "_12"
+            elif feature_ending == "nan":
                 pass
             else:
-                feature_root += '_' + feature_ending
+                feature_root += "_" + feature_ending
             new_features.append(feature_root)
         return new_features

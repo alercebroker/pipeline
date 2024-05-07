@@ -80,11 +80,11 @@ class HierarchicalRandomForestClassifier(Classifier):
 
     def fit(self, features: pd.DataFrame, labels: pd.DataFrame, config: Dict):
         self.feature_list = self.preprocessor.preprocess_feature_names(
-            features.columns.values)
+            features.columns.values
+        )
         training_labels = labels[labels["partition"] == "training_0"]
         training_features = features.loc[training_labels.index]
-        training_features = self.preprocessor.preprocess_features(
-            training_features)
+        training_features = self.preprocessor.preprocess_features(training_features)
 
         top_model = BalancedRandomForestClassifier(
             n_estimators=config["n_trees"],
@@ -181,12 +181,10 @@ class HierarchicalRandomForestClassifier(Classifier):
             )
 
     def load_classifier(self, model_path: str):
-        if model_path.split('.')[-1] == 'pkl':
+        if model_path.split(".")[-1] == "pkl":
             filename = model_path
         else:
-            filename = os.path.join(
-                model_path,
-                "hierarchical_random_forest_model.pkl")
+            filename = os.path.join(model_path, "hierarchical_random_forest_model.pkl")
         loaded_data = pd.read_pickle(filename)
         self.feature_list = loaded_data["feature_list"]
         self.list_of_classes = loaded_data["list_of_classes"]
