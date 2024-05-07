@@ -244,8 +244,9 @@ class ColorVariationExtractor(FeatureExtractor):
             color = fid_means.loc[self.band_1] - fid_means.loc[self.band_2]
             return color
 
+        # pandas 2.2 and higher should use the include_groups=False arg
         window_colors = observations.groupby("window").apply(
-            compute_color, include_groups=False
+            compute_color  # , include_groups=False
         )
         window_colors.dropna(inplace=True)
 
