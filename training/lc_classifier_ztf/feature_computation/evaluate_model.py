@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report
@@ -87,7 +88,7 @@ if compute_predictions:
     prediction_df.to_parquet(predictions_filename)
 
 predictions = pd.read_parquet(predictions_filename)
-print(predictions)
+logfile = os.path.join(model_dir, 'classification_reports.txt')
 
 
 def plot_cm_custom(ax, cm_mean, display_labels, title):
@@ -127,8 +128,9 @@ def compute_stats(predictions_df, labels_df, ax, title):
     labels_df = labels_df.loc[predictions_df.index]
     true_astro_classes = labels_df['alerceclass'].values
     predicted_class = predictions_df.idxmax(axis=1).values
-    print(title)
-    print(classification_report(true_astro_classes, predicted_class))
+    with open(logfile, 'a') as sys.stdout:
+        print(title)
+        print(classification_report(true_astro_classes, predicted_class))
     cm = confusion_matrix(true_astro_classes, predicted_class, labels=labels_figure_order)
     cm = cm / cm.sum(axis=1, keepdims=True)
     plot_cm_custom(ax, cm, labels_figure_order, title)
@@ -140,6 +142,10 @@ def compute_stats(predictions_df, labels_df, ax, title):
 all_shorten = predictions['shorten'].unique()
 all_shorten = np.sort(all_shorten)
 
+figure_dir = os.path.join(model_dir, 'confusion_matrix')
+if not os.path.exists(figure_dir):
+    os.makedirs(figure_dir)
+
 f1_dict = {}
 for shorten in all_shorten:
     shorten_predictions = predictions[predictions['shorten'] == shorten]
@@ -150,15 +156,26 @@ for shorten in all_shorten:
     plt.rcParams.update({'font.size': 8})
 
     val_labels = labels[labels['partition'] == 'validation_0']
-    compute_stats(shorten_predictions.loc[val_labels.index], val_labels, ax[0], 'validation')
+    compute_stats(
+        shorten_predictions.loc[val_labels.index],
+        val_labels,
+        ax[0],
+        f'validation {shorten} days')
 
     test_labels = labels[labels['partition'] == 'test']
-    f1_test = compute_stats(shorten_predictions.loc[test_labels.index], test_labels, ax[1], 'test')
+    f1_test = compute_stats(
+        shorten_predictions.loc[test_labels.index],
+        test_labels,
+        ax[1],
+        f'test {shorten} days')
 
     f1_dict[shorten] = f1_test
     plt.suptitle(str(shorten))
     plt.tight_layout()
-    plt.show()
+    plt.savefig(
+        os.path.join(figure_dir, f'{shorten}_days.png')
+    )
+    plt.close()
 
 f1_dict['2000'] = f1_dict['None']
 del f1_dict['None']
@@ -166,11 +183,11 @@ del f1_dict['None']
 lc_lengths = [float(i) for i in f1_dict.keys()]
 lc_f1 = f1_dict.values()
 
-print(lc_f1)
-print(lc_lengths)
-
 plt.scatter(lc_lengths, lc_f1)
 plt.semilogx()
 plt.xlabel('light curve max length [days]')
 plt.ylabel('F1-score (macro)')
-plt.show()
+plt.savefig(
+    os.path.join(figure_dir, f'f1_evolution.png')
+)
+plt.close()
