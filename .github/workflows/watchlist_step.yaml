@@ -15,26 +15,22 @@ jobs:
       sources-folder: "watchlist_step"
       base-folder: "watchlist_step"
   watchlist_step_unittest:
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-test-template.yaml
     with:
       base-folder: "watchlist_step"
       python-version: "3.11"
       sources-folder: "watchlist_step"
       test-folder: "tests/unittest"
-      test-dependencies: "pytest pytest-cov"
-      test-command: "python -m pytest -x tests/unittest --cov watchlist_step --cov-report xml"
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
   watchlist_step_integration:
-    uses: ./.github/workflows/pip-tests-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: "watchlist_step"
       python-version: "3.11"
       sources-folder: "watchlist_step"
       test-folder: "tests/integration"
-      test-dependencies: "pytest==7.2.0 pytest-docker"
       codecov-flags: "" # Do not upload
-      test-command: "python -m pytest -x tests/integration"
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
 
