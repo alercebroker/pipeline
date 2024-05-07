@@ -81,6 +81,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "watchlist-step.fullname" . }}
                   key: consumer-topics
+            - name: UPDATE_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "watchlist-step.fullname" . }}
+                  key: update-strategy
             - name: CONSUMER_SERVER
               valueFrom:
                 configMapKeyRef:

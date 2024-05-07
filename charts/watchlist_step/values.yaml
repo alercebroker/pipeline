@@ -45,6 +45,7 @@ affinity:
 
 configmap:
   consumerTopics: ""
+  updateStrategy: ""
   consumerGroup: ""
   consumeMessages: ""
   internalServer: ""
