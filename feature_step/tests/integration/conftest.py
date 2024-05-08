@@ -35,6 +35,14 @@ def docker_compose_file(pytestconfig):
         return path
 
 
+@pytest.fixture(scope="session")
+def docker_compose_command():
+    v2 = False
+    if os.getenv("COMPOSE", "v1") == "v2":
+        v2 = True
+    return "docker compose" if v2 else "docker-compose"
+
+
 def is_responsive_kafka(url):
     client = AdminClient({"bootstrap.servers": url})
     topics = ["ztf"]

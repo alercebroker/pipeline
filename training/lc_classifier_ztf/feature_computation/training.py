@@ -1,13 +1,13 @@
 import os
 import pandas as pd
 import time
-from lc_classifier.classifiers.mlp import MLPClassifier
-from lc_classifier.classifiers.random_forest import RandomForestClassifier
-from lc_classifier.classifiers.hierarchical_random_forest import (
+from alerce_classifiers.classifiers.mlp import MLPClassifier
+from alerce_classifiers.classifiers.random_forest import RandomForestClassifier
+from alerce_classifiers.classifiers.hierarchical_random_forest import (
     HierarchicalRandomForestClassifier,
 )
-from lc_classifier.classifiers.lightgbm import LightGBMClassifier
-from lc_classifier.classifiers.xgboost import XGBoostClassifier
+from alerce_classifiers.classifiers.lightgbm import LightGBMClassifier
+from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 
 
 # def rename_feature(feature_name: str):

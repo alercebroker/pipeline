@@ -27,7 +27,7 @@ def test_step_mbappe_result(
         {
             "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
             ),
             "METADATA_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_METADATA_QUANTILES_PATH"
@@ -69,7 +69,7 @@ def test_step_mbappe_no_features_result(
         {
             "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
             "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_MBAPPE_FEATURE_QUANTILES_PATH"
+                "TEST_MBAPPE_FEATURES_QUANTILES_PATH"
             ),
             "METADATA_QUANTILES_PATH": os.getenv(
                 "TEST_MBAPPE_METADATA_QUANTILES_PATH"
