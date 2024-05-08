@@ -37,7 +37,6 @@ class WatchlistStep(GenericStep):
         config: dict,
         strategy_name: str = "",
         level=logging.INFO,
-        **step_args,
     ):
         super().__init__(consumer, config=config, level=level)
         self.users_db = PsqlDatabase(config["PSQL_CONFIG"])
