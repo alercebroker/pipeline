@@ -15,7 +15,7 @@ jobs:
       sources-folder: "watchlist_step"
       base-folder: "watchlist_step"
   watchlist_step_unittest:
-    uses: ./.github/workflows/poetry-test-template.yaml
+    uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: "watchlist_step"
       python-version: "3.11"
