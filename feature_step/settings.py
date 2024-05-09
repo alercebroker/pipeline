@@ -47,9 +47,7 @@ PRODUCER_CONFIG = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "message.max.bytes": int(
-            os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)
-        ),
+        "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
     },
     "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", output_schema_path),
 }
@@ -88,27 +86,17 @@ if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
 
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
-        "KAFKA_USERNAME"
-    )
-    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
-        "KAFKA_PASSWORD"
-    )
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    SCRIBE_PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv(
-        "KAFKA_USERNAME"
-    )
-    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv(
-        "KAFKA_PASSWORD"
-    )
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.username"] = os.getenv("KAFKA_USERNAME")
+    METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.password"] = os.getenv("KAFKA_PASSWORD")
 
 
 use_profiling = bool(os.getenv("USE_PROFILING", True))
-pyroscope_server = os.getenv(
-    "PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040"
-)
+pyroscope_server = os.getenv("PYROSCOPE_SERVER", "http://pyroscope.pyroscope:4040")
 
 STEP_CONFIG = {
     "EXTRACTOR": EXTRACTOR,

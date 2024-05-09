@@ -2,35 +2,34 @@
 name = "lc-classifier"
 version = "24.4.2a34"
 description = "Lightcurve classifiers and feature computation"
-authors = ["Your Name <you@example.com>"]
+authors = ["Ignacio Reyes Jainaga <ireyes@cmm.uchile.cl>"]
 readme = "README.md"
 packages = [{include = "lc_classifier"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-astropy = "~5.2"
-imbalanced-learn = "^0.10"
-numba = ">=0.56"
-numpy = "^1.16"
-pyarrow = "*"
-requests = "^2.24"
-scipy = "^1.4"
-scikit-learn = "~1.2"
-statsmodels = "*"
-tensorflow = "^2.3"
-pandas = "^2.0.1"
-wget = "^3.2"
-celerite2 = "^0.2"
+python = ">=3.10,<3.12"
+astropy = "^6.1"
+imbalanced-learn = "~0.12.2"
+numba = "^0.59"
+numpy = "^1.26"
+pyarrow = "^16.0"
+requests = "^2.31"
+scipy = "^1.13"
+scikit-learn = "~1.4.2"
+statsmodels = "^0.14.2"
+tensorflow = "^2.16.1"
+pandas = "^2.2.2"
+celerite2 = "^0.3.1"
 extinction = "*"
-jax = {version = "*", extras = ["cpu"]}
+jax = {version = "^0.4.26", extras = ["cpu"]}
 mhps = {path = "../mhps" }
 P4J = {path = "../P4J" }
-tensorflow-io-gcs-filesystem = { version = "~0.33" }
 tqdm = "^4.66.2"
 matplotlib = "^3.8.4"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.4"
+pytest = "^8.2"
+pytest-cov = "^5.0"
 
 [build-system]
 requires = ["poetry-core"]

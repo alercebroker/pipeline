@@ -9,24 +9,24 @@ from typing import List, Optional, Tuple, Dict
 
 class PeriodExtractor(FeatureExtractor):
     def __init__(
-            self,
-            bands: List[str],
-            unit: str,
-            smallest_period: float,
-            largest_period: float,
-            trim_lightcurve_to_n_days: Optional[float],
-            min_length: int,
-            use_forced_photo: bool,
-            return_power_rates: bool,
-            shift: float = 0.1
+        self,
+        bands: List[str],
+        unit: str,
+        smallest_period: float,
+        largest_period: float,
+        trim_lightcurve_to_n_days: Optional[float],
+        min_length: int,
+        use_forced_photo: bool,
+        return_power_rates: bool,
+        shift: float = 0.1,
     ):
-        self.version = '1.0.0'
+        self.version = "1.0.0"
         self.bands = bands
-        valid_units = ['magnitude', 'diff_flux']
+        valid_units = ["magnitude", "diff_flux"]
         if unit not in valid_units:
-            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+            raise ValueError(f"{unit} is not a valid unit ({valid_units})")
         self.unit = unit
-        self.periodogram_computer = MultiBandPeriodogram(method='MHAOV')
+        self.periodogram_computer = MultiBandPeriodogram(method="MHAOV")
         self.smallest_period = smallest_period
         self.largest_period = largest_period
         self.trim_lightcurve_to_n_days = trim_lightcurve_to_n_days
@@ -36,14 +36,14 @@ class PeriodExtractor(FeatureExtractor):
         self.return_power_rates = return_power_rates
 
         self.factors = [0.25, 1 / 3, 0.5, 2.0, 3.0, 4.0]
-        pr_names = ['1_4', '1_3', '1_2', '2', '3', '4']
-        self.pr_names = ['Power_rate_' + n for n in pr_names]
+        pr_names = ["1_4", "1_3", "1_2", "2", "3", "4"]
+        self.pr_names = ["Power_rate_" + n for n in pr_names]
 
     def _trim_lightcurve(self, observations: pd.DataFrame):
         if self.trim_lightcurve_to_n_days is None or len(observations) == 0:
             return observations
 
-        times = observations['mjd'].values
+        times = observations["mjd"].values
 
         # indexes of the best subsequence so far
         best_starting = 0
@@ -82,18 +82,18 @@ class PeriodExtractor(FeatureExtractor):
             else:
                 starting += 1
 
-        return observations.iloc[best_starting:(best_ending + 1)]
+        return observations.iloc[best_starting : (best_ending + 1)]
 
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
         if self.use_forced_photo:
             if astro_object.forced_photometry is not None:
-                observations = pd.concat([
-                    observations,
-                    astro_object.forced_photometry], axis=0)
-        observations = observations[observations['unit'] == self.unit]
-        observations = observations[observations['brightness'].notna()]
-        observations = observations.sort_values('mjd')
+                observations = pd.concat(
+                    [observations, astro_object.forced_photometry], axis=0
+                )
+        observations = observations[observations["unit"] == self.unit]
+        observations = observations[observations["brightness"].notna()]
+        observations = observations.sort_values("mjd")
         observations = self._trim_lightcurve(observations)
         return observations
 
@@ -108,51 +108,58 @@ class PeriodExtractor(FeatureExtractor):
         useful_bands = []
         for band in self.bands:
             band_periods[band] = (np.nan, np.nan)
-            n_obs_band = len(observations[observations['fid'] == band])
+            n_obs_band = len(observations[observations["fid"] == band])
             if n_obs_band >= self.min_length:
                 useful_bands.append(band)
 
-        observations = observations[observations['fid'].isin(useful_bands)]
+        observations = observations[observations["fid"].isin(useful_bands)]
 
         if len(observations) < self.min_length:
             # don't compute the period if the lightcurve
             # is too short
             self._add_period_to_astroobject(
-                astro_object, period_candidate, significance, band_periods, power_rates)
+                astro_object, period_candidate, significance, band_periods, power_rates
+            )
             return
 
-        aid = astro_object.metadata[astro_object.metadata['name'] == 'aid']
-        aid = aid['value'].values[0]
+        aid = astro_object.metadata[astro_object.metadata["name"] == "aid"]
+        aid = aid["value"].values[0]
         self.periodogram_computer.set_data(
-            mjds=observations['mjd'].values,
-            mags=observations['brightness'].values,
-            errs=observations['e_brightness'].values,
-            fids=observations['fid'].values)
+            mjds=observations["mjd"].values,
+            mags=observations["brightness"].values,
+            errs=observations["e_brightness"].values,
+            fids=observations["fid"].values,
+        )
 
         try:
             self.periodogram_computer.optimal_frequency_grid_evaluation(
                 smallest_period=self.smallest_period,
                 largest_period=self.largest_period,
-                shift=self.shift
+                shift=self.shift,
             )
             self.periodogram_computer.optimal_finetune_best_frequencies(
-                times_finer=10.0, n_local_optima=10)
+                times_finer=10.0, n_local_optima=10
+            )
 
             best_freq, best_per = self.periodogram_computer.get_best_frequencies()
             if len(best_freq) == 0:
                 logging.error(
-                    f'[PeriodExtractor] best frequencies has len 0: '
-                    f'aid {aid}')
+                    f"[PeriodExtractor] best frequencies has len 0: " f"aid {aid}"
+                )
                 self._add_period_to_astroobject(
-                    astro_object, period_candidate, significance, band_periods, power_rates)
+                    astro_object,
+                    period_candidate,
+                    significance,
+                    band_periods,
+                    power_rates,
+                )
                 return
 
         except TypeError as e:
-            logging.error(
-                f'TypeError exception in PeriodExtractor: '
-                f'oid {aid}\n{e}')
+            logging.error(f"TypeError exception in PeriodExtractor: " f"oid {aid}\n{e}")
             self._add_period_to_astroobject(
-                astro_object, period_candidate, significance, band_periods, power_rates)
+                astro_object, period_candidate, significance, band_periods, power_rates
+            )
             return
 
         freq, per = self.periodogram_computer.get_periodogram()
@@ -161,7 +168,7 @@ class PeriodExtractor(FeatureExtractor):
 
         period_candidate = 1.0 / best_freq[0]
 
-        available_bands = np.unique(observations['fid'].values)
+        available_bands = np.unique(observations["fid"].values)
         for band in self.bands:
             if band not in available_bands:
                 continue
@@ -182,28 +189,29 @@ class PeriodExtractor(FeatureExtractor):
         entropy = (-normalized_top_values * np.log(normalized_top_values)).sum()
         significance = 1 - entropy / np.log(entropy_best_n)
         self._add_period_to_astroobject(
-            astro_object, period_candidate, significance, band_periods, power_rates)
+            astro_object, period_candidate, significance, band_periods, power_rates
+        )
 
     def _add_period_to_astroobject(
-            self,
-            astro_object: AstroObject,
-            period_candidate: float,
-            significance: float,
-            band_periods: Dict[str, Tuple[float, float]],
-            power_rates: Optional[List[Tuple[str, float]]]
+        self,
+        astro_object: AstroObject,
+        period_candidate: float,
+        significance: float,
+        band_periods: Dict[str, Tuple[float, float]],
+        power_rates: Optional[List[Tuple[str, float]]],
     ):
         features = []
 
-        all_bands = ','.join(self.bands)
+        all_bands = ",".join(self.bands)
 
-        features.append(('Multiband_period', period_candidate, all_bands))
-        features.append(('PPE', significance, all_bands))
+        features.append(("Multiband_period", period_candidate, all_bands))
+        features.append(("PPE", significance, all_bands))
 
         for band in self.bands:
             period_band, delta_period_band = band_periods[band]
 
-            features.append((f'Period_band', period_band, band))
-            features.append((f'delta_period', delta_period_band, band))
+            features.append((f"Period_band", period_band, band))
+            features.append((f"delta_period", delta_period_band, band))
 
         if self.return_power_rates:
             if power_rates is not None:
@@ -213,22 +221,18 @@ class PeriodExtractor(FeatureExtractor):
                 for name in self.pr_names:
                     features.append((name, np.nan, all_bands))
 
-        features_df = pd.DataFrame(
-            data=features,
-            columns=['name', 'value', 'fid']
-        )
+        features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
-        sids = astro_object.detections['sid'].unique()
+        sids = astro_object.detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )
 
     def compute_power_rates(self, freq, per):
@@ -257,11 +261,11 @@ class PeriodExtractor(FeatureExtractor):
         elif desired_frequency > frequencies[-1]:
             i = len(frequencies) - 1
         else:
-            left = frequencies[i-1]
+            left = frequencies[i - 1]
             right = frequencies[i]
             mean = (left + right) / 2.0
             if desired_frequency > mean:
                 i = i
             else:
-                i = i-1
+                i = i - 1
         return periodogram[i] / period_power
