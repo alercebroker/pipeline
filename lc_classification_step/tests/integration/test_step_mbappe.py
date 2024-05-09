@@ -22,7 +22,7 @@ def test_step_mbappe_result(
 ):
     produce_messages("features_mbappe")
     env_variables_mbappe(
-        "mbape",
+        "mbappe",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
@@ -64,7 +64,7 @@ def test_step_mbappe_no_features_result(
 ):
     produce_messages("features_mbappe", force_missing_features=True)
     env_variables_mbappe(
-        "mbape",
+        "mbappe",
         "alerce_classifiers.mbappe.model.MbappeClassifier",
         {
             "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"), 
