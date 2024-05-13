@@ -40,6 +40,7 @@ class LateClassifier(GenericStep):
 
         if model:
             self.model = model
+            self.classifier_version = self.config["MODEL_VERSION"]
 
         else:
             if self.isztf:
