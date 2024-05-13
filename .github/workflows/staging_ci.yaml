@@ -323,7 +323,7 @@ jobs:
           poetry run python main.py deploy add-package feature-step-23.x --values=feature_step-helm-values:28 --chart-folder=feature_step --chart=feature-step
           poetry run python main.py deploy add-package lc-classifier-step-ztf --chart=lc-classifier-step --values=lc_classification_step-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lc-classification-step-anomaly --chart=lc-classifier-step --values=anomaly-detector-step-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package lc-classification-step-mbappe --chart=lc-classifier-step --values=mbappe-detector-step-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classification-step-mbappe --chart=lc-classifier-step --values=lc_classification_step_mbape-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lc-classification-step-squidward --chart=lc-classifier-step --values=lc_classification_step_squidward-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --values=lightcurve-step-helm-values
           poetry run python main.py deploy add-package logstash --values=logstash-helm-values --chart=logstash --chart-folder=logstash
