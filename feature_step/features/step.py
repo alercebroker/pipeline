@@ -50,12 +50,22 @@ class FeatureStep(GenericStep):
             self.extractor_version,
             self.extractor_group,
         )
+        update_object_cmds = commands["update_object"]
+        update_features_cmds = commands["upserting_features"]
 
-        count = 0
+        count_objs = 0
         flush = False
-        for command in commands:
-            count += 1
-            if count == len(commands):
+        for command in update_object_cmds:
+            count_objs += 1
+            if count_objs == len(update_object_cmds):
+                flush = True
+            self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
+
+        count_fatures = 0
+        flush = False
+        for command in update_features_cmds:
+            count_fatures += 1
+            if count_fatures == len(update_features_cmds):
                 flush = True
             self.scribe_producer.produce({"payload": json.dumps(command)}, flush=flush)
 

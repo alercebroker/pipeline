@@ -5,6 +5,7 @@ from .connection import PSQLConnection, Session
 from mongo_scribe.sql.command.commands import (
     Command,
     InsertObjectCommand,
+    UpdateObjectCommand,
     InsertDetectionsCommand,
     InsertForcedPhotometryCommand,
     UpdateObjectStatsCommand,
@@ -41,6 +42,7 @@ class SQLCommandExecutor:
         self.connection = PSQLConnection(config["PSQL"])
         commands = (
             InsertObjectCommand,
+            UpdateObjectCommand,
             InsertDetectionsCommand,
             InsertForcedPhotometryCommand,
             UpdateObjectStatsCommand,

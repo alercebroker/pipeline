@@ -5,6 +5,8 @@
 class ValidCommands:
     # insert + object
     insert_object = "insert_object"
+    #update + object no xmatch in data
+    update_object = "update_object"
     # update + detections
     insert_detections = "insert_detections"
     # update_probabilities + probabilities in data

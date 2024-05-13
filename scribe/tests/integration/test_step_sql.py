@@ -747,3 +747,46 @@ class PsqlIntegrationTest(unittest.TestCase):
                 assert len(result) == 2
                 assert result[0][0] == 420
                 assert result[1][0] == 423432
+
+    def test_update_object(self):
+        command = {
+            "collection": "object",
+            "type": "update",
+            "criteria": {
+                "oid": "ZTF04ululeea",
+            },
+            "data": {
+                "g_r_mean_corr": 100,
+                "g_r_max_corr": 100
+            },
+        }
+        
+
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """
+                    INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, 
+                    meanra, meandec, step_id_corr, lastmjd, deltajd, ncovhist, ndethist, 
+                    corrected, stellar)
+                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) 
+                    ON CONFLICT DO NOTHING
+                    """
+                )
+            )
+            session.commit()
+
+        self.producer.produce({"payload": json.dumps(command)})
+        self.step.start()
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT oid, g_r_max_corr, g_r_mean_corr FROM object WHERE oid = 'ZTF04ululeea'
+                    """
+                )
+            )
+            result = result.fetchall()
+            assert result[0][1] == 100
+            assert result[0][2] == 100

@@ -103,9 +103,11 @@ def parse_scribe_payload(
         return 0
 
     # features = features.replace({np.nan: None, np.inf: None, -np.inf: None})
-    commands_list = []
+    upsert_features_commands_list = []
+    update_object_command_list = []
 
     for astro_object in astro_objects:
+        # for upserting features
         ao_features = astro_object.features[["name", "fid", "value"]].copy()
         ao_features["fid"] = ao_features["fid"].apply(get_fid)
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
@@ -113,7 +115,7 @@ def parse_scribe_payload(
 
         features_list = ao_features.to_dict("records")
 
-        command = {
+        upsert_features_command = {
             "collection": "object",
             "type": "update_features",
             "criteria": {"_id": oid},
@@ -124,9 +126,35 @@ def parse_scribe_payload(
             },
             "options": {"upsert": True},
         }
-        commands_list.append(command)
+        upsert_features_commands_list.append(upsert_features_command)
 
-    return commands_list
+        # for updating the object
+        g_r_max = list(
+            filter(lambda x: x["name"] == "g-r_max" and x["fid"] == 12, features_list)
+        )
+        g_r_max = g_r_max[0] if len(g_r_max) == 1 else None
+        g_r_mean = list(
+            filter(lambda x: x["name"] == "g-r_mean" and x["fid"] == 12, features_list)
+        )
+        g_r_mean = g_r_mean[0] if len(g_r_mean) == 1 else None
+
+        if g_r_max and g_r_mean:
+            update_object_command = {
+                "collection": "object",
+                "type": "update",
+                "criteria": {"oid": oid},
+                "data": {
+                    "g_r_max_corr": g_r_max,
+                    "g_r_mean_corr": g_r_mean,
+                },
+                "options": {},
+            }
+            update_object_command_list.append(update_object_command)
+
+    return {
+        "update_object": update_object_command_list,
+        "upserting_features": upsert_features_commands_list,
+    }
 
 
 def parse_output(
