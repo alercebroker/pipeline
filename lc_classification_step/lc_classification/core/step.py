@@ -33,7 +33,6 @@ class LateClassifier(GenericStep):
     def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
-        self.classifier_version = self.config["MODEL_VERSION"]
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
@@ -41,12 +40,14 @@ class LateClassifier(GenericStep):
 
         if model:
             self.model = model
+            self.classifier_version = self.config["MODEL_VERSION"]
 
         else:
             if self.isztf:
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])()
                 self.model.download_model()
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
+                self.classifier_version = self.config["MODEL_VERSION"]
             else:
                 mapper = get_class(
                     config["MODEL_CONFIG"]["PARAMS"]["mapper"]
@@ -55,7 +56,7 @@ class LateClassifier(GenericStep):
                 self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
-
+                self.classifier_version = self.model.model_version
         self.scribe_producer = get_class(
             config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
         )(config["SCRIBE_PRODUCER_CONFIG"])
