@@ -1,7 +1,6 @@
 # Based on the work of Manuel Pavez
 
-from ..core.base import FeatureExtractor
-from lc_classifier.base import AstroObject
+from ..core.base import FeatureExtractor, AstroObject
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
@@ -12,8 +11,8 @@ from typing import List
 
 
 class TDETailExtractor(FeatureExtractor):
-    version = '1.0.0'
-    unit = 'magnitude'
+    version = "1.0.0"
+    unit = "magnitude"
 
     def __init__(self, bands: List[str]):
         self.bands = bands
@@ -21,13 +20,13 @@ class TDETailExtractor(FeatureExtractor):
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
         if astro_object.forced_photometry is not None:
-            observations = pd.concat([
-                observations,
-                astro_object.forced_photometry], axis=0)
-        observations = observations[observations['unit'] == self.unit]
-        observations = observations[observations['brightness'].notna()]
-        observations = observations[observations['e_brightness'] > 0.0]
-        observations = observations[observations['e_brightness'] < 1.0]
+            observations = pd.concat(
+                [observations, astro_object.forced_photometry], axis=0
+            )
+        observations = observations[observations["unit"] == self.unit]
+        observations = observations[observations["brightness"].notna()]
+        observations = observations[observations["e_brightness"] > 0.0]
+        observations = observations[observations["e_brightness"] < 1.0]
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -35,25 +34,22 @@ class TDETailExtractor(FeatureExtractor):
 
         features = []
         for band in self.bands:
-            band_observations = observations[observations['fid'] == band]
+            band_observations = observations[observations["fid"] == band]
             if len(band_observations) < 2:
-                features.append(('TDE_decay', np.nan, band))
-                features.append(('TDE_decay_chi', np.nan, band))
+                features.append(("TDE_decay", np.nan, band))
+                features.append(("TDE_decay_chi", np.nan, band))
                 continue
 
-            brightest_obs = band_observations.sort_values('brightness').iloc[0]
+            brightest_obs = band_observations.sort_values("brightness").iloc[0]
             t_d = brightest_obs.mjd + 14
 
-            after_t_d = band_observations[band_observations['mjd'] > t_d]
+            after_t_d = band_observations[band_observations["mjd"] > t_d]
 
             x = 2.5 * np.log10(after_t_d.mjd.values - t_d + 30)
             y = after_t_d.brightness.values
             y_err = after_t_d.e_brightness.values + 1e-2
 
-            omega = np.stack([
-                np.ones(len(x)),
-                x
-            ], axis=-1)
+            omega = np.stack([np.ones(len(x)), x], axis=-1)
             inverr = 1.0 / y_err
 
             # weighted regularized linear regression
@@ -63,39 +59,35 @@ class TDETailExtractor(FeatureExtractor):
 
             # Calculate reduced chi-squared statistic
             fitted_magnitude = coeffs[1] * x + coeffs[0]
-            chi = np.sum((fitted_magnitude - y) ** 2 / y_err ** 2)
+            chi = np.sum((fitted_magnitude - y) ** 2 / y_err**2)
             chi_den = len(fitted_magnitude) - 2
             if chi_den >= 1:
                 chi_per_degree = chi / chi_den
             else:
                 chi_per_degree = np.nan
 
-            features.append(('TDE_decay', coeffs[1], band))
-            features.append(('TDE_decay_chi', chi_per_degree, band))
+            features.append(("TDE_decay", coeffs[1], band))
+            features.append(("TDE_decay_chi", chi_per_degree, band))
 
-        features_df = pd.DataFrame(
-            data=features,
-            columns=['name', 'value', 'fid']
-        )
+        features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
-        sids = astro_object.detections['sid'].unique()
+        sids = astro_object.detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )
 
 
 def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     original_length = len(x_array)
     pad_length = 25 - (original_length % 25)
-    pad_array = np.array([fill_value]*pad_length, dtype=np.float32)
+    pad_array = np.array([fill_value] * pad_length, dtype=np.float32)
     return np.concatenate([x_array, pad_array])
 
 
@@ -119,12 +111,12 @@ def flux2mag(flux):
 
 
 def flux_err_2_mag_err(flux_err, flux):
-    return (2.5*flux_err)/(np.log(10.0)*flux)
+    return (2.5 * flux_err) / (np.log(10.0) * flux)
 
 
 class FleetExtractor(FeatureExtractor):
-    version = '1.0.0'
-    unit = 'diff_flux'
+    version = "1.0.0"
+    unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
         self.bands = bands
@@ -132,13 +124,15 @@ class FleetExtractor(FeatureExtractor):
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
         if astro_object.forced_photometry is not None:
-            observations = pd.concat([
-                observations,
-                astro_object.forced_photometry], axis=0)
-        observations = observations[observations['unit'] == self.unit]
-        observations = observations[observations['brightness'].notna()]
-        observations = observations[observations['brightness'] > 1]  # at least 1uJy positive detection
-        observations = observations[observations['e_brightness'] > 0.0]
+            observations = pd.concat(
+                [observations, astro_object.forced_photometry], axis=0
+            )
+        observations = observations[observations["unit"] == self.unit]
+        observations = observations[observations["brightness"].notna()]
+        observations = observations[
+            observations["brightness"] > 1
+        ]  # at least 1uJy positive detection
+        observations = observations[observations["e_brightness"] > 0.0]
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -146,72 +140,70 @@ class FleetExtractor(FeatureExtractor):
 
         features = []
         for band in self.bands:
-            band_observations = observations[observations['fid'] == band]
+            band_observations = observations[observations["fid"] == band]
             if len(band_observations) < 4:
-                features.append(('fleet_a', np.nan, band))
-                features.append(('fleet_w', np.nan, band))
-                features.append(('fleet_chi', np.nan, band))
+                features.append(("fleet_a", np.nan, band))
+                features.append(("fleet_w", np.nan, band))
+                features.append(("fleet_chi", np.nan, band))
                 continue
 
-            first_mjd = band_observations.sort_values('mjd').iloc[0]['mjd']
+            first_mjd = band_observations.sort_values("mjd").iloc[0]["mjd"]
             y = flux2mag(band_observations.brightness)
-            y_err = flux_err_2_mag_err(
-                band_observations.e_brightness,
-                band_observations.brightness) + 1e-2
+            y_err = (
+                flux_err_2_mag_err(
+                    band_observations.e_brightness, band_observations.brightness
+                )
+                + 1e-2
+            )
 
             try:
                 # noinspection PyTupleAssignmentBalance
                 parameters, _ = curve_fit(
                     fleet_model,
-                    band_observations['mjd'].values - first_mjd,
+                    band_observations["mjd"].values - first_mjd,
                     y,
                     sigma=y_err,
                     p0=[0.6, -0.05, np.mean(y), 0],
-                    bounds=([0.0, -100.0, 0, -50], [10, 0, 30, 10000])
+                    bounds=([0.0, -100.0, 0, -50], [10, 0, 30, 10000]),
                 )
 
                 model_prediction = fleet_model(
-                    band_observations['mjd'].values - first_mjd,
-                    *parameters
+                    band_observations["mjd"].values - first_mjd, *parameters
                 )
 
-                chi = np.sum((model_prediction - y) ** 2 / y_err ** 2)
+                chi = np.sum((model_prediction - y) ** 2 / y_err**2)
                 chi_den = len(model_prediction) - 4
                 if chi_den >= 1:
                     chi_per_degree = chi / chi_den
                 else:
                     chi_per_degree = np.nan
 
-                features.append(('fleet_a', parameters[0], band))
-                features.append(('fleet_w', parameters[1], band))
-                features.append(('fleet_chi', chi_per_degree, band))
+                features.append(("fleet_a", parameters[0], band))
+                features.append(("fleet_w", parameters[1], band))
+                features.append(("fleet_chi", chi_per_degree, band))
             except RuntimeError:
-                features.append(('fleet_a', np.nan, band))
-                features.append(('fleet_w', np.nan, band))
-                features.append(('fleet_chi', np.nan, band))
+                features.append(("fleet_a", np.nan, band))
+                features.append(("fleet_w", np.nan, band))
+                features.append(("fleet_chi", np.nan, band))
 
-        features_df = pd.DataFrame(
-            data=features,
-            columns=['name', 'value', 'fid']
-        )
+        features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
-        sids = astro_object.detections['sid'].unique()
+        sids = astro_object.detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )
 
 
 class ColorVariationExtractor(FeatureExtractor):
-    version = '1.0.0'
-    unit = 'magnitude'
+    version = "1.0.0"
+    unit = "magnitude"
 
     def __init__(self, window_len: float, band_1: str, band_2: str):
         self.window_len = window_len
@@ -221,23 +213,25 @@ class ColorVariationExtractor(FeatureExtractor):
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections
         if astro_object.forced_photometry is not None:
-            observations = pd.concat([
-                observations,
-                astro_object.forced_photometry], axis=0)
-        observations = observations[observations['unit'] == self.unit]
-        observations = observations[observations['brightness'].notna()]
-        observations = observations[observations['e_brightness'] > 0.0]
-        observations = observations[observations['e_brightness'] < 1.0]
-        observations = observations[observations['fid'].isin([self.band_1, self.band_2])]
+            observations = pd.concat(
+                [observations, astro_object.forced_photometry], axis=0
+            )
+        observations = observations[observations["unit"] == self.unit]
+        observations = observations[observations["brightness"].notna()]
+        observations = observations[observations["e_brightness"] > 0.0]
+        observations = observations[observations["e_brightness"] < 1.0]
+        observations = observations[
+            observations["fid"].isin([self.band_1, self.band_2])
+        ]
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object).copy()
-        observations['mjd'] -= observations['mjd'].min()
-        observations['window'] = (observations['mjd'] // self.window_len).astype(int)
+        observations["mjd"] -= observations["mjd"].min()
+        observations["window"] = (observations["mjd"] // self.window_len).astype(int)
 
         def compute_color(df):
-            fid_count = df[['fid', 'brightness']].groupby('fid').count()
+            fid_count = df[["fid", "brightness"]].groupby("fid").count()
 
             if len(fid_count) < 2:
                 return
@@ -245,12 +239,15 @@ class ColorVariationExtractor(FeatureExtractor):
             if not np.all(fid_count.values >= 3):
                 return
 
-            fid_means = df[['fid', 'brightness']].groupby('fid').mean()
+            fid_means = df[["fid", "brightness"]].groupby("fid").mean()
 
             color = fid_means.loc[self.band_1] - fid_means.loc[self.band_2]
             return color
 
-        window_colors = observations.groupby('window').apply(compute_color)
+        # pandas 2.2 and higher should use the include_groups=False arg
+        window_colors = observations.groupby("window").apply(
+            compute_color  # , include_groups=False
+        )
         window_colors.dropna(inplace=True)
 
         if len(window_colors) > 1:
@@ -259,19 +256,18 @@ class ColorVariationExtractor(FeatureExtractor):
             color_std = np.nan
 
         features_df = pd.DataFrame(
-            data=[['color_variation', color_std, f'{self.band_1},{self.band_2}']],
-            columns=['name', 'value', 'fid']
+            data=[["color_variation", color_std, f"{self.band_1},{self.band_2}"]],
+            columns=["name", "value", "fid"],
         )
 
-        sids = astro_object.detections['sid'].unique()
+        sids = astro_object.detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )

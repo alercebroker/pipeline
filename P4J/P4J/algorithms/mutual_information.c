@@ -12,7 +12,7 @@
         ],
         "include_dirs": [
             ".",
-            "/tmp/pip-build-env-rko2j2pf/overlay/lib/python3.11/site-packages/numpy/core/include"
+            "/tmp/tmp1d7yst_6/.venv/lib/python3.11/site-packages/numpy/core/include"
         ],
         "libraries": [
             "m"

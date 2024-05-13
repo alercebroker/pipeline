@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "lc_classification_step"
-version = "24.4.2a16"
+version = "24.4.2a35"
 description = "LC Classification Step"
 authors = []
 readme = "README.md"
@@ -15,9 +15,9 @@ packages = [{include = "lc_classification"}]
 step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.10,<3.12"
 apf-base = { path = "../libs/apf", develop = true }
-pandas = { version = "2.0.1" }
+pandas = { version = "^2.0.1" }
 numexpr = "^2.8.8"
 
 [tool.poetry.group.ztf]
@@ -64,6 +64,12 @@ alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = 
 
 [tool.poetry.group.anomaly.dependencies]
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["anomaly"] }
+
+[tool.poetry.group.mbappe.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mbappe"] }
+
+[tool.poetry.group.squidward.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=23.0"

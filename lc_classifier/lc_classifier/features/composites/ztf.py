@@ -24,47 +24,41 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
     version = "1.0.0"
 
     def _instantiate_extractors(self) -> List[FeatureExtractor]:
-        bands = list('gr')
+        bands = list("gr")
 
         feature_extractors = [
-            ColorFeatureExtractor(bands, unit='magnitude'),
+            ColorFeatureExtractor(bands, unit="magnitude"),
             AllwiseColorsFeatureExtractor(bands),
             PanStarrsFeatureExtractor(),
-            MHPSExtractor(bands, unit='diff_flux'),
-            GPDRWExtractor(bands, unit='diff_flux'),
-
+            MHPSExtractor(bands, unit="diff_flux"),
+            GPDRWExtractor(bands, unit="diff_flux"),
             PeriodExtractor(
                 bands,
-                unit='magnitude',
+                unit="magnitude",
                 smallest_period=0.045,
                 largest_period=100.0,
                 trim_lightcurve_to_n_days=1000.0,
                 min_length=15,
                 use_forced_photo=True,
                 return_power_rates=True,
-                shift=0.1
+                shift=0.1,
             ),  # TODO: consider LPVs + be within comp. budget
-            FoldedKimExtractor(bands, unit='magnitude'),
-            HarmonicsExtractor(bands, unit='magnitude', use_forced_photo=True),
-            TurboFatsExtractor(bands, unit='diff_flux'),
+            FoldedKimExtractor(bands, unit="magnitude"),
+            HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=True),
+            TurboFatsExtractor(bands, unit="diff_flux"),
             SPMExtractor(
-                bands, unit='diff_flux',
+                bands,
+                unit="diff_flux",
                 redshift=None,
                 extinction_color_excess=None,
-                forced_phot_prelude=30.0
+                forced_phot_prelude=30.0,
             ),
             TDETailExtractor(bands),
             FleetExtractor(bands),
-            ColorVariationExtractor(
-                window_len=20,
-                band_1='g',
-                band_2='r'
-            ),
-            SNExtractor(
-                bands, unit='diff_flux', use_forced_photo=True
-            ),
+            ColorVariationExtractor(window_len=20, band_1="g", band_2="r"),
+            SNExtractor(bands, unit="diff_flux", use_forced_photo=True),
             MicroLensExtractor(bands),
             TimespanExtractor(),
-            CoordinateExtractor()
+            CoordinateExtractor(),
         ]
         return feature_extractors

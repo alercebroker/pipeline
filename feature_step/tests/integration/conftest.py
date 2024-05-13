@@ -22,8 +22,7 @@ os.environ["SCRIBE_TOPIC"] = ""
 def docker_compose_file(pytestconfig):
     try:
         path = (
-            pathlib.Path(pytestconfig.rootdir)
-            / "tests/integration/docker-compose.yml"
+            pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yml"
         )
         assert path.exists()
         return path
@@ -34,6 +33,14 @@ def docker_compose_file(pytestconfig):
         )
         assert path.exists()
         return path
+
+
+@pytest.fixture(scope="session")
+def docker_compose_command():
+    v2 = False
+    if os.getenv("COMPOSE", "v1") == "v2":
+        v2 = True
+    return "docker compose" if v2 else "docker-compose"
 
 
 def is_responsive_kafka(url):
@@ -63,10 +70,7 @@ def kafka_service(docker_ip, docker_services):
         "schemas/feature_step",  # TODO: repair this
         "output.avsc",
     )
-    data_ztf = generate_input_batch(
-        10,
-        ["g", "r"],
-        survey="ZTF")
+    data_ztf = generate_input_batch(10, ["g", "r"], survey="ZTF")
     config = {
         "PARAMS": {"bootstrap.servers": "localhost:9092"},
         "TOPIC": "ztf",

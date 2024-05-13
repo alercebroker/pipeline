@@ -1,5 +1,4 @@
-from ..core.base import FeatureExtractor
-from lc_classifier.base import AstroObject
+from ..core.base import FeatureExtractor, AstroObject
 import numpy as np
 import pandas as pd
 from typing import List
@@ -8,28 +7,28 @@ import mhps
 
 class MHPSExtractor(FeatureExtractor):
     def __init__(
-            self,
-            bands: List[str],
-            unit: str,
-            t1: float = 100.0,
-            t2: float = 10.0,
-            dt: float = 3.0
+        self,
+        bands: List[str],
+        unit: str,
+        t1: float = 100.0,
+        t2: float = 10.0,
+        dt: float = 3.0,
     ):
-        self.version = '1.0.0'
+        self.version = "1.0.0"
 
         self.t1 = t1
         self.t2 = t2
         self.dt = dt
 
         self.bands = bands
-        valid_units = ['magnitude', 'diff_flux']
+        valid_units = ["magnitude", "diff_flux"]
         if unit not in valid_units:
-            raise ValueError(f'{unit} is not a valid unit ({valid_units})')
+            raise ValueError(f"{unit} is not a valid unit ({valid_units})")
         self.unit = unit
 
     def preprocess_detections(self, detections: pd.DataFrame) -> pd.DataFrame:
-        detections = detections[detections['unit'] == self.unit]
-        detections = detections[detections['brightness'].notna()]
+        detections = detections[detections["unit"] == self.unit]
+        detections = detections[detections["brightness"].notna()]
         return detections
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -38,60 +37,50 @@ class MHPSExtractor(FeatureExtractor):
 
         features = []
         for band in self.bands:
-            band_detections = detections[detections['fid'] == band].copy()
+            band_detections = detections[detections["fid"] == band].copy()
             if len(band_detections) == 0:
                 ratio = low = high = non_zero = pn_flag = np.nan
             else:
-                band_detections.sort_values('mjd', inplace=True)
+                band_detections.sort_values("mjd", inplace=True)
 
-                time = band_detections['mjd'].values
-                brightness = band_detections['brightness'].values
-                e_brightness = band_detections['e_brightness'].values
+                time = band_detections["mjd"].values
+                brightness = band_detections["brightness"].values
+                e_brightness = band_detections["e_brightness"].values
 
-                if self.unit == 'magnitude':
+                if self.unit == "magnitude":
                     brightness = brightness.astype(np.double)
                     e_brightness = e_brightness.astype(np.double)
                     time = time.astype(np.double)
 
                     # TODO: check extra params of mhps.statistics
                     ratio, low, high, non_zero, pn_flag = mhps.statistics(
-                        brightness,
-                        e_brightness,
-                        time,
-                        self.t1,
-                        self.t2)
-                elif self.unit == 'diff_flux':
+                        brightness, e_brightness, time, self.t1, self.t2
+                    )
+                elif self.unit == "diff_flux":
                     brightness = brightness.astype(np.float32)
                     e_brightness = e_brightness.astype(np.float32)
                     time = time.astype(np.float32)
 
                     ratio, low, high, non_zero, pn_flag = mhps.flux_statistics(
-                        brightness,
-                        e_brightness,
-                        time,
-                        self.t1,
-                        self.t2)
+                        brightness, e_brightness, time, self.t1, self.t2
+                    )
 
-            features.append((f'MHPS_ratio', ratio, band))
-            features.append((f'MHPS_low', low, band))
-            features.append((f'MHPS_high', high, band))
-            features.append((f'MHPS_non_zero', non_zero, band))
-            features.append((f'MHPS_PN_flag', pn_flag, band))
+            features.append((f"MHPS_ratio", ratio, band))
+            features.append((f"MHPS_low", low, band))
+            features.append((f"MHPS_high", high, band))
+            features.append((f"MHPS_non_zero", non_zero, band))
+            features.append((f"MHPS_PN_flag", pn_flag, band))
 
-        features_df = pd.DataFrame(
-            data=features,
-            columns=['name', 'value', 'fid']
-        )
+        features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
-        sids = detections['sid'].unique()
+        sids = detections["sid"].unique()
         sids = np.sort(sids)
-        sid = ','.join(sids)
+        sid = ",".join(sids)
 
-        features_df['sid'] = sid
-        features_df['version'] = self.version
+        features_df["sid"] = sid
+        features_df["version"] = self.version
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(
-            [f for f in all_features if not f.empty],
-            axis=0
+            [f for f in all_features if not f.empty], axis=0
         )

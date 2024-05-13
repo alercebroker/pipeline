@@ -25,7 +25,7 @@ def SFarray(jd, mag, err):
     err_squared = err**2
     len_mag = len(mag)
     for i in range(len_mag):
-        for j in range(i+1, len_mag):
+        for j in range(i + 1, len_mag):
             dm = mag[i] - mag[j]
             sigma = err_squared[i] + err_squared[j]
             dt = jd[j] - jd[i]
@@ -43,9 +43,10 @@ class SF_ML_amplitude(Base):
     Fit the model A*tau^gamma to the SF, finding the maximum value of the likelihood.
     Based on Schmidt et al. 2010.
     """
+
     def __init__(self, shared_data):
         super().__init__(shared_data)
-        self.Data = ['magnitude', 'time', 'error']
+        self.Data = ["magnitude", "time", "error"]
 
     def bincalc(self, nbin=0.1, bmin=5, bmax=2000):
         """
@@ -78,20 +79,20 @@ class SF_ML_amplitude(Base):
         sf_list = []
         tau_list = []
 
-        for i in range(0, len(bins)-1):
-            n = np.where((dtarray >= bins[i]) & (dtarray < bins[i+1]))
+        for i in range(0, len(bins) - 1):
+            n = np.where((dtarray >= bins[i]) & (dtarray < bins[i + 1]))
             nobjbin = len(n[0])
             if nobjbin >= 1:
-                dmag1 = (dmagarray[n])**2
-                derr1 = (sigmaarray[n])
-                sf = (dmag1-derr1)
+                dmag1 = (dmagarray[n]) ** 2
+                derr1 = sigmaarray[n]
+                sf = dmag1 - derr1
                 mean_sf = np.mean(sf)
                 if mean_sf < 0:
                     continue
                 sff = np.sqrt(mean_sf)
                 sf_list.append(sff)
                 # central tau for the bin
-                tau_list.append((bins[i]+bins[i+1])*0.5)
+                tau_list.append((bins[i] + bins[i + 1]) * 0.5)
 
         SF = np.array(sf_list)
         tau = np.array(tau_list)
@@ -100,7 +101,7 @@ class SF_ML_amplitude(Base):
             tau = np.array([-99])
             SF = np.array([-99])
 
-        return tau/365., SF
+        return tau / 365.0, SF
 
     def fit(self, data):
         mag = data[0]
@@ -120,7 +121,7 @@ class SF_ML_amplitude(Base):
             y = y[np.where((tau <= 0.5) & (tau > 0.01))]
             try:
                 coefficients = np.polyfit(x, y, 1)
-                a = 10**(coefficients[1])
+                a = 10 ** (coefficients[1])
                 gamma = coefficients[0]
 
                 if a < 0.005:
@@ -135,18 +136,20 @@ class SF_ML_amplitude(Base):
                 a = -0.5
                 gamma = -0.5
 
-        self.shared_data['g_sf'] = gamma
+        self.shared_data["g_sf"] = gamma
         return a
 
 
 class SF_ML_gamma(Base):
     def __init__(self, shared_data):
         super().__init__(shared_data)
-        self.Data = ['magnitude', 'time', 'error']
+        self.Data = ["magnitude", "time", "error"]
 
     def fit(self, data):
         try:
-            g_sf = self.shared_data['g_sf']
+            g_sf = self.shared_data["g_sf"]
             return g_sf
         except KeyError:
-            raise Exception("Please run SF_amplitude first to generate values for SF_gamma")
+            raise Exception(
+                "Please run SF_amplitude first to generate values for SF_gamma"
+            )

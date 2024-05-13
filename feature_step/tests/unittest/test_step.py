@@ -56,16 +56,13 @@ class StepTestCase(unittest.TestCase):
         self.step.scribe_producer.produce = mock.MagicMock()
 
     def test_execute(self):
-        messages = generate_input_batch(
-            10,
-            ["g", "r"],
-            survey="ZTF")
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
         result_messages = self.step.execute(messages)
 
         self.assertEqual(len(messages), len(result_messages))
         n_features_prev = -1
         for result_message in result_messages:
-            n_features = len(result_message['features'])
+            n_features = len(result_message["features"])
             self.assertTrue(n_features > 0)
 
             # Check all messages have the same number of features
@@ -87,7 +84,7 @@ class StepTestCase(unittest.TestCase):
         self.assertEqual(len(messages), len(result_messages))
         n_features_prev = -1
         for result_message in result_messages:
-            n_features = len(result_message['features'])
+            n_features = len(result_message["features"])
             self.assertTrue(n_features > 0)
 
             # Check all messages have the same number of features

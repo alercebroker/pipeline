@@ -12,21 +12,20 @@ class TestZTFPreprocessor(unittest.TestCase):
         period = 0.051451615
         astro_object = get_ztf_example(3)
         astro_object.features.loc[len(astro_object.features)] = (
-            'Multiband_period',
+            "Multiband_period",
             period,
-            'g,r',
-            'ztf',
-            '1.0.0'
+            "g,r",
+            "ztf",
+            "1.0.0",
         )
         harmonics_extractor = HarmonicsExtractor(
-            bands=['g', 'r'],
-            unit='magnitude',
-            use_forced_photo=False,
-            n_harmonics=7
+            bands=["g", "r"], unit="magnitude", use_forced_photo=False, n_harmonics=7
         )
         harmonics_extractor.compute_features_single_object(astro_object)
         features = astro_object.features
-        mean_chi_original = np.mean(features[features['name'] == 'Harmonics_chi']['value'].values)
+        mean_chi_original = np.mean(
+            features[features["name"] == "Harmonics_chi"]["value"].values
+        )
 
         # plot_astro_object(
         #     astro_object, unit='magnitude',
@@ -39,6 +38,8 @@ class TestZTFPreprocessor(unittest.TestCase):
 
         harmonics_extractor.compute_features_single_object(astro_object)
         features = astro_object.features
-        mean_chi_helio_time = np.mean(features[features['name'] == 'Harmonics_chi']['value'].values)
+        mean_chi_helio_time = np.mean(
+            features[features["name"] == "Harmonics_chi"]["value"].values
+        )
 
         self.assertLessEqual(mean_chi_helio_time, mean_chi_original)
