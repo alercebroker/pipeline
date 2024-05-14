@@ -132,11 +132,11 @@ def parse_scribe_payload(
         g_r_max = list(
             filter(lambda x: x["name"] == "g-r_max" and x["fid"] == 12, features_list)
         )
-        g_r_max = g_r_max[0] if len(g_r_max) == 1 else None
+        g_r_max = g_r_max[0]["value"] if len(g_r_max) == 1 else None
         g_r_mean = list(
             filter(lambda x: x["name"] == "g-r_mean" and x["fid"] == 12, features_list)
         )
-        g_r_mean = g_r_mean[0] if len(g_r_mean) == 1 else None
+        g_r_mean = g_r_mean[0]["value"] if len(g_r_mean) == 1 else None
 
         if g_r_max and g_r_mean:
             update_object_command = {
