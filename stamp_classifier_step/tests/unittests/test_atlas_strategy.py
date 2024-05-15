@@ -83,3 +83,20 @@ def test_with_real_data(alerts):
     assert len(output_dict) == len(alerts)
     for aid, predictions in output_dict.items():
         assert set(predictions.keys()) == set(strategy.model.class_names)
+
+
+def test_speed(alerts):
+    import time
+    strategy = ATLASStrategy()
+
+    n_alerts = 50
+    many_alerts = []
+    for i in range(n_alerts):
+        alert_copy = alerts[0].copy()
+        alert_copy['aid'] = str(i)
+        many_alerts.append(alert_copy)
+    t0 = time.time()
+    output_dict = strategy.get_probabilities(many_alerts)
+    alerts_per_second = n_alerts / (time.time() - t0)
+    print(alerts_per_second)
+    assert alerts_per_second > 15
