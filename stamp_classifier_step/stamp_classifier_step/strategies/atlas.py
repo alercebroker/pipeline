@@ -2,6 +2,7 @@ import gzip
 import io
 import warnings
 from typing import List, Tuple
+import os
 
 import pandas as pd
 from astropy.io import fits
@@ -17,8 +18,10 @@ class ATLASStrategy(BaseStrategy):
     HEADER_FIELDS = ["FILTER", "AIRMASS", "SEEING", "SUNELONG", "MANGLE"]
 
     def __init__(self):
-        self.model = AtlasStampClassifier()
         super().__init__("atlas_stamp_classifier", "1.0.0")
+        self.model = AtlasStampClassifier(
+            model_url=os.environ["ATLAS_STAMP_MODEL_PATH"], batch_size=16
+        )
 
     @staticmethod
     def _extract_ra_dec(header: dict) -> Tuple[float, float]:

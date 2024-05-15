@@ -69,3 +69,17 @@ def test_get_probabilities_reformats_dictionary(mock_classifier, alerts):
         },
     }
     assert probs == expected
+
+
+def test_with_zero_messages():
+    strategy = ATLASStrategy()
+    messages = []
+    output_dict = strategy.get_probabilities(messages)
+
+
+def test_with_real_data(alerts):
+    strategy = ATLASStrategy()
+    output_dict = strategy.get_probabilities(alerts)
+    assert len(output_dict) == len(alerts)
+    for aid, predictions in output_dict.items():
+        assert set(predictions.keys()) == set(strategy.model.class_names)

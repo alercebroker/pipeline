@@ -16,7 +16,7 @@ url = "https://github.com/alercebroker/atlas_stamp_classifier"
 priority = "primary"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.9"
+python = ">=3.9, ^3.11"
 apf-base = { version = "<2.0" }
 atlas-stamp-classifier = {git = "ssh://git@github.com/alercebroker/atlas_stamp_classifier.git", rev = "main", optional = true }
 astropy = { version = "*", optional = true }
