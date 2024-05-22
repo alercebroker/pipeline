@@ -51,3 +51,4 @@ def test_step_ztf(kafka_service):
     }
     step = FeatureStep(config=step_config)
     step.start()
+    assert False
