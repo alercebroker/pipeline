@@ -56,7 +56,7 @@ class InsertObjectCommand(Command):
         )
 
 class UpdateObjectFromStatsCommand(Command):
-    type = ValidCommands.update_object
+    type = ValidCommands.update_object_from_stats
     valid_attributes = set([
         "ndethist",
         "ncovhist",

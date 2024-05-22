@@ -3,7 +3,7 @@ from .exceptions import WrongFormatCommandException
 from .commands import (
     Command,
     InsertObjectCommand,
-    UpdateObjectCommand,
+    UpdateObjectFromStatsCommand,
     InsertDetectionsCommand,
     InsertForcedPhotometryCommand,
     UpdateObjectStatsCommand,
@@ -50,7 +50,7 @@ def command_factory(msg: str) -> Command:
     # here it comes
     if type_ == "insert" and table == "object":
         return InsertObjectCommand(**message)
-    if type_ == "update_object_stats":
+    if type_ == "update_object_from_stats":
         return UpdateObjectFromStatsCommand(**message)
     if type_ == "update" and table == "detection":
         return InsertDetectionsCommand(**message)

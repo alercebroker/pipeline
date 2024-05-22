@@ -751,9 +751,9 @@ class PsqlIntegrationTest(unittest.TestCase):
     def test_update_object(self):
         command = {
             "collection": "object",
-            "type": "update",
+            "type": "update_object_from_stats",
             "criteria": {
-                "oid": "ZTF04ululeea",
+                "oid": "oid_test_update",
             },
             "data": {
                 "g_r_mean_corr": 100,
@@ -766,10 +766,10 @@ class PsqlIntegrationTest(unittest.TestCase):
             session.execute(
                 text(
                     """
-                    INSERT INTO object(oid, ndet, firstmjd, g_r_max, g_r_mean_corr, 
+                    INSERT INTO object(oid, ndet, firstmjd, g_r_max_corr, g_r_mean_corr, 
                     meanra, meandec, step_id_corr, lastmjd, deltajd, ncovhist, ndethist, 
                     corrected, stellar)
-                    VALUES ('ZTF04ululeea', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) 
+                    VALUES ('oid_test_update', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) 
                     ON CONFLICT DO NOTHING
                     """
                 )
@@ -783,7 +783,7 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = session.execute(
                 text(
                     """
-                    SELECT oid, g_r_max_corr, g_r_mean_corr FROM object WHERE oid = 'ZTF04ululeea'
+                    SELECT oid, g_r_max_corr, g_r_mean_corr FROM object WHERE oid = 'oid_test_update'
                     """
                 )
             )
