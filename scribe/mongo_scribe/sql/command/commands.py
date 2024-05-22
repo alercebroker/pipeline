@@ -55,8 +55,8 @@ class InsertObjectCommand(Command):
             insert(Object).values(data).on_conflict_do_nothing()
         )
 
-class UpdateObjectCommand(Command):
-    type = ValidCommands.update_object
+class UpdateObjectFromStatsCommand(Command):
+    type = ValidCommands.update_object_from_stats
     valid_attributes = set([
         "ndethist",
         "ncovhist",
@@ -82,17 +82,20 @@ class UpdateObjectCommand(Command):
 
     def _check_inputs(self, data, criteria):
         super()._check_inputs(data, criteria)
+        
+    def _format_data(self, data):
 
         if not set(data.keys()).issubset(self.valid_attributes):
             bad_inputs = set(data.keys()).difference(self.valid_attributes)
-            raise ValueError(f"Invalid keys provided {bad_inputs}")
+            logging.debug(f"Invalid keys provided {bad_inputs}")
+            for k in bad_inputs:
+                data.pop(k)
         
-    def _format_data(self, data):
         return {
             "oid": self.criteria["oid"],
             **data
         }
-    
+
     @staticmethod
     def db_operation(session: Session, data: List):
         #upsert_stmt = update(Object)

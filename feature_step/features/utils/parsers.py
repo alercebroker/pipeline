@@ -141,7 +141,7 @@ def parse_scribe_payload(
         if g_r_max and g_r_mean:
             update_object_command = {
                 "collection": "object",
-                "type": "update",
+                "type": "update_object_from_stats",
                 "criteria": {"oid": oid},
                 "data": {
                     "g_r_max_corr": g_r_max,
