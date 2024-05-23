@@ -322,10 +322,3 @@ class UpdateFeaturesCommand(UpdateCommand):
         ops.append(UpdateOne(self.criteria, update, array_filters=[filters]))
 
         return ops
-
-class PlaceHolderCommand(Command):
-
-    type = ValidCommands.update_object_from_stats
-
-    def get_operations(self) -> list:
-        return []
