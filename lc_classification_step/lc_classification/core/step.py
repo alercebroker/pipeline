@@ -180,7 +180,9 @@ class LateClassifier(GenericStep):
             classifier_version=self.classifier_version,
         )
         self.produce_scribe(parsed_result.value)
-        print(f"---SCRIBE PARSED---\n\n{json.dumps(parsed_result.value)}\n\n--------")
+        print(
+            f"---SCRIBE PARSED---\n\n{json.dumps(parsed_result.value)}\n\n--------"
+        )
         return result
 
     def tear_down(self):
