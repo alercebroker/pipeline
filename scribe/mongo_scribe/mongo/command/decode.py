@@ -49,6 +49,4 @@ def db_command_factory(msg: str) -> Command:
         return UpdateProbabilitiesCommand(**decoded_message)
     if msg_type == UpdateFeaturesCommand.type:
         return UpdateFeaturesCommand(**decoded_message)
-    if msg_type == PlaceHolderCommand.type:
-        return PlaceHolderCommand(**decoded_message)
     raise ValueError(f"Unrecognized command type {msg_type}")
