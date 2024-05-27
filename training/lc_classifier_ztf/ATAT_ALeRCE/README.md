@@ -2,7 +2,7 @@
 
 ATAT: Astronomical Transformer for time series And Tabular data consists of two Transformer models that encode light curves and features using novel Time Modulation (TM) and Quantile Feature Tokenizer (QFT) mechanisms, respectively.
 
-![Diagram of ATAT](images/ATAT.png)
+<img src="https://arxiv.org/html/2405.03078v2/x1.png" alt="Description of the image" style="background-color: white; padding: 10px;">>
 
 **Code authors**:
 - Nicolas Astorga 
