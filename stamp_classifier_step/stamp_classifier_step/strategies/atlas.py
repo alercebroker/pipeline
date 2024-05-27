@@ -95,14 +95,14 @@ class ATLASStrategy(BaseStrategy):
                 io.BytesIO(fh.read()), memmap=False, ignore_missing_simple=True
             ) as hdu:
                 im = hdu[0].data
-                header = hdu[0].header
-        if not with_metadata:
-            return im
-        metadata = []
-        for field in self.HEADER_FIELDS:
-            metadata.append(header[field])
+                if not with_metadata:
+                    return im
 
-        metadata.extend(self._extract_ra_dec(header))
+                header = hdu[0].header
+
+        metadata = [header[field] for field in self.HEADER_FIELDS]
+
+        # metadata.extend(self._extract_ra_dec(header))
         return im, metadata
 
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -145,7 +145,9 @@ class ATLASStrategy(BaseStrategy):
             difference = self.extract_image_from_fits(
                 msg["stamps"]["difference"], with_metadata=False
             )
-            data.append(fields + [science, difference] + metadata)
+            data.append(
+                fields + [science, difference] + metadata + [msg["ra"], msg["dec"]]
+            )
 
             index.append(msg["aid"])
 

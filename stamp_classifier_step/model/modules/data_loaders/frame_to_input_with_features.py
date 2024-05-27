@@ -157,15 +157,15 @@ class FrameToInputWithFeatures(FrameToInput):
             use_feature_normalizer=True
         )
         self.dataset_preprocessor.verbose = False
-        datasets_dict[
-            general_keys.TRAIN
-        ] = self.dataset_preprocessor.preprocess_dataset(train_dataset)
+        datasets_dict[general_keys.TRAIN] = (
+            self.dataset_preprocessor.preprocess_dataset(train_dataset)
+        )
         datasets_dict[general_keys.TEST] = self.dataset_preprocessor.preprocess_dataset(
             test_dataset
         )
-        datasets_dict[
-            general_keys.VALIDATION
-        ] = self.dataset_preprocessor.preprocess_dataset(val_dataset)
+        datasets_dict[general_keys.VALIDATION] = (
+            self.dataset_preprocessor.preprocess_dataset(val_dataset)
+        )
         self.dataset_preprocessor.verbose = True
         self.dataset_preprocessor.verbose_warnings = True
         return datasets_dict

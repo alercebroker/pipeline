@@ -10,6 +10,7 @@
 @copyright: Copyright (c) 2016-2017, Vignesh Srinivasan, Sebastian Lapuschkin, Alexander Binder, Gregoire Montavon, Klaus-Robert Mueller, Wojciech Samek
 @license : BSD-2-Clause
 """
+
 import os
 import sys
 import tensorflow as tf

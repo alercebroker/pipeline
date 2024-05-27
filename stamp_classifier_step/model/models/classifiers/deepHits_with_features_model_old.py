@@ -477,9 +477,9 @@ class DeepHiTSWithFeatures(DeepHiTSNanNormCropStampModel):
             * self.it_horizon_increase_criterion_model[general_keys.LOSS]
         ):
             self.it_horizon_increase_criterion_model[general_keys.LOSS] = criterion
-            self.it_horizon_increase_criterion_model[
-                general_keys.ITERATION
-            ] = current_iteration
+            self.it_horizon_increase_criterion_model[general_keys.ITERATION] = (
+                current_iteration
+            )
             new_train_horizon = (
                 current_iteration + self.params[param_keys.TRAIN_HORIZON_INCREMENT]
             )

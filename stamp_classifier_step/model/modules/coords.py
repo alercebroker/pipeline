@@ -63,6 +63,7 @@
         rect_area(lon_min, lon_max, lat_min, lat_max)
             Calculate the area of a rectangle on the sphere.
 """
+
 import math
 import numpy as np
 

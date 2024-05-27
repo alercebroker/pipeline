@@ -665,12 +665,12 @@ class BaseModel(object):
             self.params[param_keys.VALIDATION_MODE],
             self.params[param_keys.CRITERION_PERCENTAGE],
         ):
-            self.it_horizon_increase_criterion_model[
-                validation_monitor_name
-            ] = criterion
-            self.it_horizon_increase_criterion_model[
-                general_keys.ITERATION
-            ] = current_iteration
+            self.it_horizon_increase_criterion_model[validation_monitor_name] = (
+                criterion
+            )
+            self.it_horizon_increase_criterion_model[general_keys.ITERATION] = (
+                current_iteration
+            )
             new_train_horizon = (
                 current_iteration + self.params[param_keys.TRAIN_HORIZON_INCREMENT]
             )

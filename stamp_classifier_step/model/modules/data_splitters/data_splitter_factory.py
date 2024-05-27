@@ -18,7 +18,6 @@ from modules.data_set_generic import Dataset as data_set_class
 
 # Todo: CODE
 class DatasetDivider(object):
-
     """
     Constructor
     """

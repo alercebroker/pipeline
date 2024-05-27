@@ -16,7 +16,6 @@ from raw_data_manage.add_bogus_class import AddBogus
 
 
 class StampsFromCatalog(object):
-
     """
     Take ALeRCE training set, download avros and build pickle
     to train single stamp classifier.

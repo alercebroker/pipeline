@@ -34,9 +34,9 @@ class OcclusionGenerator(object):
             return None, None, None
 
         retImg = np.copy(self.img)
-        retImg[
-            self.i : self.i + self.box_size, self.j : self.j + self.box_size, :
-        ] = self.box
+        retImg[self.i : self.i + self.box_size, self.j : self.j + self.box_size, :] = (
+            self.box
+        )
 
         old_i = deepcopy(self.i)
         old_j = deepcopy(self.j)

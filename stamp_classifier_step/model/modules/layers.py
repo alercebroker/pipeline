@@ -3,6 +3,7 @@ Custome layers for models
 
 @author Esteban Reyes
 """
+
 import tensorflow as tf
 
 from parameters import constants
