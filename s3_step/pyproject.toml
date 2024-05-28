@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "s3-step"
-version = "24.4.2a44"
+version = "24.5.0"
 description = "S3 step"
 authors = []
 readme = "README.md"
