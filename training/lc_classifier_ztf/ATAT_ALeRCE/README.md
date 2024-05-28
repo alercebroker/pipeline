@@ -158,7 +158,7 @@ python training.py --experiment_type_general lc_mta --experiment_name_general ex
 python training.py --experiment_type_general lc_md_feat_mta --experiment_name_general experiment_0 --name_dataset_general ztf_ff --data_root_general data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12
 ```
 
-In the hyperparameter `--experiment_name_general` you can put any name you want. You could use `custom_parser.py` to configure the hyperparameters.
+In the hyperparameter `--experiment_name_general` you can put any name you want. You could use `custom_parser.py` to configure the model hyperparameters.
 
 ## Evaluating Performance [ Estoy ordenando los Notebooks ]
 
@@ -168,5 +168,5 @@ After training the models, obtain the predictions and evaluate performance over 
 python inference_ztf.py ztf_ff
 ```
 
-This generates a file called `predictions_times.pt` within each trained model's files. To review the results, utilize the `notebooks/plot_metrics_times.ipynb`, `notebooks/classification_metrics.ipynb`, and `notebooks/confusion_matrices.ipynb` notebooks, which plot the evaluated F1 score metric over time, report the metrics, and show the confusion matrices, respectively.
+This generates a file called `predictions_times.pt` within each trained model's files. You could use the `notebooks/vis_results/ATAT_results_windows_v3.ipynb` to understand how obtain the metrics. It is just a notebook example that can variety depeding on you processing used (e.g. windows, logspace, linspace, etc...).
 

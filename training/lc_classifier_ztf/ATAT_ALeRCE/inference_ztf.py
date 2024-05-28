@@ -277,8 +277,8 @@ if __name__ == '__main__':
             'list_eval_time': [8, 16, 32, 64, 128, 256, 512, 1024, 2048],
         },
         'ztf_ff':{
-            'path_exp': 'results/ZTF_ff/LC/lc_mta_v3_fixed_windows_200_sampling_tm/MTA',
-            'data_root': 'data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12_sampling',
+            'path_exp': 'results/ZTF_ff/LC_MD_FEAT/experiment_0/MTA',
+            'data_root': 'data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12',
             'list_eval_time': [16, 32, 64, 128, 256, 512, 1024, 2048],
         }
     }
@@ -288,6 +288,6 @@ if __name__ == '__main__':
     list_eval_time = path_dict[data_name]['list_eval_time']
     
     partition_used = 0
-    batch_size = 256 # 256
+    batch_size = 100 # 256
 
     get_predictions(path_exp, data_root, list_eval_time, batch_size, device, partition_used)

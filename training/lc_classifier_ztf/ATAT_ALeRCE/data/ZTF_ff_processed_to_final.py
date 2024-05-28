@@ -227,7 +227,7 @@ def main(path_lcs_file,
 if __name__ == "__main__":
     ROOT = './data/datasets/ZTF_ff'
 
-    version = 'v3' # Consider the partition version that you want to use
+    version = 'v3_HighCadence' # Consider the partition version that you want to use
     path_save_dataset = '{}/final/LC_MD_FEAT_{}'.format(ROOT, version)
     path_save_k_fold = '{}/partitions/{}'.format(ROOT, version)
 
