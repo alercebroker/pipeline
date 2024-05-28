@@ -8,7 +8,6 @@ from .PosEmbeddingMLP import PosEmbeddingMLP
 from .PosEmbeddingRNN import PosEmbeddingRNN
 from .PosConcatEmbedding import PosConcatEmbedding
 from .PosEmbeddingCadence import PosEmbeddingCadence
-from .PEA import PEA
 from .tAPE import tAPE
 
 from .LinearProj import LinearProj
@@ -30,7 +29,6 @@ class TimeHandler(nn.Module):
             'mlp': PosEmbeddingMLP,
             'rnn': PosEmbeddingRNN,
             'pe_concat': PosConcatEmbedding,
-            'pea': PEA,
             'tAPE': tAPE,
         }
 

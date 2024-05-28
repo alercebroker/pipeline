@@ -183,6 +183,3 @@ cython_debug/
 
 inference_elasticc_1.py
 inference_elasticc.py
-
-/data
-

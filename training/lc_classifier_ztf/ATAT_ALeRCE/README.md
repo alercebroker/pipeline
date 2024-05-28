@@ -85,6 +85,11 @@ ATAT: Astronomical Transformer for time series And Tabular data consists of two 
 
 The steps to run ATAT are the following:
 
+```
+git clone https://github.com/alercebroker/pipeline.git
+cd pipeline/training/lc_classifier_ztf/ATAT_ALeRCE
+```
+
 ## Environment Setup
 
 Firstly, you should create the enviroment:
@@ -93,7 +98,7 @@ Firstly, you should create the enviroment:
 - conda activate ATAT
 - pip install -r requirements.txt
 
-## Data Acquisition [ Estará listo el 28/05/2024 por actualización de la pipeline]
+## Data Acquisition 
 
 The raw ZTF_ff data is stored at `quimal-cpu2` in `/home/db_storage/ztf_forced_photometry`. Ensure to replicate the same file structure locally: 
 
@@ -103,20 +108,15 @@ scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_23
 scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_231206_ao_features ./data/datasets/ZTF_ff/raw
 ```
 
-To process the pickles obtained (each pickle contains a list of AstroObjects, each with detections, forced photometry, features, metadata, etc.), you should need to do the following steps:
-
 ```
-cd data/datasets/ZTF_ff/raw/
-git clone https://github.com/alercebroker/pipeline
-git checkout features_refactoring
-cd pipeline/libs/lc_classifier
+mkdir -p ./data/datasets/ZTF_ff/processed
+scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_231206 ./data/datasets/ZTF_ff/raw 
 ```
-
 
 Then, run the following to obtain the processed data:
 
 ```
-python ZTF_ff_raw_to_processed.py
+python data/ZTF_ff_raw_to_processed.py
 ```
 
 Additionally, retrieve the mislabeled ulens and those that are to be retained:
@@ -135,7 +135,7 @@ scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/partiti
 Alternatively, you can utilize a previously created partition or assign a new one by setting the path in the path_save_k_fold variable within the ZTF_ff_processed_to_final.py script. If the specified partition does not exist, it will be created automatically. To generate both the partitions and the final dataset, run:
 
 ```
-python -m data.ZTF_ff_processed_to_final
+python data/ZTF_ff_processed_to_final.py
 ```
 
 The quantiles are generated in this same script.
@@ -144,29 +144,28 @@ The quantiles are generated in this same script.
 
 Execute the following commands, depending on the training components (this will generate a `results` file):
 
-* Use the `configs/training.yaml`  to select which components of ATAT to train. It can be done specifying the hyperparameter `--experiment_type_general` as shown below.
+* Use the `configs/training.yaml`  to select which components of ATAT to train (only LC, LC + MD, LC + MD + Feat + MTA, etc...). It can be done specifying the hyperparameter `--experiment_type_general` as shown below.
 
 ```
 # Train only with light curves (LC + MTA)
-python training.py --experiment_type_general lc_mta --experiment_name_general experiment_0 --name_dataset_general ztf_ff --data_root_general data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_fixed_windows_200
+python training.py --experiment_type_general lc_mta --experiment_name_general experiment_0 --name_dataset_general ztf_ff --data_root_general data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12
 
 .
 .
 .
 
 # Train with light curves and tabular information together (LC + MD + Feat + MTA)
-python training.py --experiment_type_general lc_md_feat_mta --experiment_name_general experiment_0 --name_dataset_general ztf_ff --data_root_general data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_fixed_windows_200
-
+python training.py --experiment_type_general lc_md_feat_mta --experiment_name_general experiment_0 --name_dataset_general ztf_ff --data_root_general data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12
 ```
 
 In the hyperparameter `--experiment_name_general` you can put any name you want. You could use `custom_parser.py` to configure the hyperparameters.
 
-## Evaluating Performance
+## Evaluating Performance [ Estoy ordenando los Notebooks ]
 
 After training the models, obtain the predictions and evaluate performance over various days (e.g., 16, 32, 64, 128, 256, 512, 1024, and 2048 days) using:
 
 ```
-python get_metrics.py
+python inference_ztf.py ztf_ff
 ```
 
 This generates a file called `predictions_times.pt` within each trained model's files. To review the results, utilize the `notebooks/plot_metrics_times.ipynb`, `notebooks/classification_metrics.ipynb`, and `notebooks/confusion_matrices.ipynb` notebooks, which plot the evaluated F1 score metric over time, report the metrics, and show the confusion matrices, respectively.

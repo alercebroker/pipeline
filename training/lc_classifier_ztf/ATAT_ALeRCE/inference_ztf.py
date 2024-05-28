@@ -270,6 +270,7 @@ if __name__ == '__main__':
     device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
     path_dict = {
+        # La idea es que en algun momento se pueda utilizar para inferir cualquier dataset
         'elasticc':{
             'path_exp': 'results/ELASTICC/BALTO',
             'data_root': 'data/final/ELASTICC_2/LC_MD_FEAT',

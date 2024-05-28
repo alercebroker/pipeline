@@ -7,5 +7,4 @@ from .PosEmbeddingRNN import PosEmbeddingRNN
 from .PosEmbeddingMLP import PosEmbeddingMLP
 from .PosConcatEmbedding import PosConcatEmbedding
 from .PosEmbeddingCadence import PosEmbeddingCadence
-from .PEA import PEA
 from .tAPE import tAPE
