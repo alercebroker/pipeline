@@ -80,7 +80,7 @@ ATAT: Astronomical Transformer for time series And Tabular data consists of two 
 # Run the Training and Inference
  ┣ 📜 custom_parser.py
  ┣ 📜 training.py
- ┗ 📜 inference.py 
+ ┗ 📜 inference_ztf.py 
  ```
 
 The steps to run ATAT are the following:
@@ -94,7 +94,7 @@ cd pipeline/training/lc_classifier_ztf/ATAT_ALeRCE
 
 Firstly, you should create the enviroment:
 
-- conda create -n ATAT python==3.10.12
+- conda create -n ATAT python==3.10.10
 - conda activate ATAT
 - pip install -r requirements.txt
 
