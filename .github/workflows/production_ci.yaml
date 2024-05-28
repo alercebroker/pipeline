@@ -77,35 +77,35 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-balto-dagger:
-    needs: update_versions
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      stage: production
-      extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
-      submodules: true
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # build-lc-classification-balto-dagger:
+  #   needs: update_versions
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     stage: production
+  #     extra-args: lc_classification_step_balto --build-args=model:balto --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-messi-dagger:
-    needs: update_versions
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      stage: production
-      extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
-      submodules: true
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # build-lc-classification-messi-dagger:
+  #   needs: update_versions
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     stage: production
+  #     extra-args: lc_classification_step_messi --build-args=model:messi --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  build-lc-classification-mlp-dagger:
-    needs: update_versions
-    uses: ./.github/workflows/template_build_with_dagger.yaml
-    with:
-      stage: production
-      extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
-      submodules: true
-    secrets:
-      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  # build-lc-classification-mlp-dagger:
+  #   needs: update_versions
+  #   uses: ./.github/workflows/template_build_with_dagger.yaml
+  #   with:
+  #     stage: production
+  #     extra-args: lc_classification_step_mlp --build-args=model:mlp --package-dir=lc_classification_step
+  #     submodules: true
+  #   secrets:
+  #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-ztf-dagger:
     needs: update_versions
@@ -214,9 +214,9 @@ jobs:
       - build-correction-dagger
       - build-early-classification-dagger
       - build-feature-dagger
-      - build-lc-classification-balto-dagger
-      - build-lc-classification-messi-dagger
-      - build-lc-classification-mlp-dagger
+      # - build-lc-classification-balto-dagger
+      # - build-lc-classification-messi-dagger
+      # - build-lc-classification-mlp-dagger
       - build-lc-classification-ztf-dagger
       - build-lightcurve-dagger
       - build-magstats-dagger
