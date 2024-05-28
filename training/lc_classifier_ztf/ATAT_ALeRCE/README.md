@@ -110,7 +110,7 @@ scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_23
 
 ```
 mkdir -p ./data/datasets/ZTF_ff/processed
-scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_231206 ./data/datasets/ZTF_ff/raw 
+scp -r <user_name>@146.83.185.161:/home/db_storage/ztf_forced_photometry/data_231206 ./data/datasets/ZTF_ff/processed 
 ```
 
 Then, run the following to obtain the processed data:
