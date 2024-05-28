@@ -177,10 +177,10 @@ cython_debug/
 /data/ELASTICC_2_processed_to_final.py
 /data/src/ELASTICC_2
 
-/noteboks/data_exploration
-/noteboks/meta_model
-/noteboks/model_exploration
-/noteboks/processing
+/notebooks/data_exploration
+/notebooks/meta_model
+/notebooks/model_exploration
+/notebooks/processing
 
 /results
 /tutorial
