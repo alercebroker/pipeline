@@ -51,8 +51,62 @@ def extract_features(
     save_batch(batch_astro_objects, output_filename)
 
 
-# n_days = [16, 32, 64, 128, 256, 512, 1024, None]
-n_days = [None]
+def patch_features(batch_id, shorten_n_days=None):
+    import pandas as pd
+    from typing import List
+
+    from lc_classifier.features.core.base import FeatureExtractorComposite, FeatureExtractor
+    from lc_classifier.features.extractors.color_feature_extractor import ColorFeatureExtractor
+    from lc_classifier.features.core.base import astro_object_from_dict
+    from dataset import save_batch
+
+    filename = os.path.join(
+        output_folder, f"astro_objects_batch_{shorten_n_days}_{batch_id:04}.pkl"
+    )
+
+    batch_astro_objects = pd.read_pickle(filename)
+    batch_astro_objects = [astro_object_from_dict(d) for d in batch_astro_objects]
+    # Assuming light curve is preprocessed and shortened
+
+    # Delete old features to be patched
+    features_to_be_patched = [
+        'g-r_max',
+        'g-r_mean',
+    ]
+    for ao in batch_astro_objects:
+        features = ao.features
+        features = features[~features['name'].isin(features_to_be_patched)]
+        ao.features = features
+
+    class PatchExtractor(FeatureExtractorComposite):
+        version = "1.0.0"
+
+        def _instantiate_extractors(self) -> List[FeatureExtractor]:
+            bands = list("gr")
+
+            feature_extractors = [
+                ColorFeatureExtractor(bands, just_flux=False),
+            ]
+            return feature_extractors
+
+    feature_extractor = PatchExtractor()
+    feature_extractor.compute_features_batch(batch_astro_objects, progress_bar=False)
+
+    save_batch(batch_astro_objects, filename)
+
+
+n_days = [16, 32, 64, 128, 256, 512, 1024, None]
+for shorten_n_days in n_days:
+    tasks = []
+    for ao_filename in astro_objects_filenames:
+        batch_id = int(ao_filename.split(".")[0].split("_")[3])
+        tasks.append(delayed(patch_features)(batch_id, shorten_n_days))
+
+    Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
+
+exit()
+
+n_days = [16, 32, 64, 128, 256, 512, 1024, None]
 for shorten_n_days in n_days:
     tasks = []
     for ao_filename in astro_objects_filenames:
