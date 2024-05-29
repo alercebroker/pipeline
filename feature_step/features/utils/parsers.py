@@ -114,6 +114,14 @@ def parse_scribe_payload(
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
+        
+        RENAME_MAP = {
+            "g-r_max": "g-r_max_corr",
+            "g-r_mean": "g-r_mean_corr",
+        }
+        for feat in features_list:
+            if feat["name"] in RENAME_MAP.keys():
+                feat["name"] = RENAME_MAP[feat["name"]]
 
         upsert_features_command = {
             "collection": "object",
@@ -130,11 +138,11 @@ def parse_scribe_payload(
 
         # for updating the object
         g_r_max = list(
-            filter(lambda x: x["name"] == "g-r_max" and x["fid"] == 12, features_list)
+            filter(lambda x: x["name"] == "g-r_max_corr" and x["fid"] == 12, features_list)
         )
         g_r_max = g_r_max[0]["value"] if len(g_r_max) == 1 else None
         g_r_mean = list(
-            filter(lambda x: x["name"] == "g-r_mean" and x["fid"] == 12, features_list)
+            filter(lambda x: x["name"] == "g-r_mean_corr" and x["fid"] == 12, features_list)
         )
         g_r_mean = g_r_mean[0]["value"] if len(g_r_mean) == 1 else None
 
@@ -150,7 +158,7 @@ def parse_scribe_payload(
                 "options": {},
             }
             update_object_command_list.append(update_object_command)
-
+    
     return {
         "update_object": update_object_command_list,
         "upserting_features": upsert_features_commands_list,
