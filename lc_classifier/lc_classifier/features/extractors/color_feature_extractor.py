@@ -12,23 +12,27 @@ class ColorFeatureExtractor(FeatureExtractor):
         self.bands = bands
         self.just_flux = just_flux
 
-    def preprocess_detections_just_magnitude(self, detections: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def preprocess_detections_just_magnitude(
+        self, detections: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         detections = detections[detections["brightness"].notna()]
-        corrected_mags = detections[detections.unit == 'magnitude']
+        corrected_mags = detections[detections.unit == "magnitude"]
         corrected_mags = corrected_mags[corrected_mags["e_brightness"] < 1.0]
 
-        diff_fluxes = detections[detections.unit == 'diff_flux'].copy()
-        diff_fluxes['brightness'] = np.abs(diff_fluxes['brightness'])
-        diff_fluxes['e_brightness'] = flux_err_2_mag_err(diff_fluxes['e_brightness'], diff_fluxes['brightness'])
-        diff_fluxes['brightness'] = flux2mag(diff_fluxes['brightness'])
-        diff_fluxes['unit'] = 'diff_magnitude'
+        diff_fluxes = detections[detections.unit == "diff_flux"].copy()
+        diff_fluxes["brightness"] = np.abs(diff_fluxes["brightness"])
+        diff_fluxes["e_brightness"] = flux_err_2_mag_err(
+            diff_fluxes["e_brightness"], diff_fluxes["brightness"]
+        )
+        diff_fluxes["brightness"] = flux2mag(diff_fluxes["brightness"])
+        diff_fluxes["unit"] = "diff_magnitude"
         diff_magnitudes = diff_fluxes
 
         return corrected_mags, diff_magnitudes
 
     def preprocess_detections_just_flux(self, detections: pd.DataFrame) -> pd.DataFrame:
         detections = detections[detections["brightness"].notna()]
-        detections = detections[detections["unit"] == 'diff_flux']
+        detections = detections[detections["unit"] == "diff_flux"]
         return detections
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -44,7 +48,9 @@ class ColorFeatureExtractor(FeatureExtractor):
             detections = self.preprocess_detections_just_flux(detections)
             features = self._diff_flux_colors(detections)
         else:
-            corrected_mags, diff_magnitudes = self.preprocess_detections_just_magnitude(detections)
+            corrected_mags, diff_magnitudes = self.preprocess_detections_just_magnitude(
+                detections
+            )
             corr_colors = self._magnitude_colors(corrected_mags, feature_suffix="_corr")
             colors = self._magnitude_colors(diff_magnitudes)
             features = colors + corr_colors
@@ -80,7 +86,9 @@ class ColorFeatureExtractor(FeatureExtractor):
 
         return features
 
-    def _magnitude_colors(self, detections: pd.DataFrame, feature_suffix: str = "") -> List[Tuple[str, float]]:
+    def _magnitude_colors(
+        self, detections: pd.DataFrame, feature_suffix: str = ""
+    ) -> List[Tuple[str, float]]:
         # compute mean and max of each band
         band_means = []
         band_maxima = []
