@@ -157,6 +157,8 @@
 		{"name": "g_W4_12", "type": ["float", "null"]},
 		{"name": "g_r_max_12", "type": ["float", "null"]},
 		{"name": "g_r_mean_12", "type": ["float", "null"]},
+		{"name": "g_r_max_corr_12", "type": ["float", "null"]},
+		{"name": "g_r_mean_corr_12", "type": ["float", "null"]},
 		{"name": "last_brightness_before_band_1", "type": ["float", "null"]},
 		{"name": "last_brightness_before_band_2", "type": ["float", "null"]},
 		{"name": "max_brightness_after_band_1", "type": ["float", "null"]},

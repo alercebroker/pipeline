@@ -27,7 +27,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
         bands = list("gr")
 
         feature_extractors = [
-            ColorFeatureExtractor(bands, unit="magnitude"),
+            ColorFeatureExtractor(bands, just_flux=False),
             AllwiseColorsFeatureExtractor(bands),
             PanStarrsFeatureExtractor(),
             MHPSExtractor(bands, unit="diff_flux"),
