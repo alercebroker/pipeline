@@ -175,10 +175,13 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     prv_candidates = pickle.loads(prv_candidates) if prv_candidates else []
 
     forced_photometries = alert["extra_fields"].pop("fp_hists", [])
+    forced_photometries = (
+        pickle.loads(forced_photometries) if forced_photometries else []
+    )
 
     # filter forced photometry by value
     # potencial bugs from ztf
-    def filter_fp(fp):
+    def filter_fp(fp):  
         forcediffimflux_bad_values = [
             None, 0
         ]
@@ -191,11 +194,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         return good_fp
 
     # use the filter funcion to remove bad fp
-    forced_photometries = filter(filter_fp, forced_photometries)
-
-    forced_photometries = (
-        pickle.loads(forced_photometries) if forced_photometries else []
-    )
+    forced_photometries = list(filter(filter_fp, forced_photometries))
 
     acopy = copy.deepcopy(alert)
     detections = [acopy]
