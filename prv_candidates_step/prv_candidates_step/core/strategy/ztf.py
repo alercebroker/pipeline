@@ -183,13 +183,19 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
     # potencial bugs from ztf
     def filter_fp(fp):
         forcediffimflux_bad_values = [None, 0]
+        forcediffimfluxunc_bad_values = [None, 0]
         # if the value is not close to -99999 return true
-        good_fp = fp[
+        good_fp_flux = fp[
             "forcediffimflux"
         ] not in forcediffimflux_bad_values and not np.isclose(
             fp["forcediffimflux"], -99999
         )
-        return good_fp
+        good_fp_xunc = fp[
+            "forcediffimfluxunc"
+        ] not in forcediffimflux_bad_values and not np.isclose(
+            fp["forcediffimfluxunc"], -99999
+        ) 
+        return good_fp_flux and good_fp_xunc
 
     # use the filter funcion to remove bad fp
     forced_photometries = list(filter(filter_fp, forced_photometries))
