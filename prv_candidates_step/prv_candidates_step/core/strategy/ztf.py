@@ -190,12 +190,12 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         ] not in forcediffimflux_bad_values and not np.isclose(
             fp["forcediffimflux"], -99999
         )
-        good_fp_xunc = fp[
+        good_fp_fluxunc = fp[
             "forcediffimfluxunc"
         ] not in forcediffimflux_bad_values and not np.isclose(
             fp["forcediffimfluxunc"], -99999
         )
-        return good_fp_flux and good_fp_xunc
+        return good_fp_flux and good_fp_fluxunc
 
     # use the filter funcion to remove bad fp
     forced_photometries = list(filter(filter_fp, forced_photometries))
