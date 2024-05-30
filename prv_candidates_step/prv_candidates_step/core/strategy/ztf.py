@@ -194,7 +194,7 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
             "forcediffimfluxunc"
         ] not in forcediffimflux_bad_values and not np.isclose(
             fp["forcediffimfluxunc"], -99999
-        ) 
+        )
         return good_fp_flux and good_fp_xunc
 
     # use the filter funcion to remove bad fp
