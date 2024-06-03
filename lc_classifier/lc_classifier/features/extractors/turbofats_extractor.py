@@ -8,7 +8,7 @@ from typing import List
 
 class TurboFatsExtractor(FeatureExtractor):
     def __init__(self, bands: List[str], unit: str):
-        self.version = "1.0.0"
+        self.version = "1.1.0"
         self.bands = bands
 
         valid_units = ["magnitude", "diff_flux"]
@@ -75,7 +75,13 @@ class TurboFatsExtractor(FeatureExtractor):
 
             feature_dfs.append(band_features_df)
 
-        all_features = [astro_object.features] + feature_dfs
+        turbo_fats_features = pd.concat(
+            [f for f in feature_dfs if not f.empty], axis=0
+        )
+        if self.unit == 'diff_flux':
+            turbo_fats_features['name'] += '_flux'
+
+        all_features = [astro_object.features, turbo_fats_features]
         astro_object.features = pd.concat(
             [f for f in all_features if not f.empty], axis=0
         )

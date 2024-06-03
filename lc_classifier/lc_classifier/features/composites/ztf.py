@@ -45,7 +45,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             ),  # TODO: consider LPVs + be within comp. budget
             FoldedKimExtractor(bands, unit="magnitude"),
             HarmonicsExtractor(bands, unit="magnitude", use_forced_photo=True),
-            TurboFatsExtractor(bands, unit="diff_flux"),
+            TurboFatsExtractor(bands, unit="magnitude"),
             SPMExtractor(
                 bands,
                 unit="diff_flux",

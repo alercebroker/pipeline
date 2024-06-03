@@ -111,6 +111,15 @@ def parse_scribe_payload(
         ao_features = astro_object.features[["name", "fid", "value"]].copy()
         ao_features["fid"] = ao_features["fid"].apply(get_fid)
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+        # backward compatibility
+        ao_features['name'] = ao_features['name'].replace(
+            {
+                'Power_rate_1_4': 'Power_rate_1/4',
+                'Power_rate_1_3': 'Power_rate_1/3',
+                'Power_rate_1_2': 'Power_rate_1/2',
+            }
+        )
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")

@@ -95,16 +95,16 @@ def patch_features(batch_id, shorten_n_days=None):
     save_batch(batch_astro_objects, filename)
 
 
-n_days = [16, 32, 64, 128, 256, 512, 1024, None]
-for shorten_n_days in n_days:
-    tasks = []
-    for ao_filename in astro_objects_filenames:
-        batch_id = int(ao_filename.split(".")[0].split("_")[3])
-        tasks.append(delayed(patch_features)(batch_id, shorten_n_days))
-
-    Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
-
-exit()
+# n_days = [16, 32, 64, 128, 256, 512, 1024, None]
+# for shorten_n_days in n_days:
+#     tasks = []
+#     for ao_filename in astro_objects_filenames:
+#         batch_id = int(ao_filename.split(".")[0].split("_")[3])
+#         tasks.append(delayed(patch_features)(batch_id, shorten_n_days))
+#
+#     Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
+#
+# exit()
 
 n_days = [16, 32, 64, 128, 256, 512, 1024, None]
 for shorten_n_days in n_days:
