@@ -113,4 +113,4 @@ for shorten_n_days in n_days:
         batch_id = int(ao_filename.split(".")[0].split("_")[3])
         tasks.append(delayed(extract_features)(batch_id, ao_filename, shorten_n_days))
 
-    Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
+    Parallel(n_jobs=12, verbose=11, backend="loky")(tasks)
