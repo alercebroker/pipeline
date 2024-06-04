@@ -75,11 +75,9 @@ class TurboFatsExtractor(FeatureExtractor):
 
             feature_dfs.append(band_features_df)
 
-        turbo_fats_features = pd.concat(
-            [f for f in feature_dfs if not f.empty], axis=0
-        )
-        if self.unit == 'diff_flux':
-            turbo_fats_features['name'] += '_flux'
+        turbo_fats_features = pd.concat([f for f in feature_dfs if not f.empty], axis=0)
+        if self.unit == "diff_flux":
+            turbo_fats_features["name"] += "_flux"
 
         all_features = [astro_object.features, turbo_fats_features]
         astro_object.features = pd.concat(
