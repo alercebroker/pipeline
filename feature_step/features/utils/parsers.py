@@ -150,10 +150,12 @@ def parse_scribe_payload(
             "type": "update_object_from_stats",
             "criteria": {"oid": oid},
             "data": {
-                "g_r_max": get_color_from_features('g_r_max', features_list),
-                "g_r_mean": get_color_from_features('g_r_mean', features_list),
-                "g_r_max_corr": get_color_from_features('g_r_max_corr', features_list),
-                "g_r_mean_corr": get_color_from_features('g_r_mean_corr', features_list),
+                "g_r_max": get_color_from_features("g_r_max", features_list),
+                "g_r_mean": get_color_from_features("g_r_mean", features_list),
+                "g_r_max_corr": get_color_from_features("g_r_max_corr", features_list),
+                "g_r_mean_corr": get_color_from_features(
+                    "g_r_mean_corr", features_list
+                ),
             },
             "options": {},
         }
