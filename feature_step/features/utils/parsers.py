@@ -124,6 +124,14 @@ def parse_scribe_payload(
 
         features_list = ao_features.to_dict("records")
 
+        RENAME_MAP = {
+            "g-r_max": "g-r_max_corr",
+            "g-r_mean": "g-r_mean_corr",
+        }
+        for feat in features_list:
+            if feat["name"] in RENAME_MAP.keys():
+                feat["name"] = RENAME_MAP[feat["name"]]
+
         upsert_features_command = {
             "collection": "object",
             "type": "update_features",

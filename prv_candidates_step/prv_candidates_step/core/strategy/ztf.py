@@ -179,6 +179,27 @@ def extract_detections_and_non_detections(alert: dict) -> dict:
         pickle.loads(forced_photometries) if forced_photometries else []
     )
 
+    # filter forced photometry by value
+    # potencial bugs from ztf
+    def filter_fp(fp):
+        forcediffimflux_bad_values = [None, 0]
+        forcediffimfluxunc_bad_values = [None, 0]
+        # if the value is not close to -99999 return true
+        good_fp_flux = fp[
+            "forcediffimflux"
+        ] not in forcediffimflux_bad_values and not np.isclose(
+            fp["forcediffimflux"], -99999
+        )
+        good_fp_fluxunc = fp[
+            "forcediffimfluxunc"
+        ] not in forcediffimflux_bad_values and not np.isclose(
+            fp["forcediffimfluxunc"], -99999
+        )
+        return good_fp_flux and good_fp_fluxunc
+
+    # use the filter funcion to remove bad fp
+    forced_photometries = list(filter(filter_fp, forced_photometries))
+
     acopy = copy.deepcopy(alert)
     detections = [acopy]
     non_detections = []
