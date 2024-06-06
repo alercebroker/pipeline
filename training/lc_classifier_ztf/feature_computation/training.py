@@ -22,7 +22,7 @@ from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 
 if __name__ == "__main__":
     features = pd.read_parquet("data_231206_features/consolidated_features.parquet")
-    labels = pd.read_parquet("data_231206_ao_features/partitions.parquet")
+    labels = pd.read_parquet("data_231206/partitions.parquet")
 
     # support for shortened lightcurves
     features.index = (

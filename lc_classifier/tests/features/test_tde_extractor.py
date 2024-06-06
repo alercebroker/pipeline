@@ -17,11 +17,11 @@ from lc_classifier.features.extractors.tde_extractor import ColorVariationExtrac
 
 
 class TestTDETailExtractor(unittest.TestCase):
-    def test_ztf(self):
+    def test_no_diff_flux(self):
         astro_object = get_ztf_example(2)
         feature_extractor = TDETailExtractor(bands=list("gr"))
         feature_extractor.compute_features_single_object(astro_object)
-        print(astro_object.features)
+        assert np.all(np.isnan(astro_object.features["value"].values))
 
     def test_ztf_forced_phot(self):
         astro_objects = get_ztf_forced_training_examples()
