@@ -57,6 +57,7 @@ def patch_features(batch_id, shorten_n_days=None):
 
     from lc_classifier.features.core.base import FeatureExtractorComposite, FeatureExtractor
     from lc_classifier.features.extractors.color_feature_extractor import ColorFeatureExtractor
+    from lc_classifier.features.extractors.tde_extractor import TDETailExtractor
     from lc_classifier.features.core.base import astro_object_from_dict
     from dataset import save_batch
 
@@ -72,6 +73,10 @@ def patch_features(batch_id, shorten_n_days=None):
     features_to_be_patched = [
         'g-r_max',
         'g-r_mean',
+        'g-r_mean_corr',
+        'g-r_max_corr',
+        'TDE_decay',
+        'TDE_decay_chi'
     ]
     for ao in batch_astro_objects:
         features = ao.features
@@ -86,6 +91,7 @@ def patch_features(batch_id, shorten_n_days=None):
 
             feature_extractors = [
                 ColorFeatureExtractor(bands, just_flux=False),
+                TDETailExtractor(bands),
             ]
             return feature_extractors
 
@@ -95,16 +101,16 @@ def patch_features(batch_id, shorten_n_days=None):
     save_batch(batch_astro_objects, filename)
 
 
-# n_days = [16, 32, 64, 128, 256, 512, 1024, None]
-# for shorten_n_days in n_days:
-#     tasks = []
-#     for ao_filename in astro_objects_filenames:
-#         batch_id = int(ao_filename.split(".")[0].split("_")[3])
-#         tasks.append(delayed(patch_features)(batch_id, shorten_n_days))
-#
-#     Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
-#
-# exit()
+n_days = [16, 32, 64, 128, 256, 512, 1024, None]
+for shorten_n_days in n_days:
+    tasks = []
+    for ao_filename in astro_objects_filenames:
+        batch_id = int(ao_filename.split(".")[0].split("_")[3])
+        tasks.append(delayed(patch_features)(batch_id, shorten_n_days))
+
+    Parallel(n_jobs=9, verbose=11, backend="loky")(tasks)
+
+exit()
 
 n_days = [16, 32, 64, 128, 256, 512, 1024, None]
 for shorten_n_days in n_days:

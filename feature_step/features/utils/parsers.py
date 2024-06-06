@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject, query_ao_table
-from features.core.utils.functions import collapse_fid_columns
+from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
@@ -40,8 +40,9 @@ def detections_to_astro_objects(
     )
     a["unit"] = "magnitude"
     a_flux = a.copy()
-    a_flux["brightness"] = 10.0 ** (-0.4 * (a["mag"] - 23.9)) * a["isdiffpos"]
-    a_flux["e_brightness"] = a_flux["e_mag"] * 0.4 * np.log(10) * np.abs(a_flux["mag"])
+    # TODO: check this
+    a_flux["e_brightness"] = mag_err_2_flux_err(a["e_mag"], a["mag"])
+    a_flux["brightness"] = mag2flux(a["mag"]) * a["isdiffpos"]
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)

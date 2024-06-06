@@ -1,7 +1,7 @@
 import pandas as pd
 
 from ..core.base import FeatureExtractor, AstroObject
-from .tde_extractor import flux2mag, flux_err_2_mag_err
+from ...utils import flux2mag, flux_err_2_mag_err
 import numpy as np
 from typing import List, Tuple
 

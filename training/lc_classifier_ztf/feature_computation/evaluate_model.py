@@ -64,7 +64,7 @@ elif classifier_type == "RandomForest":
     classifier.load_classifier("rf_classifier_240307")
 elif classifier_type == "HierarchicalRandomForest":
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = "models/hrf_classifier_20240604-103703"
+    model_dir = "models/hrf_classifier_20240605-153338"
     classifier.load_classifier(model_dir)
     predictions_filename = os.path.join(model_dir, "predictions.parquet")
 elif classifier_type == "LightGBM":
