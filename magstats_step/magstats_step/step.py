@@ -27,7 +27,7 @@ class MagstatsStep(GenericStep):
             for det in msg["detections"]:
                 jdendhist = det["extra_fields"].get("jdendhist", None)
                 if jdendhist:
-                    det["mjdendhist"] = jdendhist - 2400000.5    
+                    det["mjdendhist"] = jdendhist - 2400000.5
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
         return {"detections": detections, "non_detections": non_detections}

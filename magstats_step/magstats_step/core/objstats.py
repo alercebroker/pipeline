@@ -118,17 +118,18 @@ class ObjectStatistics(BaseStatistics):
                 )
             }
         )
-    
+
     def calculate_reference_change(self) -> pd.DataFrame:
         return pd.DataFrame(
             {
-                "reference_change": self._grouped_value("mjdendhist", which="last") > self._grouped_value("mjd", which="first")
+                "reference_change": self._grouped_value(
+                    "mjdendhist", which="last"
+                )
+                > self._grouped_value("mjd", which="first")
             }
         )
 
     def calculate_diffpos(self) -> pd.DataFrame:
         return pd.DataFrame(
-            {
-                "diffpos": self._grouped_value("isdiffpos", which="first") > 0
-            }
+            {"diffpos": self._grouped_value("isdiffpos", which="first") > 0}
         )
