@@ -1,17 +1,20 @@
+import logging
 import os
 import sys
 
-import logging
+from apf.core import get_class
+
+import settings
+from watchlist_step.step import WatchlistStep
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 
 sys.path.append(PACKAGE_PATH)
-from settings import *
 
 level = logging.INFO
 if "LOGGING_DEBUG" in locals():
-    if LOGGING_DEBUG:
+    if settings.LOGGING_DEBUG:
         level = logging.DEBUG
 
 logging.basicConfig(
@@ -21,15 +24,17 @@ logging.basicConfig(
 )
 
 
-from watchlist_step import WatchlistStep
-from apf.core import get_class
-
-if "CLASS" in CONSUMER_CONFIG:
-    Consumer = get_class(CONSUMER_CONFIG["CLASS"])
+if "CLASS" in settings.CONSUMER_CONFIG:
+    Consumer = get_class(settings.CONSUMER_CONFIG["CLASS"])
 else:
     from apf.consumers import KafkaConsumer as Consumer
 
-consumer = Consumer(config=CONSUMER_CONFIG)
+consumer = Consumer(config=settings.CONSUMER_CONFIG)
 
-step = WatchlistStep(consumer, config=STEP_CONFIG, level=level)
+step = WatchlistStep(
+    consumer,
+    config=settings.STEP_CONFIG,
+    level=level,
+    strategy_name=settings.UPDATE_STRATEGY,
+)
 step.start()
