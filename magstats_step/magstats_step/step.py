@@ -30,7 +30,7 @@ class MagstatsStep(GenericStep):
                     det["mjdendref"] = jdendref - 2400000.5
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
-        return {"detections": detections, "non_detections": non_detections} 
+        return {"detections": detections, "non_detections": non_detections}
 
     def _calculate_object_statistics(self, detections) -> dict:
         obj_calculator = ObjectStatistics(detections)
