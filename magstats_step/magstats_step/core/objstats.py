@@ -123,7 +123,7 @@ class ObjectStatistics(BaseStatistics):
         return pd.DataFrame(
             {
                 "reference_change": self._grouped_value(
-                    "mjdendhist", which="last"
+                    "mjdendref", which="last"
                 )
                 > self._grouped_value("mjd", which="first")
             }

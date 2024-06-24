@@ -23,14 +23,14 @@ class MagstatsStep(GenericStep):
     def pre_execute(cls, messages: List[dict]) -> dict:
         detections, non_detections = [], []
         for msg in messages:
-            # code to add mjdendhist to detections fields from extra fields
+            # code to add mjdendref to detections fields from extra fields
             for det in msg["detections"]:
-                jdendhist = det["extra_fields"].get("jdendhist", None)
-                if jdendhist:
-                    det["mjdendhist"] = jdendhist - 2400000.5
+                jdendref = det["extra_fields"].get("jdendref", None)
+                if jdendref:
+                    det["mjdendref"] = jdendref - 2400000.5
             detections.extend(msg["detections"])
             non_detections.extend(msg["non_detections"])
-        return {"detections": detections, "non_detections": non_detections}
+        return {"detections": detections, "non_detections": non_detections} 
 
     def _calculate_object_statistics(self, detections) -> dict:
         obj_calculator = ObjectStatistics(detections)

@@ -500,7 +500,7 @@ def test_generate_stats():
             "e_dec": 1,
             "dec": 10,
             "isdiffpos": 1,
-            "mjdendhist": 60470.5,
+            "mjdendref": 60470.5,
         },
         {
             "oid": "OID1",
@@ -516,7 +516,7 @@ def test_generate_stats():
             "e_dec": 1,
             "dec": 10,
             "isdiffpos": 1,
-            "mjdendhist": 60470.5,
+            "mjdendref": 60470.5,
         },
         {
             "oid": "OID2",
@@ -532,7 +532,7 @@ def test_generate_stats():
             "e_dec": 1,
             "dec": 10,
             "isdiffpos": 1,
-            "mjdendhist": 60470.5,
+            "mjdendref": 60470.5,
         },
         {
             "oid": "OID1",
@@ -548,7 +548,7 @@ def test_generate_stats():
             "e_dec": 1,
             "dec": 10,
             "isdiffpos": 1,
-            "mjdendhist": 60470.5,
+            "mjdendref": 60470.5,
         },
     ]
     calculator = ObjectStatistics(detections)
