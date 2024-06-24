@@ -32,6 +32,7 @@ for d in data:
         detection["oid"] = oid
         detection["sid"] = sid
         detection["fid"] = fid
+        detection["extra_fields"] = {"jdendref": 80000}
 
     for non_detection in d["non_detections"]:
         non_detection["oid"] = oid
