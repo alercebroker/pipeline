@@ -20,7 +20,7 @@ def detections_to_astro_objects(
         "dec",
         "mjd",
         "mag_corr",
-        "e_mag_corr",
+        "e_mag_corr_ext",
         "mag",
         "e_mag",
         "fid",
@@ -36,7 +36,8 @@ def detections_to_astro_objects(
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
     a.rename(
-        columns={"mag_corr": "brightness", "e_mag_corr": "e_brightness"}, inplace=True
+        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
+        inplace=True,
     )
     a["unit"] = "magnitude"
     a_flux = a.copy()
