@@ -66,7 +66,7 @@ def main(dict_info, num_cores, ROOT):
                                                            real_time)
         os.makedirs(path_save_feat_time, exist_ok=True)        
 
-        path_chunks = glob.glob('{}/raw/data_231206_ao_features/astro_objects_batch_{}_*'.format(ROOT, time_to_eval))
+        path_chunks = glob.glob('{}/raw/data_231206_features/astro_objects_batch_{}_*'.format(ROOT, time_to_eval))
         
         dict_info.update({
             'path_save_feat_time': path_save_feat_time,
@@ -86,7 +86,9 @@ if __name__ == "__main__":
     dict_info = {
         'path_save': '{}/processed/md_feat_231206_v2'.format(ROOT),
         'list_time_to_eval': [16, 32, 64, 128, 256, 512, 1024, None], # 
-        'md_col_names': ['W1-W2_g,r', 'W2-W3_g,r', 'W3-W4_g,r', 'sg_score', 'dist_nr', 'ps_g-r'],
+        'md_col_names': [
+            'W1-W2', 'W2-W3', 'W3-W4', 
+            'sgscore1', 'dist_nr', 'ps_g-r'],
     }
 
     num_cores = 20
