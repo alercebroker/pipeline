@@ -62,30 +62,53 @@ class InsertScoreCommand(Command):
         
         super()._check_inputs(data, criteria)
 
+        data_keys = data.keys()
+
+        if not 'detector_name' in data_keys or not 'detector_version' in data_keys or not 'categories' in data_keys:
+            return 'error'
+        else: 
+            if len(data['categories']) < 1:
+                return 'error'
+            else:
+                return data
+        
         # revisar que venga detector_name, detector_version, 
         # categories > 0 y que exista
 
-    def _format_data(self,data):
+    def _format_data(self,data,criteria):
         
+        principal_list = []
+
+        for dictionary in data['categories']:
+
+            principal_list.append({
+
+                'detector_name': data['detector_name'],
+                'oid': criteria['id'],
+                'detector_version': data['detector_version'],
+                'category_name': data['categories']['name'],
+                'category_scote': data['categories']['score'],
+                
+            })
+
         # hay que definir un diccionario de salida (retornar) que tendra
         # los campos para hacer la operacion de insert
         # hay que crear una lista de diccionarios 
         # que tenga detector_name, oid, detector_version, category_name, 
         # score 
 
-        return #dictionary
+        return principal_list
     
     @staticmethod
-    def db_operation(session: Session, data: List):
-        # logging.debug("Inserting %s objects", len(data))
-        # return session.connection().execute(
-        #     insert(Score).values(data).on_conflict_do_nothing()
-        # )
-
+    def db_operation(session: Session, data: List, Score):
+        logging.debug("Inserting %s objects", len(data))
+        return session.connection().execute(
+            insert(Score).values(data).on_conflict_do_update()
+        )
         #existe on_conflict_replace? sql.alchemy
 
-
         return
+        
 
 
 class UpdateObjectFromStatsCommand(Command):
