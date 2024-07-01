@@ -15,6 +15,7 @@ from src.processing import processing_lc
 from src.create_dataset import create_lc_h5py
 from src.add_md_feat import add_metadata, add_features
 
+
 def check_files(df_objid_label, dict_cols, dict_info, path_lcs_file, path_md_feat_file):
     print('We are checking the IDs in all files that you will use...')
     oid_objects = df_objid_label[dict_cols['oid']].values
@@ -227,11 +228,11 @@ def main(path_lcs_file,
 if __name__ == "__main__":
     ROOT = './data/datasets/ZTF_ff'
 
-    version = 'v3_HighCadence' # Consider the partition version that you want to use
+    version = '240627' # Consider the partition version that you want to use
     path_save_dataset = '{}/final/LC_MD_FEAT_{}'.format(ROOT, version)
     path_save_k_fold = '{}/partitions/{}'.format(ROOT, version)
 
-    path_lcs_file = '{}/processed/data_231206'.format(ROOT)
+    path_lcs_file = '{}/raw/data_231206'.format(ROOT)
     path_md_feat_file = '{}/processed/md_feat_231206_v2'.format(ROOT) # if you dont have features put None
 
     # You shouldn't change the key's names, just the values names
@@ -300,7 +301,7 @@ if __name__ == "__main__":
         path_save_dataset += '_sampling'
 
     # Astronomical objects and their labels
-    df_objid_label = pd.read_parquet('{}/processed/data_231206/objects.parquet'.format(ROOT))
+    df_objid_label = pd.read_parquet('{}/raw/data_231206/objects.parquet'.format(ROOT))
     df_objid_label = df_objid_label.reset_index()
     df_objid_label = df_objid_label[[dict_cols['oid'], dict_cols['class']]]
     
