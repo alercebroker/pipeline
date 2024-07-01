@@ -46,7 +46,7 @@ class AllwiseColorsFeatureExtractor(FeatureExtractor):
         features = np.stack([self._feature_names(), deltas], axis=-1)
         features_df = pd.DataFrame(data=features, columns=["name", "value"])
 
-        features_df["fid"] = ",".join(self.bands)
+        features_df["fid"] = None
 
         sids = detections["sid"].unique()
         sids = np.sort(sids)

@@ -9,10 +9,12 @@ from jax import jit as jax_jit
 
 from typing import List
 
+from ...utils import flux2mag, flux_err_2_mag_err
+
 
 class TDETailExtractor(FeatureExtractor):
     version = "1.0.0"
-    unit = "magnitude"
+    unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
         self.bands = bands
@@ -26,11 +28,21 @@ class TDETailExtractor(FeatureExtractor):
         observations = observations[observations["unit"] == self.unit]
         observations = observations[observations["brightness"].notna()]
         observations = observations[observations["e_brightness"] > 0.0]
-        observations = observations[observations["e_brightness"] < 1.0]
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object)
+
+        diff_fluxes = observations[observations.unit == "diff_flux"].copy()
+        diff_fluxes["brightness"] = np.abs(diff_fluxes["brightness"])
+        diff_fluxes["e_brightness"] = flux_err_2_mag_err(
+            diff_fluxes["e_brightness"], diff_fluxes["brightness"]
+        )
+        diff_fluxes["brightness"] = flux2mag(diff_fluxes["brightness"])
+        diff_fluxes["unit"] = "diff_magnitude"
+        observations = diff_fluxes
+        observations = observations[observations["e_brightness"] < 1.0]
+        observations = observations[observations["brightness"] > 30.0]
 
         features = []
         for band in self.bands:
@@ -104,14 +116,6 @@ def fleet_model_jax(t, a, w, m_0, t0):
     t = t - t0
     func = jnp.exp(w * t) - a * w * t + m_0
     return func
-
-
-def flux2mag(flux):
-    return -2.5 * np.log10(flux) + 23.9
-
-
-def flux_err_2_mag_err(flux_err, flux):
-    return (2.5 * flux_err) / (np.log(10.0) * flux)
 
 
 class FleetExtractor(FeatureExtractor):

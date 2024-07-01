@@ -16,11 +16,6 @@ def is_sorted(a):
     return True
 
 
-def mag_to_flux(mag: np.ndarray):
-    """Converts a list of magnitudes into flux."""
-    return 10 ** (-(mag + 48.6) / 2.5 + 26.0)
-
-
 def plot_astro_object(
     astro_object: AstroObject, unit: str, use_forced_phot: bool, period=None
 ):
@@ -114,3 +109,20 @@ def all_features_from_astro_objects(astro_objects: List[AstroObject]) -> pd.Data
         columns=["_".join([str(i) for i in pair]) for pair in indexes],
     )
     return df
+
+
+def flux2mag(flux):
+    """flux in uJy to AB magnitude"""
+    return -2.5 * np.log10(flux) + 23.9
+
+
+def flux_err_2_mag_err(flux_err, flux):
+    return (2.5 * flux_err) / (np.log(10.0) * flux)
+
+
+def mag2flux(mag):
+    return 10 ** (-(mag - 23.9) / 2.5)
+
+
+def mag_err_2_flux_err(mag_err, mag):
+    return np.log(10.0) * mag2flux(mag) / 2.5 * mag_err

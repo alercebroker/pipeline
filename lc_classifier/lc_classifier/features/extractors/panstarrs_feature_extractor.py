@@ -18,7 +18,7 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
         available_fields = set(metadata["name"].values)
         field_intersection = available_fields.intersection(set(self.required_metadata))
         if len(field_intersection) != len(self.required_metadata):
-            features.append(["sg_score", np.nan])
+            features.append(["sgscore1", np.nan])
             features.append(["dist_nr", np.nan])
             features.append(["ps_g-r", np.nan])
         else:
@@ -29,7 +29,7 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
                 sg_score = np.nan
                 dist_nr = np.nan
 
-            features.append(["sg_score", sg_score])
+            features.append(["sgscore1", sg_score])
             features.append(["dist_nr", dist_nr])
 
             g_mag = metadata[metadata["name"] == "sgmag1"]["value"].values[0]

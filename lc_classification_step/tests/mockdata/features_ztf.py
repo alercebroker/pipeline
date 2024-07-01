@@ -223,7 +223,7 @@ def features_ztf(force_empty_features=False, force_missing_features=False):
             {"name": "r-W2_12", "type": ["float", "null"]},
             {"name": "r-W3_12", "type": ["float", "null"]},
             {"name": "r-W4_12", "type": ["float", "null"]},
-            {"name": "sg_score", "type": ["float", "null"]},
+            {"name": "sgscore1", "type": ["float", "null"]},
             {"name": "ulens_chi_1", "type": ["float", "null"]},
             {"name": "ulens_chi_2", "type": ["float", "null"]},
             {"name": "ulens_fs_1", "type": ["float", "null"]},
