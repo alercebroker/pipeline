@@ -54,6 +54,39 @@ class InsertObjectCommand(Command):
         return session.connection().execute(
             insert(Object).values(data).on_conflict_do_nothing()
         )
+    
+class InsertScoreCommand(Command):
+    
+
+    def _check_inputs(self, data, criteria):
+        
+        super()._check_inputs(data, criteria)
+
+        # revisar que venga detector_name, detector_version, 
+        # categories > 0 y que exista
+
+    def _format_data(self,data):
+        
+        # hay que definir un diccionario de salida (retornar) que tendra
+        # los campos para hacer la operacion de insert
+        # hay que crear una lista de diccionarios 
+        # que tenga detector_name, oid, detector_version, category_name, 
+        # score 
+
+        return #dictionary
+    
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        # logging.debug("Inserting %s objects", len(data))
+        # return session.connection().execute(
+        #     insert(Score).values(data).on_conflict_do_nothing()
+        # )
+
+        #existe on_conflict_replace? sql.alchemy
+
+
+        return
+
 
 class UpdateObjectFromStatsCommand(Command):
     type = ValidCommands.update_object_from_stats
