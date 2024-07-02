@@ -21,3 +21,5 @@ class ValidCommands:
     upsert_xmatch = "upsert_xmatch"
     # update + forced_photometry
     insert_forced_photo = "insert_forced_photo"
+    # upsert + score
+    upsert_score = "upsert_score"

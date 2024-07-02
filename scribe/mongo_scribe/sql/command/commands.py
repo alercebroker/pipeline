@@ -13,6 +13,7 @@ from db_plugins.db.sql.models import (
     Object,
     Probability,
     Xmatch,
+    Score,
 )
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -55,7 +56,7 @@ class InsertObjectCommand(Command):
             insert(Object).values(data).on_conflict_do_nothing()
         )
     
-class InsertScoreCommand(Command):
+class UpsertScoreCommand(Command):
     
 
     def _check_inputs(self, data, criteria):
@@ -65,37 +66,28 @@ class InsertScoreCommand(Command):
         data_keys = data.keys()
 
         if not 'detector_name' in data_keys or not 'detector_version' in data_keys or not 'categories' in data_keys:
-            return 'error'
+            raise ValueError(f"missing field in data: {data}")
         else: 
             if len(data['categories']) < 1:
-                return 'error'
-            else:
-                return data
-        
-        # revisar que venga detector_name, detector_version, 
-        # categories > 0 y que exista
+                raise ValueError(f"Categories in data with no content")
+           
+        return data
 
     def _format_data(self,data,criteria):
         
         principal_list = []
 
-        for dictionary in data['categories']:
+        for cat_dict in data['categories']:
 
             principal_list.append({
 
                 'detector_name': data['detector_name'],
                 'oid': criteria['id'],
                 'detector_version': data['detector_version'],
-                'category_name': data['categories']['name'],
-                'category_scote': data['categories']['score'],
+                'category_name': cat_dict['name'],
+                'category_scote': cat_dict['score'],
                 
             })
-
-        # hay que definir un diccionario de salida (retornar) que tendra
-        # los campos para hacer la operacion de insert
-        # hay que crear una lista de diccionarios 
-        # que tenga detector_name, oid, detector_version, category_name, 
-        # score 
 
         return principal_list
     
@@ -105,9 +97,7 @@ class InsertScoreCommand(Command):
         return session.connection().execute(
             insert(Score).values(data).on_conflict_do_update()
         )
-        #existe on_conflict_replace? sql.alchemy
 
-        return
         
 
 
