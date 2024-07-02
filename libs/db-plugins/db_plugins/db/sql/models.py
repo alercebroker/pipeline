@@ -102,6 +102,33 @@ class Probability(Base):
         ),
     )
 
+class Score(Base):
+    __tablename__ = "score"
+    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
+    detector_name = Column(String, primary_key=True)
+    detector_version = Column(String, primary_key=True)
+    category_name = Column(String, primary_key=True)
+    score =  Column(Float, nullable=False)
+    __table_args__ = (
+        Index("ix_scores_oid", "oid", postgresql_using="hash"),
+        Index("ix_scores_score", "score", postgresql_using="btree"),
+    )
+
+class ScoresDistribution(Base):
+    detector_name = Column(String, ForeignKey(Score.detector_name), primary_key=True)
+    detector_version = Column(String, ForeignKey(Score.detector_version), primary_key=True)
+    distribution_version = Column(String, primary_key=True)
+    category_name = Column(String)
+    creation_date = Column(DateTime)
+    distrubion_name = Column(Float, nullable=False)
+    distribution_value = Column(Float, nullable=False)
+    __table_args__ = (
+        Index("ix_scoresdistribution_distrubion_name", "distrubion_name", postgresql_using="hash"),
+        Index("ix_scoresdistribution_category_name", "category_name", postgresql_using="hash"),
+        Index("ix_scoresdistribution_detector_name", "detector_name", postgresql_using="hash"),
+        Index("ix_scoresdistribution_detector_version", "detector_version", postgresql_using="hash"),
+    )
+
 
 class FeatureVersion(Base):
     __tablename__ = "feature_version"
