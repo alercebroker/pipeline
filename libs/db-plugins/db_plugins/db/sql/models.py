@@ -103,18 +103,22 @@ class Probability(Base):
         ),
     )
 
+
 class Score(Base):
     __tablename__ = "score"
     oid = Column(String, ForeignKey(Object.oid), primary_key=True)
     detector_name = Column(String, primary_key=True)
     detector_version = Column(String, primary_key=True)
     category_name = Column(String, primary_key=True)
-    score =  Column(Float, nullable=False)
+    score = Column(Float, nullable=False)
     __table_args__ = (
-        UniqueConstraint('detector_name', 'detector_version', name='_detector_name_version_'),
+        UniqueConstraint(
+            "detector_name", "detector_version", name="_detector_name_version_"
+        ),
         Index("ix_scores_oid", "oid", postgresql_using="hash"),
         Index("ix_scores_score", "score", postgresql_using="btree"),
     )
+
 
 class ScoreDistribution(Base):
     __tablename__ = "score_distribution"
@@ -126,9 +130,20 @@ class ScoreDistribution(Base):
     distrubion_name = Column(Float, nullable=False)
     distribution_value = Column(Float, nullable=False)
     __table_args__ = (
-        ForeignKeyConstraint([detector_name, detector_version], [Score.detector_name, Score.detector_version]),
-        Index("ix_scoredistribution_distrubion_name", "distrubion_name", postgresql_using="hash"),
-        Index("ix_scoredistribution_category_name", "category_name", postgresql_using="hash"),
+        ForeignKeyConstraint(
+            [detector_name, detector_version],
+            [Score.detector_name, Score.detector_version],
+        ),
+        Index(
+            "ix_scoredistribution_distrubion_name",
+            "distrubion_name",
+            postgresql_using="hash",
+        ),
+        Index(
+            "ix_scoredistribution_category_name",
+            "category_name",
+            postgresql_using="hash",
+        ),
     )
 
 
