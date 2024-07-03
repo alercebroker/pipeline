@@ -29,7 +29,7 @@ class ATATDataset(Dataset):
         **kwargs,
     ):
         """loading dataset from H5 file"""
-        """ dataset is composed for all samples, where self.these_idx dart to sampels for each partition"""
+        """ dataset is composed for all samples, where self.these_idx dart to samples for each partition"""
 
         name = (
             "training"
@@ -92,7 +92,7 @@ class ATATDataset(Dataset):
             
 
     def __getitem__(self, idx):
-        """idx is used for pytorch to select samples to construc its batch"""
+        """idx is used for pytorch to select samples to construct its batch"""
         """ idx_ is to map a valid index over all samples in dataset  """
 
         data_dict = {
@@ -122,7 +122,7 @@ class ATATDataset(Dataset):
         return data_dict
 
     def __len__(self):
-        """lenght of the dataaset, is necesary for consistent getitem values"""
+        """length of the dataset, is necessary for consistent getitem values"""
         return len(self.labels)
 
     def get_tabular_data(self, tabular_data, path_QT, type_data):
@@ -136,9 +136,9 @@ class ATATDataset(Dataset):
         return torch.from_numpy(tabular_data)
 
     def sc_augmenation(self, sample: dict, index: int):
-        """sample is a dictionary objg"""
+        """sample is a dictionary obj"""
         mask, time_alert = sample["mask"], sample["time"]
-        """ random value to asing new light curvee """
+        """ random value to asing new light curve """
 
         random_value = random.uniform(0, 1)
         max_time = (time_alert * mask).max()
@@ -146,7 +146,7 @@ class ATATDataset(Dataset):
         eval_time = init_time + (max_time - init_time) * random_value
         mask_time = (time_alert <= eval_time).float()
 
-        """ if lc features are using in training tablular feeat is updated to especifict time (near to)"""
+        """ if lc features are using in training tabular feeat is updated to specific time (near to)"""
 
         if self.use_features:
             """tabular features is updated to acording time span"""
@@ -165,7 +165,7 @@ class ATATDataset(Dataset):
         return sample
 
     def three_time_mask(self, sample: dict, idx: int):
-        """sample is update to a fixed lenght betwent thre values"""
+        """sample is update to a fixed length between the values"""
         mask, time = sample["mask"], sample["time"] 
         time_eval = np.random.choice([16, 128, 2048]) #16, 32, 64, 128, 256, 512, 1024, 2048]) 
         mask_time = (time <= time_eval).float()

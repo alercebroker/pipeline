@@ -64,3 +64,11 @@
   online_opt_tt_general: true,
 }
 
+'lc_md_feat_mta_ireyes': {
+  use_lightcurves_general: true,
+  use_metadata_general: true,
+  use_features_general: true,
+  use_QT_general: true,
+  online_opt_tt_general: true,
+}
+

@@ -16,6 +16,7 @@ from src.layers import ATAT
 
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
 from pytorch_lightning import Trainer
 
@@ -161,6 +162,12 @@ if __name__ == "__main__":
             patience=args_general['patience'],
             verbose=False,
             mode="max",
+        )
+    ]
+
+    all_callbacks += [
+        LearningRateMonitor(
+            logging_interval='step'
         )
     ]
 

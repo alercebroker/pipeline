@@ -8,10 +8,9 @@ import torchmetrics
 import pytorch_lightning as pl
 
 from torch.optim.lr_scheduler import LambdaLR
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-
+from src.training.schedulers import cosine_decay_ireyes
 from src.layers import ATAT
-from src.training.schedulers import CosineDecayWithWarmup
+
 
 class LitATAT(pl.LightningModule):
     def __init__(self, **kwargs):
@@ -145,11 +144,20 @@ class LitATAT(pl.LightningModule):
 
     def configure_optimizers(self):
         params = filter(lambda p: p.requires_grad, self.parameters())
-        optimizer = optim.Adam(params,
-                               lr=self.general_["lr"])
+        optimizer = optim.Adam(
+            params,
+            lr=self.general_["lr"])
         
         if self.use_cosine_decay:
-            scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=45000, T_mult=1, eta_min=self.general_["lr"] * 0.05)
+            scheduler = LambdaLR(
+                optimizer, 
+                lambda epoch: cosine_decay_ireyes(
+                    epoch, 
+                    warm_up_epochs=10,
+                    decay_steps=150,
+                    alpha=0.05
+                )
+            )
             return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler}}
         else:
             return optimizer
