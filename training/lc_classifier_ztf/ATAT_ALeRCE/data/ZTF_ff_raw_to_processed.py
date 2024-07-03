@@ -49,13 +49,19 @@ def extract_info(path_chunk, dict_info):
         path_save_md = "{}/metadata".format(dict_info["path_save"])
         os.makedirs(path_save_md, exist_ok=True)
         df_metadata = df_features[["oid"] + dict_info["md_col_names"]]
-        df_metadata = df_metadata.rename(columns=ZTF_ff_columns_to_PROD)
+        columns_wo_oid = [c for c in df_metadata.columns if c != 'oid']
+        assert set(columns_wo_oid).issubset(set(ZTF_ff_columns_to_PROD.keys()))
+        df_metadata = df_metadata.rename(
+            columns=ZTF_ff_columns_to_PROD)
         df_metadata.to_parquet(
             "./{}/metadata_batch_{}.parquet".format(path_save_md, num_batch)
         )
 
     df_features = df_features.drop(dict_info["md_col_names"], axis="columns")
-    df_features = df_features.rename(columns=ZTF_ff_columns_to_PROD)
+    columns_wo_oid = [c for c in df_features.columns if c != 'oid']
+    assert set(columns_wo_oid).issubset(set(ZTF_ff_columns_to_PROD.keys()))
+    df_features = df_features.rename(
+        columns=ZTF_ff_columns_to_PROD)
     df_features.to_parquet(
         "./{}/feat_batch_{}.parquet".format(dict_info["path_save_feat_time"], num_batch)
     )

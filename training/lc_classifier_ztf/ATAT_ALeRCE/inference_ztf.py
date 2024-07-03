@@ -355,8 +355,8 @@ if __name__ == "__main__":
             "list_eval_time": [8, 16, 32, 64, 128, 256, 512, 1024, 2048],
         },
         "ztf_ff": {
-            "path_exp": "results/ZTF_ff/LC_MD_FEAT/experiment_0/MTA",
-            "data_root": "data/datasets/ZTF_ff/final/LC_MD_FEAT_v3_windows_200_12",
+            "path_exp": "results/ZTF_ff/LC_MD_FEAT/ireyes_test_1/MTA",
+            "data_root": "data/datasets/ZTF_ff/final/LC_MD_FEAT_240627_windows_200_12",
             "list_eval_time": [16, 32, 64, 128, 256, 512, 1024, 2048],
         },
     }
