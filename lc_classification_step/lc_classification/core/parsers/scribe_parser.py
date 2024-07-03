@@ -108,11 +108,10 @@ class ScribeParser(KafkaParser):
         )
 
 
-class ScoreScribeParser(ScribeParser):
-    def __init__(self, *, detector_name: str, detector_version: str):
+class ScoreScribeParser(KafkaParser):
+    def __init__(self, *, classifier_name: str):
         super().__init__(self)
-        self.detector_name = detector_name
-        self.detector_version = detector_version
+        self.detector_name = classifier_name
 
     def parse(self, to_parse: OutputDTO, **kwargs) -> KafkaOutput[List[dict]]:
         """Parse data output from the Random Forest to scribe commands.
@@ -156,8 +155,7 @@ class ScoreScribeParser(ScribeParser):
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
-        probabilities["detector_name"] = self._get_detector_name()
-        probabilities["detector_version"] = self.detector_version
+        probabilities["classifier_name"] = self._get_detector_name()
 
         results = probabilities
         if not results.index.name == "oid":
@@ -179,11 +177,11 @@ class ScoreScribeParser(ScribeParser):
                     "collection": "score",
                     "type": "insert",
                     "criteria": {
-                        "id": idx,
+                        "_id": idx,
                     },
                     "data": {
                         "detector_name": row["classifier_name"],
-                        "classifier_version": row["classifier_version"],
+                        "detector_version": kwargs["classifier_version"],
                         "categories": categories,
                     },
                     "options": {"upsert": True, "set_on_insert": False},
@@ -193,7 +191,7 @@ class ScoreScribeParser(ScribeParser):
 
         for oid in results.index.unique():
             results.loc[[oid], :].groupby(
-                "detector_name", group_keys=False
+                "classifier_name", group_keys=False
             ).apply(get_scribe_messages)
 
         return KafkaOutput(commands)
