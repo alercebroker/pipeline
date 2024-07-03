@@ -11,6 +11,7 @@ from .commands import (
     UpsertNonDetectionsCommand,
     UpsertProbabilitiesCommand,
     UpsertXmatchCommand,
+    UpsertScoreCommand
 )
 
 
@@ -66,4 +67,6 @@ def command_factory(msg: str) -> Command:
         return UpsertXmatchCommand(**message)
     if type_ == "update" and table == "forced_photometry":
         return InsertForcedPhotometryCommand(**message)
+    if type_ == "insert" and table == "score":
+        return UpsertScoreCommand(**message)
     raise ValueError(f"Unrecognized command type {type_} in table {table}.")

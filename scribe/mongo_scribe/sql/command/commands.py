@@ -13,6 +13,7 @@ from db_plugins.db.sql.models import (
     Object,
     Probability,
     Xmatch,
+    Score,
 )
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -54,6 +55,51 @@ class InsertObjectCommand(Command):
         return session.connection().execute(
             insert(Object).values(data).on_conflict_do_nothing()
         )
+    
+class UpsertScoreCommand(Command):
+    
+
+    def _check_inputs(self, data, criteria):
+        
+        super()._check_inputs(data, criteria)
+
+        data_keys = data.keys()
+
+        if not 'detector_name' in data_keys or not 'detector_version' in data_keys or not 'categories' in data_keys:
+            raise ValueError(f"missing field in data: {data}")
+        else: 
+            if len(data['categories']) < 1:
+                raise ValueError(f"Categories in data with no content")
+           
+        return data
+
+    def _format_data(self,data,criteria):
+        
+        principal_list = []
+
+        for cat_dict in data['categories']:
+
+            principal_list.append({
+
+                'detector_name': data['detector_name'],
+                'oid': criteria['id'],
+                'detector_version': data['detector_version'],
+                'category_name': cat_dict['name'],
+                'category_scote': cat_dict['score'],
+                
+            })
+
+        return principal_list
+    
+    @staticmethod
+    def db_operation(session: Session, data: List, Score):
+        logging.debug("Inserting %s objects", len(data))
+        return session.connection().execute(
+            insert(Score).values(data).on_conflict_do_update()
+        )
+
+        
+
 
 class UpdateObjectFromStatsCommand(Command):
     type = ValidCommands.update_object_from_stats
