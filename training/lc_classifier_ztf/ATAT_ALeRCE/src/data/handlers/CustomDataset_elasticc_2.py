@@ -51,22 +51,30 @@ class ATATDataset(Dataset):
                     use MTA {online_opt_tt}"
         )
 
-        self.data = torch.from_numpy(h5_.get("data")[:][self.these_idx]) # flux 
-        self.data_var = torch.from_numpy(h5_.get("data-var")[:][self.these_idx]) # data-var # flux_err
-        self.mask = torch.from_numpy(h5_.get("mask_alert")[:][self.these_idx])  # mask_alert # mask
-        self.time = torch.from_numpy(h5_.get("time_phot")[:][self.these_idx]) # time_phot # time
-        #self.time_alert = torch.from_numpy(h5_.get("time_detection")[:][self.these_idx])
-        #self.time_phot = torch.from_numpy(h5_.get("time_photometry")[:][self.these_idx])
+        self.data = torch.from_numpy(h5_.get("data")[:][self.these_idx])  # flux
+        self.data_var = torch.from_numpy(
+            h5_.get("data-var")[:][self.these_idx]
+        )  # data-var # flux_err
+        self.mask = torch.from_numpy(
+            h5_.get("mask_alert")[:][self.these_idx]
+        )  # mask_alert # mask
+        self.time = torch.from_numpy(
+            h5_.get("time_phot")[:][self.these_idx]
+        )  # time_phot # time
+        # self.time_alert = torch.from_numpy(h5_.get("time_detection")[:][self.these_idx])
+        # self.time_phot = torch.from_numpy(h5_.get("time_photometry")[:][self.these_idx])
         self.labels = h5_.get("labels")[:][self.these_idx]
 
-        self.time_alert = torch.from_numpy(h5_.get("time_alert")[:][self.these_idx]) # BORRAR
+        self.time_alert = torch.from_numpy(
+            h5_.get("time_alert")[:][self.these_idx]
+        )  # BORRAR
 
         self.eval_time = eval_metric  # must be a number
         self.max_time = 1500
         self.use_lightcurves = use_lightcurves
         self.use_metadata = use_metadata
         self.use_features = use_features
-        self.use_QT = use_QT 
+        self.use_QT = use_QT
 
         self.set_type = set_type
         self.force_online_opt = force_online_opt
@@ -74,22 +82,35 @@ class ATATDataset(Dataset):
         self.online_opt_tt = online_opt_tt
 
         self.list_time_to_eval = list_time_to_eval
-        print('list_time_to_eval: ', list_time_to_eval)
+        print("list_time_to_eval: ", list_time_to_eval)
 
         logging.info(f"Partition : {partition_used} Set Type : {set_type}")
 
         if self.use_metadata:
             metadata_feat = h5_.get("metadata_feat")[:][self.these_idx]
-            path_QT = "./{}/quantiles/metadata/fold_{}.joblib".format(data_root, partition_used)
-            self.metadata_feat = self.get_tabular_data(metadata_feat, path_QT, 'metadata')
+            path_QT = "./{}/quantiles/metadata/fold_{}.joblib".format(
+                data_root, partition_used
+            )
+            self.metadata_feat = self.get_tabular_data(
+                metadata_feat, path_QT, "metadata"
+            )
 
         if self.use_features:
             self.extracted_feat = dict()
             for time_eval in self.list_time_to_eval:
-                path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(data_root, time_eval, partition_used)
-                extracted_feat = h5_.get("extracted_feat_{}".format(time_eval))[:][self.these_idx]
-                self.extracted_feat.update({time_eval: self.get_tabular_data(extracted_feat, path_QT, 'features')})
-            
+                path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(
+                    data_root, time_eval, partition_used
+                )
+                extracted_feat = h5_.get("extracted_feat_{}".format(time_eval))[:][
+                    self.these_idx
+                ]
+                self.extracted_feat.update(
+                    {
+                        time_eval: self.get_tabular_data(
+                            extracted_feat, path_QT, "features"
+                        )
+                    }
+                )
 
     def __getitem__(self, idx):
         """idx is used for pytorch to select samples to construc its batch"""
@@ -99,8 +120,7 @@ class ATATDataset(Dataset):
             "time": self.time[idx],
             "mask": self.mask[idx],
             "labels": self.labels[idx],
-
-            "time_alert": self.time_alert[idx], # BORRAR
+            "time_alert": self.time_alert[idx],  # BORRAR
         }
 
         if self.use_lightcurves:
@@ -110,7 +130,9 @@ class ATATDataset(Dataset):
             data_dict.update({"metadata_feat": self.metadata_feat[idx]})
 
         if self.use_features:
-            data_dict.update({"extracted_feat": self.extracted_feat[self.list_time_to_eval[-1]][idx]})
+            data_dict.update(
+                {"extracted_feat": self.extracted_feat[self.list_time_to_eval[-1]][idx]}
+            )
 
         if self.set_type == "train":
             if self.force_online_opt:
@@ -125,10 +147,8 @@ class ATATDataset(Dataset):
         return len(self.labels)
 
     def get_tabular_data(self, tabular_data, path_QT, type_data):
-        logging.info(
-            f"Loading and procesing {type_data}. Using QT: {self.use_QT}"
-        )
-        if self.use_QT: 
+        logging.info(f"Loading and procesing {type_data}. Using QT: {self.use_QT}")
+        if self.use_QT:
             QT = load(path_QT)
             tabular_data = QT.transform(tabular_data)
 
@@ -165,8 +185,10 @@ class ATATDataset(Dataset):
 
     def three_time_mask(self, sample: dict, idx: int):
         """sample is update to a fixed lenght betwent thre values"""
-        mask, time = sample["mask"], sample["time_alert"] # BORRAR (time_alert to time)
-        time_eval = np.random.choice([8, 128, 2048]) #16, 32, 64, 128, 256, 512, 1024, 2048]) # BORRAR
+        mask, time = sample["mask"], sample["time_alert"]  # BORRAR (time_alert to time)
+        time_eval = np.random.choice(
+            [8, 128, 2048]
+        )  # 16, 32, 64, 128, 256, 512, 1024, 2048]) # BORRAR
         mask_time = (time <= time_eval).float()
 
         if self.use_features:

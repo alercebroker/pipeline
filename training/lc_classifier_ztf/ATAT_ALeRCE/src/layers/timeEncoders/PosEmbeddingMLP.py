@@ -12,19 +12,19 @@ class PosEmbeddingMLP(nn.Module):
 
         assert embedding_size % 2 == 0
 
-        self.w = nn.Linear(input_size, embedding_size//2, bias=False)
+        self.w = nn.Linear(input_size, embedding_size // 2, bias=False)
 
         self.mlp = nn.Sequential(
             nn.Linear(embedding_size, m_layers),
             nn.GELU(),
-            nn.Linear(m_layers, embedding_size)
+            nn.Linear(m_layers, embedding_size),
         )
 
         self.linear_proj = nn.Sequential(
             nn.Linear(in_features=input_size, out_features=embedding_size, bias=True),
         )
-        
-        self.scale = embedding_size**-0.5
+
+        self.scale = embedding_size ** -0.5
 
     def forward(self, x, t):
         batch_size, seq_len, _ = t.shape

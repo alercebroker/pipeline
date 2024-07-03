@@ -20,28 +20,32 @@ class ATAT(nn.Module):
         self.feature_ = kwargs["ft"]
 
         # Lightcurve Transformer
-        if self.general_['use_lightcurves']:
-            self.time_encoder   = TimeHandler(**kwargs["lc"])
+        if self.general_["use_lightcurves"]:
+            self.time_encoder = TimeHandler(**kwargs["lc"])
             self.transformer_lc = Transformer(**kwargs["lc"])
-            self.classifier_lc  = TokenClassifier(num_classes=self.general_["num_classes"], 
-                                                  **kwargs["lc"])
-            self.token_lc       = Token(**kwargs["lc"])
-        
+            self.classifier_lc = TokenClassifier(
+                num_classes=self.general_["num_classes"], **kwargs["lc"]
+            )
+            self.token_lc = Token(**kwargs["lc"])
+
         # Tabular Transformer
-        if self.general_['use_metadata'] or self.general_['use_features']:
-            self.embedding_ft   = Embedding(**kwargs["ft"])
+        if self.general_["use_metadata"] or self.general_["use_features"]:
+            self.embedding_ft = Embedding(**kwargs["ft"])
             self.transformer_ft = Transformer(**kwargs["ft"])
-            self.classifier_ft  = TokenClassifier(num_classes=self.general_["num_classes"], 
-                                                  **kwargs["ft"])
-            self.token_ft       = Token(**kwargs["ft"])
+            self.classifier_ft = TokenClassifier(
+                num_classes=self.general_["num_classes"], **kwargs["ft"]
+            )
+            self.token_ft = Token(**kwargs["ft"])
 
         # Mixed Classifier (Lightcurve and tabular)
-        if self.general_['use_lightcurves'] and any([self.general_['use_metadata'], 
-                                                     self.general_['use_features']]):
-            
-            input_dim = kwargs["lc"]["embedding_size"] + kwargs["ft"]["embedding_size"]
-            self.classifier_mix = MixedClassifier(input_dim=input_dim, **kwargs["general"])      
+        if self.general_["use_lightcurves"] and any(
+            [self.general_["use_metadata"], self.general_["use_features"]]
+        ):
 
+            input_dim = kwargs["lc"]["embedding_size"] + kwargs["ft"]["embedding_size"]
+            self.classifier_mix = MixedClassifier(
+                input_dim=input_dim, **kwargs["general"]
+            )
 
         # init model params
         self.init_model()
@@ -65,25 +69,38 @@ class ATAT(nn.Module):
         m_mod = torch.cat([m_token, m_mod], axis=1)
         return x_mod, m_mod, t_mod
 
-    def forward(self, data=None, data_err=None, time=None, tabular_feat=None, mask=None, **kwargs):
+    def forward(
+        self,
+        data=None,
+        data_err=None,
+        time=None,
+        tabular_feat=None,
+        mask=None,
+        **kwargs
+    ):
         x_cls, f_cls, m_cls = None, None, None
 
-        if self.general_['use_lightcurves']:
-            if self.general_['use_lightcurves_err']:
-                data = torch.stack((data, data_err), dim=data.dim()-1)
+        if self.general_["use_lightcurves"]:
+            if self.general_["use_lightcurves_err"]:
+                data = torch.stack((data, data_err), dim=data.dim() - 1)
 
-            x_mod, m_mod, _ = self.embedding_light_curve(**{"x": data, "t": time, "mask": mask})
+            x_mod, m_mod, _ = self.embedding_light_curve(
+                **{"x": data, "t": time, "mask": mask}
+            )
             x_emb = self.transformer_lc(**{"x": x_mod, "mask": m_mod})
             x_cls = self.classifier_lc(x_emb[:, 0, :])
-        
-        if self.general_['use_metadata'] or self.general_['use_features']:
+
+        if self.general_["use_metadata"] or self.general_["use_features"]:
             f_mod = self.embedding_feats(**{"f": tabular_feat})
             f_emb = self.transformer_ft(**{"x": f_mod, "mask": None})
             f_cls = self.classifier_ft(f_emb[:, 0, :])
 
-        if self.general_['use_lightcurves'] and (self.general_['use_metadata'] or 
-                                                 self.general_['use_features']):
-            m_cls = self.classifier_mix(torch.cat([f_emb[:, 0, :], x_emb[:, 0, :]], axis=1))
+        if self.general_["use_lightcurves"] and (
+            self.general_["use_metadata"] or self.general_["use_features"]
+        ):
+            m_cls = self.classifier_mix(
+                torch.cat([f_emb[:, 0, :], x_emb[:, 0, :]], axis=1)
+            )
 
         return x_cls, f_cls, m_cls
 

@@ -1,4 +1,3 @@
-
 ZTF_ff_columns_to_PROD = {
     "g-r_mean_g,r": "g_r_mean_12",
     "g-r_max_g,r": "g_r_max_12",
@@ -184,5 +183,5 @@ ZTF_ff_columns_to_PROD = {
     "Timespan": "Timespan",
     "Coordinate_x": "Coordinate_x",
     "Coordinate_y": "Coordinate_y",
-    "Coordinate_z": "Coordinate_z"
+    "Coordinate_z": "Coordinate_z",
 }

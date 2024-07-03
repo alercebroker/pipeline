@@ -2,19 +2,25 @@ import torch
 import torch.nn as nn
 import math
 
+
 class tAPE(nn.Module):
-    def __init__(self, embedding_size, Tmax=1000.0, max_obs=200, input_size=1, trainable=False):
+    def __init__(
+        self, embedding_size, Tmax=1000.0, max_obs=200, input_size=1, trainable=False
+    ):
         super(tAPE, self).__init__()
 
         self.embedding_size = embedding_size
         self.max_obs = max_obs
-        
-        initial_div_term = torch.exp(torch.arange(0.0, embedding_size, 2).float() * -(math.log(Tmax) / embedding_size))
+
+        initial_div_term = torch.exp(
+            torch.arange(0.0, embedding_size, 2).float()
+            * -(math.log(Tmax) / embedding_size)
+        )
 
         if trainable:
             self.w = nn.Parameter(initial_div_term)
         else:
-            self.register_buffer('w', initial_div_term)
+            self.register_buffer("w", initial_div_term)
 
         self.linear_proj = nn.Sequential(
             nn.Linear(in_features=input_size, out_features=embedding_size, bias=True),
@@ -28,10 +34,13 @@ class tAPE(nn.Module):
         pe = torch.empty(batch_size, seq_len, self.embedding_size, device=t.device)
 
         t = t.squeeze(-1)
-        w = self.w.unsqueeze(0).unsqueeze(1) 
+        w = self.w.unsqueeze(0).unsqueeze(1)
 
-        pe[:, :, 0::2] = torch.sin((t[:, :, None] * w) * (self.embedding_size/self.max_obs))
-        pe[:, :, 1::2] = torch.cos((t[:, :, None] * w) * (self.embedding_size/self.max_obs))
+        pe[:, :, 0::2] = torch.sin(
+            (t[:, :, None] * w) * (self.embedding_size / self.max_obs)
+        )
+        pe[:, :, 1::2] = torch.cos(
+            (t[:, :, None] * w) * (self.embedding_size / self.max_obs)
+        )
 
         return self.linear_proj(x) + pe
-

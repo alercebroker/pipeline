@@ -15,7 +15,15 @@ from ..utils import clones
 
 
 class TimeHandler(nn.Module):
-    def __init__(self, num_bands=2, input_size=1, embedding_size=64, Tmax=1500.0, pe_type='tm', **kwargs):
+    def __init__(
+        self,
+        num_bands=2,
+        input_size=1,
+        embedding_size=64,
+        Tmax=1500.0,
+        pe_type="tm",
+        **kwargs
+    ):
         super(TimeHandler, self).__init__()
         # general params
         self.num_bands = num_bands
@@ -23,20 +31,21 @@ class TimeHandler(nn.Module):
         self.T_max = Tmax
 
         dict_PEs = {
-            'tm': TimeFilmModified,
-            'pe': PosEmbedding,
-            'pe_cad': PosEmbeddingCadence,
-            'mlp': PosEmbeddingMLP,
-            'rnn': PosEmbeddingRNN,
-            'pe_concat': PosConcatEmbedding,
-            'tAPE': tAPE,
+            "tm": TimeFilmModified,
+            "pe": PosEmbedding,
+            "pe_cad": PosEmbeddingCadence,
+            "mlp": PosEmbeddingMLP,
+            "rnn": PosEmbeddingRNN,
+            "pe_concat": PosConcatEmbedding,
+            "tAPE": tAPE,
         }
 
         # tume_encoders
         self.time_encoders = clones(
-            dict_PEs[pe_type](embedding_size=embedding_size, 
-                              input_size=input_size,
-                              Tmax=Tmax), num_bands
+            dict_PEs[pe_type](
+                embedding_size=embedding_size, input_size=input_size, Tmax=Tmax
+            ),
+            num_bands,
         )
 
     def forward(self, x, t, mask, **kwargs):
@@ -44,7 +53,7 @@ class TimeHandler(nn.Module):
         t_mod = []
         m_mod = []
 
-        for i in range(x.shape[-1]):         
+        for i in range(x.shape[-1]):
             slices_x = [slice(None)] * (x.dim() - 1) + [slice(i, i + 1)]
             slices_t = [slice(None)] * (t.dim() - 1) + [slice(i, i + 1)]
 
