@@ -172,7 +172,9 @@ class ScoreScribeParser(KafkaParser):
             for idx, row in scores_by_detector.iterrows():
                 categories = []
                 for cat_name in cat_names:
-                   categories.append({"name": cat_name, "score": row[cat_name]})
+                    categories.append(
+                        {"name": cat_name, "score": row[cat_name]}
+                    )
                 command = {
                     "collection": "score",
                     "type": "insert",
