@@ -20,6 +20,7 @@ class SortingHatStep(GenericStep):
         self.parser = ALeRCEParser()
         # feature flags
         self.use_psql = config["FEATURE_FLAGS"]["USE_PSQL"]
+        self.use_mongo = config["FEATURE_FLAGS"]["USE_MONGO"]
         self.run_conesearch = config["FEATURE_FLAGS"]["RUN_CONESEARCH"]
 
     def set_psql_driver(self, psql_connection: PsqlConnection):
@@ -102,8 +103,11 @@ class SortingHatStep(GenericStep):
         psql_driver = None
         if self.use_psql:
             psql_driver = self.psql_driver
+        mongo_driver = None
+        if self.use_mongo:
+            mongo_driver = self.mongo_driver
         wizard.insert_empty_objects(
-            self.mongo_driver, alerts, psql=psql_driver
+            mongo_driver, alerts, psql=psql_driver
         )
         return alerts
 
@@ -116,8 +120,9 @@ class SortingHatStep(GenericStep):
         self.logger.info(f"Assigning AID to {len(alerts)} alerts")
         alerts["aid"] = None
         # Interaction with database: group all alerts with the same oid and find/create alerce_id
-        alerts = wizard.find_existing_id(self.mongo_driver, alerts)
-        if self.run_conesearch:
-            alerts = wizard.find_id_by_conesearch(self.mongo_driver, alerts)
+        if self.use_mongo:
+            alerts = wizard.find_existing_id(self.mongo_driver, alerts)
+            if self.run_conesearch:
+                alerts = wizard.find_id_by_conesearch(self.mongo_driver, alerts)
         alerts = wizard.generate_new_id(alerts)
         return alerts
