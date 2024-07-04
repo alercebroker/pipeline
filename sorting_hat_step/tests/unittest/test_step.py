@@ -17,6 +17,7 @@ class SortingHatStepTestCase(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
         self.mock_db = mock.create_autospec(MongoConnection)
@@ -82,6 +83,7 @@ class RunConesearchTestCase(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
 
@@ -100,6 +102,7 @@ class RunConesearchTestCase(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
 
@@ -118,6 +121,7 @@ class RunConesearchTestCase(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": False,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
@@ -135,6 +139,7 @@ class RunConesearchTestCase(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": False,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
         step = SortingHatStep(config=step_config, mongo_connection=self.mock_db)
