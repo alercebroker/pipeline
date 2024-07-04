@@ -11,7 +11,7 @@ from .commands import (
     UpsertNonDetectionsCommand,
     UpsertProbabilitiesCommand,
     UpsertXmatchCommand,
-    UpsertScoreCommand
+    UpsertScoreCommand,
 )
 
 
