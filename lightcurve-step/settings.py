@@ -127,6 +127,7 @@ def settings_creator():
             "USE_PROFILING": use_profiling,
             "PROMETHEUS": prometheus,
             "USE_SQL": bool(os.getenv("USE_SQL", True)),
+            "USE_MONGO": bool(os.getenv("USE_MONGO", True)),
             "SKIP_MJD_FILTER": bool(os.getenv("SKIP_MJD_FILTER", False)),
         },
     }
