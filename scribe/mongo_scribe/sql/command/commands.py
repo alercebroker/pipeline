@@ -57,23 +57,25 @@ class InsertObjectCommand(Command):
         )
     
 class UpsertScoreCommand(Command):
+    type = ValidCommands.upsert_score
     
 
     def _check_inputs(self, data, criteria):
-        
         super()._check_inputs(data, criteria)
-
+        
         data_keys = data.keys()
 
-        if not 'detector_name' in data_keys or not 'detector_version' in data_keys or not 'categories' in data_keys:
-            raise ValueError(f"missing field in data: {data}")
+        if not 'detector_name' in data_keys:
+            raise ValueError(f"missing field detector_name")
+        if not 'detector_version' in data_keys:
+            raise ValueError(f"missing field detector_version")
+        if not 'categories' in data_keys:
+            raise ValueError(f"missing field categories")
         else: 
             if len(data['categories']) < 1:
                 raise ValueError(f"Categories in data with no content")
-           
-        return data
 
-    def _format_data(self,data,criteria):
+    def _format_data(self,data):
         
         principal_list = []
 
@@ -82,21 +84,27 @@ class UpsertScoreCommand(Command):
             principal_list.append({
 
                 'detector_name': data['detector_name'],
-                'oid': criteria['id'],
+                'oid': self.criteria['_id'],
                 'detector_version': data['detector_version'],
                 'category_name': cat_dict['name'],
-                'category_scote': cat_dict['score'],
+                'score': cat_dict['score'],
                 
             })
 
         return principal_list
     
     @staticmethod
-    def db_operation(session: Session, data: List, Score):
+    def db_operation(session: Session, data: List):
         logging.debug("Inserting %s objects", len(data))
-        return session.connection().execute(
-            insert(Score).values(data).on_conflict_do_update()
+
+        insert_stmt = insert(Score)
+        insert_stmt = insert_stmt.on_conflict_do_update(
+            constraint="score_pkey",
+            set_=dict(
+                score=insert_stmt.excluded.score,
+            )
         )
+        return session.connection().execute(insert_stmt, data)
 
         
 
@@ -246,6 +254,7 @@ class InsertForcedPhotometryCommand(Command):
         new_data["fid"] = fid_map[new_data["fid"]]
 
         return {**new_data, **extra_fields}
+        super()._check_inputs(data, criteria)
 
     @staticmethod
     def db_operation(session: Session, data: List):

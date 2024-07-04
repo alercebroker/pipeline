@@ -790,3 +790,53 @@ class PsqlIntegrationTest(unittest.TestCase):
             result = result.fetchall()
             assert result[0][1] == 100
             assert result[0][2] == 100
+
+    def test_insert_score_correct(self):
+        command = {
+            "collection": "score",
+            "type": "insert",
+            "criteria": {
+                "_id": "test_score_oid",
+            },
+            "data": {
+                'detector_name': "test_detector_name",
+                'detector_version': "test_version",
+                'categories': [
+                    {"name": "test_category_name", "score": "123"}
+                ]
+                
+            },
+        }
+
+        with self.db.session() as session:
+            session.execute(
+                text(
+                    """
+                    INSERT INTO object(oid, ndet, firstmjd, g_r_max_corr, g_r_mean_corr, 
+                    meanra, meandec, step_id_corr, lastmjd, deltajd, ncovhist, ndethist, 
+                    corrected, stellar)
+                    VALUES ('test_score_oid', 1, 50001, 1.0, 0.9, 45, 45, 'v1', 50001, 0, 1, 1, false, false) 
+                    ON CONFLICT DO NOTHING
+                    """
+                )
+            )
+            session.commit()
+
+        self.producer.produce({"payload": json.dumps(command)})
+        self.step.start()
+
+        with self.db.session() as session:
+            result = session.execute(
+                text(
+                    """
+                    SELECT * FROM score WHERE oid = 'test_score_oid'
+                    """
+                )
+            )
+            result = result.fetchall()
+            print(result)
+            assert result[0][0] == "test_score_oid"
+            assert result[0][1] == "test_detector_name"
+            assert result[0][2] == "test_version"
+            assert result[0][3] == "test_category_name"
+            assert result[0][4] == 123
