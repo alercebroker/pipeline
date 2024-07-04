@@ -106,9 +106,7 @@ class SortingHatStep(GenericStep):
         mongo_driver = None
         if self.use_mongo:
             mongo_driver = self.mongo_driver
-        wizard.insert_empty_objects(
-            mongo_driver, alerts, psql=psql_driver
-        )
+        wizard.insert_empty_objects(mongo_driver, alerts, psql=psql_driver)
         return alerts
 
     def add_aid(self, alerts: pd.DataFrame) -> pd.DataFrame:
@@ -123,6 +121,8 @@ class SortingHatStep(GenericStep):
         if self.use_mongo:
             alerts = wizard.find_existing_id(self.mongo_driver, alerts)
             if self.run_conesearch:
-                alerts = wizard.find_id_by_conesearch(self.mongo_driver, alerts)
+                alerts = wizard.find_id_by_conesearch(
+                    self.mongo_driver, alerts
+                )
         alerts = wizard.generate_new_id(alerts)
         return alerts
