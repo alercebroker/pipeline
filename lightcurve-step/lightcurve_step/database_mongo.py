@@ -14,6 +14,8 @@ class DatabaseConnection:
 
 
 def _get_mongo_detections(oids, db_mongo, parser) -> list:
+    if db_mongo is None:
+        return []
     db_detections = db_mongo.database[DETECTION].aggregate(
         [
             {"$match": {"oid": {"$in": oids}}},
@@ -43,6 +45,8 @@ def _get_mongo_detections(oids, db_mongo, parser) -> list:
 
 
 def _get_mongo_non_detections(oids, db_mongo, parser):
+    if db_mongo is None:
+        return []
     db_non_detections = db_mongo.database[NON_DETECTION].find(
         {"oid": {"$in": oids}},
         {"_id": False, "evilDocDbHack": False},
@@ -52,6 +56,8 @@ def _get_mongo_non_detections(oids, db_mongo, parser):
 
 
 def _get_mongo_forced_photometries(oids, db_mongo, parser):
+    if db_mongo is None:
+        return []
     db_forced_photometries = db_mongo.database[FORCED_PHOTOMETRY].aggregate(
         [
             {"$match": {"oid": {"$in": oids}}},
