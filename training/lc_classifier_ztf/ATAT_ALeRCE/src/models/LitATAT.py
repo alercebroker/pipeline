@@ -164,7 +164,7 @@ class LitATAT(pl.LightningModule):
             scheduler = LambdaLR(
                 optimizer,
                 lambda epoch: cosine_decay_ireyes(
-                    epoch, warm_up_epochs=10, decay_steps=60, alpha=0.05
+                    epoch, warm_up_epochs=10, decay_steps=100, alpha=0.05
                 ),
             )
             return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler}}
