@@ -33,7 +33,7 @@ def test_step_squidward_result(
     from settings import config
 
     kconsumer = kafka_consumer("squidward")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_squidward")
 
     step = LateClassifier(config=config())
     step.start()
@@ -69,7 +69,7 @@ def test_step_squidward_no_features_result(
     from settings import config
 
     kconsumer = kafka_consumer("squidward")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_squidward")
 
     step = LateClassifier(config=config())
     step.start()
