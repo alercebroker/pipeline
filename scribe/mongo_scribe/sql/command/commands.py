@@ -13,6 +13,7 @@ from db_plugins.db.sql.models import (
     Object,
     Probability,
     Xmatch,
+    Score,
 )
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -55,34 +56,87 @@ class InsertObjectCommand(Command):
             insert(Object).values(data).on_conflict_do_nothing()
         )
 
-class UpdateObjectFromStatsCommand(Command):
-    type = ValidCommands.update_object_from_stats
-    valid_attributes = set([
-        "ndethist",
-        "ncovhist",
-        "mjdstarthist",
-        "mjdendhist",
-        "corrected",
-        "stellar",
-        "ndet",
-        "g_r_max",
-        "g_r_max_corr",
-        "g_r_mean",
-        "g_r_mean_corr",
-        "meanra",
-        "meandec",
-        "sigmara",
-        "sigmadec",
-        "deltajd",
-        "firstmjd",
-        "lastmjd",
-        "step_id_corr", 
-        "diffpos",
-    ])
+
+class UpsertScoreCommand(Command):
+    type = ValidCommands.upsert_score
 
     def _check_inputs(self, data, criteria):
         super()._check_inputs(data, criteria)
-        
+
+        data_keys = data.keys()
+
+        if not "detector_name" in data_keys:
+            raise ValueError(f"missing field detector_name")
+        if not "detector_version" in data_keys:
+            raise ValueError(f"missing field detector_version")
+        if not "categories" in data_keys:
+            raise ValueError(f"missing field categories")
+        else:
+            if len(data["categories"]) < 1:
+                raise ValueError(f"Categories in data with no content")
+
+    def _format_data(self, data):
+
+        principal_list = []
+
+        for cat_dict in data["categories"]:
+
+            principal_list.append(
+                {
+                    "detector_name": data["detector_name"],
+                    "oid": self.criteria["_id"],
+                    "detector_version": data["detector_version"],
+                    "category_name": cat_dict["name"],
+                    "score": cat_dict["score"],
+                }
+            )
+
+        return principal_list
+
+    @staticmethod
+    def db_operation(session: Session, data: List):
+        logging.debug("Inserting %s objects", len(data))
+
+        insert_stmt = insert(Score)
+        insert_stmt = insert_stmt.on_conflict_do_update(
+            constraint="score_pkey",
+            set_=dict(
+                score=insert_stmt.excluded.score,
+            ),
+        )
+        return session.connection().execute(insert_stmt, data)
+
+
+class UpdateObjectFromStatsCommand(Command):
+    type = ValidCommands.update_object_from_stats
+    valid_attributes = set(
+        [
+            "ndethist",
+            "ncovhist",
+            "mjdstarthist",
+            "mjdendhist",
+            "corrected",
+            "stellar",
+            "ndet",
+            "g_r_max",
+            "g_r_max_corr",
+            "g_r_mean",
+            "g_r_mean_corr",
+            "meanra",
+            "meandec",
+            "sigmara",
+            "sigmadec",
+            "deltajd",
+            "firstmjd",
+            "lastmjd",
+            "step_id_corr",
+            "diffpos",
+        ]
+    )
+
+    def _check_inputs(self, data, criteria):
+        super()._check_inputs(data, criteria)
+
     def _format_data(self, data):
 
         if not set(data.keys()).issubset(self.valid_attributes):
@@ -90,19 +144,15 @@ class UpdateObjectFromStatsCommand(Command):
             logging.debug(f"Invalid keys provided {bad_inputs}")
             for k in bad_inputs:
                 data.pop(k)
-        
-        return {
-            "oid": self.criteria["oid"],
-            **data
-        }
+
+        return {"oid": self.criteria["oid"], **data}
 
     @staticmethod
     def db_operation(session: Session, data: List):
-        #upsert_stmt = update(Object)
+        # upsert_stmt = update(Object)
         logging.debug("Updating or inserting %s objects", len(data))
-        return session.bulk_update_mappings(
-            Object, data
-        )
+        return session.bulk_update_mappings(Object, data)
+
 
 class InsertDetectionsCommand(Command):
     type = ValidCommands.insert_detections
@@ -200,6 +250,7 @@ class InsertForcedPhotometryCommand(Command):
         new_data["fid"] = fid_map[new_data["fid"]]
 
         return {**new_data, **extra_fields}
+        super()._check_inputs(data, criteria)
 
     @staticmethod
     def db_operation(session: Session, data: List):
@@ -373,7 +424,7 @@ class UpsertXmatchCommand(Command):
                 "oid": self.criteria["_id"],
                 "catid": catalog,
                 "oid_catalog": data["xmatch"][catalog]["catoid"],
-                "dist": data["xmatch"][catalog]["dist"]
+                "dist": data["xmatch"][catalog]["dist"],
             }
             formatted_data.append(catalog_data)
         return formatted_data
