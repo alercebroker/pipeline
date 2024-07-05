@@ -7,7 +7,7 @@ from apf.consumers import KafkaConsumer
 
 from lc_classification.core.step import LateClassifier
 from tests.test_commons import (
-    assert_command_is_correct,
+    assert_score_command_is_correct,
     assert_ztf_object_is_correct,
 )
 
@@ -36,7 +36,7 @@ def test_step_anomaly_result(
     from settings import config
 
     kconsumer = kafka_consumer("anomaly")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_anomaly")
 
     step = LateClassifier(config=config())
     step.start()
@@ -47,7 +47,7 @@ def test_step_anomaly_result(
 
     for message in sconsumer.consume():
         command = json.loads(message["payload"])
-        assert_command_is_correct(command)
+        assert_score_command_is_correct(command)
         sconsumer.commit()
 
 
@@ -75,7 +75,7 @@ def test_step_anomaly_no_features_result(
     from settings import config
 
     kconsumer = kafka_consumer("anomaly")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_anomaly")
 
     step = LateClassifier(config=config())
     step.start()
@@ -86,5 +86,5 @@ def test_step_anomaly_no_features_result(
 
     for message in sconsumer.consume():
         command = json.loads(message["payload"])
-        assert_command_is_correct(command)
+        assert_score_command_is_correct(command)
         sconsumer.commit()

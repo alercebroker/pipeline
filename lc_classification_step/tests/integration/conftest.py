@@ -197,12 +197,12 @@ def env_variables_anomaly():
             "SCRIBE_SERVER": "localhost:9092",
             "METRICS_HOST": "localhost:9092",
             "METRICS_TOPIC": "metrics",
-            "SCRIBE_TOPIC": "w_object",
+            "SCRIBE_TOPIC": "w_object_anomaly",
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "ztf",
             "MODEL_CLASS": model_class,
-            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScribeParser",
+            "SCRIBE_PARSER_CLASS": "lc_classification.core.parsers.scribe_parser.ScoreScribeParser",
             "STEP_PARSER_CLASS": "lc_classification.core.parsers.anomaly_parser.AnomalyParser",
         }
         env_variables_dict.update(extra_env_vars)
@@ -243,7 +243,7 @@ def env_variables_squidward():
             "SCRIBE_SERVER": "localhost:9092",
             "METRICS_HOST": "localhost:9092",
             "METRICS_TOPIC": "metrics",
-            "SCRIBE_TOPIC": "w_object",
+            "SCRIBE_TOPIC": "w_object_squidward",
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "ztf",
@@ -289,7 +289,7 @@ def env_variables_mbappe():
             "SCRIBE_SERVER": "localhost:9092",
             "METRICS_HOST": "localhost:9092",
             "METRICS_TOPIC": "metrics",
-            "SCRIBE_TOPIC": "w_object",
+            "SCRIBE_TOPIC": "w_object_mbappe",
             "CONSUME_MESSAGES": "5",
             "ENABLE_PARTITION_EOF": "True",
             "STREAM": "ztf",
@@ -432,7 +432,7 @@ def kafka_consumer():
 
 @pytest.fixture
 def scribe_consumer():
-    def factory():
+    def factory(topic=None):
         consumer = KafkaConsumer(
             {
                 "PARAMS": {
@@ -441,7 +441,7 @@ def scribe_consumer():
                     "auto.offset.reset": "beginning",
                     "enable.partition.eof": True,
                 },
-                "TOPICS": ["w_object"],
+                "TOPICS": [topic] if topic is not None else ["w_object"],
                 "TIMEOUT": 0,
             }
         )
