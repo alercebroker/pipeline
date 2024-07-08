@@ -55,8 +55,10 @@ def patch_features(batch_id, shorten_n_days=None):
     import pandas as pd
     from typing import List
 
-    from lc_classifier.features.core.base import FeatureExtractorComposite, FeatureExtractor
-    from lc_classifier.features.extractors.color_feature_extractor import ColorFeatureExtractor
+    from lc_classifier.features.core.base import (
+        FeatureExtractorComposite,
+        FeatureExtractor,
+    )
     from lc_classifier.features.extractors.tde_extractor import TDETailExtractor
     from lc_classifier.features.core.base import astro_object_from_dict
     from dataset import save_batch
@@ -70,17 +72,11 @@ def patch_features(batch_id, shorten_n_days=None):
     # Assuming light curve is preprocessed and shortened
 
     # Delete old features to be patched
-    features_to_be_patched = [
-        'g-r_max',
-        'g-r_mean',
-        'g-r_mean_corr',
-        'g-r_max_corr',
-        'TDE_decay',
-        'TDE_decay_chi'
-    ]
+    features_to_be_patched = ["TDE_decay", "TDE_decay_chi"]
+
     for ao in batch_astro_objects:
         features = ao.features
-        features = features[~features['name'].isin(features_to_be_patched)]
+        features = features[~features["name"].isin(features_to_be_patched)]
         ao.features = features
 
     class PatchExtractor(FeatureExtractorComposite):
@@ -90,7 +86,6 @@ def patch_features(batch_id, shorten_n_days=None):
             bands = list("gr")
 
             feature_extractors = [
-                ColorFeatureExtractor(bands, just_flux=False),
                 TDETailExtractor(bands),
             ]
             return feature_extractors

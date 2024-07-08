@@ -42,7 +42,7 @@ class TDETailExtractor(FeatureExtractor):
         diff_fluxes["unit"] = "diff_magnitude"
         observations = diff_fluxes
         observations = observations[observations["e_brightness"] < 1.0]
-        observations = observations[observations["brightness"] > 30.0]
+        observations = observations[observations["brightness"] < 30.0]
 
         features = []
         for band in self.bands:
