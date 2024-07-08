@@ -29,7 +29,7 @@ class ATATDataset(Dataset):
         **kwargs,
     ):
         """loading dataset from H5 file"""
-        """ dataset is composed for all samples, where self.these_idx dart to sampels for each partition"""
+        """ dataset is composed for all samples, where self.these_idx dart to samples for each partition"""
 
         name = (
             "training"
@@ -52,10 +52,16 @@ class ATATDataset(Dataset):
                     use MTA {online_opt_tt}"
         )
 
-        self.data = torch.from_numpy(h5_.get("flux")[:][self.these_idx]) # flux 
-        self.data_err = torch.from_numpy(h5_.get("flux_err")[:][self.these_idx]) # data-var # flux_err
-        self.mask = torch.from_numpy(h5_.get("mask")[:][self.these_idx])  # mask_alert # mask
-        self.time = torch.from_numpy(h5_.get("time")[:][self.these_idx]) # time_phot # time
+        self.data = torch.from_numpy(h5_.get("flux")[:][self.these_idx])  # flux
+        self.data_err = torch.from_numpy(
+            h5_.get("flux_err")[:][self.these_idx]
+        )  # data-var # flux_err
+        self.mask = torch.from_numpy(
+            h5_.get("mask")[:][self.these_idx]
+        )  # mask_alert # mask
+        self.time = torch.from_numpy(
+            h5_.get("time")[:][self.these_idx]
+        )  # time_phot # time
         self.time_alert = torch.from_numpy(h5_.get("time_detection")[:][self.these_idx])
         self.time_phot = torch.from_numpy(h5_.get("time_photometry")[:][self.these_idx])
         self.labels = h5_.get("labels")[:][self.these_idx].astype(int)
@@ -66,7 +72,7 @@ class ATATDataset(Dataset):
         self.use_lightcurves_err = use_lightcurves_err
         self.use_metadata = use_metadata
         self.use_features = use_features
-        self.use_QT = use_QT 
+        self.use_QT = use_QT
 
         self.set_type = set_type
         self.force_online_opt = force_online_opt
@@ -74,25 +80,38 @@ class ATATDataset(Dataset):
         self.online_opt_tt = online_opt_tt
 
         self.list_time_to_eval = list_time_to_eval
-        print('list_time_to_eval: ', list_time_to_eval)
+        print("list_time_to_eval: ", list_time_to_eval)
 
         logging.info(f"Partition : {partition_used} Set Type : {set_type}")
 
         if self.use_metadata:
             metadata_feat = h5_.get("metadata_feat")[:][self.these_idx]
-            path_QT = "./{}/quantiles/metadata/fold_{}.joblib".format(data_root, partition_used)
-            self.metadata_feat = self.get_tabular_data(metadata_feat, path_QT, 'metadata')
+            path_QT = "./{}/quantiles/metadata/fold_{}.joblib".format(
+                data_root, partition_used
+            )
+            self.metadata_feat = self.get_tabular_data(
+                metadata_feat, path_QT, "metadata"
+            )
 
         if self.use_features:
             self.extracted_feat = dict()
             for time_eval in self.list_time_to_eval:
-                path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(data_root, time_eval, partition_used)
-                extracted_feat = h5_.get("extracted_feat_{}".format(time_eval))[:][self.these_idx]
-                self.extracted_feat.update({time_eval: self.get_tabular_data(extracted_feat, path_QT, 'features_{}'.format(time_eval))})
-            
+                path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(
+                    data_root, time_eval, partition_used
+                )
+                extracted_feat = h5_.get("extracted_feat_{}".format(time_eval))[:][
+                    self.these_idx
+                ]
+                self.extracted_feat.update(
+                    {
+                        time_eval: self.get_tabular_data(
+                            extracted_feat, path_QT, "features_{}".format(time_eval)
+                        )
+                    }
+                )
 
     def __getitem__(self, idx):
-        """idx is used for pytorch to select samples to construc its batch"""
+        """idx is used for pytorch to select samples to construct its batch"""
         """ idx_ is to map a valid index over all samples in dataset  """
 
         data_dict = {
@@ -103,7 +122,7 @@ class ATATDataset(Dataset):
 
         if self.use_lightcurves:
             data_dict.update({"data": self.data[idx]})
-            
+
         if self.use_lightcurves_err:
             data_dict.update({"data_err": self.data_err[idx]})
 
@@ -111,7 +130,9 @@ class ATATDataset(Dataset):
             data_dict.update({"metadata_feat": self.metadata_feat[idx]})
 
         if self.use_features:
-            data_dict.update({"extracted_feat": self.extracted_feat[self.list_time_to_eval[-1]][idx]})
+            data_dict.update(
+                {"extracted_feat": self.extracted_feat[self.list_time_to_eval[-1]][idx]}
+            )
 
         if self.set_type == "train":
             if self.force_online_opt:
@@ -122,23 +143,21 @@ class ATATDataset(Dataset):
         return data_dict
 
     def __len__(self):
-        """lenght of the dataaset, is necesary for consistent getitem values"""
+        """length of the dataset, is necessary for consistent getitem values"""
         return len(self.labels)
 
     def get_tabular_data(self, tabular_data, path_QT, type_data):
-        logging.info(
-            f"Loading and procesing {type_data}. Using QT: {self.use_QT}"
-        )
-        if self.use_QT: 
+        logging.info(f"Loading and procesing {type_data}. Using QT: {self.use_QT}")
+        if self.use_QT:
             QT = load(path_QT)
             tabular_data = QT.transform(tabular_data)
 
         return torch.from_numpy(tabular_data)
 
     def sc_augmenation(self, sample: dict, index: int):
-        """sample is a dictionary objg"""
+        """sample is a dictionary obj"""
         mask, time_alert = sample["mask"], sample["time"]
-        """ random value to asing new light curvee """
+        """ random value to asing new light curve """
 
         random_value = random.uniform(0, 1)
         max_time = (time_alert * mask).max()
@@ -146,7 +165,7 @@ class ATATDataset(Dataset):
         eval_time = init_time + (max_time - init_time) * random_value
         mask_time = (time_alert <= eval_time).float()
 
-        """ if lc features are using in training tablular feeat is updated to especifict time (near to)"""
+        """ if lc features are using in training tabular feeat is updated to specific time (near to)"""
 
         if self.use_features:
             """tabular features is updated to acording time span"""
@@ -165,9 +184,11 @@ class ATATDataset(Dataset):
         return sample
 
     def three_time_mask(self, sample: dict, idx: int):
-        """sample is update to a fixed lenght betwent thre values"""
-        mask, time = sample["mask"], sample["time"] 
-        time_eval = np.random.choice([16, 128, 2048]) #16, 32, 64, 128, 256, 512, 1024, 2048]) 
+        """sample is update to a fixed length between the values"""
+        mask, time = sample["mask"], sample["time"]
+        time_eval = np.random.choice(
+            [16, 128, 2048]
+        )  # 16, 32, 64, 128, 256, 512, 1024, 2048])
         mask_time = (time <= time_eval).float()
 
         if self.use_features:

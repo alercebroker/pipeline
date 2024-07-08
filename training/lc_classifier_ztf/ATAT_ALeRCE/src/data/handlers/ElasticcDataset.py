@@ -54,9 +54,9 @@ class ElasticcDataset(Dataset):
             "%s/%s"
             % (
                 data_root,
-                "dataset.h5" # "elasticc_dataset_update_sn.h5"
+                "dataset.h5"  # "elasticc_dataset_update_sn.h5"
                 if supernova
-                else "dataset.h5",#"elasticc_dataset_update.h5",
+                else "dataset.h5",  # "elasticc_dataset_update.h5",
             )
         )
 
@@ -91,7 +91,7 @@ class ElasticcDataset(Dataset):
         self.per_init_time = per_init_time
         self.code_eval_time = np.array(
             ["8", "16", "32", "64", "128", "256", "512", "1024", "2048"]
-            #["0008", "0016", "0032", "0064", "0128", "0256", "0512", "1024", "2048"]
+            # ["0008", "0016", "0032", "0064", "0128", "0256", "0512", "1024", "2048"]
         )
         self.time_eval_time = self.code_eval_time.astype(int)
 
@@ -113,7 +113,7 @@ class ElasticcDataset(Dataset):
                 f"Loading and procesing extra features for QTF,   Partition : {partition_used} Set Type : {set_type}"
             )
             self.add_feat_col = h5_.get(
-                'norm_add_feat_col_2048' # "feats_2048"
+                "norm_add_feat_col_2048"  # "feats_2048"
             )  # if self.eval_time is None else 'norm_add_feat_col_%s' % self.eval_time)
             self.features_qt = load(
                 "%s/QT-New%s/qt-feat-%s.joblib"
@@ -126,7 +126,9 @@ class ElasticcDataset(Dataset):
             for c_, t_ in zip(self.code_eval_time, self.time_eval_time):
                 logging.info(f"Procesing feat cols for time {t_}")
                 self.add_feat_col_list["time_%s" % t_] = self.features_qt.transform(
-                    h5_.get("norm_add_feat_col_%s" % c_)[:]  # h5_.get("feats_%s" % c_)[:]
+                    h5_.get("norm_add_feat_col_%s" % c_)[
+                        :
+                    ]  # h5_.get("feats_%s" % c_)[:]
                 )
 
     """ data augmentation methods """
@@ -268,8 +270,9 @@ class ElasticcDataset(Dataset):
             if self.online_opt_tt:
                 data_dict = self.three_time_mask(data_dict, idx_)
 
-        return data_dict, torch.LongTensor(
-            torch.from_numpy(np.array(self.target[idx_]))
+        return (
+            data_dict,
+            torch.LongTensor(torch.from_numpy(np.array(self.target[idx_]))),
         )
 
     def __len__(self):

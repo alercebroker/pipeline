@@ -8,10 +8,9 @@ import torchmetrics
 import pytorch_lightning as pl
 
 from torch.optim.lr_scheduler import LambdaLR
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-
+from src.training.schedulers import cosine_decay_ireyes
 from src.layers import ATAT
-from src.training.schedulers import CosineDecayWithWarmup
+
 
 class LitATAT(pl.LightningModule):
     def __init__(self, **kwargs):
@@ -47,18 +46,24 @@ class LitATAT(pl.LightningModule):
             task="multiclass", num_classes=self.general_["num_classes"], average="macro"
         )
 
-        self.use_cosine_decay = kwargs["general"]['use_cosine_decay']
-        self.gradient_clip_val = 1.0 if kwargs["general"]['use_gradient_clipping'] else 0
+        self.use_cosine_decay = kwargs["general"]["use_cosine_decay"]
+        self.gradient_clip_val = (
+            1.0 if kwargs["general"]["use_gradient_clipping"] else 0
+        )
 
     def training_step(self, batch_data, batch_idx):
         input_dict = self.get_input_data(batch_data)
 
         pred_lc, pred_tab, pred_mix = self.atat(**input_dict)
-        pred = pred_mix if pred_mix is not None else (pred_lc if pred_lc is not None else pred_tab)
+        pred = (
+            pred_mix
+            if pred_mix is not None
+            else (pred_lc if pred_lc is not None else pred_tab)
+        )
 
         if pred is None:
             raise ValueError("Invalid prediction.")
-        
+
         """ labels """
         y_true = batch_data["labels"].long()
 
@@ -90,11 +95,15 @@ class LitATAT(pl.LightningModule):
         input_dict = self.get_input_data(batch_data)
 
         pred_lc, pred_tab, pred_mix = self.atat(**input_dict)
-        pred = pred_mix if pred_mix is not None else (pred_lc if pred_lc is not None else pred_tab)
-        
+        pred = (
+            pred_mix
+            if pred_mix is not None
+            else (pred_lc if pred_lc is not None else pred_tab)
+        )
+
         if pred is None:
             raise ValueError("Invalid prediction.")
-        
+
         """ labels """
         y_true = batch_data["labels"].long()
 
@@ -123,11 +132,15 @@ class LitATAT(pl.LightningModule):
         input_dict = self.get_input_data(batch_data)
 
         pred_lc, pred_tab, pred_mix = self.atat(**input_dict)
-        pred = pred_mix if pred_mix is not None else (pred_lc if pred_lc is not None else pred_tab)
+        pred = (
+            pred_mix
+            if pred_mix is not None
+            else (pred_lc if pred_lc is not None else pred_tab)
+        )
 
         if pred is None:
             raise ValueError("Invalid prediction.")
-        
+
         """ labels """
         y_true = batch_data["labels"].long()
 
@@ -145,25 +158,30 @@ class LitATAT(pl.LightningModule):
 
     def configure_optimizers(self):
         params = filter(lambda p: p.requires_grad, self.parameters())
-        optimizer = optim.Adam(params,
-                               lr=self.general_["lr"])
-        
+        optimizer = optim.Adam(params, lr=self.general_["lr"])
+
         if self.use_cosine_decay:
-            scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=45000, T_mult=1, eta_min=self.general_["lr"] * 0.05)
+            scheduler = LambdaLR(
+                optimizer,
+                lambda epoch: cosine_decay_ireyes(
+                    epoch, warm_up_epochs=10, decay_steps=60, alpha=0.05
+                ),
+            )
             return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler}}
         else:
             return optimizer
-
 
     def get_input_data(self, batch_data):
         input_dict = {}
 
         if self.use_lightcurves:
-            input_dict.update({
-                "data": batch_data["data"].float(),
-                "time": batch_data["time"].float(),
-                "mask": batch_data["mask"].float(),
-            })
+            input_dict.update(
+                {
+                    "data": batch_data["data"].float(),
+                    "time": batch_data["time"].float(),
+                    "mask": batch_data["mask"].float(),
+                }
+            )
 
         if self.use_lightcurves_err:
             input_dict.update({"data_err": batch_data["data_err"].float()})
@@ -179,4 +197,3 @@ class LitATAT(pl.LightningModule):
             input_dict["tabular_feat"] = torch.cat(tabular_features, axis=1)
 
         return input_dict
-

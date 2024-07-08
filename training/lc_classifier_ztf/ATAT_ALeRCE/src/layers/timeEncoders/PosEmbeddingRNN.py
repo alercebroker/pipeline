@@ -9,11 +9,11 @@ class PosEmbeddingRNN(nn.Module):
 
         assert embedding_size % 2 == 0
 
-        self.w = nn.Linear(input_size, embedding_size//2, bias=False)
+        self.w = nn.Linear(input_size, embedding_size // 2, bias=False)
         self.rnn = nn.GRU(embedding_size, embedding_size, batch_first=True)
         self.mlp = nn.Linear(embedding_size, embedding_size)
 
-        self.scale = embedding_size**-0.5
+        self.scale = embedding_size ** -0.5
 
         self.linear_proj = nn.Sequential(
             nn.Linear(in_features=input_size, out_features=embedding_size, bias=True),
@@ -29,4 +29,3 @@ class PosEmbeddingRNN(nn.Module):
         pe = self.mlp(pe)
 
         return self.linear_proj(x) + pe
-
