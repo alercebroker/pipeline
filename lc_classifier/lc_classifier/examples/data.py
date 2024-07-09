@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject, empty_normal_dataframe
+from lc_classifier.utils import create_astro_object
 from typing import List
 
 
@@ -243,75 +244,15 @@ def get_tde_example():
     forced_photometry = pd.read_csv(
         os.path.join(os.path.dirname(__file__), folder, "forced_photometry.csv")
     )
-    fid_map = {1: "g", 2: "r", 3: "i"}
 
-    detections.rename(
-        columns={"mag": "brightness", "e_mag": "e_brightness"}, inplace=True
-    )
-    detections = detections[
-        [
-            "candid",
-            "tid",
-            "mjd",
-            "fid",
-            "pid",
-            "ra",
-            "dec",
-            "brightness",
-            "e_brightness",
-        ]
-    ]
-    detections = detections.dropna(subset=["brightness"])
-    detections["sid"] = "ztf"
-    detections["unit"] = "magnitude"
-    detections["fid"] = detections["fid"].map(fid_map)
-
-    forced_photometry.rename(
-        columns={"mag": "brightness", "e_mag": "e_brightness"}, inplace=True
-    )
-    forced_photometry = forced_photometry[
-        [
-            "candid",
-            "tid",
-            "mjd",
-            "fid",
-            "pid",
-            "ra",
-            "dec",
-            "brightness",
-            "e_brightness",
-        ]
-    ]
-    forced_photometry = forced_photometry.dropna(subset=["brightness"])
-    forced_photometry["sid"] = "ztf"
-    forced_photometry["unit"] = "magnitude"
-    forced_photometry["fid"] = forced_photometry["fid"].map(fid_map)
-
-    non_detections = non_detections[
-        [
-            "tid",
-            "mjd",
-            "fid",
-            "diffmaglim",
-        ]
-    ]
-    non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
-
-    non_detections["sid"] = "ztf"
-    non_detections["unit"] = "magnitude"
-    non_detections["fid"] = non_detections["fid"].map(fid_map)
-
-    metadata = pd.DataFrame(
-        [["aid", "aid_example"], ["oid", folder.split("_")[0]]],
-        columns=["name", "value"],
-    )
-
-    astro_object = AstroObject(
+    astro_object = create_astro_object(
+        data_origin="explorer",
         detections=detections,
-        non_detections=non_detections,
-        metadata=metadata,
         forced_photometry=forced_photometry,
+        xmatch=None,
+        non_detections=non_detections,
     )
+
     return astro_object
 
 
