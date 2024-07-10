@@ -283,6 +283,10 @@ def create_astro_object(
         non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
 
     astro_object = AstroObject(
-        detections=aid_detections, forced_photometry=aid_forced, metadata=metadata
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        non_detections=non_detections,
+        xmatch=xmatch,
     )
     return astro_object
