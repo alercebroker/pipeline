@@ -155,6 +155,7 @@ class ScoreScribeParser(KafkaParser):
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
+        cat_names = probabilities.columns
         probabilities["classifier_name"] = self._get_detector_name()
 
         results = probabilities
@@ -168,7 +169,6 @@ class ScoreScribeParser(KafkaParser):
         commands = []
 
         def get_scribe_messages(scores_by_detector: pd.DataFrame):
-            cat_names = scores_by_detector.columns
             for idx, row in scores_by_detector.iterrows():
                 categories = []
                 for cat_name in cat_names:
