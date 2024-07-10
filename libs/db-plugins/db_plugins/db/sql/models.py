@@ -112,9 +112,6 @@ class Score(Base):
     category_name = Column(String, primary_key=True)
     score = Column(Float, nullable=False)
     __table_args__ = (
-        UniqueConstraint(
-            "detector_name", "detector_version", name="_detector_name_version_"
-        ),
         Index("ix_scores_oid", "oid", postgresql_using="hash"),
         Index("ix_scores_score", "score", postgresql_using="btree"),
     )
