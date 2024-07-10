@@ -126,3 +126,167 @@ def mag2flux(mag):
 
 def mag_err_2_flux_err(mag_err, mag):
     return np.log(10.0) * mag2flux(mag) / 2.5 * mag_err
+
+
+def create_astro_object(
+    data_origin: str,
+    detections: pd.DataFrame,
+    forced_photometry: pd.DataFrame,
+    xmatch: pd.DataFrame = None,
+    non_detections: pd.DataFrame = None,
+) -> AstroObject:
+
+    if data_origin == "database":
+        mag_corr_column = "magpsf_corr"
+        e_mag_corr_ext_column = "sigmapsf_corr_ext"
+        diff_mag_column = "magpsf"
+        e_diff_mag_column = "sigmapsf"
+
+        mag_corr_column_fp = "mag_corr"
+        e_mag_corr_ext_column_fp = "e_mag_corr_ext"
+        diff_mag_column_fp = "mag"
+        e_diff_mag_column_fp = "e_mag"
+    elif data_origin == "explorer":
+        mag_corr_column = "mag_corr"
+        e_mag_corr_ext_column = "e_mag_corr_ext"
+        diff_mag_column = "mag"
+        e_diff_mag_column = "e_mag"
+
+        mag_corr_column_fp = "mag_corr"
+        e_mag_corr_ext_column_fp = "e_mag_corr_ext"
+        diff_mag_column_fp = "mag"
+        e_diff_mag_column_fp = "e_mag"
+
+    else:
+        raise ValueError(f"{data_origin} is not a valid data_origin")
+
+    detection_keys = [
+        "oid",
+        "candid",
+        "pid",
+        "ra",
+        "dec",
+        "mjd",
+        mag_corr_column,
+        e_mag_corr_ext_column,
+        diff_mag_column,
+        e_diff_mag_column,
+        "fid",
+        "isdiffpos",
+    ]
+
+    detections = detections[detection_keys].copy()
+    detections["forced"] = False
+
+    forced_photometry["candid"] = forced_photometry["oid"] + forced_photometry[
+        "pid"
+    ].astype(str)
+    forced_photometry_keys = [
+        "oid",
+        "candid",
+        "pid",
+        "ra",
+        "dec",
+        "mjd",
+        mag_corr_column_fp,
+        e_mag_corr_ext_column_fp,
+        diff_mag_column_fp,
+        e_diff_mag_column_fp,
+        "fid",
+        "isdiffpos",
+    ]
+    forced_photometry = forced_photometry[forced_photometry_keys]
+    forced_photometry = forced_photometry[
+        (forced_photometry[e_diff_mag_column_fp] != 100)
+        | (forced_photometry[diff_mag_column_fp] != 100)
+    ].copy()
+    forced_photometry["forced"] = True
+
+    # standard names
+    detections.rename(
+        columns={
+            mag_corr_column: "mag_corr",
+            e_mag_corr_ext_column: "e_mag_corr_ext",
+            diff_mag_column: "mag",
+            e_diff_mag_column: "e_mag",
+        },
+        inplace=True,
+    )
+    forced_photometry.rename(
+        columns={
+            mag_corr_column_fp: "mag_corr",
+            e_mag_corr_ext_column_fp: "e_mag_corr_ext",
+            diff_mag_column_fp: "mag",
+            e_diff_mag_column_fp: "e_mag",
+        },
+        inplace=True,
+    )
+
+    a = pd.concat([detections, forced_photometry])
+    a["aid"] = "aid_" + a["oid"]
+    a["tid"] = "ZTF"
+    a["sid"] = "ZTF"
+    a.fillna(value=np.nan, inplace=True)
+    a.rename(
+        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
+        inplace=True,
+    )
+    a["unit"] = "magnitude"
+    a_flux = a.copy()
+    a_flux["brightness"] = mag2flux(a["mag"]) * a["isdiffpos"]
+    a_flux["e_brightness"] = mag_err_2_flux_err(a["e_mag"], a["mag"])
+    a_flux["unit"] = "diff_flux"
+    a = pd.concat([a, a_flux], axis=0)
+    del a["mag"], a["e_mag"]
+    a.set_index("aid", inplace=True)
+    a["fid"] = a["fid"].map({1: "g", 2: "r", 3: "i"})
+    a = a[a["fid"].isin(["g", "r"])]
+
+    aid = a.index.values[0]
+    oid = a["oid"].iloc[0]
+
+    aid_forced = a[a["forced"]]
+    aid_detections = a[~a["forced"]]
+
+    if xmatch is None:
+        extra_metadata = []
+    else:
+        extra_metadata = [
+            ["W1", xmatch["w1mpro"]],
+            ["W2", xmatch["w2mpro"]],
+            ["W3", xmatch["w3mpro"]],
+            ["W4", xmatch["w4mpro"]],
+            ["sgscore1", xmatch["sgscore1"]],
+            ["sgmag1", xmatch["sgmag1"]],
+            ["srmag1", xmatch["srmag1"]],
+            ["distpsnr1", xmatch["distpsnr1"]],
+        ]
+
+    metadata = pd.DataFrame(
+        [
+            ["aid", aid],
+            ["oid", oid],
+        ]
+        + extra_metadata,
+        columns=["name", "value"],
+    ).fillna(value=np.nan)
+
+    if non_detections is not None:
+        non_detections = non_detections[
+            [
+                "tid",
+                "mjd",
+                "fid",
+                "diffmaglim",
+            ]
+        ].copy()
+        non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
+
+    astro_object = AstroObject(
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        non_detections=non_detections,
+        xmatch=xmatch,
+    )
+    return astro_object

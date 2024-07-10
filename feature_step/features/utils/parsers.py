@@ -35,6 +35,7 @@ def detections_to_astro_objects(
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+    a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
         columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
         inplace=True,

@@ -10,6 +10,7 @@ from lc_classifier.examples.data import (
     get_ztf_example,
     get_ztf_forced_training_examples,
     get_elasticc_example,
+    get_tde_example,
 )
 
 # from lc_classifier.utils import plot_astro_object
@@ -24,9 +25,8 @@ class TestTDETailExtractor(unittest.TestCase):
         assert np.all(np.isnan(astro_object.features["value"].values))
 
     def test_ztf_forced_phot(self):
-        astro_objects = get_ztf_forced_training_examples()
+        astro_object = get_tde_example()
         feature_extractor = TDETailExtractor(bands=list("gr"))
-        astro_object = astro_objects[0]
         feature_extractor.compute_features_single_object(astro_object)
         print(astro_object.features)
 

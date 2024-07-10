@@ -64,7 +64,7 @@ elif classifier_type == "RandomForest":
     classifier.load_classifier("rf_classifier_240307")
 elif classifier_type == "HierarchicalRandomForest":
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = "models/hrf_classifier_20240605-153338"
+    model_dir = "models/hrf_classifier_20240710-142630"
     classifier.load_classifier(model_dir)
     predictions_filename = os.path.join(model_dir, "predictions.parquet")
 elif classifier_type == "LightGBM":
@@ -79,7 +79,7 @@ else:
 
 if compute_predictions:
     consolidated_features = pd.read_parquet(
-        os.path.join("data_231206_features", "consolidated_features.parquet")
+        os.path.join("data_231206_ao_features", "consolidated_features.parquet")
     )
 
     shorten = consolidated_features["shorten"]
