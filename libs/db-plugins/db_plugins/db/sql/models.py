@@ -106,7 +106,7 @@ class Probability(Base):
 
 class Score(Base):
     __tablename__ = "score"
-    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
+    oid = Column(String, primary_key=True)
     detector_name = Column(String, primary_key=True)
     detector_version = Column(String, primary_key=True)
     category_name = Column(String, primary_key=True)
