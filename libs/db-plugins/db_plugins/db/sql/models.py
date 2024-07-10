@@ -106,7 +106,7 @@ class Probability(Base):
 
 class Score(Base):
     __tablename__ = "score"
-    oid = Column(String, primary_key=True)
+    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
     detector_name = Column(String, primary_key=True)
     detector_version = Column(String, primary_key=True)
     category_name = Column(String, primary_key=True)
@@ -119,7 +119,7 @@ class Score(Base):
 
 class ScoreDistribution(Base):
     __tablename__ = "score_distribution"
-    detector_name = Column(String, ForeignKey(Taxonomy.classifier_name), primary_key=True)
+    detector_name = Column(String, primary_key=True)
     distribution_version = Column(String, primary_key=True)
     creation_date = Column(DateTime)
     category_name = Column(String)
