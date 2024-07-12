@@ -37,11 +37,14 @@ pyroscope_server = STEP_CONFIG.pop("PYROSCOPE_SERVER")
 # db config
 db_type = STEP_CONFIG.pop("DB_TYPE")
 DB_CONFIG = {}
-db_credentials = get_credentials(STEP_CONFIG["DB_SECRET_NAME"], db_type)
-if db_type == "mongo":
-    DB_CONFIG["MONGO"] = db_credentials
-elif db_type == "sql":
-    DB_CONFIG["PSQL"] = db_credentials
+if STEP_CONFIG.get("DB_SECRET_NAME", None):
+    db_credentials = get_credentials(STEP_CONFIG["DB_SECRET_NAME"], db_type)
+    if db_type == "mongo":
+        DB_CONFIG["MONGO"] = db_credentials
+    elif db_type == "sql":
+        DB_CONFIG["PSQL"] = db_credentials
+else:
+    DB_CONFIG=STEP_CONFIG.get("DB_CONFIG")
 STEP_CONFIG["DB_CONFIG"] = DB_CONFIG
 
 if use_profiling:
