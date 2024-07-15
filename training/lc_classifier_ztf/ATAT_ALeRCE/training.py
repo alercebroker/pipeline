@@ -147,10 +147,10 @@ if __name__ == "__main__":
     all_callbacks = []
     all_callbacks += [
         ModelCheckpoint(
-            monitor="mix/f1s_valid",  # "F1Score_MLPMix/val"
+            monitor="loss_validation/mix",  # "F1Score_MLPMix/val"
             dirpath=path,
             save_top_k=1,
-            mode="max",  # )]
+            mode="min",  # )]
             every_n_train_steps=1,
             filename="my_best_checkpoint-{step}",
         )
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     all_callbacks += [
         EarlyStopping(
-            monitor="mix/f1s_valid",
+            monitor="loss_validation/mix",
             min_delta=0.00,
             patience=args_general["patience"],
             verbose=False,
