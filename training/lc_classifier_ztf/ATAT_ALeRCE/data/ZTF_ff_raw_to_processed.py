@@ -108,6 +108,6 @@ if __name__ == "__main__":
         "md_col_names": ["W1-W2", "W2-W3", "W3-W4", "sgscore1", "dist_nr", "ps_g-r"],
     }
 
-    num_cores = 20
+    num_cores = 40
 
     main(dict_info, num_cores, ROOT)
