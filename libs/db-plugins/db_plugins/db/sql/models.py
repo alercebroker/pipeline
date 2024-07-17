@@ -122,8 +122,8 @@ class ScoreDistribution(Base):
     detector_name = Column(String, primary_key=True)
     distribution_version = Column(String, primary_key=True)
     creation_date = Column(DateTime)
-    category_name = Column(String)
-    distrubion_name = Column(Float, primary_key=True)
+    category_name = Column(String, primary_key=True)
+    distrubion_name = Column(String, primary_key=True)
     distribution_value = Column(Float, nullable=False)
     __table_args__ = (
         Index(
