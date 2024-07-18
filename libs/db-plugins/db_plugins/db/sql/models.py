@@ -123,12 +123,12 @@ class ScoreDistribution(Base):
     distribution_version = Column(String, primary_key=True)
     creation_date = Column(DateTime)
     category_name = Column(String, primary_key=True)
-    distrubion_name = Column(String, primary_key=True)
+    distribution_name = Column(String, primary_key=True)
     distribution_value = Column(Float, nullable=False)
     __table_args__ = (
         Index(
-            "ix_scoredistribution_distrubion_name",
-            "distrubion_name",
+            "ix_scoredistribution_distribution_name",
+            "distribution_name",
             postgresql_using="hash",
         ),
         Index(
