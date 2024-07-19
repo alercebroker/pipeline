@@ -155,21 +155,22 @@ class ScoreScribeParser(KafkaParser):
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
-        cat_names = probabilities.columns
-        probabilities["classifier_name"] = self._get_detector_name()
+        top_probabilities = to_parse.hierarchical["top"]
 
-        results = probabilities
-        if not results.index.name == "oid":
-            try:
-                results.set_index("oid", inplace=True)
-            except KeyError as e:
-                if not is_all_strings(results.index.values):
-                    raise e
+        commands_list = []
+        commands_list.append(probabilities.apply(get_scribe_commands, axis=1, **{"detector_name" : self.detector_name}))
+        commands_list.append(top_probabilities.apply(get_scribe_commands, axis=1, **{"detector_name" : f"{self.detector_name}_top"}))
 
-        commands = []
+        for child_detector in to_parse.hierarchical["children"].keys():
+            commands_list.append(to_parse.hierarchical["children"][child_detector].apply(
+                get_scribe_commands, axis=1, **{"detector_name" : f"{self.detector_name}_{child_detector}"})
+            )
 
-        def get_scribe_messages(scores_by_detector: pd.DataFrame):
-            for idx, row in scores_by_detector.iterrows():
+
+        def get_scribe_commands(scores_df: pd.Series, detector_name: str):
+            commands = []
+            cat_names = scores_df.columns
+            for idx, row in scores_df.iterrows():
                 categories = []
                 for cat_name in cat_names:
                     categories.append(
@@ -182,25 +183,13 @@ class ScoreScribeParser(KafkaParser):
                         "_id": idx,
                     },
                     "data": {
-                        "detector_name": row["classifier_name"],
+                        "detector_name": detector_name,
                         "detector_version": kwargs["classifier_version"],
                         "categories": categories,
                     },
                     "options": {"upsert": True, "set_on_insert": False},
                 }
                 commands.append(command)
-            return scores_by_detector
+            return commands
 
-        for oid in results.index.unique():
-            results.loc[[oid], :].groupby(
-                "classifier_name", group_keys=False
-            ).apply(get_scribe_messages)
-
-        return KafkaOutput(commands)
-
-    def _get_detector_name(self, suffix=None):
-        return (
-            self.detector_name
-            if suffix is None
-            else f"{self.detector_name}_{suffix}"
-        )
+        return KafkaOutput(commands_list)
