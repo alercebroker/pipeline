@@ -152,44 +152,70 @@ class ScoreScribeParser(KafkaParser):
               vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
+        commands_list = []
+
+        def get_scribe_commands(
+            scores_df: pd.Series, detector_name: str, detector_version: str
+        ):
+            categories = []
+            for idx, row in scores_df.items():
+                categories.append({"name": idx, "score": row})
+            command = {
+                "collection": "score",
+                "type": "insert",
+                "criteria": {
+                    "_id": scores_df.name,
+                },
+                "data": {
+                    "detector_name": detector_name,
+                    "detector_version": detector_version,
+                    "categories": categories,
+                },
+                "options": {"upsert": True, "set_on_insert": False},
+            }
+
+            commands_list.append(command)
+            return scores_df
+
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
+
+        detector_version = kwargs["classifier_version"]
+
         probabilities = to_parse.probabilities
-        top_probabilities = to_parse.hierarchical["top"]
+        probabilities.apply(
+            get_scribe_commands,
+            axis=1,
+            **{
+                "detector_name": self.detector_name,
+                "detector_version": detector_version,
+            },
+        )
 
-        commands_list = []
-        commands_list.append(probabilities.apply(get_scribe_commands, axis=1, **{"detector_name" : self.detector_name}))
-        commands_list.append(top_probabilities.apply(get_scribe_commands, axis=1, **{"detector_name" : f"{self.detector_name}_top"}))
-
-        for child_detector in to_parse.hierarchical["children"].keys():
-            commands_list.append(to_parse.hierarchical["children"][child_detector].apply(
-                get_scribe_commands, axis=1, **{"detector_name" : f"{self.detector_name}_{child_detector}"})
+        if (
+            to_parse.hierarchical["top"] is not None
+            and not to_parse.hierarchical["top"].empty
+        ):
+            top_probabilities = to_parse.hierarchical["top"]
+            top_probabilities.apply(
+                get_scribe_commands,
+                axis=1,
+                **{
+                    "detector_name": f"{self.detector_name}_top",
+                    "detector_version": detector_version,
+                },
             )
 
-
-        def get_scribe_commands(scores_df: pd.Series, detector_name: str):
-            commands = []
-            cat_names = scores_df.columns
-            for idx, row in scores_df.iterrows():
-                categories = []
-                for cat_name in cat_names:
-                    categories.append(
-                        {"name": cat_name, "score": row[cat_name]}
+        if len(to_parse.hierarchical["children"]) > 0:
+            for child_detector in to_parse.hierarchical["children"].keys():
+                if not to_parse.hierarchical["children"][child_detector].empty:
+                    to_parse.hierarchical["children"][child_detector].apply(
+                        get_scribe_commands,
+                        axis=1,
+                        **{
+                            "detector_name": f"{self.detector_name}_{child_detector}",
+                            "detector_version": detector_version,
+                        },
                     )
-                command = {
-                    "collection": "score",
-                    "type": "insert",
-                    "criteria": {
-                        "_id": idx,
-                    },
-                    "data": {
-                        "detector_name": detector_name,
-                        "detector_version": kwargs["classifier_version"],
-                        "categories": categories,
-                    },
-                    "options": {"upsert": True, "set_on_insert": False},
-                }
-                commands.append(command)
-            return commands
 
         return KafkaOutput(commands_list)
