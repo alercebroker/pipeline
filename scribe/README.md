@@ -55,6 +55,7 @@ The command must be formatted as follows:
   * `"object"`
   * `"detections"`
   * `"non_detections"`
+  * `"score"`
 - Except for `"insert"`, all other types require a non-empty `"criteria"` to match documents in the respective collection.
 - The supported options are `"upsert"` and `"set_on_insert"`. These are ignored by the `"insert"` type.
   * `"upsert"` will add a new document with the updated data if one doesn't exist

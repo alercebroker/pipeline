@@ -36,3 +36,9 @@ def assert_command_is_correct(command):
     assert command["type"] == "update_probabilities"
     assert command["criteria"]["_id"] is not None
     assert not command["options"]["set_on_insert"]
+
+def assert_score_command_is_correct(command):
+    assert command["collection"] == "score"
+    assert command["type"] == "insert"
+    assert command["criteria"]["_id"] is not None
+    assert not command["options"]["set_on_insert"]

@@ -225,6 +225,7 @@ def insert_empty_objects(
     logger.debug(
         f"Upserting {len(objects)} entries into the Objects collection"
     )
-    update_query(mongodb, objects)
+    if mongodb:
+        update_query(mongodb, objects)
     if psql:
         insert_empty_objects_to_sql(psql, objects)

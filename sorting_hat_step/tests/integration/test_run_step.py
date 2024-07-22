@@ -108,6 +108,7 @@ class DbIntegrationTest(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": True,
+                "USE_MONGO": True,
             },
         }
         self.psql_database.create_db()
@@ -225,6 +226,7 @@ class PrometheusIntegrationTest(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": True,
+                "USE_MONGO": True,
             },
         }
 
@@ -279,6 +281,7 @@ class OnlyMongoIntegrationTest(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
 

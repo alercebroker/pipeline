@@ -94,6 +94,7 @@ class SchemalessConsumeIntegrationTest(unittest.TestCase):
             "FEATURE_FLAGS": {
                 "RUN_CONESEARCH": True,
                 "USE_PSQL": False,
+                "USE_MONGO": True,
             },
         }
 
