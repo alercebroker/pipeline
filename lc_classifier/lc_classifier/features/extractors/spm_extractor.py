@@ -67,6 +67,9 @@ class SPMExtractor(FeatureExtractor):
             before_prelude = mjd_first_detection - self.forced_phot_prelude
             observations = observations[observations["mjd"] > before_prelude]
         observations["mjd"] -= mjd_first_detection
+
+        # Backwards compatibility: old SPM used mili Jansky, not uJy
+        observations[["brightness", "e_brightness"]] *= 0.001
         return observations
 
     def _deattenuation_factor(self, band: str, mwebv: float):
