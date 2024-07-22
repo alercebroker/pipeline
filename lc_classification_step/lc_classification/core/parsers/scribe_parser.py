@@ -152,55 +152,70 @@ class ScoreScribeParser(KafkaParser):
               vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
+        commands_list = []
+
+        def get_scribe_commands(
+            scores_df: pd.Series, detector_name: str, detector_version: str
+        ):
+            categories = []
+            for idx, row in scores_df.items():
+                categories.append({"name": idx, "score": row})
+            command = {
+                "collection": "score",
+                "type": "insert",
+                "criteria": {
+                    "_id": scores_df.name,
+                },
+                "data": {
+                    "detector_name": detector_name,
+                    "detector_version": detector_version,
+                    "categories": categories,
+                },
+                "options": {"upsert": True, "set_on_insert": False},
+            }
+
+            commands_list.append(command)
+            return scores_df
+
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
+
+        detector_version = kwargs["classifier_version"]
+
         probabilities = to_parse.probabilities
-        cat_names = probabilities.columns
-        probabilities["classifier_name"] = self._get_detector_name()
-
-        results = probabilities
-        if not results.index.name == "oid":
-            try:
-                results.set_index("oid", inplace=True)
-            except KeyError as e:
-                if not is_all_strings(results.index.values):
-                    raise e
-
-        commands = []
-
-        def get_scribe_messages(scores_by_detector: pd.DataFrame):
-            for idx, row in scores_by_detector.iterrows():
-                categories = []
-                for cat_name in cat_names:
-                    categories.append(
-                        {"name": cat_name, "score": row[cat_name]}
-                    )
-                command = {
-                    "collection": "score",
-                    "type": "insert",
-                    "criteria": {
-                        "_id": idx,
-                    },
-                    "data": {
-                        "detector_name": row["classifier_name"],
-                        "detector_version": kwargs["classifier_version"],
-                        "categories": categories,
-                    },
-                    "options": {"upsert": True, "set_on_insert": False},
-                }
-                commands.append(command)
-            return scores_by_detector
-
-        for oid in results.index.unique():
-            results.loc[[oid], :].groupby(
-                "classifier_name", group_keys=False
-            ).apply(get_scribe_messages)
-
-        return KafkaOutput(commands)
-
-    def _get_detector_name(self, suffix=None):
-        return (
-            self.detector_name
-            if suffix is None
-            else f"{self.detector_name}_{suffix}"
+        probabilities.apply(
+            get_scribe_commands,
+            axis=1,
+            **{
+                "detector_name": self.detector_name,
+                "detector_version": detector_version,
+            },
         )
+
+        if (
+            to_parse.hierarchical["top"] is not None
+            and not to_parse.hierarchical["top"].empty
+        ):
+            top_probabilities = to_parse.hierarchical["top"]
+            top_probabilities.apply(
+                get_scribe_commands,
+                axis=1,
+                **{
+                    "detector_name": f"{self.detector_name}_top",
+                    "detector_version": detector_version,
+                },
+            )
+
+        if len(to_parse.hierarchical["children"]) > 0:
+            for child_detector in to_parse.hierarchical["children"].keys():
+                if not to_parse.hierarchical["children"][child_detector].empty:
+                    to_parse.hierarchical["children"][child_detector].apply(
+                        get_scribe_commands,
+                        axis=1,
+                        **{
+                            "detector_name": f"{self.detector_name}_{child_detector}",
+                            "detector_version": detector_version,
+                        },
+                    )
+
+        return KafkaOutput(commands_list)
