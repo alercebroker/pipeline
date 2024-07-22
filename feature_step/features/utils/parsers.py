@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject, query_ao_table
-from features.core.utils.functions import collapse_fid_columns
+from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
@@ -20,7 +20,7 @@ def detections_to_astro_objects(
         "dec",
         "mjd",
         "mag_corr",
-        "e_mag_corr",
+        "e_mag_corr_ext",
         "mag",
         "e_mag",
         "fid",
@@ -35,13 +35,16 @@ def detections_to_astro_objects(
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+    a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
-        columns={"mag_corr": "brightness", "e_mag_corr": "e_brightness"}, inplace=True
+        columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
+        inplace=True,
     )
     a["unit"] = "magnitude"
     a_flux = a.copy()
-    a_flux["brightness"] = 10.0 ** (-0.4 * (a["mag"] - 23.9)) * a["isdiffpos"]
-    a_flux["e_brightness"] = a_flux["e_mag"] * 0.4 * np.log(10) * np.abs(a_flux["mag"])
+    # TODO: check this
+    a_flux["e_brightness"] = mag_err_2_flux_err(a["e_mag"], a["mag"])
+    a_flux["brightness"] = mag2flux(a["mag"]) * a["isdiffpos"]
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
@@ -111,6 +114,15 @@ def parse_scribe_payload(
         ao_features = astro_object.features[["name", "fid", "value"]].copy()
         ao_features["fid"] = ao_features["fid"].apply(get_fid)
         ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+        # backward compatibility
+        ao_features["name"] = ao_features["name"].replace(
+            {
+                "Power_rate_1_4": "Power_rate_1/4",
+                "Power_rate_1_3": "Power_rate_1/3",
+                "Power_rate_1_2": "Power_rate_1/2",
+            }
+        )
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
@@ -137,31 +149,28 @@ def parse_scribe_payload(
         upsert_features_commands_list.append(upsert_features_command)
 
         # for updating the object
-        g_r_max = list(
-            filter(
-                lambda x: x["name"] == "g-r_max_corr" and x["fid"] == 12, features_list
+        def get_color_from_features(name, features_list):
+            color = list(
+                filter(lambda x: x["name"] == name and x["fid"] == 12, features_list)
             )
-        )
-        g_r_max = g_r_max[0]["value"] if len(g_r_max) == 1 else None
-        g_r_mean = list(
-            filter(
-                lambda x: x["name"] == "g-r_mean_corr" and x["fid"] == 12, features_list
-            )
-        )
-        g_r_mean = g_r_mean[0]["value"] if len(g_r_mean) == 1 else None
+            color = color[0]["value"] if len(color) == 1 else None
+            return color
 
-        if g_r_max and g_r_mean:
-            update_object_command = {
-                "collection": "object",
-                "type": "update_object_from_stats",
-                "criteria": {"oid": oid},
-                "data": {
-                    "g_r_max_corr": g_r_max,
-                    "g_r_mean_corr": g_r_mean,
-                },
-                "options": {},
-            }
-            update_object_command_list.append(update_object_command)
+        update_object_command = {
+            "collection": "object",
+            "type": "update_object_from_stats",
+            "criteria": {"oid": oid},
+            "data": {
+                "g_r_max": get_color_from_features("g_r_max", features_list),
+                "g_r_mean": get_color_from_features("g_r_mean", features_list),
+                "g_r_max_corr": get_color_from_features("g_r_max_corr", features_list),
+                "g_r_mean_corr": get_color_from_features(
+                    "g_r_mean_corr", features_list
+                ),
+            },
+            "options": {},
+        }
+        update_object_command_list.append(update_object_command)
 
     return {
         "update_object": update_object_command_list,
