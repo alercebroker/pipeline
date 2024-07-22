@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 import time
 from alerce_classifiers.classifiers.mlp import MLPClassifier
@@ -23,6 +24,46 @@ from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 if __name__ == "__main__":
     features = pd.read_parquet("data_231206_ao_features/consolidated_features.parquet")
     labels = pd.read_parquet("data_231206/partitions.parquet")
+    objects = pd.read_parquet(
+        "data_231206/objects_with_wise_20240105.parquet"
+    )  # to get RA/DEC
+
+    # manage bias of Periodic-Other towards southern sky
+    training_partition = "training_0"
+    po_tp = labels[
+        (labels["alerceclass"] == "Periodic-Other")
+        & (labels["partition"] == training_partition)
+    ]
+    po_tp_coords = objects[objects["oid"].isin(po_tp["oid"])]
+    southern = po_tp_coords["dec"] < -20
+
+    n_not_to_be_replaced = ((~southern).astype(float).sum()) / (54 - (-20)) * (28 - 20)
+    n_not_to_be_replaced = int(np.ceil(n_not_to_be_replaced))
+
+    southern_po_oids = po_tp_coords[southern]["oid"].values
+    northern_po_oids = po_tp_coords[~southern]["oid"].values
+
+    np.random.seed(0)
+    southern_not_to_be_replaced = np.random.choice(
+        southern_po_oids, size=n_not_to_be_replaced, replace=False
+    )
+    not_to_be_replaced = np.concatenate([northern_po_oids, southern_not_to_be_replaced])
+    to_be_replaced = list(set(po_tp.oid.values) - set(not_to_be_replaced))
+
+    features.reset_index(inplace=True)
+    tbr_feature_mask = features["index"].isin(["aid_" + oid for oid in to_be_replaced])
+    n_replacement_needed = tbr_feature_mask.astype(int).sum()
+    replacement_coords = (
+        features[features["index"].isin(["aid_" + oid for oid in not_to_be_replaced])][
+            [f"Coordinate_{x}_nan" for x in "xyz"]
+        ]
+        .sample(n_replacement_needed, replace=True)
+        .values
+    )
+    features.set_index("index", inplace=True)
+    features.loc[
+        ["aid_" + oid for oid in to_be_replaced], [f"Coordinate_{x}_nan" for x in "xyz"]
+    ] = replacement_coords
 
     # support for shortened lightcurves
     features.index = (
