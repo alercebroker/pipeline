@@ -2,7 +2,7 @@
   "doc": "Multi stream light curve with xmatch",
   "name": "features_output",
   "type": "record",
-  "fields": "fields": [
+  "fields": [
     {
       "name": "oid",
       "type": "string"
