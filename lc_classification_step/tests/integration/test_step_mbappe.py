@@ -39,7 +39,7 @@ def test_step_mbappe_result(
     from settings import config
 
     kconsumer = kafka_consumer("mbappe")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_mbappe")
 
     step = LateClassifier(config=config())
     step.start()
@@ -81,7 +81,7 @@ def test_step_mbappe_no_features_result(
     from settings import config 
 
     kconsumer = kafka_consumer("mbappe")
-    sconsumer = scribe_consumer()
+    sconsumer = scribe_consumer("w_object_mbappe")
 
     step = LateClassifier(config=config())
     step.start()

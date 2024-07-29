@@ -19,7 +19,10 @@ class AnomalyParser(KafkaParser):
             [{"oid": message.get("oid")} for message in messages]
         )
         probs_copy = model_output.probabilities.copy()
-        probs_copy.pop("classifier_name")
+        try:
+            probs_copy.pop("classifier_name")
+        except KeyError:
+            pass
         try:
             probs_copy.set_index("oid", inplace=True)
         except KeyError:

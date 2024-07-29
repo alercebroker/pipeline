@@ -19,7 +19,7 @@ class ElasticcFeatureExtractor(FeatureExtractorComposite):
         unit = "diff_flux"
 
         feature_extractors = [
-            ColorFeatureExtractor(bands, unit),
+            ColorFeatureExtractor(bands, just_flux=True),
             MHPSExtractor(bands, unit),
             PeriodExtractor(
                 bands,

@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 from lc_classifier.features.core.base import AstroObject, empty_normal_dataframe
+from lc_classifier.utils import create_astro_object
 from typing import List
 
 
@@ -232,7 +233,32 @@ def get_ztf_forced_phot_cepheid():
     return astro_object
 
 
+def get_tde_example():
+    folder = "ZTF24aaecooj_20240605"
+    detections = pd.read_csv(
+        os.path.join(os.path.dirname(__file__), folder, "detections.csv")
+    )
+    non_detections = pd.read_csv(
+        os.path.join(os.path.dirname(__file__), folder, "non_detections.csv")
+    )
+    forced_photometry = pd.read_csv(
+        os.path.join(os.path.dirname(__file__), folder, "forced_photometry.csv")
+    )
+
+    astro_object = create_astro_object(
+        data_origin="explorer",
+        detections=detections,
+        forced_photometry=forced_photometry,
+        xmatch=None,
+        non_detections=non_detections,
+    )
+
+    return astro_object
+
+
 if __name__ == "__main__":
+    astro_object = get_tde_example()
+
     astro_object = get_ztf_forced_phot_cepheid()
     print(astro_object)
 

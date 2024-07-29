@@ -39,12 +39,14 @@ def step_creator():
 
     logger = set_logger(settings)
 
-    if settings.get("MONGO_SECRET_NAME"):
-        db_mongo = DatabaseConnection(
-            get_credentials(settings["MONGO_SECRET_NAME"], "mongo")
-        )
-    else:
-        db_mongo = DatabaseConnection(settings["MONGO_CONFIG"])
+    db_mongo = None
+    if settings["FEATURE_FLAGS"]["USE_MONGO"]:
+        if settings.get("MONGO_SECRET_NAME"):
+            db_mongo = DatabaseConnection(
+                get_credentials(settings["MONGO_SECRET_NAME"], "mongo")
+            )
+        else:
+            db_mongo = DatabaseConnection(settings["MONGO_CONFIG"])
 
     db_sql = None
     if settings["FEATURE_FLAGS"]["USE_SQL"]:

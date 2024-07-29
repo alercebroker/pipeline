@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     ARRAY,
     Index,
+    UniqueConstraint,
     DateTime,
     JSON,
     ForeignKeyConstraint,
@@ -99,6 +100,46 @@ class Probability(Base):
             "ranking",
             postgresql_where=ranking == 1,
             postgresql_using="btree",
+        ),
+    )
+
+
+class Score(Base):
+    __tablename__ = "score"
+    oid = Column(String, ForeignKey(Object.oid), primary_key=True)
+    detector_name = Column(String, primary_key=True)
+    detector_version = Column(String, primary_key=True)
+    category_name = Column(String, primary_key=True)
+    score = Column(Float, nullable=False)
+    __table_args__ = (
+        Index("ix_scores_oid", "oid", postgresql_using="hash"),
+        Index("ix_scores_score", "score", postgresql_using="btree"),
+    )
+
+
+class ScoreDistribution(Base):
+    __tablename__ = "score_distribution"
+    detector_name = Column(String, primary_key=True)
+    distribution_version = Column(String, primary_key=True)
+    creation_date = Column(DateTime)
+    category_name = Column(String, primary_key=True)
+    distribution_name = Column(String, primary_key=True)
+    distribution_value = Column(Float, nullable=False)
+    __table_args__ = (
+        Index(
+            "ix_scoredistribution_distribution_name",
+            "distribution_name",
+            postgresql_using="hash",
+        ),
+        Index(
+            "ix_scoredistribution_category_name",
+            "category_name",
+            postgresql_using="hash",
+        ),
+        Index(
+            "ix_scoredistribution_detector_name",
+            "category_name",
+            postgresql_using="hash",
         ),
     )
 

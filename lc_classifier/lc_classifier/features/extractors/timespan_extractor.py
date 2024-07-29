@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ..core.base import FeatureExtractor, AstroObject
 import numpy as np
 
@@ -13,5 +15,11 @@ class TimespanExtractor(FeatureExtractor):
         sids = np.sort(sids)
         sid = ",".join(sids)
 
-        features = astro_object.features
-        features.loc[len(features)] = ["Timespan", timespan, None, sid, self.version]
+        timespan_feature = pd.DataFrame(
+            data=[["Timespan", timespan, None, sid, self.version]],
+            columns=["name", "value", "fid", "sid", "version"],
+        )
+        all_features = [astro_object.features, timespan_feature]
+        astro_object.features = pd.concat(
+            [f for f in all_features if not f.empty], axis=0
+        )
