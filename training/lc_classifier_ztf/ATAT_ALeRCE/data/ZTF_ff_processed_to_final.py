@@ -223,7 +223,10 @@ def main(
     #######################################################################################################################################################
 
     # Merge between light curves and partitions
-    num_folds = 5
+
+    # we will modify the training data for fold_0,
+    # so using other partitions will leak info
+    num_folds = 1  # 5
     all_partitions = {}
     for fold in range(num_folds):
         all_partitions["fold_%s" % fold] = ordered_partitions(
@@ -282,6 +285,7 @@ def main(
             dict_info["list_time_to_eval"],
             all_partitions,
             num_folds,
+            df_objid_label
         )
 
     dict_info.update(
@@ -370,7 +374,7 @@ if __name__ == "__main__":
     # Astronomical objects and their labels
     df_objid_label = pd.read_parquet("{}/raw/data_231206/objects.parquet".format(ROOT))
     df_objid_label = df_objid_label.reset_index()
-    df_objid_label = df_objid_label[[dict_cols["oid"], dict_cols["class"]]]
+    df_objid_label = df_objid_label[[dict_cols["oid"], dict_cols["class"], 'ra', 'dec']]
 
     main(
         path_lcs_file,

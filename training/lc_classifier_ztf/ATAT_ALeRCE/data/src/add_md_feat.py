@@ -94,6 +94,7 @@ def add_features(
     list_times_to_eval,
     all_partitions,
     num_folds,
+    df_objid_label  # used for periodic-other unbias
 ):
 
     for time_to_eval in list_times_to_eval:
@@ -119,6 +120,52 @@ def add_features(
                     df_feat[col] = df_feat[col]
                 df_feat[col] = df_feat[col].replace([np.inf, -np.inf], -9999)
 
+        # manage bias Periodic-Other
+        # we will modify the training data for fold_0,
+        # so using other partitions will leak info
+        assert num_folds == 1
+
+        training_partition = "training_0"
+        labels = all_partitions['fold_0']
+        po_tp = labels[
+            (labels["alerceclass"] == "Periodic-Other")
+            & (labels["partition"] == training_partition)
+        ]
+
+        training_po_oids = list(set([oid.split('_')[0] for oid in po_tp['oid'].values]))
+        del po_tp
+        po_tp_coords = df_objid_label[df_objid_label["oid"].isin(training_po_oids)]
+        southern = po_tp_coords["dec"] < -20
+
+        n_not_to_be_replaced = ((~southern).astype(float).sum()) / (54 - (-20)) * (28 - 20)
+        n_not_to_be_replaced = int(np.ceil(n_not_to_be_replaced))
+
+        southern_po_oids = po_tp_coords[southern]["oid"].values
+        northern_po_oids = po_tp_coords[~southern]["oid"].values
+
+        np.random.seed(0)
+        southern_not_to_be_replaced = np.random.choice(
+            southern_po_oids, size=n_not_to_be_replaced, replace=False
+        )
+        not_to_be_replaced = np.concatenate([northern_po_oids, southern_not_to_be_replaced])
+        to_be_replaced = list(set(training_po_oids) - set(not_to_be_replaced))
+
+        tbr_feature_mask = df_feat["oid"].isin(to_be_replaced)
+        n_replacement_needed = tbr_feature_mask.astype(int).sum()
+        replacement_coords = (
+            df_feat[df_feat["oid"].isin(not_to_be_replaced)][
+                [f"Coordinate_{x}" for x in "xyz"]
+            ]
+            .sample(n_replacement_needed, replace=True)
+            .values
+        )
+        df_feat = df_feat.set_index("oid")
+        df_feat.loc[
+            to_be_replaced, [f"Coordinate_{x}" for x in "xyz"]
+        ] = replacement_coords
+        df_feat = df_feat.reset_index()
+
+        
         feat_cols = df_feat.columns
 
         if dict_info["type_windows"] == "windows":
