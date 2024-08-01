@@ -387,7 +387,7 @@ def _produce_messages(
     for message in messages:
         for det in message["detections"]:
             det["oid"] = message["oid"]
-            det["candid"] = random.randint(0, 100000)
+            det["candid"] = str(random.randint(0, 100000))
             det["extra_fields"] = generate_extra_fields()
             det["fid"] = random.choice(BANDS)
         message["detections"][0]["new"] = True
