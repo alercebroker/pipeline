@@ -150,10 +150,15 @@ class LateClassifier(GenericStep):
         except ValueError as e:
             self.log_data(model_input)
             raise e
-        
+
     def pre_execute(self, messages):
         if self.min_detections:
-            filtered_messages = list(filter(lambda x: len(x["detections"] >= self.min_detections), messages))
+            filtered_messages = list(
+                filter(
+                    lambda x: len(x["detections"] >= self.min_detections),
+                    messages,
+                )
+            )
             return filtered_messages
         else:
             return messages
