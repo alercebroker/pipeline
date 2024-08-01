@@ -67,6 +67,8 @@ class LateClassifier(GenericStep):
             config["STEP_PARSER_CLASS"]
         )()
 
+        self.min_detections = config.get("MIN_DETECTIONS", None)
+
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
             result[0],
@@ -148,6 +150,13 @@ class LateClassifier(GenericStep):
         except ValueError as e:
             self.log_data(model_input)
             raise e
+        
+    def pre_execute(self, messages):
+        if self.min_detections:
+            filtered_messages = list(filter(lambda x: len(x["detections"] >= self.min_detections), messages))
+            return filtered_messages
+        else:
+            return messages
 
     def execute(self, messages):
         """Run the classification.
