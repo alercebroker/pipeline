@@ -72,7 +72,7 @@ def add_metadata(
         ].index.to_numpy()
 
         qt = QuantileTransformer(
-            n_quantiles=10000, random_state=0, output_distribution="normal"
+            n_quantiles=1000, random_state=0, output_distribution="uniform"
         )
         qt.fit(df_metadata.iloc[aux_idx])
 
@@ -190,29 +190,6 @@ def add_features(
         df_feat = df_feat.set_index(dict_cols["oid"])
         df_feat.index.names = ["SNID"]
         df_feat = df_feat.filter(items=All_SNID_h5.astype(str), axis=0)
-
-        for fold in range(num_folds):
-            name_used = "fold_{}".format(fold)
-            aux_pd = all_partitions["fold_{}".format(fold)]
-            aux_idx = aux_pd[
-                aux_pd["partition"] == "training_{}".format(fold)
-            ].index.to_numpy()
-
-            qt = QuantileTransformer(
-                n_quantiles=10000, random_state=0, output_distribution="normal"
-            )
-            qt.fit(df_feat.iloc[aux_idx])
-
-            os.makedirs(
-                "{}/quantiles/features/{}_days".format(path_save_dataset, time_to_eval),
-                exist_ok=True,
-            )
-            dump(
-                qt,
-                "{}/quantiles/features/{}_days/{}.joblib".format(
-                    path_save_dataset, time_to_eval, name_used
-                ),
-            )
 
         add_cols_h5py(
             df_feat,
@@ -370,3 +347,26 @@ def add_features_QT_as_MLP(
         )
 
     return list(df_feat.columns)
+
+
+def compute_feature_quantiles(dataset_path, path_save_dataset, list_time_to_eval):
+    h5_file = h5py.File(dataset_path)
+
+    all_features = []
+    for time in list_time_to_eval:
+        all_features.append(h5_file[f"extracted_feat_{time}"][h5_file["training_0"]])
+
+    h5_file.close()
+    all_features = np.concatenate(all_features, axis=0)
+    qt = QuantileTransformer(
+        n_quantiles=1000, random_state=0, output_distribution="uniform"
+    )
+    qt.fit(all_features)
+    os.makedirs(
+        f"{path_save_dataset}/quantiles/features",
+        exist_ok=True,
+    )
+    dump(
+        qt,
+        f"{path_save_dataset}/quantiles/features/fold_0.joblib"
+    )

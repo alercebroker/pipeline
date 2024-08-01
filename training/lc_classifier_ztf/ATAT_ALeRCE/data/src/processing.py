@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 import copy
 import glob
@@ -252,9 +253,8 @@ def processing_lc(path_lcs_file, dict_cols, dict_info, df_objid_label):
     df_final = []
 
     path_lcs_chunks = glob.glob("{}/lightcurves*".format(path_lcs_file))
-    for i, path_chunk in enumerate(path_lcs_chunks):
-        print("Processing chunk {}".format(i))
-
+    for path_chunk in tqdm(path_lcs_chunks, "processing lc chunks"):
+        
         # Lightcurves
         df_chunk = pd.read_parquet("{}".format(path_chunk))
         df_chunk = df_chunk[

@@ -209,10 +209,7 @@ def get_predictions(
     if config_used["general"]["use_features"]:
         extracted_feat = dict()
         for time_eval in config_used["general"]["list_time_to_eval"]:
-            last_time = config_used["general"]["list_time_to_eval"][-1]
-            path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(
-                data_root, last_time, partition_used
-            )
+            path_QT = f"./{data_root}/quantiles/features/fold_{partition_used}.joblib"
             extracted_feat_aux = h5_file.get("extracted_feat_{}".format(time_eval))[:][
                 these_idx
             ]
@@ -355,7 +352,7 @@ if __name__ == "__main__":
             "list_eval_time": [8, 16, 32, 64, 128, 256, 512, 1024, 2048],
         },
         "ztf_ff": {
-            "path_exp": "results/ZTF_ff/LC_MD_FEAT/ireyes_test_6/MTA",
+            "path_exp": "results/ZTF_ff/LC_MD_FEAT/ireyes_test_7/MTA",
             "data_root": "data/datasets/ZTF_ff/final/LC_MD_FEAT_240627_windows_200_12",
             "list_eval_time": [16, 32, 64, 128, 256, 512, 1024, 2048],
         },

@@ -13,7 +13,7 @@ from joblib import dump
 from src.partitions import get_partitions, ordered_partitions
 from src.processing import processing_lc
 from src.create_dataset import create_lc_h5py
-from src.add_md_feat import add_metadata, add_features
+from src.add_md_feat import add_metadata, add_features, compute_feature_quantiles
 
 
 def check_files(df_objid_label, dict_cols, dict_info, path_lcs_file, path_md_feat_file):
@@ -287,6 +287,8 @@ def main(
             num_folds,
             df_objid_label
         )
+
+        compute_feature_quantiles(path_dataset, path_save_dataset, dict_info["list_time_to_eval"])
 
     dict_info.update(
         {"mapping_classes": mapping_to_int, "md_cols": md_cols, "feat_cols": feat_cols,}

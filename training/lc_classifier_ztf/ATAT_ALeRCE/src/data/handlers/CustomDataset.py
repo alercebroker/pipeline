@@ -38,6 +38,9 @@ class ATATDataset(Dataset):
         )
         partition_used = seed if not same_partition else 0
 
+        # only using partition 0
+        assert partition_used == 0
+
         h5_ = h5py.File("{}/dataset.h5".format(data_root))
 
         self.these_idx = (
@@ -96,16 +99,14 @@ class ATATDataset(Dataset):
         if self.use_features:
             self.extracted_feat = dict()
             for time_eval in self.list_time_to_eval:
-                path_QT = "./{}/quantiles/features/{}_days/fold_{}.joblib".format(
-                    data_root, time_eval, partition_used
-                )
+                path_QT = f"./{data_root}/quantiles/features/fold_{partition_used}.joblib"
                 extracted_feat = h5_.get("extracted_feat_{}".format(time_eval))[:][
                     self.these_idx
                 ]
                 self.extracted_feat.update(
                     {
                         time_eval: self.get_tabular_data(
-                            extracted_feat, path_QT, "features_{}".format(time_eval)
+                            extracted_feat, path_QT, f"features_{time_eval}"
                         )
                     }
                 )
