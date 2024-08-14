@@ -159,4 +159,5 @@ def config():
                 os.getenv("LOG_CLASS_DISTRIBUTION", False)
             ),
         },
+        "MIN_DETECTIONS": os.getenv("MIN_DETECTIONS", None),
     }

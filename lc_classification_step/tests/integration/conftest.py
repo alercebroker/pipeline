@@ -212,6 +212,7 @@ def env_variables_anomaly():
     yield set_env_variables
     os.environ = env_copy
 
+
 @pytest.fixture
 def env_variables_squidward():
     env_copy = os.environ.copy()
@@ -258,6 +259,7 @@ def env_variables_squidward():
     yield set_env_variables
     os.environ = env_copy
 
+
 @pytest.fixture
 def env_variables_mbappe():
     env_copy = os.environ.copy()
@@ -303,6 +305,7 @@ def env_variables_mbappe():
 
     yield set_env_variables
     os.environ = env_copy
+
 
 @pytest.fixture
 def env_variables_elasticc():
@@ -355,7 +358,12 @@ def env_variables_elasticc():
 
 @pytest.fixture
 def produce_messages():
-    def func(topic, force_empty_features=False, force_missing_features=False):
+    def func(
+        topic,
+        force_empty_features=False,
+        force_missing_features=False,
+        n_forced=5,
+    ):
         schema = load_schema(str(INPUT_SCHEMA_PATH))
         schema_path = INPUT_SCHEMA_PATH
         _produce_messages(
@@ -364,13 +372,19 @@ def produce_messages():
             schema_path,
             force_empty_features,
             force_missing_features,
+            n_forced,
         )
 
     return func
 
 
 def _produce_messages(
-    topic, SCHEMA, SCHEMA_PATH, force_empty_features, force_missing_features
+    topic,
+    SCHEMA,
+    SCHEMA_PATH,
+    force_empty_features,
+    force_missing_features,
+    n_forced: int,
 ):
     BANDS = ["g", "r"]
     producer = KafkaProducer(
@@ -385,11 +399,16 @@ def _produce_messages(
     producer.set_key_field("oid")
 
     for message in messages:
-        for det in message["detections"]:
+        for i, det in enumerate(message["detections"]):
             det["oid"] = message["oid"]
-            det["candid"] = random.randint(0, 100000)
+            det["candid"] = str(random.randint(0, 100000))
             det["extra_fields"] = generate_extra_fields()
             det["fid"] = random.choice(BANDS)
+            if i < n_forced:
+                det["forced"] = True
+            else:
+                det["forced"] = False
+
         message["detections"][0]["new"] = True
         message["detections"][0]["has_stamp"] = True
         if topic == "features_ztf":
