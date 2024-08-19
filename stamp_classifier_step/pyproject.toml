@@ -64,6 +64,7 @@ werkzeug = {version = "*", optional = true }
 wrapt = {version = "*", optional = true }
 matplotlib = {version = "*", optional = true }
 click = {version = "*", optional = true }
+wget = {version = "*", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "~=21.0"
