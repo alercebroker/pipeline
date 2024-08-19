@@ -37,10 +37,8 @@ def docker_compose_file(pytestconfig):
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
-    v2 = False
-    if os.getenv("COMPOSE", "v1") == "v2":
-        v2 = True
-    return "docker compose" if v2 else "docker-compose"
+    version = os.getenv("COMPOSE", "v2")
+    return "docker compose" if version == "v2" else "docker-compose"
 
 
 def is_responsive_kafka(url):

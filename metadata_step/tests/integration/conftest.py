@@ -5,17 +5,13 @@ import pytest
 
 @pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return os.path.join(
-        str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml"
-    )
+    return os.path.join(str(pytestconfig.rootdir), "tests/integration", "docker-compose.yaml")
 
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
-    v2 = False
-    if os.getenv("COMPOSE", "v1") == "v2":
-        v2 = True
-    return "docker compose" if v2 else "docker-compose"
+    version = os.getenv("COMPOSE", "v2")
+    return "docker compose" if version == "v2" else "docker-compose"
 
 
 def is_psql_responsive(ip, port):
@@ -39,7 +35,5 @@ def is_psql_responsive(ip, port):
 def psql_service(docker_ip, docker_services):
     port = docker_services.port_for("postgres", 5432)
     server = f"{docker_ip}:{port}"
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_psql_responsive(server, port)
-    )
+    docker_services.wait_until_responsive(timeout=30.0, pause=0.1, check=lambda: is_psql_responsive(server, port))
     return server

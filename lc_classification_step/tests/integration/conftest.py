@@ -34,11 +34,8 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
-    return (
-        "docker compose"
-        if not os.getenv("COMPOSE", "v1") == "v1"
-        else "docker-compose"
-    )
+    version = os.getenv("COMPOSE", "v2")
+    return "docker compose" if version == "v2" else "docker-compose"
 
 
 @pytest.fixture(scope="session")

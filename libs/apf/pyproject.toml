@@ -8,12 +8,12 @@ readme = "README.md"
 packages = [{include = "apf"}]
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = ">=3.8"
 click = ">=7.1.1"
 confluent-kafka = ">=1.4.0,<2.1.0"
 fastavro = ">=0.22.0,<=1.6.1"
 jinja2 = ">=2.10.0"
-pandas = ">=0.24,<=2.0.1"
+pandas = ">=1.2,<=2.0.1"
 boto3 = "1.26.69"
 prometheus-client = "0.16.0"
 pyroscope-io = "0.8.4"
