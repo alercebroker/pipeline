@@ -199,9 +199,9 @@ def generate_new_id(alerts: pd.DataFrame):
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
         id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
-        alerts_wo_aid.loc[
-            group.index, "aid"
-        ] = f"AL{time.strftime('%y')}{encode(id_)}"
+        alerts_wo_aid.loc[group.index, "aid"] = (
+            f"AL{time.strftime('%y')}{encode(id_)}"
+        )
         count += 1
 
     logger.debug(

@@ -14,6 +14,12 @@ from tests.utils import atlas_extra_fields, lsst_extra_fields, ztf_extra_fields
 
 
 @pytest.fixture(scope="session")
+def docker_compose_command():
+    version = os.getenv("COMPOSE", "v2")
+    return "docker compose" if version == "v2" else "docker-compose"
+
+
+@pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return (pathlib.Path(pytestconfig.rootdir) / "tests/integration/docker-compose.yaml").absolute()
 
