@@ -178,6 +178,7 @@ def create_astro_object(
     detections = detections[detection_keys].copy()
     detections["forced"] = False
 
+    forced_photometry = forced_photometry.copy()
     forced_photometry["candid"] = forced_photometry["oid"] + forced_photometry[
         "pid"
     ].astype(str)

@@ -27,7 +27,7 @@ def extract_features(
     )
     from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
     from lc_classifier.features.core.base import astro_object_from_dict
-    from dataset import save_batch
+    from lc_classifier.features.core.base import save_batch
 
     output_filename = os.path.join(
         output_folder, f"astro_objects_batch_{shorten_n_days}_{batch_id:04}.pkl"
@@ -61,7 +61,7 @@ def patch_features(batch_id, shorten_n_days=None):
     )
     from lc_classifier.features.extractors.tde_extractor import TDETailExtractor
     from lc_classifier.features.core.base import astro_object_from_dict
-    from dataset import save_batch
+    from lc_classifier.features.core.base import save_batch
 
     filename = os.path.join(
         output_folder, f"astro_objects_batch_{shorten_n_days}_{batch_id:04}.pkl"
