@@ -49,12 +49,6 @@ on:
       TEST_TORETTO_MODEL_PATH:
         required: false
         description: 'A path to a .pkl file'
-      TEST_BARNEY_MODEL_PATH:
-        required: false
-        description: 'A path to a .pkl file'
-      TEST_NEW_BARNEY_MODEL_PATH:
-        required: false
-        description: 'A path to a .pkl file'
       TEST_MLP_MODEL_PATH:
         required: false
         description: 'A path to a .pkl file'
@@ -86,15 +80,13 @@ jobs:
       TEST_MESSI_MODEL_PATH: ${{ secrets.TEST_MESSI_MODEL_PATH }}
       TEST_MESSI_FEATURE_QUANTILES_PATH: ${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}
       TEST_TORETTO_MODEL_PATH: ${{ secrets.TEST_TORETTO_MODEL_PATH }}
-      TEST_BARNEY_MODEL_PATH: ${{ secrets.TEST_BARNEY_MODEL_PATH }}
-      TEST_NEW_BARNEY_MODEL_PATH: ${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}
       TEST_MLP_MODEL_PATH: ${{ secrets.TEST_MLP_MODEL_PATH }}
       TEST_ANOMALY_QUANTILES_PATH: ${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}
       TEST_ANOMALY_MODEL_PATH: ${{ secrets.TEST_ANOMALY_MODEL_PATH }}
-      TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
-      TEST_MBAPPE_FEATURES_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}"
-      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
-      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
+      TEST_MBAPPE_MODEL_PATH: ${{ secrets.TEST_MBAPPE_MODEL_PATH }}
+      TEST_MBAPPE_FEATURES_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}
+      TEST_SQUIDWARD_MODEL_PATH: ${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
