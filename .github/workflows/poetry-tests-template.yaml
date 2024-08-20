@@ -43,9 +43,6 @@ on:
       TEST_MESSI_MODEL_PATH:
         required: false
         description: 'A path to a .pt file'
-      TEST_MESSI_HEADER_QUANTILES_PATH:
-        required: false
-        description: 'A path to the directory containing joblib files for messi'
       TEST_MESSI_FEATURE_QUANTILES_PATH:
         required: false
         description: 'A path to the directory containing joblib files for messi'
@@ -87,7 +84,6 @@ jobs:
       TEST_BALTO_MODEL_PATH: ${{ secrets.TEST_BALTO_MODEL_PATH }}
       TEST_BALTO_QUANTILES_PATH: ${{ secrets.TEST_BALTO_QUANTILES_PATH }}
       TEST_MESSI_MODEL_PATH: ${{ secrets.TEST_MESSI_MODEL_PATH }}
-      TEST_MESSI_HEADER_QUANTILES_PATH: ${{ secrets.TEST_MESSI_HEADER_QUANTILES_PATH }}
       TEST_MESSI_FEATURE_QUANTILES_PATH: ${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}
       TEST_TORETTO_MODEL_PATH: ${{ secrets.TEST_TORETTO_MODEL_PATH }}
       TEST_BARNEY_MODEL_PATH: ${{ secrets.TEST_BARNEY_MODEL_PATH }}
