@@ -89,6 +89,9 @@ class WatchlistStep(GenericStep):
     ) -> list[tuple]:
         to_notify = []
         for (oid, candid, target_id, values), filter in zip(updated_values, filters):
+            if not filter or "fields" not in filter or "filters" not in filter:
+                to_notify.append((oid, candid, target_id))
+                continue
             available_fields = set(values.keys())
             requiered_fields = set(itertools.chain(*filter["fields"].values()))
 
@@ -123,10 +126,6 @@ class WatchlistStep(GenericStep):
 
         new_values, filters = self.strategy.get_new_values(matches, alerts)
         updated_values = self.update_match_values(new_values)
-
-        to_notify = self.get_to_notify(updated_values, filters)
-        if len(to_notify) > 0:
-            self.mark_for_notification(to_notify)
 
         to_notify = self.get_to_notify(updated_values, filters)
         if len(to_notify) > 0:
