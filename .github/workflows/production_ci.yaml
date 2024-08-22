@@ -117,6 +117,26 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
+  build-lc-classification-mbappe-dagger:
+    needs: update_versions
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: lc_classification_step_mbappe --build-args=model:mbappe --package-dir=lc_classification_step
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+  build-lc-classification-squidward-dagger:
+    needs: update_versions
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: lc_classification_step_squidward --build-args=model:squidward --package-dir=lc_classification_step
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
   build-lightcurve-dagger:
     needs: update_versions
     uses: ./.github/workflows/template_build_with_dagger.yaml
@@ -218,6 +238,8 @@ jobs:
       # - build-lc-classification-messi-dagger
       # - build-lc-classification-mlp-dagger
       - build-lc-classification-ztf-dagger
+      - build-lc-classification-mbappe-dagger
+      - build-lc-classification-squidward-dagger
       - build-lightcurve-dagger
       - build-magstats-dagger
       - build-metadata-dagger
@@ -285,6 +307,8 @@ jobs:
           # feature step freezed 23.x version
           poetry run python main.py deploy add-package feature-step-23.x --chart=feature-step --values=feature_step-helm-values:13 --chart-folder=feature_step
           poetry run python main.py deploy add-package lc-classifier-step --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classifier-step-mbappe --chart=lc-classifier-step --values=lc_classification_step_mbape-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classifier-step-squidward --chart=lc-classifier-step --values=lc_classification_step_squidward-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --chart=lightcurve-step --values=lightcurve-step-helm-values --chart-folder=lightcurve-step
           poetry run python main.py deploy add-package magstats-step --chart=magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
           poetry run python main.py deploy add-package metadata-step --chart=metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
