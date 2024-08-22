@@ -12,6 +12,11 @@ from watchlist_step.db.connection import PsqlDatabase
 
 
 @pytest.fixture(scope="session")
+def docker_compose_command():
+    return "docker compose"
+
+
+@pytest.fixture(scope="session")
 def docker_compose_file(pytestconfig):
     return os.path.join(
         str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
@@ -68,9 +73,7 @@ def produce_message(config):
     fo = BytesIO()
     for record in records:
         for topic in topics:
-            writer(
-                fo, parsed_schema, [record], "null", 160000, None, None, None, None
-            )
+            writer(fo, parsed_schema, [record], "null", 160000, None, None, None, None)
             fo.seek(0)
             producer.produce(topic, value=fo.read())
             fo.seek(0)
