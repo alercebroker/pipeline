@@ -13,7 +13,7 @@ from joblib import dump
 from src.partitions import get_partitions, ordered_partitions
 from src.processing import processing_lc
 from src.create_dataset import create_lc_h5py
-from src.add_md_feat import add_metadata, add_features
+from src.add_md_feat import add_metadata, add_features, compute_feature_quantiles
 
 
 def check_files(df_objid_label, dict_cols, dict_info, path_lcs_file, path_md_feat_file):
@@ -223,7 +223,10 @@ def main(
     #######################################################################################################################################################
 
     # Merge between light curves and partitions
-    num_folds = 5
+
+    # we will modify the training data for fold_0,
+    # so using other partitions will leak info
+    num_folds = 1  # 5
     all_partitions = {}
     for fold in range(num_folds):
         all_partitions["fold_%s" % fold] = ordered_partitions(
@@ -282,7 +285,10 @@ def main(
             dict_info["list_time_to_eval"],
             all_partitions,
             num_folds,
+            df_objid_label
         )
+
+        compute_feature_quantiles(path_dataset, path_save_dataset, dict_info["list_time_to_eval"])
 
     dict_info.update(
         {"mapping_classes": mapping_to_int, "md_cols": md_cols, "feat_cols": feat_cols,}
@@ -370,7 +376,7 @@ if __name__ == "__main__":
     # Astronomical objects and their labels
     df_objid_label = pd.read_parquet("{}/raw/data_231206/objects.parquet".format(ROOT))
     df_objid_label = df_objid_label.reset_index()
-    df_objid_label = df_objid_label[[dict_cols["oid"], dict_cols["class"]]]
+    df_objid_label = df_objid_label[[dict_cols["oid"], dict_cols["class"], 'ra', 'dec']]
 
     main(
         path_lcs_file,

@@ -66,6 +66,9 @@ class LateClassifier(GenericStep):
         self.step_parser: KafkaParser = get_class(
             config["STEP_PARSER_CLASS"]
         )()
+        self.min_detections = config.get("MIN_DETECTIONS", None)
+        if self.min_detections is not None:
+            self.min_detections = int(self.min_detections)
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return self.step_parser.parse(
@@ -148,6 +151,20 @@ class LateClassifier(GenericStep):
         except ValueError as e:
             self.log_data(model_input)
             raise e
+
+    def pre_execute(self, messages: List[dict]):
+        if self.min_detections is None:
+            return messages
+
+        def has_enough_detections(message: dict) -> bool:
+            n_dets = len(
+                [True for det in message["detections"] if not det["forced"]]
+            )
+            return n_dets >= self.min_detections
+
+        filtered_messages = filter(has_enough_detections, messages)
+        filtered_messages = list(filtered_messages)
+        return filtered_messages
 
     def execute(self, messages):
         """Run the classification.

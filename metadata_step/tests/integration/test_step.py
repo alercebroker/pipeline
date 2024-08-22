@@ -10,9 +10,7 @@ from tests.data.mocks import *
 def _populate_db(conn: PSQLConnection):
     with conn.session() as session:
         session.execute(insert(Object).values(object_mocks).on_conflict_do_nothing())
-        session.execute(
-            insert(Detection).values(detection_mocks).on_conflict_do_nothing()
-        )
+        session.execute(insert(Detection).values(detection_mocks).on_conflict_do_nothing())
         session.execute(insert(Gaia_ztf).values(gaia_mocks).on_conflict_do_nothing())
         session.execute(insert(Ps1_ztf).values(ps1_mocks).on_conflict_do_nothing())
         session.commit()
@@ -43,35 +41,32 @@ def test_step(psql_service):
         # assert insertion
         ss_result = session.execute(select(Ss_ztf).where(Ss_ztf.oid == "ZTF21waka"))
         ps1_result = session.execute(
-            select(Ps1_ztf)
-            .where(Ps1_ztf.oid == "ZTF21waka")
-            .where(Ps1_ztf.candid == 930930930)
+            select(Ps1_ztf).where(Ps1_ztf.oid == "ZTF21waka").where(Ps1_ztf.candid == 930930930)
         )
         gaia_result = session.execute(
-            select(Gaia_ztf)
-            .where(Gaia_ztf.oid == "ZTF21waka")
-            .where(Gaia_ztf.candid == 930930930)
+            select(Gaia_ztf).where(Gaia_ztf.oid == "ZTF21waka").where(Gaia_ztf.candid == 930930930)
         )
         ss_result = list(ss_result)[0][0].__dict__
         ps1_result = list(ps1_result)[0][0].__dict__
         gaia_result = list(gaia_result)[0][0].__dict__
-    
+
         assert ss_result["oid"] == "ZTF21waka"
         assert ss_result["candid"] == 930930930
         assert ss_result["ssdistnr"] == 100
 
         assert ps1_result["oid"] == "ZTF21waka"
         assert ps1_result["sgmag1"] == 100
-        
+
         assert gaia_result["neargaia"] == 100
 
         # assert updating
         ps1_result = session.execute(
-            select(Ps1_ztf)
-            .where(Ps1_ztf.oid == "ZTF00llmn")
-            .where(Ps1_ztf.candid == 1234567890)
+            select(Ps1_ztf).where(Ps1_ztf.oid == "ZTF00llmn").where(Ps1_ztf.candid == 1234567890)
         )
         ps1_result = list(ps1_result)[0][0].__dict__
 
         assert ps1_result["oid"] == "ZTF00llmn"
-        assert ps1_result["unique1"] == False
+
+        # This assertion is failing. I don't understand the
+        # expected behavior
+        assert ps1_result["unique1"] is False

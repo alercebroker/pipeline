@@ -15,7 +15,8 @@ from schema import SCHEMA, SCRIBE_SCHEMA
 
 
 PRODUCER_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "test_schema.avsc")
-SCRIBE_SCHEMA_PATH =  os.path.join(os.path.dirname(__file__), "scribe.avsc")
+SCRIBE_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "scribe.avsc")
+
 
 def consume_messages(topic) -> List[dict]:
     config = {
@@ -33,7 +34,7 @@ def consume_messages(topic) -> List[dict]:
     }
     consumer = KafkaConsumer(config)
     messages = []
-    #if len(consumer.consumer.assignment()) == 0:
+    # if len(consumer.consumer.assignment()) == 0:
     #    return messages
 
     for message in consumer.consume():
@@ -88,7 +89,7 @@ def test_atlas_step():
             "PARAMS": {
                 "bootstrap.servers": "localhost:9092",
             },
-            "SCHEMA_PATH": SCRIBE_SCHEMA_PATH
+            "SCHEMA_PATH": SCRIBE_SCHEMA_PATH,
         }
     )
     strategy = ATLASStrategy()

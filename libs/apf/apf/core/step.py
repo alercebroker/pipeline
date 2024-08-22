@@ -432,6 +432,9 @@ class GenericStep(abc.ABC):
         self._pre_consume()
         for message in self.consumer.consume():
             preprocessed_msg = self._pre_execute(message)
+            if len(preprocessed_msg) == 0:
+                logger.info("Message of len zero after pre_execute")
+                continue
             try:
                 result = self.execute(preprocessed_msg)
             except Exception as error:

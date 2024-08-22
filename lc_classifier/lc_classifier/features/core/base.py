@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 from abc import ABC, abstractmethod
@@ -129,3 +130,9 @@ def query_ao_table(table: pd.DataFrame, name: str, check_unique: bool = True):
         return ans_df["value"].values[0]
     else:
         return ans_df
+
+
+def save_astro_objects_batch(astro_objects: List[AstroObject], filename: str):
+    astro_objects_dicts = [ao.to_dict() for ao in astro_objects]
+    with open(filename, "wb") as f:
+        pickle.dump(astro_objects_dicts, f)

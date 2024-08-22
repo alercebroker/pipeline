@@ -1,11 +1,9 @@
 import os
-import pickle
 
 import numpy as np
 import pandas as pd
-from lc_classifier.features.core.base import AstroObject
+from lc_classifier.features.core.base import AstroObject, save_astro_objects_batch
 from tqdm import tqdm
-from typing import List
 
 
 class NoDetections(Exception):
@@ -82,12 +80,6 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
     return astro_object
 
 
-def save_batch(astro_objects: List[AstroObject], filename: str):
-    astro_objects_dicts = [ao.to_dict() for ao in astro_objects]
-    with open(filename, "wb") as f:
-        pickle.dump(astro_objects_dicts, f)
-
-
 if __name__ == "__main__":
     # Build AstroObjects
 
@@ -120,7 +112,7 @@ if __name__ == "__main__":
                 print(object_info)
                 print("Object with no detections")
 
-        save_batch(
+        save_astro_objects_batch(
             astro_objects_list,
             os.path.join(data_dir, f"astro_objects_batch_{batch_i_str}.pkl"),
         )

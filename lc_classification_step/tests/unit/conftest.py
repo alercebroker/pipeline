@@ -368,7 +368,7 @@ def test_anomaly_model():
 
         # Test producer produces correct data
         calls = step.producer.mock_calls
-        assert len(calls) == len(messages_ztf) + 1  # beause call __del__
+        assert len(calls) == len(messages_ztf) + 1  # because call __del__
         for call in calls:
             if len(call.args) > 1:  # because of __del__
                 obj = call.args[0]
