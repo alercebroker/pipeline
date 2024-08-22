@@ -307,8 +307,8 @@ jobs:
           # feature step freezed 23.x version
           poetry run python main.py deploy add-package feature-step-23.x --chart=feature-step --values=feature_step-helm-values:13 --chart-folder=feature_step
           poetry run python main.py deploy add-package lc-classifier-step --chart=lc-classifier-step --values=lc_classification_step_ztf-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package lc-classifier-step-mbappe --chart=lc-classifier-step --values=lc_classification_step_mbape-helm-values --chart-folder=lc_classification_step
-          poetry run python main.py deploy add-package lc-classifier-step-squidward --chart=lc-classifier-step --values=lc_classification_step_squidward-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classification-step-mbappe --chart=lc-classifier-step --values=lc_classification_step_mbape-helm-values --chart-folder=lc_classification_step
+          poetry run python main.py deploy add-package lc-classification-step-squidward --chart=lc-classifier-step --values=lc_classification_step_squidward-helm-values --chart-folder=lc_classification_step
           poetry run python main.py deploy add-package lightcurve-step --chart=lightcurve-step --values=lightcurve-step-helm-values --chart-folder=lightcurve-step
           poetry run python main.py deploy add-package magstats-step --chart=magstats-step --values=magstats_step-helm-values --chart-folder=magstats_step
           poetry run python main.py deploy add-package metadata-step --chart=metadata-step --values=metadata_step-helm-values --chart-folder=metadata_step
