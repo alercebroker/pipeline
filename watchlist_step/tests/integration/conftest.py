@@ -1,12 +1,12 @@
 import os
 from io import BytesIO
 
-import psycopg
+import psycopg2
 import pytest
 from apf.consumers import KafkaConsumer
 from confluent_kafka import Producer
 from confluent_kafka.admin import AdminClient, NewTopic
-from fastavro import writer
+from fastavro import writer, parse_schema
 
 from watchlist_step.db.connection import PsqlDatabase
 
@@ -26,7 +26,6 @@ def produce_message(config):
         "fields": [
             {"name": "oid", "type": "string"},
             {"name": "candid", "type": "long"},
-            {"name": "mag", "type": "float"},
             {"name": "pid", "type": "long"},
             {"name": "mjd", "type": "double"},
             {"name": "fid", "type": "string"},
@@ -37,7 +36,7 @@ def produce_message(config):
             {"name": "isdiffpos", "type": "int"},
         ],
     }
-    # parsed_schema = parse_schema(schema)
+    parsed_schema = parse_schema(schema)
     records = [
         {
             "oid": "ZTF19aaapkto",
@@ -51,23 +50,31 @@ def produce_message(config):
             "e_mag": 0.5,
             "isdiffpos": 1,
         },
-    ]
+        {
+            "oid": "ZTF19aaapktoBAD",
+            "candid": 1000151433015015014,
+            "pid": 0.5,
+            "mjd": 123,
+            "fid": "1",
+            "ra": 252.6788662886394,
+            "dec": 53.34521158573315,
+            "mag": 10.5,
+            "e_mag": 0.5,
+            "isdiffpos": 1,
+        },
+    ] * 10
     producer = Producer(config)
     topics = ["test"]
     fo = BytesIO()
-    writer(fo, schema, records, "null", 16000, None, None, None, None)
-    fo.seek(0)
-    try:
+    for record in records:
         for topic in topics:
-            producer.produce(topic, value=fo.read())
-            producer.flush(30)
+            writer(
+                fo, parsed_schema, [record], "null", 160000, None, None, None, None
+            )
             fo.seek(0)
             producer.produce(topic, value=fo.read())
-            producer.flush(30)
             fo.seek(0)
-            print(f"produced to {topic} {fo.read()}")
-    except Exception as e:
-        print(f"failed to produce to topic: {e}")
+    producer.flush()
 
 
 def consume_message(config):
@@ -99,13 +106,14 @@ def kafka_service(docker_ip, docker_services):
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
     config = {"bootstrap.servers": "localhost:9094"}
+
     produce_message(config)
     return server
 
 
 def is_responsive_users_database(docker_ip, port):
     try:
-        conn = psycopg.connect(
+        conn = psycopg2.connect(
             dbname="postgres",
             user="postgres",
             host=docker_ip,

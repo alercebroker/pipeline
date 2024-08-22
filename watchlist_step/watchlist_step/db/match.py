@@ -1,4 +1,4 @@
-from psycopg.sql import SQL, Literal
+from psycopg2.sql import SQL, Literal
 
 
 def create_match_query(len, base_radius=30 / 3600):
@@ -47,8 +47,8 @@ def create_insertion_query():
     return SQL(
         """
         INSERT INTO
-            watchlist_match(target_id, object_id, candid, values, date)
-        VALUES (%s, %s, %s, %s, %s)
+            watchlist_match(target_id, object_id, candid, values, date, ready_to_notify)
+        VALUES (%s, %s, %s, %s, %s, false)
         """
     )
 

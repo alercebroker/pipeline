@@ -13,7 +13,7 @@ step = "scripts.run_step:step"
 python = "~3.11"
 apf-base = "^1.0.9"
 pydantic = "^2.6.4"
-psycopg = "^3.1.18"
+psycopg2-binary = "=2.9.9"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"

@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 from apf.core.step import GenericStep
-from psycopg.types.json import Jsonb
+import json
 
 from .db.connection import PsqlDatabase
 from .db.match import (
@@ -44,7 +44,7 @@ class WatchlistStep(GenericStep):
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], m[1], Jsonb({}), datetime.datetime.now()) for m in matches
+            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now()) for m in matches
         ]
 
         query = create_insertion_query()
@@ -69,7 +69,7 @@ class WatchlistStep(GenericStep):
                 "oid": oid,
                 "candid": candid,
                 "target_id": target_id,
-                "values": Jsonb(values),
+                "values": json.dumps(values),
             }
             for oid, candid, target_id, values in new_values
         ]
@@ -79,11 +79,9 @@ class WatchlistStep(GenericStep):
         res = []
         with self.users_db.conn() as conn:
             with conn.cursor() as cursor:
-                cursor.executemany(query, values, returning=True)
-                while True:
+                for value in values:
+                    cursor.execute(query, value)
                     res.append(cursor.fetchone())
-                    if not cursor.nextset():
-                        break
         return res
 
     def get_to_notify(

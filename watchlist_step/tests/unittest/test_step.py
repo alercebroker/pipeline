@@ -28,7 +28,7 @@ def wl_step():
 
 
 @mock.patch("watchlist_step.step.datetime.datetime")
-@mock.patch("psycopg.connect")
+@mock.patch("psycopg2.connect")
 def test_should_insert_matches(
     connect_mock: mock.MagicMock,
     datetime_mock: mock.MagicMock,
@@ -54,7 +54,7 @@ def test_should_insert_matches(
     ), "executemany should be called with tuples of length 5"
 
 
-@mock.patch("psycopg.connect")
+@mock.patch("psycopg2.connect")
 def test_should_create_matches(connect_mock: mock.MagicMock, wl_step: WatchlistStep):
     cursor_mock: mock.MagicMock = (
         connect_mock.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value

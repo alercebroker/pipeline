@@ -26,7 +26,7 @@ class TestStep:
             "enable.partition.eof": "true",
             "enable.auto.commit": "false",
         },
-        "consume.timeout": 5,
+        "consume.timeout": 30,
         "consume.messages": 2,
     }
     config = {
@@ -46,7 +46,7 @@ class TestStep:
         users_db,
         step_creator,
     ):
-        self.consumer_config["PARAMS"]["group.id"] = "test_should_insert"
+        self.consumer_config["PARAMS"]["group.id"] = "test_integration"
         consumer = KafkaConsumer(self.consumer_config)
         strategy_name = "SortingHat"
         step = step_creator(
@@ -59,8 +59,17 @@ class TestStep:
         matches = []
         with users_db.conn() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM watchlist_match")
+                cursor.execute(
+                    "SELECT * FROM watchlist_match WHERE ready_to_notify = true"
+                )
                 matches = cursor.fetchall()
 
                 cursor.execute("SELECT * FROM watchlist_target")
-        assert len(matches) == 1
+                targets = cursor.fetchall()
+
+        # from pprint import pprint
+        # print("Matches:")
+        # pprint(matches)
+        # print("\nTargets:")
+        # pprint(targets)
+        assert len(matches) == 10
