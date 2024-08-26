@@ -1,16 +1,19 @@
 import pytest
-from apf.consumers import KafkaConsumer
-
 from watchlist_step.step import WatchlistStep
+from unittest import mock
+import datetime
+from apf.consumers import KafkaConsumer
+from db_plugins.db.sql.connection import SQLConnection
 
 
 @pytest.fixture
 def step_creator():
-    def create_step(consumer, strategy_name, config):
+    def create_step(consumer, alerts_db_connection, users_db_connection, config):
         return WatchlistStep(
             consumer=consumer,
+            alerts_db_connection=alerts_db_connection,
+            users_db_connection=users_db_connection,
             config=config,
-            strategy_name=strategy_name,
         )
 
     return create_step
@@ -26,50 +29,51 @@ class TestStep:
             "enable.partition.eof": "true",
             "enable.auto.commit": "false",
         },
-        "consume.timeout": 30,
+        "consume.timeout": 5,
         "consume.messages": 2,
     }
+    alerts_db_connection = SQLConnection()
+    users_db_connection = SQLConnection()
     config = {
-        "PSQL_CONFIG": {
-            "ENGINE": "postgresql",
-            "HOST": "localhost",
-            "USER": "postgres",
-            "PASSWORD": "password",
-            "PORT": 5433,
-            "DB_NAME": "postgres",
-        }
+        "alert_db_config": {
+            "SQL": {
+                "ENGINE": "postgresql",
+                "HOST": "localhost",
+                "USER": "postgres",
+                "PASSWORD": "postgres",
+                "PORT": 5432,
+                "DB_NAME": "postgres",
+            }
+        },
+        "users_db_config": {
+            "SQL": {
+                "ENGINE": "postgresql",
+                "HOST": "localhost",
+                "USER": "postgres",
+                "PASSWORD": "password",
+                "PORT": 5433,
+                "DB_NAME": "postgres",
+            }
+        },
     }
 
     def test_should_insert_matches_if_matches_returned(
         self,
         kafka_service,
-        users_db,
+        alerts_database,
+        users_database,
         step_creator,
     ):
-        self.consumer_config["PARAMS"]["group.id"] = "test_integration"
+        self.consumer_config["PARAMS"]["group.id"] = "test_should_insert"
         consumer = KafkaConsumer(self.consumer_config)
-        strategy_name = "SortingHat"
         step = step_creator(
             consumer,
-            strategy_name,
+            self.alerts_db_connection,
+            self.users_db_connection,
             self.config,
         )
         step.start()
-
-        matches = []
-        with users_db.conn() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT * FROM watchlist_match WHERE ready_to_notify = true"
-                )
-                matches = cursor.fetchall()
-
-                cursor.execute("SELECT * FROM watchlist_target")
-                targets = cursor.fetchall()
-
-        # from pprint import pprint
-        # print("Matches:")
-        # pprint(matches)
-        # print("\nTargets:")
-        # pprint(targets)
-        assert len(matches) == 10
+        matches = self.users_db_connection.session.execute(
+            "SELECT * FROM watchlist_match;"
+        ).fetchall()
+        assert len(matches) == 1

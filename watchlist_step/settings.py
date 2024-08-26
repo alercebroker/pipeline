@@ -34,8 +34,6 @@ elif os.getenv("CONSUMER_TOPICS"):
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
-UPDATE_STRATEGY = os.environ["UPDATE_STRATEGY"]
-
 METRICS_CONFIG = {
     "CLASS": "apf.metrics.KafkaMetricsProducer",
     "EXTRA_METRICS": [
@@ -98,14 +96,25 @@ if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
 
 ## Step Configuratiom
 STEP_CONFIG = {
-    "PSQL_CONFIG": {
-        "ENGINE": "postgresql",
-        "HOST": os.environ["USERS_DB_HOST"],
-        "USER": os.environ["USERS_DB_USER"],
-        "PASSWORD": os.environ["USERS_DB_PASSWORD"],
-        "PORT": 5432,  # postgresql tipically runs on port 5432. Notice that we use an int here.
-        "DB_NAME": os.environ["USERS_DB_NAME"],
+    "alert_db_config": {
+        "SQL": {
+            "ENGINE": "postgresql",
+            "HOST": os.environ["ALERTS_DB_HOST"],
+            "USER": os.environ["ALERTS_DB_USER"],
+            "PASSWORD": os.environ["ALERTS_DB_PASSWORD"],
+            "PORT": 5432,  # postgresql tipically runs on port 5432. Notice that we use an int here.
+            "DB_NAME": os.environ["ALERTS_DB_NAME"],
+        },
+    },
+    "users_db_config": {
+        "SQL": {
+            "ENGINE": "postgresql",
+            "HOST": os.environ["USERS_DB_HOST"],
+            "USER": os.environ["USERS_DB_USER"],
+            "PASSWORD": os.environ["USERS_DB_PASSWORD"],
+            "PORT": 5432,  # postgresql tipically runs on port 5432. Notice that we use an int here.
+            "DB_NAME": os.environ["USERS_DB_NAME"],
+        }
     },
     "METRICS_CONFIG": METRICS_CONFIG,
-    "N_PROCESS": os.getenv("N_PROCESS", 1),
 }

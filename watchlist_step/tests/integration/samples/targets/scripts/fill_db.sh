@@ -10,19 +10,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         id INTEGER PRIMARY KEY,
         ra DOUBLE PRECISION,
         dec DOUBLE PRECISION,
-        radius DOUBLE PRECISION,
-        filter JSONB
+        radius DOUBLE PRECISION
     );
     CREATE TABLE watchlist_match (
         id SERIAL,
         target_id INTEGER REFERENCES watchlist_target(id),
         object_id VARCHAR(20),
-        candid BIGINT,
-        date TIMESTAMP,
-        ready_to_notify BOOLEAN,
-        values JSONB
+        candid VARCHAR(200),
+        date TIMESTAMP
     );
-    CREATE INDEX ON watchlist_target (q3c_ang2ipix(ra, dec));
-    CLUSTER watchlist_target_q3c_ang2ipix_idx ON watchlist_target;
-    COPY watchlist_target (id, ra, dec, radius, filter) FROM '/data/targets.csv' DELIMITER ';' CSV;
+    COPY watchlist_target (id, ra, dec, radius) FROM '/data/targets.csv' DELIMITER ',' CSV;
 EOSQL
