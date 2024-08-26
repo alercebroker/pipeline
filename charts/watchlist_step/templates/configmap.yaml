@@ -15,15 +15,6 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: alerts-database
-  namespace: {{ .Values.namespace }}
-data:
-  host: {{ .Values.configmap.alertsDb.host }}
-  name: {{ .Values.configmap.alertsDb.name }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: users-database
   namespace: {{ .Values.namespace }}
 data:
