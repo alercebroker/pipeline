@@ -19,6 +19,10 @@ python = ">=3.10,<3.12"
 apf-base = { path = "../libs/apf", develop = true }
 pandas = { version = "^2.0.1" }
 numexpr = "^2.8.8"
+sqlalchemy = "^2.0.32"
+psycopg2-binary = "^2.9.9"
+pgvector = "^0.3.2"
+
 
 [tool.poetry.group.ztf]
 optional = true

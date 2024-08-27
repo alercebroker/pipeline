@@ -25,10 +25,8 @@ def test_step_anomaly_result(
         "anomaly",
         "alerce_classifiers.anomaly.model.AnomalyDetector",
         {
-            "MODEL_PATH": os.getenv("TEST_ANOMALY_MODEL_PATH"), 
-            "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_ANOMALY_QUANTILES_PATH"
-            ),
+            "MODEL_PATH": os.getenv("TEST_ANOMALY_MODEL_PATH"),
+            "FEATURE_QUANTILES_PATH": os.getenv("TEST_ANOMALY_QUANTILES_PATH"),
             "MAPPER_CLASS": "alerce_classifiers.anomaly.mapper.AnomalyMapper",
         },
     )
@@ -65,9 +63,7 @@ def test_step_anomaly_no_features_result(
         "alerce_classifiers.anomaly.model.AnomalyDetector",
         {
             "MODEL_PATH": os.getenv("TEST_ANOMALY_MODEL_PATH"),
-            "FEATURE_QUANTILES_PATH": os.getenv(
-                "TEST_ANOMALY_QUANTILES_PATH"
-            ),
+            "FEATURE_QUANTILES_PATH": os.getenv("TEST_ANOMALY_QUANTILES_PATH"),
             "MAPPER_CLASS": "alerce_classifiers.anomaly.mapper.AnomalyMapper",
         },
     )

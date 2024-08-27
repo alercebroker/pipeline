@@ -82,7 +82,6 @@ def mbappe_params(model_class: str):
 
 
 def squidward_params(model_class: str):
-
     return {
         "PARAMS": {
             "model_path": os.getenv("MODEL_PATH"),

@@ -29,5 +29,9 @@ def test_parse():
         assert res["criteria"]["_id"] in ["oid1", "oid2", "oid3"]
         assert "test_detector" in res["data"]["detector_name"]
         assert {"name": "Periodic", "score": "5"} in res["data"]["categories"]
-        assert {"name": "Stochastic", "score": "4"} in res["data"]["categories"]
-        assert {"name": "Transient", "score": "10"} in res["data"]["categories"]
+        assert {"name": "Stochastic", "score": "4"} in res["data"][
+            "categories"
+        ]
+        assert {"name": "Transient", "score": "10"} in res["data"][
+            "categories"
+        ]

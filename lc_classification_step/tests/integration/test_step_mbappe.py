@@ -105,7 +105,6 @@ def test_step_mbappe_min_detections(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-
     env_variables_mbappe(
         "mbappe",
         "alerce_classifiers.mbappe.model.MbappeClassifier",

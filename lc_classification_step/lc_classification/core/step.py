@@ -9,10 +9,21 @@ from alerce_classifiers.base.dto import OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
+from sqlalchemy import create_engine, text, insert
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert
+import os
+from lc_classification.core.db.models import (
+    AnomalyScore,
+    AnomalyScoreTop,
+    AnomalyEmbeddings,
+)
 
 ZTF_CLASSIFIER_CLASS = (
     "lc_classifier.classifier.models.HierarchicalRandomForest"
 )
+
+ANOMALY_CLASS = "alerce_classifiers.anomaly.model.AnomalyDetector"
 
 
 class LateClassifier(GenericStep):
@@ -36,6 +47,21 @@ class LateClassifier(GenericStep):
         numexpr.utils.set_num_threads(1)
 
         self.isztf = config["MODEL_CONFIG"]["CLASS"] == ZTF_CLASSIFIER_CLASS
+
+        # ANOMALY
+        self.isanomaly = config["MODEL_CONFIG"]["CLASS"] == ANOMALY_CLASS
+        """engine for anomaly detector model"""
+        if self.isanomaly:
+            self.sql_engine = create_engine(
+                f"postgresql://{os.getenv('ANOMALY_USER')}:{os.getenv('ANOMALY_PASSWORD')}@{os.getenv('ANOMALY_HOST')}:{os.getenv('ANOMALY_PORT')}/{os.getenv('ANOMALY_DB_NAME')}",
+                connect_args={
+                    "options": "-csearch_path={}".format(
+                        os.getenv("ANOMALY_SCHEMA")
+                    )
+                },
+            )
+            self.logger.info("Engine for anomaly model")
+        # ANOMALY
         self.logger.info("Loading Models")
 
         if model:
@@ -48,6 +74,7 @@ class LateClassifier(GenericStep):
                 self.model.download_model()
                 self.model.load_model(self.model.MODEL_PICKLE_PATH)
                 self.classifier_version = self.config["MODEL_VERSION"]
+
             else:
                 mapper = get_class(
                     config["MODEL_CONFIG"]["PARAMS"]["mapper"]
@@ -57,6 +84,7 @@ class LateClassifier(GenericStep):
                     **config["MODEL_CONFIG"]["PARAMS"]
                 )
                 self.classifier_version = self.model.model_version
+
         self.scribe_producer = get_class(
             config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
         )(config["SCRIBE_PRODUCER_CONFIG"])
@@ -192,10 +220,60 @@ class LateClassifier(GenericStep):
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         probabilities = result[0]
+
+        def df_to_anomaly_model(df):
+            return [
+                AnomalyScore(
+                    oid=index,
+                    score_SNIa=row["SNIa"].astype(float),
+                    score_SNIbc=row["SNIa"].astype(float),
+                    score_SNII=row["SNIa"].astype(float),
+                    score_SNIIn=row["SNIa"].astype(float),
+                    score_SLSN=row["SNIa"].astype(float),
+                    score_TDE=row["SNIa"].astype(float),
+                    score_Microlensing=row["SNIa"].astype(float),
+                    score_QSO=row["SNIa"].astype(float),
+                    score_AGN=row["SNIa"].astype(float),
+                    score_Blazar=row["SNIa"].astype(float),
+                    score_YSO=row["SNIa"].astype(float),
+                    score_CVnova=row["SNIa"].astype(float),
+                    score_LPV=row["SNIa"].astype(float),
+                    score_EA=row["SNIa"].astype(float),
+                    score_EBEW=row["SNIa"].astype(float),
+                    score_PeriodicOther=row["SNIa"].astype(float),
+                    score_RSCVn=row["SNIa"].astype(float),
+                    score_CEP=row["SNIa"].astype(float),
+                    score_RLLab=row["SNIa"].astype(float),
+                    score_RLLc=row["SNIa"].astype(float),
+                    score_DSCT=row["SNIa"].astype(float),
+                )
+                for index, row in df.iterrows()
+            ]
+
+        # ANOMALY
+        if self.isanomaly:
+            Session = sessionmaker(
+                autocommit=False, autoflush=False, bind=self.sql_engine
+            )
+            try:
+                with Session.begin() as session:
+                    chunk = df_to_anomaly_model(probabilities.probabilities)
+                    for e in chunk:
+                        try:
+                            session.add_all([e])
+                            session.commit()
+                        except Exception as e:
+                            print(f"Something happened :< {e}")
+
+            except Exception as e:
+                print(f"Something happened :< {e}")
+
+        # ANOMALY
         parsed_result = self.scribe_parser.parse(
             probabilities,
             classifier_version=self.classifier_version,
         )
+        """ bypass scribe when anomaly detector is used"""
         self.produce_scribe(parsed_result.value)
         return result
 

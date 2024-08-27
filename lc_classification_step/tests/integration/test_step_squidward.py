@@ -93,7 +93,6 @@ def test_step_squidward_min_detections(
     kafka_consumer: Callable[[str], KafkaConsumer],
     scribe_consumer: Callable[[], KafkaConsumer],
 ):
-
     env_variables_squidward(
         "squidward",
         "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
