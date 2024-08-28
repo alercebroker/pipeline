@@ -1,9 +1,29 @@
 import json
 import os
 from typing import Callable
-
 import pytest
 from apf.consumers import KafkaConsumer
+import logging
+import colorlog
+
+LOG_FILENAME = f"logs_job.log"
+logger = logging.getLogger()
+logging.root.handlers = []
+handler = colorlog.StreamHandler()
+handler.setFormatter(
+    colorlog.ColoredFormatter(
+        "%(log_color)s[%(asctime)s] [%(levelname)s] %(message)s"
+    )
+)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILENAME, encoding="utf-8"),
+        handler,
+    ],
+)
+
 
 from lc_classification.core.step import LateClassifier
 from tests.test_commons import (

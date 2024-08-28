@@ -22,6 +22,8 @@ numexpr = "^2.8.8"
 sqlalchemy = "^2.0.32"
 psycopg2-binary = "^2.9.9"
 pgvector = "^0.3.2"
+pytest-dotenv = "^0.5.2"
+colorlog = "^6.8.2"
 
 
 [tool.poetry.group.ztf]

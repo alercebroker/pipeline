@@ -33,6 +33,7 @@ class AnomalyScore(Base):
     )
     score_SNIa = Column(Float, primary_key=False)
     score_SNIbc = Column(Float, primary_key=False)
+    score_SNIIb = Column(Float, primary_key=False)
     score_SNII = Column(Float, primary_key=False)
     score_SNIIn = Column(Float, primary_key=False)
     score_SLSN = Column(Float, primary_key=False)

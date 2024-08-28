@@ -221,59 +221,82 @@ class LateClassifier(GenericStep):
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         probabilities = result[0]
 
-        def df_to_anomaly_model(df):
-            return [
-                AnomalyScore(
-                    oid=index,
-                    score_SNIa=row["SNIa"].astype(float),
-                    score_SNIbc=row["SNIa"].astype(float),
-                    score_SNII=row["SNIa"].astype(float),
-                    score_SNIIn=row["SNIa"].astype(float),
-                    score_SLSN=row["SNIa"].astype(float),
-                    score_TDE=row["SNIa"].astype(float),
-                    score_Microlensing=row["SNIa"].astype(float),
-                    score_QSO=row["SNIa"].astype(float),
-                    score_AGN=row["SNIa"].astype(float),
-                    score_Blazar=row["SNIa"].astype(float),
-                    score_YSO=row["SNIa"].astype(float),
-                    score_CVnova=row["SNIa"].astype(float),
-                    score_LPV=row["SNIa"].astype(float),
-                    score_EA=row["SNIa"].astype(float),
-                    score_EBEW=row["SNIa"].astype(float),
-                    score_PeriodicOther=row["SNIa"].astype(float),
-                    score_RSCVn=row["SNIa"].astype(float),
-                    score_CEP=row["SNIa"].astype(float),
-                    score_RLLab=row["SNIa"].astype(float),
-                    score_RLLc=row["SNIa"].astype(float),
-                    score_DSCT=row["SNIa"].astype(float),
-                )
-                for index, row in df.iterrows()
-            ]
-
-        # ANOMALY
-        if self.isanomaly:
-            Session = sessionmaker(
-                autocommit=False, autoflush=False, bind=self.sql_engine
+        def format_records(df: DataFrame):
+            df_ = df.copy().reset_index()
+            df_ = df_.rename(
+                columns={
+                    "SNIa": "score_SNIa",
+                    "SNIbc": "score_SNIbc",
+                    "SNIIb": "score_SNIIb",
+                    "SNII": "score_SNII",
+                    "SNIIn": "score_SNIIn",
+                    "SLSN": "score_SLSN",
+                    "TDE": "score_TDE",
+                    "Microlensing": "score_Microlensing",
+                    "QSO": "score_QSO",
+                    "AGN": "score_AGN",
+                    "Blazar": "score_Blazar",
+                    "YSO": "score_YSO",
+                    "CV/Nova": "score_CVnova",
+                    "LPV": "score_LPV",
+                    "EA": "score_EA",
+                    "EB/EW": "score_EBEW",
+                    "Periodic-Other": "score_PeriodicOther",
+                    "RSCVn": "score_RSCVn",
+                    "CEP": "score_CEP",
+                    "RRLab": "score_RLLab",
+                    "RRLc": "score_RLLc",
+                    "DSCT": "score_DSCT",
+                }
             )
+            df_ = df_.drop_duplicates(subset=["oid"])
+            return df_.to_dict(orient="records")
+
+        def insert_to_db(records: list[dict], engine):
+            stmt = insert(AnomalyScore).values(records)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["oid"],
+                set_={
+                    "score_SNIa": stmt.excluded.score_SNIa,
+                    "score_SNIbc": stmt.excluded.score_SNIbc,
+                    "score_SNIIb": stmt.excluded.score_SNIIb,
+                    "score_SNII": stmt.excluded.score_SNII,
+                    "score_SNIIn": stmt.excluded.score_SNIIn,
+                    "score_SLSN": stmt.excluded.score_SLSN,
+                    "score_TDE": stmt.excluded.score_TDE,
+                    "score_Microlensing": stmt.excluded.score_Microlensing,
+                    "score_QSO": stmt.excluded.score_QSO,
+                    "score_AGN": stmt.excluded.score_AGN,
+                    "score_Blazar": stmt.excluded.score_Blazar,
+                    "score_YSO": stmt.excluded.score_YSO,
+                    "score_CVnova": stmt.excluded.score_CVnova,
+                    "score_LPV": stmt.excluded.score_LPV,
+                    "score_EA": stmt.excluded.score_EA,
+                    "score_EBEW": stmt.excluded.score_EBEW,
+                    "score_PeriodicOther": stmt.excluded.score_PeriodicOther,
+                    "score_RSCVn": stmt.excluded.score_RSCVn,
+                    "score_CEP": stmt.excluded.score_CEP,
+                    "score_RLLab": stmt.excluded.score_RLLab,
+                    "score_RLLc": stmt.excluded.score_RLLc,
+                    "score_DSCT": stmt.excluded.score_DSCT,
+                },
+            )
+            with engine.connect() as conn:
+                conn.execute(stmt)
+                conn.commit()
+
+        if self.isanomaly:
             try:
-                with Session.begin() as session:
-                    chunk = df_to_anomaly_model(probabilities.probabilities)
-                    for e in chunk:
-                        try:
-                            session.add_all([e])
-                            session.commit()
-                        except Exception as e:
-                            print(f"Something happened :< {e}")
-
+                records = format_records(probabilities.probabilities)
+                insert_to_db(records, self.sql_engine)
+                self.logger.info("Inserted values !")
             except Exception as e:
-                print(f"Something happened :< {e}")
+                self.logger.warning(f"Error:  {e}")
 
-        # ANOMALY
         parsed_result = self.scribe_parser.parse(
             probabilities,
             classifier_version=self.classifier_version,
         )
-        """ bypass scribe when anomaly detector is used"""
         self.produce_scribe(parsed_result.value)
         return result
 
