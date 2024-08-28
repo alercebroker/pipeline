@@ -221,7 +221,15 @@ class LateClassifier(GenericStep):
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         probabilities = result[0]
 
-        def format_records(df: DataFrame):
+        def get_score(x, branch="Transient"):
+            if branch == "Transient":
+                return x[["score_SNIa", "score_SNIbc"]].min()
+            if branch == "Stochastic":
+                return x[["score_SNIa", "score_SNIbc"]].min()
+            if branch == "Periodic":
+                return x[["score_SNIa", "score_SNIbc"]].min()
+
+        def format_records(df: DataFrame) -> Tuple:
             df_ = df.copy().reset_index()
             df_ = df_.rename(
                 columns={
@@ -250,6 +258,16 @@ class LateClassifier(GenericStep):
                 }
             )
             df_ = df_.drop_duplicates(subset=["oid"])
+            df_["score_Transient"] = df_.apply(
+                lambda x: get_score(x, "Transient"), axis=1
+            )
+            df_["score_Stochastic"] = df_.apply(
+                lambda x: get_score(x, "Stochastic"), axis=1
+            )
+            df_["score_Periodic"] = df_.apply(
+                lambda x: get_score(x, "Periodic"), axis=1
+            )
+
             return df_.to_dict(orient="records")
 
         def insert_to_db(records: list[dict], engine):
@@ -293,6 +311,7 @@ class LateClassifier(GenericStep):
             except Exception as e:
                 self.logger.warning(f"Error:  {e}")
 
+        """ no entiendo por que es necesario estooooo , bueno mañana se lo pido al alex"""
         parsed_result = self.scribe_parser.parse(
             probabilities,
             classifier_version=self.classifier_version,
