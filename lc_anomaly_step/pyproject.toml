@@ -1,0 +1,81 @@
+[tool.poetry]
+name = "lc-anomaly-step"
+version = "0.1.0"
+description = ""
+authors = ["Bastiancito <bastian.gamboa@ug.uchile.cl>"]
+readme = "README.md"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+apf-base = { path = "../libs/apf", develop = true }
+pandas = { version = "^2.0.1" }
+numexpr = "^2.8.8"
+
+[tool.poetry.group.ztf]
+optional = true
+
+[tool.poetry.group.toretto]
+optional = true
+
+[tool.poetry.group.messi]
+optional = true
+
+[tool.poetry.group.balto]
+optional = true
+
+[tool.poetry.group.barney]
+optional = true
+
+[tool.poetry.group.mlp]
+optional = true
+
+[tool.poetry.group.elasticc]
+optional = true
+
+[tool.poetry.group.ztf.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
+
+[tool.poetry.group.toretto.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true,  extras = ["toretto"] }
+
+[tool.poetry.group.messi.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["messi", "balto"] }
+
+[tool.poetry.group.balto.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["balto"]}
+
+[tool.poetry.group.barney.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney"] }
+
+[tool.poetry.group.mlp.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mlp"] }
+
+[tool.poetry.group.elasticc.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["barney","messi","toretto","balto", "mlp"] }
+
+[tool.poetry.group.anomaly.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["anomaly"] }
+
+[tool.poetry.group.mbappe.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["mbappe"] }
+
+[tool.poetry.group.squidward.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["ztf"] }
+
+[tool.poetry.group.dev.dependencies]
+black = "~=23.0"
+ 
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-cov = "^4.1.0"
+pytest-docker = "^1.0.1"
+
+[tool.black]
+line-length = 79
