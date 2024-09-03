@@ -18,6 +18,8 @@ def step_creator():
 
 class TestStep:
     consumer_config = {
+        "CLASS": "apf.consumers.KafkaSchemalessConsumer",
+        "SCHEMA_PATH": "/schemas/sorting_hat_step/output.avsc",
         "TOPICS": ["test"],
         "PARAMS": {
             "bootstrap.servers": "localhost:9094",

@@ -11,6 +11,7 @@ def wl_step():
     strategy_name = "SortingHat"
 
     config = {
+        "CONSUMER_CONFIG": {"hola": "mundo"},
         "PSQL_CONFIG": {
             "ENGINE": "postgresql",
             "HOST": "localhost",
