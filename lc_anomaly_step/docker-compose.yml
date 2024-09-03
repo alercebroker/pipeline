@@ -1,0 +1,44 @@
+version: "3"
+services:
+  kafka:
+    image: "bitnami/kafka:latest"
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+  balto:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-balto
+      args:
+        GH_TOKEN: ${GH_TOKEN}
+      tags:
+        - "balto:local"
+    environment:
+      - CONSUMER_CLASS=apf.consumers.KafkaConsumer
+      - CONSUMER_TOPICS=features_elasticc
+      - CONSUMER_SERVER=${CONSUMER_SERVER}
+      - CONSUMER_GROUP_ID=lc_classifier_balto
+      - CONSUMER_KAFKA_USERNAME=${CONSUMER_KAFKA_USERNAME}
+      - CONSUMER_KAFKA_PASSWORD=${CONSUMER_KAFKA_PASSWORD}
+      - PRODUCER_TOPIC_FORMAT=format%s
+      - PRODUCER_DATE_FORMAT=YYYYmmdd
+      - PRODUCER_CHANGE_HOUR=22
+      - PRODUCER_RETENTION_DAYS=1
+      - PRODUCER_SERVER=kafka:9092
+      - SCRIBE_SERVER=kafka:9092
+      - SCRIBE_TOPIC=w_object
+      - METRICS_HOST=kafka:9092
+      - METRICS_TOPIC=metrics
+      - CONSUME_TIMEOUT=10
+      - CONSUME_MESSAGES=100
+      - PREDICTOR_CLASS=lc_classification.predictors.balto.balto_predictor.BaltoPredictor
+      - MODEL_PATH=${BALTO_MODEL_PATH}
+      - QUANTILES_PATH=${BALTO_QUANTILES_PATH}
+      - PREDICTOR_PARSER_CLASS=lc_classification.predictors.balto.balto_parser.BaltoParser
+      - SCRIBE_PARSER_CLASS=lc_classification.core.parsers.scribe_parser.ScribeParser
+      - STEP_PARSER_CLASS=lc_classification.core.parsers.elasticc_parser.ElasticcParser
+      - LOGGING_DEBUG=yes
+      - STREAM=elasticc
