@@ -20,6 +20,7 @@ RUN apt-get update && \
 RUN pip install poetry
 
 COPY watchlist_step/poetry.lock watchlist_step/pyproject.toml /app/
+COPY libs/apf libs/apf
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test
