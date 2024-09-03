@@ -32,6 +32,7 @@ COPY --from=builder /app /app
 # COPY --from=builder /libs /libs
 
 COPY watchlist_step/watchlist_step /app/watchlist_step
+COPY schemas/sorting_hat_step /schemas/sorting_hat_step
 COPY watchlist_step/scripts /app/scripts
 COPY watchlist_step/README.md \
   watchlist_step/settings.py \

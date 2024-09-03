@@ -9,6 +9,8 @@ import os
 ## Consumer configuration
 ### Each consumer has different parameters and can be found in the documentation
 CONSUMER_CONFIG = {
+    "CLASS": "apf.consumers.KafkaSchemalessConsumer",
+    "SCHEMA_PATH": "/schemas/sorting_hat_step/output.avsc",
     "PARAMS": {
         "bootstrap.servers": os.environ["CONSUMER_SERVER"],
         "group.id": os.environ["CONSUMER_GROUP_ID"],
