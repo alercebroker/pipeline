@@ -117,6 +117,7 @@ class WatchlistStep(GenericStep):
                 cursor.executemany(query, values)
 
     def execute(self, message: List[dict]):
+        print("HERE")
         alerts = {(m["oid"], m["candid"]): m for m in message}
         coordinates = self.strategy.get_coordinates(alerts)
 

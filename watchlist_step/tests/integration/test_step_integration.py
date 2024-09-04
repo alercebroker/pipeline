@@ -1,8 +1,14 @@
 import pytest
+import pathlib
 from apf.consumers import KafkaConsumer
-
 from watchlist_step.step import WatchlistStep
 
+
+SORTING_HAT_SCHEMA_PATH = pathlib.Path(
+    pathlib.Path(__file__).parent.parent.parent.parent,
+    "schemas/sorting_hat_step",
+    "output.avsc",
+)
 
 @pytest.fixture
 def step_creator():
@@ -19,11 +25,11 @@ def step_creator():
 class TestStep:
     consumer_config = {
         "CLASS": "apf.consumers.KafkaSchemalessConsumer",
-        "SCHEMA_PATH": "/schemas/sorting_hat_step/output.avsc",
+        "SCHEMA_PATH": SORTING_HAT_SCHEMA_PATH,
         "TOPICS": ["test"],
         "PARAMS": {
-            "bootstrap.servers": "localhost:9094",
-            "group.id": "",
+            "bootstrap.servers": "localhost:9092",
+            "group.id": "test_integration",
             "auto.offset.reset": "beginning",
             "enable.partition.eof": "true",
             "enable.auto.commit": "false",
@@ -32,12 +38,13 @@ class TestStep:
         "consume.messages": 2,
     }
     config = {
+        "CONSUMER_CONFIG": consumer_config,
         "PSQL_CONFIG": {
             "ENGINE": "postgresql",
             "HOST": "localhost",
             "USER": "postgres",
-            "PASSWORD": "password",
-            "PORT": 5433,
+            "PASSWORD": "postgres",
+            "PORT": 5432,
             "DB_NAME": "postgres",
         }
     }
@@ -69,9 +76,4 @@ class TestStep:
                 cursor.execute("SELECT * FROM watchlist_target")
                 targets = cursor.fetchall()
 
-        # from pprint import pprint
-        # print("Matches:")
-        # pprint(matches)
-        # print("\nTargets:")
-        # pprint(targets)
         assert len(matches) == 10
