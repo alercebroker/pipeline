@@ -25,12 +25,9 @@ services:
       context: ./docker/postgres
       dockerfile: Dockerfile
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=password
     ports:
-      - 5432:5432
+      - "5433:5432"
     volumes:
       - ./samples/targets/scripts:/docker-entrypoint-initdb.d
       - ./samples/targets/data:/data
-  

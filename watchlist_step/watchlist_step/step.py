@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 import json
 
 from .db.connection import PsqlDatabase
@@ -131,3 +132,11 @@ class WatchlistStep(GenericStep):
         to_notify = self.get_to_notify(updated_values, filters)
         if len(to_notify) > 0:
             self.mark_for_notification(to_notify)
+
+    def tear_down(self):
+        self.db_mongo.client.close()
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()

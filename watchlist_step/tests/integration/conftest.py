@@ -4,7 +4,7 @@ import pathlib
 
 import psycopg2
 import pytest
-from apf.producers import KafkaProducer
+from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka import Producer
 from fastavro.schema import load_schema
@@ -36,7 +36,7 @@ def produce_message(config):
         "schemas/sorting_hat_step",
         "output.avsc",
     )
-    producer = KafkaProducer(
+    producer = KafkaSchemalessProducer(
         {
             "PARAMS": {"bootstrap.servers": config["bootstrap.servers"]},
             "TOPIC": config["topic"],
