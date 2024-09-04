@@ -1,17 +1,5 @@
 version: "3"
 services:
-  users_db:
-    image: postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - 5432:5432
-    volumes:
-      - ./samples/targets/scripts:/docker-entrypoint-initdb.d
-      - ./samples/targets/data:/data
-
   zookeeper:
     image: "bitnami/zookeeper:latest"
     ports:
@@ -31,3 +19,16 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
+
+  users_db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./samples/targets/scripts:/docker-entrypoint-initdb.d
+      - ./samples/targets/data:/data
+  
