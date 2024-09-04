@@ -49,8 +49,9 @@ def produce_message(config):
 
     for message in messages:
         message["sid"] = "ZTF"
-        if message["sid"] == "ZTF":
-            message["extra_fields"] = ztf_extra_fields_generator()
+        # if message["sid"] == "ZTF":
+        #     message["extra_fields"] = ztf_extra_fields_generator()
+        print(f"producing message \n {message}")
         producer.produce(message)
 
 def consume_message(config):
@@ -60,15 +61,18 @@ def consume_message(config):
 
 
 def is_responsive_kafka(url):
+    print("HERE")
     client = AdminClient({"bootstrap.servers": url})
     topics = ["test"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
     for _, f in fs.items():
+        print(f"HERE {f}")
         try:
             f.result()
             return True
-        except Exception:
+        except Exception as e:
+            print(e)
             return False
 
 
@@ -78,6 +82,7 @@ def kafka_service(docker_ip, docker_services):
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
+    print(f"debug {server}")
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
@@ -96,12 +101,13 @@ def is_responsive_users_database(docker_ip, port):
             dbname="postgres",
             user="postgres",
             host=docker_ip,
-            password="password",
+            password="postgres",
             port=port,
         )
         conn.close()
         return True
-    except Exception:
+    except Exception as e:
+        print(e)
         return False
 
 
