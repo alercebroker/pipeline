@@ -21,7 +21,9 @@ services:
       - zookeeper
 
   users_db:
-    image: postgres
+    build: 
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
