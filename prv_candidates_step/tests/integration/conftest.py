@@ -120,6 +120,7 @@ def produce_messages(topic):
             message["extra_fields"] = ztf_extra_fields_generator()
         producer.produce(message)
 
+
 @pytest.fixture(scope="session")
 def kafka_consumer():
     consumer = KafkaConsumer(
