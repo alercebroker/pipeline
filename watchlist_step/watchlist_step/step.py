@@ -44,7 +44,8 @@ class WatchlistStep(GenericStep):
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], int(m[1]), json.dumps({}), datetime.datetime.now()) for m in matches
+            (m[2], m[0], int(m[1]), json.dumps({}), datetime.datetime.now())
+            for m in matches
         ]
 
         query = create_insertion_query()
@@ -130,7 +131,7 @@ class WatchlistStep(GenericStep):
         to_notify = self.get_to_notify(updated_values, filters)
         if len(to_notify) > 0:
             self.mark_for_notification(to_notify)
-        
+
         return []
 
     # def tear_down(self):
