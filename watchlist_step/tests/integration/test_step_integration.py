@@ -12,9 +12,8 @@ SORTING_HAT_SCHEMA_PATH = pathlib.Path(
 
 @pytest.fixture
 def step_creator():
-    def create_step(consumer, strategy_name, config):
+    def create_step(strategy_name, config):
         return WatchlistStep(
-            consumer=consumer,
             config=config,
             strategy_name=strategy_name,
         )
@@ -24,19 +23,19 @@ def step_creator():
 
 class TestStep:
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaSchemalessConsumer",
+        "CLASS": "apf.consumers.KafkaConsumer",
         "SCHEMA_PATH": SORTING_HAT_SCHEMA_PATH,
         "TOPICS": ["test"],
         "PARAMS": {
             "bootstrap.servers": "localhost:9092",
             "group.id": "test_integration",
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": "true",
-            "enable.auto.commit": "false",
+            "enable.partition.eof": True
         },
         "consume.timeout": 30,
         "consume.messages": 2,
     }
+
     config = {
         "CONSUMER_CONFIG": consumer_config,
         "PSQL_CONFIG": {
@@ -56,10 +55,9 @@ class TestStep:
         step_creator,
     ):
         self.consumer_config["PARAMS"]["group.id"] = "test_integration"
-        consumer = KafkaConsumer(self.consumer_config)
+        #consumer = KafkaConsumer(self.consumer_config)
         strategy_name = "SortingHat"
         step = step_creator(
-            consumer,
             strategy_name,
             self.config,
         )

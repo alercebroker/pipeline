@@ -30,16 +30,16 @@ def docker_compose_file(pytestconfig):
     )
 
 
-def produce_message(config):
+def produce_message(topic):
     schema_path = pathlib.Path(
         pathlib.Path(__file__).parent.parent.parent.parent,
         "schemas/sorting_hat_step",
         "output.avsc",
     )
-    producer = KafkaSchemalessProducer(
+    producer = KafkaProducer(
         {
-            "PARAMS": {"bootstrap.servers": config["bootstrap.servers"]},
-            "TOPIC": config["topic"],
+            "PARAMS": {"bootstrap.servers": "localhost:9092"},
+            "TOPIC": topic,
             "SCHEMA_PATH": schema_path,
         }
     )
@@ -47,12 +47,19 @@ def produce_message(config):
     messages = generate_many(schema, 10)
     producer.set_key_field("oid")
 
-    for message in messages:
+    for i, message in enumerate(messages):
         message["sid"] = "ZTF"
+        message["ra"] = 252.6788662886394
+        message["dec"] = 53.34521158573315
+        message["candid"] = str(1000151433015015014 + i)
+        # aqi plantar match
         # if message["sid"] == "ZTF":
         #     message["extra_fields"] = ztf_extra_fields_generator()
         print(f"producing message \n {message}")
         producer.produce(message)
+        
+    producer.producer.flush()
+    del producer
 
 def consume_message(config):
     consumer = KafkaConsumer(config)
@@ -61,7 +68,6 @@ def consume_message(config):
 
 
 def is_responsive_kafka(url):
-    print("HERE")
     client = AdminClient({"bootstrap.servers": url})
     topics = ["test"]
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
@@ -86,12 +92,8 @@ def kafka_service(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
-    config = {
-        "bootstrap.servers": "localhost:9092",
-        "topic": "test"        
-    }
 
-    produce_message(config)
+    produce_message("test")
     return server
 
 
