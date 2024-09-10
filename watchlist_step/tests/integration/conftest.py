@@ -36,7 +36,7 @@ def produce_message(topic):
         "schemas/sorting_hat_step",
         "output.avsc",
     )
-    producer = KafkaProducer(
+    producer = KafkaSchemalessProducer(
         {
             "PARAMS": {"bootstrap.servers": "localhost:9092"},
             "TOPIC": topic,
@@ -52,10 +52,6 @@ def produce_message(topic):
         message["ra"] = 252.6788662886394
         message["dec"] = 53.34521158573315
         message["candid"] = str(1000151433015015014 + i)
-        # aqi plantar match
-        # if message["sid"] == "ZTF":
-        #     message["extra_fields"] = ztf_extra_fields_generator()
-        print(f"producing message \n {message}")
         producer.produce(message)
         
     producer.producer.flush()
@@ -73,12 +69,10 @@ def is_responsive_kafka(url):
     new_topics = [NewTopic(topic, num_partitions=1) for topic in topics]
     fs = client.create_topics(new_topics)
     for _, f in fs.items():
-        print(f"HERE {f}")
         try:
             f.result()
             return True
         except Exception as e:
-            print(e)
             return False
 
 
@@ -88,7 +82,6 @@ def kafka_service(docker_ip, docker_services):
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
-    print(f"debug {server}")
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
@@ -109,7 +102,6 @@ def is_responsive_users_database(docker_ip, port):
         conn.close()
         return True
     except Exception as e:
-        print(e)
         return False
 
 

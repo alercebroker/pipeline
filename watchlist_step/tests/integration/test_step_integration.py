@@ -23,7 +23,7 @@ def step_creator():
 
 class TestStep:
     consumer_config = {
-        "CLASS": "apf.consumers.KafkaConsumer",
+        "CLASS": "apf.consumers.KafkaSchemalessConsumer",
         "SCHEMA_PATH": SORTING_HAT_SCHEMA_PATH,
         "TOPICS": ["test"],
         "PARAMS": {

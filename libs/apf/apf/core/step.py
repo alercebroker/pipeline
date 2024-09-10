@@ -60,6 +60,7 @@ class GenericStep(abc.ABC):
     ):
         self._set_logger(level)
         self.config = config
+        print(f"config {self.consumer_config}")
         self.consumer = self._get_consumer(consumer)(self.consumer_config)
         self.producer = self._get_producer(producer)(self.producer_config)
         self.metrics_sender = self._get_metrics_sender(metrics_sender)(
@@ -217,6 +218,7 @@ class GenericStep(abc.ABC):
         pass
 
     def _post_execute(self, result: Union[Iterable[Dict[str, Any]], Dict[str, Any]]):
+        print("En post execute")
         self.logger.info("Processed message. Begin post processing")
         try:
             final_result = self.post_execute(result)
@@ -448,6 +450,7 @@ class GenericStep(abc.ABC):
         self._tear_down()
 
     def _tear_down(self):
+        print("En teardown")
         self.logger.info("Processing finished. No more messages. Begin tear down.")
         try:
             self.tear_down()
