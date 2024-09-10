@@ -7,10 +7,12 @@ from watchlist_step.step import WatchlistStep
 
 @pytest.fixture
 def wl_step():
-    consumer = mock.MagicMock()
     strategy_name = "SortingHat"
 
     config = {
+        "CONSUMER_CONFIG": {
+            "CLASS": "unittest.mock.MagicMock",
+        },
         "PSQL_CONFIG": {
             "ENGINE": "postgresql",
             "HOST": "localhost",
@@ -21,7 +23,6 @@ def wl_step():
         }
     }
     return WatchlistStep(
-        consumer=consumer,
         strategy_name=strategy_name,
         config=config,
     )

@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 from apf.core.step import GenericStep
+from apf.consumers import KafkaConsumer
 import json
 
 from .db.connection import PsqlDatabase
@@ -33,18 +34,18 @@ class WatchlistStep(GenericStep):
 
     def __init__(
         self,
-        consumer,
         config: dict,
         strategy_name: str = "",
         level=logging.INFO,
     ):
-        super().__init__(consumer, config=config, level=level)
+        super().__init__(config=config, level=level)
         self.users_db = PsqlDatabase(config["PSQL_CONFIG"])
         self.strategy = get_strategy(strategy_name)
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now()) for m in matches
+            (m[2], m[0], int(m[1]), json.dumps({}), datetime.datetime.now())
+            for m in matches
         ]
 
         query = create_insertion_query()
@@ -67,7 +68,7 @@ class WatchlistStep(GenericStep):
         values = [
             {
                 "oid": oid,
-                "candid": candid,
+                "candid": int(candid),
                 "target_id": target_id,
                 "values": json.dumps(values),
             }
@@ -130,3 +131,12 @@ class WatchlistStep(GenericStep):
         to_notify = self.get_to_notify(updated_values, filters)
         if len(to_notify) > 0:
             self.mark_for_notification(to_notify)
+
+        return []
+
+    # def tear_down(self):
+    #     self.db_mongo.client.close()
+    #     if isinstance(self.consumer, KafkaConsumer):
+    #         self.consumer.teardown()
+    #     else:
+    #         self.consumer.__del__()

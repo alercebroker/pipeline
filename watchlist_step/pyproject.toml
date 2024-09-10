@@ -10,8 +10,8 @@ packages = [{ include = "watchlist_step" }]
 step = "scripts.run_step:step"
 
 [tool.poetry.dependencies]
-python = "~3.11"
-apf-base = "^1.0.9"
+python = "~3.10"
+apf-base = { path = "../libs/apf", develop = true }
 pydantic = "^2.6.4"
 psycopg2-binary = "=2.9.9"
 

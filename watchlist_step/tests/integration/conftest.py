@@ -1,18 +1,25 @@
 import os
 from io import BytesIO
+import pathlib
 
 import psycopg2
 import pytest
+from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from apf.consumers import KafkaConsumer
 from confluent_kafka import Producer
+from fastavro.schema import load_schema
+from fastavro.utils import generate_many
 from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro import writer, parse_schema
 
 from watchlist_step.db.connection import PsqlDatabase
+from tests.integration.mocks.mock_alerts import ztf_extra_fields_generator
 
 
 @pytest.fixture(scope="session")
 def docker_compose_command():
+    if os.getenv("COMPOSE_VERSION", "") == "V1":
+        return "docker-compose"
     return "docker compose"
 
 
@@ -23,62 +30,32 @@ def docker_compose_file(pytestconfig):
     )
 
 
-def produce_message(config):
-    schema = {
-        "doc": "Multi stream alert of any telescope/survey",
-        "name": "alerce.alert",
-        "type": "record",
-        "fields": [
-            {"name": "oid", "type": "string"},
-            {"name": "candid", "type": "long"},
-            {"name": "pid", "type": "long"},
-            {"name": "mjd", "type": "double"},
-            {"name": "fid", "type": "string"},
-            {"name": "ra", "type": "double"},
-            {"name": "dec", "type": "double"},
-            {"name": "mag", "type": "float"},
-            {"name": "e_mag", "type": "float"},
-            {"name": "isdiffpos", "type": "int"},
-        ],
-    }
-    parsed_schema = parse_schema(schema)
-    records = [
+def produce_message(topic):
+    schema_path = pathlib.Path(
+        pathlib.Path(__file__).parent.parent.parent.parent,
+        "schemas/sorting_hat_step",
+        "output.avsc",
+    )
+    producer = KafkaSchemalessProducer(
         {
-            "oid": "ZTF19aaapkto",
-            "candid": 1000151433015015013,
-            "pid": 0.5,
-            "mjd": 123,
-            "fid": "1",
-            "ra": 252.6788662886394,
-            "dec": 53.34521158573315,
-            "mag": 0.5,
-            "e_mag": 0.5,
-            "isdiffpos": 1,
-        },
-        {
-            "oid": "ZTF19aaapktoBAD",
-            "candid": 1000151433015015014,
-            "pid": 0.5,
-            "mjd": 123,
-            "fid": "1",
-            "ra": 252.6788662886394,
-            "dec": 53.34521158573315,
-            "mag": 10.5,
-            "e_mag": 0.5,
-            "isdiffpos": 1,
-        },
-    ] * 10
-    producer = Producer(config)
-    topics = ["test"]
-    fo = BytesIO()
-    for record in records:
-        for topic in topics:
-            writer(fo, parsed_schema, [record], "null", 160000, None, None, None, None)
-            fo.seek(0)
-            producer.produce(topic, value=fo.read())
-            fo.seek(0)
-    producer.flush()
+            "PARAMS": {"bootstrap.servers": "localhost:9092"},
+            "TOPIC": topic,
+            "SCHEMA_PATH": schema_path,
+        }
+    )
+    schema = load_schema(str(schema_path))
+    messages = generate_many(schema, 10)
+    producer.set_key_field("oid")
 
+    for i, message in enumerate(messages):
+        message["sid"] = "ZTF"
+        message["ra"] = 252.6788662886394
+        message["dec"] = 53.34521158573315
+        message["candid"] = str(1000151433015015014 + i)
+        producer.produce(message)
+        
+    producer.producer.flush()
+    del producer
 
 def consume_message(config):
     consumer = KafkaConsumer(config)
@@ -95,7 +72,7 @@ def is_responsive_kafka(url):
         try:
             f.result()
             return True
-        except Exception:
+        except Exception as e:
             return False
 
 
@@ -103,14 +80,13 @@ def is_responsive_kafka(url):
 def kafka_service(docker_ip, docker_services):
     """Ensure that Kafka service is up and responsive."""
     # `port_for` takes a container port and returns the corresponding host port
-    port = docker_services.port_for("kafka", 9094)
+    port = docker_services.port_for("kafka", 9092)
     server = "{}:{}".format(docker_ip, port)
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_kafka(server)
     )
-    config = {"bootstrap.servers": "localhost:9094"}
 
-    produce_message(config)
+    produce_message("test")
     return server
 
 
@@ -120,12 +96,12 @@ def is_responsive_users_database(docker_ip, port):
             dbname="postgres",
             user="postgres",
             host=docker_ip,
-            password="password",
+            password="postgres",
             port=port,
         )
         conn.close()
         return True
-    except Exception:
+    except Exception as e:
         return False
 
 
@@ -143,7 +119,7 @@ def users_db(docker_ip, docker_services):
         {
             "HOST": docker_ip,
             "USER": "postgres",
-            "PASSWORD": "password",
+            "PASSWORD": "postgres",
             "PORT": port,
             "DB_NAME": "postgres",
         }
