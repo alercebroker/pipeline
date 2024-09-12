@@ -128,6 +128,10 @@ def mag_err_2_flux_err(mag_err, mag):
     return np.log(10.0) * mag2flux(mag) / 2.5 * mag_err
 
 
+class EmptyLightcurveException(Exception):
+    pass
+
+
 def create_astro_object(
     data_origin: str,
     detections: pd.DataFrame,
@@ -242,6 +246,9 @@ def create_astro_object(
     a.set_index("aid", inplace=True)
     a["fid"] = a["fid"].map({1: "g", 2: "r", 3: "i"})
     a = a[a["fid"].isin(["g", "r"])]
+
+    if len(a) == 0:
+        raise EmptyLightcurveException("No observations in bands g, r")
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
