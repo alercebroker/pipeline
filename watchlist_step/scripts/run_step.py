@@ -24,15 +24,14 @@ logging.basicConfig(
 )
 
 
-if "CLASS" in settings.CONSUMER_CONFIG:
-    Consumer = get_class(settings.CONSUMER_CONFIG["CLASS"])
-else:
-    from apf.consumers import KafkaConsumer as Consumer
-
-consumer = Consumer(config=settings.CONSUMER_CONFIG)
+# if "CLASS" in settings.CONSUMER_CONFIG:
+#     Consumer = get_class(settings.CONSUMER_CONFIG["CLASS"])
+# else:
+#     from apf.consumers import KafkaConsumer as Consumer
+#
+# consumer = Consumer(config=settings.CONSUMER_CONFIG)
 
 step = WatchlistStep(
-    consumer,
     config=settings.STEP_CONFIG,
     level=level,
     strategy_name=settings.UPDATE_STRATEGY,
