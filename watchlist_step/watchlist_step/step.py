@@ -44,8 +44,7 @@ class WatchlistStep(GenericStep):
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now())
-            for m in matches
+            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now()) for m in matches
         ]
 
         query = create_insertion_query()
