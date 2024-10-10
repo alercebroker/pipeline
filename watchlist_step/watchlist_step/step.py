@@ -44,7 +44,7 @@ class WatchlistStep(GenericStep):
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], int(m[1]), json.dumps({}), datetime.datetime.now())
+            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now())
             for m in matches
         ]
 
@@ -68,7 +68,7 @@ class WatchlistStep(GenericStep):
         values = [
             {
                 "oid": oid,
-                "candid": int(candid),
+                "candid": candid,
                 "target_id": target_id,
                 "values": json.dumps(values),
             }
