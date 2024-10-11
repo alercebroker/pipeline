@@ -21,7 +21,7 @@ from ..extractors.ulens_extractor import MicroLensExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
-    version = "1.0.0"
+    version = "1.0.1"
 
     def _instantiate_extractors(self) -> List[FeatureExtractor]:
         bands = list("gr")
@@ -55,7 +55,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             ),
             TDETailExtractor(bands),
             FleetExtractor(bands),
-            ColorVariationExtractor(window_len=20, band_1="g", band_2="r"),
+            ColorVariationExtractor(window_len=10, band_1="g", band_2="r"),
             SNExtractor(bands, unit="diff_flux", use_forced_photo=True),
             MicroLensExtractor(bands),
             TimespanExtractor(),

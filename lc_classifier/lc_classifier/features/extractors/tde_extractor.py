@@ -11,9 +11,12 @@ from typing import List
 
 from ...utils import flux2mag, flux_err_2_mag_err
 
+import jax
+jax.config.update("jax_enable_x64", True)
+
 
 class TDETailExtractor(FeatureExtractor):
-    version = "1.0.0"
+    version = "1.0.1"
     unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
@@ -50,6 +53,7 @@ class TDETailExtractor(FeatureExtractor):
             if len(band_observations) < 2:
                 features.append(("TDE_decay", np.nan, band))
                 features.append(("TDE_decay_chi", np.nan, band))
+                features.append(("TDE_mag_0", np.nan, band))
                 continue
 
             brightest_obs = band_observations.sort_values("brightness").iloc[0]
@@ -80,6 +84,7 @@ class TDETailExtractor(FeatureExtractor):
 
             features.append(("TDE_decay", coeffs[1], band))
             features.append(("TDE_decay_chi", chi_per_degree, band))
+            features.append(("TDE_mag_0", coeffs[0], band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
@@ -99,7 +104,7 @@ class TDETailExtractor(FeatureExtractor):
 def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     original_length = len(x_array)
     pad_length = 25 - (original_length % 25)
-    pad_array = np.array([fill_value] * pad_length, dtype=np.float32)
+    pad_array = np.array([fill_value] * pad_length)
     return np.concatenate([x_array, pad_array])
 
 
@@ -119,7 +124,7 @@ def fleet_model_jax(t, a, w, m_0, t0):
 
 
 class FleetExtractor(FeatureExtractor):
-    version = "1.0.0"
+    version = "1.0.1"
     unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
@@ -149,6 +154,8 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_a", np.nan, band))
                 features.append(("fleet_w", np.nan, band))
                 features.append(("fleet_chi", np.nan, band))
+                features.append(("fleet_m_0", np.nan, band))
+                features.append(("fleet_t0", np.nan, band))
                 continue
 
             first_mjd = band_observations.sort_values("mjd").iloc[0]["mjd"]
@@ -185,10 +192,14 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_a", parameters[0], band))
                 features.append(("fleet_w", parameters[1], band))
                 features.append(("fleet_chi", chi_per_degree, band))
+                features.append(("fleet_m_0", parameters[2], band))
+                features.append(("fleet_t0", parameters[3], band))
             except RuntimeError:
                 features.append(("fleet_a", np.nan, band))
                 features.append(("fleet_w", np.nan, band))
                 features.append(("fleet_chi", np.nan, band))
+                features.append(("fleet_m_0", np.nan, band))
+                features.append(("fleet_t0", np.nan, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
@@ -206,8 +217,8 @@ class FleetExtractor(FeatureExtractor):
 
 
 class ColorVariationExtractor(FeatureExtractor):
-    version = "1.0.0"
-    unit = "magnitude"
+    version = "1.0.1"
+    unit = "diff_flux"
 
     def __init__(self, window_len: float, band_1: str, band_2: str):
         self.window_len = window_len
@@ -223,14 +234,26 @@ class ColorVariationExtractor(FeatureExtractor):
         observations = observations[observations["unit"] == self.unit]
         observations = observations[observations["brightness"].notna()]
         observations = observations[observations["e_brightness"] > 0.0]
-        observations = observations[observations["e_brightness"] < 1.0]
         observations = observations[
             observations["fid"].isin([self.band_1, self.band_2])
         ]
+        
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object).copy()
+        
+        diff_fluxes = observations[observations.unit == "diff_flux"].copy()
+        diff_fluxes["brightness"] = np.abs(diff_fluxes["brightness"])
+        diff_fluxes["e_brightness"] = flux_err_2_mag_err(
+            diff_fluxes["e_brightness"], diff_fluxes["brightness"]
+        )
+        diff_fluxes["brightness"] = flux2mag(diff_fluxes["brightness"])
+        diff_fluxes["unit"] = "diff_magnitude"
+        observations = diff_fluxes
+        observations = observations[observations["e_brightness"] < 1.0]
+        observations = observations[observations["brightness"] < 30.0]
+        
         observations["mjd"] -= observations["mjd"].min()
         observations["window"] = (observations["mjd"] // self.window_len).astype(int)
 
