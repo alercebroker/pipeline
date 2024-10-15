@@ -2,6 +2,9 @@ import unittest
 from unittest import mock
 from apf.producers import GenericProducer
 from features.step import FeatureStep
+import json
+import pandas as pd
+import numpy as np
 from ..message_factory import generate_input_batch
 from .message_example import messages as spm_messages
 
@@ -70,6 +73,11 @@ class StepTestCase(unittest.TestCase):
                 self.assertEqual(n_features, n_features_prev)
                 n_features_prev = n_features
 
+        scribe_args = self.step.scribe_producer.produce.call_args
+        assert (
+            len(json.loads(scribe_args[0][0]["payload"])["data"]["features"])
+            == n_features
+        )
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = self.step.scribe_producer.produce.call_count
         # 2 times the len of messages 1 for objects and 1 for features
@@ -92,3 +100,19 @@ class StepTestCase(unittest.TestCase):
 
         self.step.scribe_producer.produce.assert_called()
         scribe_producer_call_count = self.step.scribe_producer.produce.call_count
+
+    def test_period_consistency(self):
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
+        result_messages = self.step.execute(messages)
+
+        self.assertEqual(len(messages), len(result_messages))
+        result_message = result_messages[-1]
+        scribe_args = self.step.scribe_producer.produce.call_args
+        features = json.loads(scribe_args[0][0]["payload"])["data"]["features"]
+        features = pd.DataFrame.from_records(features)
+        multiband_period_scribe = features[features["name"] == "Multiband_period"][
+            "value"
+        ].values.astype(np.float64)[0]
+        multiband_period_message = result_message["features"]["Multiband_period_12"]
+
+        assert multiband_period_scribe == multiband_period_message

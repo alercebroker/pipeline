@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from lc_classifier.features.core.base import AstroObject
+from lc_classifier.features.core.base import query_ao_table
 import matplotlib.pyplot as plt
 
 
@@ -93,21 +94,21 @@ def all_features_from_astro_objects(astro_objects: List[AstroObject]) -> pd.Data
     indexes = features.index.values
 
     feature_list = []
-    aids = []
+    oids = []
     for astro_object in astro_objects:
         features = astro_object.features.drop_duplicates(subset=["name", "fid"])
         features = features.set_index(["name", "fid"])
         feature_list.append(features.loc[indexes]["value"].values)
 
-        metadata = astro_object.metadata
-        aid = metadata[metadata["name"] == "aid"]["value"].values[0]
-        aids.append(aid)
+        oid = query_ao_table(astro_object.metadata, "oid")
+        oids.append(oid)
 
     df = pd.DataFrame(
         data=np.stack(feature_list, axis=0),
-        index=aids,
+        index=oids,
         columns=["_".join([str(i) for i in pair]) for pair in indexes],
     )
+    df.index.name = "oid"
     return df
 
 
@@ -128,6 +129,10 @@ def mag_err_2_flux_err(mag_err, mag):
     return np.log(10.0) * mag2flux(mag) / 2.5 * mag_err
 
 
+class EmptyLightcurveException(Exception):
+    pass
+
+
 def create_astro_object(
     data_origin: str,
     detections: pd.DataFrame,
@@ -146,6 +151,12 @@ def create_astro_object(
         e_mag_corr_ext_column_fp = "e_mag_corr_ext"
         diff_mag_column_fp = "mag"
         e_diff_mag_column_fp = "e_mag"
+
+        w1_column = "w1mpro"
+        w2_column = "w2mpro"
+        w3_column = "w3mpro"
+        w4_column = "w4mpro"
+
     elif data_origin == "explorer":
         mag_corr_column = "mag_corr"
         e_mag_corr_ext_column = "e_mag_corr_ext"
@@ -157,6 +168,26 @@ def create_astro_object(
         diff_mag_column_fp = "mag"
         e_diff_mag_column_fp = "e_mag"
 
+        w1_column = "w1mpro"
+        w2_column = "w2mpro"
+        w3_column = "w3mpro"
+        w4_column = "w4mpro"
+
+    elif data_origin == "batch_processing":
+        mag_corr_column = "magpsf_corr"
+        e_mag_corr_ext_column = "sigmapsf_corr_ext"
+        diff_mag_column = "magpsf"
+        e_diff_mag_column = "sigmapsf"
+
+        mag_corr_column_fp = "magpsf_corr"
+        e_mag_corr_ext_column_fp = "sigmapsf_corr_ext"
+        diff_mag_column_fp = "magpsf"
+        e_diff_mag_column_fp = "sigmapsf"
+
+        w1_column = "W1mag"
+        w2_column = "W2mag"
+        w3_column = "W3mag"
+        w4_column = "W4mag"
     else:
         raise ValueError(f"{data_origin} is not a valid data_origin")
 
@@ -223,7 +254,10 @@ def create_astro_object(
         inplace=True,
     )
 
-    a = pd.concat([detections, forced_photometry])
+    if len(forced_photometry) == 0:
+        a = detections
+    else:
+        a = pd.concat([detections, forced_photometry])
     a["aid"] = "aid_" + a["oid"]
     a["tid"] = "ZTF"
     a["sid"] = "ZTF"
@@ -243,6 +277,9 @@ def create_astro_object(
     a["fid"] = a["fid"].map({1: "g", 2: "r", 3: "i"})
     a = a[a["fid"].isin(["g", "r"])]
 
+    if len(a) == 0:
+        raise EmptyLightcurveException("No observations in bands g, r")
+
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
 
@@ -253,10 +290,10 @@ def create_astro_object(
         extra_metadata = []
     else:
         extra_metadata = [
-            ["W1", xmatch["w1mpro"]],
-            ["W2", xmatch["w2mpro"]],
-            ["W3", xmatch["w3mpro"]],
-            ["W4", xmatch["w4mpro"]],
+            ["W1", xmatch[w1_column]],
+            ["W2", xmatch[w2_column]],
+            ["W3", xmatch[w3_column]],
+            ["W4", xmatch[w4_column]],
             ["sgscore1", xmatch["sgscore1"]],
             ["sgmag1", xmatch["sgmag1"]],
             ["srmag1", xmatch["srmag1"]],
