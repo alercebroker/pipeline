@@ -12,6 +12,7 @@ from typing import List
 from ...utils import flux2mag, flux_err_2_mag_err
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
 
 
@@ -237,12 +238,12 @@ class ColorVariationExtractor(FeatureExtractor):
         observations = observations[
             observations["fid"].isin([self.band_1, self.band_2])
         ]
-        
+
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object).copy()
-        
+
         diff_fluxes = observations[observations.unit == "diff_flux"].copy()
         diff_fluxes["brightness"] = np.abs(diff_fluxes["brightness"])
         diff_fluxes["e_brightness"] = flux_err_2_mag_err(
@@ -253,7 +254,7 @@ class ColorVariationExtractor(FeatureExtractor):
         observations = diff_fluxes
         observations = observations[observations["e_brightness"] < 1.0]
         observations = observations[observations["brightness"] < 30.0]
-        
+
         observations["mjd"] -= observations["mjd"].min()
         observations["window"] = (observations["mjd"] // self.window_len).astype(int)
 

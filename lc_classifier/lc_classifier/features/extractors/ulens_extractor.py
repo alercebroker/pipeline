@@ -10,6 +10,7 @@ from jax import jit as jax_jit
 from typing import List
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
 
 
@@ -83,7 +84,10 @@ class MicroLensExtractor(FeatureExtractor):
                     y,
                     sigma=y_err,
                     p0=[0.6, 20.0, 0.5, mjd_max_flux, np.median(y)],
-                    bounds=([0, 0, 0, -np.inf, -np.inf], [np.inf, np.inf, 1, np.inf, np.inf]),
+                    bounds=(
+                        [0, 0, 0, -np.inf, -np.inf],
+                        [np.inf, np.inf, 1, np.inf, np.inf],
+                    ),
                 )
 
                 model_prediction = ulens_model(band_observations["mjd"], *parameters)

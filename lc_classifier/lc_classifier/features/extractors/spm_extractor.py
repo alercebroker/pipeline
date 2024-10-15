@@ -18,6 +18,7 @@ from ..core.base import FeatureExtractor, AstroObject
 from typing import List, Optional
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
 
 
@@ -260,14 +261,17 @@ class SNModel:
         negative_observations = (fluxpsf + obs_errors) < 0.0
         negative_observations = negative_observations.astype(np.float64)
         ignore_negative_fluxes = np.exp(
-            -(((fluxpsf + obs_errors) * negative_observations / (obs_errors + 1.e-3)) ** 2)
+            -(
+                ((fluxpsf + obs_errors) * negative_observations / (obs_errors + 1.0e-3))
+                ** 2
+            )
         )
 
         bands_num = np.vectorize(band_mapper.get)(bands)
         available_bands_num = np.vectorize(band_mapper.get)(available_bands)
         smooth_error = np.percentile(obs_errors, 10) * 0.5
-        #smooth_error = smooth_error.astype(np.float32)
-        #ignore_negative_fluxes = ignore_negative_fluxes.astype(np.float32)
+        # smooth_error = smooth_error.astype(np.float32)
+        # ignore_negative_fluxes = ignore_negative_fluxes.astype(np.float32)
 
         # padding
         pad_times = pad(times, np.min(times))
@@ -324,7 +328,9 @@ class SNModel:
                     plt.plot(band_times[order], predictions[order])
                     plt.show()
 
-                chi = np.sum((predictions - band_flux) ** 2 / (band_errors + 1.e-3) ** 2)
+                chi = np.sum(
+                    (predictions - band_flux) ** 2 / (band_errors + 1.0e-3) ** 2
+                )
                 chi_den = len(predictions) - 6
                 if chi_den >= 1:
                     chi_per_degree = chi / chi_den
@@ -391,11 +397,11 @@ def objective_function_jax(
         sig = jax_sigmoid(sigmoid_exp_arg)
 
         # push to 0 and 1
-        sig *= (sigmoid_exp_arg > -10.0)
+        sig *= sigmoid_exp_arg > -10.0
         sig = jnp.maximum(sig, (sigmoid_exp_arg >= 10.0))
 
         # if t_fall < t_rise, the output diverges for early times
-        stable_case = (t_fall < t_rise)
+        stable_case = t_fall < t_rise
         sig *= stable_case + (1 - stable_case) * (band_times > t1)
 
         den_exp_arg = (band_times - t0) / t_rise
