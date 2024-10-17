@@ -138,6 +138,7 @@ def create_astro_object(
     detections: pd.DataFrame,
     forced_photometry: pd.DataFrame,
     xmatch: pd.DataFrame = None,
+    reference: pd.DataFrame = None,
     non_detections: pd.DataFrame = None,
 ) -> AstroObject:
 
@@ -204,6 +205,8 @@ def create_astro_object(
         e_diff_mag_column,
         "fid",
         "isdiffpos",
+        "distnr",
+        "rfid",
     ]
 
     detections = detections[detection_keys].copy()
@@ -226,6 +229,8 @@ def create_astro_object(
         e_diff_mag_column_fp,
         "fid",
         "isdiffpos",
+        "distnr",
+        "rfid",
     ]
     forced_photometry = forced_photometry[forced_photometry_keys]
     forced_photometry = forced_photometry[
@@ -319,6 +324,10 @@ def create_astro_object(
             ]
         ].copy()
         non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
+    
+    reference = reference[["oid", "rfid", "sharpnr", "chinr"]].copy()
+    reference.drop_duplicates(keep="first", inplace=True)
+    reference.set_index("oid", inplace=True)
 
     astro_object = AstroObject(
         detections=aid_detections,
@@ -326,5 +335,6 @@ def create_astro_object(
         metadata=metadata,
         non_detections=non_detections,
         xmatch=xmatch,
+        reference=reference
     )
     return astro_object

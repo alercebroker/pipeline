@@ -18,6 +18,7 @@ from ..extractors.tde_extractor import TDETailExtractor
 from ..extractors.tde_extractor import FleetExtractor
 from ..extractors.tde_extractor import ColorVariationExtractor
 from ..extractors.ulens_extractor import MicroLensExtractor
+from ..extractors.reference_feature_extractor import ReferenceFeatureExtractor
 
 
 class ZTFFeatureExtractor(FeatureExtractorComposite):
@@ -31,6 +32,8 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             AllwiseColorsFeatureExtractor(bands),
             PanStarrsFeatureExtractor(),
             MHPSExtractor(bands, unit="diff_flux"),
+            MHPSExtractor(bands, unit="diff_flux",
+                          t1=365., t2=30.),
             GPDRWExtractor(bands, unit="diff_flux"),
             PeriodExtractor(
                 bands,
@@ -58,6 +61,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             ColorVariationExtractor(window_len=10, band_1="g", band_2="r"),
             SNExtractor(bands, unit="diff_flux", use_forced_photo=True),
             MicroLensExtractor(bands),
+            ReferenceFeatureExtractor(bands),
             TimespanExtractor(),
             CoordinateExtractor(),
         ]

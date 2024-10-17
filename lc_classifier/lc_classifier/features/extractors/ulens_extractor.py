@@ -69,7 +69,7 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_fs", np.nan, band))
                 features.append(("ulens_chi", np.nan, band))
                 features.append(("ulens_t0", np.nan, band))
-                features.append(("ulens_mag_0", np.nan, band))
+                features.append(("ulens_mag0", np.nan, band))
                 continue
 
             mjd_max_flux = band_observations.sort_values("brightness").iloc[0]["mjd"]
@@ -104,14 +104,14 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_fs", parameters[2], band))
                 features.append(("ulens_chi", chi_per_degree, band))
                 features.append(("ulens_t0", parameters[3], band))
-                features.append(("ulens_mag_0", parameters[4], band))
+                features.append(("ulens_mag0", parameters[4], band))
             except RuntimeError:
                 features.append(("ulens_u0", np.nan, band))
                 features.append(("ulens_tE", np.nan, band))
                 features.append(("ulens_fs", np.nan, band))
                 features.append(("ulens_chi", np.nan, band))
                 features.append(("ulens_t0", np.nan, band))
-                features.append(("ulens_mag_0", np.nan, band))
+                features.append(("ulens_mag0", np.nan, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 

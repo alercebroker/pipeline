@@ -54,15 +54,16 @@ class TDETailExtractor(FeatureExtractor):
             if len(band_observations) < 2:
                 features.append(("TDE_decay", np.nan, band))
                 features.append(("TDE_decay_chi", np.nan, band))
-                features.append(("TDE_mag_0", np.nan, band))
+                features.append(("TDE_mag0", np.nan, band))
                 continue
 
             brightest_obs = band_observations.sort_values("brightness").iloc[0]
-            t_d = brightest_obs.mjd + 14
+            t_d = brightest_obs.mjd
 
-            after_t_d = band_observations[band_observations["mjd"] > t_d]
+            after_t_d = band_observations[(band_observations["mjd"] > t_d) \
+                                          & (band_observations["mjd"] < t_d + 200)]
 
-            x = 2.5 * np.log10(after_t_d.mjd.values - t_d + 30)
+            x = 2.5 * np.log10(after_t_d.mjd.values - t_d + 40)
             y = after_t_d.brightness.values
             y_err = after_t_d.e_brightness.values + 1e-2
 
@@ -85,7 +86,7 @@ class TDETailExtractor(FeatureExtractor):
 
             features.append(("TDE_decay", coeffs[1], band))
             features.append(("TDE_decay_chi", chi_per_degree, band))
-            features.append(("TDE_mag_0", coeffs[0], band))
+            features.append(("TDE_mag0", coeffs[0], band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
@@ -155,7 +156,7 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_a", np.nan, band))
                 features.append(("fleet_w", np.nan, band))
                 features.append(("fleet_chi", np.nan, band))
-                features.append(("fleet_m_0", np.nan, band))
+                features.append(("fleet_m0", np.nan, band))
                 features.append(("fleet_t0", np.nan, band))
                 continue
 
@@ -193,13 +194,13 @@ class FleetExtractor(FeatureExtractor):
                 features.append(("fleet_a", parameters[0], band))
                 features.append(("fleet_w", parameters[1], band))
                 features.append(("fleet_chi", chi_per_degree, band))
-                features.append(("fleet_m_0", parameters[2], band))
+                features.append(("fleet_m0", parameters[2], band))
                 features.append(("fleet_t0", parameters[3], band))
             except RuntimeError:
                 features.append(("fleet_a", np.nan, band))
                 features.append(("fleet_w", np.nan, band))
                 features.append(("fleet_chi", np.nan, band))
-                features.append(("fleet_m_0", np.nan, band))
+                features.append(("fleet_m0", np.nan, band))
                 features.append(("fleet_t0", np.nan, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
