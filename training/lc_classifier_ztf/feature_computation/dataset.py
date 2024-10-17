@@ -14,6 +14,11 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
 
     lc_df = lc_df.copy()
     # lc_df['detected'] = np.abs(lc_df['flux_diff_ujy'] / lc_df['sigma_flux_diff_ujy']) > 5
+    
+    lc_df.rename(columns={"dnearestrefsrc": "distnr",
+                          "nearestrefsharp": "sharpnr",
+                          "nearestrefchi": "chinr"},
+                 inplace=True)
 
     lc_df["fid"] = lc_df["fid"].map({1: "g", 2: "r", 3: "i"})
     lc_df = lc_df[lc_df["fid"].isin(["g", "r"])]
@@ -22,7 +27,8 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
         raise NoDetections()
 
     diff_flux = lc_df[
-        ["index", "flux_diff_ujy", "sigma_flux_diff_ujy", "fid", "mjd", "detected"]
+        ["index", "flux_diff_ujy", "sigma_flux_diff_ujy", "fid", "mjd", "detected",
+         "distnr", "rfid", "sharpnr", "chinr"]
     ].copy()
 
     diff_flux.rename(
@@ -32,7 +38,8 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
     diff_flux["unit"] = "diff_flux"
 
     magnitude = lc_df[
-        ["index", "mag_tot", "sigma_mag_tot", "fid", "mjd", "detected"]
+        ["index", "mag_tot", "sigma_mag_tot", "fid", "mjd", "detected",
+         "distnr", "rfid", "sharpnr", "chinr"]
     ].copy()
     magnitude.rename(
         columns={"mag_tot": "brightness", "sigma_mag_tot": "e_brightness"}, inplace=True
@@ -53,8 +60,14 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
     first_detected_mjd = np.min(df[df["detected"]]["mjd"])
     last_detected_mjd = np.max(df[df["detected"]]["mjd"])
 
+    # These lines are redundant if the input data includes such cuts
     df = df[df["mjd"] <= last_detected_mjd]
     df = df[df["mjd"] >= (first_detected_mjd - 30)]
+    
+    reference = df[["rfid", "sharpnr", "chinr"]].copy()
+    reference.drop_duplicates(keep="first", inplace=True)
+    df.drop(columns={"sharpnr", "chinr"},
+            inplace=True)
 
     metadata = pd.DataFrame(
         [
@@ -68,6 +81,8 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
             ["distpsnr1", object_info["distpsnr1"]],
             ["sgmag1", object_info["sgmag1"]],
             ["srmag1", object_info["srmag1"]],
+            ["simag1", object_info["simag1"]],
+            ["szmag1", object_info["szmag1"]],
         ],
         columns=["name", "value"],
     )
@@ -76,6 +91,7 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
         detections=df[df["detected"]],
         forced_photometry=df[~df["detected"]],
         metadata=metadata,
+        reference=reference,
     )
     return astro_object
 
@@ -83,12 +99,13 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
 if __name__ == "__main__":
     # Build AstroObjects
 
-    data_dir = "data_231206"
+    data_dir = "data_241015"
+    data_out = data_dir + "_ao"
     lightcurve_filenames = os.listdir(data_dir)
     lightcurve_filenames = [f for f in lightcurve_filenames if "lightcurves_batch" in f]
 
     object_df = pd.read_parquet(
-        os.path.join(data_dir, "objects_with_wise_20240105.parquet")
+        os.path.join(data_dir, "objects_with_wise_20241016.parquet")
     )
     object_df.set_index("oid", inplace=True)
 
@@ -114,5 +131,5 @@ if __name__ == "__main__":
 
         save_astro_objects_batch(
             astro_objects_list,
-            os.path.join(data_dir, f"astro_objects_batch_{batch_i_str}.pkl"),
+            os.path.join(data_out, f"astro_objects_batch_{batch_i_str}.pkl"),
         )
