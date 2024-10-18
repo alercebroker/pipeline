@@ -206,7 +206,7 @@ def create_astro_object(
         "fid",
         "isdiffpos",
     ]
-    
+
     if "distnr" in detections.columns:
         distnr = detections["distnr"]
     else:
@@ -218,10 +218,10 @@ def create_astro_object(
 
     detections = detections[detection_keys].copy()
     detections["forced"] = False
-    
+
     detections["distnr"] = distnr
     detections["rfid"] = rfid
-    
+
     if "distnr" in forced_photometry.columns:
         distnr = forced_photometry["distnr"]
     else:
@@ -250,10 +250,10 @@ def create_astro_object(
         "isdiffpos",
     ]
     forced_photometry = forced_photometry[forced_photometry_keys]
-    
+
     forced_photometry["distnr"] = distnr
     forced_photometry["rfid"] = rfid
-    
+
     forced_photometry = forced_photometry[
         (forced_photometry[e_diff_mag_column_fp] != 100)
         | (forced_photometry[diff_mag_column_fp] != 100)
@@ -345,7 +345,7 @@ def create_astro_object(
             ]
         ].copy()
         non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
-    
+
     if reference is not None:
         reference = reference[["oid", "rfid", "sharpnr", "chinr"]].copy()
         reference.drop_duplicates(keep="first", inplace=True)
