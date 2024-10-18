@@ -35,6 +35,16 @@ def get_ztf_example(index: int) -> AstroObject:
         detections.rename(
             columns={"magpsf": "brightness", "sigmapsf": "e_brightness"}, inplace=True
         )
+    
+    if "distnr" in detections.columns:
+        distnr = detections["distnr"]
+    else:
+        distnr = np.nan
+    if "rfid" in detections.columns:
+        rfid = detections["rfid"]
+    else:
+        rfid = np.nan
+    
     detections = detections[
         [
             "candid",
@@ -52,7 +62,10 @@ def get_ztf_example(index: int) -> AstroObject:
     detections["sid"] = "ztf"
     detections["unit"] = "magnitude"
     detections["fid"] = detections["fid"].map(fid_map)
-
+    
+    detections["distnr"] = distnr
+    detections["rfid"] = rfid
+    
     non_detections = non_detections[
         [
             "tid",
@@ -170,9 +183,23 @@ def get_ztf_forced_training_examples() -> List[AstroObject]:
     def df_to_astro_object(df):
         df["detected"] = np.abs(df["forcediffimsnr"]) > 5.0
         df["fid"] = df["fid"].map({1: "g", 2: "r", 3: "i"})
+        
+        if "distnr" in df.columns:
+            distnr = df["distnr"]
+        else:
+            distnr = np.nan
+        if "rfid" in df.columns:
+            rfid = detections["rfid"]
+        else:
+            rfid = np.nan
+        
         diff_flux = df[
             ["index", "forcediffimflux", "forcediffimfluxunc", "fid", "mjd", "detected"]
         ].copy()
+        
+        diff_flux["distnr"] = distnr
+        diff_flux["rfid"] = rfid
+        
         diff_flux.rename(
             columns={
                 "forcediffimflux": "brightness",
@@ -185,6 +212,10 @@ def get_ztf_forced_training_examples() -> List[AstroObject]:
         magnitude = df[
             ["index", "mag_tot", "sigma_mag_tot", "fid", "mjd", "detected"]
         ].copy()
+        
+        magnitude["distnr"] = distnr
+        magnitude["rfid"] = rfid
+        
         magnitude.rename(
             columns={"mag_tot": "brightness", "sigma_mag_tot": "e_brightness"},
             inplace=True,
