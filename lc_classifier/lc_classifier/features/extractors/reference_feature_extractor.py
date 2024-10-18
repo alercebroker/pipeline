@@ -32,7 +32,9 @@ class ReferenceFeatureExtractor(FeatureExtractor):
     def compute_features_single_object(self, astro_object: AstroObject):
         observations = self.get_observations(astro_object)
 
-        reference = astro_object.reference
+        reference = pd.DataFrame()
+        if astro_object.reference is not None:
+            reference = astro_object.reference.copy()
 
         features = []
         all_bands = ",".join(self.bands)

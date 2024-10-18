@@ -37,8 +37,6 @@ class AstroObject:
             "brightness",
             "e_brightness",
             "unit",
-            "distnr",
-            "rfid",
         }
 
         missing_detections_columns = mandatory_detection_columns - set(
