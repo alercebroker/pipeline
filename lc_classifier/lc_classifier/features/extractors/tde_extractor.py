@@ -60,8 +60,10 @@ class TDETailExtractor(FeatureExtractor):
             brightest_obs = band_observations.sort_values("brightness").iloc[0]
             t_d = brightest_obs.mjd
 
-            after_t_d = band_observations[(band_observations["mjd"] > t_d) \
-                                          & (band_observations["mjd"] < t_d + 200)]
+            after_t_d = band_observations[
+                (band_observations["mjd"] > t_d)
+                & (band_observations["mjd"] < t_d + 200)
+            ]
 
             x = 2.5 * np.log10(after_t_d.mjd.values - t_d + 40)
             y = after_t_d.brightness.values

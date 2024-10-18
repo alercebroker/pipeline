@@ -324,7 +324,7 @@ def create_astro_object(
             ]
         ].copy()
         non_detections.rename(columns={"diffmaglim": "brightness"}, inplace=True)
-    
+
     reference = reference[["oid", "rfid", "sharpnr", "chinr"]].copy()
     reference.drop_duplicates(keep="first", inplace=True)
     reference.set_index("oid", inplace=True)
@@ -335,6 +335,6 @@ def create_astro_object(
         metadata=metadata,
         non_detections=non_detections,
         xmatch=xmatch,
-        reference=reference
+        reference=reference,
     )
     return astro_object

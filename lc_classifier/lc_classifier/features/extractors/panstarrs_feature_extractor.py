@@ -9,8 +9,14 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
     version = "1.0.1"
 
     def __init__(self):
-        self.required_metadata = ["sgscore1", "distpsnr1", "sgmag1", "srmag1",
-                                  "simag1", "szmag1"]
+        self.required_metadata = [
+            "sgscore1",
+            "distpsnr1",
+            "sgmag1",
+            "srmag1",
+            "simag1",
+            "szmag1",
+        ]
 
     def compute_features_single_object(self, astro_object: AstroObject):
         metadata = astro_object.metadata
@@ -46,14 +52,14 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
                 color_gr = g_mag - r_mag
 
             features.append(["ps_g-r", color_gr])
-            
+
             if r_mag < -30.0 or i_mag < -30.0:
                 color_ri = np.nan
             else:
                 color_ri = r_mag - i_mag
 
             features.append(["ps_r-i", color_ri])
-            
+
             if i_mag < -30.0 or z_mag < -30.0:
                 color_iz = np.nan
             else:

@@ -32,8 +32,7 @@ class ZTFFeatureExtractor(FeatureExtractorComposite):
             AllwiseColorsFeatureExtractor(bands),
             PanStarrsFeatureExtractor(),
             MHPSExtractor(bands, unit="diff_flux"),
-            MHPSExtractor(bands, unit="diff_flux",
-                          t1=365., t2=30.),
+            MHPSExtractor(bands, unit="diff_flux", t1=365.0, t2=30.0),
             GPDRWExtractor(bands, unit="diff_flux"),
             PeriodExtractor(
                 bands,
