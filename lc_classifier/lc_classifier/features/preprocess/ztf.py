@@ -33,6 +33,7 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
             time_corrections = dots.value * (u.au.to(u.lightsecond) * u.second).to(
                 u.day
             )
+            dataframe["mjd_nohelio"] = dataframe["mjd"]
             dataframe["mjd"] += time_corrections.value
 
         helio_correct_dataframe(astro_object.detections)
