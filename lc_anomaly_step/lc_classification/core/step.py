@@ -51,14 +51,15 @@ class LateClassifier(GenericStep):
         """engine for anomaly detector model"""
         if self.isanomaly:
             self.sql_engine = create_engine(
-                f"postgresql://{os.getenv('ANOMALY_USER')}:{os.getenv('ANOMALY_PASSWORD')}@{os.getenv('ANOMALY_HOST')}:{os.getenv('ANOMALY_PORT')}/{os.getenv('ANOMALY_DB_NAME')}",
+                f"postgresql://{self.db_config['ANOMALY_USER']}:{self.db_config['ANOMALY_PASSWORD']}@{self.db_config['ANOMALY_HOST']}:{self.db_config['ANOMALY_PORT']}/{self.db_config['ANOMALY_DB_NAME']}",
                 connect_args={
                     "options": "-csearch_path={}".format(
-                        os.getenv("ANOMALY_SCHEMA")
+                        self.db_config["ANOMALY_SCHEMA"]
                     )
                 },
             )
             self.logger.info("Engine for anomaly model")
+            self.db_config = config["DB_CONFIG"]
         # ANOMALY
 
         self.logger.info("Loading Models")
