@@ -122,7 +122,7 @@ async def build(
         dockerfile=f"{package_dir}/Dockerfile",
         build_args=bargs,
     )
-    tags = await get_tags(client, package_dir)
+    tags = ["anomaly"]
     print(f"Built image with tag: {tags}")
 
     if not dry_run:

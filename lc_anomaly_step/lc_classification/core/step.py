@@ -214,22 +214,12 @@ class LateClassifier(GenericStep):
 
         probabilities = self.predict(model_input)
         self.log_class_distribution(probabilities)
-        return probabilities, messages, model_input.features
+
+        _ = self.anomaly_execute((probabilities, messages, model_input.features))
+
+        return OutputDTO(DataFrame([]), {}), messages, model_input.features
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-
-        # ANOMALY
-        if self.isanomaly:
-            return self.anomaly_execute(result)
-
-        probabilities = result[0]
-        parsed_result = self.scribe_parser.parse(
-            probabilities,
-            classifier_version=self.classifier_version,
-        )
-
-        self.produce_scribe(parsed_result.value)
-
         return result
 
     def anomaly_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
