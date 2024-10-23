@@ -9,11 +9,15 @@ from jax import jit as jax_jit
 
 from typing import List
 
+import jax
+
+jax.config.update("jax_enable_x64", True)
+
 
 def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     original_length = len(x_array)
     pad_length = 25 - (original_length % 25)
-    pad_array = np.array([fill_value] * pad_length, dtype=np.float32)
+    pad_array = np.array([fill_value] * pad_length)
     return np.concatenate([x_array, pad_array])
 
 
@@ -29,13 +33,13 @@ def ulens_model(t, u0, tE, fs, t0, mag_0):
 def ulens_model_jax(t, u0, tE, fs, t0, mag_0):
     t = t - t0
     u = jnp.sqrt(u0**2 + (t / tE) ** 2)
-    A = (u**2 + 2.0) / (u * jnp.sqrt(u**2 + 3))
+    A = (u**2 + 2.0) / (u * jnp.sqrt(u**2 + 4))
     func = -2.5 * jnp.log10(fs * (A - 1) + 1) + mag_0
     return func
 
 
 class MicroLensExtractor(FeatureExtractor):
-    version = "1.0.0"
+    version = "1.0.1"
     unit = "magnitude"
 
     def __init__(self, bands: List[str]):
@@ -64,6 +68,8 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_tE", np.nan, band))
                 features.append(("ulens_fs", np.nan, band))
                 features.append(("ulens_chi", np.nan, band))
+                features.append(("ulens_t0", np.nan, band))
+                features.append(("ulens_mag0", np.nan, band))
                 continue
 
             mjd_max_flux = band_observations.sort_values("brightness").iloc[0]["mjd"]
@@ -78,7 +84,10 @@ class MicroLensExtractor(FeatureExtractor):
                     y,
                     sigma=y_err,
                     p0=[0.6, 20.0, 0.5, mjd_max_flux, np.median(y)],
-                    bounds=([0.0, 0.0, 0.0, -50, 10], [1.5, 100.0, 1.0, 10000, 25]),
+                    bounds=(
+                        [0, 0, 0, -np.inf, -np.inf],
+                        [np.inf, np.inf, 1, np.inf, np.inf],
+                    ),
                 )
 
                 model_prediction = ulens_model(band_observations["mjd"], *parameters)
@@ -94,11 +103,15 @@ class MicroLensExtractor(FeatureExtractor):
                 features.append(("ulens_tE", parameters[1], band))
                 features.append(("ulens_fs", parameters[2], band))
                 features.append(("ulens_chi", chi_per_degree, band))
+                features.append(("ulens_t0", parameters[3], band))
+                features.append(("ulens_mag0", parameters[4], band))
             except RuntimeError:
                 features.append(("ulens_u0", np.nan, band))
                 features.append(("ulens_tE", np.nan, band))
                 features.append(("ulens_fs", np.nan, band))
                 features.append(("ulens_chi", np.nan, band))
+                features.append(("ulens_t0", np.nan, band))
+                features.append(("ulens_mag0", np.nan, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 

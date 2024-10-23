@@ -84,6 +84,33 @@ def detections_to_astro_objects(
     return astro_object
 
 
+def fid_mapper_for_db(band: str):
+    """
+    Parses the number used to reference the fid in the ztf alerts
+    to the string value corresponding
+    """
+    fid_map = {"g": 1, "r": 2, "g,r": 12}
+    if band in fid_map:
+        return fid_map[band]
+    return 0
+
+
+def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame:
+    ao_features = astro_object.features[["name", "fid", "value"]].copy()
+    ao_features["fid"] = ao_features["fid"].apply(fid_mapper_for_db)
+    ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+    # backward compatibility
+    ao_features["name"] = ao_features["name"].replace(
+        {
+            "Power_rate_1_4": "Power_rate_1/4",
+            "Power_rate_1_3": "Power_rate_1/3",
+            "Power_rate_1_2": "Power_rate_1/2",
+        }
+    )
+    return ao_features
+
+
 def parse_scribe_payload(
     astro_objects: List[AstroObject], features_version, features_group
 ):
@@ -95,45 +122,16 @@ def parse_scribe_payload(
     :return: a list of json with Alerce Scribe commands
     """
 
-    def get_fid(band: str):
-        """
-        Parses the number used to reference the fid in the ztf alerts
-        to the string value corresponding
-        """
-        fid_map = {"g": 1, "r": 2, "g,r": 12}
-        if band in fid_map:
-            return fid_map[band]
-        return 0
-
     # features = features.replace({np.nan: None, np.inf: None, -np.inf: None})
     upsert_features_commands_list = []
     update_object_command_list = []
 
     for astro_object in astro_objects:
         # for upserting features
-        ao_features = astro_object.features[["name", "fid", "value"]].copy()
-        ao_features["fid"] = ao_features["fid"].apply(get_fid)
-        ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-
-        # backward compatibility
-        ao_features["name"] = ao_features["name"].replace(
-            {
-                "Power_rate_1_4": "Power_rate_1/4",
-                "Power_rate_1_3": "Power_rate_1/3",
-                "Power_rate_1_2": "Power_rate_1/2",
-            }
-        )
+        ao_features = prepare_ao_features_for_db(astro_object)
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
-
-        RENAME_MAP = {
-            "g-r_max": "g-r_max_corr",
-            "g-r_mean": "g-r_mean_corr",
-        }
-        for feat in features_list:
-            if feat["name"] in RENAME_MAP.keys():
-                feat["name"] = RENAME_MAP[feat["name"]]
 
         upsert_features_command = {
             "collection": "object",

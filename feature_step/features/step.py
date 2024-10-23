@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List
 
 from apf.core import get_class
 from apf.core.step import GenericStep
