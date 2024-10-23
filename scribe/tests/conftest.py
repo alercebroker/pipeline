@@ -14,6 +14,11 @@ def docker_compose_file(pytestconfig):
         str(pytestconfig.rootdir), "tests/integration", "docker-compose.yml"
     )
 
+@pytest.fixture(scope="session")
+def docker_compose_command():
+    version = os.getenv("COMPOSE", "v2")
+    return "docker compose" if version == "v2" else "docker-compose"
+
 
 def is_mongo_responsive(ip, port):
     client = MongoClient(f"mongodb://{ip}:{port}")
