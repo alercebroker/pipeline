@@ -24,3 +24,4 @@ jobs:
       codecov-flags: "lc_classifier" # Do not upload
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
