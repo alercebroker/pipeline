@@ -70,6 +70,9 @@ on:
       TEST_SQUIDWARD_MODEL_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
+      CODECOV_TOKEN:
+        required: false
+        description: "token to upload coverage to codecov.io"
 
 jobs:
   test:
