@@ -21,6 +21,6 @@ jobs:
       base-folder: "lc_classifier"
       sources-folder: "lc_classifier"
       test-folder: "tests"
-      codecov-flags: "" # Do not upload
+      codecov-flags: "lc_classifier" # Do not upload
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
