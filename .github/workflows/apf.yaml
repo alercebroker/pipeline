@@ -182,9 +182,10 @@ jobs:
       base-folder: 'feature_step'
       sources-folder: 'features'
       test-folder: 'tests/unittest'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'feature_step_unittest'  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
   feature_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -192,9 +193,10 @@ jobs:
       base-folder: 'feature_step'
       sources-folder: 'features/'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'feature_step_integration'  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   build-correction-dagger:
     
