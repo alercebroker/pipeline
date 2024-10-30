@@ -13,12 +13,12 @@ class KafkaProducerTest(GenericProducerTest):
     PRODUCER_SCHEMA_PATH = os.path.join(
         FILE_PATH, "../examples/kafka_producer_schema.avsc"
     )
-    
+
     def setUp(self) -> None:
         self.params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
-            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH
+            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH,
         }
 
     def test_produce(self, producer_mock):
@@ -87,7 +87,7 @@ class TestKafkaSchemalessProducer(GenericProducerTest):
         self.params = {
             "PARAMS": {"bootstrap.servers": "kafka1:9092, kafka2:9092"},
             "TOPIC": "test_topic",
-            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH
+            "SCHEMA_PATH": self.PRODUCER_SCHEMA_PATH,
         }
 
     def test_serialize_message(self):

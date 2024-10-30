@@ -22,8 +22,10 @@ jobs:
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
+        codecov-flags: 'reflector_step_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   reflector_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -32,6 +34,7 @@ jobs:
       sources-folder: 'reflector_step'
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'reflector_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"

@@ -21,8 +21,10 @@ jobs:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
       test-folder: 'tests'
+      codecov-flags: 'libs_apf_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   reflector_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -31,8 +33,11 @@ jobs:
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
+        codecov-flags: 'reflector_step_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+
   reflector_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -40,9 +45,10 @@ jobs:
       sources-folder: 'reflector_step'
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'reflector_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   sorting_hat_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -51,8 +57,11 @@ jobs:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
+      codecov-flags: 'sorting_hat_step_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+
   sorting_hat_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -60,9 +69,10 @@ jobs:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'sorting_hat_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   prv_candidates_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -79,9 +89,10 @@ jobs:
       python-version: '3.8'
       sources-folder: 'prv_candidates_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'prv_candidates_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   lightcurve_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
