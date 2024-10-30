@@ -74,8 +74,22 @@ def test_calculate_weighted_mean_error_with_one_very_large_error_has_that_error_
 def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_error_per_oid():
     detections = [
         {"oid": "OID1", "ra": 10, "e_ra": 2, "candid": "a", "forced": False},
-        {"oid": "OID2", "ra": 10, "ra": 20, "e_ra": 4, "candid": "c", "forced": False},
-        {"oid": "OID1", "ra": 10, "ra": 20, "e_ra": 4, "candid": "b", "forced": False},
+        {
+            "oid": "OID2",
+            "ra": 10,
+            "ra": 20,
+            "e_ra": 4,
+            "candid": "c",
+            "forced": False,
+        },
+        {
+            "oid": "OID1",
+            "ra": 10,
+            "ra": 20,
+            "e_ra": 4,
+            "candid": "b",
+            "forced": False,
+        },
     ]
     calculator = ObjectStatistics(detections)
 
@@ -115,7 +129,11 @@ def test_calculate_coordinates_with_ra_uses_weighted_mean_and_weighted_mean_erro
             assert_series_equal(
                 val,
                 pd.Series(
-                    [20], index=pd.Index(["c_OID2"], ), name="ra"
+                    [20],
+                    index=pd.Index(
+                        ["c_OID2"],
+                    ),
+                    name="ra",
                 ),
             )
             assert_series_equal(
@@ -151,7 +169,7 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
     for call in calculator._weighted_mean.call_args_list:
         val, err = call.args
         assert call.kwargs == {}
-        if len(val) == 2:  
+        if len(val) == 2:
             assert_series_equal(
                 val,
                 pd.Series(
@@ -168,12 +186,10 @@ def test_calculate_coordinates_with_dec_uses_weighted_mean_and_weighted_mean_err
                     name="e_dec",
                 ),
             )
-        else:  
+        else:
             assert_series_equal(
                 val,
-                pd.Series(
-                    [20], index=pd.Index(["c_OID2"]), name="dec"
-                ),
+                pd.Series([20], index=pd.Index(["c_OID2"]), name="dec"),
             )
             assert_series_equal(
                 err,
@@ -328,7 +344,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
             "corrected": True,
             "candid": "b",
             "forced": False,
-        },  
+        },
         {
             "oid": "OID1",
             "sid": "SURVEY",
@@ -352,7 +368,7 @@ def test_calculate_corrected_gives_whether_first_detection_in_surveys_with_corre
             "corrected": False,
             "candid": "e",
             "forced": False,
-        },  
+        },
         {
             "oid": "OID3",
             "sid": "SURVEY",
@@ -394,7 +410,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
             "stellar": True,
             "candid": "b",
             "forced": False,
-        },  
+        },
         {
             "oid": "OID1",
             "sid": "SURVEY",
@@ -418,7 +434,7 @@ def test_calculate_stellar_gives_whether_first_detection_in_surveys_with_stellar
             "stellar": False,
             "candid": "e",
             "forced": False,
-        },  
+        },
         {
             "oid": "OID3",
             "sid": "SURVEY",
@@ -452,9 +468,7 @@ def test_object_statistics_ignores_forced_photometry():
 
     assert_series_equal(
         calculator._detections["check"],
-        pd.Series(
-            ["this"], index=pd.Index(["a_OIDa"]), name="check"
-        ),
+        pd.Series(["this"], index=pd.Index(["a_OIDa"]), name="check"),
     )
 
 
@@ -483,6 +497,7 @@ def test_object_statistics_deltajd():
         result["deltajd"],
         pd.Series([4], index=pd.Index(["OID1"], name="oid"), name="deltajd"),
     )
+
 
 def test_generate_stats():
     detections = [
