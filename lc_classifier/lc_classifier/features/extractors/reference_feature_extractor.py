@@ -25,8 +25,9 @@ class ReferenceFeatureExtractor(FeatureExtractor):
         observations = observations[observations["e_brightness"] > 0.0]
         observations = observations[observations["fid"].isin(self.bands)]
 
-        # Because of training set limitations (it used the ZTF forced photometry service)
-        observations = observations[observations["distnr"] <= 5.0]
+        # 5 arcsec limit is because of training set limitations (it used the ZTF forced photometry service)
+        mask = (observations["distnr"] != -99999) & (observations["distnr"] <= 5.0)
+        observations = observations[mask].copy()
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -54,7 +55,8 @@ class ReferenceFeatureExtractor(FeatureExtractor):
             features.append(["mean_sharpnr", np.nan, all_bands])
             features.append(["mean_chinr", np.nan, all_bands])
         else:
-            observations = observations[["distnr", "rfid"]].copy()
+            mask = observations["rfid"].notna()
+            observations = observations.loc[mask, ["distnr", "rfid"]].copy()
             observations.set_index("rfid", inplace=True)
 
             reference.set_index("rfid", inplace=True)

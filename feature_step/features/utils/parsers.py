@@ -6,8 +6,26 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
+def extract_reference(detections: List[Dict]):
+    keys = ["distnr", "rfid", "sharpnr", "chinr"]
+
+    reference = []
+    for detection in detections:
+        value = []
+        for key in keys:
+            if key in detection["extra_fields"].keys():
+                value.append(detection["extra_fields"][key])
+            else:
+                value.append(None)
+        reference.append(value)
+
+    reference = pd.DataFrame(reference, columns=keys)
+
+    return reference
+
+
 def detections_to_astro_objects(
-    detections: List[Dict], xmatches: Optional[Dict]
+    detections: List[Dict], xmatches: Optional[Dict], reference: Optional[List[Dict]]
 ) -> AstroObject:
     detection_keys = [
         "oid",
@@ -29,12 +47,24 @@ def detections_to_astro_objects(
         # 'sgscore1'
     ]
 
+    reference_keys = [
+        "oid",
+        "candid",
+        "rfid",
+        "sharpnr",
+        "chinr",
+    ]
+
     values = []
     for detection in detections:
         values.append([detection[key] for key in detection_keys])
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+
+    reference_from_detections = extract_reference(detections)
+    a = pd.concat([a, reference_from_detections], axis=1)
+
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
         columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
@@ -48,6 +78,11 @@ def detections_to_astro_objects(
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
+
+    aid_reference = a[reference_keys].copy()
+    for field in ["sharpnr", "chinr"]:
+        if field in a.columns:
+            a.drop(columns=[field], inplace=True)
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
@@ -73,13 +108,31 @@ def detections_to_astro_objects(
             ["sgscore1", detections[0]["extra_fields"]["sgscore1"]],
             ["sgmag1", detections[0]["extra_fields"]["sgmag1"]],
             ["srmag1", detections[0]["extra_fields"]["srmag1"]],
+            ["simag1", detections[0]["extra_fields"]["simag1"]],
+            ["szmag1", detections[0]["extra_fields"]["szmag1"]],
             ["distpsnr1", detections[0]["extra_fields"]["distpsnr1"]],
         ],
         columns=["name", "value"],
     ).fillna(value=np.nan)
 
+    if reference is not None:
+        b = pd.DataFrame(reference)
+        if len(b) > 0:
+            aid_reference = pd.concat([aid_reference, b], axis=0, ignore_index=True)
+    for field in ["sharpnr", "chinr"]:
+        aid_reference.loc[aid_reference[field] == -99999, field] = None
+    aid_reference.dropna(inplace=True)
+    aid_reference.sort_values(by=["oid", "candid"], inplace=True)
+    aid_reference.drop_duplicates(subset=["oid", "rfid"], keep="first", inplace=True)
+    aid_reference.drop(columns=["candid"], inplace=True)
+    aid_reference.set_index("oid", inplace=True)
+    aid_reference["rfid"] = aid_reference["rfid"].astype(int)
+
     astro_object = AstroObject(
-        detections=aid_detections, forced_photometry=aid_forced, metadata=metadata
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        reference=aid_reference,
     )
     return astro_object
 
@@ -205,6 +258,8 @@ def parse_output(
         assert oid_ao == oid
         feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
 
+        reference = astro_object.reference.reset_index().to_dict("records")
+
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
         )
@@ -215,6 +270,7 @@ def parse_output(
             "non_detections": message["non_detections"],
             "xmatches": message["xmatches"],
             "features": features_for_oid,
+            "reference": reference,
         }
         output_messages.append(out_message)
 
