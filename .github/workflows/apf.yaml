@@ -154,7 +154,7 @@ jobs:
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe --with squidward"
       test-folder: "tests/unit"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -163,16 +163,20 @@ jobs:
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-      TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+      TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
+      TEST_MBAPPE_FEATURES_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
       codecov-flags: ''  # Do not upload
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe --with squidward"
       test-folder: "tests/integration"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -181,9 +185,13 @@ jobs:
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-      TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+      TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
+      TEST_MBAPPE_FEATURES_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
 
 
   feature_step_unittest:
