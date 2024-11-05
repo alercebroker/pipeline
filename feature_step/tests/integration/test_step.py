@@ -1,5 +1,6 @@
 from features.step import FeatureStep
 import pathlib
+from unittest import mock
 
 
 CONSUMER_CONFIG = {
@@ -49,5 +50,6 @@ def test_step_ztf(kafka_service):
         "CONSUMER_CONFIG": CONSUMER_CONFIG,
         "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
     }
-    step = FeatureStep(config=step_config)
+    db_sql = mock.MagicMock()
+    step = FeatureStep(config=step_config, db_sql=db_sql)
     step.start()
