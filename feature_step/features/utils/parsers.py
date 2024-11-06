@@ -6,8 +6,26 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
+def extract_reference(detections: List[Dict]):
+    keys = ["distnr", "rfid", "sharpnr", "chinr"]
+
+    reference = []
+    for detection in detections:
+        value = []
+        for key in keys:
+            if key in detection["extra_fields"].keys():
+                value.append(detection["extra_fields"][key])
+            else:
+                value.append(None)
+        reference.append(value)
+
+    reference = pd.DataFrame(reference, columns=keys)
+
+    return reference
+
+
 def detections_to_astro_objects(
-    detections: List[Dict], xmatches: Optional[Dict]
+    detections: List[Dict], xmatches: Optional[Dict], reference: Optional[List[Dict]]
 ) -> AstroObject:
     detection_keys = [
         "oid",
@@ -29,12 +47,24 @@ def detections_to_astro_objects(
         # 'sgscore1'
     ]
 
+    reference_keys = [
+        "oid",
+        "candid",
+        "rfid",
+        "sharpnr",
+        "chinr",
+    ]
+
     values = []
     for detection in detections:
         values.append([detection[key] for key in detection_keys])
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+
+    reference_from_detections = extract_reference(detections)
+    a = pd.concat([a, reference_from_detections], axis=1)
+
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
         columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
@@ -48,6 +78,11 @@ def detections_to_astro_objects(
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
+
+    aid_reference = a[reference_keys].copy()
+    for field in ["sharpnr", "chinr"]:
+        if field in a.columns:
+            a.drop(columns=[field], inplace=True)
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
@@ -73,15 +108,60 @@ def detections_to_astro_objects(
             ["sgscore1", detections[0]["extra_fields"]["sgscore1"]],
             ["sgmag1", detections[0]["extra_fields"]["sgmag1"]],
             ["srmag1", detections[0]["extra_fields"]["srmag1"]],
+            ["simag1", detections[0]["extra_fields"]["simag1"]],
+            ["szmag1", detections[0]["extra_fields"]["szmag1"]],
             ["distpsnr1", detections[0]["extra_fields"]["distpsnr1"]],
         ],
         columns=["name", "value"],
     ).fillna(value=np.nan)
 
+    if reference is not None:
+        b = pd.DataFrame(reference)
+        if len(b) > 0:
+            aid_reference = pd.concat([aid_reference, b], axis=0, ignore_index=True)
+    for field in ["sharpnr", "chinr"]:
+        aid_reference.loc[aid_reference[field] == -99999, field] = None
+    aid_reference.dropna(inplace=True)
+    aid_reference.sort_values(by=["oid", "candid"], inplace=True)
+    aid_reference.drop_duplicates(subset=["oid", "rfid"], keep="first", inplace=True)
+    aid_reference.drop(columns=["candid"], inplace=True)
+    aid_reference.set_index("oid", inplace=True)
+    aid_reference["rfid"] = aid_reference["rfid"].astype(int)
+
     astro_object = AstroObject(
-        detections=aid_detections, forced_photometry=aid_forced, metadata=metadata
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        reference=aid_reference,
     )
     return astro_object
+
+
+def fid_mapper_for_db(band: str):
+    """
+    Parses the number used to reference the fid in the ztf alerts
+    to the string value corresponding
+    """
+    fid_map = {"g": 1, "r": 2, "g,r": 12}
+    if band in fid_map:
+        return fid_map[band]
+    return 0
+
+
+def prepare_ao_features_for_db(astro_object: AstroObject) -> pd.DataFrame:
+    ao_features = astro_object.features[["name", "fid", "value"]].copy()
+    ao_features["fid"] = ao_features["fid"].apply(fid_mapper_for_db)
+    ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
+
+    # backward compatibility
+    ao_features["name"] = ao_features["name"].replace(
+        {
+            "Power_rate_1_4": "Power_rate_1/4",
+            "Power_rate_1_3": "Power_rate_1/3",
+            "Power_rate_1_2": "Power_rate_1/2",
+        }
+    )
+    return ao_features
 
 
 def parse_scribe_payload(
@@ -95,45 +175,16 @@ def parse_scribe_payload(
     :return: a list of json with Alerce Scribe commands
     """
 
-    def get_fid(band: str):
-        """
-        Parses the number used to reference the fid in the ztf alerts
-        to the string value corresponding
-        """
-        fid_map = {"g": 1, "r": 2, "g,r": 12}
-        if band in fid_map:
-            return fid_map[band]
-        return 0
-
     # features = features.replace({np.nan: None, np.inf: None, -np.inf: None})
     upsert_features_commands_list = []
     update_object_command_list = []
 
     for astro_object in astro_objects:
         # for upserting features
-        ao_features = astro_object.features[["name", "fid", "value"]].copy()
-        ao_features["fid"] = ao_features["fid"].apply(get_fid)
-        ao_features.replace({np.nan: None, np.inf: None, -np.inf: None}, inplace=True)
-
-        # backward compatibility
-        ao_features["name"] = ao_features["name"].replace(
-            {
-                "Power_rate_1_4": "Power_rate_1/4",
-                "Power_rate_1_3": "Power_rate_1/3",
-                "Power_rate_1_2": "Power_rate_1/2",
-            }
-        )
+        ao_features = prepare_ao_features_for_db(astro_object)
         oid = query_ao_table(astro_object.metadata, "oid")
 
         features_list = ao_features.to_dict("records")
-
-        RENAME_MAP = {
-            "g-r_max": "g-r_max_corr",
-            "g-r_mean": "g-r_mean_corr",
-        }
-        for feat in features_list:
-            if feat["name"] in RENAME_MAP.keys():
-                feat["name"] = RENAME_MAP[feat["name"]]
 
         upsert_features_command = {
             "collection": "object",
@@ -207,6 +258,8 @@ def parse_output(
         assert oid_ao == oid
         feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
 
+        reference = astro_object.reference.reset_index().to_dict("records")
+
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
         )
@@ -217,6 +270,7 @@ def parse_output(
             "non_detections": message["non_detections"],
             "xmatches": message["xmatches"],
             "features": features_for_oid,
+            "reference": reference,
         }
         output_messages.append(out_message)
 

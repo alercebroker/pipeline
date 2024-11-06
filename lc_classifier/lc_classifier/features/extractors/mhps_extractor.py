@@ -65,11 +65,18 @@ class MHPSExtractor(FeatureExtractor):
                         brightness, e_brightness, time, self.t1, self.t2
                     )
 
-            features.append((f"MHPS_ratio", ratio, band))
-            features.append((f"MHPS_low", low, band))
-            features.append((f"MHPS_high", high, band))
-            features.append((f"MHPS_non_zero", non_zero, band))
-            features.append((f"MHPS_PN_flag", pn_flag, band))
+            if self.t1 == 100.0 and self.t2 == 10.0:
+                features.append((f"MHPS_ratio", ratio, band))
+                features.append((f"MHPS_low", low, band))
+                features.append((f"MHPS_high", high, band))
+                features.append((f"MHPS_non_zero", non_zero, band))
+                features.append((f"MHPS_PN_flag", pn_flag, band))
+            else:
+                features.append(
+                    (f"MHPS_ratio_{int(self.t1)}_{int(self.t2)}", ratio, band)
+                )
+                features.append((f"MHPS_low_{int(self.t1)}", low, band))
+                features.append((f"MHPS_high_{int(self.t2)}", high, band))
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 

@@ -16,6 +16,7 @@ class AstroObject:
     non_detections: [Optional[pd.DataFrame]] = None
     forced_photometry: [Optional[pd.DataFrame]] = None
     xmatch: [Optional[pd.DataFrame]] = None
+    reference: [Optional[pd.DataFrame]] = None
     stamps: Optional[Dict[str, np.ndarray]] = None  # Might change
     features: [Optional[pd.DataFrame]] = None
     predictions: Optional[pd.DataFrame] = None
@@ -59,6 +60,7 @@ class AstroObject:
             "non_detections": self.non_detections,
             "forced_photometry": self.forced_photometry,
             "xmatch": self.xmatch,
+            "reference": self.reference,
             "stamps": self.stamps,
             "features": self.features,
             "predictions": self.predictions,
@@ -114,6 +116,7 @@ def astro_object_from_dict(d: Dict) -> AstroObject:
         non_detections=d["non_detections"],
         forced_photometry=d["forced_photometry"],
         xmatch=d["xmatch"],
+        reference=d["reference"],
         stamps=d["stamps"],
         features=d["features"],
         predictions=d["predictions"],

@@ -17,6 +17,10 @@ from jax import jit as jax_jit
 from ..core.base import FeatureExtractor, AstroObject
 from typing import List, Optional
 
+import jax
+
+jax.config.update("jax_enable_x64", True)
+
 
 class SPMExtractor(FeatureExtractor):
     """Note: the firsts calls are really expensive because of jax compilations"""
@@ -30,7 +34,7 @@ class SPMExtractor(FeatureExtractor):
         forced_phot_prelude: Optional[float] = None,
     ):
 
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.cws = {
             "u": 3671.0,
             "g": 4827.0,
@@ -257,20 +261,17 @@ class SNModel:
         negative_observations = (fluxpsf + obs_errors) < 0.0
         negative_observations = negative_observations.astype(np.float64)
         ignore_negative_fluxes = np.exp(
-            -(((fluxpsf + obs_errors) * negative_observations / (obs_errors + 1)) ** 2)
+            -(
+                ((fluxpsf + obs_errors) * negative_observations / (obs_errors + 1.0e-3))
+                ** 2
+            )
         )
 
-        # float32 cast
-        times = times.astype(np.float32)
-        fluxpsf = fluxpsf.astype(np.float32)
-        obs_errors = obs_errors.astype(np.float32)
-        bands_num = np.vectorize(band_mapper.get)(bands).astype(np.float32)
-        available_bands_num = np.vectorize(band_mapper.get)(available_bands).astype(
-            np.float32
-        )
+        bands_num = np.vectorize(band_mapper.get)(bands)
+        available_bands_num = np.vectorize(band_mapper.get)(available_bands)
         smooth_error = np.percentile(obs_errors, 10) * 0.5
-        smooth_error = smooth_error.astype(np.float32)
-        ignore_negative_fluxes = ignore_negative_fluxes.astype(np.float32)
+        # smooth_error = smooth_error.astype(np.float32)
+        # ignore_negative_fluxes = ignore_negative_fluxes.astype(np.float32)
 
         # padding
         pad_times = pad(times, np.min(times))
@@ -327,7 +328,9 @@ class SNModel:
                     plt.plot(band_times[order], predictions[order])
                     plt.show()
 
-                chi = np.sum((predictions - band_flux) ** 2 / (band_errors + 5) ** 2)
+                chi = np.sum(
+                    (predictions - band_flux) ** 2 / (band_errors + 1.0e-3) ** 2
+                )
                 chi_den = len(predictions) - 6
                 if chi_den >= 1:
                     chi_per_degree = chi / chi_den
@@ -352,7 +355,7 @@ class SNModel:
 def pad(x_array: np.ndarray, fill_value: float) -> np.ndarray:
     original_length = len(x_array)
     pad_length = 250 - (original_length % 250)
-    pad_array = np.array([fill_value] * pad_length, dtype=np.float32)
+    pad_array = np.array([fill_value] * pad_length)
     return np.concatenate([x_array, pad_array])
 
 
@@ -394,12 +397,12 @@ def objective_function_jax(
         sig = jax_sigmoid(sigmoid_exp_arg)
 
         # push to 0 and 1
-        sig *= (sigmoid_exp_arg > -10.0).astype(jnp.float32)
-        sig = jnp.maximum(sig, (sigmoid_exp_arg >= 10.0).astype(np.float32))
+        sig *= sigmoid_exp_arg > -10.0
+        sig = jnp.maximum(sig, (sigmoid_exp_arg >= 10.0))
 
         # if t_fall < t_rise, the output diverges for early times
-        stable_case = (t_fall < t_rise).astype(jnp.float32)
-        sig *= stable_case + (1 - stable_case) * (band_times > t1).astype(jnp.float32)
+        stable_case = t_fall < t_rise
+        sig *= stable_case + (1 - stable_case) * (band_times > t1)
 
         den_exp_arg = (band_times - t0) / t_rise
 
@@ -407,7 +410,7 @@ def objective_function_jax(
 
         # push to 0
         den_exp_arg_zero_mask = den_exp_arg > -20.0
-        one_over_den *= den_exp_arg_zero_mask.astype(jnp.float32)
+        one_over_den *= den_exp_arg_zero_mask
 
         fall_exp_arg = -(band_times - t1) / t_fall
         fall_exp_arg = jnp.clip(fall_exp_arg, -20.0, 20.0)
@@ -421,7 +424,7 @@ def objective_function_jax(
         )
 
         band_sqerr = ((model_output - band_flux) / (band_errors + smooth_error)) ** 2
-        band_sqerr *= band_mask.astype(jnp.float32)
+        band_sqerr *= band_mask
 
         sum_sqerrs += jnp.dot(band_sqerr, band_ignore_negative_fluxes)
         # sum_sqerrs += np.sum(band_sqerr)
@@ -446,7 +449,6 @@ def objective_function_jax(
             0.7,  # t_rise
             0.01,  # t_fall
         ],
-        dtype=jnp.float32,
     )
 
     regularization = jnp.dot(lambdas, jnp.sqrt(params_var))

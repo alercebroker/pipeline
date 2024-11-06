@@ -21,7 +21,7 @@ class HarmonicsExtractor(FeatureExtractor):
         if unit == "magnitude":
             self.error_tol = 1e-2
         elif unit == "diff_flux":
-            self.error_tol = 5
+            self.error_tol = 1e-3
 
     def get_observations(self, astro_object: AstroObject) -> pd.DataFrame:
         observations = astro_object.detections

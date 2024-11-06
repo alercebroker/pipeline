@@ -1,13 +1,16 @@
+import pandas as pd
 import random
 from test_utils.mockdata.extra_fields.elasticc import generate_extra_fields
+from features.utils.parsers import fid_mapper_for_db
 
 random.seed(8798, version=2)
 
 ELASTICC_BANDS = ["u", "g", "r", "i", "z", "Y"]
 
 
-def get_extra_fields():
+def get_extra_fields(reference: list[dict] = None):
     extra_fields = generate_extra_fields()
+
     extra_fields.update(
         {
             "distnr": random.random(),
@@ -26,10 +29,41 @@ def get_extra_fields():
             "sgscore1": random.uniform(0, 1),
             "sgmag1": random.random() * 4 + 15,
             "srmag1": random.random() * 4 + 15,
+            "simag1": random.random() * 4 + 15,
+            "szmag1": random.random() * 4 + 15,
             "distpsnr1": random.random(),
         }
     )
+
+    if reference is not None:
+        reference_row = random.choice(reference)
+        extra_fields.update(
+            {
+                "rfid": reference_row["rfid"],
+                "sharpnr": reference_row["sharpnr"],
+                "chinr": reference_row["chinr"],
+            }
+        )
+
     return extra_fields
+
+
+def generate_reference_data(oid: str, num_references: int, band: str) -> list[dict]:
+    band_to_fid = {"g": 1, "r": 2, "i": 3}
+    oids = [oid for _ in range(num_references)]
+
+    rfid = [random.randint(1000000, 9000000) for _ in range(num_references)]
+    rfid = [int(str(fid_mapper_for_db(band)) + str(x)) for x in rfid]
+
+    sharpnr = [random.random() for _ in range(num_references)]
+    chinr = [random.random() for _ in range(num_references)]
+
+    reference = [oids, rfid, sharpnr, chinr]
+    reference = pd.DataFrame(reference).T
+    reference.columns = ["oid", "rfid", "sharpnr", "chinr"]
+    reference = reference.to_dict("records")
+
+    return reference
 
 
 def generate_alert(
@@ -38,8 +72,12 @@ def generate_alert(
     alerts = []
     survey_id = kwargs.get("survey", "LSST")
     diaObject = get_extra_fields()["diaObject"]
+
+    num_references = 3
+    reference = generate_reference_data(oid, num_references, band)
+
     for i in range(num_messages):
-        extra_fields = get_extra_fields()
+        extra_fields = get_extra_fields(reference)
         extra_fields["diaObject"] = diaObject
         alert = {
             "candid": str(random.randint(1000000, 9000000)),
@@ -130,6 +168,24 @@ def generate_input_batch(
                 "W4mag": 15.0,
             }
         }
+
+        reference = [
+            (
+                x["oid"],
+                x["candid"],
+                x["extra_fields"]["rfid"],
+                x["extra_fields"]["sharpnr"],
+                x["extra_fields"]["chinr"],
+            )
+            for x in detections
+        ]
+        reference = pd.DataFrame(
+            reference, columns=["oid", "candid", "rfid", "sharpnr", "chinr"]
+        )
+        reference.sort_values(by=["oid", "candid"], inplace=True)
+        reference.drop_duplicates(subset=["oid", "rfid"], keep="first", inplace=True)
+        reference = reference.to_dict("records")
+
         msg = {
             "oid": oid,
             "candid": [det["candid"] for det in detections],
@@ -138,6 +194,7 @@ def generate_input_batch(
             "detections": detections,
             "non_detections": non_det,
             "xmatches": xmatch,
+            "reference": reference,
         }
         batch.append(msg)
     random.sample(batch, len(batch))

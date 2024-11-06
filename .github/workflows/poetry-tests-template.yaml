@@ -70,6 +70,9 @@ on:
       TEST_SQUIDWARD_MODEL_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
+      CODECOV_TOKEN:
+        required: false
+        description: "token to upload coverage to codecov.io"
 
 jobs:
   test:
@@ -112,7 +115,8 @@ jobs:
           poetry run pytest -x ${{ inputs.test-folder }} --cov ${{ inputs.sources-folder }} --cov-report xml
       - name: Upload test coverage to Codecov
         if: ${{ inputs.codecov-flags != '' }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ${{ inputs.base-folder }}/coverage.xml
           flags: ${{ inputs.codecov-flags }}
+          token: ${{ secrets.CODECOV_TOKEN }}

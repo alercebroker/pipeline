@@ -74,6 +74,19 @@ METRICS_CONFIG = {
     },
 }
 
+SQL_SECRET_NAME = {
+    "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
+}
+
+PSQL_CONFIG = {
+    "ENGINE": "postgres",
+    "HOST": os.getenv("PSQL_HOST"),
+    "USER": os.getenv("PSQL_USERNAME"),
+    "PASSWORD": os.getenv("PSQL_PASSWORD"),
+    "PORT": int(os.getenv("PSQL_PORT", 5432)),
+    "DB_NAME": os.getenv("PSQL_DATABASE"),
+}
+
 if os.getenv("KAFKA_USERNAME") and os.getenv("KAFKA_PASSWORD"):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
@@ -108,4 +121,6 @@ STEP_CONFIG = {
         "USE_PROFILING": use_profiling,
     },
     "PYROSCOPE_SERVER": pyroscope_server,
+    "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
+    "PSQL_CONFIG": PSQL_CONFIG,
 }
