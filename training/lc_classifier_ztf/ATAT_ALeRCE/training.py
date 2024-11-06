@@ -147,7 +147,7 @@ if __name__ == "__main__":
     all_callbacks = []
     all_callbacks += [
         ModelCheckpoint(
-            monitor="loss_validation/mix",  # "F1Score_MLPMix/val"
+            monitor="loss_validation/total",  # "mix/f1s_valid"
             dirpath=path,
             save_top_k=1,
             mode="min",  # )]
@@ -158,11 +158,11 @@ if __name__ == "__main__":
 
     all_callbacks += [
         EarlyStopping(
-            monitor="loss_validation/mix",
+            monitor="loss_validation/total", # "mix/f1s_valid"
             min_delta=0.00,
             patience=args_general["patience"],
             verbose=False,
-            mode="max",
+            mode="min",
         )
     ]
 
@@ -190,13 +190,13 @@ if __name__ == "__main__":
     trainer = Trainer(
         callbacks=all_callbacks,
         logger=all_loggers,
-        val_check_interval=0.5,
+        val_check_interval=1.0,
         log_every_n_steps=100,
         accelerator="gpu",
         min_epochs=1,
         max_epochs=args_general["num_epochs"],
         gradient_clip_val=1.0 if pl_model.gradient_clip_val else 0.0,
-        num_sanity_val_steps=0,
+        num_sanity_val_steps=-1,
     )
 
     # Trainer model pl routine # trsainer fit models

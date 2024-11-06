@@ -19,7 +19,7 @@ from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 # from training import rename_feature
 
 
-labels = pd.read_parquet(os.path.join("data_231206", "partitions.parquet"))
+labels = pd.read_parquet(os.path.join("data_241015", "partitions.parquet"))
 labels["aid"] = "aid_" + labels["oid"]
 labels.set_index("aid", inplace=True)
 
@@ -64,7 +64,7 @@ elif classifier_type == "RandomForest":
     classifier.load_classifier("rf_classifier_240307")
 elif classifier_type == "HierarchicalRandomForest":
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = "models/hrf_classifier_20240722-162932"
+    model_dir = "models/hrf_classifier_20241105-143121"
     classifier.load_classifier(model_dir)
     predictions_filename = os.path.join(model_dir, "predictions.parquet")
 elif classifier_type == "LightGBM":
@@ -79,8 +79,10 @@ else:
 
 if compute_predictions:
     consolidated_features = pd.read_parquet(
-        os.path.join("data_231206_ao_features", "consolidated_features.parquet")
+        os.path.join("data_241015_ao_shorten_features", "consolidated_features.parquet")
     )
+    consolidated_features.index = 'aid_' + consolidated_features.index.astype(str)
+    consolidated_features.index.name = 'index'
 
     shorten = consolidated_features["shorten"]
     consolidated_features = consolidated_features[

@@ -24,6 +24,8 @@ def extract_info(path_chunk, dict_info):
 
     list_dict_feat = []
     for astro_object in astro_objects_batch:
+        astro_object["features"] = astro_object["features"][~astro_object["features"]["name"].isin(dict_info['rm_feat'])]
+
         ao_features = astro_object["features"][
             ~astro_object["features"]["fid"].isin([None])
         ]
@@ -66,8 +68,7 @@ def extract_info(path_chunk, dict_info):
         "./{}/feat_batch_{}.parquet".format(dict_info["path_save_feat_time"], num_batch)
     )
 
-
-def main(dict_info, num_cores, ROOT):
+def main(dict_info, num_cores, path_astrofeat_file):
     os.makedirs(dict_info["path_save"], exist_ok=True)
 
     for i, time_to_eval in enumerate(dict_info["list_time_to_eval"]):
@@ -82,8 +83,8 @@ def main(dict_info, num_cores, ROOT):
         os.makedirs(path_save_feat_time, exist_ok=True)
 
         path_chunks = glob.glob(
-            "{}/raw/data_231206_features/astro_objects_batch_{}_*".format(
-                ROOT, time_to_eval
+            "{}/{}_astro_objects_batch_*".format(
+                path_astrofeat_file, time_to_eval
             )
         )
 
@@ -102,12 +103,15 @@ def main(dict_info, num_cores, ROOT):
 if __name__ == "__main__":
     ROOT = "./data/datasets/ZTF_ff"
 
+    path_astrofeat_file = "{}/raw/data_241015_ao_shorten_features".format(ROOT)
+
     dict_info = {
-        "path_save": "{}/processed/md_feat_231206_v2".format(ROOT),
-        "list_time_to_eval": [16, 32, 64, 128, 256, 512, 1024, None],  #
-        "md_col_names": ["W1-W2", "W2-W3", "W3-W4", "sgscore1", "dist_nr", "ps_g-r"],
+        "path_save": "{}/processed/md_feat_241015".format(ROOT),
+        "list_time_to_eval": [16, 32, 64, 128, 256, 512, 1024, None],
+        "md_col_names": ["W1-W2", "W2-W3", "W3-W4", "sgscore1", "distpsnr1", "ps_g-r", 'ps_r-i', 'ps_i-z'],
+        "rm_feat": ['TDE_mag0', 'fleet_t0', 'fleet_m0', 'ulens_t0', 'ulens_mag0'],
     }
 
     num_cores = 40
 
-    main(dict_info, num_cores, ROOT)
+    main(dict_info, num_cores, path_astrofeat_file)

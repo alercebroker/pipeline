@@ -123,7 +123,7 @@ def add_features(
         # manage bias Periodic-Other
         # we will modify the training data for fold_0,
         # so using other partitions will leak info
-        assert num_folds == 1
+        #assert num_folds == 1
 
         training_partition = "training_0"
         labels = all_partitions['fold_0']

@@ -6,12 +6,12 @@ from lc_classifier.features.core.base import astro_object_from_dict
 
 
 def get_shorten(filename: str):
-    possible_n_days = filename.split("_")[-2]
+    possible_n_days = filename.split("/")[-1].split("_")[0]
     return possible_n_days
 
 
 if __name__ == "__main__":
-    dir_name = "data_231206_features"
+    dir_name = "data_241015_ao_shorten_features"
     data_dir = os.listdir(dir_name)
     data_dir = [filename for filename in data_dir if "astro_objects_batch" in filename]
     data_dir = sorted(data_dir)

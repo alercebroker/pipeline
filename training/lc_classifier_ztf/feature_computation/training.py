@@ -9,6 +9,7 @@ from alerce_classifiers.classifiers.hierarchical_random_forest import (
 )
 from alerce_classifiers.classifiers.lightgbm import LightGBMClassifier
 from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
+from utils import ZTF_ff_columns_to_PROD
 
 
 # def rename_feature(feature_name: str):
@@ -22,11 +23,23 @@ from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 
 
 if __name__ == "__main__":
-    features = pd.read_parquet("data_231206_ao_features/consolidated_features.parquet")
-    labels = pd.read_parquet("data_231206/partitions.parquet")
+    features = pd.read_parquet("data_241015_ao_shorten_features/consolidated_features.parquet")
+    labels = pd.read_parquet("data_241015/partitions.parquet")
     objects = pd.read_parquet(
         "data_231206/objects_with_wise_20240105.parquet"
     )  # to get RA/DEC
+
+    columns_to_select = list(ZTF_ff_columns_to_PROD.keys()) + ['shorten']
+    features = features[columns_to_select]
+
+    print(len(features.columns))
+    exit()
+    
+    features.index = 'aid_' + features.index.astype(str)
+    features.index.name = 'index'
+
+    #labels['oid'] = 'aid_' + labels['oid'].astype(str)
+    #objects['oid'] = 'aid_' + objects['oid'].astype(str)
 
     # manage bias of Periodic-Other towards southern sky
     training_partition = "training_0"

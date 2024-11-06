@@ -252,19 +252,22 @@ def processing_lc(path_lcs_file, dict_cols, dict_info, df_objid_label):
     # dict_snid_windows = dict()
     df_final = []
 
-    path_lcs_chunks = glob.glob("{}/lightcurves*".format(path_lcs_file))
+    path_lcs_chunks = glob.glob("{}/*".format(path_lcs_file))
     for path_chunk in tqdm(path_lcs_chunks, "processing lc chunks"):
         
         # Lightcurves
         df_chunk = pd.read_parquet("{}".format(path_chunk))
-        df_chunk = df_chunk[
-            df_chunk[dict_cols["oid"]].isin(df_objid_label[dict_cols["oid"]].values)
-        ]
+
+        # Comprobar si `oid` es columna o está en el índice
+        if dict_cols["oid"] in df_chunk.index.names:
+            df_chunk = df_chunk.reset_index(level=dict_cols["oid"])
+        df_chunk = df_chunk[df_chunk[dict_cols["oid"]].isin(df_objid_label[dict_cols["oid"]].values)]
         df_chunk = (
             df_chunk.groupby(dict_cols["oid"])
             .apply(lambda x: x.sort_values(dict_cols["time"]))
             .reset_index(drop=True)
         )
+        
         df_chunk_filtered = df_chunk[
             list(set(dict_cols.values()) - {dict_cols["class"]})
         ]

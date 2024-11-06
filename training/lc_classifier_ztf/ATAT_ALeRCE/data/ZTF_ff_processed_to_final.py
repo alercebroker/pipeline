@@ -9,6 +9,7 @@ import os
 
 from sklearn.preprocessing import QuantileTransformer
 from joblib import dump
+from pathlib import Path
 
 from src.partitions import get_partitions, ordered_partitions
 from src.processing import processing_lc
@@ -20,31 +21,58 @@ def check_files(df_objid_label, dict_cols, dict_info, path_lcs_file, path_md_fea
     print("We are checking the IDs in all files that you will use...")
     oid_objects = df_objid_label[dict_cols["oid"]].values
     oid_files = []
-    path_lcs_chunks = glob.glob("{}/lightcurves*".format(path_lcs_file))
+
+    path_lcs_chunks = glob.glob("{}/*".format(path_lcs_file))
     for i, path_chunk in enumerate(path_lcs_chunks):
         # print('Checking chunk {}'.format(i))
         num_batch = path_chunk.split("_")[-1].split(".")[0]
-        oid_lcs = pd.read_parquet("{}".format(path_chunk))[dict_cols["oid"]].values
+        df = pd.read_parquet("{}".format(path_chunk))
+        
+        # Try to access 'oid' either as a column or index
+        try:
+            oid_lcs = df[dict_cols["oid"]].values
+        except KeyError:
+            # If it's not a column, check if it's in the index
+            if dict_cols["oid"] in df.index.names:
+                oid_lcs = df.index.get_level_values(dict_cols["oid"]).values
+            else:
+                raise KeyError(f"{dict_cols['oid']} does not exist as a column or index in the DataFrame")
 
         if os.path.exists("./{}/metadata".format(path_md_feat_file)):
-            metadata = pd.read_parquet(
-                "{}/metadata/metadata_batch_0{}.parquet".format(
-                    path_md_feat_file, num_batch
+            if len(path_lcs_chunks) == glob.glob("./{}/metadata/*".format(path_md_feat_file)):
+                metadata = pd.read_parquet(
+                    "{}/metadata/metadata_batch_0{}.parquet".format(
+                        path_md_feat_file, num_batch
+                    )
                 )
-            )
-            oid_mds = metadata[dict_cols["oid"]].values
+                oid_mds = metadata[dict_cols["oid"]].values
+                oid_lcs = np.intersect1d(oid_lcs, oid_mds)
+            else:
+                metadata = []
+                for path_md_batch in glob.glob("./{}/metadata/*".format(path_md_feat_file)):
+                    metadata.append(pd.read_parquet(path_md_batch))
+                metadata = pd.concat(metadata)
+                oid_mds = metadata[dict_cols["oid"]].values
+                oid_lcs = np.intersect1d(oid_lcs, oid_mds)
 
-            oid_lcs = np.intersect1d(oid_lcs, oid_mds)
 
         if os.path.exists("./{}/features".format(path_md_feat_file)):
             for time_to_eval in dict_info["list_time_to_eval"]:
-                features = pd.read_parquet(
-                    "{}/features/{}_days/feat_batch_0{}.parquet".format(
-                        path_md_feat_file, time_to_eval, num_batch
+                if len(path_lcs_chunks) == glob.glob("./{}/features/{}_days/*".format(path_md_feat_file, time_to_eval)): 
+                    features = pd.read_parquet(
+                        "{}/features/{}_days/feat_batch_0{}.parquet".format(
+                            path_md_feat_file, time_to_eval, num_batch
+                        )
                     )
-                )
-                oid_feat = features[dict_cols["oid"]].values
-                oid_lcs = np.intersect1d(oid_lcs, oid_feat)
+                    oid_feat = features[dict_cols["oid"]].values
+                    oid_lcs = np.intersect1d(oid_lcs, oid_feat)
+                else:
+                    features = []
+                    for path_feat_batch in glob.glob("./{}/features/{}_days/*".format(path_md_feat_file, time_to_eval)):
+                        features.append(pd.read_parquet(path_feat_batch))
+                    features = pd.concat(features)
+                    oid_mds = features[dict_cols["oid"]].values
+                    oid_lcs = np.intersect1d(oid_lcs, oid_mds)  
 
         oid_files.append(oid_lcs)
 
@@ -226,7 +254,7 @@ def main(
 
     # we will modify the training data for fold_0,
     # so using other partitions will leak info
-    num_folds = 1  # 5
+    num_folds = 5  # 5
     all_partitions = {}
     for fold in range(num_folds):
         all_partitions["fold_%s" % fold] = ordered_partitions(
@@ -301,12 +329,12 @@ def main(
 if __name__ == "__main__":
     ROOT = "./data/datasets/ZTF_ff"
 
-    version = "240627"  # Consider the partition version that you want to use
-    path_save_dataset = "{}/final/LC_MD_FEAT_{}".format(ROOT, version)
+    version = "241015"  # Consider the partition version that you want to use
+    path_save_dataset = "{}/final/LC_MD_FEAT_{}".format(ROOT, version)   # LC_MD_FEAT_{}".format(ROOT, version)
     path_save_k_fold = "{}/partitions/{}".format(ROOT, version)
 
-    path_lcs_file = "{}/raw/data_231206".format(ROOT)
-    path_md_feat_file = "{}/processed/md_feat_231206_v2".format(
+    path_lcs_file = "{}/processed/data_241015".format(ROOT)
+    path_md_feat_file = "{}/processed/md_feat_241015".format(
         ROOT
     )  # if you dont have features put None
 
@@ -314,8 +342,8 @@ if __name__ == "__main__":
     dict_cols = {
         "oid": "oid",
         "time": "mjd",
-        "flux": "flux_diff_ujy",
-        "flux_err": "sigma_flux_diff_ujy",
+        "flux": "flux_diff_uJy",
+        "flux_err": "sigma_flux_diff_uJy",
         "detected": "detected",
         "band": "fid",
         "class": "alerceclass",
