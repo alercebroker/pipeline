@@ -186,7 +186,7 @@ class StepTestCase(unittest.TestCase):
             },
             {
                 "oid": "ZTF23abuesxr",
-                "candid": "15",
+                "candid": "17",
                 "rfid": 783120208,
                 "sharpnr": -0.08399999886751175,
                 "chinr": 1.0240000486373901,
