@@ -38,7 +38,7 @@ class FeatureStep(GenericStep):
     def __init__(
         self,
         config=None,
-        db_sql:PSQLConnection = None,
+        db_sql: PSQLConnection = None,
         **step_args,
     ):
 
