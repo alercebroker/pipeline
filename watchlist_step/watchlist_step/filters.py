@@ -2,9 +2,9 @@ def satisfies_filter(values: dict, type: str, params: dict) -> bool:
     match type:
         case "constant":
             return constant(values, **params)
-        case "all":
+        case "and":
             return _all(values, **params)
-        case "any":
+        case "or":
             return _any(values, **params)
         case "no filter":
             return True

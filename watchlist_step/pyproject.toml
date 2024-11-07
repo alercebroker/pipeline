@@ -8,6 +8,7 @@ packages = [{ include = "watchlist_step" }]
 
 [tool.poetry.scripts]
 step = "scripts.run_step:step"
+sample = "scripts.make_sample:run"
 
 [tool.poetry.dependencies]
 python = "~3.10"
@@ -24,8 +25,11 @@ pytest-cov = "^4.1.0"
 black = "^23.0.0"
 ruff = "^0.3.5"
 
-[tool.black]
-line-length = 88
+[tool.ruff]
+line-length = 80
+
+[tool.pyright]
+typeCheckingMode = "basic"
 
 [build-system]
 requires = ["poetry-core"]

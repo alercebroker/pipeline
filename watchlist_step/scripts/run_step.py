@@ -2,8 +2,6 @@ import logging
 import os
 import sys
 
-from apf.core import get_class
-
 import settings
 from watchlist_step.step import WatchlistStep
 
