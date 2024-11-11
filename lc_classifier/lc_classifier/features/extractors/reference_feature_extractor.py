@@ -64,10 +64,14 @@ class ReferenceFeatureExtractor(FeatureExtractor):
             columns = ["sharpnr", "chinr"]
             observations.loc[ref_index, columns] = reference.loc[ref_index, columns]
 
-            mean_sharpnr = observations["sharpnr"].mean()
-            mean_chinr = observations["chinr"].mean()
-            features.append(["mean_sharpnr", mean_sharpnr, all_bands])
-            features.append(["mean_chinr", mean_chinr, all_bands])
+            if len(observations.loc[ref_index]) == 0:
+                features.append(["mean_sharpnr", np.nan, all_bands])
+                features.append(["mean_chinr", np.nan, all_bands])
+            else:
+                mean_sharpnr = observations["sharpnr"].mean()
+                mean_chinr = observations["chinr"].mean()
+                features.append(["mean_sharpnr", mean_sharpnr, all_bands])
+                features.append(["mean_chinr", mean_chinr, all_bands])
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 
