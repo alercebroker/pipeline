@@ -133,10 +133,6 @@ class FeatureStep(GenericStep):
 
     def post_execute(self, result):
         self.metrics["sid"] = get_sid(result)
-
-        for message in result:
-            del message["reference"]
-
         return result
 
     def tear_down(self):
