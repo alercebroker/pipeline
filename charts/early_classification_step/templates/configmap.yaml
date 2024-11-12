@@ -7,6 +7,8 @@ data:
   consumer-topics: {{ .Values.configmap.consumerTopics }}
   consumer-server: {{ .Values.configmap.consumerServer }}
   consumer-group: {{ .Values.configmap.consumerGroup }}
+  consumer-security-protocol: {{ .Values.configmap.consumer-security-protocol }}
+  consumer-sasl-mechanism: {{ .Values.configmap.consumer-sasl-mechanism }}
   topic-strategy-format: "{{ .Values.configmap.topicStrategy.format }}"
   producer-server: {{ .Values.configmap.producerServer }}
   producer-topic-format: {{ .Values.configmap.producerTopicFormat }}
@@ -17,3 +19,5 @@ data:
   classifier-version: {{ .Values.configmap.classifierVersion }}
   producer-schema-path: {{ .Values.configmap.producerSchemaPath }}
   metrics-schema-path: {{ .Values.configmap.metricsSchemaPath }}
+  metrics-security-protocol: {{ .Values.configmap.metrics-security-protocol }}
+  metrics-sasl-mechanism: {{ .Values.configmap.metrics-sasl-mechanism }}
