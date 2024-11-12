@@ -58,6 +58,16 @@ spec:
                 configMapKeyRef:
                   name: {{ include "early-classifier.fullname" . }}
                   key: consumer-group
+            - name: CONSUMER_SECURITY_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: consumer-security-protocol
+            - name: CONSUMER_SASL_MECHANISM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: consumer-sasl-mechanism
             - name: PRODUCER_SERVER
               valueFrom:
                 configMapKeyRef:
@@ -147,6 +157,16 @@ spec:
                 configMapKeyRef:
                   name: {{ include "early-classifier.fullname" . }}
                   key: metrics-schema-path
+            - name: METRICS_SECURITY_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: metrics-security-protocol
+            - name: METRICS_SASL_MECHANISM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "early-classifier.fullname" . }}
+                  key: metrics-sasl-mechanism
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
