@@ -205,3 +205,11 @@ class StepTestCase(unittest.TestCase):
             pd.DataFrame(_get_sql_ref.return_value)[columns].set_index("rfid"),
             check_like=True,
         )
+
+    def test_post_execute(self):
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
+        result_messages = self.step.execute(messages)
+        result_messages = self.step.post_execute(result_messages)
+
+        for message in result_messages:
+            self.assertTrue("reference" not in message.keys())
