@@ -3,7 +3,6 @@ absl-py==0.7.1
 astor==0.8.0
 astropy~=4.0
 bleach==3.1.0
-certifi==2019.6.16
 chardet==3.0.4
 docutils==0.14
 Flask==1.0.3
