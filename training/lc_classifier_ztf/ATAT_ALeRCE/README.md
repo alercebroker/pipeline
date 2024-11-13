@@ -100,6 +100,13 @@ Firstly, you should create the enviroment:
 
 ## Data Acquisition 
 
+To train ATAT you will need the following data:
+* **pickle files to load instances of the AstroObject class**. ALeRCE classifiers use the AstroObject class to handle data including features, stamps, light curves, etc. AstroObject instances can be stored and loaded from pickle files that contain a list of dictionaries. Each of these ditionaries correspond to one astronomical object. Each dictionary includes: 'metadata', 'detections', 'non_detections', 'forced_photometry', 'xmatch', 'stamps', 'features', 'predictions'. A set of chunks are stored in multiple pickle files.
+* **parquet files containing single light curves (e.g. detections + forced photometry) per object**. The AstroObject files need to be processed in order to add detections and forced photometry into single light curves. This is done by using ZTF_ff_raw_to_processed.py which combines the light curves in the the AstroObject pickle files and store them into parquet files.
+* **microlensing events to be removed**. Some spurious microlensing events were detected by the ALeRCE team. These are stored in csv files that only contain the object IDs of objects to be removed/kept.
+* **parquet files containing partitions**. We use K-fold cross validation. In order to have exactly the same train-validation-test sets for each partition we define a parquet file called partitions.parquet which contains the columns 'oid' (object ID), 'alerceclass' (the label of that object), ra', 'dec', and 'partition'. The latest can be one of the following: 'test', 'training_0', 'training_1', 'training_2', 'training_3', 'training_4', 'validation_0', 'validation_1', 'validation_2', 'validation_3', 'validation_4'. If 'test' that means that object is never used for validation or training. If 'training_i' it means that the object is used for training in the $i$-th experiment, while 'validation_i' means the object is used for validation in the $i$-th experiment.
+
+
 The raw ZTF_ff data is stored at `quimal-cpu2` in `/home/db_storage/ztf_forced_photometry`. Ensure to replicate the same file structure locally: 
 
 ```
