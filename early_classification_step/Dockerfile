@@ -32,8 +32,9 @@ COPY early_classification_step/model /app/model
 COPY early_classification_step/README.md \
   early_classification_step/settings.py \
   /app/
+COPY early_classification_step/requirements.txt /app/requirements.txt
 
 WORKDIR /app
-RUN pip install -r requirements.txt --only-root
+RUN pip install -r requirements.txt
 
 CMD ["python", "scripts/run_step.py"]
