@@ -44,8 +44,7 @@ class WatchlistStep(GenericStep):
 
     def insert_matches(self, matches: List[tuple]):
         values = [
-            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now())
-            for m in matches
+            (m[2], m[0], m[1], json.dumps({}), datetime.datetime.now()) for m in matches
         ]
 
         query = create_insertion_query()
@@ -60,9 +59,7 @@ class WatchlistStep(GenericStep):
         res = []
         with self.users_db.conn() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    query, [item for coord in coordinates for item in coord]
-                )
+                cursor.execute(query, [item for coord in coordinates for item in coord])
                 res = cursor.fetchall()
         return res
 

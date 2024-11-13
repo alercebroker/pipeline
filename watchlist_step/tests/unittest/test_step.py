@@ -37,7 +37,9 @@ def test_should_insert_matches(
 ):
     datetime_mock.now.return_value = "date"
 
-    cursor_mock: mock.MagicMock = connect_mock.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+    cursor_mock: mock.MagicMock = (
+        connect_mock.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+    )
     executemany_mock: mock.MagicMock = cursor_mock.executemany
 
     wl_step.insert_matches([(0, 1, 2), (3, 4, 5)])
@@ -54,10 +56,10 @@ def test_should_insert_matches(
 
 
 @mock.patch("psycopg2.connect")
-def test_should_create_matches(
-    connect_mock: mock.MagicMock, wl_step: WatchlistStep
-):
-    cursor_mock: mock.MagicMock = connect_mock.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+def test_should_create_matches(connect_mock: mock.MagicMock, wl_step: WatchlistStep):
+    cursor_mock: mock.MagicMock = (
+        connect_mock.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value
+    )
     execute_mock: mock.MagicMock = cursor_mock.execute
 
     wl_step.match_user_targets(

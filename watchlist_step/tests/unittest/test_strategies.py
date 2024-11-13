@@ -59,9 +59,7 @@ class TestSortingHatStrategy:
         assert result[1] == (5, 6, 7, 8)
 
     def test_get_new_values(self):
-        new_values = self.sorting_hat_strat.get_new_values(
-            self.matches, self.alerts
-        )
+        new_values = self.sorting_hat_strat.get_new_values(self.matches, self.alerts)
 
         assert len(new_values) == 3
         assert new_values[0][-1] == self.matches[0][3]

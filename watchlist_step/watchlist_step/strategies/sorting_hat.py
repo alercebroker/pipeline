@@ -5,9 +5,7 @@ id_to_char = {"g": 1, "r": 2}
 
 class SortingHatStrategy(BaseStrategy):
     def get_coordinates(self, alerts: dict) -> list[tuple]:
-        return [
-            (a["ra"], a["dec"], a["oid"], a["candid"]) for a in alerts.values()
-        ]
+        return [(a["ra"], a["dec"], a["oid"], a["candid"]) for a in alerts.values()]
 
     def get_new_values(self, matches: list[tuple], alerts: dict) -> list[tuple]:
         new_values = []
