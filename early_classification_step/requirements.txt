@@ -14,8 +14,6 @@ cycler==0.11.0
 db-plugins==4.2.7
 dnspython==2.3.0
 docutils==0.14
-# Editable install with no version control (early-classification-step==24.5.1)
--e /app
 ephem==3.7.7.0
 fastavro==1.4.12
 Flask==1.0.3
