@@ -17,14 +17,11 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN pip install poetry
 COPY early_classification_step/poetry.lock early_classification_step/pyproject.toml /app/
 COPY early_classification_step/model /app/model
 WORKDIR /app
-RUN poetry install --no-root --without=dev --without=test
 
 FROM python:3.7-slim as production
-RUN pip install poetry
 
 COPY --from=builder /app /app
 
@@ -37,6 +34,6 @@ COPY early_classification_step/README.md \
   /app/
 
 WORKDIR /app
-RUN poetry install --only-root
+RUN pip install -r requirements.txt --only-root
 
-CMD ["poetry", "run", "python", "scripts/run_step.py"]
+CMD ["python", "scripts/run_step.py"]
