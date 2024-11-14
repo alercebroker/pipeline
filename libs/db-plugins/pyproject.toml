@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "db-plugins"
-version = "25.0.1a26"
+version = "25.0.1a27"
 description = "ALeRCE database plugins."
 authors = []
 readme = "README.rst"
