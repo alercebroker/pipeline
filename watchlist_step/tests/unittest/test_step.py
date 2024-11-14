@@ -20,7 +20,7 @@ def wl_step():
             "PASSWORD": "password",
             "PORT": 5433,
             "DB_NAME": "postgres",
-        }
+        },
     }
     return WatchlistStep(
         strategy_name=strategy_name,
