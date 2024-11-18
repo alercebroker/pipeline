@@ -47,8 +47,8 @@ configmap:
   consumerTopics: ""
   consumerServer: ""
   consumerGroup: ""
-  consumer-security-protocol: ""
-  consumer-sasl-mechanism: ""
+  consumerSecurityProtocol: ""
+  consumerSaslMechanism: ""
   topicStrategy:
     enabled: false
     format: ""
@@ -61,8 +61,8 @@ configmap:
   classifierVersion: ""
   producerSchemaPath: ""
   metricsSchemaPath: "/schemas/early_classification_step/metrics.json"
-  metrics-security-protocol: ""
-  metrics-sasl-mechanism: ""
+  metricsSecurityProtocol: ""
+  metricsSaslMechanism: ""
 
 secrets:
   kafkaAuth:
