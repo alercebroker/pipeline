@@ -110,13 +110,19 @@ class LightcurveStep(GenericStep):
         detections["candid"] = detections["candid"].astype(str)
         detections["parent_candid"] = detections["parent_candid"].astype(str)
 
+        # TODO: check if this logic is ok
+        # TODO: has_stamp in db is not reliable
         # has_stamp true will be on top
         # new true will be on top
-        # so this will drop alerts coming from the database if they are also in the stream
-        # but will also drop if they are previous detections
         detections = detections.sort_values(
             ["has_stamp", "new"], ascending=[False, False]
-        ).drop_duplicates(["candid", "oid"], keep="first")
+        )
+
+        # so this will drop alerts coming from the database if they are also in the stream
+        # but will also drop if they are previous detections
+        detections = detections.drop_duplicates(
+            ["candid", "oid"], keep="first"
+        )
 
         non_detections = non_detections.drop_duplicates(["oid", "fid", "mjd"])
         self.logger.debug(

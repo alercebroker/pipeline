@@ -13,7 +13,7 @@ from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 
 from .database import (
     PSQLConnection,
-    _get_sql_references,
+    get_sql_references,
 )
 
 from .utils.metrics import get_sid
@@ -83,7 +83,7 @@ class FeatureStep(GenericStep):
         self.set_producer_key_field("oid")
         return result
 
-    def get_sql_references(self, oids):
+    def get_sql_references(self, oids: List[str]) -> pd.DataFrame:
         db_sql_references = _get_sql_references(oids, self.db_sql)
         reference_keys = ["oid", "candid", "rfid", "sharpnr", "chinr"]
         db_sql_references = pd.DataFrame(db_sql_references)
@@ -103,7 +103,9 @@ class FeatureStep(GenericStep):
         oids = set()
         for msg in messages:
             oids.add(msg["oid"])
-        db_sql_references = self.get_sql_references(oids)
+        db_sql_references = get_sql_references(
+            oids, self.db_sql, keys=["oid", "candid", "rfid", "sharpnr", "chinr"]
+        )
 
         for message in messages:
             if not message["oid"] in candids:
@@ -116,11 +118,11 @@ class FeatureStep(GenericStep):
 
             xmatch_data = message["xmatches"]
 
-            reference_data = db_sql_references[
-                db_sql_references["oid"] == message["oid"]
-            ].to_dict("records")
+            # reference_data = db_sql_references[
+            #     db_sql_references["oid"] == message["oid"]
+            # ].to_dict("records")
 
-            ao = detections_to_astro_objects(list(m), xmatch_data, reference_data)
+            ao = detections_to_astro_objects(list(m), xmatch_data, db_sql_references)
             astro_objects.append(ao)
             messages_to_process.append(message)
 

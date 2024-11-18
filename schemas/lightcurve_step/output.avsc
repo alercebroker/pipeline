@@ -72,7 +72,8 @@
             },
             {
               "name": "mag",
-              "type": "float"
+              "type": "float",
+              "doc": "Difference Magnitude"
             },
             {
               "name": "e_mag",

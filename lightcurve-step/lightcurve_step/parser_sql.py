@@ -4,6 +4,8 @@ from db_plugins.db.mongo.models import (
     ForcedPhotometry as MongoForcedPhotometry,
 )
 from .parser_utils import get_fid
+from survey_parser_plugins.parsers.ZTFParser import _e_ra
+from survey_parser_plugins.parsers.ZTFParser import ERRORS as dec_errors
 
 
 def parse_sql_detection(ztf_models: list, *, oids) -> list:
@@ -33,9 +35,9 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
         "dubious",
         "magpsf",
         "sigmapsf",
-        "magpsf_corr",
-        "sigmapsf_corr",
-        "sigmapsf_corr_ext",
+        # "magpsf_corr",
+        # "sigmapsf_corr",
+        # "sigmapsf_corr_ext",
     ]
 
     parsed_result = []
@@ -63,10 +65,16 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
             e_mag_corr=det["sigmapsf_corr"],
             e_mag_corr_ext=det["sigmapsf_corr_ext"],
             extra_fields=extra_fields,
-            e_ra=-999,
-            e_dec=-999,
+            e_ra=_e_ra(det["dec"], det["fid"]),
+            e_dec=dec_errors[det["fid"]],
         )
         parsed.pop("_id", None)
+
+        # Corrected mags belong to extra fields in the lightcurve step schema
+        # In the correction step schema they become detection fields
+        parsed.pop("mag_corr")
+        parsed.pop("e_mag_corr")
+        parsed.pop("e_mag_corr_ext")
 
         for field in FIELDS_TO_REMOVE:
             parsed.pop(field, None)
