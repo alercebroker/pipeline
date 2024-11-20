@@ -56,32 +56,48 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
     """Apply magnitude correction and compute its associated errors. See `README` for details"""
-    aux1 = 10 ** (-0.4 * detections["magnr"].astype(float))
-    aux2 = 10 ** (-0.4 * detections["mag"])
-    aux3 = np.maximum(aux1 + detections["isdiffpos"] * aux2, 0.0)
+
+    need_correction_mask = detections["new"]
+    detections_that_need_corr = detections[need_correction_mask]
+    detections_that_dont_need_corr = detections[~need_correction_mask]
+
+    corrected_mags_db_observations = detections_that_dont_need_corr[
+        ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+    ]
+
+    aux1 = 10 ** (-0.4 * detections_that_need_corr["magnr"].astype(float))
+    aux2 = 10 ** (-0.4 * detections_that_need_corr["mag"])
+    aux3 = np.maximum(aux1 + detections_that_need_corr["isdiffpos"] * aux2, 0.0)
     with warnings.catch_warnings():
         # possible log10 of 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         mag_corr = -2.5 * np.log10(aux3)
 
-    aux4 = (aux2 * detections["e_mag"]) ** 2 - (aux1 * detections["sigmagnr"].astype(float)) ** 2
+    aux4 = (aux2 * detections_that_need_corr["e_mag"]) ** 2 - (
+        aux1 * detections_that_need_corr["sigmagnr"].astype(float)
+    ) ** 2
     with warnings.catch_warnings():
         # possible sqrt of negative and division by 0; this is expected and returned inf is correct value
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         e_mag_corr = np.where(aux4 < 0, np.inf, np.sqrt(aux4) / aux3)
-        e_mag_corr_ext = aux2 * detections["e_mag"] / aux3
+        e_mag_corr_ext = aux2 * detections_that_need_corr["e_mag"] / aux3
 
-    mask = np.array(np.isclose(detections["mag"], _ZERO_MAG))
+    mask = np.array(np.isclose(detections_that_need_corr["mag"], _ZERO_MAG))
     mag_corr[mask] = np.inf
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
-    mask = np.array(np.isclose(detections["e_mag"], _ZERO_MAG))
+    mask = np.array(np.isclose(detections_that_need_corr["e_mag"], _ZERO_MAG))
     e_mag_corr[mask] = np.inf
     e_mag_corr_ext[mask] = np.inf
 
-    return pd.DataFrame(
+    corrected_mags_new_observations = pd.DataFrame(
         {"mag_corr": mag_corr, "e_mag_corr": e_mag_corr, "e_mag_corr_ext": e_mag_corr_ext}
     )
+
+    corrected_mags = pd.concat(
+        [corrected_mags_new_observations, corrected_mags_db_observations], axis=0
+    )
+    return corrected_mags
 
 
 def is_first_corrected(detections: pd.DataFrame, corrected: pd.Series) -> pd.Series:

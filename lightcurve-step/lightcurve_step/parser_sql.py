@@ -28,17 +28,19 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
     }
     FIELDS_TO_REMOVE = [
         "stellar",
-        "e_mag_corr",
         "corrected",
-        "mag_corr",
-        "e_mag_corr_ext",
         "dubious",
         "magpsf",
         "sigmapsf",
-        # "magpsf_corr",
-        # "sigmapsf_corr",
-        # "sigmapsf_corr_ext",
     ]
+
+    # db has old names for corrected mags in detection table
+    # update names to schema convention
+    corrected_mag_name_map = {
+        "magpsf_corr": "mag_corr",
+        "sigmapsf_corr": "e_mag_corr",
+        "sigmapsf_corr_ext": "e_mag_corr_ext",
+    }
 
     parsed_result = []
     for det in ztf_models:
@@ -48,12 +50,15 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
         for field, value in det.items():
             if field.startswith("_"):
                 continue
-            if field not in GENERIC_FIELDS:
+            elif field in corrected_mag_name_map.keys():
+                extra_fields[corrected_mag_name_map[field]] = value
+            elif field not in GENERIC_FIELDS:
                 extra_fields[field] = value
-            if field == "fid":
+            elif field == "fid":
                 parsed_det[field] = get_fid(value)
             else:
                 parsed_det[field] = value
+
         parsed = MongoDetection(
             **parsed_det,
             aid=det.get("aid", None),
@@ -119,10 +124,10 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
         # remove problematic fields
         FIELDS_TO_REMOVE = [
             "stellar",
-            "e_mag_corr",
             "corrected",
-            "mag_corr",
-            "e_mag_corr_ext",
+            # "mag_corr",
+            # "e_mag_corr",
+            # "e_mag_corr_ext",
             "dubious",
         ]
         for field in FIELDS_TO_REMOVE:
@@ -130,8 +135,9 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
 
         return fp
 
-    parsed = [
-        {
+    parsed = []
+    for forced in ztf_models:
+        parsed_fp = {
             **MongoForcedPhotometry(
                 **forced[0].__dict__,
                 aid=forced[0].__dict__.get("aid"),
@@ -143,7 +149,18 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
             "new": False,
             "forced": True,
         }
-        for forced in ztf_models
-    ]
+
+        # corrected magnitude fields must go in extra fields for feature step output
+        parsed_fp["extra_fields"]["mag_corr"] = parsed_fp["mag_corr"]
+        parsed_fp["extra_fields"]["e_mag_corr"] = parsed_fp["e_mag_corr"]
+        parsed_fp["extra_fields"]["e_mag_corr_ext"] = parsed_fp[
+            "e_mag_corr_ext"
+        ]
+
+        del parsed_fp["mag_corr"]
+        del parsed_fp["e_mag_corr"]
+        del parsed_fp["e_mag_corr_ext"]
+
+        parsed.append(parsed_fp)
 
     return list(map(format_as_detection, parsed))
