@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, ContextManager, List
+from typing import Callable, ContextManager, List, Optional
 
 import pandas as pd
 from sqlalchemy import create_engine, select
@@ -40,12 +40,11 @@ def parse_sql_reference(reference_models: list, keys) -> pd.DataFrame:
 
 def get_sql_references(
     oids: List[str], db_sql: PSQLConnection, keys: List[str]
-) -> pd.DataFrame:
+) -> Optional[pd.DataFrame]:
     if db_sql is None:
-        return []
+        return None
     with db_sql.session() as session:
         stmt = select(Reference).where(Reference.oid.in_(oids))
         reference = session.execute(stmt).all()
         df = parse_sql_reference(reference, keys)
-        # assert len(df) == len(oids)
         return df

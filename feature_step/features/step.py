@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 import json
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 from apf.core import get_class
 from apf.core.step import GenericStep
@@ -18,7 +18,7 @@ from .database import (
 
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
-from .utils.parsers import detections_to_astro_objects
+from .utils.parsers import detections_to_astro_object
 
 from importlib.metadata import version
 
@@ -83,17 +83,12 @@ class FeatureStep(GenericStep):
         self.set_producer_key_field("oid")
         return result
 
-    def get_sql_references(self, oids: List[str]) -> pd.DataFrame:
-        db_sql_references = _get_sql_references(oids, self.db_sql)
-        reference_keys = ["oid", "candid", "rfid", "sharpnr", "chinr"]
-        db_sql_references = pd.DataFrame(db_sql_references)
-
-        for field in reference_keys:
-            if field not in db_sql_references.columns:
-                db_sql_references[field] = None
-        db_sql_references = db_sql_references[reference_keys].copy()
-
-        return db_sql_references
+    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
+        db_references = get_sql_references(
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+        )
+        db_references = db_references[db_references["chinr"] >= 0.0].copy()
+        return db_references
 
     def execute(self, messages):
         candids = {}
@@ -103,9 +98,7 @@ class FeatureStep(GenericStep):
         oids = set()
         for msg in messages:
             oids.add(msg["oid"])
-        db_sql_references = get_sql_references(
-            oids, self.db_sql, keys=["oid", "candid", "rfid", "sharpnr", "chinr"]
-        )
+        references_db = self._get_sql_references(list(oids))
 
         for message in messages:
             if not message["oid"] in candids:
@@ -118,11 +111,7 @@ class FeatureStep(GenericStep):
 
             xmatch_data = message["xmatches"]
 
-            # reference_data = db_sql_references[
-            #     db_sql_references["oid"] == message["oid"]
-            # ].to_dict("records")
-
-            ao = detections_to_astro_objects(list(m), xmatch_data, db_sql_references)
+            ao = detections_to_astro_object(list(m), xmatch_data, references_db)
             astro_objects.append(ao)
             messages_to_process.append(message)
 

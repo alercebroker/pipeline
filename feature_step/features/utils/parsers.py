@@ -6,8 +6,11 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
-def extract_reference(detections: List[Dict]):
-    keys = ["distnr", "rfid", "sharpnr", "chinr"]
+def get_reference_for_each_detection(detections: List[Dict]):
+    # for each detection, it looks what is the reference id
+    # and how far away it is
+
+    keys = ["distnr", "rfid"]
 
     reference = []
     for detection in detections:
@@ -24,8 +27,30 @@ def extract_reference(detections: List[Dict]):
     return reference
 
 
-def detections_to_astro_objects(
-    detections: List[Dict], xmatches: Optional[Dict], reference: Optional[List[Dict]]
+def get_new_references_from_message(detections: List[Dict]) -> pd.DataFrame:
+    # get info of references that is in the incoming message
+    #
+    # output columns: oid, rfid, sharpnr, chinr
+
+    keys = ["rfid", "sharpnr", "chinr"]
+
+    references = []
+    for detection in detections:
+        if not set(keys).issubset(detection["extra_fields"]):
+            continue
+        reference = [detection["oid"]] + [detection["extra_fields"][k] for k in keys]
+        references.append(reference)
+
+    references = pd.DataFrame(references, columns=["oid"] + keys)
+    references = references[references["chinr"] >= 0.0].copy()
+    references.drop_duplicates(["oid", "rfid"], keep="first", inplace=True)
+    return references
+
+
+def detections_to_astro_object(
+    detections: List[Dict],
+    xmatches: Optional[Dict],
+    references_db: Optional[pd.DataFrame],
 ) -> AstroObject:
     detection_keys = [
         "oid",
@@ -44,15 +69,6 @@ def detections_to_astro_objects(
         "fid",
         "isdiffpos",
         "forced",
-        # 'sgscore1'
-    ]
-
-    reference_keys = [
-        "oid",
-        "candid",
-        "rfid",
-        "sharpnr",
-        "chinr",
     ]
 
     values = []
@@ -62,8 +78,11 @@ def detections_to_astro_objects(
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
 
-    reference_from_detections = extract_reference(detections)
-    a = pd.concat([a, reference_from_detections], axis=1)
+    # reference_for_each_detection has distnr, rfid from dets
+    reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
+        detections
+    )
+    a = pd.concat([a, reference_for_each_detection], axis=1)
 
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
@@ -78,11 +97,6 @@ def detections_to_astro_objects(
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
-
-    aid_reference = a[reference_keys].copy()
-    for field in ["sharpnr", "chinr"]:
-        if field in a.columns:
-            a.drop(columns=[field], inplace=True)
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
@@ -115,24 +129,20 @@ def detections_to_astro_objects(
         columns=["name", "value"],
     ).fillna(value=np.nan)
 
-    if reference is not None:
-        b = pd.DataFrame(reference)
-        if len(b) > 0:
-            aid_reference = pd.concat([aid_reference, b], axis=0, ignore_index=True)
-    for field in ["sharpnr", "chinr"]:
-        aid_reference.loc[aid_reference[field] == -99999, field] = None
-    aid_reference.dropna(inplace=True)
-    aid_reference.sort_values(by=["oid", "candid"], inplace=True)
-    aid_reference.drop_duplicates(subset=["oid", "rfid"], keep="first", inplace=True)
-    aid_reference.drop(columns=["candid"], inplace=True)
-    aid_reference.set_index("oid", inplace=True)
-    aid_reference["rfid"] = aid_reference["rfid"].astype(int)
+    new_references = get_new_references_from_message(detections)
+
+    if references_db is not None:
+        references_db = references_db[references_db["oid"] == oid].copy()
+        references = pd.concat([new_references, references_db], axis=0)
+        references.drop_duplicates(["oid", "rfid"], keep="first", inplace=True)
+    else:
+        references = new_references
 
     astro_object = AstroObject(
         detections=aid_detections,
         forced_photometry=aid_forced,
         metadata=metadata,
-        reference=aid_reference,
+        reference=references,
     )
     return astro_object
 
@@ -258,7 +268,9 @@ def parse_output(
         assert oid_ao == oid
         feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
 
-        reference = astro_object.reference.reset_index().to_dict("records")
+        reference = astro_object.reference
+        if reference is not None:
+            reference = astro_object.reference.reset_index(drop=True).to_dict("records")
 
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))

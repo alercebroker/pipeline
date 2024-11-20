@@ -8,7 +8,6 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 from ..message_factory import generate_input_batch
 from .message_example import messages as spm_messages
-from features.utils.parsers import extract_reference
 
 
 CONSUMER_CONFIG = {
@@ -120,7 +119,7 @@ class StepTestCase(unittest.TestCase):
 
         assert multiband_period_scribe == multiband_period_message
 
-    @mock.patch("features.step._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
         _get_sql_ref.return_value = []
 
@@ -128,32 +127,31 @@ class StepTestCase(unittest.TestCase):
         oids = set()
         for msg in messages:
             oids.add(msg["oid"])
-        result_references_from_db = self.step.get_sql_references(oids)
-
+        result_references_from_db = self.step._get_sql_references(list(oids))
         self.assertEqual(0, len(result_references_from_db))
 
-    @mock.patch("features.step._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_are_in_messages_only(self, _get_sql_ref):
-        _get_sql_ref.return_value = []
+        _get_sql_ref.return_value = None
 
         messages = [spm_messages[2]]
         result_messages = self.step.execute(messages)
 
         self.assertEqual(2, len(result_messages[0]["reference"]))
 
-    @mock.patch("features.step._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_some_are_in_db(self, _get_sql_ref):
         rfid = 783120150
-        _get_sql_ref.return_value = [
-            {
-                "oid": "ZTF18acphgdi",
-                "candid": "5",
-                "rfid": rfid,
-                "sharpnr": -0.020999999716877937,
-                "chinr": 0.5440000295639038,
-                "fid": "g",
-            },
-        ]
+        _get_sql_ref.return_value = pd.DataFrame(
+            [
+                {
+                    "oid": "ZTF18acphgdi",
+                    "rfid": rfid,
+                    "sharpnr": -0.020999999716877937,
+                    "chinr": 0.5440000295639038,
+                },
+            ]
+        )
 
         columns = ["oid", "rfid", "sharpnr", "chinr"]
 
@@ -173,26 +171,24 @@ class StepTestCase(unittest.TestCase):
             check_like=True,
         )
 
-    @mock.patch("features.step._get_sql_references")
+    @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_are_all_in_db(self, _get_sql_ref):
-        _get_sql_ref.return_value = [
-            {
-                "oid": "ZTF23abuesxr",
-                "candid": "12",
-                "rfid": 783120108,
-                "sharpnr": -0.024000000208616257,
-                "chinr": 0.5049999952316284,
-                "fid": "g",
-            },
-            {
-                "oid": "ZTF23abuesxr",
-                "candid": "17",
-                "rfid": 783120208,
-                "sharpnr": -0.08399999886751175,
-                "chinr": 1.0240000486373901,
-                "fid": "r",
-            },
-        ]
+        _get_sql_ref.return_value = pd.DataFrame(
+            [
+                {
+                    "oid": "ZTF23abuesxr",
+                    "rfid": 783120108,
+                    "sharpnr": -0.024000000208616257,
+                    "chinr": 0.5049999952316284,
+                },
+                {
+                    "oid": "ZTF23abuesxr",
+                    "rfid": 783120208,
+                    "sharpnr": -0.08399999886751175,
+                    "chinr": 1.0240000486373901,
+                },
+            ]
+        )
 
         columns = ["oid", "rfid", "sharpnr", "chinr"]
 
