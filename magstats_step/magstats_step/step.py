@@ -123,6 +123,6 @@ class MagstatsStep(GenericStep):
             )
 
     def post_execute(self, result: dict):
-        self.produce_scribe(result)
+        # self.produce_scribe(result)
         self.produce_scribe_ztf(result)
         return {}
