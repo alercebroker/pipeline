@@ -6,15 +6,17 @@ from unittest import mock
 
 from correction._step import CorrectionStep
 
-from tests.utils import ztf_alert, atlas_alert, non_detection, elasticc_alert
+from tests.utils import ztf_detection, atlas_alert, non_detection, elasticc_alert
+from typing import Dict, Any
+
 
 messages = [
     {
         "oid": "OID1",
         "candid": "a",
         "detections": [
-            ztf_alert(candid="a", new=True, forced=False),
-            ztf_alert(candid="b", has_stamp=False, new=False, forced=True),
+            ztf_detection(is_new=True, candid="a", forced=False),
+            ztf_detection(candid="b", has_stamp=False, is_new=False, forced=True),
         ],
         "non_detections": [],
     },
@@ -22,8 +24,8 @@ messages = [
         "oid": "OID2",
         "candid": "c",
         "detections": [
-            ztf_alert(oid="OID2", candid="c", new=True, forced=False),
-            ztf_alert(oid="OID2", candid="d", has_stamp=False, new=True, forced=False),
+            ztf_detection(oid="OID2", candid="c", is_new=True, forced=False),
+            ztf_detection(oid="OID2", candid="d", has_stamp=False, is_new=True, forced=False),
         ],
         "non_detections": [non_detection(oid="OID2", mjd=1, fid=1)],
     },
@@ -36,7 +38,7 @@ messages = [
     {
         "oid": "OID4",
         "candid": "hehe",
-        "detections": [elasticc_alert(oid="OID4", candid="hehe", new=True, forced=False)],
+        "detections": [elasticc_alert(oid="OID4", candid="hehe", is_new=True, forced=False)],
         "non_detections": [],
     },
 ]
@@ -48,17 +50,17 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(
+            ztf_detection(
                 candid="a",
-                new=True,
+                is_new=True,
                 forced=False,
                 extra_fields=messages[0]["detections"][0]["extra_fields"],
             ),
-            ztf_alert(
+            ztf_detection(
                 candid="b",
                 has_stamp=False,
                 forced=True,
-                new=False,
+                is_new=False,
                 extra_fields=messages[0]["detections"][1]["extra_fields"],
             ),
         ],
@@ -70,18 +72,18 @@ message4produce = [
         "meanra": 1,
         "meandec": 1,
         "detections": [
-            ztf_alert(
+            ztf_detection(
                 oid="OID2",
                 candid="c",
-                new=True,
+                is_new=True,
                 forced=False,
                 extra_fields=messages[1]["detections"][0]["extra_fields"],
             ),
-            ztf_alert(
+            ztf_detection(
                 oid="OID2",
                 candid="d",
                 has_stamp=False,
-                new=True,
+                is_new=True,
                 forced=False,
                 extra_fields=messages[1]["detections"][1]["extra_fields"],
             ),
@@ -112,7 +114,7 @@ message4produce = [
             elasticc_alert(
                 oid="OID4",
                 candid="hehe",
-                new=True,
+                is_new=True,
                 forced=False,
                 extra_fields=messages[3]["detections"][0]["extra_fields"],
             )
@@ -124,33 +126,33 @@ message4produce = [
 message4execute = {
     "candids": {"OID1": "a", "OID2": "c", "OID3": "e", "OID4": "hehe"},
     "detections": [
-        ztf_alert(
+        ztf_detection(
             oid="OID1",
             candid="a",
-            new=True,
+            is_new=True,
             forced=False,
             extra_fields=messages[0]["detections"][0]["extra_fields"],
         ),
-        ztf_alert(
+        ztf_detection(
             oid="OID1",
             candid="b",
             has_stamp=False,
-            new=False,
+            is_new=False,
             forced=True,
             extra_fields=messages[0]["detections"][1]["extra_fields"],
         ),
-        ztf_alert(
+        ztf_detection(
             oid="OID2",
             candid="c",
-            new=True,
+            is_new=True,
             forced=False,
             extra_fields=messages[1]["detections"][0]["extra_fields"],
         ),
-        ztf_alert(
+        ztf_detection(
             oid="OID2",
             candid="d",
             has_stamp=False,
-            new=True,
+            is_new=True,
             forced=False,
             extra_fields=messages[1]["detections"][1]["extra_fields"],
         ),
@@ -163,7 +165,7 @@ message4execute = {
         elasticc_alert(
             oid="OID4",
             candid="hehe",
-            new=True,
+            is_new=True,
             forced=False,
             extra_fields=messages[3]["detections"][0]["extra_fields"],
         ),
@@ -180,7 +182,23 @@ message4execute = {
 }
 
 
+def add_corr_mags_to_message(message: Dict[str, Any]):
+    for detection in message["detections"]:
+        if detection["new"]:
+            continue
+        else:
+            detection["extra_fields"]["mag_corr"] = 15.2
+            detection["extra_fields"]["e_mag_corr"] = 0.02
+            detection["extra_fields"]["e_mag_corr_ext"] = 0.08
+
+
+add_corr_mags_to_message(message4execute)
+
+
 def test_pre_execute_formats_message_with_all_detections_and_non_detections():
+    for m in messages:
+        add_corr_mags_to_message(m)
+
     formatted = CorrectionStep.pre_execute(messages)
     assert "detections" in formatted
     assert formatted["detections"] == message4execute["detections"]
@@ -261,10 +279,11 @@ def test_post_execute_calls_scribe_producer_for_each_detection():
 
         mock_args, _ = step.scribe_producer.produce.call_args
         from unittest import TestCase
+
         tc = TestCase()
         tc.maxDiff = None
         tc.assertDictEqual(mock_args[0], {"payload": json.dumps(data)})
-        
+
     assert step.scribe_producer.produce.call_count == len(
         list(filter(lambda x: x["new"], message4execute_copy["detections"]))
     )

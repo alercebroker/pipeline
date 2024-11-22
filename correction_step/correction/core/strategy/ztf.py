@@ -14,7 +14,17 @@ _ZERO_MAG = 100.0
 
 def is_corrected(detections: pd.DataFrame) -> pd.Series:
     """Whether the nearest source is closer than `DISTANCE_THRESHOLD`"""
-    return detections["distnr"] < DISTANCE_THRESHOLD
+    is_new_mask = detections["new"]
+    new_detections = detections[is_new_mask]
+    old_detections = detections[~is_new_mask]
+
+    corrected_new: pd.Series = new_detections["distnr"] < DISTANCE_THRESHOLD
+
+    if len(old_detections) == 0:
+        return corrected_new
+
+    corrected_old: pd.Series = old_detections["corrected"]
+    return pd.concat([corrected_new, corrected_old])
 
 
 def is_dubious(detections: pd.DataFrame) -> pd.Series:
@@ -24,10 +34,21 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
     * the first detection for its OID and FID has a nearby source, but the detection doesn't, or
     * the first detection for its OID and FID doesn't have a nearby source, but the detection does.
     """
-    negative = detections["isdiffpos"] == -1
-    corrected = is_corrected(detections)
-    first = is_first_corrected(detections, corrected)
-    return (~corrected & negative) | (first & ~corrected) | (~first & corrected)
+    is_new_mask = detections["new"]
+    new_detections = detections[is_new_mask]
+    old_detections = detections[~is_new_mask]
+
+    # Process new detections
+    negative = new_detections["isdiffpos"] == -1
+    corrected = is_corrected(new_detections)
+    first = is_first_corrected(new_detections, corrected)
+    dubious_new: pd.Series = (~corrected & negative) | (first & ~corrected) | (~first & corrected)
+
+    if len(old_detections) == 0:
+        return dubious_new
+
+    dubious_old: pd.Series = old_detections["dubious"]
+    return pd.concat([dubious_new, dubious_old])
 
 
 def is_stellar(detections: pd.DataFrame) -> pd.Series:
@@ -46,12 +67,30 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
     * the nearest source sharpness parameter is within a range around zero, and
     * the nearest source $\chi$ parameter is low.
     """
-    near_ps1 = detections["distpsnr1"] < DISTANCE_THRESHOLD
-    stellar_ps1 = detections["sgscore1"] > SCORE_THRESHOLD
-    near_ztf = is_corrected(detections)
-    sharpnr_in_range = (SHARPNR_MIN < detections["sharpnr"]) < SHARPNR_MAX
-    stellar_ztf = (detections["chinr"] < CHINR_THRESHOLD) & sharpnr_in_range
-    return (near_ztf & near_ps1 & stellar_ps1) | (near_ztf & ~near_ps1 & stellar_ztf)
+    is_new_mask = detections["new"]
+    new_detections = detections[is_new_mask]
+    old_detections = detections[~is_new_mask]
+
+    near_ps1 = new_detections["distpsnr1"] < DISTANCE_THRESHOLD
+    stellar_ps1 = new_detections["sgscore1"] > SCORE_THRESHOLD
+    near_ztf = is_corrected(new_detections)
+    sharpnr_in_range = (SHARPNR_MIN < new_detections["sharpnr"]) < SHARPNR_MAX
+    stellar_ztf = (new_detections["chinr"] < CHINR_THRESHOLD) & sharpnr_in_range
+    stellar_new: pd.Series = (near_ztf & near_ps1 & stellar_ps1) | (
+        near_ztf & ~near_ps1 & stellar_ztf
+    )
+
+    if len(old_detections) == 0:
+        return stellar_new
+
+    stellar_new_with_oid = pd.concat([stellar_new, new_detections["oid"]], axis=1)
+    stellar_new_with_oid.rename(columns={0: "stellar"}, inplace=True)
+    stellar_new_with_oid.drop_duplicates("oid", keep="first")
+
+    stellar_old = old_detections[["oid"]].merge(stellar_new_with_oid, on="oid", how="left")
+    stellar_old: pd.Series = stellar_old["stellar"]
+
+    return pd.concat([stellar_new, stellar_old])
 
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
@@ -61,9 +100,12 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     detections_that_need_corr = detections[need_correction_mask]
     detections_that_dont_need_corr = detections[~need_correction_mask]
 
-    corrected_mags_db_observations = detections_that_dont_need_corr[
-        ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
-    ]
+    corr_mag_column_names = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
+    if len(detections_that_dont_need_corr) == 0:
+        for col in corr_mag_column_names:
+            detections_that_dont_need_corr[col] = []
+
+    corrected_mags_db_observations = detections_that_dont_need_corr[corr_mag_column_names]
 
     aux1 = 10 ** (-0.4 * detections_that_need_corr["magnr"].astype(float))
     aux2 = 10 ** (-0.4 * detections_that_need_corr["mag"])

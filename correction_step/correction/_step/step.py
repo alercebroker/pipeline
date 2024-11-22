@@ -36,7 +36,7 @@ class CorrectionStep(GenericStep):
         from apf.core.settings import config_from_yaml_file
 
         if os.getenv("CONFIG_FROM_YAML"):
-            settings = config_from_yaml_file("config.yaml")  # /config/config.yaml")
+            settings = config_from_yaml_file("/config/config.yaml")  # /config/config.yaml")
         else:
             from .settings import settings_creator
 

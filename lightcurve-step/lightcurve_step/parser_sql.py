@@ -20,19 +20,12 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
         "ra",
         "dec",
         "isdiffpos",
-        "corrected",
-        "dubious",
         "candid",
         "parent_candid",
         "has_stamp",
+        "corrected",  # for dumb a reason: MongoDetection needs it
+        "dubious",  # idem as above
     }
-    FIELDS_TO_REMOVE = [
-        "stellar",
-        "corrected",
-        "dubious",
-        "magpsf",
-        "sigmapsf",
-    ]
 
     # db has old names for corrected mags in detection table
     # update names to schema convention
@@ -81,10 +74,15 @@ def parse_sql_detection(ztf_models: list, *, oids) -> list:
         parsed.pop("e_mag_corr")
         parsed.pop("e_mag_corr_ext")
 
-        for field in FIELDS_TO_REMOVE:
-            parsed.pop(field, None)
-            parsed["extra_fields"].pop(field, None)
+        # corrected and dubious belong to extra fields in the lightcurve step schema
+        # In the correction step schema they become detection fields
+        parsed["extra_fields"]["corrected"] = parsed.pop("corrected")
+        parsed["extra_fields"]["dubious"] = parsed.pop("dubious")
 
+        parsed["extra_fields"].pop("magpsf")
+        parsed["extra_fields"].pop("sigmapsf")
+
+        assert {"corrected", "dubious"}.issubset(parsed["extra_fields"].keys())
         parsed_result.append({**parsed, "forced": False, "new": False})
 
     return parsed_result
