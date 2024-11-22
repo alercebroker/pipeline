@@ -19,7 +19,8 @@ def set_logger(settings):
     logger.setLevel(level)
 
     fmt = logging.Formatter(
-        "%(asctime)s %(levelname)7s %(name)36s: %(message)s", "%Y-%m-%d %H:%M:%S"
+        "%(asctime)s %(levelname)7s %(name)36s: %(message)s",
+        "%Y-%m-%d %H:%M:%S",
     )
     handler = logging.StreamHandler()
     handler.setFormatter(fmt)

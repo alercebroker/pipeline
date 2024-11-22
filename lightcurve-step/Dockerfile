@@ -22,6 +22,7 @@ RUN pip install poetry
 COPY lightcurve-step/poetry.lock lightcurve-step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins libs/db-plugins
+COPY libs/survey_parser_plugins libs/survey_parser_plugins
 COPY schemas/prv_candidate_step /schemas/prv_candidate_step
 COPY schemas/lightcurve_step /schemas/lightcurve_step
 COPY schemas/scribe_step /schemas/scribe_step

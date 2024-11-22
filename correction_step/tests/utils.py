@@ -2,18 +2,33 @@ import pickle
 from random import random, choice
 
 
-def ztf_extra_fields(**kwargs):
+def ztf_extra_fields(is_new: bool, **kwargs):
     extra_fields = {
-        "magnr": 10.0,
-        "sigmagnr": 1.0,
         # make some detections non correctible
         "distnr": random() + 1 if random() < 0.5 else random(),
-        "distpsnr1": 1.0,
-        "sgscore1": 0.5,
-        "chinr": 1,
-        "sharpnr": 0.0,
         "unused": None,
     }
+    if is_new:
+        extra_fields.update(
+            {
+                "magnr": 10.0,
+                "sigmagnr": 1.0,
+                "distpsnr1": 1.0,
+                "sgscore1": 0.5,
+                "chinr": 1.0,
+                "sharpnr": 0.0,
+            }
+        )
+    else:
+        extra_fields.update(
+            {
+                "mag_corr": 15.2,
+                "e_mag_corr": 0.02,
+                "e_mag_corr_ext": 0.08,
+                "corrected": True,
+                "dubious": False,
+            }
+        )
     extra_fields.update(kwargs)
     return extra_fields
 
@@ -37,7 +52,7 @@ def atlas_extra_fields(**kwargs):
     return extra_fields
 
 
-def ztf_alert(**kwargs):
+def ztf_detection(is_new: bool, **kwargs):
     alert = {
         "candid": "candid",
         "sid": "ZTF",
@@ -54,9 +69,10 @@ def ztf_alert(**kwargs):
         "mjd": 1.0,
         "has_stamp": True,
         "forced": choice([True, False]),
-        "extra_fields": kwargs["extra_fields"]
-        if kwargs.get("extra_fields", None)
-        else ztf_extra_fields(),
+        "new": is_new,
+        "extra_fields": (
+            kwargs["extra_fields"] if kwargs.get("extra_fields", None) else ztf_extra_fields(is_new)
+        ),
     }
     alert.update(kwargs)
     return alert
@@ -72,7 +88,7 @@ def elasticc_extra_fields():
 
 
 def elasticc_alert(**kwargs):
-    alert = ztf_alert(**kwargs)
+    alert = ztf_detection(**kwargs)
     alert["tid"] = "LSST"
     alert["sid"] = "LSST"
     alert["extra_fields"] = elasticc_extra_fields()
@@ -96,6 +112,7 @@ def atlas_alert(**kwargs):
         "mjd": 1.0,
         "has_stamp": True,
         "forced": False,
+        "new": True,
         "extra_fields": {"dummy": None},
     }
     alert.update(kwargs)

@@ -14,7 +14,19 @@ class Corrector:
 
     # _EXTRA_FIELDS must include columns from all surveys that are needed
     # in their respective strategy
-    _EXTRA_FIELDS = ["magnr", "sigmagnr", "distnr", "distpsnr1", "sgscore1", "sharpnr", "chinr"]
+
+    # new dets will be corrected by Corrector
+    _EXTRA_FIELDS_NEW_DET = [
+        "magnr",
+        "sigmagnr",
+        "distnr",
+        "distpsnr1",
+        "sgscore1",
+        "sharpnr",
+        "chinr",
+    ]
+    # old dets are already corrected
+    _EXTRA_FIELDS_OLD_DET = ["mag_corr", "e_mag_corr", "e_mag_corr_ext", "corrected", "dubious"]
     # Not really zero mag, but zero flux (very high magnitude)
     _ZERO_MAG = 100.0
 
@@ -37,7 +49,10 @@ class Corrector:
             {**alert["extra_fields"], "candid": alert["candid"], "oid": alert["oid"]}
             for alert in detections
         ]
-        extras = pd.DataFrame(self.__extras, columns=self._EXTRA_FIELDS + ["candid", "oid"])
+        extras = pd.DataFrame(
+            self.__extras,
+            columns=self._EXTRA_FIELDS_NEW_DET + self._EXTRA_FIELDS_OLD_DET + ["candid", "oid"],
+        )
         extras = extras.drop_duplicates(["candid", "oid"]).set_index(
             self._detections["candid"].astype(str) + "_" + self._detections["oid"]
         )
@@ -89,7 +104,8 @@ class Corrector:
                 # Get module containing strategy for survey
                 module = getattr(strategy, name)
                 # Get function and call it over the detections belonging to the survey
-                basic[mask] = getattr(module, function)(self._detections[mask])
+                function_output = getattr(module, function)(self._detections[mask])
+                basic[mask] = function_output.astype(dtype).values
         return basic.astype(dtype)  # Ensure correct output type
 
     @property
@@ -136,9 +152,9 @@ class Corrector:
         corrected = corrected.assign(
             corrected=self.corrected, dubious=self.dubious, stellar=self.stellar
         )
-        corrected = (
-            self._detections.join(corrected).replace(np.nan, None).drop(columns=self._EXTRA_FIELDS)
-        )
+        detections = self._detections.drop(columns=self._EXTRA_FIELDS_OLD_DET)
+        corrected = detections.join(corrected).replace(np.nan, None)
+        corrected = corrected.drop(columns=self._EXTRA_FIELDS_NEW_DET)
         corrected = corrected.replace(-np.inf, None)
         self.logger.debug("Corrected %s", corrected["corrected"].sum())
         corrected = corrected.reset_index(drop=True).to_dict("records")

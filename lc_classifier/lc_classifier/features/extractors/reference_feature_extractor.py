@@ -26,8 +26,12 @@ class ReferenceFeatureExtractor(FeatureExtractor):
         observations = observations[observations["fid"].isin(self.bands)]
 
         # 5 arcsec limit is because of training set limitations (it used the ZTF forced photometry service)
-        mask = (observations["distnr"] != -99999) & (observations["distnr"] <= 5.0)
-        observations = observations[mask].copy()
+        is_reference_close_enough = (
+            (observations["distnr"] >= 0.0)
+            & (observations["distnr"] <= 5.0)
+            & observations["distnr"].notna()
+        )
+        observations = observations[is_reference_close_enough].copy()
         return observations
 
     def compute_features_single_object(self, astro_object: AstroObject):
@@ -40,7 +44,10 @@ class ReferenceFeatureExtractor(FeatureExtractor):
         features = []
         all_bands = ",".join(self.bands)
 
-        distnr = observations["distnr"][observations["distnr"].notna()]
+        # distnr column from observations (dets+forced phot)
+        # sharpnr and chinr from reference
+
+        distnr = observations["distnr"]
         if len(distnr) == 0:
             features.append(["mean_distnr", np.nan, all_bands])
             features.append(["sigma_distnr", np.nan, all_bands])
@@ -51,27 +58,33 @@ class ReferenceFeatureExtractor(FeatureExtractor):
             features.append(["mean_distnr", mean_distnr, all_bands])
             features.append(["sigma_distnr", sigma_distnr, all_bands])
 
+        observations = observations[~observations["rfid"].isna()]
+        observations["rfid"] = observations["rfid"].astype(int)
         if len(observations) == 0 or len(reference) == 0:
             features.append(["mean_sharpnr", np.nan, all_bands])
             features.append(["mean_chinr", np.nan, all_bands])
         else:
-            mask = observations["rfid"].notna()
-            observations = observations.loc[mask, ["distnr", "rfid"]].copy()
-            observations.set_index("rfid", inplace=True)
+            weighted_sharpnr = 0.0
+            weighted_chinr = 0.0
+            n_obs_with_ref = 0
+            for _, reference_row in reference.iterrows():
+                rfid_row = reference_row["rfid"]
+                sharpnr_row = reference_row["sharpnr"]
+                chinr_row = reference_row["chinr"]
+                n_obs_ref_row = len(observations[observations["rfid"] == rfid_row])
 
-            reference.set_index("rfid", inplace=True)
-            ref_index = observations.index.intersection(reference.index)
-            columns = ["sharpnr", "chinr"]
-            observations.loc[ref_index, columns] = reference.loc[ref_index, columns]
+                weighted_sharpnr += sharpnr_row * n_obs_ref_row
+                weighted_chinr += chinr_row * n_obs_ref_row
+                n_obs_with_ref += n_obs_ref_row
 
-            if len(observations.loc[ref_index]) == 0:
+            if n_obs_with_ref == 0:
                 features.append(["mean_sharpnr", np.nan, all_bands])
                 features.append(["mean_chinr", np.nan, all_bands])
             else:
-                mean_sharpnr = observations["sharpnr"].mean()
-                mean_chinr = observations["chinr"].mean()
-                features.append(["mean_sharpnr", mean_sharpnr, all_bands])
-                features.append(["mean_chinr", mean_chinr, all_bands])
+                weighted_sharpnr /= n_obs_with_ref
+                weighted_chinr /= n_obs_with_ref
+                features.append(["mean_sharpnr", weighted_sharpnr, all_bands])
+                features.append(["mean_chinr", weighted_chinr, all_bands])
 
         features_df = pd.DataFrame(data=features, columns=["name", "value", "fid"])
 

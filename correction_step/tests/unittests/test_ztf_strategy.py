@@ -8,6 +8,7 @@ from correction.core.strategy import ztf
 
 def test_ztf_strategy_corrected_is_based_on_distance():
     detections = pd.DataFrame({"distnr": np.linspace(1, 2, 10)})
+    detections["new"] = True
 
     corrected = ztf.is_corrected(detections)
 
@@ -67,6 +68,7 @@ def test_ztf_strategy_dubious_for_negative_difference_without_close_source(
             "oid": ["OID1", "OID1"],
             "fid": [1, 1],
             "mjd": [1, 2],
+            "new": [True, True],
         }
     )
     dubious = ztf.is_dubious(detections)
@@ -87,6 +89,7 @@ def test_ztf_strategy_dubious_true_for_follow_up_without_close_source_and_first_
             "oid": ["OID1", "OID1"],
             "fid": [1, 1],
             "mjd": [1, 2],
+            "new": [True, True],
         }
     )
     dubious = ztf.is_dubious(detections)
@@ -107,6 +110,7 @@ def test_ztf_strategy_dubious_true_for_follow_up_with_close_source_and_first_wit
             "oid": ["OID1", "OID1"],
             "fid": [1, 1],
             "mjd": [1, 2],
+            "new": [True, True],
         }
     )
     dubious = ztf.is_dubious(detections)
@@ -127,6 +131,7 @@ def test_ztf_strategy_dubious_false_for_follow_up_without_close_source_and_first
             "oid": ["OID1", "OID1"],
             "fid": [1, 1],
             "mjd": [1, 2],
+            "new": [True, True],
         }
     )
     dubious = ztf.is_dubious(detections)
@@ -147,6 +152,7 @@ def test_ztf_strategy_dubious_false_for_follow_up_with_close_source_and_first_wi
             "oid": ["OID1", "OID1"],
             "fid": [1, 1],
             "mjd": [1, 2],
+            "new": [True, True],
         }
     )
     dubious = ztf.is_dubious(detections)
@@ -155,7 +161,14 @@ def test_ztf_strategy_dubious_false_for_follow_up_with_close_source_and_first_wi
 
 def test_ztf_strategy_correction_with_low_reference_flux_equals_difference_magnitude():
     detections = pd.DataFrame.from_records(
-        {"magnr": [200.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [1]}
+        {
+            "magnr": [200.0],
+            "sigmagnr": [2.0],
+            "mag": [5.0],
+            "e_mag": [0.1],
+            "isdiffpos": [1],
+            "new": [True],
+        }
     )
     corrected = ztf.correct(detections)
 
@@ -166,7 +179,14 @@ def test_ztf_strategy_correction_with_low_reference_flux_equals_difference_magni
 
 def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magnitude():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [200.0], "e_mag": [0.1], "isdiffpos": [1]}
+        {
+            "magnr": [5.0],
+            "sigmagnr": [2.0],
+            "mag": [200.0],
+            "e_mag": [0.1],
+            "isdiffpos": [1],
+            "new": [True],
+        }
     )
     corrected = ztf.correct(detections)
 
@@ -177,7 +197,14 @@ def test_ztf_strategy_correction_with_low_difference_flux_equals_reference_magni
 
 def test_ztf_strategy_correction_with_positive_difference_has_lower_corrected_magnitude_than_reference():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [1]}
+        {
+            "magnr": [5.0],
+            "sigmagnr": [2.0],
+            "mag": [5.0],
+            "e_mag": [0.1],
+            "isdiffpos": [1],
+            "new": [True],
+        }
     )
     corrected = ztf.correct(detections)
 
@@ -186,7 +213,14 @@ def test_ztf_strategy_correction_with_positive_difference_has_lower_corrected_ma
 
 def test_ztf_strategy_correction_with_negative_difference_has_higher_corrected_magnitude_than_reference():
     detections = pd.DataFrame.from_records(
-        {"magnr": [5.0], "sigmagnr": [2.0], "mag": [5.0], "e_mag": [0.1], "isdiffpos": [-1]}
+        {
+            "magnr": [5.0],
+            "sigmagnr": [2.0],
+            "mag": [5.0],
+            "e_mag": [0.1],
+            "isdiffpos": [-1],
+            "new": [True],
+        }
     )
     corrected = ztf.correct(detections)
 
@@ -195,7 +229,14 @@ def test_ztf_strategy_correction_with_negative_difference_has_higher_corrected_m
 
 def test_ztf_strategy_correction_with_null_nr_fields_results_in_null_corrections():
     detections = pd.DataFrame.from_records(
-        {"magnr": [None], "sigmagnr": [None], "mag": [200.0], "e_mag": [0.1], "isdiffpos": [1]}
+        {
+            "magnr": [None],
+            "sigmagnr": [None],
+            "mag": [200.0],
+            "e_mag": [0.1],
+            "isdiffpos": [1],
+            "new": [True],
+        }
     )
     corrected = ztf.correct(detections)
 
@@ -212,6 +253,7 @@ def test_ztf_strategy_correction_with_zeromag():
             "mag": [100, 100],
             "e_mag": [0.1, 0.2],
             "isdiffpos": [1, 0],
+            "new": [True, True],
         }
     )
     corrected = ztf.correct(detections)
@@ -228,6 +270,7 @@ def test_ztf_strategy_correction_with_zeromag_only_emag():
             "mag": [14, 15],
             "e_mag": [100, 100],
             "isdiffpos": [1, 0],
+            "new": [True, True],
         }
     )
     corrected = ztf.correct(detections)
