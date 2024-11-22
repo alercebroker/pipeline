@@ -85,7 +85,7 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
 
     stellar_new_with_oid = pd.concat([stellar_new, new_detections["oid"]], axis=1)
     stellar_new_with_oid.rename(columns={0: "stellar"}, inplace=True)
-    stellar_new_with_oid.drop_duplicates("oid", keep="first")
+    stellar_new_with_oid.drop_duplicates("oid", keep="first", inplace=True)
 
     stellar_old = old_detections[["oid"]].merge(stellar_new_with_oid, on="oid", how="left")
     stellar_old: pd.Series = stellar_old["stellar"]
