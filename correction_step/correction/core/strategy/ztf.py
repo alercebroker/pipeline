@@ -24,7 +24,8 @@ def is_corrected(detections: pd.DataFrame) -> pd.Series:
         return corrected_new
 
     corrected_old: pd.Series = old_detections["corrected"]
-    return pd.concat([corrected_new, corrected_old])
+    corrected = pd.concat([corrected_new, corrected_old]).loc[detections.index]
+    return corrected
 
 
 def is_dubious(detections: pd.DataFrame) -> pd.Series:
@@ -48,7 +49,8 @@ def is_dubious(detections: pd.DataFrame) -> pd.Series:
         return dubious_new
 
     dubious_old: pd.Series = old_detections["dubious"]
-    return pd.concat([dubious_new, dubious_old])
+    dubious = pd.concat([dubious_new, dubious_old]).loc[detections.index]
+    return dubious
 
 
 def is_stellar(detections: pd.DataFrame) -> pd.Series:
@@ -87,10 +89,13 @@ def is_stellar(detections: pd.DataFrame) -> pd.Series:
     stellar_new_with_oid.rename(columns={0: "stellar"}, inplace=True)
     stellar_new_with_oid.drop_duplicates("oid", keep="first", inplace=True)
 
-    stellar_old = old_detections[["oid"]].merge(stellar_new_with_oid, on="oid", how="left")
-    stellar_old: pd.Series = stellar_old["stellar"]
+    old_detections = old_detections.reset_index()[["index", "oid"]]
+    stellar_old = old_detections.merge(stellar_new_with_oid, on="oid", how="left")
+    stellar_old: pd.Series = stellar_old.set_index("index")["stellar"]
 
-    return pd.concat([stellar_new, stellar_old])
+    # return output in the same order
+    stellar = pd.concat([stellar_new, stellar_old]).loc[detections.index]
+    return stellar
 
 
 def correct(detections: pd.DataFrame) -> pd.DataFrame:
@@ -139,6 +144,8 @@ def correct(detections: pd.DataFrame) -> pd.DataFrame:
     corrected_mags = pd.concat(
         [corrected_mags_new_observations, corrected_mags_db_observations], axis=0
     )
+    # return things in the same order
+    corrected_mags = corrected_mags.loc[detections.index]
     return corrected_mags
 
 

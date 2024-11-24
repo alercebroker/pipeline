@@ -104,8 +104,9 @@ class Corrector:
                 # Get module containing strategy for survey
                 module = getattr(strategy, name)
                 # Get function and call it over the detections belonging to the survey
-                function_output = getattr(module, function)(self._detections[mask])
-                basic[mask] = function_output.astype(dtype).values
+                function_input = self._detections[mask]
+                function_output = getattr(module, function)(function_input)
+                basic[mask] = function_output.loc[function_input.index].astype(dtype).values
         return basic.astype(dtype)  # Ensure correct output type
 
     @property
