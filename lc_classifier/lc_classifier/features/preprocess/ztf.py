@@ -13,6 +13,8 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
     def preprocess_single_object(self, astro_object: AstroObject):
         self._helio_time_correction(astro_object)
         self.drop_absurd_detections(astro_object)
+        # TODO: does error need a np.maximum(error, 0.01) ?
+        # the factor depends on the units
 
     def _helio_time_correction(self, astro_object: AstroObject):
         detections = astro_object.detections
