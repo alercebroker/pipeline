@@ -33,7 +33,8 @@ def test_mask_survey_returns_only_alerts_from_requested_survey():
 def test_apply_all_calls_requested_function_to_masked_detections_for_each_submodule(mock_strategy):
     mock_strategy.ztf = mock.MagicMock()
     mock_strategy.ztf.function = mock.MagicMock()
-    mock_strategy.ztf.function.return_value = pd.Series([None])
+    ztf_det_internal_index = f"{detections[0]['candid']}_{detections[0]['oid']}"
+    mock_strategy.ztf.function.return_value = pd.Series(data=[None], index=[ztf_det_internal_index])
     mock_strategy.dummy = mock.MagicMock()
     mock_strategy.dummy.function = mock.MagicMock()
 
