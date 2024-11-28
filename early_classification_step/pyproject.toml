@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "early_classification_step"
-version = "25.0.1a34"
+version = "25.0.1a35"
 description = "Early Classification Step"
 authors = []
 readme = "README.md"
