@@ -220,6 +220,7 @@ class ScoreScribeParser(KafkaParser):
 
         return KafkaOutput(commands_list)
 
+
 class TopBottomScribeParser(KafkaParser):
     def __init__(self, *, classifier_name: str):
         super().__init__(self)
@@ -268,7 +269,10 @@ class TopBottomScribeParser(KafkaParser):
             return KafkaOutput([])
         probabilities = to_parse.probabilities
         top = to_parse.hierarchical["top"]
-        hierarchical = [to_parse.hierarchical["children"][ch] for ch in to_parse.hierarchical["children"].keys()]
+        hierarchical = [
+            to_parse.hierarchical["children"][ch]
+            for ch in to_parse.hierarchical["children"].keys()
+        ]
         hierarchical = pd.concat(hierarchical)
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
