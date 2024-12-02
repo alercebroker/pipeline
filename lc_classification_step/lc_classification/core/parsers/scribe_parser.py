@@ -288,7 +288,6 @@ class TopBottomScribeParser(KafkaParser):
                 commands.append(command)
             return classifications_by_classifier
 
-
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
@@ -328,7 +327,6 @@ class TopBottomScribeParser(KafkaParser):
                 "classifier_name", group_keys=False
             ).apply(get_scribe_messages)
 
-
         # top
         if not top.index.name == "oid":
             try:
@@ -341,7 +339,6 @@ class TopBottomScribeParser(KafkaParser):
             top.loc[[oid], :].groupby(
                 "classifier_name", group_keys=False
             ).apply(get_scribe_messages)
-        
 
         return KafkaOutput(commands)
 
