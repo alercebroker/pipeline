@@ -240,7 +240,7 @@ class TopBottomScribeParser(KafkaParser):
 
         Examples
         --------
-        to_parse.hierarchical
+        to_parse.hierarchicalprometheus.staging.alerce.online
 
             {
                 'top':                     Periodic  Stochastic  Transient
@@ -265,28 +265,6 @@ class TopBottomScribeParser(KafkaParser):
               vbKsodtqMI  0.029192  0.059808  0.158064  0.108936  ...  0.068572  0.012152         0.05208  0.170996,
         }
         """
-        if len(to_parse.probabilities) == 0:
-            return KafkaOutput([])
-        probabilities = to_parse.probabilities
-        top = to_parse.hierarchical["top"]
-        hierarchical = [
-            to_parse.hierarchical["children"][ch]
-            for ch in to_parse.hierarchical["children"].keys()
-        ]
-        hierarchical = pd.concat(hierarchical)
-        probabilities["classifier_name"] = self._get_classifier_name()
-        top["classifier_name"] = self._get_classifier_name("top")
-        hierarchical["classifier_name"] = self._get_classifier_name("bottom")
-
-        results = [top, hierarchical, probabilities]
-
-        results = pd.concat(results)
-        if not results.index.name == "oid":
-            try:
-                results.set_index("oid", inplace=True)
-            except KeyError as e:
-                if not is_all_strings(results.index.values):
-                    raise e
 
         commands = []
 
@@ -310,8 +288,55 @@ class TopBottomScribeParser(KafkaParser):
                 commands.append(command)
             return classifications_by_classifier
 
-        for oid in results.index.unique():
-            results.loc[[oid], :].groupby(
+        if len(to_parse.probabilities) == 0:
+            return KafkaOutput([])
+        probabilities = to_parse.probabilities
+        top = to_parse.hierarchical["top"]
+        hierarchical = [
+            to_parse.hierarchical["children"][ch]
+            for ch in to_parse.hierarchical["children"].keys()
+        ]
+        hierarchical = pd.concat(hierarchical)
+        probabilities["classifier_name"] = self._get_classifier_name()
+        top["classifier_name"] = self._get_classifier_name("top")
+        hierarchical["classifier_name"] = self._get_classifier_name("bottom")
+
+        # probabilities
+        if not probabilities.index.name == "oid":
+            try:
+                probabilities.set_index("oid", inplace=True)
+            except KeyError as e:
+                if not is_all_strings(probabilities.index.values):
+                    raise e
+
+        for oid in probabilities.index.unique():
+            probabilities.loc[[oid], :].groupby(
+                "classifier_name", group_keys=False
+            ).apply(get_scribe_messages)
+
+        # hierarchical
+        if not hierarchical.index.name == "oid":
+            try:
+                hierarchical.set_index("oid", inplace=True)
+            except KeyError as e:
+                if not is_all_strings(hierarchical.index.values):
+                    raise e
+
+        for oid in hierarchical.index.unique():
+            hierarchical.loc[[oid], :].groupby(
+                "classifier_name", group_keys=False
+            ).apply(get_scribe_messages)
+
+        # top
+        if not top.index.name == "oid":
+            try:
+                top.set_index("oid", inplace=True)
+            except KeyError as e:
+                if not is_all_strings(top.index.values):
+                    raise e
+
+        for oid in top.index.unique():
+            top.loc[[oid], :].groupby(
                 "classifier_name", group_keys=False
             ).apply(get_scribe_messages)
 
