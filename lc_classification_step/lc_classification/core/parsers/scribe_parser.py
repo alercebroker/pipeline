@@ -292,14 +292,15 @@ class TopBottomScribeParser(KafkaParser):
             return KafkaOutput([])
         probabilities = to_parse.probabilities
         top = to_parse.hierarchical["top"]
-        hierarchical = [
-            to_parse.hierarchical["children"][ch]
-            for ch in to_parse.hierarchical["children"].keys()
-        ]
-        hierarchical = pd.concat(hierarchical)
+
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
-        hierarchical["classifier_name"] = self._get_classifier_name("bottom")
+
+        hierarchical = pd.DataFrame()
+        for ch in to_parse.hierarchical["children"].keys():
+            hierarchical_ch = to_parse.hierarchical["children"][ch]
+            hierarchical_ch["classifier_name"] = self._get_classifier_name(ch)
+            hierarchical = pd.concat([hierarchical, hierarchical_ch], axis=0)
 
         # probabilities
         if not probabilities.index.name == "oid":
