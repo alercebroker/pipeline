@@ -299,7 +299,9 @@ class TopBottomScribeParser(KafkaParser):
         hierarchical = pd.DataFrame()
         for ch in to_parse.hierarchical["children"].keys():
             hierarchical_ch = to_parse.hierarchical["children"][ch]
-            hierarchical_ch["classifier_name"] = self._get_classifier_name(ch.lower())
+            hierarchical_ch["classifier_name"] = self._get_classifier_name(
+                ch.lower()
+            )
             hierarchical = pd.concat([hierarchical, hierarchical_ch], axis=0)
 
         # probabilities
