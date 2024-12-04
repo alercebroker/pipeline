@@ -301,7 +301,6 @@ class TopBottomScribeParser(KafkaParser):
             pd_to_insert["classifier_nane"] = self._get_classifier_name(ch)
             hierarchical.append(pd_to_insert)
 
-
         # probabilities
         if not probabilities.index.name == "oid":
             try:
@@ -317,7 +316,6 @@ class TopBottomScribeParser(KafkaParser):
 
         # hierarchical
         for h_pd in hierarchical:
-
             if not h_pd.index.name == "oid":
                 try:
                     h_pd.set_index("oid", inplace=True)
