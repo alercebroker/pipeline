@@ -296,7 +296,6 @@ class TopBottomScribeParser(KafkaParser):
             to_parse.hierarchical["children"][ch]
             for ch in to_parse.hierarchical["children"].keys()
         ]
-        hierarchical = pd.concat(hierarchical)
         probabilities["classifier_name"] = self._get_classifier_name()
         top["classifier_name"] = self._get_classifier_name("top")
         hierarchical["classifier_name"] = self._get_classifier_name("bottom")
@@ -315,17 +314,20 @@ class TopBottomScribeParser(KafkaParser):
             ).apply(get_scribe_messages)
 
         # hierarchical
-        if not hierarchical.index.name == "oid":
-            try:
-                hierarchical.set_index("oid", inplace=True)
-            except KeyError as e:
-                if not is_all_strings(hierarchical.index.values):
-                    raise e
+        for hc_pd in hierarchical:
 
-        for oid in hierarchical.index.unique():
-            hierarchical.loc[[oid], :].groupby(
-                "classifier_name", group_keys=False
-            ).apply(get_scribe_messages)
+            hc_pd["classifier_name"] = self._get_classifier_name("bottom")
+            if not hc_pd.index.name == "oid":
+                try:
+                    hc_pd.set_index("oid", inplace=True)
+                except KeyError as e:
+                    if not is_all_strings(hc_pd.index.values):
+                        raise e
+
+            for oid in hc_pd.index.unique():
+                hc_pd.loc[[oid], :].groupby(
+                    "classifier_name", group_keys=False
+                ).apply(get_scribe_messages)
 
         # top
         if not top.index.name == "oid":
