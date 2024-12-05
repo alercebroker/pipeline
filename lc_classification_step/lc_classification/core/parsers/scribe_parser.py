@@ -291,15 +291,17 @@ class TopBottomScribeParser(KafkaParser):
         if len(to_parse.probabilities) == 0:
             return KafkaOutput([])
         probabilities = to_parse.probabilities
-        top = to_parse.hierarchical["top"]
-        hierarchical = [
-            to_parse.hierarchical["children"][ch]
-            for ch in to_parse.hierarchical["children"].keys()
-        ]
-        hierarchical = pd.concat(hierarchical)
         probabilities["classifier_name"] = self._get_classifier_name()
+        top = to_parse.hierarchical["top"]
         top["classifier_name"] = self._get_classifier_name("top")
-        hierarchical["classifier_name"] = self._get_classifier_name("bottom")
+
+        hierarchical = []
+        for ch in to_parse.hierarchical["children"].keys():
+            pd_to_insert = to_parse.hierarchical["children"][ch]
+            pd_to_insert["classifier_name"] = self._get_classifier_name(
+                ch.lower()
+            )
+            hierarchical.append(pd_to_insert)
 
         # probabilities
         if not probabilities.index.name == "oid":
@@ -315,17 +317,18 @@ class TopBottomScribeParser(KafkaParser):
             ).apply(get_scribe_messages)
 
         # hierarchical
-        if not hierarchical.index.name == "oid":
-            try:
-                hierarchical.set_index("oid", inplace=True)
-            except KeyError as e:
-                if not is_all_strings(hierarchical.index.values):
-                    raise e
+        for h_pd in hierarchical:
+            if not h_pd.index.name == "oid":
+                try:
+                    h_pd.set_index("oid", inplace=True)
+                except KeyError as e:
+                    if not is_all_strings(h_pd.index.values):
+                        raise e
 
-        for oid in hierarchical.index.unique():
-            hierarchical.loc[[oid], :].groupby(
-                "classifier_name", group_keys=False
-            ).apply(get_scribe_messages)
+            for oid in h_pd.index.unique():
+                h_pd.loc[[oid], :].groupby(
+                    "classifier_name", group_keys=False
+                ).apply(get_scribe_messages)
 
         # top
         if not top.index.name == "oid":
