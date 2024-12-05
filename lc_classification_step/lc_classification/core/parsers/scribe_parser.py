@@ -298,7 +298,7 @@ class TopBottomScribeParser(KafkaParser):
         hierarchical = []
         for ch in to_parse.hierarchical["children"].keys():
             pd_to_insert = to_parse.hierarchical["children"][ch]
-            pd_to_insert["classifier_nane"] = self._get_classifier_name(
+            pd_to_insert["classifier_name"] = self._get_classifier_name(
                 ch.lower()
             )
             hierarchical.append(pd_to_insert)
