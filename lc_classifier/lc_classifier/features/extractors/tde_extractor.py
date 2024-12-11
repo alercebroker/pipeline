@@ -128,7 +128,7 @@ def fleet_model_jax(t, a, w, m_0, t0):
 
 
 class FleetExtractor(FeatureExtractor):
-    version = "1.0.1"
+    version = "1.0.2"
     unit = "diff_flux"
 
     def __init__(self, bands: List[str]):
@@ -180,6 +180,7 @@ class FleetExtractor(FeatureExtractor):
                     sigma=y_err,
                     p0=[0.6, -0.05, np.mean(y), 0],
                     bounds=([0.0, -100.0, 0, -50], [10, 0, 30, 10000]),
+                    max_nfev=800,  # twice default value
                 )
 
                 model_prediction = fleet_model(
