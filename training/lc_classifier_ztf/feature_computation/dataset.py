@@ -24,7 +24,8 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
     lc_df["procstatus"] = lc_df["procstatus"].astype(str)
     
     lc_df = lc_df[lc_df["fid"].isin(["g", "r"]) \
-                  & (lc_df["procstatus"] == "0")]
+                  & ((lc_df["procstatus"] == "0") \
+                      | (lc_df["procstatus"] == "57"))]
 
     if len(lc_df[lc_df["detected"]]) == 0:
         raise NoDetections()
