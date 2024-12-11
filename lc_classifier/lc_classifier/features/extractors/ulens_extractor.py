@@ -39,7 +39,7 @@ def ulens_model_jax(t, u0, tE, fs, t0, mag_0):
 
 
 class MicroLensExtractor(FeatureExtractor):
-    version = "1.0.1"
+    version = "1.0.2"
     unit = "magnitude"
 
     def __init__(self, bands: List[str]):
@@ -88,6 +88,7 @@ class MicroLensExtractor(FeatureExtractor):
                         [0, 0, 0, -np.inf, -np.inf],
                         [np.inf, np.inf, 1, np.inf, np.inf],
                     ),
+                    max_nfev=1000,  # twice default value
                 )
 
                 model_prediction = ulens_model(band_observations["mjd"], *parameters)
