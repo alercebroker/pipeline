@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lc-classifier"
-version = "26.1.0"
+version = "26.1.1a0"
 description = "Lightcurve classifiers and feature computation"
 authors = ["Ignacio Reyes Jainaga <ireyes@cmm.uchile.cl>"]
 readme = "README.md"
