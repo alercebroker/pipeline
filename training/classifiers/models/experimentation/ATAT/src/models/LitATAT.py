@@ -286,7 +286,7 @@ class LitATAT(L.LightningModule):
                 {
                     "data": batch_data["data"].float(),
                     "time": batch_data["time"].float(),
-                    "mask": batch_data["mask"].float(),
+                    "mask": batch_data["mask"].bool(),
                 }
             )
 

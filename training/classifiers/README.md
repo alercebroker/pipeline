@@ -20,7 +20,7 @@ Navigate to the data acquisition directory:
 cd pipeline/training/data_acquisition/ztf_forced_photometry
 ```
 
-Refer to the [`README.MD`](https://github.com/alercebroker/pipeline/tree/main/training/data_acquisition/ztf_forced_photometry) to obtain the data.
+Refer to the [`README.MD`](data_acquisition/README.MD) to obtain the data.
 
 **Outputs:** 
 
@@ -30,7 +30,7 @@ Refer to the [`README.MD`](https://github.com/alercebroker/pipeline/tree/main/tr
 
 ## Models
 
-The models are organized into two folders: **experimentation** and **stagging_production**.
+The models are organized into two folders: **experimentation** and **staging_production**.
 
 1. **Experimentation:** This folder contains the source code for the models, which can be modified for experimental purposes and testing new ideas. The models in this folder use `AstroObjects` as their input format. Models available:
 
@@ -39,7 +39,7 @@ The models are organized into two folders: **experimentation** and **stagging_pr
     * MLP (WORK IN PROGRESS).
     * LightGBM (WORK IN PROGRESS).
 
-2. **Stagging_production:** This folder imports the models located in [`stagging repository`](https://github.com/alercebroker/alerce_classifiers) for training and/or inference to validate their functionality. The models use [`InputDTO`](https://github.com/alercebroker/pipeline/blob/main/schemas/feature_step/output.avsc) as the input format. `AstroObjects` data, provided in the [`data_acquisition folder`](https://github.com/alercebroker/pipeline/tree/main/training/classifiers/data_acquisition) is parsed into `InputDTO` to ensure compatibility with the stagging environment. Models available:
+2. **Staging_production:** This folder imports the models located in [`staging repository`](https://github.com/alercebroker/alerce_classifiers) for training and/or inference to validate their functionality. The models use [`InputDTO`](https://github.com/alercebroker/pipeline/blob/main/schemas/feature_step/output.avsc) as the input format. `AstroObjects` data, provided in the `data_acquisition folder` is parsed into `InputDTO` to ensure compatibility with the staging environment. Models available:
 
     * ATAT (Mbappe) (WORK IN PROGRESS).
     * HBRF (Squidward) (WORK IN PROGRESS).

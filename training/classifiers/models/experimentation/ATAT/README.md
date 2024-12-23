@@ -68,22 +68,13 @@ Firstly, you should create the enviroment:
 
 ## Data Acquisition 
 
-To train ATAT, you need to obtain the preprocessed data from the [`data_acquisition folder`](https://github.com/alercebroker/pipeline/tree/main/training/classifiers/data_acquisition). In general, the following data is required to prepare the model's input:
+To train ATAT, you need to obtain the preprocessed data and partitions from the [`data_acquisition folder`](../../../data_acquisition). . Detailed explanations are provided in the [`README.MD`](../../../data_acquisition/README.MD). In general, the following data is required to prepare the model's input:
 
-* **Pickle files to load instances of the `AstroObject` class:** ALeRCE classifiers use the `AstroObject` class to handle data, including features, stamps, light curves, and more. AstroObject instances are stored and loaded from pickle files, which contain a list of dictionaries. Each dictionary corresponds to one astronomical object and includes the following keys: `'metadata'`, `'detections'`, `'non_detections'`, `'forced_photometry'`, `'xmatch'`, `'stamps'`, `'features'`, and `'predictions'`. These dictionaries are divided into chunks and stored across multiple pickle files. You will need two types of files:
+1. Pickle files containing dictionaries derived from instances of [`AstroObjects`](https://github.com/alercebroker/pipeline/blob/main/lc_classifier/lc_classifier/features/core/base.py) with the following keys: `'detections'`, `'non_detections'`, and `'forced_photometry'`.
 
-1. **Without features**: These files contain the dataset with light curves, i.e., `'detections'`, `'non_detections'`, and `'forced_photometry'` information. For example: `data_241209_ao/astro_objects_batch_000.pkl`
+2. Pickle files containing dictionaries derived from instances of [`AstroObjects`](https://github.com/alercebroker/pipeline/blob/main/lc_classifier/lc_classifier/features/core/base.py) with the `'features'`.
 
-2. **With features**: These files contain the `'metadata'`, and `'features'` information. The number of days used to calculate the features is indicated at the beginning of the file name. For example: `data_241209_ao_shorten_features/{days}_astro_objects_batch_000.pkl`. These files also include light curve data; however, the **Modified Julian Date (MJD)** has been altered during the feature calculation process.
-
-* **parquet files containing partitions**. We use K-fold cross-validation to ensure consistency across train-validation-test sets. A parquet file named partitions.parquet contains the following columns:
-    * `'oid'`: Object ID
-    * `'alerceclass'`: Object label
-    * `'ra', 'dec'`: Right Ascension and Declination
-    * `'partition'`: Indicates the data split, which can be one of the following`:
-        * `'test'`: The object is never used for training or validation.
-        * `'training_i'`: The object is used for training in the i-th fold.
-        * `'validation_i'`: The object is used for validation in the i-th fold.
+3. Parquet files containing partitions.
 
 ## Preparing Model Input
 

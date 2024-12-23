@@ -73,9 +73,8 @@ class TimeHandler(nn.Module):
         t_mod = torch.cat(t_mod, axis=1)
         m_mod = torch.cat(m_mod, axis=1)
 
-
         # sorted indexes along time, trwoh to the end  new samples
-        indexes = (t_mod * m_mod + (1 - m_mod) * 9999999).argsort(axis=1)
+        indexes = (t_mod * m_mod + (~m_mod) * 9999999).argsort(axis=1)
 
         return (
             x_mod.gather(1, indexes.repeat(1, 1, x_mod.shape[-1])),

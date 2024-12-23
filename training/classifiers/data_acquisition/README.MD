@@ -10,7 +10,7 @@ You have two options for data preparation:
 
 2. **Get the preprocessed data:** Directly download the data that was used to train the **Mbappe** and **Squidward** models.
 
-### 1. Get the Raw data [WORK IN PROCESS]
+### 1. Get the Raw data [WORK IN PROGRESS]
 
 To obtain the raw data, first create a directory for it:
 
@@ -33,7 +33,7 @@ To preprocess the raw data from scratch using the same methods as **Mbappe** and
 python scripts/preprocessing.py
 ```
 
-**Preprocessing details: (WORK IN PROCESS, so start in the step 2. for now)**
+**Preprocessing details: (WORK IN PROGRESS, so start at step 2. for now)**
 
 [ESCRIBIR AQUÍ LA EXPLICACIÓN DE QUE SE HACE EXACTAMENTE.] Algunas notas que serviran para esto:
 

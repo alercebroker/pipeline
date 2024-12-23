@@ -8,8 +8,6 @@ from .transformer import Transformer
 from .classifiers import TokenClassifier, MixedClassifier
 from .tokenEmbeddings import Token
 
-import copy
-
 
 class ATAT(nn.Module):
     def __init__(self, **kwargs):

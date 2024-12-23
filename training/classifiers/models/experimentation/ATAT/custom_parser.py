@@ -9,7 +9,7 @@ def parse_model_args(arg_dict=None):
     parser.add_argument("--experiment_name_general", type=str, default="")
     parser.add_argument("--name_dataset_general", type=str, default="ztf_ff")
     parser.add_argument(
-        "--data_root_general", type=str, default="data/ztf_forced_photometry/processed/LC_MD_FEAT_241209"
+        "--data_root_general", type=str, default="data/ztf_forced_photometry/processed/dataset_pre241209_pos241222"
     )
     parser.add_argument("--list_folds_general", type=str, default="[0]")
 
@@ -109,7 +109,7 @@ def handler_parser(
             "num_classes_general": len(dict_info["mapping_classes"]),
             "num_bands": len(dict_info["bands_to_use"]),
             "length_size_tab": 0,
-            "list_time_to_eval_tab": None,
+            "list_time_to_eval_general": dict_info["list_time_to_eval"],
         }
     )
 
@@ -124,7 +124,6 @@ def handler_parser(
 
     if parser_dict["use_features_general"]:
         parser_dict["length_size_tab"] += len(dict_info["feat_cols"])
-        parser_dict["list_time_to_eval_general"] = dict_info["list_time_to_eval"]
 
     output = {}
     output["lc"] = {}
