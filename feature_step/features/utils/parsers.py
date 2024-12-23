@@ -6,8 +6,51 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
-def detections_to_astro_objects(
-    detections: List[Dict], xmatches: Optional[Dict]
+def get_reference_for_each_detection(detections: List[Dict]):
+    # for each detection, it looks what is the reference id
+    # and how far away it is
+
+    keys = ["distnr", "rfid"]
+
+    reference = []
+    for detection in detections:
+        value = []
+        for key in keys:
+            if key in detection["extra_fields"].keys():
+                value.append(detection["extra_fields"][key])
+            else:
+                value.append(None)
+        reference.append(value)
+
+    reference = pd.DataFrame(reference, columns=keys)
+
+    return reference
+
+
+def get_new_references_from_message(detections: List[Dict]) -> pd.DataFrame:
+    # get info of references that is in the incoming message
+    #
+    # output columns: oid, rfid, sharpnr, chinr
+
+    keys = ["rfid", "sharpnr", "chinr"]
+
+    references = []
+    for detection in detections:
+        if not set(keys).issubset(detection["extra_fields"]):
+            continue
+        reference = [detection["oid"]] + [detection["extra_fields"][k] for k in keys]
+        references.append(reference)
+
+    references = pd.DataFrame(references, columns=["oid"] + keys)
+    references = references[references["chinr"] >= 0.0].copy()
+    references.drop_duplicates(["oid", "rfid"], keep="first", inplace=True)
+    return references
+
+
+def detections_to_astro_object(
+    detections: List[Dict],
+    xmatches: Optional[Dict],
+    references_db: Optional[pd.DataFrame],
 ) -> AstroObject:
     detection_keys = [
         "oid",
@@ -26,7 +69,6 @@ def detections_to_astro_objects(
         "fid",
         "isdiffpos",
         "forced",
-        # 'sgscore1'
     ]
 
     values = []
@@ -35,6 +77,13 @@ def detections_to_astro_objects(
 
     a = pd.DataFrame(data=values, columns=detection_keys)
     a.fillna(value=np.nan, inplace=True)
+
+    # reference_for_each_detection has distnr, rfid from dets
+    reference_for_each_detection: pd.DataFrame = get_reference_for_each_detection(
+        detections
+    )
+    a = pd.concat([a, reference_for_each_detection], axis=1)
+
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(
         columns={"mag_corr": "brightness", "e_mag_corr_ext": "e_brightness"},
@@ -73,13 +122,27 @@ def detections_to_astro_objects(
             ["sgscore1", detections[0]["extra_fields"]["sgscore1"]],
             ["sgmag1", detections[0]["extra_fields"]["sgmag1"]],
             ["srmag1", detections[0]["extra_fields"]["srmag1"]],
+            ["simag1", detections[0]["extra_fields"]["simag1"]],
+            ["szmag1", detections[0]["extra_fields"]["szmag1"]],
             ["distpsnr1", detections[0]["extra_fields"]["distpsnr1"]],
         ],
         columns=["name", "value"],
     ).fillna(value=np.nan)
 
+    new_references = get_new_references_from_message(detections)
+
+    if references_db is not None:
+        references_db = references_db[references_db["oid"] == oid].copy()
+        references = pd.concat([new_references, references_db], axis=0)
+        references.drop_duplicates(["oid", "rfid"], keep="first", inplace=True)
+    else:
+        references = new_references
+
     astro_object = AstroObject(
-        detections=aid_detections, forced_photometry=aid_forced, metadata=metadata
+        detections=aid_detections,
+        forced_photometry=aid_forced,
+        metadata=metadata,
+        reference=references,
     )
     return astro_object
 
@@ -205,6 +268,10 @@ def parse_output(
         assert oid_ao == oid
         feature_names = [f.replace("-", "_") for f in ao_features["name"].values]
 
+        reference = astro_object.reference
+        if reference is not None:
+            reference = astro_object.reference.reset_index(drop=True).to_dict("records")
+
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
         )
@@ -215,6 +282,7 @@ def parse_output(
             "non_detections": message["non_detections"],
             "xmatches": message["xmatches"],
             "features": features_for_oid,
+            "reference": reference,
         }
         output_messages.append(out_message)
 

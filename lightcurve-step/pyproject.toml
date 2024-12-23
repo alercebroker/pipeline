@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lightcurve-step"
-version = "25.0.1a8"
+version = "26.2.0"
 description = "Lightcurve Step"
 authors = []
 readme = "README.md"
@@ -13,6 +13,7 @@ pymongo = "^4.4.1"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.19"}
 psycopg2-binary = "^2.9.6"
 db-plugins = {path = "../libs/db-plugins", develop = true}
+survey-parser-plugins = {path = "../libs/survey_parser_plugins", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

@@ -11,7 +11,7 @@ class KafkaMetricsProducerTest(unittest.TestCase):
         self.schema_path = os.path.join(
             FILE_PATH, "../examples/kafka_producer_schema.avsc"
         )
-        
+
         self.config = {
             "PARAMS": {
                 "bootstrap.servers": "fake",

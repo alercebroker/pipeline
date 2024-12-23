@@ -886,5 +886,8 @@ def test_magnitude_statistics_ignores_forced_photometry():
 
     assert_frame_equal(
         calculator._detections,
-        pd.DataFrame({"oid": "OIDa", "candid": "a", "forced": False}, index=pd.Index(["a_OIDa"])),
+        pd.DataFrame(
+            {"oid": "OIDa", "candid": "a", "forced": False},
+            index=pd.Index(["a_OIDa"]),
+        ),
     )

@@ -1,6 +1,7 @@
+import pandas as pd
 import logging
 import json
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 from apf.core import get_class
 from apf.core.step import GenericStep
@@ -10,9 +11,14 @@ from lc_classifier.features.core.base import AstroObject
 from lc_classifier.features.preprocess.ztf import ZTFLightcurvePreprocessor
 from lc_classifier.features.composites.ztf import ZTFFeatureExtractor
 
+from .database import (
+    PSQLConnection,
+    get_sql_references,
+)
+
 from .utils.metrics import get_sid
 from .utils.parsers import parse_output, parse_scribe_payload
-from .utils.parsers import detections_to_astro_objects
+from .utils.parsers import detections_to_astro_object
 
 from importlib.metadata import version
 
@@ -32,6 +38,7 @@ class FeatureStep(GenericStep):
     def __init__(
         self,
         config=None,
+        db_sql: PSQLConnection = None,
         **step_args,
     ):
 
@@ -43,6 +50,9 @@ class FeatureStep(GenericStep):
         self.scribe_producer = scribe_class(self.config["SCRIBE_PRODUCER_CONFIG"])
         self.extractor_version = version("feature-step")
         self.extractor_group = ZTFFeatureExtractor.__name__
+
+        self.db_sql = db_sql
+        self.logger = logging.getLogger("alerce.FeatureStep")
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
         commands = parse_scribe_payload(
@@ -73,10 +83,23 @@ class FeatureStep(GenericStep):
         self.set_producer_key_field("oid")
         return result
 
+    def _get_sql_references(self, oids: List[str]) -> Optional[pd.DataFrame]:
+        db_references = get_sql_references(
+            oids, self.db_sql, keys=["oid", "rfid", "sharpnr", "chinr"]
+        )
+        db_references = db_references[db_references["chinr"] >= 0.0].copy()
+        return db_references
+
     def execute(self, messages):
         candids = {}
         astro_objects = []
         messages_to_process = []
+
+        oids = set()
+        for msg in messages:
+            oids.add(msg["oid"])
+        references_db = self._get_sql_references(list(oids))
+
         for message in messages:
             if not message["oid"] in candids:
                 candids[message["oid"]] = []
@@ -88,7 +111,7 @@ class FeatureStep(GenericStep):
 
             xmatch_data = message["xmatches"]
 
-            ao = detections_to_astro_objects(list(m), xmatch_data)
+            ao = detections_to_astro_object(list(m), xmatch_data, references_db)
             astro_objects.append(ao)
             messages_to_process.append(message)
 
@@ -101,6 +124,10 @@ class FeatureStep(GenericStep):
 
     def post_execute(self, result):
         self.metrics["sid"] = get_sid(result)
+
+        for message in result:
+            del message["reference"]
+
         return result
 
     def tear_down(self):

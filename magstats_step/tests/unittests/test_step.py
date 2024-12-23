@@ -54,12 +54,16 @@ def test_scribe_message_multistream(env_variables):
         if len(d["detections"]) > 0:
             dcopy.append(d)
     for i, d in enumerate(dcopy):
-        oid_calls = list(filter(
-            lambda call: call.kwargs["key"] == d["oid"],
-            step.scribe_producer.produce.call_args_list,
-        ))
+        oid_calls = list(
+            filter(
+                lambda call: call.kwargs["key"] == d["oid"],
+                step.scribe_producer.produce.call_args_list,
+            )
+        )
         assert len(oid_calls) == 2
-        parsed_commands = list(map(lambda call: json.loads(call[0][0]["payload"]), oid_calls))
+        parsed_commands = list(
+            map(lambda call: json.loads(call[0][0]["payload"]), oid_calls)
+        )
         assert len(parsed_commands) == 2
         assert parsed_commands[0]["collection"] == "object"
         assert parsed_commands[0]["type"] == "update"

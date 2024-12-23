@@ -1,15 +1,12 @@
 import abc
 from abc import ABC
-from typing import List, Tuple
 
 
 class BaseStrategy(ABC):
     @abc.abstractmethod
-    def get_coordinates(self, alerts: dict) -> List[tuple]:
+    def get_coordinates(self, alerts: dict) -> list[tuple]:
         pass
 
     @abc.abstractmethod
-    def get_new_values(
-        self, matches: List[tuple], alerts: dict
-    ) -> Tuple[List[tuple], List[dict]]:
+    def get_new_values(self, matches: list[tuple], alerts: dict) -> list[tuple]:
         pass

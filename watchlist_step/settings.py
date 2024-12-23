@@ -26,7 +26,9 @@ if os.getenv("TOPIC_STRATEGY_FORMAT"):
     CONSUMER_CONFIG["TOPIC_STRATEGY"] = {
         "CLASS": "apf.core.topic_management.DailyTopicStrategy",
         "PARAMS": {
-            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"].strip().split(","),
+            "topic_format": os.environ["TOPIC_STRATEGY_FORMAT"]
+            .strip()
+            .split(","),
             "date_format": "%Y%m%d",
             "change_hour": 23,
         },
@@ -57,7 +59,10 @@ METRICS_CONFIG = {
             "description": "The root schema comprises the entire JSON document.",
             "default": {},
             "examples": [
-                {"timestamp_sent": "2020-09-01", "timestamp_received": "2020-09-01"}
+                {
+                    "timestamp_sent": "2020-09-01",
+                    "timestamp_received": "2020-09-01",
+                }
             ],
             "required": ["timestamp_sent", "timestamp_received"],
             "properties": {
@@ -83,11 +88,17 @@ METRICS_CONFIG = {
     },
 }
 
-if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv(
+    "CONSUMER_KAFKA_PASSWORD"
+):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
-    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "CONSUMER_KAFKA_USERNAME"
+    )
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "CONSUMER_KAFKA_PASSWORD"
+    )
 if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
@@ -110,4 +121,5 @@ STEP_CONFIG = {
     },
     "METRICS_CONFIG": METRICS_CONFIG,
     "N_PROCESS": os.getenv("N_PROCESS", 1),
+    "CONSUMER_CONFIG": CONSUMER_CONFIG,
 }

@@ -30,9 +30,10 @@ jobs:
       python-version: "3.8"
       sources-folder: "sorting_hat_step"
       test-folder: "tests/integration"
-      codecov-flags: "" # Do not upload
+      codecov-flags: "sorting_hat_step_integration"
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   build-sorting-hat-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml

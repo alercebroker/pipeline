@@ -21,8 +21,10 @@ jobs:
       python-version: "3.9"
       sources-folder: "magstats_step"
       test-folder: "tests/unittests"
+      codecov-flags: "magstats_step_unittest"
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
   magstats_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -30,9 +32,10 @@ jobs:
       python-version: "3.9"
       sources-folder: "magstats_step"
       test-folder: "tests/integration"
-      codecov-flags: "" # Do not upload
+      codecov-flags: "magstats_step_integration" # Do not upload
     secrets:
       GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
   build-magstats-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:

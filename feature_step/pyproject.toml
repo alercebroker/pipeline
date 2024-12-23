@@ -1,17 +1,20 @@
 [tool.poetry]
 name = "feature-step"
-version = "25.0.1a8"
+version = "26.2.0"
 description = "Feature step"
 authors = ["Ignacio Reyes"]
 readme = "README.md"
 packages = [{include = "features"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 numpy = "^1.16"
 pandas = "^2.0.1"
 lc-classifier = { path = "../lc_classifier", develop = true}
 apf_base = { path = "../libs/apf", develop = true }
+psycopg2-binary = "^2.9.6"
+SQLAlchemy="2.0.19"
+db-plugins = "^25.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"

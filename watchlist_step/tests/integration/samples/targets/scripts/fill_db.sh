@@ -16,8 +16,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE TABLE watchlist_match (
         id SERIAL,
         target_id INTEGER REFERENCES watchlist_target(id),
-        object_id VARCHAR(20),
-        candid BIGINT,
+        object_id VARCHAR,
+        candid VARCHAR,
         date TIMESTAMP,
         ready_to_notify BOOLEAN,
         values JSONB

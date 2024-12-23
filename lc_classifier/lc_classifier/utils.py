@@ -324,6 +324,8 @@ def create_astro_object(
             ["sgmag1", xmatch["sgmag1"]],
             ["srmag1", xmatch["srmag1"]],
             ["distpsnr1", xmatch["distpsnr1"]],
+            ["simag1", xmatch["simag1"]],
+            ["szmag1", xmatch["szmag1"]],
         ]
 
     metadata = pd.DataFrame(

@@ -21,9 +21,13 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
                  inplace=True)
 
     lc_df["fid"] = lc_df["fid"].map({1: "g", 2: "r", 3: "i"})
-    lc_df = lc_df[lc_df["fid"].isin(["g", "r"])]
+    lc_df["procstatus"] = lc_df["procstatus"].astype(str)
+    
+    lc_df = lc_df[lc_df["fid"].isin(["g", "r"]) \
+                  & ((lc_df["procstatus"] == "0") \
+                     | (lc_df["procstatus"] == "57"))]
 
-    if len(lc_df[lc_df["detected"]]) == 0:
+    if len(lc_df[lc_df["detected"]]) < 2:
         raise NoDetections()
 
     diff_flux = lc_df[
@@ -99,15 +103,20 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
 if __name__ == "__main__":
     # Build AstroObjects
 
-    data_dir = "data_241015"
+    data_dir = "data_241209"
     data_out = data_dir + "_ao"
     lightcurve_filenames = os.listdir(data_dir)
     lightcurve_filenames = [f for f in lightcurve_filenames if "lightcurves_batch" in f]
 
     object_df = pd.read_parquet(
-        os.path.join(data_dir, "objects_with_wise_20241016.parquet")
+        os.path.join(data_dir, "objects_with_wise_20241209.parquet")
     )
     object_df.set_index("oid", inplace=True)
+    
+    exclude_df = pd.read_parquet(
+        os.path.join(data_dir, "objects_to_exclude_20241209.parquet")
+    )
+    exclude_df.set_index("oid", inplace=True)
 
     for lc_filename in tqdm(lightcurve_filenames):
         batch_i_str = lc_filename.split(".")[0].split("_")[2]
@@ -119,6 +128,10 @@ if __name__ == "__main__":
 
         astro_objects_list = []
         for oid in batch_oids:
+            if oid in exclude_df.index:
+                print(oid + ' excluded from sample')
+                continue
+            
             lc = lightcurves.loc[[oid]]
             object_info = object_df.loc[oid]
             try:
@@ -127,7 +140,7 @@ if __name__ == "__main__":
                 astro_objects_list.append(astro_object)
             except NoDetections:
                 print(object_info)
-                print("Object with no detections")
+                print("Object with not enough detections")
 
         save_astro_objects_batch(
             astro_objects_list,

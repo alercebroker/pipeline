@@ -1,19 +1,15 @@
 import os
-from io import BytesIO
 import pathlib
 
 import psycopg2
 import pytest
-from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from apf.consumers import KafkaConsumer
-from confluent_kafka import Producer
+from apf.producers import KafkaSchemalessProducer
+from confluent_kafka.admin import AdminClient, NewTopic
 from fastavro.schema import load_schema
 from fastavro.utils import generate_many
-from confluent_kafka.admin import AdminClient, NewTopic
-from fastavro import writer, parse_schema
 
 from watchlist_step.db.connection import PsqlDatabase
-from tests.integration.mocks.mock_alerts import ztf_extra_fields_generator
 
 
 @pytest.fixture(scope="session")
@@ -53,9 +49,10 @@ def produce_message(topic):
         message["dec"] = 53.34521158573315
         message["candid"] = str(1000151433015015014 + i)
         producer.produce(message)
-        
+
     producer.producer.flush()
     del producer
+
 
 def consume_message(config):
     consumer = KafkaConsumer(config)
@@ -72,7 +69,7 @@ def is_responsive_kafka(url):
         try:
             f.result()
             return True
-        except Exception as e:
+        except Exception:
             return False
 
 
@@ -101,7 +98,7 @@ def is_responsive_users_database(docker_ip, port):
         )
         conn.close()
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 

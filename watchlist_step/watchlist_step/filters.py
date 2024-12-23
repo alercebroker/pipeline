@@ -2,12 +2,14 @@ def satisfies_filter(values: dict, type: str, params: dict) -> bool:
     match type:
         case "constant":
             return constant(values, **params)
-        case "all":
+        case "and":
             return _all(values, **params)
-        case "any":
+        case "or":
             return _any(values, **params)
+        case "no filter":
+            return True
         case _:
-            raise Exception("invalid filter type")
+            raise Exception(f"Invalid filter type: {type}")
 
 
 def constant(values: dict, field: str, constant: int, op: str) -> bool:
@@ -24,7 +26,7 @@ def constant(values: dict, field: str, constant: int, op: str) -> bool:
         case "eq":
             return value == constant
         case _:
-            raise Exception("invalid value for filter.params.op")
+            raise Exception(f"Invalid value for filter.params.op: {op}")
 
 
 def _all(values: dict, filters: list[dict]) -> bool:

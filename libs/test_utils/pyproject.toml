@@ -10,9 +10,9 @@ packages = [{include = "test_utils"}]
 python = ">=3.9,<3.12"
 confluent_kafka = "2.0.2"
 pymongo = "^4.4.1"
-db-plugins = {path = "../db-plugins", develop = true}
 psycopg2-binary = "*"
 pytest-docker = "^1.0.1"
+db-plugins = "^25.0.0"
 
 [project]
 name = "test_utils"

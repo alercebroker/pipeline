@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from features.database import PSQLConnection
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -38,6 +39,6 @@ if STEP_CONFIG["FEATURE_FLAGS"]["USE_PROFILING"]:
         application_name="step.Feature",
         server_address=STEP_CONFIG["PYROSCOPE_SERVER"],
     )
-
-step = FeatureStep(config=STEP_CONFIG)
+db_sql = PSQLConnection(STEP_CONFIG["PSQL_CONFIG"])
+step = FeatureStep(config=STEP_CONFIG, db_sql=db_sql)
 step.start()

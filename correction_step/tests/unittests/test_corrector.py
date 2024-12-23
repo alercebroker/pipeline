@@ -6,15 +6,18 @@ import numpy as np
 from pandas.testing import assert_frame_equal
 
 from correction import Corrector
-from tests.utils import ztf_alert, atlas_alert
+from tests.utils import ztf_detection, atlas_alert
 
-detections = [ztf_alert(candid="c1", oid="oid_ztf"), atlas_alert(candid="c2", oid="oid_atlas")]
+detections = [
+    ztf_detection(is_new=True, candid="c1", oid="oid_ztf"),
+    atlas_alert(candid="c2", oid="oid_atlas"),
+]
 MAG_CORR_COLS = ["mag_corr", "e_mag_corr", "e_mag_corr_ext"]
 ALL_NEW_COLS = MAG_CORR_COLS + ["dubious", "stellar", "corrected"]
 
 
 def test_corrector_removes_duplicate_candids():
-    detections_duplicate = [ztf_alert(candid="c"), atlas_alert(candid="c")]
+    detections_duplicate = [ztf_detection(is_new=True, candid="c"), atlas_alert(candid="c")]
     corrector = Corrector(detections_duplicate)
     assert (corrector._detections.index == ["c_OID1"]).all()
 
@@ -30,7 +33,8 @@ def test_mask_survey_returns_only_alerts_from_requested_survey():
 def test_apply_all_calls_requested_function_to_masked_detections_for_each_submodule(mock_strategy):
     mock_strategy.ztf = mock.MagicMock()
     mock_strategy.ztf.function = mock.MagicMock()
-    mock_strategy.ztf.function.return_value = None
+    ztf_det_internal_index = f"{detections[0]['candid']}_{detections[0]['oid']}"
+    mock_strategy.ztf.function.return_value = pd.Series(data=[None], index=[ztf_det_internal_index])
     mock_strategy.dummy = mock.MagicMock()
     mock_strategy.dummy.function = mock.MagicMock()
 
@@ -86,7 +90,9 @@ def test_dubious_calls_apply_all_with_function_is_dubious():
 
 def test_dubious_is_false_for_surveys_without_strategy():
     corrector = Corrector(detections)
-    assert (corrector.dubious == pd.Series([False, False], index=["c1_oid_ztf", "c2_oid_atlas"])).all()
+    assert (
+        corrector.dubious == pd.Series([False, False], index=["c1_oid_ztf", "c2_oid_atlas"])
+    ).all()
 
 
 def test_stellar_calls_apply_all_with_function_is_stellar():
@@ -100,7 +106,9 @@ def test_stellar_calls_apply_all_with_function_is_stellar():
 def test_stellar_is_false_for_surveys_without_strategy(is_corrected):
     is_corrected.return_value = pd.Series([True], index=["c1_oid_ztf"])
     corrector = Corrector(detections)
-    assert (corrector.stellar == pd.Series([True, False], index=["c1_oid_ztf", "c2_oid_atlas"])).all()
+    assert (
+        corrector.stellar == pd.Series([True, False], index=["c1_oid_ztf", "c2_oid_atlas"])
+    ).all()
 
 
 def test_corrected_magnitudes_calls_apply_all_with_function_correct():
@@ -166,7 +174,7 @@ def test_arcsec2deg_applies_proper_conversion():
 
 def test_calculate_coordinates_with_equal_weights_is_same_as_ordinary_mean():
     wdetections = [
-        ztf_alert(candid="c1", ra=100, e_ra=5, forced=False),
+        ztf_detection(is_new=True, candid="c1", ra=100, e_ra=5, forced=False),
         atlas_alert(candid="c2", ra=200, e_ra=5),
     ]
     corrector = Corrector(wdetections)
@@ -175,7 +183,7 @@ def test_calculate_coordinates_with_equal_weights_is_same_as_ordinary_mean():
 
 def test_calculate_coordinates_with_a_very_high_error_does_not_consider_its_value_in_mean():
     wdetections = [
-        ztf_alert(candid="c1", ra=100, e_ra=5, forced=False),
+        ztf_detection(is_new=True, candid="c1", ra=100, e_ra=5, forced=False),
         atlas_alert(candid="c2", ra=200, e_ra=1e6),
     ]
     corrector = Corrector(wdetections)
@@ -184,7 +192,7 @@ def test_calculate_coordinates_with_a_very_high_error_does_not_consider_its_valu
 
 def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value_in_mean():
     wdetections = [
-        ztf_alert(candid="c1", ra=100, e_ra=5),
+        ztf_detection(is_new=True, candid="c1", ra=100, e_ra=5),
         atlas_alert(candid="c2", ra=200, e_ra=1e-6),
     ]
     corrector = Corrector(wdetections)
@@ -193,7 +201,7 @@ def test_calculate_coordinates_with_an_very_small_error_only_considers_its_value
 
 def test_calculate_coordinates_ignores_forced_photometry():
     wdetections = [
-        ztf_alert(candid="c1", ra=100, e_ra=1, forced=False),
+        ztf_detection(is_new=True, candid="c1", ra=100, e_ra=1, forced=False),
         atlas_alert(candid="c2", ra=200, forced=True, e_ra=1),
     ]
     corrector = Corrector(wdetections)
@@ -201,7 +209,10 @@ def test_calculate_coordinates_ignores_forced_photometry():
 
 
 def test_coordinates_dataframe_calculates_mean_for_each_aid():
-    detections_duplicate = [ztf_alert(candid="c", forced=False), atlas_alert(candid="c")]
+    detections_duplicate = [
+        ztf_detection(is_new=True, candid="c", forced=False),
+        atlas_alert(candid="c"),
+    ]
     corrector = Corrector(detections_duplicate)
     assert corrector.mean_coordinates().index == ["OID1"]
 
@@ -217,7 +228,10 @@ def test_coordinates_dataframe_includes_mean_ra_and_mean_dec():
 
 
 def test_coordinates_records_has_one_entry_per_aid():
-    test_detections = [ztf_alert(candid="c1", forced=False), atlas_alert(candid="c2")]
+    test_detections = [
+        ztf_detection(is_new=True, candid="c1", forced=False),
+        atlas_alert(candid="c2"),
+    ]
     corrector = Corrector(test_detections)
     assert set(corrector.coordinates_as_records()) == {"OID1"}
 

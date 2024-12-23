@@ -21,8 +21,10 @@ jobs:
       base-folder: 'libs/apf'
       sources-folder: 'apf'
       test-folder: 'tests'
+      codecov-flags: 'libs_apf_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   reflector_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -31,8 +33,11 @@ jobs:
         sources-folder: 'reflector_step'
         test-folder: 'tests/unittest'
         base-folder: 'reflector_step'
+        codecov-flags: 'reflector_step_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+
   reflector_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -40,9 +45,10 @@ jobs:
       sources-folder: 'reflector_step'
       base-folder: 'reflector_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'reflector_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   sorting_hat_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -51,8 +57,11 @@ jobs:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
+      codecov-flags: 'sorting_hat_step_unittest'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+
   sorting_hat_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -60,9 +69,10 @@ jobs:
       python-version: '3.8'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'sorting_hat_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   prv_candidates_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -79,9 +89,10 @@ jobs:
       python-version: '3.8'
       sources-folder: 'prv_candidates_step'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'prv_candidates_step_integration'
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   lightcurve_step_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
@@ -143,7 +154,7 @@ jobs:
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe --with squidward"
       test-folder: "tests/unit"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -152,16 +163,20 @@ jobs:
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-      TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+      TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
+      TEST_MBAPPE_FEATURES_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
   lc_classification_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lc_classification_step'
       python-version: '3.8'
       codecov-flags: ''  # Do not upload
-      poetry-install: "--with ztf --with elasticc"
+      poetry-install: "--with ztf --with elasticc --with anomaly --with mbappe --with squidward"
       test-folder: "tests/integration"
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -170,9 +185,13 @@ jobs:
       TEST_MESSI_MODEL_PATH: "${{ secrets.TEST_MESSI_MODEL_PATH }}"
       TEST_MESSI_FEATURE_QUANTILES_PATH: "${{ secrets.TEST_MESSI_FEATURE_QUANTILES_PATH }}"
       TEST_TORETTO_MODEL_PATH: "${{ secrets.TEST_TORETTO_MODEL_PATH }}"
-      TEST_BARNEY_MODEL_PATH: "${{ secrets.TEST_BARNEY_MODEL_PATH }}"
-      TEST_NEW_BARNEY_MODEL_PATH: "${{ secrets.TEST_NEW_BARNEY_MODEL_PATH }}"
       TEST_MLP_MODEL_PATH: "${{ secrets.TEST_MLP_MODEL_PATH }}"
+      TEST_ANOMALY_QUANTILES_PATH: "${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}"
+      TEST_ANOMALY_MODEL_PATH: "${{ secrets.TEST_ANOMALY_MODEL_PATH }}"
+      TEST_MBAPPE_MODEL_PATH: "${{ secrets.TEST_MBAPPE_MODEL_PATH }}"
+      TEST_MBAPPE_FEATURES_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}"
+      TEST_MBAPPE_METADATA_QUANTILES_PATH: "${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}"
+      TEST_SQUIDWARD_MODEL_PATH: "${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}"
 
 
   feature_step_unittest:
@@ -182,9 +201,10 @@ jobs:
       base-folder: 'feature_step'
       sources-folder: 'features'
       test-folder: 'tests/unittest'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'feature_step_unittest'  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
   feature_step_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
@@ -192,9 +212,10 @@ jobs:
       base-folder: 'feature_step'
       sources-folder: 'features/'
       test-folder: 'tests/integration'
-      codecov-flags: ''  # Do not upload
+      codecov-flags: 'feature_step_integration'  # Do not upload
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
+      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
 
   build-correction-dagger:
     

@@ -1,14 +1,15 @@
-import pytest
 import pathlib
-from apf.consumers import KafkaConsumer
-from watchlist_step.step import WatchlistStep
 
+import pytest
+
+from watchlist_step.step import WatchlistStep
 
 SORTING_HAT_SCHEMA_PATH = pathlib.Path(
     pathlib.Path(__file__).parent.parent.parent.parent,
     "schemas/sorting_hat_step",
     "output.avsc",
 )
+
 
 @pytest.fixture
 def step_creator():
@@ -30,7 +31,7 @@ class TestStep:
             "bootstrap.servers": "localhost:9092",
             "group.id": "test_integration",
             "auto.offset.reset": "beginning",
-            "enable.partition.eof": True
+            "enable.partition.eof": True,
         },
         "consume.timeout": 30,
         "consume.messages": 2,
@@ -45,7 +46,7 @@ class TestStep:
             "PASSWORD": "postgres",
             "PORT": 5432,
             "DB_NAME": "postgres",
-        }
+        },
     }
 
     def test_should_insert_matches_if_matches_returned(
@@ -55,7 +56,7 @@ class TestStep:
         step_creator,
     ):
         self.consumer_config["PARAMS"]["group.id"] = "test_integration"
-        #consumer = KafkaConsumer(self.consumer_config)
+        # consumer = KafkaConsumer(self.consumer_config)
         strategy_name = "SortingHat"
         step = step_creator(
             strategy_name,

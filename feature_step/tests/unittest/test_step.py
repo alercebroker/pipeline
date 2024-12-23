@@ -4,6 +4,7 @@ from apf.producers import GenericProducer
 from features.step import FeatureStep
 import json
 import pandas as pd
+from pandas.testing import assert_frame_equal
 import numpy as np
 from ..message_factory import generate_input_batch
 from .message_example import messages as spm_messages
@@ -54,7 +55,8 @@ class StepTestCase(unittest.TestCase):
                 "FEATURE_VERSION": "1.0-test",
             },
         }
-        self.step = FeatureStep(config=self.step_config)
+        db_sql = mock.MagicMock()
+        self.step = FeatureStep(config=self.step_config, db_sql=db_sql)
         self.step.scribe_producer = mock.create_autospec(GenericProducer)
         self.step.scribe_producer.produce = mock.MagicMock()
 
@@ -116,3 +118,94 @@ class StepTestCase(unittest.TestCase):
         multiband_period_message = result_message["features"]["Multiband_period_12"]
 
         assert multiband_period_scribe == multiband_period_message
+
+    @mock.patch("features.step.FeatureStep._get_sql_references")
+    def test_read_empty_reference_from_db(self, _get_sql_ref):
+        _get_sql_ref.return_value = []
+
+        messages = [spm_messages[1]]
+        oids = set()
+        for msg in messages:
+            oids.add(msg["oid"])
+        result_references_from_db = self.step._get_sql_references(list(oids))
+        self.assertEqual(0, len(result_references_from_db))
+
+    @mock.patch("features.step.FeatureStep._get_sql_references")
+    def test_references_are_in_messages_only(self, _get_sql_ref):
+        _get_sql_ref.return_value = None
+
+        messages = [spm_messages[2]]
+        result_messages = self.step.execute(messages)
+
+        self.assertEqual(2, len(result_messages[0]["reference"]))
+
+    @mock.patch("features.step.FeatureStep._get_sql_references")
+    def test_references_some_are_in_db(self, _get_sql_ref):
+        rfid = 783120150
+        _get_sql_ref.return_value = pd.DataFrame(
+            [
+                {
+                    "oid": "ZTF18acphgdi",
+                    "rfid": rfid,
+                    "sharpnr": -0.020999999716877937,
+                    "chinr": 0.5440000295639038,
+                },
+            ]
+        )
+
+        columns = ["oid", "rfid", "sharpnr", "chinr"]
+
+        messages = [spm_messages[3]]
+        result_messages = self.step.execute(messages)
+
+        result_references = pd.DataFrame(result_messages[0]["reference"]).set_index(
+            "rfid"
+        )
+        result_references_from_db = pd.DataFrame(_get_sql_ref.return_value)[
+            columns
+        ].set_index("rfid")
+
+        assert_frame_equal(
+            pd.DataFrame(result_references.loc[rfid]),
+            pd.DataFrame(result_references_from_db.loc[rfid]),
+            check_like=True,
+        )
+
+    @mock.patch("features.step.FeatureStep._get_sql_references")
+    def test_references_are_all_in_db(self, _get_sql_ref):
+        _get_sql_ref.return_value = pd.DataFrame(
+            [
+                {
+                    "oid": "ZTF23abuesxr",
+                    "rfid": 783120108,
+                    "sharpnr": -0.024000000208616257,
+                    "chinr": 0.5049999952316284,
+                },
+                {
+                    "oid": "ZTF23abuesxr",
+                    "rfid": 783120208,
+                    "sharpnr": -0.08399999886751175,
+                    "chinr": 1.0240000486373901,
+                },
+            ]
+        )
+
+        columns = ["oid", "rfid", "sharpnr", "chinr"]
+
+        messages = [spm_messages[0]]
+        result_messages = self.step.execute(messages)
+        # print(result_messages[0]["reference"])
+
+        assert_frame_equal(
+            pd.DataFrame(result_messages[0]["reference"]).set_index("rfid"),
+            pd.DataFrame(_get_sql_ref.return_value)[columns].set_index("rfid"),
+            check_like=True,
+        )
+
+    def test_post_execute(self):
+        messages = generate_input_batch(10, ["g", "r"], survey="ZTF")
+        result_messages = self.step.execute(messages)
+        result_messages = self.step.post_execute(result_messages)
+
+        for message in result_messages:
+            self.assertTrue("reference" not in message.keys())

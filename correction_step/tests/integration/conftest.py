@@ -124,7 +124,7 @@ def produce_messages(topic):
             if detection["sid"] == "LSST":
                 detection["fid"] = random.choice(["u", "g", "r", "i", "z", "y"])
             if str(detection["tid"]).lower() == "ztf":
-                detection["extra_fields"] = ztf_extra_fields()
+                detection["extra_fields"] = ztf_extra_fields(is_new=detection["new"])
             elif str(detection["tid"]).lower() == "lsst":
                 detection["extra_fields"] = lsst_extra_fields()
             elif str(detection["tid"]).lower() == "atlas":

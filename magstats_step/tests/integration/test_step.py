@@ -25,7 +25,7 @@ def assert_command_data_schema(data):
         "lastmjd",
         "deltajd",
         "magstats",
-        "ndet"
+        "ndet",
     ]
     for field in expected_fields:
         assert field in data
@@ -36,6 +36,7 @@ def assert_magstats_is_list(data):
     assert isinstance(magstats, list)
     assert len(magstats)
 
+
 def assert_ndet(data, oid):
     dets_by_oid = {}
     for msg in input_data:
@@ -43,6 +44,7 @@ def assert_ndet(data, oid):
         for det in detections:
             dets_by_oid[det["oid"]] = dets_by_oid.get(det["oid"], []) + [det]
     assert len(dets_by_oid[oid]) == data["ndet"]
+
 
 def test_step(kafka_service, env_variables, kafka_consumer):
     step = step_factory()
