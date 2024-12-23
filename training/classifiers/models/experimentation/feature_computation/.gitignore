@@ -1,0 +1,11 @@
+*.pkl
+*.parquet
+
+alercereaduser_v4.json
+config.py
+
+/ztf_classifier_model*
+models/
+/data_241209_ao_shorten_features
+/data_241015
+/data_231206
