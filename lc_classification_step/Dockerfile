@@ -1,4 +1,4 @@
-FROM python:3.10-slim as python-base
+FROM python:3.10-slim AS python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 ARG model
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_NO_INTERACTION=1
 
 
-FROM python-base as builder
+FROM python-base AS builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git build-essential && \
     apt-get clean && \
@@ -34,7 +34,7 @@ RUN poetry run python -m pip install ../mhps --no-use-pep517
 RUN poetry install --no-root --without=dev --without=test --with=${model}
 
 
-FROM python:3.10-slim as production
+FROM python:3.10-slim AS production
 RUN pip install poetry
 COPY --from=builder /app /app
 COPY --from=builder /libs/apf /libs/apf
