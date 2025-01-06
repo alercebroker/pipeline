@@ -84,3 +84,23 @@ class ShortenPreprocessor(LightcurvePreprocessor):
         astro_object.forced_photometry = astro_object.forced_photometry[
             astro_object.forced_photometry["mjd"] < last_detection_mjd
         ]
+
+
+class ShortenNDetPreprocessor(LightcurvePreprocessor):
+    def __init__(self, n_dets: float):
+        self.n_dets = n_dets
+
+    def preprocess_single_object(self, astro_object: AstroObject):
+        dets = astro_object.detections[
+            astro_object.detections["unit"] == "diff_flux"
+        ].copy()
+        dets = dets.sort_values(by="mjd").iloc[0 : self.n_dets].copy()
+        max_mjd = np.max(dets["mjd"])
+        del dets
+
+        astro_object.detections = astro_object.detections[
+            astro_object.detections["mjd"] <= max_mjd
+        ]
+        astro_object.forced_photometry = astro_object.forced_photometry[
+            astro_object.forced_photometry["mjd"] < max_mjd
+        ]
