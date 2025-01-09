@@ -7,14 +7,21 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 from ..core.base import LightcurvePreprocessor, AstroObject
+from ..core.base import discard_bogus_detections
 
 
 class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
+    def __init__(self, drop_bogus: bool = False):
+        self.drop_bogus = drop_bogus
+
     def preprocess_single_object(self, astro_object: AstroObject):
         self._helio_time_correction(astro_object)
         self.drop_absurd_detections(astro_object)
         # TODO: does error need a np.maximum(error, 0.01) ?
         # the factor depends on the units
+
+        if self.drop_bogus:
+            self.drop_bogus_detections(astro_object)
 
     def _helio_time_correction(self, astro_object: AstroObject):
         detections = astro_object.detections
@@ -68,6 +75,26 @@ class ZTFLightcurvePreprocessor(LightcurvePreprocessor):
 
         astro_object.detections = drop_absurd(astro_object.detections)
         astro_object.forced_photometry = drop_absurd(astro_object.forced_photometry)
+
+    def drop_bogus_detections(self, astro_object: AstroObject):
+        def drop_bogus_dets(table):
+            keys = table.keys()
+            table = table.to_dict("records")
+            table = discard_bogus_detections(table)
+            table = pd.DataFrame.from_records(table)
+            if len(table) == 0:
+                table = pd.DataFrame(columns=keys)
+            return table
+
+        astro_object.detections = drop_bogus_dets(astro_object.detections)
+        if len(astro_object.detections) == 0:
+            astro_object.forced_photometry = pd.DataFrame(
+                columns=astro_object.forced_photometry.keys()
+            )
+        else:
+            astro_object.forced_photometry = drop_bogus_dets(
+                astro_object.forced_photometry
+            )
 
 
 class ShortenPreprocessor(LightcurvePreprocessor):

@@ -6,6 +6,29 @@ from lc_classifier.utils import mag2flux, mag_err_2_flux_err
 from typing import List, Dict, Optional
 
 
+def get_bogus_flags_for_each_detection(detections: List[Dict]):
+    # for each detection, it looks for the real-bogus score (available only for
+    # detections) and procstatus flag (available only for forced
+    # photometry epochs)
+
+    keys = ["rb", "procstatus"]
+
+    bogus_flags = []
+    for detection in detections:
+        value = []
+        for key in keys:
+            if key in detection["extra_fields"].keys():
+                value.append(detection["extra_fields"][key])
+            else:
+                value.append(None)
+        bogus_flags.append(value)
+
+    bogus_flags = pd.DataFrame(bogus_flags, columns=keys)
+    bogus_flags["procstatus"] = bogus_flags["procstatus"].astype(str)
+
+    return bogus_flags
+
+
 def get_reference_for_each_detection(detections: List[Dict]):
     # for each detection, it looks what is the reference id
     # and how far away it is
@@ -83,6 +106,11 @@ def detections_to_astro_object(
         detections
     )
     a = pd.concat([a, reference_for_each_detection], axis=1)
+
+    bogus_flags_for_each_detection: pd.DataFrame = get_bogus_flags_for_each_detection(
+        detections
+    )
+    a = pd.concat([a, bogus_flags_for_each_detection], axis=1)
 
     a = a[(a["mag"] != 100) | (a["e_mag"] != 100)].copy()
     a.rename(

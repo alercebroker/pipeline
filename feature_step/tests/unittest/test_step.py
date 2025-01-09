@@ -119,6 +119,17 @@ class StepTestCase(unittest.TestCase):
 
         assert multiband_period_scribe == multiband_period_message
 
+    def test_drop_bogus(self):
+        messages = [
+            spm_messages[2]
+        ]  # after drop bogus detections, it ends with 0 detections
+        result_messages = self.step.execute(messages)
+
+        nan_features = [
+            (x, y) for (x, y) in result_messages[0]["features"].items() if np.isnan(y)
+        ]
+        self.assertEqual(len(nan_features), len(result_messages[0]["features"]))
+
     @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
         _get_sql_ref.return_value = []
@@ -134,10 +145,10 @@ class StepTestCase(unittest.TestCase):
     def test_references_are_in_messages_only(self, _get_sql_ref):
         _get_sql_ref.return_value = None
 
-        messages = [spm_messages[2]]
+        messages = [spm_messages[3]]
         result_messages = self.step.execute(messages)
 
-        self.assertEqual(2, len(result_messages[0]["reference"]))
+        self.assertEqual(4, len(result_messages[0]["reference"]))
 
     @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_references_some_are_in_db(self, _get_sql_ref):
