@@ -43,7 +43,7 @@ class FeatureStep(GenericStep):
     ):
 
         super().__init__(config=config, **step_args)
-        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()
+        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
         self.feature_extractor = ZTFFeatureExtractor()
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
