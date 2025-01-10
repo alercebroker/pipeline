@@ -104,6 +104,45 @@ class LightcurvePreprocessor(ABC):
             self.preprocess_single_object(astro_object)
 
 
+def discard_bogus_detections(detections: List[Dict]) -> list[dict]:
+    RB_THRESHOLD = 0.55
+
+    filtered_detections = []
+
+    for det in detections:
+        bogus = False
+
+        if "extra_fields" in det.keys():
+            rb = (
+                det["extra_fields"]["rb"]
+                if "rb" in det["extra_fields"].keys()
+                else None
+            )
+            procstatus = (
+                det["extra_fields"]["procstatus"]
+                if "procstatus" in det["extra_fields"].keys()
+                else None
+            )
+        else:
+            rb = det["rb"] if "rb" in det.keys() else None
+            procstatus = det["procstatus"] if "procstatus" in det.keys() else None
+
+        mask_rb = rb is not None and not det["forced"] and (rb < RB_THRESHOLD)
+        mask_procstatus = (
+            procstatus is not None
+            and det["forced"]
+            and (procstatus != "0")
+            and (procstatus != "57")
+        )
+        if mask_rb or mask_procstatus:
+            bogus = True
+
+        if not bogus:
+            filtered_detections.append(det)
+
+    return filtered_detections
+
+
 def empty_normal_dataframe() -> pd.DataFrame:
     df = pd.DataFrame(columns=["name", "value", "fid", "sid", "version"])
     return df

@@ -52,6 +52,10 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
         pd.DataFrame.from_records(msg["detections"]) for msg in messages
     ]
     detections = pd.concat(detections)
+
+    if len(detections) == 0:
+        return pd.DataFrame()
+
     detections.drop_duplicates(["candid", "oid"], inplace=True)
     detections = detections.set_index("oid")
     detections["extra_fields"] = parse_extra_fields(detections)

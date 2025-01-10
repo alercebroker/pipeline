@@ -34,7 +34,7 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
             sg_score = metadata[metadata["name"] == "sgscore1"]["value"].values[0]
             dist_nr = metadata[metadata["name"] == "distpsnr1"]["value"].values[0]
 
-            if sg_score < 0 or dist_nr < 0:
+            if sg_score < 0 or dist_nr < 0 or len(astro_object.detections) == 0:
                 sg_score = np.nan
                 dist_nr = np.nan
 

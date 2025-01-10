@@ -126,6 +126,17 @@ class SPMExtractor(FeatureExtractor):
 
         observations = self.get_observations(astro_object)
 
+        if len(observations) == 0:
+            parameters = []
+            chis = []
+            for band in self.bands:
+                parameters.append([np.nan] * 6)
+                chis.append(np.nan)
+
+            self.parameters = np.concatenate(parameters, axis=0)
+            self.chis = np.array(chis)
+            return
+
         times = observations["mjd"].values
         flux = observations["brightness"].values
         e_flux = observations["e_brightness"].values
