@@ -375,6 +375,44 @@ def produce_messages():
     return func
 
 
+def add_fields_to_message(
+    message,
+    topic,
+    bands,
+    force_empty_features,
+    force_missing_features,
+    n_forced: int,
+):
+    message = message.copy()
+
+    for i, det in enumerate(message["detections"]):
+        det["oid"] = message["oid"]
+        det["candid"] = str(random.randint(0, 100000))
+        det["extra_fields"] = generate_extra_fields()
+        det["fid"] = random.choice(bands)
+        if i < n_forced:
+            det["forced"] = True
+            det["extra_fields"]["procstatus"] = random.choice(
+                ["0", "55", "56", "57", "61"]
+            )
+        else:
+            det["forced"] = False
+            det["extra_fields"]["rb"] = random.uniform(0, 1)
+
+    message["detections"][0]["new"] = True
+    message["detections"][0]["has_stamp"] = True
+    if topic == "features_ztf":
+        message["features"] = features_ztf(
+            force_empty_features, force_missing_features
+        )
+    elif topic == "features_elasticc":
+        message["features"] = features_elasticc(
+            force_empty_features, force_missing_features
+        )
+
+    return message
+
+
 def _produce_messages(
     topic,
     SCHEMA,
@@ -396,26 +434,14 @@ def _produce_messages(
     producer.set_key_field("oid")
 
     for message in messages:
-        for i, det in enumerate(message["detections"]):
-            det["oid"] = message["oid"]
-            det["candid"] = str(random.randint(0, 100000))
-            det["extra_fields"] = generate_extra_fields()
-            det["fid"] = random.choice(BANDS)
-            if i < n_forced:
-                det["forced"] = True
-            else:
-                det["forced"] = False
-
-        message["detections"][0]["new"] = True
-        message["detections"][0]["has_stamp"] = True
-        if topic == "features_ztf":
-            message["features"] = features_ztf(
-                force_empty_features, force_missing_features
-            )
-        elif topic == "features_elasticc":
-            message["features"] = features_elasticc(
-                force_empty_features, force_missing_features
-            )
+        message = add_fields_to_message(
+            message,
+            topic,
+            BANDS,
+            force_empty_features,
+            force_missing_features,
+            n_forced,
+        )
         producer.produce(message)
 
 
