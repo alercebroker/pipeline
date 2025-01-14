@@ -45,4 +45,4 @@ COPY xmatch_step/README.md \
 WORKDIR /app
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "scripts/run_step.py"]
+CMD ["poetry", "run", "python", "scripts/run_step.py"]

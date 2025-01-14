@@ -50,4 +50,4 @@ COPY lc_classification_step/models_settings.py /app/models_settings.py
 COPY lc_classification_step/lc_classification /app/lc_classification
 WORKDIR /app/
 RUN poetry install --only-root
-CMD ["poetry", "run", "scripts/run_step.py"]
+CMD ["poetry", "run",  "python", "scripts/run_step.py"]
