@@ -44,4 +44,4 @@ COPY sorting_hat_step/credentials.py \
 WORKDIR /app
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "step"]
+CMD ["poetry", "run", "scripts/run_step.py"]
