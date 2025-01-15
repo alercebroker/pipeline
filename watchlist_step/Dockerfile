@@ -44,4 +44,4 @@ COPY watchlist_step/README.md \
 WORKDIR /app
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "step"]
+CMD ["poetry", "run",  "python", "scripts/run_step.py"]
