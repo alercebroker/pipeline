@@ -50,6 +50,7 @@ def test_step_anomaly_result(
         assert_score_command_is_correct(command)
         sconsumer.commit()
 
+
 @pytest.mark.ztf
 def test_step_anomaly_no_features_result(
     kafka_service,
