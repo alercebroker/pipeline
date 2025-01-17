@@ -6,6 +6,9 @@ from lc_classifier.features.core.base import AstroObject, save_astro_objects_bat
 from tqdm import tqdm
 
 
+NDET_MIN = 8
+
+
 class NoDetections(Exception):
     pass
 
@@ -27,7 +30,7 @@ def create_astro_object(lc_df: pd.DataFrame, object_info: pd.Series) -> AstroObj
                   & ((lc_df["procstatus"] == "0") \
                      | (lc_df["procstatus"] == "57"))]
 
-    if len(lc_df[lc_df["detected"]]) < 2:
+    if len(lc_df[lc_df["detected"]]) < NDET_MIN:
         raise NoDetections()
 
     diff_flux = lc_df[
@@ -104,7 +107,7 @@ if __name__ == "__main__":
     # Build AstroObjects
 
     data_dir = "data_241209"
-    data_out = data_dir + "_ao"
+    data_out = data_dir + "_ndetge" + str(NDET_MIN) + "_ao"
     lightcurve_filenames = os.listdir(data_dir)
     lightcurve_filenames = [f for f in lightcurve_filenames if "lightcurves_batch" in f]
 
