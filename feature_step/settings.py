@@ -123,4 +123,5 @@ STEP_CONFIG = {
     "PYROSCOPE_SERVER": pyroscope_server,
     "SQL_SECRET_NAME": os.getenv("SQL_SECRET_NAME"),
     "PSQL_CONFIG": PSQL_CONFIG,
+    "MIN_DETECTIONS_FEATURES": os.getenv("MIN_DETECTIONS_FEATURES", None),
 }

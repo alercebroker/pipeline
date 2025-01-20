@@ -119,6 +119,31 @@ class StepTestCase(unittest.TestCase):
 
         assert multiband_period_scribe == multiband_period_message
 
+    def test_pre_execute(self):
+        step_config = {
+            "PRODUCER_CONFIG": PRODUCER_CONFIG,
+            "CONSUMER_CONFIG": CONSUMER_CONFIG,
+            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
+            "FEATURE_VERSION": "v1",
+            "STEP_METADATA": {
+                "STEP_VERSION": "feature",
+                "STEP_ID": "feature",
+                "STEP_NAME": "feature",
+                "STEP_COMMENTS": "feature",
+                "FEATURE_VERSION": "1.0-test",
+            },
+            "MIN_DETECTIONS_FEATURES": 2,
+        }
+        db_sql = mock.MagicMock()
+        step = FeatureStep(config=step_config, db_sql=db_sql)
+        step.scribe_producer = mock.create_autospec(GenericProducer)
+        step.scribe_producer.produce = mock.MagicMock()
+
+        messages = [spm_messages[2]]  # has only 1 detection
+        result_messages = step.pre_execute(messages)
+
+        self.assertEqual(0, len(result_messages))
+
     def test_drop_bogus(self):
         messages = [
             spm_messages[2]
