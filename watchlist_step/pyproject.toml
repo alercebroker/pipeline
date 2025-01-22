@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "watchlist-step"
-version = "27.0.1a0"
+version = "27.0.1a1"
 description = "Watchlist Step"
 authors = []
 readme = "README.md"
