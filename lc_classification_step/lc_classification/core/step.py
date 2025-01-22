@@ -66,7 +66,7 @@ class LateClassifier(GenericStep):
         self.step_parser: KafkaParser = get_class(
             config["STEP_PARSER_CLASS"]
         )()
-        self.min_detections = config.get("MIN_DETECTIONS", None)
+        self.min_detections = self.config.get("MIN_DETECTIONS", None)
         if self.min_detections is not None:
             self.min_detections = int(self.min_detections)
 
