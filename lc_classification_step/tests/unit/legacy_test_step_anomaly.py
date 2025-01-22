@@ -11,3 +11,4 @@ def test_step_anomaly(test_anomaly_model, step_factory_anomaly):
             mock_feats = features_ztf()
             msg["features"] = mock_feats
     test_anomaly_model(step_factory_anomaly, messages)
+
