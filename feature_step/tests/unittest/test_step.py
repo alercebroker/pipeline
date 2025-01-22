@@ -150,10 +150,10 @@ class StepTestCase(unittest.TestCase):
         ]  # after drop bogus detections, it ends with 0 detections
         result_messages = self.step.execute(messages)
 
-        nan_features = [
-            (x, y) for (x, y) in result_messages[0]["features"].items() if np.isnan(y)
+        none_features = [
+            (x, y) for (x, y) in result_messages[0]["features"].items() if y is None
         ]
-        self.assertEqual(len(nan_features), len(result_messages[0]["features"]))
+        self.assertEqual(len(none_features), len(result_messages[0]["features"]))
 
     @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
