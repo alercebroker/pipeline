@@ -6,7 +6,6 @@ import logging
 import json
 import numexpr
 from alerce_classifiers.base.dto import OutputDTO
-from lc_classifier.features.core.base import discard_bogus_detections
 from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
@@ -177,27 +176,7 @@ class LateClassifier(GenericStep):
 
         """
         self.logger.info("Processing %i messages.", len(messages))
-
-        filtered_messages = []
-        for message in messages:
-            filtered_message = message.copy()
-            filtered_message["detections"] = discard_bogus_detections(
-                message["detections"]
-            )
-
-            n_dets = len(
-                [
-                    True
-                    for det in filtered_message["detections"]
-                    if not det["forced"]
-                ]
-            )
-            if n_dets == 0:
-                filtered_message["detections"] = []
-                filtered_message["features"] = None
-            filtered_messages.append(filtered_message)
-
-        model_input = create_input_dto(filtered_messages)
+        model_input = create_input_dto(messages)
         probabilities = OutputDTO(
             DataFrame(), {"top": DataFrame(), "children": {}}
         )
