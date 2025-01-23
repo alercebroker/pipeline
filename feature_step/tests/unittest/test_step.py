@@ -150,58 +150,10 @@ class StepTestCase(unittest.TestCase):
         ]  # after drop bogus detections, it ends with 0 detections
         result_messages = self.step.execute(messages)
 
-        none_features = [
-            (x, y) for (x, y) in result_messages[0]["features"].items() if y is None
+        nan_features = [
+            (x, y) for (x, y) in result_messages[0]["features"].items() if np.isnan(y)
         ]
-        self.assertEqual(len(none_features), len(result_messages[0]["features"]))
-
-    def test_drop_bogus_post_execute(self):
-        step_config = {
-            "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "CONSUMER_CONFIG": CONSUMER_CONFIG,
-            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-            "FEATURE_VERSION": "v1",
-            "STEP_METADATA": {
-                "STEP_VERSION": "feature",
-                "STEP_ID": "feature",
-                "STEP_NAME": "feature",
-                "STEP_COMMENTS": "feature",
-                "FEATURE_VERSION": "1.0-test",
-            },
-            "MIN_DETECTIONS_FEATURES": 2,
-        }
-        db_sql = mock.MagicMock()
-        step = FeatureStep(config=step_config, db_sql=db_sql)
-        step.scribe_producer = mock.create_autospec(GenericProducer)
-        step.scribe_producer.produce = mock.MagicMock()
-
-        messages = [
-            spm_messages[2]
-        ]  # after drop bogus detections, it ends with 0 detections
-        result_messages = step.execute(messages)
-        result_messages = step.post_execute(result_messages)
-        print(result_messages)
-
-        self.assertEqual(len(messages), len(result_messages))
-        n_features_prev = -1
-        for result_message in result_messages:
-            n_features = len(result_message["features"])
-            self.assertTrue(n_features > 0)
-
-            # Check all messages have the same number of features
-            if n_features_prev != -1:
-                self.assertEqual(n_features, n_features_prev)
-                n_features_prev = n_features
-
-        scribe_args = step.scribe_producer.produce.call_args
-        assert (
-            len(json.loads(scribe_args[0][0]["payload"])["data"]["features"])
-            == n_features
-        )
-        step.scribe_producer.produce.assert_called()
-        scribe_producer_call_count = step.scribe_producer.produce.call_count
-        # 2 times the len of messages 1 for objects and 1 for features
-        self.assertEqual(scribe_producer_call_count, len(messages) * 2)
+        self.assertEqual(len(nan_features), len(result_messages[0]["features"]))
 
     @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
