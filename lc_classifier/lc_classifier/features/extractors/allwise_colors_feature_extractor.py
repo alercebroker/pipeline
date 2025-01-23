@@ -54,6 +54,7 @@ class AllwiseColorsFeatureExtractor(FeatureExtractor):
 
         features_df["sid"] = sid
         features_df["version"] = self.version
+        features_df["value"] = features_df["value"].astype(np.float64)
 
         all_features = [astro_object.features, features_df]
         astro_object.features = pd.concat(

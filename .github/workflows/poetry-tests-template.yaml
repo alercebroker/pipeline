@@ -61,10 +61,10 @@ on:
       TEST_MBAPPE_MODEL_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
-      TEST_MBAPPE_FEATURES_QUANTILES_PATH:
+      TEST_MBAPPE_QUANTILES_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
-      TEST_MBAPPE_METADATA_QUANTILES_PATH:
+      TEST_MBAPPE_CONFIG_PATH:
         required: false
         description: 'A path to a folder containing .pkl file'
       TEST_SQUIDWARD_MODEL_PATH:
@@ -87,8 +87,8 @@ jobs:
       TEST_ANOMALY_QUANTILES_PATH: ${{ secrets.TEST_ANOMALY_QUANTILES_PATH }}
       TEST_ANOMALY_MODEL_PATH: ${{ secrets.TEST_ANOMALY_MODEL_PATH }}
       TEST_MBAPPE_MODEL_PATH: ${{ secrets.TEST_MBAPPE_MODEL_PATH }}
-      TEST_MBAPPE_FEATURES_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_FEATURES_QUANTILES_PATH }}
-      TEST_MBAPPE_METADATA_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_METADATA_QUANTILES_PATH }}
+      TEST_MBAPPE_QUANTILES_PATH: ${{ secrets.TEST_MBAPPE_QUANTILES_PATH }}
+      TEST_MBAPPE_CONFIG_PATH: ${{ secrets.TEST_MBAPPE_CONFIG_PATH }}
       TEST_SQUIDWARD_MODEL_PATH: ${{ secrets.TEST_SQUIDWARD_MODEL_PATH }}
     steps:
       - name: Check out repository code
