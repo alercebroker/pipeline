@@ -59,14 +59,14 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  #build-early-classification-dagger:
-  #  needs: update_versions
-  #  uses: ./.github/workflows/template_build_with_dagger.yaml
-  #  with:
-  #    stage: production
-  #    extra-args: early_classification_step
-  #  secrets:
-  #    GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  build-early-classification-dagger:
+    needs: update_versions
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: early_classification_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-feature-dagger:
     needs: update_versions
@@ -107,15 +107,15 @@ jobs:
   #   secrets:
   #     GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
-  #build-lc-classification-ztf-dagger:
-  #  needs: update_versions
-  #  uses: ./.github/workflows/template_build_with_dagger.yaml
-  #  with:
-  #    stage: production
-  #    extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
-  #    submodules: true
-  #  secrets:
-  #    GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  build-lc-classification-ztf-dagger:
+    needs: update_versions
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: lc_classification_step_ztf --build-args=model:ztf --package-dir=lc_classification_step
+      submodules: true
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   build-lc-classification-mbappe-dagger:
     needs: update_versions
@@ -232,12 +232,12 @@ jobs:
     needs:
       - build-alert-archiving-dagger
       - build-correction-dagger
-      # - build-early-classification-dagger
+      - build-early-classification-dagger
       - build-feature-dagger
       # - build-lc-classification-balto-dagger
       # - build-lc-classification-messi-dagger
       # - build-lc-classification-mlp-dagger
-      # - build-lc-classification-ztf-dagger
+      - build-lc-classification-ztf-dagger
       - build-lc-classification-mbappe-dagger
       - build-lc-classification-squidward-dagger
       - build-lightcurve-dagger
@@ -315,7 +315,7 @@ jobs:
           poetry run python main.py deploy add-package prv-candidates-step --chart=prv-candidates --values=prv_candidates_step-helm-values --chart-folder=prv_candidates_step
           poetry run python main.py deploy add-package s3-step --chart=s3-step --values=s3_step-helm-values --chart-folder=s3_step
           poetry run python main.py deploy add-package scribe-psql --chart=scribe --values=scribe_step_psql-helm-values --chart-folder=scribe
-          # poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe_step_mongo-helm-values --chart-folder=scribe
+          poetry run python main.py deploy add-package scribe-mongo --chart=scribe --values=scribe_step_mongo-helm-values --chart-folder=scribe
           poetry run python main.py deploy add-package sorting-hat-step-ztf --chart=sorting-hat --values=sorting_hat_step_ztf-helm-values --chart-folder=sorting_hat_step
           poetry run python main.py deploy add-package sorting-hat-step-atlas --chart=sorting-hat --values=sorting_hat_step_atlas-helm-values --chart-folder=sorting_hat_step
           poetry run python main.py deploy add-package xmatch-step --chart=xmatch-step --values=xmatch_step-helm-values --chart-folder=xmatch_step
