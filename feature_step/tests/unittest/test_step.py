@@ -180,6 +180,7 @@ class StepTestCase(unittest.TestCase):
         ]  # after drop bogus detections, it ends with 0 detections
         result_messages = step.execute(messages)
         result_messages = step.post_execute(result_messages)
+        print(result_messages)
 
         self.assertEqual(len(messages), len(result_messages))
         n_features_prev = -1
