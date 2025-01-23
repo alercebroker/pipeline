@@ -303,11 +303,6 @@ def parse_output(
         features_for_oid = dict(
             zip(feature_names, ao_features["value"].astype(np.double))
         )
-        for key in features_for_oid.keys():
-            features_for_oid[key] = (
-                None if np.isnan(features_for_oid[key]) else features_for_oid[key]
-            )
-
         out_message = {
             "oid": oid,
             "candid": candid,
