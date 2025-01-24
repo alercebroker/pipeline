@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xmatch-step"
-version = "27.1.1a10"
+version = "27.1.1a11"
 description = "xmatch step"
 authors = []
 readme = "README.md"
