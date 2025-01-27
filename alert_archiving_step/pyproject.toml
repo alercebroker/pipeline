@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alert-archiving-step"
-version = "27.1.1a13"
+version = "27.2.0"
 description = "Group alerts and upload to S3 by date"
 authors = ["ALeRCE"]
 readme = "README.md"
