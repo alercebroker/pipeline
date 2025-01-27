@@ -215,6 +215,14 @@ def create_astro_object(
         rfid = detections["rfid"]
     else:
         rfid = np.nan
+    if "rb" in detections.columns:
+        rb = detections["rb"]
+    else:
+        rb = np.nan
+    if "procstatus" in detections.columns:
+        procstatus = detections["procstatus"]
+    else:
+        procstatus = np.nan
 
     detections = detections[detection_keys].copy()
     detections["forced"] = False
@@ -230,6 +238,18 @@ def create_astro_object(
         rfid = forced_photometry["rfid"]
     else:
         rfid = np.nan
+
+    detections["rb"] = rb
+    detections["procstatus"] = procstatus
+
+    if "rb" in forced_photometry.columns:
+        rb = forced_photometry["rb"]
+    else:
+        rb = np.nan
+    if "procstatus" in forced_photometry.columns:
+        procstatus = forced_photometry["procstatus"]
+    else:
+        procstatus = np.nan
 
     forced_photometry = forced_photometry.copy()
     forced_photometry["candid"] = forced_photometry["oid"] + forced_photometry[
@@ -253,6 +273,8 @@ def create_astro_object(
 
     forced_photometry["distnr"] = distnr
     forced_photometry["rfid"] = rfid
+    forced_photometry["rb"] = rb
+    forced_photometry["procstatus"] = procstatus
 
     forced_photometry = forced_photometry[
         (forced_photometry[e_diff_mag_column_fp] != 100)
