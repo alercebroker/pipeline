@@ -37,7 +37,10 @@ class AllwiseColorsFeatureExtractor(FeatureExtractor):
 
         deltas = []
         for i in range(len(self.allwise_bands) - 1):
-            deltas.append(allwise_band_means[i] - allwise_band_means[i + 1])
+            if len(detections) > 0:
+                deltas.append(allwise_band_means[i] - allwise_band_means[i + 1])
+            else:
+                deltas.append(np.nan)
 
         for allwise_mean in allwise_band_means:
             for band_mean in band_means:
