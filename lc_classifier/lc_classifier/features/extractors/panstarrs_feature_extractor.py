@@ -51,20 +51,23 @@ class PanStarrsFeatureExtractor(FeatureExtractor):
             else:
                 color_gr = g_mag - r_mag
 
-            features.append(["ps_g-r", color_gr])
-
             if r_mag < -30.0 or i_mag < -30.0:
                 color_ri = np.nan
             else:
                 color_ri = r_mag - i_mag
-
-            features.append(["ps_r-i", color_ri])
 
             if i_mag < -30.0 or z_mag < -30.0:
                 color_iz = np.nan
             else:
                 color_iz = i_mag - z_mag
 
+            if len(astro_object.detections) == 0:
+                color_gr = np.nan
+                color_ri = np.nan
+                color_iz = np.nan
+
+            features.append(["ps_g-r", color_gr])
+            features.append(["ps_r-i", color_ri])
             features.append(["ps_i-z", color_iz])
 
         features_df = pd.DataFrame(data=features, columns=["name", "value"])
