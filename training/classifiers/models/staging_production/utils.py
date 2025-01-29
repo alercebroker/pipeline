@@ -34,7 +34,7 @@ def get_det_AO_to_InputDTO(lightcurve):
     })
 
     lightcurve = pd.concat([detections, forced_photometry])
-    #lightcurve.sort_values(by='mjd', inplace=True)
+    lightcurve.sort_values(by='mjd', inplace=True)
 
     lightcurve = recover_mag_and_emag_with_signed_flux(lightcurve)
     lightcurve = lightcurve[['mjd', 'fid', 'mag', 'e_mag', 'isdiffpos']]

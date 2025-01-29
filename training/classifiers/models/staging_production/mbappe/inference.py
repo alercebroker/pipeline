@@ -45,19 +45,19 @@ def run(dir_astro_lightcurves, dir_astro_features, path_partition, subset, batch
     logging.info(f"Results directory created at ./results/{dir_results}")
 
     # Model
-    #model = MbappeClassifier(
-    #    model_path=os.getenv("TEST_MBAPPE_MODEL_PATH"),
-    #    quantiles_dir=os.getenv("TEST_MBAPPE_QUANTILES_PATH"),
-    #    config_dir=os.getenv("TEST_MBAPPE_CONFIG_PATH"),
-    #    mapper=MbappeMapper(),
-    #)
-
     model = MbappeClassifier(
-        model_path='model.ckpt',
-        quantiles_dir='quantiles',
-        config_dir='configs',
+        model_path=os.getenv("TEST_MBAPPE_MODEL_PATH"),
+        quantiles_dir=os.getenv("TEST_MBAPPE_QUANTILES_PATH"),
+        config_dir=os.getenv("TEST_MBAPPE_CONFIG_PATH"),
         mapper=MbappeMapper(),
     )
+
+    #model = MbappeClassifier(
+    #    model_path='model.ckpt',
+    #    quantiles_dir='quantiles',
+    #    config_dir='configs',
+    #    mapper=MbappeMapper(),
+    #)
 
     # Inference process
     logging.info("Starting the inference process...")
