@@ -175,8 +175,16 @@ cython_debug/
 /data
 /notebooks
 /results
+/results_only_det
 
 !dataset_builder.py
 !datasetHandlers.py
 /lightning_logs
 /run.sh
+
+/data_processor_ndet.py
+/inference_ndet_bins.py
+/inference_ndet_prev_model_to_other.py
+
+/inference_ndays.py
+/inference_ndet.py

@@ -25,7 +25,16 @@ def create_partitions(objects, dir_save_partition, num_folds):
     X = objects['oid']
     y = objects["class_name"]
 
-    _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+    #_, X_test, _, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+    ######################
+    partitions = pd.read_parquet('preprocessed/partitions/241209/partitions.parquet')
+    X_test = partitions[partitions.partition == 'test']
+    ids_test = X_test[X_test.oid.isin(objects.oid)].oid.values
+
+    X_test = X[X.isin(ids_test)]
+    y_test = y.loc[X_test.index]
+    ######################
 
     logging.info(f"Test set split completed, size: {len(X_test)}")
     test_indices = X_test.index
@@ -80,8 +89,8 @@ if __name__ == "__main__":
     path_all_objects = './raw/objects.parquet'
 
     ROOT = './preprocessed'
-    dir_astro_lightcurves = f"{ROOT}/data_241015_ao"
-    dir_save_partition = f"{ROOT}/partitions/241015"
+    dir_astro_lightcurves = f"{ROOT}/data_241209_ndetge8_ao"
+    dir_save_partition = f"{ROOT}/partitions/241209_ndetge8"
     num_cores = 20
 
     run(path_all_objects, dir_astro_lightcurves, dir_save_partition, num_folds, num_cores)

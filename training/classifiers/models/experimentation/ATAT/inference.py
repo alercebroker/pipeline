@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         'checkpoint': {
             'exp_name': 'classification/ztf_ff/testing',
-            'run_name': '2024-12-19_21-59-23',
+            'run_name': '2025-01-10_02-16-55',
             'results_dir': 'results',
         },
 

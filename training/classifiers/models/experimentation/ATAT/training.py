@@ -191,7 +191,8 @@ def run(arg_dict):
 
     # Setup MLflow
     mlflow.set_tracking_uri(f"file:results/ml-runs")
-    experiment_name = f"classification/{name_dataset}/testing"
+    experiment_phase = "hp_tuning" if args_general['is_searching_hyperparameters'] else "testing"
+    experiment_name = f"classification/{name_dataset}/{experiment_phase}"
     mlflow.set_experiment(experiment_name)
     
     run_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

@@ -68,7 +68,7 @@ Firstly, you should create the enviroment:
 
 ## Data Acquisition 
 
-To train ATAT, you need to obtain the preprocessed data and partitions from the [`data_acquisition folder`](../../../data_acquisition). . Detailed explanations are provided in the [`README.MD`](../../../data_acquisition/README.MD). In general, the following data is required to prepare the model's input:
+To train ATAT, you need to obtain the preprocessed data and partitions from the [`data_acquisition folder`](../../../data_acquisition). Detailed explanations are provided in the [`README.MD`](../../../data_acquisition/README.MD). In general, the following data is required to prepare the model's input:
 
 1. Pickle files containing dictionaries derived from instances of [`AstroObjects`](https://github.com/alercebroker/pipeline/blob/main/lc_classifier/lc_classifier/features/core/base.py) with the following keys: `'detections'`, `'non_detections'`, and `'forced_photometry'`.
 

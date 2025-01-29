@@ -39,12 +39,19 @@ def extract_info(path_chunk, dict_info, dict_cols, dir_astro_features):
                                                                                      time_to_eval, 
                                                                                      file_name))
             
+    filtered_cols = [col for col in dict_cols.values() if col not in ['oid', 'class_name']]
     df_dataset = []
     for i, astro_object in enumerate(astro_objects_batch):
-        lightcurve = astro_object['detections']
-        lightcurve = lightcurve[lightcurve['unit'] == 'diff_flux']
-        filtered_cols = [col for col in dict_cols.values() if col not in ['oid', 'class_name']]
+        detections = astro_object['detections']
+        forced_photometry = astro_object['forced_photometry']
+
+        detections = detections[detections['unit'] == 'diff_flux']
+        forced_photometry = forced_photometry[forced_photometry['unit'] == 'diff_flux']
+        
+        lightcurve = pd.concat([detections, forced_photometry])
         lightcurve = lightcurve.rename(columns=dict_cols)[filtered_cols].reset_index()
+        lightcurve.sort_values(by='time', inplace=True)
+
         lightcurve = processing_lightcurve(lightcurve, dict_info, dict_cols)
         combined_info = lightcurve.copy()
 
@@ -83,7 +90,7 @@ def main(dict_info, dict_cols, num_cores, dir_astro_lightcurves, dir_astro_featu
 
     if dict_info['extract_features']: 
         all_columns = set(ZTF_ff_columns_to_PROD.keys())
-        feat_cols_names = list(all_columns - set(dict_info["md_col_names"]))
+        feat_cols_names = sorted(list(all_columns - set(dict_info["md_col_names"])))
         feat_cols_names = [col for col in feat_cols_names if not any(substring in col for substring in dict_info['rm_feat'])]
         dict_info['feat_cols'] = [ZTF_ff_columns_to_PROD[col] for col in feat_cols_names]
 
@@ -146,13 +153,13 @@ def main(dict_info, dict_cols, num_cores, dir_astro_lightcurves, dir_astro_featu
 if __name__ == "__main__":
     ROOT = "../../../data_acquisition/ztf_forced_photometry"
 
-    dir_astro_lightcurves = "{}/preprocessed/data_241209_ao".format(ROOT)
-    dir_astro_features = "{}/preprocessed/data_241209_ao_shorten_features".format(ROOT)
-    path_partition = '{}/preprocessed/partitions/241209/partitions.parquet'.format(ROOT)
+    dir_astro_lightcurves = "{}/preprocessed/data_241209_ndetge8_ao".format(ROOT)
+    dir_astro_features = "{}/preprocessed/data_241209_ndetge8_ao_shorten_features".format(ROOT)
+    path_partition = '{}/preprocessed/partitions/241209_ndetge8/partitions.parquet'.format(ROOT)
 
     timestamp = datetime.now().strftime("%y%m%d")
     dict_info = {
-        "path_save": "data/ztf_forced_photometry/processed/dataset_pre241209_pos{}".format(timestamp),
+        "path_save": "data/ztf_forced_photometry/processed/ds_pre241209_pos{}_detff_ndetge8".format(timestamp),
         "type_windows": "windows",
         "max_obs": 200,
         "extract_metadata": True,
@@ -163,8 +170,8 @@ if __name__ == "__main__":
         "bands_to_use": ['g', 'r'] # NO esta haciendo nada aqui, pero se usa en el entrenamiento, quizas agregarlo al dict_info desde los mismos AO
     }
 
-    # Key are the names of the dataset
-    # Values are the news names to use
+    # The keys refer to the names of the dataset 
+    # The values refer to the news names to use (keep fixed)
     dict_cols = { 
         "oid": "oid",
         "mjd": "time",

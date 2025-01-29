@@ -30,6 +30,8 @@ class ATATDataset(Dataset):
         use_QT=False,
         qt_type='qt_global',
         feat_cols=None,
+        top_n_feats=None,
+        use_only_det=False,
         list_time_to_eval=[16, 32, 64, 128, 256, 512, 1024, None],
         **kwargs,
     ):
@@ -72,6 +74,11 @@ class ATATDataset(Dataset):
         self.labels = h5_.get("labels")[:][self.these_idx].astype(int)
         self.class_name = h5_.get("class_name")[:][self.these_idx]
 
+        if use_only_det:
+            print('USING ONLY DET')
+            self.mask = torch.from_numpy(h5_.get("mask_detection")[:][self.these_idx])
+            self.time = self.time_alert.clone()
+
         self.use_lightcurves = use_lightcurves
         self.use_lightcurves_err = use_lightcurves_err
         self.use_metadata = use_metadata
@@ -85,7 +92,16 @@ class ATATDataset(Dataset):
         self.online_opt_tt = online_opt_tt
 
         self.list_time_to_eval = list_time_to_eval
-        
+        self.top_n_feats = top_n_feats
+        if self.top_n_feats is not None:
+            self.sorted_feat_imp = pd.read_csv(
+                './results/top_feats_hbrf/sorted_transient_features_importance.csv', 
+                index_col=0
+                ).index.tolist()
+            coordinate_cols = [f"Coordinate_{x}" for x in "xyz"]
+            self.sorted_feat_imp = [feat for feat in self.sorted_feat_imp if feat not in coordinate_cols]
+            self.sorted_feat_imp = coordinate_cols + self.sorted_feat_imp
+
         if self.use_lightcurves:
             self.apply_normalization(norm_type)
 
@@ -110,6 +126,7 @@ class ATATDataset(Dataset):
             'idx': idx,
             "id": self.lcid[idx],
             "time": self.time[idx],
+            "time_alert": self.time_alert[idx],
             "mask": self.mask[idx],
             "labels": self.labels[idx],
         }
@@ -171,18 +188,16 @@ class ATATDataset(Dataset):
 
     def three_time_mask(self, sample: dict, idx: int):
         """Aplica una máscara a la muestra en función de un límite de tiempo aleatorio."""
-        mask, time = sample["mask"], sample["time"]
+        mask, time_alert = sample["mask"], sample["time_alert"]
         time_eval = np.random.choice([16, 128, None]) 
         
         if time_eval is not None:
-            mask_time = (time <= time_eval).float()
-        else:
-            mask_time = torch.ones_like(time)
-        
+            mask_time = (time_alert <= time_eval).bool()
+            sample["mask"] = mask * mask_time
+
         if self.use_features:
             sample["extracted_feat"] = self.extracted_feat[time_eval][idx]
         
-        sample["mask"] = mask * mask_time
         return sample
 
     def update_mask(self, sample: dict, timeat: int):
@@ -306,8 +321,14 @@ class ATATDataset(Dataset):
         
         if set_type == "train":
             extracted_feat = self.manage_bias_periodic_others(extracted_feat, feat_cols)
+
+        if self.top_n_feats is not None:
+            list_name_cols = self.sorted_feat_imp[:self.top_n_feats]
+            idx_feat_cols = [feat_cols.index(col) for col in list_name_cols if col in feat_cols]
+            extracted_feat = extracted_feat[:, idx_feat_cols]
         
         if self.use_QT:
+            time_eval = None if set_type == 'test' else time_eval
             path_QT = self._get_qt_path(tab_type, fold, time_eval)
             if set_type == 'train':
                 self.calculate_and_save_QT(tabular_data=extracted_feat, path_QT=path_QT)
@@ -322,6 +343,11 @@ class ATATDataset(Dataset):
 
             if set_type == "train":
                 extracted_feat = self.manage_bias_periodic_others(extracted_feat, feat_cols)
+
+            if self.top_n_feats is not None:
+                list_name_cols = self.sorted_feat_imp[:self.top_n_feats]
+                idx_feat_cols = [feat_cols.index(col) for col in list_name_cols if col in feat_cols]
+                extracted_feat = extracted_feat[:, idx_feat_cols]
 
             if self.use_QT:
                 if self.qt_type == 'qt_global':
@@ -358,9 +384,9 @@ class ATATDataset(Dataset):
 
     def obtain_valid_mask(self, sample, time_eval, idx):
         if self.use_lightcurves:
-            mask, time = sample["mask"], sample["time"]
+            mask, time_alert = sample["mask"], sample["time_alert"]
             if time_eval is not None:
-                mask_time = (time <= time_eval).float()
+                mask_time = (time_alert <= time_eval).bool()
                 sample["mask"] = mask * mask_time
 
         if self.use_features:

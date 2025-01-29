@@ -20,10 +20,10 @@ def parse_model_args(arg_dict=None):
     )
     parser.add_argument("--norm_type_general", type=str, default="arcsinh")
     parser.add_argument("--input_size", type=int, default=1)
-    parser.add_argument("--embedding_size", type=int, default=192)
-    parser.add_argument("--embedding_size_sub", type=int, default=384)
-    parser.add_argument("--num_heads", type=int, default=4)
-    parser.add_argument("--num_encoders", type=int, default=3)
+    parser.add_argument("--embedding_size", type=int, default=192) # 96, 192, 384
+    parser.add_argument("--embedding_size_sub", type=int, default=384) # 192, 384, 768
+    parser.add_argument("--num_heads", type=int, default=4) 
+    parser.add_argument("--num_encoders", type=int, default=3) # 2, 3, 4
     parser.add_argument(
         "--Tmax", type=float, default=1500.0
     )
@@ -33,10 +33,10 @@ def parse_model_args(arg_dict=None):
     ## Metadata and Features
     parser.add_argument("--use_metadata_general", action="store_true", default=False)
     parser.add_argument("--use_features_general", action="store_true", default=False)
-    parser.add_argument("--embedding_size_tab", type=int, default=128)
-    parser.add_argument("--embedding_size_tab_sub", type=int, default=256)
+    parser.add_argument("--embedding_size_tab", type=int, default=128) # 64, 128, 256
+    parser.add_argument("--embedding_size_tab_sub", type=int, default=256) # 128, 256, 512
     parser.add_argument("--num_heads_tab", type=int, default=4)
-    parser.add_argument("--num_encoders_tab", type=int, default=3)
+    parser.add_argument("--num_encoders_tab", type=int, default=3) # 2, 3, 4
 
     # CNN PARAMS
     parser.add_argument("--encoder_type", type=str, default="Linear")
@@ -48,7 +48,7 @@ def parse_model_args(arg_dict=None):
     parser.add_argument("--debug_general", action="store_true", default=False)
     parser.add_argument("--batch_size_general", type=int, default=256)
     parser.add_argument("--num_epochs_general", type=int, default=10000)
-    parser.add_argument("--patience_general", type=int, default=40)
+    parser.add_argument("--patience_general", type=int, default=20)
     parser.add_argument("--lr_general", type=float, default=1e-4)
     parser.add_argument(
         "--use_cosine_decay_general", action="store_true", default=False
@@ -63,6 +63,13 @@ def parse_model_args(arg_dict=None):
     parser.add_argument(
         "--use_time_nondetection_general", action="store_true", default=False
     )
+    parser.add_argument(
+        "--top_n_feats_general", type=int, default=None
+    )   
+    parser.add_argument(
+        "--is_searching_hyperparameters_general", action="store_true", default=False
+    )
+    parser.add_argument("--use_only_det_general", action="store_true", default=False)
 
     # AUGMENTATIONS
     parser.add_argument(
@@ -123,7 +130,10 @@ def handler_parser(
         parser_dict["length_size_tab"] += len(dict_info["md_cols"])
 
     if parser_dict["use_features_general"]:
-        parser_dict["length_size_tab"] += len(dict_info["feat_cols"])
+        if parser_dict["top_n_feats_general"] is not None:
+            parser_dict["length_size_tab"] += parser_dict["top_n_feats_general"]
+        else:
+            parser_dict["length_size_tab"] += len(dict_info["feat_cols"])
 
     output = {}
     output["lc"] = {}

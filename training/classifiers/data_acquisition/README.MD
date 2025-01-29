@@ -6,9 +6,9 @@ This document provides an overview of the preprocessing steps applied to the **Z
 
 You have two options for data preparation:
 
-1. **Get the raw data:** Perform preprocessing from scratch to generate the preprocessed data used by the **Mbappe** and **Squidward** models, or apply your own preprocessing methods.
+1. **Obtain the raw data and preprocess it:** Start with the raw data and use the provided scripts to preprocess it from scratch. This process will generate the preprocessed data used by the **Mbappe** and **Squidward** models (as described in option 2). Alternatively, you can apply your own preprocessing methods.
 
-2. **Get the preprocessed data:** Directly download the data that was used to train the **Mbappe** and **Squidward** models.
+2. **Obtain the preprocessed data directly:** Download the preprocessed data that was used to train the **Mbappe** and **Squidward** models.
 
 ### 1. Get the Raw data [WORK IN PROGRESS]
 
@@ -18,26 +18,30 @@ To obtain the raw data, first create a directory for it:
 mkdir raw
 ```
 
-The raw `ztf_forced_photometry` data is stored on the server `quimal-gpu` at the following location: `/storage/ztf_forced_photometry`.
+The raw `ztf_forced_photometry` data is stored on the server `quimal-gpu` at the following location: `/storage/ztf_forced_photometry/raw_data`.
 
 To copy the data to your local machine, run the following commands:
 
 ```
-scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/detections.parquet ./raw
-scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/objects.parquet ./raw
+scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/raw_data/detections ./raw
+scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/raw_data/objects.parquet ./raw
+scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/raw_data/ts_v9.0.1_b3000 ./raw
 ```
 
 To preprocess the raw data from scratch using the same methods as **Mbappe** and **Squidward** run:
 
-```
 python scripts/preprocessing.py
+
+```
+# Notebook to do the first preprocessing to the data
+scp -r <user_name>@146.83.185.167:/storage/ztf_forced_photometry/raw_data/preprocessing_data.ipynb ./raw
 ```
 
 **Preprocessing details: (WORK IN PROGRESS, so start at step 2. for now)**
 
 [ESCRIBIR AQUÍ LA EXPLICACIÓN DE QUE SE HACE EXACTAMENTE.] Algunas notas que serviran para esto:
 
-Processing (Get LC AstroObjects and AstroObjects with computed features).
+Prerocessing (Get LC AstroObjects and AstroObjects with computed features).
 
 2. Obtener la tabla processed (la hago yo en mi notebook).
 

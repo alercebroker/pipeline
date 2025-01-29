@@ -20,6 +20,19 @@ def batch_to_df(batch, sorted_classes):
 
     return pd.DataFrame(df_dict)
 
+def batch_to_df_logits(batch, sorted_classes):
+    df_dict = {
+        'id': batch['id'],
+        'y_pred': batch['y_pred'],
+        'y_true': batch['y_true'],
+    }
+    
+    # Add columns for each class probability
+    for i, class_label in enumerate(sorted_classes):
+        df_dict[class_label] = batch['logits'][:, i]
+
+    return pd.DataFrame(df_dict)
+
 def sort_dict_by_value(d, reverse=False):
     return dict(sorted(d.items(), key=lambda x: x[0], reverse=reverse))
 

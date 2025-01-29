@@ -22,15 +22,21 @@ from utils import ZTF_ff_columns_to_PROD
 #     return feature_name
 
 
+# partition 241209 --> dataset 241209 ( ultima iteracion del dataset )
+# partition 241209 --> dataset 241015 ( primera iteracion del dataset )
+# partition 241015 --> dataset 241015 ( todo lo antiguo )
+# paula from scratch
+# paula keep test
+
 if __name__ == "__main__":
     features = pd.read_parquet(
-        "data_241209_ao_shorten_features/consolidated_features.parquet"
+        "data_241209_ndetge8_ao_shorten_features/consolidated_features.parquet"
         )
     labels = pd.read_parquet(
-        "../../../data_acquisition/ztf_forced_fotometry/preprocessed/partitions/241209/partitions.parquet"
+        "../../../data_acquisition/ztf_forced_photometry/preprocessed/partitions/241209_ndetge8/partitions.parquet"
         )
     objects = pd.read_parquet(
-        "data_231206/objects_with_wise_20240105.parquet"
+        "../../../data_acquisition/ztf_forced_photometry/raw/objects_with_wise_20240105.parquet"
     )  # to get RA/DEC
 
     columns_to_select = list(ZTF_ff_columns_to_PROD.keys()) + ['shorten']

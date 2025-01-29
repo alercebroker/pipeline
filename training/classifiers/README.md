@@ -34,15 +34,13 @@ The models are organized into two folders: **experimentation** and **staging_pro
 
 1. **Experimentation:** This folder contains the source code for the models, which can be modified for experimental purposes and testing new ideas. The models in this folder use `AstroObjects` as their input format. Models available:
 
-    * ATAT (Mbappe)
-    * HBRF (Squidward)
-    * MLP (WORK IN PROGRESS).
-    * LightGBM (WORK IN PROGRESS).
+    * ATAT
+    * classifiers (which contains Machine Learning algorithms, as HBRF, LightGBM, XGBoost, MLP)
 
 2. **Staging_production:** This folder imports the models located in [`staging repository`](https://github.com/alercebroker/alerce_classifiers) for training and/or inference to validate their functionality. The models use [`InputDTO`](https://github.com/alercebroker/pipeline/blob/main/schemas/feature_step/output.avsc) as the input format. `AstroObjects` data, provided in the `data_acquisition folder` is parsed into `InputDTO` to ensure compatibility with the staging environment. Models available:
 
-    * ATAT (Mbappe) (WORK IN PROGRESS).
-    * HBRF (Squidward) (WORK IN PROGRESS).
+    * mbappe.
+    * squidward.
 
 Refer to the appropriate `README.md` file to run the models after obtaining the data. **If you add a new model, please update this section.**
 

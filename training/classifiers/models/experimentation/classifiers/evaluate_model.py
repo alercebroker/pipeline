@@ -19,7 +19,7 @@ from alerce_classifiers.classifiers.xgboost import XGBoostClassifier
 # from training import rename_feature
 
 
-labels = pd.read_parquet(os.path.join("../../../data_acquisition/ztf_forced_fotometry/preprocessed/partitions/241209", "partitions.parquet"))
+labels = pd.read_parquet(os.path.join("../../../data_acquisition/ztf_forced_photometry/preprocessed/partitions/241209_ndetge8", "partitions.parquet"))
 labels["aid"] = "aid_" + labels["oid"]
 labels.set_index("aid", inplace=True)
 
@@ -50,6 +50,24 @@ labels_figure_order = [
     "RRLc",
     "DSCT",
 ]
+
+#labels_figure_order = [
+#    "SNIa",
+#    "SNIbc",
+#    "SNII",
+#    "SLSN",
+#    "QSO",
+#    "AGN",
+#    "Blazar",
+#    "YSO",
+#    "CV/Nova",
+#    "LPV",
+#    "E",
+#    "DSCT",
+#    "RRL",
+#    "CEP",
+#    "Periodic-Other",
+#]
 assert set(list_of_classes) == set(labels_figure_order)
 
 classifier_type = "HierarchicalRandomForest"
@@ -64,8 +82,9 @@ elif classifier_type == "RandomForest":
     classifier.load_classifier("rf_classifier_240307")
 elif classifier_type == "HierarchicalRandomForest":
     classifier = HierarchicalRandomForestClassifier(list_of_classes)
-    model_dir = "models/hrf_classifier_20241214-192451"
+    model_dir = "models/hrf_classifier_20250120-195519"
     classifier.load_classifier(model_dir)
+    #model_dir = "models/hrf_classifier_20241214-192451_testing"
     predictions_filename = os.path.join(model_dir, "predictions.parquet")
 elif classifier_type == "LightGBM":
     classifier = LightGBMClassifier(list_of_classes)
@@ -79,20 +98,29 @@ else:
 
 if compute_predictions:
     consolidated_features = pd.read_parquet(
-        os.path.join("data_241209_ao_shorten_features", "consolidated_features.parquet")
+        os.path.join("data_241209_ndetge8_ao_shorten_features", "consolidated_features.parquet")
     )
     consolidated_features.index = 'aid_' + consolidated_features.index.astype(str)
     consolidated_features.index.name = 'index'
+    #consolidated_features.index = (
+    #    consolidated_features.index.values + "_" + consolidated_features["shorten"].astype(str)
+    #).values
 
     shorten = consolidated_features["shorten"]
+    #shorten = 'None'
+    #print('0. consolidated_features:\n', consolidated_features)
+    consolidated_features = consolidated_features[consolidated_features.shorten == shorten]
     consolidated_features = consolidated_features[
         [c for c in consolidated_features.columns if c != "shorten"]
     ]
     # consolidated_features.rename(columns=rename_feature, inplace=True)
+    #print('1. consolidated_features:\n', consolidated_features)
     prediction_df = classifier.classify_batch(consolidated_features)
+    #print('prediction_df:\n', consolidated_features)
     prediction_df["shorten"] = shorten
 
     prediction_df.to_parquet(predictions_filename)
+
 
 predictions = pd.read_parquet(predictions_filename)
 logfile = os.path.join(model_dir, "classification_reports.txt")

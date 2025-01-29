@@ -37,13 +37,13 @@ class LitData(L.LightningDataModule):
             )
             self.val_dataset = ATATDataset(
                 path_results=self.path_results, data_root=self.data_root, 
-                set_type="validation", fold=self.fold, 
+                set_type="validation", fold=self.fold, feat_cols=self.feat_cols, 
                 **self.kwargs
             )
         if stage == "test" or stage is None:
             self.test_dataset = ATATDataset(
                 path_results=self.path_results, data_root=self.data_root, 
-                set_type="test", fold=self.fold, 
+                set_type="test", fold=self.fold, feat_cols=self.feat_cols, 
                 **self.kwargs
             )
 

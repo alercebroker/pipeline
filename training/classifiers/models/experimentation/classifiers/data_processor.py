@@ -11,7 +11,7 @@ def get_shorten(filename: str):
 
 
 if __name__ == "__main__":
-    dir_name = "data_241209_ao_shorten_features"
+    dir_name = "data_241209_ndetge8_ao_shorten_features"
     data_dir = os.listdir(dir_name)
     data_dir = [filename for filename in data_dir if "astro_objects_batch" in filename]
     data_dir = sorted(data_dir)
@@ -27,5 +27,5 @@ if __name__ == "__main__":
         all_features.append(features_batch)
 
     all_features = pd.concat(all_features, axis=0)
-    print(all_features)
     all_features.to_parquet(os.path.join(dir_name, "consolidated_features.parquet"))
+

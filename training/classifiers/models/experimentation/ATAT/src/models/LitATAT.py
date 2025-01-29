@@ -151,45 +151,7 @@ class LitATAT(L.LightningModule):
         self.log("mix/rcl_valid", self.valid_rcl, on_epoch=True)
 
         return loss_dic
-
-    #def test_step(self, batch_data, batch_idx, dataloader_idx=None):
-    #    time_to_eval = self.list_time_to_eval[dataloader_idx]
-#
-    #    input_dict = self.get_input_data(batch_data)
-#
-    #    pred_lc, pred_tab, pred_mix = self.atat(**input_dict)
-    #    pred = (
-    #        pred_mix
-    #        if pred_mix is not None
-    #        else (pred_lc if pred_lc is not None else pred_tab)
-    #    )
-#
-    #    if pred is None:
-    #        raise ValueError("Invalid prediction.")
-#
-    #    """ labels """
-    #    y_true = batch_data["labels"].long()
-#
-    #    self.test_acc(pred, y_true)
-    #    self.test_f1s(pred, y_true)
-    #    self.test_rcl(pred, y_true)
-#
-    #    loss = 0
-    #    loss_dic = {}
-    #    for y, y_type in zip([pred_lc, pred_tab, pred_mix], ["lc", "tab", "mix"]):
-    #        if y is not None:
-    #            partial_loss = F.cross_entropy(y, y_true)
-    #            loss += partial_loss
-    #            loss_dic.update({f"loss_test_{time_to_eval}/{y_type}": partial_loss})
-#
-    #    loss_dic.update({f"loss_test_{time_to_eval}/total": loss})
-    #    self.log_dict(loss_dic)
-#
-    #    self.log("mix/acc_test", self.test_acc, on_epoch=True)
-    #    self.log("mix/f1s_test", self.test_f1s, on_epoch=True)
-    #    self.log("mix/rcl_test", self.test_rcl, on_epoch=True)
-#
-    #    return loss_dic
+    
 
     def test_step(self, batch_data, batch_idx, dataloader_idx=None):
         time_to_eval = self.list_time_to_eval[dataloader_idx]
@@ -256,6 +218,7 @@ class LitATAT(L.LightningModule):
         # Return the required dictionary
         return {
             "id": batch_data["id"],
+            "logits": pred.cpu().numpy(),
             "y_pred": y_pred.cpu().numpy(),
             "y_pred_prob": y_pred_prob.cpu().numpy(),
             "y_true": y_true.cpu().numpy(),
@@ -286,6 +249,7 @@ class LitATAT(L.LightningModule):
                 {
                     "data": batch_data["data"].float(),
                     "time": batch_data["time"].float(),
+                    "time_alert": batch_data["time_alert"].float(),
                     "mask": batch_data["mask"].bool(),
                 }
             )
