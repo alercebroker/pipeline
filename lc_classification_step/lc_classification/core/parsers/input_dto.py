@@ -52,9 +52,22 @@ def create_detections_dto(messages: List[dict]) -> pd.DataFrame:
         pd.DataFrame.from_records(msg["detections"]) for msg in messages
     ]
     detections = pd.concat(detections)
+
+    if len(detections) == 0:
+        return pd.DataFrame()
+
     detections.drop_duplicates(["candid", "oid"], inplace=True)
     detections = detections.set_index("oid")
     detections["extra_fields"] = parse_extra_fields(detections)
+
+    if "mjd" in detections.columns:
+        column_sort = (
+            ["mjd", "forced"] if "forced" in detections.columns else "mjd"
+        )
+        order_sort = [True, False] if "forced" in detections.columns else True
+        detections.sort_values(
+            by=column_sort, ascending=order_sort, inplace=True
+        )
 
     if detections is not None:
         return detections

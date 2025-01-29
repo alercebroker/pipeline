@@ -43,7 +43,7 @@ class FeatureStep(GenericStep):
     ):
 
         super().__init__(config=config, **step_args)
-        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor()
+        self.lightcurve_preprocessor = ZTFLightcurvePreprocessor(drop_bogus=True)
         self.feature_extractor = ZTFFeatureExtractor()
 
         scribe_class = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
@@ -53,6 +53,10 @@ class FeatureStep(GenericStep):
 
         self.db_sql = db_sql
         self.logger = logging.getLogger("alerce.FeatureStep")
+
+        self.min_detections_features = config.get("MIN_DETECTIONS_FEATURES", None)
+        if self.min_detections_features is not None:
+            self.min_detections_features = int(self.min_detections_features)
 
     def produce_to_scribe(self, astro_objects: List[AstroObject]):
         commands = parse_scribe_payload(
@@ -89,6 +93,18 @@ class FeatureStep(GenericStep):
         )
         db_references = db_references[db_references["chinr"] >= 0.0].copy()
         return db_references
+
+    def pre_execute(self, messages: List[dict]):
+        if self.min_detections_features is None:
+            return messages
+
+        def has_enough_detections(message: dict) -> bool:
+            n_dets = len([True for det in message["detections"] if not det["forced"]])
+            return n_dets >= self.min_detections_features
+
+        filtered_messages = filter(has_enough_detections, messages)
+        filtered_messages = list(filtered_messages)
+        return filtered_messages
 
     def execute(self, messages):
         candids = {}

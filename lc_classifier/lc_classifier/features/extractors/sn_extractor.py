@@ -22,8 +22,12 @@ class SNExtractor(FeatureExtractor):
         detections = detections[detections["unit"] == self.unit]
         detections = detections.sort_values("mjd")
         forced_photometry = astro_object.forced_photometry
-        first_detection = detections.iloc[0]
-        first_detection_mjd = first_detection["mjd"]
+
+        if len(detections) > 0:
+            first_detection = detections.iloc[0]
+            first_detection_mjd = first_detection["mjd"]
+        else:
+            first_detection_mjd = np.nan
 
         features = []
         for band in self.bands:

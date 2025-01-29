@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lc-classifier"
-version = "26.2.0"
+version = "27.3.0"
 description = "Lightcurve classifiers and feature computation"
 authors = ["Ignacio Reyes Jainaga <ireyes@cmm.uchile.cl>"]
 readme = "README.md"
@@ -9,15 +9,11 @@ packages = [{include = "lc_classifier"}]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 astropy = "^6.1"
-imbalanced-learn = "~0.12.2"
 numba = "^0.59"
 numpy = "^1.26"
 pyarrow = "^16.0"
-requests = "^2.31"
 scipy = "^1.13"
-scikit-learn = "~1.4.2"
 statsmodels = "^0.14.2"
-tensorflow = "^2.16.1"
 pandas = "^2.2.2"
 celerite2 = "^0.3.1"
 extinction = "*"

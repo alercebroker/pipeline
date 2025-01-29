@@ -126,26 +126,36 @@ class SPMExtractor(FeatureExtractor):
 
         observations = self.get_observations(astro_object)
 
-        times = observations["mjd"].values
-        flux = observations["brightness"].values
-        e_flux = observations["e_brightness"].values
-        bands = observations["fid"].values
-        available_bands = np.unique(bands)
+        if len(observations) == 0:
+            parameters = []
+            chis = []
+            for band in self.bands:
+                parameters.append([np.nan] * 6)
+                chis.append(np.nan)
 
-        self._correct_lightcurve(
-            times,
-            flux,
-            e_flux,
-            bands,
-            available_bands,
-            extinction_color_excess,
-            redshift,
-        )
+            model_parameters = np.concatenate(parameters, axis=0)
+            chis = np.array(chis)
+        else:
+            times = observations["mjd"].values
+            flux = observations["brightness"].values
+            e_flux = observations["e_brightness"].values
+            bands = observations["fid"].values
+            available_bands = np.unique(bands)
 
-        self.sn_model.fit(times, flux, e_flux, bands)
+            self._correct_lightcurve(
+                times,
+                flux,
+                e_flux,
+                bands,
+                available_bands,
+                extinction_color_excess,
+                redshift,
+            )
 
-        model_parameters = self.sn_model.get_model_parameters()
-        chis = self.sn_model.get_chis()
+            self.sn_model.fit(times, flux, e_flux, bands)
+
+            model_parameters = self.sn_model.get_model_parameters()
+            chis = self.sn_model.get_chis()
 
         param_names = [
             "SPM_A",
