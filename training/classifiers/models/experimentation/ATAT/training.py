@@ -165,7 +165,9 @@ def perform_training(run, args, experiment_name): # , pl_datal
     path_save_metrics = f'{EXPDIR}/metrics'
     os.makedirs(path_save_metrics, exist_ok=True)
     loaded_model = LitATAT.load_from_checkpoint(checkpoint.best_model_path).eval()
-    _ = predict(pl_datal, loaded_model, args, path_save_metrics)
+    _ = predict(pl_datal, loaded_model, args, 
+                path_save_metrics=path_save_metrics, 
+                path_save_predictions=EXPDIR)
    
 
 def run(arg_dict):

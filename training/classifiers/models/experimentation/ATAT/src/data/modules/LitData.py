@@ -29,17 +29,20 @@ class LitData(L.LightningDataModule):
         """
         Setup datasets for different stages: 'fit', 'validate', 'test'.
         """
-        if stage == "fit" or stage is None:
+        if stage in ["fit", "train"] or stage is None:
             self.train_dataset = ATATDataset(
                 path_results=self.path_results, data_root=self.data_root, 
                 set_type="train", fold=self.fold, feat_cols=self.feat_cols, 
                 **self.kwargs
             )
+        
+        if stage in ["fit", "validation", "val"] or stage is None:
             self.val_dataset = ATATDataset(
                 path_results=self.path_results, data_root=self.data_root, 
                 set_type="validation", fold=self.fold, feat_cols=self.feat_cols, 
                 **self.kwargs
             )
+            
         if stage == "test" or stage is None:
             self.test_dataset = ATATDataset(
                 path_results=self.path_results, data_root=self.data_root, 
@@ -63,9 +66,13 @@ class LitData(L.LightningDataModule):
             dataloaders.append(get_dataloader(dataset, set_type="test", batch_size=self.batch_size))
         return dataloaders
 
-    def predict_dataloader(self):
-        return get_dataloader(dataset_used=self.test_dataset, set_type="test")
-
+    def predict_dataloader(self, stage='test'):
+        if stage == 'train':
+            return get_dataloader(dataset_used=self.train_dataset, set_type="train")
+        elif stage == 'val':
+            return get_dataloader(dataset_used=self.val_dataset, set_type="validation")
+        else: 
+            return get_dataloader(dataset_used=self.test_dataset, set_type="test")
 
     def _filter_test_dataset_by_time(self, dataset, time_to_eval):
         """

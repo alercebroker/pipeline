@@ -21,10 +21,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def predict(dataset: LightningDataModule, 
             loaded_model: LightningModule, 
             args: yaml,
-            path_save_metrics: Optional[str] = None):
+            path_save_metrics: Optional[str] = None,
+            path_save_predictions: Optional[str] = None,
+            stage: Optional[str] = 'test'):
 
     trainer = L.Trainer(logger=None)
-    batches_output = trainer.predict(loaded_model, dataloaders=dataset.predict_dataloader())
+    batches_output = trainer.predict(loaded_model, dataloaders=dataset.predict_dataloader(stage=stage))
 
     # Handling output
     path_data = os.path.join(args["general"]["data_root"], 'dict_info.yaml')
@@ -48,6 +50,9 @@ def predict(dataset: LightningDataModule,
     # Probabilities by lightcurves (average windows probabilities)
     df_lcs_proba['y_pred'] = df_lcs_proba[sort_name_classes].idxmax(axis=1)
     df_lcs_proba['y_true'] = df_lcs_proba['y_true'].replace(dict_mapping_classes)
+
+    if path_save_predictions is not None:
+        df_lcs_proba.to_parquet(f'{path_save_predictions}/predictions_{stage}.parquet')
 
     # Metrics
     dict_metrics = dict()
@@ -86,7 +91,7 @@ if __name__ == "__main__":
 
         'checkpoint': {
             'exp_name': 'classification/ztf_ff/testing',
-            'run_name': '2025-01-10_02-16-55',
+            'run_name': '2025-01-20_23-11-17',
             'results_dir': 'results',
         },
 
@@ -110,11 +115,14 @@ if __name__ == "__main__":
         path_results=EXPDIR,
         **hparams['general']
         )
-    pl_datal.setup(stage='test')
+    stage = 'test'
+    pl_datal.setup(stage=stage)
 
     # Model
     loaded_model = LitATAT.load_from_checkpoint(ckpt_model, map_location=device).eval()
-    dict_metrics = predict(pl_datal, loaded_model, hparams)
+    dict_metrics = predict(pl_datal, loaded_model, hparams, 
+                           path_save_predictions=EXPDIR, 
+                           stage=stage)
 
     print(f"Windows:\n{dict_metrics['Windows']}")
     print(f"Avg windows:\n{dict_metrics['LCs']}")
