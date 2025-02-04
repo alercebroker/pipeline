@@ -87,9 +87,10 @@ class StepTestCase(unittest.TestCase):
 
     def test_tough_examples(self):
         messages = spm_messages
-        result_messages = self.step.execute(messages)
+        pre_messages = self.step.pre_execute(messages)
+        result_messages = self.step.execute(pre_messages)
 
-        self.assertEqual(len(messages), len(result_messages))
+        self.assertEqual(len(pre_messages), len(result_messages))
         n_features_prev = -1
         for result_message in result_messages:
             n_features = len(result_message["features"])
@@ -119,7 +120,7 @@ class StepTestCase(unittest.TestCase):
 
         assert multiband_period_scribe == multiband_period_message
 
-    def test_pre_execute(self):
+    def test_pre_execute_not_enough_detections(self):
         step_config = {
             "PRODUCER_CONFIG": PRODUCER_CONFIG,
             "CONSUMER_CONFIG": CONSUMER_CONFIG,
@@ -144,63 +145,44 @@ class StepTestCase(unittest.TestCase):
 
         self.assertEqual(0, len(result_messages))
 
-    def test_drop_bogus(self):
-        messages = [
-            spm_messages[2]
-        ]  # after drop bogus detections, it ends with 0 detections
-        result_messages = self.step.execute(messages)
+    def test_pre_execute_drop_bogus(self):
+        messages = [spm_messages[3]]
 
-        none_features = [
-            (x, y) for (x, y) in result_messages[0]["features"].items() if y is None
-        ]
-        self.assertEqual(len(none_features), len(result_messages[0]["features"]))
+        for message in messages:
+            valid_detections = 0
+            valid_forced = 0
+            for det in message["detections"]:
+                if det["forced"]:
+                    if valid_forced > 0:
+                        det["extra_fields"]["procstatus"] = "0"
+                    else:
+                        det["extra_fields"]["procstatus"] = "2"
+                        valid_forced = 1
+                else:
+                    if valid_detections > 0:
+                        det["extra_fields"]["rb"] = 0.9
+                    else:
+                        det["extra_fields"]["rb"] = 0.1
+                        valid_detections = 1
 
-    def test_drop_bogus_post_execute(self):
-        step_config = {
-            "PRODUCER_CONFIG": PRODUCER_CONFIG,
-            "CONSUMER_CONFIG": CONSUMER_CONFIG,
-            "SCRIBE_PRODUCER_CONFIG": SCRIBE_PRODUCER_CONFIG,
-            "FEATURE_VERSION": "v1",
-            "STEP_METADATA": {
-                "STEP_VERSION": "feature",
-                "STEP_ID": "feature",
-                "STEP_NAME": "feature",
-                "STEP_COMMENTS": "feature",
-                "FEATURE_VERSION": "1.0-test",
-            },
-            "MIN_DETECTIONS_FEATURES": 2,
-        }
-        db_sql = mock.MagicMock()
-        step = FeatureStep(config=step_config, db_sql=db_sql)
-        step.scribe_producer = mock.create_autospec(GenericProducer)
-        step.scribe_producer.produce = mock.MagicMock()
+        result_messages = self.step.pre_execute(messages)
 
-        messages = [
-            spm_messages[2]
-        ]  # after drop bogus detections, it ends with 0 detections
-        result_messages = step.execute(messages)
-        result_messages = step.post_execute(result_messages)
+        for message, result_message in zip(messages, result_messages):
+            n_dets_before = len(
+                [True for det in message["detections"] if not det["forced"]]
+            )
+            n_dets_after = len(
+                [True for det in result_message["detections"] if not det["forced"]]
+            )
+            n_forced_before = len(
+                [True for det in message["detections"] if det["forced"]]
+            )
+            n_forced_after = len(
+                [True for det in result_message["detections"] if det["forced"]]
+            )
 
-        self.assertEqual(len(messages), len(result_messages))
-        n_features_prev = -1
-        for result_message in result_messages:
-            n_features = len(result_message["features"])
-            self.assertTrue(n_features > 0)
-
-            # Check all messages have the same number of features
-            if n_features_prev != -1:
-                self.assertEqual(n_features, n_features_prev)
-                n_features_prev = n_features
-
-        scribe_args = step.scribe_producer.produce.call_args
-        assert (
-            len(json.loads(scribe_args[0][0]["payload"])["data"]["features"])
-            == n_features
-        )
-        step.scribe_producer.produce.assert_called()
-        scribe_producer_call_count = step.scribe_producer.produce.call_count
-        # 2 times the len of messages 1 for objects and 1 for features
-        self.assertEqual(scribe_producer_call_count, len(messages) * 2)
+            self.assertEqual(n_dets_after, n_dets_before - 1)
+            self.assertEqual(n_forced_after, n_forced_before - 1)
 
     @mock.patch("features.step.FeatureStep._get_sql_references")
     def test_read_empty_reference_from_db(self, _get_sql_ref):
