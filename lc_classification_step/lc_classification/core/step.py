@@ -152,20 +152,6 @@ class LateClassifier(GenericStep):
             self.log_data(model_input)
             raise e
 
-    def pre_execute(self, messages: List[dict]):
-        if self.min_detections is None:
-            return messages
-
-        def has_enough_detections(message: dict) -> bool:
-            n_dets = len(
-                [True for det in message["detections"] if not det["forced"]]
-            )
-            return n_dets >= self.min_detections
-
-        filtered_messages = filter(has_enough_detections, messages)
-        filtered_messages = list(filtered_messages)
-        return filtered_messages
-
     def execute(self, messages):
         """Run the classification.
 
@@ -176,10 +162,28 @@ class LateClassifier(GenericStep):
 
         """
         self.logger.info("Processing %i messages.", len(messages))
-        model_input = create_input_dto(messages)
+
         probabilities = OutputDTO(
             DataFrame(), {"top": DataFrame(), "children": {}}
         )
+
+        def has_enough_detections(message: dict) -> bool:
+            n_dets = len(
+                [True for det in message["detections"] if not det["forced"]]
+            )
+            return n_dets >= self.min_detections
+
+        if self.min_detections is None:
+            model_input = create_input_dto(messages)
+        else:
+            filtered_messages = filter(has_enough_detections, messages)
+            filtered_messages = list(filtered_messages)
+
+            if len(filtered_messages) == 0:
+                self.logger.info(f"No messages have enough detections")
+                return probabilities, messages, DataFrame()
+
+            model_input = create_input_dto(filtered_messages)
 
         can, error = self.model.can_predict(model_input)
         if not can:
