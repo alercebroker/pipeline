@@ -3,7 +3,6 @@ from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
 from lc_classification.core.parsers.kafka_parser import KafkaParser
 import logging
-import json
 import numexpr
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
 from typing import List, Tuple
@@ -11,12 +10,9 @@ import pandas as pd
 from pandas import DataFrame
 import numpy as np
 
-ZTF_CLASSIFIER_CLASS = "lc_classifier.classifier.models.HierarchicalRandomForest"
-
-
 class MultiStampClassifier(GenericStep):
     """
-    Multiscale stamp classifier
+    MultiScaleStampClassifier
     """
 
     _mapper_names = {
@@ -40,9 +36,10 @@ class MultiStampClassifier(GenericStep):
         #     config["SCRIBE_PARSER_CLASS"]
         # )(classifier_name=self.classifier_name)
         self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
-        # self.min_detections = self.config.get("MIN_DETECTIONS", None)
-        # if self.min_detections is not None:
-        #     self.min_detections = int(self.min_detections)
+        self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
+            **config["MODEL_CONFIG"]["PARAMS"]
+        )
+
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         pass
@@ -81,16 +78,11 @@ class MultiStampClassifier(GenericStep):
         Parameters
         ----------
         messages : List[dict-like]
-            Current object data, it must have the features and object id.
+            Current object data.
 
         """
-
-        # self.logger.info("Processing %i messages.", len(messages))
-        # self.logger.info(f"messages {messages}")
         input_dto = self._messages_to_input_dto(messages)
-        self.logger.info(f"input_dto {input_dto}")
         probabilities = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
-
         return probabilities, [], DataFrame()
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
@@ -117,10 +109,9 @@ class MultiStampClassifier(GenericStep):
         for i, msg in enumerate(messages):
             """for each message extract only necessary information"""
             template = {}
-            template.update({"oid": msg["objectId"]})
             template.update(self._extract_metadata_from_message(msg))
             for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                template.update({k: self._decompress_fits(msg[k]["stampData"])})
+                template.update({k: self._decode_fits(msg[k]["stampData"])})
             """ update the same list """
             messages[i] = template
         return messages
@@ -128,12 +119,13 @@ class MultiStampClassifier(GenericStep):
     def _extract_metadata_from_message(self, msg: dict) -> dict:
 
         return {
+            "oid": msg["objectId"], 
             "ra": msg["candidate"]["ra"],
             "dec": msg["candidate"]["dec"],
             "candid": msg["candidate"]["candid"],
         }
 
-    def _decompress_fits(self, data: bytes) -> np.array:
+    def _decode_fits(self, data: bytes) -> np.array:
 
         import io
         import gzip
@@ -145,10 +137,13 @@ class MultiStampClassifier(GenericStep):
                 return hdul[0].data
 
     def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
+
         return InputDTO(
             DataFrame,
             DataFrame,
             DataFrame,
             DataFrame,
-            pd.DataFrame.from_records(messages).set_index("oid").rename(columns=self._mapper_names),
+            pd.DataFrame.from_records(messages)
+            .set_index("oid")
+            .rename(columns=self._mapper_names),
         )

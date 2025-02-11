@@ -45,7 +45,7 @@ class StampParser(KafkaParser):
         #         "lc_classification": tree_oid,
         #     }
         #     parsed.append(write)
-        parsed = [{"oid": "dummyoid", "features": "", "lc_classification": {}}]
+        parsed = []
         return KafkaOutput(parsed)
 
     # def _get_oid_tree(self, tree, oid):
