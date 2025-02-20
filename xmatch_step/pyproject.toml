@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xmatch-step"
-version = "27.4.1a0"
+version = "27.4.0"
 description = "xmatch step"
 authors = []
 readme = "README.md"
@@ -10,10 +10,12 @@ packages = [{include = "xmatch_step"}]
 step = { callable = "scripts.run_step:step" }
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.12"
 astropy = "^6.0.0"
 requests = "^2.23.0"
 apf_base = { path = "../libs/apf", develop = true }
+aiohttp = "^3.11.12"
+asyncio = "^3.4.3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"

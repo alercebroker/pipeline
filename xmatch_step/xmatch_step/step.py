@@ -13,7 +13,6 @@ from xmatch_step.core.utils.extract_info import (
     extract_lightcurve_from_messages,
     get_candids_from_messages,
 )
-from xmatch_step.core.xmatch_client import XmatchClient
 
 
 class XmatchStep(GenericStep):
@@ -25,8 +24,38 @@ class XmatchStep(GenericStep):
         super().__init__(config=config, **step_args)
 
         self.xmatch_config = config["XMATCH_CONFIG"]
-        self.xmatch_client = XmatchClient()
         self.catalog = self.xmatch_config["CATALOG"]
+
+        if config.get("USE_XWAVE", False):
+            # importa xwave en lugar de xmatch
+            from xmatch_step.core.xwave_client import XwaveClient
+            self.xmatch_client = XwaveClient(self.catalog["service_url"])
+            # mover xmatch parameter a un 
+            # un self.xmatch parameters y definirlo
+            # dentro del if
+            self.xmatch_parameters = {                
+                "catalog_type": None,
+                "ext_catalog": None,
+                "ext_columns": self.catalog["columns"],
+                "selection": self.catalog["selection"],
+                "result_type": None,
+                "distmaxarcsec": 1,
+            }
+        else:
+            # importar xmatch en lugar de xwave
+            from xmatch_step.core.xmatch_client import XmatchClient
+            self.xmatch_client = XmatchClient()
+            # mover xmatch parameter a un 
+            # un self.xmatch parameters y definirlo
+            # dentro del if
+            self.xmatch_parameters = {
+                "catalog_alias": self.catalog["name"],
+                "columns": self.catalog["columns"],
+                "radius": 1,
+                "selection": "best",
+                "input_type": "pandas",
+                "output_type": "pandas",
+            }
 
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -35,16 +64,7 @@ class XmatchStep(GenericStep):
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
 
-    @property
-    def xmatch_parameters(self):
-        return {
-            "catalog_alias": self.catalog["name"],
-            "columns": self.catalog["columns"],
-            "radius": 1,
-            "selection": "best",
-            "input_type": "pandas",
-            "output_type": "pandas",
-        }
+
 
     def pre_execute(self, messages: List[dict]):
         def remove_timestamp(message: dict):
