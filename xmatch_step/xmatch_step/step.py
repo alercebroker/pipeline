@@ -27,12 +27,8 @@ class XmatchStep(GenericStep):
         self.catalog = self.xmatch_config["CATALOG"]
 
         if config.get("USE_XWAVE", False):
-            # importa xwave en lugar de xmatch
             from xmatch_step.core.xwave_client import XwaveClient
             self.xmatch_client = XwaveClient(self.catalog["service_url"])
-            # mover xmatch parameter a un 
-            # un self.xmatch parameters y definirlo
-            # dentro del if
             self.xmatch_parameters = {                
                 "catalog_type": None,
                 "ext_catalog": None,
@@ -117,17 +113,30 @@ class XmatchStep(GenericStep):
         :param retries_count: number of attempts
         :return: Data with its xmatch. Data without xmatch is not included.
         """
+        
         if retries_count > 0:
             try:
-                result = self.xmatch_client.execute(
+                from xmatch_step.core.xwave_client import XwaveClient
+                if isinstance(self.xmatch_client, XwaveClient):
+                    result = self.xmatch_client.execute(
                     input_catalog,
-                    self.xmatch_parameters["input_type"],
-                    self.xmatch_parameters["catalog_alias"],
-                    self.xmatch_parameters["columns"],
+                    self.xmatch_parameters["catalog_type"],
+                    self.xmatch_parameters["ext_catalog"],
+                    self.xmatch_parameters["ext_columns"],
                     self.xmatch_parameters["selection"],
-                    self.xmatch_parameters["output_type"],
-                    self.xmatch_parameters["radius"],
+                    self.xmatch_parameters["result_type"],
+                    self.xmatch_parameters["distmaxarcsec"],
                 )
+                else:
+                    result = self.xmatch_client.execute(
+                        input_catalog,
+                        self.xmatch_parameters["input_type"],
+                        self.xmatch_parameters["catalog_alias"],
+                        self.xmatch_parameters["columns"],
+                        self.xmatch_parameters["selection"],
+                        self.xmatch_parameters["output_type"],
+                        self.xmatch_parameters["radius"],
+                    )
                 return result
 
             except Exception as e:

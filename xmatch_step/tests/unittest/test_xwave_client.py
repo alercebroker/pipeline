@@ -49,7 +49,6 @@ class SessionMock:
         if "conesearch" in url:
             oid = url.split('/')[-1]
             self.get_call_count += 1
-            print(self.conesearch_responses)
             return MockResponse(200, self.conesearch_responses[oid], True)
         
         elif "metadata" in url:

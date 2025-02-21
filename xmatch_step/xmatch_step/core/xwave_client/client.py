@@ -4,157 +4,132 @@ import asyncio
 import time
 import numpy as np
 
-
 class XwaveClient:
     def __init__(self, base_url):
         self.base_url = base_url
-
+        self.num_workers = 5  # Configurable number of metadata workers
 
     def execute(
         self,
         catalog,
-        catalog_type: str,
-        ext_catalog: str,
-        ext_columns: list,
-        selection: int,
-        result_type: str,
-        distmaxarcsec: int = 1.005, # To account for slight differences with CDS we use a slightly bigger radius
+        catalog_type: str = None,
+        ext_catalog: str = None,
+        ext_columns: list = None,
+        selection: int = 1,
+        result_type: str = None,
+        distmaxarcsec: float = 1.005,
     ):
-        """ 
-            catalog: input data for the xmatch (OID, ra, dec)
-            catalog_type: data type of the catalof (for xwave is pandas)
-                # not in use
-            ext_catalog: an allias for the name of the catalog
-                # not in use
-            ext_columns: parameter cols2 of cds request. It select wich of the
-                available columns to return. default none, if none return all data.
-            selection: n neighbors for xwave request
-            result_type: data type for the return of this function (for xwave is pandas)
-                # not in use
-            distmaxarcsec: the search radious
-        """
+        return asyncio.run(self.async_execute(
+            catalog, ext_columns, selection, distmaxarcsec
+        ))
 
-        async def async_execute():
-            batches = self.split_dataframe(catalog, num_parts=5)
+    async def async_execute(self, catalog, ext_columns, selection, distmaxarcsec):
+        metadata_queue = asyncio.Queue()
+        results = []
 
-            async with aiohttp.ClientSession() as session:
-                tasks = []
-                for batch in batches:
-                    for index, row in batch.iterrows():
-                        # with this we have a list of dict with 
-                        # id_in, ra_in, dec_in, RAJ2000, DEJ2000, ALLWISE
-                        ra = row['ra']
-                        dec = row['dec']
-                        oid = row['oid']
-                        task = asyncio.create_task(self.process_coordinate(session, ra, dec, oid, selection, distmaxarcsec))
-                        tasks.append(task)
-                    results = await asyncio.gather(*tasks)
-            result_coordinates_df = pd.DataFrame(results)
-            batches_2 = self.split_dataframe(result_coordinates_df, num_parts=5)
-            # otro proceso async para pedir metadada, pero necesita el primero
-            
-            async with aiohttp.ClientSession() as session:
-                tasks = []
-                for batch in batches_2:
-                    for index, row in batch.iterrows():
-                        # with this we have a list of dict with 
-                        # ALLWISE, and all the metadara required
-                        allwise_id = row['AllWISE']
-                        task = asyncio.create_task(self.process_metadata(session, allwise_id, ext_columns))
-                        tasks.append(task)
-                    results = await asyncio.gather(*tasks)
-            
-            result_metadata_df = pd.DataFrame(results) 
-            
-            # hacer join de result coordinate y result metadata df
-            result_complete_df = result_coordinates_df.merge(result_metadata_df, left_on="AllWISE", right_on="AllWISE")
-            
-            # Calcular la distancia angular (de momento se calcula en step. Más adelante puede venir desde el endpoint)
-            result_complete_df = self.add_distance_column(result_complete_df)
-            
-            # Apply transformatiosn
-            result_complete_df = self.apply_dataframe_transformations(result_complete_df)
-            return result_complete_df
-        
-        return asyncio.run(async_execute())
-    
-    def split_dataframe(self, df, num_parts):
-        batch_size = len(df) // num_parts
-        return [df.iloc[i:i + batch_size] for i in range(0, len(df), batch_size)]
+        async with aiohttp.ClientSession() as session:
+            # Start metadata workers
+            workers = []
+            for _ in range(self.num_workers):
+                worker = asyncio.create_task(
+                    self.metadata_worker(session, metadata_queue, results, ext_columns)
+                )
+                workers.append(worker)
 
+            # Process coordinates
+            coordinate_tasks = []
+            for index, row in catalog.iterrows():
+                task = self.process_single_coordinate(
+                    session,
+                    row['ra'],
+                    row['dec'],
+                    row['oid'],
+                    metadata_queue,
+                    selection,
+                    distmaxarcsec
+                )
+                coordinate_tasks.append(task)
 
-        # Function to handle the request for each coordinate asynchronously
-    async def process_coordinate(self, session, ra, dec, oid, selection, distmaxarcsec):
-        """
-        session: aiohttp async session oject
-        ra: ra to search
-        dec: dec to search
-        oid: alerce oid of the object to search
-        return: a list with a dict with the response 
-        """
+            total_results = sum(await asyncio.gather(*coordinate_tasks))
+
+            # Signal workers to finish
+            for _ in range(self.num_workers):
+                await metadata_queue.put(None)
+
+            # Wait for all workers to complete
+            await asyncio.gather(*workers)
+
+        # Create final dataframe and apply transformations
+        if results:
+            result_df = pd.DataFrame(results)
+            result_df = self.apply_dataframe_transformations(result_df)
+            return result_df
+        return pd.DataFrame()
+
+    async def metadata_worker(self, session, queue, results, projection):
+        while True:
+            try:
+                entry = await queue.get()
+                if entry is None:
+                    queue.task_done()
+                    break
+
+                result = await self.process_metadata(session, entry, projection)
+                if result:
+                    results.append(result)
+                queue.task_done()
+            except Exception as e:
+                print(f"Error in metadata worker: {str(e)}")
+                queue.task_done()
+
+    async def process_single_coordinate(self, session, ra, dec, oid, metadata_queue, selection, distmaxarcsec):
         url = f"{self.base_url}/v1/conesearch?ra={ra}&dec={dec}&radius={distmaxarcsec}&nneighbor={selection}"
-        async with session.get(url) as response:
-            if response.status == 200:
-                # Parse the response
-                data = await response.json()
-                data = data[0]
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data:
+                        for entry in data:
+                            entry['ra_in'] = ra
+                            entry['dec_in'] = dec
+                            entry['id_in'] = oid
+                            await metadata_queue.put(entry)
+                        return len(data)
+                else:
+                    print(f"Failed to fetch data for ra={ra}, dec={dec}. Status code: {response.status}")
+                return 0
+        except Exception as e:
+            print(f"Error in coordinate search: {str(e)}")
+            return 0
 
-                if data:
-                    result_dict = {}                
-                    result_dict['ra_in'] = ra
-                    result_dict['dec_in'] = dec
-                    result_dict['id_in'] = oid
-                    result_dict['RAJ2000'] = data['Ra']
-                    result_dict['DEJ2000'] = data['Dec']
-                    result_dict['AllWISE'] = data['ID']
-                return result_dict
-            else:
-                print(f"Failed to fetch data for ra={ra}, dec={dec}. Status code: {response.status}")
-                return []
-
-    async def process_metadata(self, session, allwise_id, projection=None):
-        """
-        session: aiohttp async session oject
-        akkwise_id: allwise id to search
-        return: a list with a dict with the response 
-        """
-
-        url = f"{self.base_url}/v1/metadata?id={allwise_id}&catalog=allwise"
-        async with session.get(url) as response:
-            if response.status == 200:
-                # Parse the response
-                data = await response.json()
-                data = data[0]
-
-                if data:
-                    result_dict = {}
-                    result_dict['AllWISE'] = allwise_id
-                    for key, value in data.items():
-                        if projection is None:
-                            result_dict[key] = value
-                        elif key in projection:
-                            result_dict[key] = value
-                return result_dict
-            else:
-                print(f"Failed to fetch metadata for id {allwise_id}. Status code: {response.status}")
-                return []
-                
-
-
+    async def process_metadata(self, session, entry, projection=None):
+        try:
+            allwise_id = entry['ID']
+            url = f"{self.base_url}/v1/metadata?id={allwise_id}&catalog=allwise"
+            async with session.get(url) as response:
+                if response.status == 200:
+                    metadata = await response.json()
+                    if metadata:
+                        metadata = metadata[0]  # Extract first item from metadata response
+                        result_dict = {**entry}  # Start with coordinate search results
+                        for key, value in metadata.items():
+                            if projection is None or key in projection:
+                                result_dict[key] = value
+                        return result_dict
+                else:
+                    print(f"Failed to fetch metadata for ID={allwise_id}. Status code: {response.status}")
+                    return None
+        except Exception as e:
+            print(f"Error processing ID={entry['ID']}: {str(e)}")
+            return None
 
     def haversine_distance(self, ra1, dec1, ra2, dec2):
-        """
-        Calculate angular distance between two points using haversine formula.
-        Returns:
-            Distance in arcseconds
-        """
-        # Convert to radians (necessary for Haversine)
+        """Calculate angular distance between two points using haversine formula."""
         ra1_rad = np.radians(ra1)
         dec1_rad = np.radians(dec1)
         ra2_rad = np.radians(ra2)
         dec2_rad = np.radians(dec2)
         
-        # Haversine formula
         delta_ra = ra2_rad - ra1_rad
         delta_dec = dec2_rad - dec1_rad
         
@@ -164,14 +139,10 @@ class XwaveClient:
         
         c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
         
-        # Convert answer to arcseconds
         return float(c * 180.0 / np.pi * 3600.0)
 
     def add_distance_column(self, df):
-        """
-        Adds angDist column to the dataframe.
-        angDist is calculated using haversine distance between input and output coordinates.
-        """
+        """Add angDist column to the dataframe."""
         distances = []
         
         for index, row in df.iterrows():
@@ -182,26 +153,14 @@ class XwaveClient:
             distances.append(dist)
         
         df['angDist'] = distances
-        
-        return df
-
-    def reorder_dataframe(self, df):
-        """
-        Reorders the dataframe so the client response will be the same as the original XMatch client
-        """
-        desired_order = ['angDist', 'col1', 'id_in', 'ra_in', 'dec_in', 'AllWISE', 'RAJ2000',
-                        'DEJ2000', 'W1mag', 'W2mag', 'W3mag', 'W4mag', 'Jmag', 'Hmag', 'Kmag',
-                        'e_W1mag', 'e_W2mag', 'e_W3mag', 'e_W4mag', 'e_Jmag', 'e_Hmag',
-                        'e_Kmag'
-                        ]
-        df = df[desired_order]
         return df
 
     def rename_columns(self, df):
-        """
-        Apply column rename so the client response will be the same as the original XMatch client
-        """
+        """Apply column rename for consistency with original XMatch client."""
         rename_dict = {
+            'Ra': 'RAJ2000',
+            'Dec': 'DEJ2000',
+            'ID': 'AllWISE',
             'w1mpro': 'W1mag',
             'w2mpro': 'W2mag',
             'w3mpro': 'W3mag',
@@ -217,53 +176,26 @@ class XwaveClient:
             'K_m_2mass': 'Kmag',
             'K_msig_2mass': 'e_Kmag'
         }
-        df = df.rename(columns=rename_dict)
-        return df
+        return df.rename(columns=rename_dict)
+
+    def reorder_dataframe(self, df):
+        """Reorder columns to match original XMatch client."""
+        desired_order = ['angDist', 'col1', 'id_in', 'ra_in', 'dec_in', 'AllWISE', 'RAJ2000',
+                        'DEJ2000', 'W1mag', 'W2mag', 'W3mag', 'W4mag', 'Jmag', 'Hmag', 'Kmag',
+                        'e_W1mag', 'e_W2mag', 'e_W3mag', 'e_W4mag', 'e_Jmag', 'e_Hmag',
+                        'e_Kmag'
+                        ]
+        return df[desired_order]
 
     def apply_dataframe_transformations(self, df):
-        """
-        Function that applies all the tranformations to the dataframe, including removing the extra id column, renmaing, reordering and adding the incremental col
-        """
+        """Apply all transformations to the dataframe."""
         df['col1'] = range(len(df))
-        df = df.drop('id', axis=1)    
+        # Drop unnecessary columns
+        columns_to_drop = ['Ipix', 'Cat'] if 'Cat' in df.columns else []
+        if columns_to_drop:
+            df = df.drop(columns=columns_to_drop)
+            
         df = self.rename_columns(df)
+        df = self.add_distance_column(df)
         df = self.reorder_dataframe(df)
         return df
-    
-
-
-    ####################### v2 of client:
-
-    """
-    async def process_coordinate(session, ra, dec, oid, selection, distmaxarcsec):
-    # Perform the conesearch query
-    url = f"{self.base_url}/v1/conesearch?ra={ra}&dec={dec}&radius={distmaxarcsec}&nneighbor={selection}"
-    async with session.get(url) as response:
-        if response.status == 200:
-            # Parse the conesearch response
-            data = await response.json()
-            results = []
-            if data:
-                for entry in data:
-                    entry['ra_in'] = ra
-                    entry['dec_in'] = dec
-                    entry['id_in'] = oid
-                    
-                    # Query the client for metadata as soon as the conesearch data is available
-                    metadata_url = f"{self.base_url}/v1/metadata?id={allwise_id}&catalog=allwise"
-                    async with session.get(metadata_url) as metadata_response:
-                        if metadata_response.status == 200:
-                            metadata = await metadata_response.json()
-                            # Combine the conesearch data with the metadata
-                            entry.update(metadata)
-                            results.append(entry)
-                        else:
-                            print(f"Failed to fetch metadata for ID={entry['ID']}. Status code: {metadata_response.status}")
-            return results
-        else:
-            print(f"Failed to fetch data for ra={ra}, dec={dec}. Status code: {response.status}")
-            return []
-
-    
-    
-    """
