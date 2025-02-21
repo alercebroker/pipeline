@@ -17,9 +17,6 @@ import pytest
 # testear que pasa si el cliente no retorna 200
 # para algun oid.
 
-BASE_URL = "http://localhost:8080"
-
-
 class MockResponse:
     status = 0
     json_data = {}
@@ -86,7 +83,7 @@ class XwaveClientTest(unittest.TestCase):
             return MockResponse(404, {}, False)
 
     def setUp(self):
-        self.client = XwaveClient(BASE_URL)
+        self.client = XwaveClient("https://test_url_xwave:8081")
         self.get_call_count = 0
         self.input_dataframe, self.conesearch_responses, self.metadata_responses, self.dataframe_output = set_data_test()
 
@@ -110,3 +107,47 @@ class XwaveClientTest(unittest.TestCase):
         with self.assertRaises(Exception):
             self.client.execute(self.input_dataframe, **client_parameters)
 
+
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @mock.patch('xmatch_step.core.xwave_client.aiohttp.ClientSession')
+    def test_projection_request(self, mock_get):
+        # Change parameters to drop some metadata columns. This is done via projection, which selects the columns from metadata that will be kept
+        # THis is added to the client parameters sent to the request
+        projection_params = client_parameters.copy()
+        # Projection uses the originak names before the rename of the columns for the final dataframe
+        projection_params["ext_columns"] = ["w1mpro", "w2mpro", "J_m_2mass"]
+        
+        # Create expected output dataframe by selecting only the columns that will be kept from the original dataframe output
+        columns_to_keep = [
+            'angDist', 'col1', 'id_in', 'ra_in', 'dec_in',
+            'AllWISE', 'RAJ2000', 'DEJ2000', 'W1mag', 'W2mag', 'Jmag'
+        ]
+        expected_output = self.dataframe_output[columns_to_keep].copy()
+
+        session_mock = SessionMock()
+        mock_get.return_value = session_mock
+
+        # Execute with new parameters
+        result = self.client.execute(self.input_dataframe, **projection_params)
+        expected_calls = len(self.input_dataframe) * 2
+        self.assertEqual(session_mock.get_call_count, expected_calls)
+
+        # Verify result has the expected columns
+        pd.testing.assert_frame_equal(result, expected_output)
+
+
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+    @mock.patch('xmatch_step.core.xwave_client.aiohttp.ClientSession')
+    def test_invalid_projection_request(self, mock_get):
+        # Set up projection using a column not available in the metadata columns
+        projection_params = client_parameters.copy()
+        projection_params["ext_columns"] = ["invalid_column", "w1mpro"]
+        
+        session_mock = SessionMock()
+        mock_get.return_value = session_mock
+
+        # Check if the warning is raised
+        with pytest.warns(Warning) as record:
+            self.client.execute(self.input_dataframe, **projection_params)
+
+        assert any("The following columns in the projection are not valid" in str(w.message) for w in record)

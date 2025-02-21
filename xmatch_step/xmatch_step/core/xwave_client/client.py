@@ -1,7 +1,7 @@
 import pandas as pd
 import aiohttp
 import asyncio
-import time
+import warnings
 import numpy as np
 
 class XwaveClient:
@@ -110,12 +110,20 @@ class XwaveClient:
                 if response.status == 200:
                     metadata = await response.json()
                     if metadata:
-                        metadata = metadata[0]  # Extract first item from metadata response
-                        result_dict = {**entry}  # Start with coordinate search results
-                        for key, value in metadata.items():
-                            if projection is None or key in projection:
-                                result_dict[key] = value
-                        return result_dict
+                        metadata = metadata[0]  
+                        result_dict = {**entry}  
+                    if projection:
+                        invalid_columns = [col for col in projection if col not in metadata]
+                        if invalid_columns:
+                            valid_columns = list(metadata.keys())
+                            # Raise warning of invalid columns to project. Process follows using only the valid ones, ignoring invalid columns
+                            warnings.warn(f"The following columns in the projection are not valid: {invalid_columns}")
+                            warnings.warn(f"Available columns: {valid_columns}")
+
+                    for key, value in metadata.items():
+                        if projection is None or key in projection:
+                            result_dict[key] = value
+                    return result_dict
                 else:
                     print(f"Failed to fetch metadata for ID={allwise_id}. Status code: {response.status}")
                     return None
@@ -181,11 +189,14 @@ class XwaveClient:
     def reorder_dataframe(self, df):
         """Reorder columns to match original XMatch client."""
         desired_order = ['angDist', 'col1', 'id_in', 'ra_in', 'dec_in', 'AllWISE', 'RAJ2000',
-                        'DEJ2000', 'W1mag', 'W2mag', 'W3mag', 'W4mag', 'Jmag', 'Hmag', 'Kmag',
-                        'e_W1mag', 'e_W2mag', 'e_W3mag', 'e_W4mag', 'e_Jmag', 'e_Hmag',
-                        'e_Kmag'
-                        ]
-        return df[desired_order]
+                    'DEJ2000', 'W1mag', 'W2mag', 'W3mag', 'W4mag', 'Jmag', 'Hmag', 'Kmag',
+                    'e_W1mag', 'e_W2mag', 'e_W3mag', 'e_W4mag', 'e_Jmag', 'e_Hmag',
+                    'e_Kmag']
+    
+        # Only keep columns that exist in the dataframe (in case of projection)
+        available_columns = [col for col in desired_order if col in df.columns]
+    
+        return df[available_columns]
 
     def apply_dataframe_transformations(self, df):
         """Apply all transformations to the dataframe."""
