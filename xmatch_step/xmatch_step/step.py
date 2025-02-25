@@ -13,7 +13,6 @@ from xmatch_step.core.utils.extract_info import (
     extract_lightcurve_from_messages,
     get_candids_from_messages,
 )
-from xmatch_step.core.xmatch_client import XmatchClient
 
 
 class XmatchStep(GenericStep):
@@ -25,8 +24,36 @@ class XmatchStep(GenericStep):
         super().__init__(config=config, **step_args)
 
         self.xmatch_config = config["XMATCH_CONFIG"]
-        self.xmatch_client = XmatchClient()
         self.catalog = self.xmatch_config["CATALOG"]
+
+        if config.get("USE_XWAVE", False):
+            from xmatch_step.core.xwave_client import XwaveClient
+
+            self.xmatch_client = XwaveClient(self.catalog["service_url"])
+            self.xmatch_parameters = {
+                "catalog_type": None,
+                "ext_catalog": None,
+                "ext_columns": self.catalog["columns"],
+                "selection": self.catalog["selection"],
+                "result_type": None,
+                "distmaxarcsec": 1,
+            }
+        else:
+            # importar xmatch en lugar de xwave
+            from xmatch_step.core.xmatch_client import XmatchClient
+
+            self.xmatch_client = XmatchClient()
+            # mover xmatch parameter a un
+            # un self.xmatch parameters y definirlo
+            # dentro del if
+            self.xmatch_parameters = {
+                "catalog_alias": self.catalog["name"],
+                "columns": self.catalog["columns"],
+                "radius": 1,
+                "selection": "best",
+                "input_type": "pandas",
+                "output_type": "pandas",
+            }
 
         cls = get_class(self.config["SCRIBE_PRODUCER_CONFIG"]["CLASS"])
         self.scribe_producer = cls(self.config["SCRIBE_PRODUCER_CONFIG"])
@@ -34,17 +61,6 @@ class XmatchStep(GenericStep):
         # Xmatch client config
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
-
-    @property
-    def xmatch_parameters(self):
-        return {
-            "catalog_alias": self.catalog["name"],
-            "columns": self.catalog["columns"],
-            "radius": 1,
-            "selection": "best",
-            "input_type": "pandas",
-            "output_type": "pandas",
-        }
 
     def pre_execute(self, messages: List[dict]):
         def remove_timestamp(message: dict):
@@ -97,17 +113,31 @@ class XmatchStep(GenericStep):
         :param retries_count: number of attempts
         :return: Data with its xmatch. Data without xmatch is not included.
         """
+
         if retries_count > 0:
             try:
-                result = self.xmatch_client.execute(
-                    input_catalog,
-                    self.xmatch_parameters["input_type"],
-                    self.xmatch_parameters["catalog_alias"],
-                    self.xmatch_parameters["columns"],
-                    self.xmatch_parameters["selection"],
-                    self.xmatch_parameters["output_type"],
-                    self.xmatch_parameters["radius"],
-                )
+                from xmatch_step.core.xwave_client import XwaveClient
+
+                if isinstance(self.xmatch_client, XwaveClient):
+                    result = self.xmatch_client.execute(
+                        input_catalog,
+                        self.xmatch_parameters["catalog_type"],
+                        self.xmatch_parameters["ext_catalog"],
+                        self.xmatch_parameters["ext_columns"],
+                        self.xmatch_parameters["selection"],
+                        self.xmatch_parameters["result_type"],
+                        self.xmatch_parameters["distmaxarcsec"],
+                    )
+                else:
+                    result = self.xmatch_client.execute(
+                        input_catalog,
+                        self.xmatch_parameters["input_type"],
+                        self.xmatch_parameters["catalog_alias"],
+                        self.xmatch_parameters["columns"],
+                        self.xmatch_parameters["selection"],
+                        self.xmatch_parameters["output_type"],
+                        self.xmatch_parameters["radius"],
+                    )
                 return result
 
             except Exception as e:

@@ -9,7 +9,10 @@ from tests.data.messages import (
     get_fake_empty_xmatch,
     get_fake_xmatch,
 )
-from xmatch_step import XmatchClient, XmatchStep
+from xmatch_step import XmatchStep
+from xmatch_step.core.xmatch_client import XmatchClient
+from xmatch_step.core.xwave_client import XwaveClient
+
 
 CONSUMER_CONFIG = {
     "CLASS": "unittest.mock.MagicMock",
