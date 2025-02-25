@@ -78,8 +78,8 @@ XMATCH_CONFIG = {
             "Kmag",
             "e_Kmag",
         ],
-    "service_url": "http://quimal-db2.alerce.online:8081",
-    "selection":  1, 
+        "service_url": "http://quimal-db2.alerce.online:8081",
+        "selection": 1,
     }
 }
 
@@ -127,6 +127,7 @@ def setUp() -> None:
     for f in futures.values():
         f.result()
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_step(kafka_service, setUp, kafka_consumer):
     step, batch = setUp()
@@ -137,6 +138,7 @@ def test_step(kafka_service, setUp, kafka_consumer):
     consumer = kafka_consumer(["xmatch"])
     messages = list(consumer.consume())
     assert len(messages) == 20
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_step_duplicate_objects(kafka_service, setUp, kafka_consumer):

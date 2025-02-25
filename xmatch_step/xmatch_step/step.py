@@ -28,8 +28,9 @@ class XmatchStep(GenericStep):
 
         if config.get("USE_XWAVE", False):
             from xmatch_step.core.xwave_client import XwaveClient
+
             self.xmatch_client = XwaveClient(self.catalog["service_url"])
-            self.xmatch_parameters = {                
+            self.xmatch_parameters = {
                 "catalog_type": None,
                 "ext_catalog": None,
                 "ext_columns": self.catalog["columns"],
@@ -40,8 +41,9 @@ class XmatchStep(GenericStep):
         else:
             # importar xmatch en lugar de xwave
             from xmatch_step.core.xmatch_client import XmatchClient
+
             self.xmatch_client = XmatchClient()
-            # mover xmatch parameter a un 
+            # mover xmatch parameter a un
             # un self.xmatch parameters y definirlo
             # dentro del if
             self.xmatch_parameters = {
@@ -59,8 +61,6 @@ class XmatchStep(GenericStep):
         # Xmatch client config
         self.retries = config["RETRIES"]
         self.retry_interval = config["RETRY_INTERVAL"]
-
-
 
     def pre_execute(self, messages: List[dict]):
         def remove_timestamp(message: dict):
@@ -113,20 +113,21 @@ class XmatchStep(GenericStep):
         :param retries_count: number of attempts
         :return: Data with its xmatch. Data without xmatch is not included.
         """
-        
+
         if retries_count > 0:
             try:
                 from xmatch_step.core.xwave_client import XwaveClient
+
                 if isinstance(self.xmatch_client, XwaveClient):
                     result = self.xmatch_client.execute(
-                    input_catalog,
-                    self.xmatch_parameters["catalog_type"],
-                    self.xmatch_parameters["ext_catalog"],
-                    self.xmatch_parameters["ext_columns"],
-                    self.xmatch_parameters["selection"],
-                    self.xmatch_parameters["result_type"],
-                    self.xmatch_parameters["distmaxarcsec"],
-                )
+                        input_catalog,
+                        self.xmatch_parameters["catalog_type"],
+                        self.xmatch_parameters["ext_catalog"],
+                        self.xmatch_parameters["ext_columns"],
+                        self.xmatch_parameters["selection"],
+                        self.xmatch_parameters["result_type"],
+                        self.xmatch_parameters["distmaxarcsec"],
+                    )
                 else:
                     result = self.xmatch_client.execute(
                         input_catalog,
