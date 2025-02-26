@@ -2,7 +2,7 @@ from apf.core import get_class
 from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
 from db_plugins.db.sql.models import Probability
-from ms_classification_step.core.parsers.kafka_parser import KafkaParser
+from .parsers.kafka_parser import KafkaParser
 import logging
 import numexpr
 import traceback
