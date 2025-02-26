@@ -32,7 +32,7 @@ class MultiScaleStampClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
 
         numexpr.utils.set_num_threads(1)
-        
+
         """ CLASSSIFIER VERSION AND NAME"""
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = self.config["MODEL_CONFIG"]["VERSION"]
@@ -55,18 +55,10 @@ class MultiScaleStampClassifier(GenericStep):
         )
 
     def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-        """BYPASS FUNCTION"""
-        pass
-        # return self.step_parser.parse(
-        #     model_output=OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
-        #     messages=[],
-        #     features=DataFrame(),
-        #     # result[0],
-        #     # messages=result[1],
-        #     # features=result[2],
-        #     # classifier_name=self.classifier_name,
-        #     # classifier_version=self.classifier_version,
-        # )
+        return self.step_parser.parse(
+            model_output=result[0],
+            messages=result[1],
+        ).value
 
     def produce_scribe(self, commands: List[dict]):
         """BYPASS FUNCTION"""
@@ -77,9 +69,9 @@ class MultiScaleStampClassifier(GenericStep):
         #     self.scribe_producer.produce({"payload": json.dumps(command)})
         # self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
-    def produce(self, result):
-        """BYPASS FUNCTION"""
-        pass
+    # def produce(self, result):
+    #     """BYPASS FUNCTION"""
+    #     pass
 
     def log_data(self, model_input):
         """BYPASS MODEL INPUT (NECESSARY ?)"""
@@ -116,13 +108,12 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.error(e)
             self.logger.error(traceback.print_exc())
 
-        return output_dto, [], DataFrame()
+        return output_dto, messages, DataFrame()
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-
         return (
-            OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}}),
-            [{}],
+            result[0],
+            result[1],
             DataFrame(),
         )
 
@@ -137,7 +128,7 @@ class MultiScaleStampClassifier(GenericStep):
         """override method"""
         return self._read_and_transform_messages(messages)
 
-    def _read_and_transform_messages(self, messages) -> List[dict]:
+    def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
         """read compressed messages and return lightweight messages with only necesary data"""
         for i, msg in enumerate(messages):
             """for each message extract only necessary information"""
@@ -146,7 +137,7 @@ class MultiScaleStampClassifier(GenericStep):
             for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
                 template.update({k: self._decode_fits(msg[k]["stampData"])})
             """ update the same list """
-            messages[i] = template
+            messages[i].update({"data_stamp_inference": template})
         return messages
 
     def _extract_metadata_from_message(self, msg: dict) -> dict:
@@ -170,13 +161,18 @@ class MultiScaleStampClassifier(GenericStep):
 
     def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
 
+        ## get only necessary information form each msg
+        records = []
+        for msg in messages:
+            records.append(msg["data_stamp_inference"])
+
         return InputDTO(
             Detections(DataFrame()),
             NonDetections(DataFrame()),
             Features(DataFrame()),
             Xmatch(DataFrame()),
             Stamps(
-                pd.DataFrame.from_records(messages)
+                pd.DataFrame.from_records(records)
                 .set_index("oid")
                 .rename(columns=self._mapper_names)
             ),
