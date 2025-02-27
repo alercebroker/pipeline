@@ -127,13 +127,13 @@ class XwaveClientTest(unittest.TestCase):
         # THis is added to the client parameters sent to the request
         projection_params = client_parameters.copy()
         # Projection uses the originak names before the rename of the columns for the final dataframe
-        projection_params["ext_columns"] = ["w1mpro", "w2mpro", "J_m_2mass"]
+        projection_params["ext_columns"] = ["W1mpro", "W2mpro", "J_m_2mass"]
 
         # Create expected output dataframe by selecting only the columns that will be kept from the original dataframe output
         columns_to_keep = [
             "angDist",
             "col1",
-            "id_in",
+            "oid_in",
             "ra_in",
             "dec_in",
             "AllWISE",
@@ -165,7 +165,6 @@ class XwaveClientTest(unittest.TestCase):
 
         session_mock = SessionMock()
         mock_get.return_value = session_mock
-
         # Check if the warning is raised
         with pytest.warns(Warning) as record:
             self.client.execute(self.input_dataframe, **projection_params)

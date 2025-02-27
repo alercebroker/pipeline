@@ -69,7 +69,14 @@ class XwaveClient:
             result_df = pd.DataFrame(results)
             result_df = self.apply_dataframe_transformations(result_df)
             return result_df
-        return pd.DataFrame()
+        # If there's no results in the messages    
+        columns = [
+                    "angDist", "col1", "oid_in", "ra_in", "dec_in", "AllWISE", "RAJ2000", "DEJ2000",
+                    "W1mag", "W2mag", "W3mag", "W4mag", "Jmag", "Hmag", "Kmag",
+                    "e_W1mag", "e_W2mag", "e_W3mag", "e_W4mag", "e_Jmag", "e_Hmag", "e_Kmag"
+                  ]
+        df_empty = pd.DataFrame(columns=columns)
+        return df_empty
 
     async def metadata_worker(self, session, queue, results, projection):
         while True:
@@ -101,7 +108,7 @@ class XwaveClient:
                         for entry in data:
                             entry["ra_in"] = ra
                             entry["dec_in"] = dec
-                            entry["id_in"] = oid
+                            entry["oid_in"] = oid
                             await metadata_queue.put(entry)
                         return len(data)
                 else:
@@ -123,9 +130,20 @@ class XwaveClient:
                 if response.status == 200:
                     metadata = await response.json()
                     if metadata:
-                        metadata = metadata[0]
                         result_dict = {**entry}
                     if projection:
+                        # Quick fix to do projection for now. When the request is unified this will be changed and instead the projection will be done at the end of the transformations! 
+                        column_mapping = {
+                                            "W1mag": "W1mpro", "e_W1mag": "W1sigmpro",
+                                            "W2mag": "W2mpro", "e_W2mag": "W2sigmpro",
+                                            "W3mag": "W3mpro", "e_W3mag": "W3sigmpro",
+                                            "W4mag": "W4mpro", "e_W4mag": "W4sigmpro",
+                                            "Jmag": "J_m_2mass", "e_Jmag": "J_msig_2mass",
+                                            "Hmag": "H_m_2mass", "e_Hmag": "H_msig_2mass",
+                                            "Kmag": "K_m_2mass", "e_Kmag": "K_msig_2mass"
+                                        }
+                        projection = projection + [column_mapping[col] for col in projection if col in column_mapping] # Adds the equivalent mapping so the columns will be added to the result of metadata
+
                         invalid_columns = [
                             col for col in projection if col not in metadata
                         ]
@@ -140,7 +158,9 @@ class XwaveClient:
                             )
 
                     for key, value in metadata.items():
+
                         if projection is None or key in projection:
+                            print('KEY IN PROJ')
                             result_dict[key] = value
                     return result_dict
                 else:
@@ -190,14 +210,14 @@ class XwaveClient:
             "Ra": "RAJ2000",
             "Dec": "DEJ2000",
             "ID": "AllWISE",
-            "w1mpro": "W1mag",
-            "w2mpro": "W2mag",
-            "w3mpro": "W3mag",
-            "w4mpro": "W4mag",
-            "w1sigmpro": "e_W1mag",
-            "w2sigmpro": "e_W2mag",
-            "w3sigmpro": "e_W3mag",
-            "w4sigmpro": "e_W4mag",
+            "W1mpro": "W1mag",
+            "W2mpro": "W2mag",
+            "W3mpro": "W3mag",
+            "W4mpro": "W4mag",
+            "W1sigmpro": "e_W1mag",
+            "W2sigmpro": "e_W2mag",
+            "W3sigmpro": "e_W3mag",
+            "W4sigmpro": "e_W4mag",
             "J_m_2mass": "Jmag",
             "J_msig_2mass": "e_Jmag",
             "H_m_2mass": "Hmag",
@@ -212,7 +232,7 @@ class XwaveClient:
         desired_order = [
             "angDist",
             "col1",
-            "id_in",
+            "oid_in",
             "ra_in",
             "dec_in",
             "AllWISE",
@@ -246,8 +266,8 @@ class XwaveClient:
         columns_to_drop = ["Ipix", "Cat"] if "Cat" in df.columns else []
         if columns_to_drop:
             df = df.drop(columns=columns_to_drop)
-
         df = self.rename_columns(df)
         df = self.add_distance_column(df)
         df = self.reorder_dataframe(df)
+        df.replace([-9999.000, -9999.0], np.nan, inplace=True)  # cast to none to fit cds response
         return df
