@@ -112,7 +112,6 @@ class XwaveClient:
                     results.append(result)
                 queue.task_done()
             except Exception as e:
-                print(f"Error in metadata worker: {str(e)}")
                 queue.task_done()
 
     async def process_single_coordinate(
@@ -130,13 +129,8 @@ class XwaveClient:
                             entry["oid_in"] = oid
                             await metadata_queue.put(entry)
                         return len(data)
-                else:
-                    print(
-                        f"Failed to fetch data for ra={ra}, dec={dec}. Status code: {response.status}"
-                    )
                 return 0
         except Exception as e:
-            print(f"Error in coordinate search: {str(e)}")
             return 0
 
     async def process_metadata(self, session, entry, projection=None):
@@ -190,16 +184,11 @@ class XwaveClient:
                     for key, value in metadata.items():
 
                         if projection is None or key in projection:
-                            print("KEY IN PROJ")
                             result_dict[key] = value
                     return result_dict
                 else:
-                    print(
-                        f"Failed to fetch metadata for ID={allwise_id}. Status code: {response.status}"
-                    )
                     return None
         except Exception as e:
-            print(f"Error processing ID={entry['ID']}: {str(e)}")
             return None
 
     def haversine_distance(self, ra1, dec1, ra2, dec2):
