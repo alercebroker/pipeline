@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import logging
+import traceback
 from alerce_classifiers.base.dto import OutputDTO
 from .kafka_parser import KafkaOutput, KafkaParser
 
@@ -15,14 +17,20 @@ class StampParser(KafkaParser):
         parsed = []
         probabilities = model_output.probabilities
         for msg in messages:
-            parsed.append(
-                self._format_each_message(
-                    msg=msg,
-                    data=self._get_probabilities_by_oid(
-                        msg["data_stamp_inference"]["oid"], probabilities=probabilities
-                    ),
+            try:
+                parsed.append(
+                    self._format_each_message(
+                        msg=msg,
+                        data=self._get_probabilities_by_oid(
+                            msg["data_stamp_inference"]["oid"],
+                            probabilities=probabilities,
+                        ),
+                    )
                 )
-            )
+            except Exception as e:
+                logging.error("Message with no probability")
+                logging.error(e)
+                logging.error(traceback.print_exc())
 
         return KafkaOutput(parsed)
 

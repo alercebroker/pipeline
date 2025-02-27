@@ -69,10 +69,6 @@ class MultiScaleStampClassifier(GenericStep):
         #     self.scribe_producer.produce({"payload": json.dumps(command)})
         # self.logger.debug(f"The list of objets from scribe are: {ids_list}")
 
-    # def produce(self, result):
-    #     """BYPASS FUNCTION"""
-    #     pass
-
     def log_data(self, model_input):
         """BYPASS MODEL INPUT (NECESSARY ?)"""
         self.logger.info("data logger")
@@ -95,20 +91,24 @@ class MultiScaleStampClassifier(GenericStep):
             Current object data.
 
         """
-        input_dto = self._messages_to_input_dto(messages)
+
         output_dto = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
-        self.logger.info(f"{len(messages)} consumed")
 
-        try:
-            self.logger.info(f"input : {input_dto}")
-            output_dto = self.predict(input_dto)
-            self.logger.info(f" output : {output_dto}")
-            self._insert_to_db_from_output_dto(output_dto)
-        except Exception as e:
-            self.logger.error(e)
-            self.logger.error(traceback.print_exc())
+        if len(messages) >= 1:
+            input_dto = self._messages_to_input_dto(messages)
+            self.logger.info(f"{len(messages)} consumed")
+            try:
+                self.logger.info(f"input : {input_dto}")
+                output_dto = self.predict(input_dto)
+                self.logger.info(f" output : {output_dto}")
+                self._insert_to_db_from_output_dto(output_dto)
+            except Exception as e:
+                self.logger.error(e)
+                self.logger.error(traceback.print_exc())
 
-        return output_dto, messages, DataFrame()
+            return output_dto, messages, DataFrame()
+        else:
+            return output_dto, messages, DataFrame()
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return (
@@ -128,6 +128,18 @@ class MultiScaleStampClassifier(GenericStep):
         """override method"""
         return self._read_and_transform_messages(messages)
 
+    def _pad_matrices(self, matrix: np.ndarray, target_shape: tuple) -> np.ndarray:
+        current_shape = matrix.shape
+        if current_shape[0] > target_shape[0] or current_shape[1] > target_shape[1]:
+            raise ValueError(
+                "Target shape must be greater than or equal to the current shape."
+            )
+        pad_rows = target_shape[0] - current_shape[0]
+        pad_cols = target_shape[1] - current_shape[1]
+        return np.pad(
+            matrix, ((0, pad_rows), (0, pad_cols)), mode="constant", constant_values=0
+        )
+
     def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
         """read compressed messages and return lightweight messages with only necesary data"""
         for i, msg in enumerate(messages):
@@ -135,10 +147,37 @@ class MultiScaleStampClassifier(GenericStep):
             template = {}
             template.update(self._extract_metadata_from_message(msg))
             for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                template.update({k: self._decode_fits(msg[k]["stampData"])})
+                template.update(
+                    {
+                        k: self._pad_matrices(
+                            matrix=self._decode_fits(msg[k]["stampData"]),
+                            target_shape=(63, 63),
+                        )
+                    }
+                )
             """ update the same list """
             messages[i].update({"data_stamp_inference": template})
         return messages
+
+    def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
+        """ensure that all stamps share the same dimension"""
+        messages_filtered = []
+        for msg in messages:
+            condition_01 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutTemplate"].shape
+            )
+            condition_02 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutDifference"].shape
+            )
+            if condition_01 and condition_02:
+                self.logger.info(
+                    f"stamps with the same dimension dim = {msg['data_stamp_inference']['cutoutScience'].shape}"
+                )
+                messages_filtered.append(msg)
+
+        return messages_filtered
 
     def _extract_metadata_from_message(self, msg: dict) -> dict:
         return {
