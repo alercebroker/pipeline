@@ -146,9 +146,9 @@ def test_step_duplicate_objects(kafka_service, setUp, kafka_consumer):
         return batch + batch
 
     consumer_config = deepcopy(CONSUMER_CONFIG)
-    consumer_config[
-        "consume.messages"
-    ] = 60  # higher than the number of messages
+    consumer_config["consume.messages"] = (
+        60  # higher than the number of messages
+    )
     consumer_config["PARAMS"]["group.id"] = uuid.uuid4().hex
     step, batch = setUp(repeat_oids, {"CONSUMER_CONFIG": consumer_config})
     mock_xmatch = mock.Mock()

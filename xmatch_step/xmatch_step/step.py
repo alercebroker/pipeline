@@ -29,6 +29,7 @@ class XmatchStep(GenericStep):
         if config.get("USE_XWAVE", False):
             from xmatch_step.core.xwave_client import XwaveClient
 
+            print("USING XWAVE!")
             self.xmatch_client = XwaveClient(self.catalog["service_url"])
             self.xmatch_parameters = {
                 "catalog_type": None,
@@ -138,6 +139,7 @@ class XmatchStep(GenericStep):
                         self.xmatch_parameters["output_type"],
                         self.xmatch_parameters["radius"],
                     )
+                print(result)
                 return result
 
             except Exception as e:
