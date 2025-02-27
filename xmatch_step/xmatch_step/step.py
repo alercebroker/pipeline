@@ -28,7 +28,8 @@ class XmatchStep(GenericStep):
 
         if config.get("USE_XWAVE", False):
             from xmatch_step.core.xwave_client import XwaveClient
-            print('USING XWAVE!')
+
+            print("USING XWAVE!")
             self.xmatch_client = XwaveClient(self.catalog["service_url"])
             self.xmatch_parameters = {
                 "catalog_type": None,
