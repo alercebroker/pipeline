@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "stamp-classifier-2025-step"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.scripts]
+step = { callable = "scripts.run_step:step" }
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+pandas = "^2.0.1"
+apf-base = { path = "../libs/apf", develop = true }
+db-plugins = "^25.0.0"
+numexpr = "^2.8.8"
+astropy = "6.1.6"
+avro = "^1.12.0"
+
+[tool.poetry.group.squidward.dependencies]
+alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["stamp_full"] }
+
+[tool.poetry.group.dev.dependencies]
+black = "~=23.0"
