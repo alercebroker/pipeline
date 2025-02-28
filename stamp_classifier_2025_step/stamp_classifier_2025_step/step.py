@@ -61,6 +61,110 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.error(traceback.print_exc())
             # sys.exit(1)
 
+    def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        return (
+            result[0],
+            result[1],
+            DataFrame(),
+        )
+
+    def pre_execute(self, messages):
+        """override method"""
+        return self._read_and_transform_messages(messages)
+
+    def _pad_matrices(self, matrix: np.ndarray, target_shape: tuple) -> np.ndarray:
+        current_shape = matrix.shape
+        if current_shape[0] > target_shape[0] or current_shape[1] > target_shape[1]:
+            raise ValueError(
+                "Target shape must be greater than or equal to the current shape."
+            )
+        pad_rows = target_shape[0] - current_shape[0]
+        pad_cols = target_shape[1] - current_shape[1]
+        return np.pad(
+            matrix, ((0, pad_rows), (0, pad_cols)), mode="constant", constant_values=0
+        )
+
+    def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
+        """read compressed messages and return lightweight messages with only necesary data"""
+        for i, msg in enumerate(messages):
+            """for each message extract only necessary information"""
+            template = {}
+            template.update(self._extract_metadata_from_message(msg))
+            for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
+                template.update(
+                    {
+                        k: self._pad_matrices(
+                            matrix=self._decode_fits(msg[k]["stampData"]),
+                            target_shape=(63, 63),
+                        )
+                    }
+                )
+            """ update the same list """
+            messages[i].update({"data_stamp_inference": template})
+        return messages
+
+    def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
+        """ensure that all stamps share the same dimension"""
+        messages_filtered = []
+        for msg in messages:
+            condition_01 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutTemplate"].shape
+            )
+            condition_02 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutDifference"].shape
+            )
+            if condition_01 and condition_02:
+                self.logger.info(
+                    f"stamps with the same dimension dim = {msg['data_stamp_inference']['cutoutScience'].shape}"
+                )
+                messages_filtered.append(msg)
+
+        return messages_filtered
+
+    def _extract_metadata_from_message(self, msg: dict) -> dict:
+        return {
+            "oid": msg["objectId"],
+            "ra": msg["candidate"]["ra"],
+            "dec": msg["candidate"]["dec"],
+            "candid": msg["candidate"]["candid"],
+        }
+
+    def _decode_fits(self, data: bytes) -> np.array:
+
+        import io
+        import gzip
+        from astropy.io import fits
+
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
+            decompressed_data = f.read()
+            with fits.open(io.BytesIO(decompressed_data)) as hdul:
+                return hdul[0].data
+
+    def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
+
+        ## get only necessary information form each msg
+        records = []
+        for msg in messages:
+            records.append(msg["data_stamp_inference"])
+
+        return InputDTO(
+            Detections(DataFrame()),
+            NonDetections(DataFrame()),
+            Features(DataFrame()),
+            Xmatch(DataFrame()),
+            Stamps(
+                pd.DataFrame.from_records(records)
+                .set_index("oid")
+                .rename(columns=self._mapper_names)
+            ),
+        )
+
+    def log_data(self, model_input):
+        """BYPASS MODEL INPUT (NECESSARY ?)"""
+        self.logger.info("data logger")
+
     def execute(self, messages):
         """Run the classification.
 
@@ -97,55 +201,12 @@ class MultiScaleStampClassifier(GenericStep):
             result[1],
             DataFrame(),
         )
-    
-    def pre_execute(self, messages):
-        """override method"""
-        return self._read_and_transform_messages(messages)
 
-    def _read_and_transform_messages(self, messages) -> List[dict]:
-        """read compressed messages and return lightweight messages with only necesary data"""
-        for i, msg in enumerate(messages):
-            """for each message extract only necessary information"""
-            template = {}
-            template.update(self._extract_metadata_from_message(msg))
-            for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                template.update({k: self._decode_fits(msg[k]["stampData"])})
-            """ update the same list """
-            messages[i] = template
-        return messages
-
-    def _extract_metadata_from_message(self, msg: dict) -> dict:
-        return {
-            "oid": msg["objectId"],
-            "ra": msg["candidate"]["ra"],
-            "dec": msg["candidate"]["dec"],
-            "candid": msg["candidate"]["candid"],
-        }
-
-    def _decode_fits(self, data: bytes) -> np.array:
-
-        import io
-        import gzip
-        from astropy.io import fits
-
-        with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
-            decompressed_data = f.read()
-            with fits.open(io.BytesIO(decompressed_data)) as hdul:
-                return hdul[0].data
-
-    def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
-
-        return InputDTO(
-            Detections(DataFrame()),
-            NonDetections(DataFrame()),
-            Features(DataFrame()),
-            Xmatch(DataFrame()),
-            Stamps(
-                pd.DataFrame.from_records(messages)
-                .set_index("oid")
-                .rename(columns=self._mapper_names)
-            ),
-        )
+    def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        return self.step_parser.parse(
+            model_output=result[0],
+            messages=result[1],
+        ).value
 
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
