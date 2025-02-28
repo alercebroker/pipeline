@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 
 
-from stamp_classifier_2025_step.core.step import MultiScaleStampClassifier
+from stamp_classifier_2025_step.step import MultiScaleStampClassifier
 
 
 step_config = config_from_yaml_file(os.path.join(SCRIPT_PATH, "config.yaml"))
