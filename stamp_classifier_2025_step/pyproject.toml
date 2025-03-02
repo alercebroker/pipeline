@@ -22,7 +22,7 @@ numexpr = "^2.8.8"
 astropy = "6.1.6"
 avro = "^1.12.0"
 alerce_classifiers = { path = "../alerce_classifiers", develop = true, extras = ["stamp_full"] }
-psycopg2 = "^2.9.10"
+psycopg2-binary = "^2.9.6"
 wget = "^3.2"
 
 [tool.poetry.group.dev.dependencies]
