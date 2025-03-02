@@ -20,7 +20,7 @@ logging.basicConfig(
 from stamp_classifier_2025_step.step import MultiScaleStampClassifier
 
 
-step_config = config_from_yaml_file(os.path.join(SCRIPT_PATH, "config.yaml"))
+step_config = config_from_yaml_file(os.path.join(SCRIPT_PATH, "/config/config.yaml"))
 prometheus_metrics = DefaultPrometheusMetrics()
 
 if step_config["FEATURE_FLAGS"]["PROMETHEUS"]:
