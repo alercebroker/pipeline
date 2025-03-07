@@ -61,6 +61,14 @@ No special conditions, only connection to kafka.
 - `CATALOG`: An array of catalog settings to perform crossmatch with. Each catalog contains:
 	- `name` : Name of the catalog
 	- `columns` : A subset of columns to be selected from the catalog
+    - `service_url` : Url where CrossWave service is hosted. Can be left blank if not using XWave client
+    - `selection` : Integer number of matches per coordinate for CrossWave (usually set to 1). Can be left blank if not using XWave client
+
+### Xmatch client setup
+
+- `USE_XWAVE`: Boolean value identifying which client will be used. If True, XWave will be used. If left blank or False, it will default to CDS-xmatch
+    
+    
 
 ## Stream
 
@@ -1087,3 +1095,28 @@ For each release an image is uploaded to ghcr.io that you can use instead of bui
 ```bash
 docker pull ghcr.io/alercebroker/xmatch_step:latest
 ```
+
+## XMatch clients
+
+There are two available clients to execute the xmatch of the coordinates. The first one is CDS-xmatch and the second one is CrossWave. To select either of the clients a pair of new values have been added to the configuration yaml. 
+
+
+If the value of `USE_XWAVE` corresponds to True, then the CrossWave client will be executed, querying to CrossWave client hosted in `service_url`. 
+
+### Explanation of Crosswave algorithm
+
+Crosswave has a sqlite3 database which contains two tables, mastercat and allwise. This is done in a way that can be expanded into more catalogues.
+
+Crosswave utilizes HEALPix indexes using resolution nside 18 to all of AllWISE's objects, to generate sqlite3 tables, dividing the object's coordinates and healpix index in one, and the metadata (using a selection of columns instead of all the catalog's columns). Using cone search algorithms is possible to match the queries with objects in the catalog within a specified radius and return the object's data. With HEALPix conesearch its possible to select a coordinate and a radius to obtain a list of pixels to completely cover the area, which helps identify all of the objects in the matching area. Then finally, using the Haversine distance, its possible to filter the resulting objects to keep only those located in a distance strictly less than the radius of crossmatch. 
+
+To do so, Crosswave generates indexing of the catalogs, the cone searches and queries to a database using go. The mastercat table has minimal data about each of AllWISE's detections. These are in particular from the AllWISE catalog source_id, ra, dec, and added by the service a catalog_name column which is a string identifier, and Ipix which corresponds to transforming the original Ra/Dec coordinates to healpix indexes in the nested ordering schema for nside 18. Then each catalog has the original source_id for each object, and all the columns identified as metadata. In the case of AllWISE catalog, these are 14 magnitudes columns. 
+
+### Differences between the clients
+
+- Crosswave makes use of the source_id column of the AllWISE catalog, to quickly identify each object and make fast searches, while CDS works with the designation column, which isn't unique for each row in the catalog. 
+- There's slight differences in the RAJ2000 column between the services. This is a floating-point slight difference, probably due to the way the catalogs are stored. This difference is less than the precision of the catalog. Crosswave makes use of a  %11.7f format of the coordinates, by using the coordidnates of the AllWISE catalog as provided by https://irsa.ipac.caltech.edu/data/download/parquet/wise/allwise/
+- The slight difference between coordinates results in a slight difference of the distances measured for the object's. This difference is less than the precision of the coordinates, however it can result in more/less objects matched due to matches present/absent in the borders of the query. 
+
+### Notes about current Crosswave service and client:
+
+The xwave service works as a HTTP service with endpoints to query to. The current version only supports a single coordinate per query and it divides the queries between conesearch queries and metadata queries, which is slower than it would if both were processed in the same query. Crosswave will be updated to incorporate queries in batch and execute both queries at once. 
