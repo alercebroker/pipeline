@@ -150,3 +150,8 @@ terraform.tfvars
 
 */.build_state.json
 */.deploy_state.json
+
+**/flake.nix
+**/flake.lock
+**/.envrc
+**/.direnv/
