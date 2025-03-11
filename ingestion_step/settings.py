@@ -3,7 +3,7 @@
 ##################################################
 import os
 import pathlib
-from typing import Any, Callable, NotRequired, TypedDict
+from typing import Any, Callable, TypedDict
 
 producer_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "output.avsc"
@@ -37,9 +37,9 @@ ConsumerConfig = TypedDict(
     {
         "CLASS": str,
         "PARAMS": dict[str, Any],
-        "TOPIC_STRATEGY": NotRequired[TopicStrategy],
-        "TOPICS": NotRequired[list[str]],
-        "SCHEMA_PATH": NotRequired[str],
+        "TOPIC_STRATEGY": TopicStrategy | None,
+        "TOPICS": list[str] | None,
+        "SCHEMA_PATH": str | None,
         "consume.timeout": int,
         "consume.messages": int,
     },
@@ -54,6 +54,9 @@ CONSUMER_CONFIG: ConsumerConfig = {
         "auto.offset.reset": "beginning",
         "max.poll.interval.ms": 3600000,
     },
+    "TOPIC_STRATEGY": None,
+    "TOPICS": None,
+    "SCHEMA_PATH": None,
     "consume.timeout": int(os.getenv("CONSUME_TIMEOUT", 10)),
     "consume.messages": int(os.getenv("CONSUME_MESSAGES", 100)),
 }
@@ -107,10 +110,10 @@ PRODUCER_CONFIG: ProducerConfig = {
     "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", str(producer_schema_path)),
 }
 
-ExtraMetrics = TypedDict("ExtraMetrics", {"key": str, "format": Callable[[Any], str]})
+ExtraMetric = TypedDict("ExtraMetric", {"key": str, "format": Callable[[Any], str]})
 MetricConfig = TypedDict(
     "MetricConfig",
-    {"CLASS": str, "PARAMS": dict[str, Any], "EXTRA_METRICS": list[ExtraMetrics]},
+    {"CLASS": str, "PARAMS": dict[str, Any], "EXTRA_METRICS": list[ExtraMetric]},
 )
 METRICS_CONFIG: MetricConfig = {
     "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
@@ -154,6 +157,7 @@ StepConfig = TypedDict(
         "FEATURE_FLAGS": dict[str, bool],
         "PSQL_CONFIG": dict[str, str | int | None],
         "PSQL_SECRET_NAME": str | None,
+        "SURVEY_STRATEGY": str | None,
         "CONSUMER_CONFIG": ConsumerConfig,
         "PRODUCER_CONFIG": ProducerConfig,
         "METRICS_CONFIG": MetricConfig,
@@ -176,6 +180,7 @@ STEP_CONFIG: StepConfig = {
         "DBNAME": os.getenv("PSQL_DATABASE"),
     },
     "PSQL_SECRET_NAME": os.getenv("PSQL_SECRET_NAME"),
+    "SURVEY_STRATEGY": "None",
     "CONSUMER_CONFIG": CONSUMER_CONFIG,
     "PRODUCER_CONFIG": PRODUCER_CONFIG,
     "METRICS_CONFIG": METRICS_CONFIG,

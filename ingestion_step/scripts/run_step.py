@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from typing import cast
 
 import pyroscope
 from apf.core.settings import config_from_yaml_file
@@ -8,6 +9,7 @@ from apf.metrics.prometheus import PrometheusMetrics
 from prometheus_client import start_http_server
 
 from ingestion_step.step import SortingHatStep
+from settings import StepConfig
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
@@ -16,7 +18,7 @@ sys.path.append(PACKAGE_PATH)
 
 
 if os.getenv("CONFIG_FROM_YAML"):
-    STEP_CONFIG = config_from_yaml_file("/config/config.yaml")
+    STEP_CONFIG = cast(StepConfig, config_from_yaml_file("/config/config.yaml"))
     STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key": "candid", "format": str}]
 else:
     from settings import STEP_CONFIG

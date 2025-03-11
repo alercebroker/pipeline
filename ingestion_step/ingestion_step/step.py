@@ -3,7 +3,8 @@ from typing import Any
 
 import pandas as pd
 from apf.core.step import GenericStep
-from survey_parser_plugins import ALeRCEParser
+from ingestion_step.parser.core.parser_interface import ParserInterface
+from ingestion_step.parser.select_parser import select_parser
 
 from settings import StepConfig
 
@@ -20,7 +21,7 @@ class SortingHatStep(GenericStep):
         **kwargs: Any,
     ):
         super().__init__(config=config, **kwargs)  # pyright: ignore
-        self.parser = ALeRCEParser()
+        self.parser = select_parser(config["SURVEY_STRATEGY"])
         self.psql_driver = PsqlConnection(config["PSQL_CONFIG"])
 
     def _add_metrics(self, alerts: pd.DataFrame):
@@ -38,8 +39,12 @@ class SortingHatStep(GenericStep):
         :return: Dataframe with the alerts
         """
         self.ingestion_timestamp = int(datetime.now().timestamp())
-        response = self.parser.parse(messages)
-        alerts = pd.DataFrame([r.to_dict() for r in response])
+        self.parser.parse(messages)
+
+        common_obj = self.parser.get_common_objects()
+
+        # No he actualizado el codigo bajo esta linea
+
         self.logger.info(f"Processing {len(alerts)} alerts")
         self._add_metrics(alerts)
 

@@ -63,26 +63,21 @@ class ZTFParser(ParserInterface):
             fp_hist=pd.DataFrame(fp_hist),
         )
 
-    def build_objects(self, data: ExtractedData) -> tuple[pd.DataFrame, pd.DataFrame]:
-        common_cols = ["oid", "candid"]
-        survey_cols = ["oid", "candid"]
+    def process_candidates(self, candidates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        common_obj_cols = ["oid", "candid", "ra", "dec", "mjd"]
+        survey_obj_cols = ["oid", "candid"]
 
-        common_objects = data.candidates[common_cols]
-        survey_objects = data.candidates[survey_cols]
+        common_objs = candidates[common_obj_cols]
+        survey_objs = candidates[survey_obj_cols]
 
         # Insert telescope ID. ZTF has only one telescope so we add 0 to all entries
-        common_objects.insert(loc=-1, column="tid", value=0)
+        common_objs.insert(loc=-1, column="tid", value=0)
 
         # Insert survey ID. ZTF is sid=0
-        common_objects.insert(loc=-1, column="sid", value=0)
+        common_objs.insert(loc=-1, column="sid", value=0)
 
-        return common_objects, survey_objects
-
-    def build_detections(
-        self, data: ExtractedData
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        common_candidate_cols = ["oid", "candid", "ra", "dec", "fid"]
-        survey_candidate_cols = [
+        common_det_cols = ["oid", "candid", "ra", "dec", "fid"]
+        survey_det_cols = [
             "oid",
             "candid",
             "pid",
@@ -111,44 +106,51 @@ class ZTFParser(ParserInterface):
             # "step_id_corr",
         ]
 
-        common_candidate_dets = data.candidates[common_candidate_cols]
-        survey_candidate_dets = data.candidates[survey_candidate_cols]
+        common_dets = candidates[common_det_cols]
+        survey_dets = candidates[survey_det_cols]
 
-        common_prv_candidate_cols = common_candidate_cols
-        survey_prv_candidate_cols = survey_candidate_cols + ["parent_candid"]
+        return common_objs, survey_objs, common_dets, survey_dets
 
-        common_prv_candidate_dets = data.prv_candidates[common_prv_candidate_cols]
-        survey_prv_candidate_dets = data.prv_candidates[survey_prv_candidate_cols]
+    def process_prv_candidates(self, prv_candidates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+        common_cols = ["oid", "candid", "ra", "dec", "fid"]
+        survey_cols = [
+            "oid",
+            "candid",
+            "pid",
+            "diffmaglim",
+            "isdiffpos",
+            "nid",
+            "magpsf",
+            "sigmapsf",
+            "magap",
+            "sigmagap",
+            "distnr",
+            "rb",
+            "rbversion",
+            "drb",
+            "drbversion",
+            "magapbig",
+            "sigmagapbig",
+            "parent_candid",
+            # "rband",
+            # "magpsf_corr",
+            # "sigmapsf_corr",
+            # "sigmapsf_corr_ext",
+            # "corrected",
+            # "dubious",
+            # "has_stamp",
+            # "step_id_corr",
+        ]
 
-        survey_candidate_dets.insert(loc=-1, column="parent_candid", value=None)
-
-        common_dets = pd.concat([common_candidate_dets, common_prv_candidate_dets])
-        survey_dets = pd.concat([survey_candidate_dets, survey_prv_candidate_dets])
+        common = prv_candidates[common_cols]
+        survey = prv_candidates[survey_cols]
 
         return common_dets, survey_dets
 
-    def build_non_detections(self, extracted_data: ExtractedData) -> pd.DataFrame:
-        pass
-
-    def build_forced_photometries(
-        self, extracted_data: ExtractedData
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        pass
 
     def parse(self, messages: list[dict[str, Any]]) -> None:
         extracted_data = self.extract(messages)
 
-        self.common_objects, self.survey_objects = self.build_objects(extracted_data)
-
-        self.common_detections, self.survey_detections = self.build_detections(
-            extracted_data
-        )
-
-        self.survey_non_detections = self.build_non_detections(extracted_data)
-
-        self.common_forced_photometries, self.survey_forced_photometries = (
-            self.build_forced_photometries(extracted_data)
-        )
 
         pass
 
