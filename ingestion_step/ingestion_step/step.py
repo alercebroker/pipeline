@@ -3,9 +3,8 @@ from typing import Any
 
 import pandas as pd
 from apf.core.step import GenericStep
-from ingestion_step.parser.core.parser_interface import ParserInterface
-from ingestion_step.parser.select_parser import select_parser
 
+from ingestion_step.parser.select_parser import select_parser
 from settings import StepConfig
 
 from .database import PsqlConnection

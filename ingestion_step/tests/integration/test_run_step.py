@@ -151,9 +151,7 @@ class DbIntegrationTest(unittest.TestCase):
         unique_count = pd.DataFrame(messages).oid.nunique()
         assert len(inserted_objects) == unique_count
         unique_count = pd.DataFrame(messages)
-        unique_count = (
-            unique_count[unique_count.sid == "ZTF"].oid.explode().nunique()
-        )
+        unique_count = unique_count[unique_count.sid == "ZTF"].oid.explode().nunique()
         with self.psql_database.session() as session:
             result = session.execute(text("SELECT * FROM object"))
             result = list(result)
@@ -185,14 +183,8 @@ class DbIntegrationTest(unittest.TestCase):
         assert message["stamps"]["difference"] == b"difference"
 
     def assert_message_timestamps(self, message: dict):
-        assert (
-            message.get("extra_fields").get("brokerIngestTimestamp")
-            is not None
-        )
-        assert (
-            message.get("extra_fields").get("surveyPublishTimestamp")
-            is not None
-        )
+        assert message.get("extra_fields").get("brokerIngestTimestamp") is not None
+        assert message.get("extra_fields").get("surveyPublishTimestamp") is not None
         assert (
             message["extra_fields"]["surveyPublishTimestamp"]
             <= message["extra_fields"]["brokerIngestTimestamp"]

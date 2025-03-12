@@ -160,9 +160,7 @@ def find_id_by_conesearch(db: MongoConnection, alerts: pd.DataFrame):
 
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
-        aid = conesearch_query(
-            db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS
-        )
+        aid = conesearch_query(db, group["ra"].iloc[0], group["dec"].iloc[0], RADIUS)
         count += group.index.size if aid else 0
         alerts_wo_aid.loc[group.index, "aid"] = aid
     logger.debug(f"{count} alerts assigned AID via cone-search")
@@ -199,14 +197,10 @@ def generate_new_id(alerts: pd.DataFrame):
     count = 0
     for oid, group in alerts_wo_aid.groupby("oid"):
         id_ = id_generator(group["ra"].iloc[0], group["dec"].iloc[0])
-        alerts_wo_aid.loc[group.index, "aid"] = (
-            f"AL{time.strftime('%y')}{encode(id_)}"
-        )
+        alerts_wo_aid.loc[group.index, "aid"] = f"AL{time.strftime('%y')}{encode(id_)}"
         count += 1
 
-    logger.debug(
-        f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts"
-    )
+    logger.debug(f"Created {count} new AIDs for {len(alerts_wo_aid.index)} alerts")
     alerts.loc[alerts_wo_aid.index, "aid"] = alerts_wo_aid["aid"]
     return alerts
 
@@ -220,7 +214,5 @@ def insert_empty_objects(psql, alerts: pd.DataFrame):
     """
     objects = alerts[["oid", "aid", "sid", "extra_fields", "ra", "dec", "mjd"]]
     objects = objects.rename(columns={"oid": "_id"}).to_dict("records")
-    logger.debug(
-        f"Upserting {len(objects)} entries into the Objects collection"
-    )
+    logger.debug(f"Upserting {len(objects)} entries into the Objects collection")
     insert_empty_objects_to_sql(psql, objects)

@@ -36,9 +36,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_conesearch_query(self):
         self.mock_db.database["object"].find_one.return_value = {"_id": 1, "aid": 1}
-        aid = database.conesearch_query(
-            self.mock_db, 180, 0, math.degrees(3600)
-        )
+        aid = database.conesearch_query(self.mock_db, 180, 0, math.degrees(3600))
         assert aid == 1
         self.mock_db.database["object"].find_one.assert_called_with(
             {
@@ -69,9 +67,7 @@ class DatabaseTestCase(unittest.TestCase):
 
         database.update_query(self.mock_db, records)
 
-        assert (
-            self.mock_db.database["object"].find_one_and_update.call_count == 2
-        )
+        assert self.mock_db.database["object"].find_one_and_update.call_count == 2
 
         query = {"_id": 0}
         new_value = {
