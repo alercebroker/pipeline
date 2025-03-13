@@ -85,23 +85,35 @@ class MultiScaleStampClassifier(GenericStep):
         )
 
     def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
+        
+        readed_oids = set()
+        filtered_messages = []
+
         """read compressed messages and return lightweight messages with only necesary data"""
         for i, msg in enumerate(messages):
             """for each message extract only necessary information"""
-            template = {}
-            template.update(self._extract_metadata_from_message(msg))
-            for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                template.update(
-                    {
-                        k: self._pad_matrices(
-                            matrix=self._decode_fits(msg[k]["stampData"]),
-                            target_shape=(63, 63),
-                        )
-                    }
-                )
-            """ update the same list """
-            messages[i].update({"data_stamp_inference": template})
-        return messages
+            if msg["objectId"] not in readed_oids:
+                readed_oids.add(msg["objectId"])
+                template = {}
+                template.update(self._extract_metadata_from_message(msg))
+                for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
+                    template.update(
+                        {
+                            k: self._pad_matrices(
+                                matrix=self._decode_fits(msg[k]["stampData"]),
+                                target_shape=(63, 63),
+                            )
+                        }
+                    )
+                """ update the same list """
+                msg.update({"data_stamp_inference": template})
+                filtered_messages.append(msg)
+
+
+        logging.info(f"Readed {len(messages)} oids")
+        logging.info(f"Processing {len(readed_oids)} oids because deduplication")
+        logging.info(f"Removed {len(messages) - len(readed_oids)} messages because deduplication")
+        return filtered_messages
 
     def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
         """ensure that all stamps share the same dimension"""
@@ -180,14 +192,10 @@ class MultiScaleStampClassifier(GenericStep):
         if len(messages) >= 1:
             input_dto = self._messages_to_input_dto(messages)
             self.logger.info(f"{len(messages)} consumed")
-            try:
-                self.logger.info(f"input : {input_dto}")
-                output_dto = self.predict(input_dto)
-                self.logger.info(f" output : {output_dto}")
-                store_probability(self.engine, self.classifier_name, self.classifier_version, output_dto)
-            except Exception as e:
-                self.logger.error(e)
-                self.logger.error(traceback.print_exc())
+            self.logger.info(f"input : {input_dto}")
+            output_dto = self.predict(input_dto)
+            self.logger.info(f" output : {output_dto}")
+            store_probability(self.engine, self.classifier_name, self.classifier_version, output_dto)
 
             return output_dto, messages, DataFrame()
         else:
