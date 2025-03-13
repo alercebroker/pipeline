@@ -1,5 +1,5 @@
-from ingestion_step.parser.core.parser_interface import ParserInterface
-from ingestion_step.parser.ztf.parser import ZTFParser
+from ..ztf.parser import ZTFParser
+from .parser_interface import ParserInterface
 
 
 def select_parser(strategy: str | None) -> ParserInterface:

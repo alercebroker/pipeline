@@ -1,14 +1,14 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Hashable, Iterable, cast
 
 import pandas as pd
 from apf.core.step import GenericStep
 
-from ingestion_step.parser.select_parser import select_parser
+from ingestion_step.core.parsed_data import ParsedData
+from ingestion_step.core.select_parser import select_parser
 from settings import StepConfig
 
 from .database import PsqlConnection
-from .utils import parser, wizard
 
 
 class SortingHatStep(GenericStep):
@@ -31,34 +31,25 @@ class SortingHatStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(self, messages: list[dict[str, Any]]) -> pd.DataFrame:
+    def execute(self, messages: list[dict[str, Any]]) -> ParsedData:
         """
         Execute method of APF. Consumes message from CONSUMER_SETTINGS.
         :param messages: list of deserialized messages
         :return: Dataframe with the alerts
         """
+        self.logger.info(f"Processing {len(messages)} alerts")
+
         self.ingestion_timestamp = int(datetime.now().timestamp())
-        self.parser.parse(messages)
+        parsed_data = self.parser.parse(messages)
 
-        common_obj = self.parser.get_common_objects()
+        self.logger.info(f'Parsed {len(parsed_data["objects"])=}')
+        self.logger.info(f'Parsed {len(parsed_data["detections"])=}')
+        self.logger.info(f'Parsed {len(parsed_data["non_detections"])=}')
+        self.logger.info(f'Parsed {len(parsed_data["forced_photometries"])=}')
 
-        # No he actualizado el codigo bajo esta linea
+        return parsed_data
 
-        self.logger.info(f"Processing {len(alerts)} alerts")
-        self._add_metrics(alerts)
-
-        return alerts
-
-    def post_execute(self, alerts: pd.DataFrame):
-        """
-        Writes entries to the database with _id and oid only.
-        :param alerts: Dataframe of alerts
-        """
-        psql_driver = self.psql_driver
-        wizard.insert_empty_objects(psql_driver, alerts)
-        return alerts
-
-    def pre_produce(self, result: pd.DataFrame):
+    def pre_produce(self, parsed_data: ParsedData) -> list[dict[Hashable, Any]]:
         """
         Step lifecycle method.
         Format output that will be taken by the producer and set the producer key.
@@ -82,6 +73,6 @@ class SortingHatStep(GenericStep):
         output_result: pd.DataFrame
             The parsed data as defined by the config["PRODUCER_CONFIG"]["SCHEMA"]
         """
-        output_result = [parser.parse_output(alert) for _, alert in result.iterrows()]
-        self.set_producer_key_field("oid")
-        return output_result
+
+        detections = parsed_data["detections"].set_index("oid").to_dict("records")
+        return detections

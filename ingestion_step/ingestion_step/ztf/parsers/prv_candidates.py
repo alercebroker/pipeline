@@ -1,0 +1,94 @@
+from typing import NamedTuple
+
+import pandas as pd
+
+from ingestion_step.ztf.parsers.transforms import (
+    add_sid,
+    add_tid,
+    apply_transforms,
+    candid_to_measurment_id,
+    fid_to_band,
+    isdiffpos_to_int,
+    jd_to_mjd,
+    objectId_to_oid,
+    sigmadec_to_e_dec,
+    sigmara_to_e_ra,
+)
+
+
+class ParsedPrvCandidates(NamedTuple):
+    detections: pd.DataFrame
+    non_detections: pd.DataFrame
+
+
+def _parse_dets_from_prv_candidates(
+    prv_candidates: pd.DataFrame,
+) -> pd.DataFrame:
+    det_prv_candidates = prv_candidates[prv_candidates["candid"].notnull()]
+    cols = [
+        "oid",
+        "measurement_id",
+        "ra",
+        "dec",
+        "band",
+        "mjd",
+        "pid",
+        "diffmaglim",
+        "isdiffpos",
+        "nid",
+        "magpsf",
+        "sigmapsf",
+        "magap",
+        "sigmagap",
+        "distnr",
+        "rb",
+        "rbversion",
+        "drb",
+        "drbversion",
+        "magapbig",
+        "sigmagapbig",
+        "parent_candid",
+        # "rband",
+        # "magpsf_corr",
+        # "sigmapsf_corr",
+        # "sigmapsf_corr_ext",
+        # "corrected",
+        # "dubious",
+        "has_stamp",
+        # "step_id_corr",
+    ]
+
+    detections = det_prv_candidates[cols]
+
+    return detections
+
+
+def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.DataFrame:
+    non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
+    cols = ["objectId", "fid", "jd", "diffmaglim"]
+
+    non_detections = non_det_prv_candidates[cols]
+
+    return non_detections
+
+
+def parse_prv_candidates(
+    prv_candidates: pd.DataFrame,
+) -> ParsedPrvCandidates:
+    prv_candidates_tansforms = [
+        objectId_to_oid,
+        candid_to_measurment_id,
+        add_tid,
+        add_sid,
+        fid_to_band,
+        jd_to_mjd,
+        sigmara_to_e_ra,
+        sigmadec_to_e_dec,
+        isdiffpos_to_int,
+    ]
+    apply_transforms(prv_candidates, prv_candidates_tansforms)
+
+    detections = _parse_dets_from_prv_candidates(prv_candidates)
+    non_detections = _parse_non_dets_from_prv_candidates(prv_candidates)
+
+    return ParsedPrvCandidates(detections=detections, non_detections=non_detections)
