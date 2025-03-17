@@ -113,12 +113,13 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
         fp["fid"] = get_fid(fp["fid"])
         fp["e_ra"] = 0
         fp["e_dec"] = 0
-        fp["candid"] = fp.pop("_id", None)
+        fp["candid"] = fp["oid"] + str(fp["pid"])
         fp["extra_fields"] = {
             k: v
             for k, v in fp["extra_fields"].items()
             if not k.startswith("_")
         }
+
         # remove problematic fields
         FIELDS_TO_REMOVE = [
             "stellar",
@@ -141,8 +142,6 @@ def parse_sql_forced_photometry(ztf_models: list, *, oids) -> list:
                 aid=forced[0].__dict__.get("aid"),
                 sid="ZTF",
                 tid="ZTF",
-                candid=forced[0].__dict__["oid"]
-                + str(forced[0].__dict__["pid"]),
             ),
             "new": False,
             "forced": True,
