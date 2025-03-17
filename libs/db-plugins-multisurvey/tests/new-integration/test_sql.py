@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, inspect, MetaData, Table, Column, Integer,
 from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
 
-from db_plugins.db.sql.models_new import Base, Object, ZtfObject
+from db_plugins.db.sql.models_new import Base, Object, ZtfObject, Detection
 
 # Clase para manejar la conexión a la base de datos
 class PsqlDatabase:
@@ -129,7 +129,7 @@ class ObjectModelTest(unittest.TestCase):
             query = select(Object)
             obj = session.execute(query)
             # Verificar que no hay objetos (base de datos vacía)
-            self.assertEqual(len(list(obj.scalars())), 0)
+            self.assertEqual(len(list(obj())), 0)
     
     def test_create_and_query_object(self):
         """Verify that objects can be created and queried in the database"""
@@ -277,25 +277,46 @@ class ZtfObjectModelTest(unittest.TestCase):
     
     def test_create_multiple_objects(self):
         """Verificar que se pueden crear y consultar múltiples objetos"""
-        # Crear varios objetos
-        obj_data = {"oid": 12345680,
-            "g_r_max": 0.43,
-            "g_r_max_corr": 1.2,
-            "g_r_mean": 3.2,
-            "g_r_mean_corr": 0.01
+        # Crear varios objetos con datos diferentes
+        objects_data = [
+            {
+                "oid": 12345680,
+                "g_r_max": 0.43,
+                "g_r_max_corr": 1.2,
+                "g_r_mean": 3.2,
+                "g_r_mean_corr": 0.01
+            },
+            {
+                "oid": 12345681,
+                "g_r_max": 0.53,
+                "g_r_max_corr": 1.4,
+                "g_r_mean": 2.8,
+                "g_r_mean_corr": 0.02
+            },
+            {
+                "oid": 12345682,
+                "g_r_max": 0.63,
+                "g_r_max_corr": 1.6,
+                "g_r_mean": 2.5,
+                "g_r_mean_corr": 0.03
             }
+        ]
         
-        obj = ZtfObject(**obj_data)
+        # Crear instancias de ZtfObject para cada conjunto de datos
+        objects = [ZtfObject(**data) for data in objects_data]
         
+        # Agregar todos los objetos en una sola sesión
         with self.db.session() as session:
-            session.add(obj)
+            for obj in objects:
+                session.add(obj)
         
         # Verificar que se han guardado todos los objetos
         with self.db.session() as session:
             query = select(ZtfObject)
             saved_objects = list(session.execute(query).scalars())
             
-            self.assertEqual(len(saved_objects), 1)
+            # Verificar que el número de objetos guardados coincide con los creados
+            self.assertEqual(len(saved_objects), len(objects_data))
     
     def test_filter_objects(self):
         """Verificar que se pueden filtrar objetos con criterios específicos"""
@@ -311,7 +332,66 @@ class ZtfObjectModelTest(unittest.TestCase):
         
         with self.db.session() as session:
             session.add(obj)
+
+# class DetectionModelTest(unittest.TestCase):
+#     """  Pruebas específicas para el modelo Detection"""
     
+#     @classmethod
+#     def setUpClas(cls):
+#         config = {
+#             "HOST": "localhost",
+#             "USER": "postgres",
+#             "PASSWORD": "postgres",
+#             "PORT": 5435,
+#             "DB_NAME": "postgres",
+#         }
+#         cls.session_options = {
+#             "autocommit": False,
+#             "autoflush": True,
+#         }
+#         cls.db = PsqlDatabase(config)
+    
+#     def setUp(self):
+#         """Preparar la base de datos antes de cada prueba"""
+#         self.db.create_db()
+
+#     def tearDown(self):
+#         """Limpiar la base de datos después de cada prueba"""
+#         self.db.drop_db()
+
+#     def test_query_empty_tables(self):
+#         """Verificar que se pueden realizar consultas a la tabla Detection vacia"""
+#         with self.db.session() as session:
+#             query = select(Detection)
+#             obj = session.execute(query)
+#             # Verificar que no hay objectos (db vacia)
+#             self.assertEqual(len(list(obj())), 0)
+
+#     def test_create_and_query_objects(self):
+#         """Verify that objects can be created and queried in the database"""
+#         # Create a new object
+#         test_object = Detection(
+#             oid= 12345678901234567,  
+#             measurement_id= 98765432109876543,  
+#             mjd= 59000.123456,  
+#             ra= 150.2345678,  
+#             dec= -20.9876543,  
+#             band= 2 
+#         )
+
+#         with self.db.session() as session:
+#             session.add(test_object)
+
+#         # Verificar que el objecto se ha guardado
+#         with self.db.session() as session:
+#             query = select(Detection)
+#             objects = list(session.execute(query))
+
+#             self.assertEqual(len(objects), 1)
+#     def test_create_multiple_objects(self):
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
