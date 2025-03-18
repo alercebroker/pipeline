@@ -4,7 +4,8 @@ from sqlalchemy import create_engine, inspect, MetaData, Table, Column, Integer,
 from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
 
-from db_plugins.db.sql.models_new import Base, Object, ZtfObject, Detection, ZtfDetection
+from db_plugins.db.sql.models_new import Base, Object, ZtfObject, Detection, ZtfDetection, ForcedPhotometry, ZtfForcedPhotometry, NonDetection
+from test_data import OBJECT_DATA, ZTF_OBJECT_DATA, DETECTION_DATA, ZTF_DETECTION_DATA, FORCED_PHOTOMETRY_DATA, ZTF_FORCED_PHOTOMETRY_DATA, NON_DETECTION_DATA
 
 # Clase para manejar la conexión a la base de datos
 class PsqlDatabase:
@@ -24,7 +25,7 @@ class PsqlDatabase:
             )
         )
     
-    def _create_engine(self): ### Extra arg para dar el esquema
+    def _create_engine(self):
         conn_str = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         return create_engine(conn_str)
     
@@ -132,97 +133,25 @@ class ObjectModelTest(unittest.TestCase):
             self.assertEqual(len(list(obj)), 0)
     
     def test_create_and_query_object(self):
-        """Verify that objects can be created and queried in the database"""
-        # Create a new object
-        test_object = Object(
-            oid=12345678,
-            tid=1,
-            sid=1,
-            meanra=291.26922,
-            meandec=72.38752,
-            sigmara=0.000326,
-            sigmade=0.000064,
-            firstmjd=60058.47743,
-            lastmjd=60207.21820,
-            deltamjd=148.74077,
-            n_det=42,
-            n_forced=10,
-            n_non_det=5,
-            corrected=True,
-            stellar=False
-        )
+        """Verificar que se pueden crear y consultar objetos en la base de datos"""
+        # Crear un nuevo objeto
+        test_object = Object(**OBJECT_DATA["filter"][0])
         
         with self.db.session() as session:
             session.add(test_object)
         
-        # Verify the object was saved
+        # Verificar que el objeto se ha guardado
         with self.db.session() as session:
             query = select(Object)
             objects = list(session.execute(query).scalars())
             
             self.assertEqual(len(objects), 1)
-            self.assertEqual(objects[0].oid, 12345678)
+            self.assertEqual(objects[0].oid, OBJECT_DATA["filter"][0]["oid"])
     
     def test_create_multiple_objects(self):
         """Verificar que se pueden crear y consultar múltiples objetos"""
-        # Crear varios objetos con datos diferentes
-
-        objects_data = [
-            {
-                "oid": 12345678,
-                "tid": 1,
-                "sid": 1,
-                "meanra": 291.26922,
-                "meandec": 72.38752,
-                "sigmara": 0.000326,
-                "sigmade": 0.000064,
-                "firstmjd": 60058.47743,
-                "lastmjd": 60207.21820,
-                "deltamjd": 148.74077,
-                "n_det": 42,
-                "n_forced": 10,
-                "n_non_det": 5,
-                "corrected": True,
-                "stellar": False
-            },
-            {
-                "oid": 12345679,
-                "tid": 2,
-                "sid": 1,
-                "meanra": 290.54321,
-                "meandec": 71.98765,
-                "sigmara": 0.000412,
-                "sigmade": 0.000089,
-                "firstmjd": 60060.32145,
-                "lastmjd": 60210.54321,
-                "deltamjd": 150.22176,
-                "n_det": 38,
-                "n_forced": 12,
-                "n_non_det": 7,
-                "corrected": True,
-                "stellar": True
-            },
-            {
-                "oid": 12345680,
-                "tid": 1,
-                "sid": 2,
-                "meanra": 292.87654,
-                "meandec": 73.12345,
-                "sigmara": 0.000287,
-                "sigmade": 0.000053,
-                "firstmjd": 60055.76543,
-                "lastmjd": 60205.98765,
-                "deltamjd": 150.22222,
-                "n_det": 45,
-                "n_forced": 8,
-                "n_non_det": 3,
-                "corrected": False,
-                "stellar": False
-            }
-        ]
-        
         # Crear instancias de Object para cada conjunto de datos
-        objects = [Object(**data) for data in objects_data]
+        objects = [Object(**data) for data in OBJECT_DATA["filter"]]
         
         # Agregar todos los objetos en una sola sesión
         with self.db.session() as session:
@@ -235,67 +164,12 @@ class ObjectModelTest(unittest.TestCase):
             saved_objects = list(session.execute(query).scalars())
             
             # Verificar que el número de objetos guardados coincide con los creados
-            self.assertEqual(len(saved_objects), len(objects_data))
+            self.assertEqual(len(saved_objects), len(OBJECT_DATA["filter"]))
     
     def test_filter_objects(self):
         """Verificar que se pueden filtrar objetos con criterios específicos"""
-        # Crear varios objetos
-        objects_data = [
-            {
-                "oid": 12345680,
-                "tid": 1,
-                "sid": 1,
-                "meanra": 293.26922,
-                "meandec": 74.38752,
-                "sigmara": 0.000326,
-                "sigmade": 0.000064,
-                "firstmjd": 60058.47743,
-                "lastmjd": 60207.21820,
-                "deltamjd": 148.74077,
-                "n_det": 44,
-                "n_forced": 12,
-                "n_non_det": 7,
-                "corrected": False,
-                "stellar": True
-            },
-            {
-                "oid": 12345681,
-                "tid": 2,
-                "sid": 1,
-                "meanra": 290.54321,
-                "meandec": 71.98765,
-                "sigmara": 0.000412,
-                "sigmade": 0.000089,
-                "firstmjd": 60060.32145,
-                "lastmjd": 60210.54321,
-                "deltamjd": 150.22176,
-                "n_det": 38,
-                "n_forced": 15,
-                "n_non_det": 5,
-                "corrected": True,
-                "stellar": False
-            },
-            {
-                "oid": 12345682,
-                "tid": 1,
-                "sid": 2,
-                "meanra": 292.87654,
-                "meandec": 73.12345,
-                "sigmara": 0.000287,
-                "sigmade": 0.000053,
-                "firstmjd": 60055.76543,
-                "lastmjd": 60205.98765,
-                "deltamjd": 150.22222,
-                "n_det": 45,
-                "n_forced": 8,
-                "n_non_det": 3,
-                "corrected": True,
-                "stellar": True
-            }
-        ]
-
         # Crear y agregar múltiples objetos a la base de datos
-        objects = [Object(**data) for data in objects_data]
+        objects = [Object(**data) for data in OBJECT_DATA["filter"]]
         with self.db.session() as session:
             for obj in objects:
                 session.add(obj)
@@ -331,10 +205,9 @@ class ObjectModelTest(unittest.TestCase):
                 sorted([12345680, 12345682])
             )
 
-
 @pytest.mark.usefixtures("psql_service")
 class ZtfObjectModelTest(unittest.TestCase):
-    """Pruebas específicas para el modelo Object"""
+    """Pruebas específicas para el modelo ZtfObject"""
     
     @classmethod
     def setUpClass(cls):
@@ -366,13 +239,7 @@ class ZtfObjectModelTest(unittest.TestCase):
     def test_create_and_query_object(self):
         """Verificar que se pueden crear y consultar objetos en la base de datos"""
         # Crear un nuevo objeto
-        test_object = ZtfObject(
-            oid=12345680,
-            g_r_max=0.043,
-            g_r_max_corr=1.02,
-            g_r_mean=3.02,
-            g_r_mean_corr=0.001
-        )
+        test_object = ZtfObject(**ZTF_OBJECT_DATA["filter"][0])
         
         with self.db.session() as session:
             session.add(test_object)
@@ -386,33 +253,8 @@ class ZtfObjectModelTest(unittest.TestCase):
     
     def test_create_multiple_objects(self):
         """Verificar que se pueden crear y consultar múltiples objetos"""
-        # Crear varios objetos con datos diferentes
-        objects_data = [
-            {
-                "oid": 12345680,
-                "g_r_max": 0.43,
-                "g_r_max_corr": 1.2,
-                "g_r_mean": 3.2,
-                "g_r_mean_corr": 0.01
-            },
-            {
-                "oid": 12345681,
-                "g_r_max": 0.53,
-                "g_r_max_corr": 1.4,
-                "g_r_mean": 2.8,
-                "g_r_mean_corr": 0.02
-            },
-            {
-                "oid": 12345682,
-                "g_r_max": 0.63,
-                "g_r_max_corr": 1.6,
-                "g_r_mean": 2.5,
-                "g_r_mean_corr": 0.03
-            }
-        ]
-        
         # Crear instancias de ZtfObject para cada conjunto de datos
-        objects = [ZtfObject(**data) for data in objects_data]
+        objects = [ZtfObject(**data) for data in ZTF_OBJECT_DATA["filter"]]
         
         # Agregar todos los objetos en una sola sesión
         with self.db.session() as session:
@@ -425,44 +267,12 @@ class ZtfObjectModelTest(unittest.TestCase):
             saved_objects = list(session.execute(query).scalars())
             
             # Verificar que el número de objetos guardados coincide con los creados
-            self.assertEqual(len(saved_objects), len(objects_data))
+            self.assertEqual(len(saved_objects), len(ZTF_OBJECT_DATA["filter"]))
     
     def test_filter_objects(self):
         """Verificar que se pueden filtrar objetos con criterios específicos"""
-        # Crear varios objetos
-        objects_data = [
-            {
-                "oid": 12345680,
-                "g_r_max": 0.43,
-                "g_r_max_corr": 1.2,
-                "g_r_mean": 3.2,
-                "g_r_mean_corr": 0.01
-            },
-            {
-                "oid": 12345681,
-                "g_r_max": 0.55,
-                "g_r_max_corr": 1.4,
-                "g_r_mean": 2.8,
-                "g_r_mean_corr": 0.02
-            },
-            {
-                "oid": 12345682,
-                "g_r_max": 0.65,
-                "g_r_max_corr": 1.6,
-                "g_r_mean": 3.4,
-                "g_r_mean_corr": 0.03
-            },
-            {
-                "oid": 12345683,
-                "g_r_max": 0.35,
-                "g_r_max_corr": 1.1,
-                "g_r_mean": 2.5,
-                "g_r_mean_corr": 0.015
-            }
-        ]
-        
         # Crear y agregar múltiples objetos a la base de datos
-        objects = [ZtfObject(**data) for data in objects_data]
+        objects = [ZtfObject(**data) for data in ZTF_OBJECT_DATA["filter"]]
         with self.db.session() as session:
             for obj in objects:
                 session.add(obj)
@@ -505,7 +315,7 @@ class ZtfObjectModelTest(unittest.TestCase):
 
 @pytest.mark.usefixtures("psql_service")
 class DetectionModelTest(unittest.TestCase):
-    """  Pruebas específicas para el modelo Detection"""
+    """Pruebas específicas para el modelo Detection"""
     
     @classmethod
     def setUpClass(cls):
@@ -527,53 +337,29 @@ class DetectionModelTest(unittest.TestCase):
         self.db.drop_db()
 
     def test_query_empty_tables(self):
-        """Verificar que se pueden realizar consultas a la tabla Detection vacia"""
+        """Verificar que se pueden realizar consultas a la tabla Detection vacía"""
         with self.db.session() as session:
             query = select(Detection)
             obj = session.execute(query)
-            # Verificar que no hay objectos (db vacia)
+            # Verificar que no hay objetos (base de datos vacía)
             self.assertEqual(len(list(obj)), 0)
 
     def test_create_and_query_objects(self):
-        
+        """Verificar que se pueden crear y consultar objetos en la base de datos"""
         # Primero, crear un objeto al que referenciarán las detecciones
-        parent_object = Object(
-            oid=12345678901234567,
-            tid=1,
-            sid=1,
-            meanra=293.26922,
-            meandec=74.38752,
-            sigmara=0.000326,
-            sigmade=0.000064,
-            firstmjd=60058.47743,
-            lastmjd=60207.21820,
-            deltamjd=148.74077,
-            n_det=42,
-            n_forced=10,
-            n_non_det=5,
-            corrected=True,
-            stellar=False
-        )
+        parent_object = Object(**OBJECT_DATA["filter"][0])
         
         # Guardar el objeto padre
         with self.db.session() as session:
             session.add(parent_object)
         
-        """Verify that objects can be created and queried in the database"""
-        # Create a new object
-        test_object = Detection(
-            oid= 12345678901234567,  
-            measurement_id= 98765432109876543,  
-            mjd= 59000.123456,  
-            ra= 150.2345678,  
-            dec= -20.9876543,  
-            band= 2 
-        )
+        # Crear un nuevo objeto de detección
+        test_object = Detection(**DETECTION_DATA["filter"][0])
 
         with self.db.session() as session:
             session.add(test_object)
 
-        # Verificar que el objecto se ha guardado
+        # Verificar que el objeto se ha guardado
         with self.db.session() as session:
             query = select(Detection)
             objects = list(session.execute(query))
@@ -582,132 +368,40 @@ class DetectionModelTest(unittest.TestCase):
 
     def test_create_multiple_objects(self):
         """Verificar que se pueden crear y consultar múltiples objetos"""
-        
-        """Verificar que se pueden filtrar objetos con criterios específicos"""
         # Primero, crear un objeto al que referenciarán las detecciones
-        parent_object = Object(
-            oid=12345680,
-            tid=1,
-            sid=1,
-            meanra=293.26922,
-            meandec=74.38752,
-            sigmara=0.000326,
-            sigmade=0.000064,
-            firstmjd=60058.47743,
-            lastmjd=60207.21820,
-            deltamjd=148.74077,
-            n_det=42,
-            n_forced=10,
-            n_non_det=5,
-            corrected=True,
-            stellar=False
-        )
+        parent_object = Object(**OBJECT_DATA["filter"][0])
         
         # Guardar el objeto padre
         with self.db.session() as session:
             session.add(parent_object)
         
-        # Crear varios objetos con datos diferentes
-        objects_data = [
-            {
-                "oid": 12345680,
-                "measurement_id": 1001,
-                "mjd": 60080.5432,
-                "ra": 293.26945,
-                "dec": 74.38762,
-                "band": 1
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 1002,
-                "mjd": 60085.6543,
-                "ra": 293.26930,
-                "dec": 74.38758,
-                "band": 2
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 1003,
-                "mjd": 60090.7654,
-                "ra": 293.26918,
-                "dec": 74.38750,
-                "band": 1
-            }
-        ]
-
         # Crear instancias de Detection para cada conjunto de datos
-        objects = [Detection(**data) for data in objects_data]
+        objects = [Detection(**data) for data in DETECTION_DATA["filter"]]
 
-        # Agregar todos los objectos en una sola sesión
+        # Agregar todos los objetos en una sola sesión
         with self.db.session() as session:
             for obj in objects:
                 session.add(obj)
         
-        # Verificar que se han guardado todos los objectos
+        # Verificar que se han guardado todos los objetos
         with self.db.session() as session:
             query = select(Detection)
             saved_objects = list(session.execute(query).scalars())
 
-            # Ferificar que el numero de objectos guardado coincide con los creados
-            self.assertEqual(len(saved_objects), len(objects_data))
+            # Verificar que el número de objetos guardado coincide con los creados
+            self.assertEqual(len(saved_objects), len(DETECTION_DATA["filter"]))
 
     def test_filter_objects(self):
         """Verificar que se pueden filtrar objetos con criterios específicos"""
-        
-        """Verificar que se pueden filtrar objetos con criterios específicos"""
         # Primero, crear un objeto al que referenciarán las detecciones
-        parent_object = Object(
-            oid=12345680,
-            tid=1,
-            sid=1,
-            meanra=293.26922,
-            meandec=74.38752,
-            sigmara=0.000326,
-            sigmade=0.000064,
-            firstmjd=60058.47743,
-            lastmjd=60207.21820,
-            deltamjd=148.74077,
-            n_det=42,
-            n_forced=10,
-            n_non_det=5,
-            corrected=True,
-            stellar=False
-        )
+        parent_object = Object(**OBJECT_DATA["filter"][0])
         
         # Guardar el objeto padre
         with self.db.session() as session:
             session.add(parent_object)
         
-        # Crear varios objetos
-        objects_data = [
-            {
-                "oid": 12345680,
-                "measurement_id": 1001,
-                "mjd": 60080.5432,
-                "ra": 293.26945,
-                "dec": 74.38762,
-                "band": 1
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 1002,
-                "mjd": 60085.6543,
-                "ra": 293.26930,
-                "dec": 74.38758,
-                "band": 2
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 1003,
-                "mjd": 60090.7654,
-                "ra": 293.26918,
-                "dec": 74.38750,
-                "band": 1
-            }
-        ]
-
-        # Crear y agregar multiples objectos a la DB
-        objects = [Detection(**data) for data in objects_data]
+        # Crear y agregar múltiples objetos a la DB
+        objects = [Detection(**data) for data in DETECTION_DATA["filter"]]
         with self.db.session() as session:
             for obj in objects:
                 session.add(obj)
@@ -758,9 +452,9 @@ class DetectionModelTest(unittest.TestCase):
 
 @pytest.mark.usefixtures("psql_service")
 class ZtfDetectionModelTest(unittest.TestCase):
-    """ Pruebas especificas para el modelo ZtfDetection """
+    """Pruebas específicas para el modelo ZtfDetection"""
+    
     @classmethod
-
     def setUpClass(cls):
         config = {
             "HOST": "localhost",
@@ -780,134 +474,24 @@ class ZtfDetectionModelTest(unittest.TestCase):
         self.db.drop_db()
 
     def test_query_empty_tables(self):
-        """Verificar que se pueden realizar consultas a la tabla Detection vacia"""
+        """Verificar que se pueden realizar consultas a la tabla ZtfDetection vacía"""
         with self.db.session() as session:
             query = select(ZtfDetection)
             obj = session.execute(query)
-            # Verificar que no hay objectos (db vacia)
+            # Verificar que no hay objetos (base de datos vacía)
             self.assertEqual(len(list(obj)), 0)
 
     def test_create_and_query_detection(self):
         """Verificar que se pueden crear y consultar detecciones en la base de datos"""
         # Primero, crear el objeto al que hará referencia la detección
-        test_object = Object(
-            oid=12345680,
-            ndethist=5,
-            ncovhist=5,
-            mjdstarthist=58000.0,
-            mjdendhist=59000.0,
-            corrected=False,
-            stellar=False,
-            ndet=5,
-            firstmjd=58000.0,
-            lastmjd=59000.0,
-            deltajd=1000.0,
-            meanra=150.0,
-            meandec=20.0,
-            sigmara=0.1,
-            sigmadec=0.1,
-            class_name="variable",
-            class_score=0.9
-        )
+        test_object = Object(**OBJECT_DATA["filter"][0])
         
         with self.db.session() as session:
             session.add(test_object)
             session.commit()
         
         # Crear una nueva detección
-        test_detection = ZtfDetection(
-            oid=12345680,
-            measurement_id=987654321,
-            pid=123456,
-            diffmaglim=19.5,
-            isdiffpos=True,
-            nid=1,
-            magpsf=18.2,
-            sigmapsf=0.1,
-            magap=18.3,
-            sigmagap=0.15,
-            distnr=0.5,
-            rb=0.8,
-            rbversion="t2",
-            drb=0.9,
-            drbversion="t2",
-            magapbig=18.0,
-            sigmagapbig=0.2,
-            rband=2,
-            magpsf_corr=0,
-            sigmapsf_corr=0,
-            sigmapsf_corr_ext=0,
-            corrected=False,
-            dubious=False,
-            parent_candid=12345,
-            has_stamp=True,
-            step_id_corr=0
-        )
-        
-        with self.db.session() as session:
-            session.add(test_detection)
-        
-        # Verificar que la detección se ha guardado
-        with self.db.session() as session:
-            query = select(ZtfDetection)
-            detections = list(session.execute(query))
-            
-            self.assertEqual(len(detections), 1)
-    
-    def test_create_and_query_detection(self):
-        """Verificar que se pueden crear y consultar detecciones en la base de datos"""
-        # Primero, crear el objeto al que hará referencia la detección
-        test_object = Object(
-            oid=12345680,
-            tid=1,
-            sid=1,
-            meanra=150.0,
-            meandec=20.0,
-            sigmara=0.1,
-            sigmade=0.1,
-            firstmjd=58000.0,
-            lastmjd=59000.0,
-            deltamjd=1000.0,
-            n_det=5,
-            n_forced=2,
-            n_non_det=10,
-            corrected=False,
-            stellar=False
-        )
-        
-        with self.db.session() as session:
-            session.add(test_object)
-            session.commit()
-        
-        # Crear una nueva detección
-        test_detection = ZtfDetection(
-            oid=12345680,
-            measurement_id=987654321,
-            pid=123456,
-            diffmaglim=19.5,
-            isdiffpos=True,
-            nid=1,
-            magpsf=18.2,
-            sigmapsf=0.1,
-            magap=18.3,
-            sigmagap=0.15,
-            distnr=0.5,
-            rb=0.8,
-            rbversion="t2",
-            drb=0.9,
-            drbversion="t2",
-            magapbig=18.0,
-            sigmagapbig=0.2,
-            rband=2,
-            magpsf_corr=0,
-            sigmapsf_corr=0,
-            sigmapsf_corr_ext=0,
-            corrected=False,
-            dubious=False,
-            parent_candid=12345,
-            has_stamp=True,
-            step_id_corr=0
-        )
+        test_detection = ZtfDetection(**ZTF_DETECTION_DATA["filter"][0])
         
         with self.db.session() as session:
             session.add(test_detection)
@@ -922,140 +506,15 @@ class ZtfDetectionModelTest(unittest.TestCase):
     def test_create_multiple_detections(self):
         """Verificar que se pueden crear y consultar múltiples detecciones"""
         # Primero, crear los objetos a los que harán referencia las detecciones
-        objects_data = [
-            {
-                "oid": 12345680,
-                "tid": 1,
-                "sid": 1,
-                "meanra": 150.0,
-                "meandec": 20.0,
-                "sigmara": 0.1,
-                "sigmade": 0.1,
-                "firstmjd": 58000.0,
-                "lastmjd": 59000.0,
-                "deltamjd": 1000.0,
-                "n_det": 5,
-                "n_forced": 2,
-                "n_non_det": 10,
-                "corrected": False,
-                "stellar": False
-            },
-            {
-                "oid": 12345681,
-                "tid": 1,
-                "sid": 2,
-                "meanra": 151.0,
-                "meandec": 21.0,
-                "sigmara": 0.1,
-                "sigmade": 0.1,
-                "firstmjd": 58100.0,
-                "lastmjd": 59100.0,
-                "deltamjd": 1000.0,
-                "n_det": 6,
-                "n_forced": 3,
-                "n_non_det": 8,
-                "corrected": False,
-                "stellar": True
-            }
-        ]
-        
-        # Crear y agregar los objetos
-        objects = [Object(**data) for data in objects_data]
-        with self.db.session() as session:
-            for obj in objects:
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
                 session.add(obj)
-            session.commit()
-        
-        # Crear varias detecciones con datos diferentes
-        detections_data = [
-            {
-                "oid": 12345680,
-                "measurement_id": 987654321,
-                "pid": 123456,
-                "diffmaglim": 19.5,
-                "isdiffpos": True,
-                "nid": 1,
-                "magpsf": 18.2,
-                "sigmapsf": 0.1,
-                "magap": 18.3,
-                "sigmagap": 0.15,
-                "distnr": 0.5,
-                "rb": 0.8,
-                "rbversion": "t2",
-                "drb": 0.9,
-                "drbversion": "t2",
-                "magapbig": 18.0,
-                "sigmagapbig": 0.2,
-                "rband": 2,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": False,
-                "parent_candid": 12345,
-                "has_stamp": True,
-                "step_id_corr": 0
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 987654322,
-                "pid": 123457,
-                "diffmaglim": 19.6,
-                "isdiffpos": True,
-                "nid": 2,
-                "magpsf": 18.3,
-                "sigmapsf": 0.12,
-                "magap": 18.4,
-                "sigmagap": 0.16,
-                "distnr": 0.6,
-                "rb": 0.85,
-                "rbversion": "t2",
-                "drb": 0.91,
-                "drbversion": "t2",
-                "magapbig": 18.1,
-                "sigmagapbig": 0.21,
-                "rband": 2,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": False,
-                "parent_candid": 12346,
-                "has_stamp": True,
-                "step_id_corr": 0
-            },
-            {
-                "oid": 12345681,
-                "measurement_id": 987654323,
-                "pid": 123458,
-                "diffmaglim": 19.7,
-                "isdiffpos": False,
-                "nid": 3,
-                "magpsf": 18.4,
-                "sigmapsf": 0.13,
-                "magap": 18.5,
-                "sigmagap": 0.17,
-                "distnr": 0.7,
-                "rb": 0.86,
-                "rbversion": "t2",
-                "drb": 0.92,
-                "drbversion": "t2",
-                "magapbig": 18.2,
-                "sigmagapbig": 0.22,
-                "rband": 1,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": True,
-                "parent_candid": 12347,
-                "has_stamp": False,
-                "step_id_corr": 0
-            }
-        ]
-        
+                session.commit()
+            
         # Crear instancias de ZtfDetection para cada conjunto de datos
-        detections = [ZtfDetection(**data) for data in detections_data]
+        detections = [ZtfDetection(**data) for data in ZTF_DETECTION_DATA["filter"]]
         
         # Agregar todas las detecciones en una sola sesión
         with self.db.session() as session:
@@ -1068,190 +527,20 @@ class ZtfDetectionModelTest(unittest.TestCase):
             saved_detections = list(session.execute(query).scalars())
             
             # Verificar que el número de detecciones guardadas coincide con las creadas
-            self.assertEqual(len(saved_detections), len(detections_data))
+            self.assertEqual(len(saved_detections), len(ZTF_DETECTION_DATA["filter"]))
     
     def test_filter_detections(self):
         """Verificar que se pueden filtrar detecciones con criterios específicos"""
         # Primero, crear los objetos a los que harán referencia las detecciones
-        objects_data = [
-            {
-                "oid": 12345680,
-                "tid": 1,
-                "sid": 1,
-                "meanra": 150.0,
-                "meandec": 20.0,
-                "sigmara": 0.1,
-                "sigmade": 0.1,
-                "firstmjd": 58000.0,
-                "lastmjd": 59000.0,
-                "deltamjd": 1000.0,
-                "n_det": 5,
-                "n_forced": 2,
-                "n_non_det": 10,
-                "corrected": False,
-                "stellar": False
-            },
-            {
-                "oid": 12345681,
-                "tid": 1,
-                "sid": 2,
-                "meanra": 151.0,
-                "meandec": 21.0,
-                "sigmara": 0.1,
-                "sigmade": 0.1,
-                "firstmjd": 58100.0,
-                "lastmjd": 59100.0,
-                "deltamjd": 1000.0,
-                "n_det": 6,
-                "n_forced": 3,
-                "n_non_det": 8,
-                "corrected": False,
-                "stellar": True
-            },
-            {
-                "oid": 12345682,
-                "tid": 2,
-                "sid": 1,
-                "meanra": 152.0,
-                "meandec": 22.0,
-                "sigmara": 0.1,
-                "sigmade": 0.1,
-                "firstmjd": 58200.0,
-                "lastmjd": 59200.0,
-                "deltamjd": 1000.0,
-                "n_det": 7,
-                "n_forced": 4,
-                "n_non_det": 12,
-                "corrected": True,
-                "stellar": False
-            }
-        ]
-        
-        # Crear y agregar los objetos
-        objects = [Object(**data) for data in objects_data]
-        with self.db.session() as session:
-            for obj in objects:
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
                 session.add(obj)
-            session.commit()
+                session.commit()
             
-        # Crear varias detecciones
-        detections_data = [
-            {
-                "oid": 12345680,
-                "measurement_id": 987654321,
-                "pid": 123456,
-                "diffmaglim": 19.5,
-                "isdiffpos": True,
-                "nid": 1,
-                "magpsf": 18.2,
-                "sigmapsf": 0.1,
-                "magap": 18.3,
-                "sigmagap": 0.15,
-                "distnr": 0.5,
-                "rb": 0.8,
-                "rbversion": "t2",
-                "drb": 0.9,
-                "drbversion": "t2",
-                "magapbig": 18.0,
-                "sigmagapbig": 0.2,
-                "rband": 2,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": False,
-                "parent_candid": 12345,
-                "has_stamp": True,
-                "step_id_corr": 0
-            },
-            {
-                "oid": 12345680,
-                "measurement_id": 987654322,
-                "pid": 123457,
-                "diffmaglim": 19.6,
-                "isdiffpos": True,
-                "nid": 2,
-                "magpsf": 17.8,
-                "sigmapsf": 0.12,
-                "magap": 17.9,
-                "sigmagap": 0.16,
-                "distnr": 0.6,
-                "rb": 0.85,
-                "rbversion": "t2",
-                "drb": 0.91,
-                "drbversion": "t2",
-                "magapbig": 17.7,
-                "sigmagapbig": 0.21,
-                "rband": 2,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": False,
-                "parent_candid": 12346,
-                "has_stamp": True,
-                "step_id_corr": 0
-            },
-            {
-                "oid": 12345681,
-                "measurement_id": 987654323,
-                "pid": 123458,
-                "diffmaglim": 19.7,
-                "isdiffpos": False,
-                "nid": 3,
-                "magpsf": 18.5,
-                "sigmapsf": 0.13,
-                "magap": 18.6,
-                "sigmagap": 0.17,
-                "distnr": 0.7,
-                "rb": 0.86,
-                "rbversion": "t2",
-                "drb": 0.92,
-                "drbversion": "t2",
-                "magapbig": 18.3,
-                "sigmagapbig": 0.22,
-                "rband": 1,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": False,
-                "dubious": True,
-                "parent_candid": 12347,
-                "has_stamp": False,
-                "step_id_corr": 0
-            },
-            {
-                "oid": 12345682,
-                "measurement_id": 987654324,
-                "pid": 123459,
-                "diffmaglim": 19.8,
-                "isdiffpos": False,
-                "nid": 4,
-                "magpsf": 19.0,
-                "sigmapsf": 0.15,
-                "magap": 19.1,
-                "sigmagap": 0.19,
-                "distnr": 0.8,
-                "rb": 0.75,
-                "rbversion": "t2",
-                "drb": 0.88,
-                "drbversion": "t2",
-                "magapbig": 18.9,
-                "sigmagapbig": 0.25,
-                "rband": 1,
-                "magpsf_corr": 0,
-                "sigmapsf_corr": 0,
-                "sigmapsf_corr_ext": 0,
-                "corrected": True,
-                "dubious": False,
-                "parent_candid": 12348,
-                "has_stamp": True,
-                "step_id_corr": 1
-            }
-        ]
-        
         # Crear y agregar múltiples detecciones a la base de datos
-        detections = [ZtfDetection(**data) for data in detections_data]
+        detections = [ZtfDetection(**data) for data in ZTF_DETECTION_DATA["filter"]]
         with self.db.session() as session:
             for det in detections:
                 session.add(det)
@@ -1298,5 +587,468 @@ class ZtfDetectionModelTest(unittest.TestCase):
                     (12345680, 987654322)
                 ])
             )
+@pytest.mark.usefixtures("psql_service")
+class ForcedPhotometryModelTest(unittest.TestCase):
+    """Pruebas específicas para el modelo ForcedPhotometry"""
+    
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "HOST": "localhost",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "PORT": 5435,
+            "DB_NAME": "postgres",
+        }
+        cls.db = PsqlDatabase(config)
+    
+    def setUp(self):
+        """Preparar la base de datos antes de cada prueba"""
+        self.db.create_db()
+
+    def tearDown(self):
+        """Limpiar la base de datos después de cada prueba"""
+        self.db.drop_db()
+
+    def test_query_empty_tables(self):
+        """Verificar que se pueden realizar consultas a la tabla ForcedPhotometry vacía"""
+        with self.db.session() as session:
+            query = select(ForcedPhotometry)
+            obj = session.execute(query)
+            # Verificar que no hay objetos (base de datos vacía)
+            self.assertEqual(len(list(obj)), 0)
+
+    def test_create_and_query_forced_photometry(self):
+        """Verificar que se pueden crear y consultar mediciones de fotometría forzada en la base de datos"""
+        # Primero, crear el objeto al que hará referencia la fotometría forzada
+        test_object = Object(**OBJECT_DATA["filter"][0])
+        with self.db.session() as session:
+            session.add(test_object)
+            session.commit()
+            object_oid = test_object.oid
+        
+        # Crear una nueva entrada de fotometría forzada
+        test_forced_photometry = ForcedPhotometry(
+            oid=object_oid,
+            measurement_id=987654321,
+            mjd=58765.4321,
+            ra=150.123,
+            dec=20.456,
+            band=1
+        )
+        
+        with self.db.session() as session:
+            session.add(test_forced_photometry)
+        
+        # Verificar que la medición se ha guardado
+        with self.db.session() as session:
+            query = select(ForcedPhotometry)
+            measurements = list(session.execute(query))
+            
+            self.assertEqual(len(measurements), 1)
+    
+    def test_create_multiple_forced_photometry(self):
+        """Verificar que se pueden crear y consultar múltiples mediciones de fotometría forzada"""
+        # Primero, crear los objetos a los que harán referencia las mediciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear datos para varias mediciones de fotometría forzada
+        photometry_data = FORCED_PHOTOMETRY_DATA["filter"]
+        
+        # Crear instancias de ForcedPhotometry para cada conjunto de datos
+        measurements = [ForcedPhotometry(**data) for data in photometry_data]
+        
+        # Agregar todas las mediciones en una sola sesión
+        with self.db.session() as session:
+            for m in measurements:
+                session.add(m)
+        
+        # Verificar que se han guardado todas las mediciones
+        with self.db.session() as session:
+            query = select(ForcedPhotometry)
+            saved_measurements = list(session.execute(query).scalars())
+            
+            # Verificar que el número de mediciones guardadas coincide con las creadas
+            self.assertEqual(len(saved_measurements), len(photometry_data))
+    
+    def test_filter_forced_photometry(self):
+        """Verificar que se pueden filtrar mediciones de fotometría forzada con criterios específicos"""
+        # Primero, crear los objetos a los que harán referencia las mediciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear y agregar múltiples mediciones a la base de datos
+        measurements = [ForcedPhotometry(**data) for data in FORCED_PHOTOMETRY_DATA["filter"]]
+        with self.db.session() as session:
+            for m in measurements:
+                session.add(m)
+        
+        # Probar diferentes filtros
+        with self.db.session() as session:
+            # Filtrar por mjd > 58766
+            query1 = select(ForcedPhotometry).where(ForcedPhotometry.mjd > 58766)
+            later_measurements = list(session.execute(query1).scalars())
+            self.assertEqual(len(later_measurements), 3)  # Debería encontrar 3 mediciones
+            
+            # Filtrar por band = 1
+            query2 = select(ForcedPhotometry).where(ForcedPhotometry.band == 1)
+            band1_measurements = list(session.execute(query2).scalars())
+            self.assertEqual(len(band1_measurements), 2)  # Debería encontrar 2 mediciones
+            
+            # Filtrar por rango de dec
+            query3 = select(ForcedPhotometry).where(ForcedPhotometry.dec.between(70, 73))
+            mid_dec_measurements = list(session.execute(query3).scalars())
+            self.assertEqual(len(mid_dec_measurements), 1)  # Debería encontrar 1 medición
+            
+            # Filtrar por múltiples condiciones
+            query4 = select(ForcedPhotometry).where(
+                ForcedPhotometry.mjd > 58766,
+                ForcedPhotometry.band == 1
+            )
+            combined_filter_measurements = list(session.execute(query4).scalars())
+            self.assertEqual(len(combined_filter_measurements), 1)  # Debería encontrar 1 medición
+            
+            # Verificar que las mediciones filtradas son las esperadas (usando oid y measurement_id)
+            self.assertEqual(
+                sorted([(m.oid, m.measurement_id) for m in later_measurements]), 
+                sorted([
+                    (12345680, 987654322),
+                    (12345681, 987654323),
+                    (12345682, 987654324)
+                ])
+            )
+            
+            self.assertEqual(
+                sorted([(m.oid, m.measurement_id) for m in band1_measurements]), 
+                sorted([
+                    (12345680, 987654321),
+                    (12345681, 987654323)
+                ])
+            )
+
+
+@pytest.mark.usefixtures("psql_service")
+class ZtfForcedPhotometryModelTest(unittest.TestCase):
+    """Pruebas específicas para el modelo ZtfForcedPhotometry"""
+    
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "HOST": "localhost",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "PORT": 5435,
+            "DB_NAME": "postgres",
+        }
+        cls.db = PsqlDatabase(config)
+    
+    def setUp(self):
+        """Preparar la base de datos antes de cada prueba"""
+        self.db.create_db()
+
+    def tearDown(self):
+        """Limpiar la base de datos después de cada prueba"""
+        self.db.drop_db()
+
+    def test_query_empty_tables(self):
+        """Verificar que se pueden realizar consultas a la tabla ZtfForcedPhotometry vacía"""
+        with self.db.session() as session:
+            query = select(ZtfForcedPhotometry)
+            obj = session.execute(query)
+            # Verificar que no hay objetos (base de datos vacía)
+            self.assertEqual(len(list(obj)), 0)
+
+    def test_create_and_query_ztf_forced_photometry(self):
+        """Verificar que se pueden crear y consultar mediciones de fotometría forzada ZTF en la base de datos"""
+        # Primero, crear el objeto al que hará referencia la fotometría forzada
+        test_object = Object(**OBJECT_DATA["filter"][0])
+        
+        with self.db.session() as session:
+            session.add(test_object)
+            session.commit()
+        
+        # Crear una nueva entrada de fotometría forzada ZTF
+        test_ztf_photometry = ZtfForcedPhotometry(**ZTF_FORCED_PHOTOMETRY_DATA["filter"][0])
+        
+        with self.db.session() as session:
+            session.add(test_ztf_photometry)
+        
+        # Verificar que la medición se ha guardado
+        with self.db.session() as session:
+            query = select(ZtfForcedPhotometry)
+            measurements = list(session.execute(query))
+            
+            self.assertEqual(len(measurements), 1)
+    
+    def test_create_multiple_ztf_forced_photometry(self):
+        """Verificar que se pueden crear y consultar múltiples mediciones de fotometría forzada ZTF"""
+        # Primero, crear los objetos a los que harán referencia las mediciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear instancias de ZtfForcedPhotometry para cada conjunto de datos
+        photometry_data = ZTF_FORCED_PHOTOMETRY_DATA["filter"]
+        measurements = [ZtfForcedPhotometry(**data) for data in photometry_data]
+        
+        # Agregar todas las mediciones en una sola sesión
+        with self.db.session() as session:
+            for m in measurements:
+                session.add(m)
+        
+        # Verificar que se han guardado todas las mediciones
+        with self.db.session() as session:
+            query = select(ZtfForcedPhotometry)
+            saved_measurements = list(session.execute(query).scalars())
+            
+            # Verificar que el número de mediciones guardadas coincide con las creadas
+            self.assertEqual(len(saved_measurements), len(photometry_data))
+    
+    def test_filter_ztf_forced_photometry(self):
+        """Verificar que se pueden filtrar mediciones de fotometría forzada ZTF con criterios específicos"""
+        # Primero, crear los objetos a los que harán referencia las mediciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear y agregar múltiples mediciones a la base de datos
+        measurements = [ZtfForcedPhotometry(**data) for data in ZTF_FORCED_PHOTOMETRY_DATA["filter"]]
+        with self.db.session() as session:
+            for m in measurements:
+                session.add(m)
+        
+        # Probar diferentes filtros
+        with self.db.session() as session:
+            # Filtrar por mag < 19.0
+            query1 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.mag < 19.0)
+            bright_measurements = list(session.execute(query1).scalars())
+            self.assertEqual(len(bright_measurements), 3)  # Debería encontrar 3 mediciones
+            
+            # Filtrar por rband = 1
+            query2 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.rband == 1)
+            band1_measurements = list(session.execute(query2).scalars())
+            self.assertEqual(len(band1_measurements), 2)  # Debería encontrar 2 mediciones
+            
+            # Filtrar por isdiffpos
+            query3 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.isdiffpos == 1)
+            isdiffpos_measurements = list(session.execute(query3).scalars())
+            self.assertEqual(len(isdiffpos_measurements), 2)  # Debería encontrar 2 mediciones
+            
+            # Filtrar por corrected = True
+            query4 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.corrected == True)
+            corrected_measurements = list(session.execute(query4).scalars())
+            self.assertEqual(len(corrected_measurements), 2)  # Debería encontrar 2 mediciones
+            
+            # Filtrar por rango de magnr
+            query5 = select(ZtfForcedPhotometry).where(ZtfForcedPhotometry.magnr.between(17.0, 18.0))
+            mid_magnr_measurements = list(session.execute(query5).scalars())
+            self.assertEqual(len(mid_magnr_measurements), 2)  # Debería encontrar 2 mediciones
+            
+            # Filtrar por múltiples condiciones
+            query6 = select(ZtfForcedPhotometry).where(
+                ZtfForcedPhotometry.mag < 19.0,
+                ZtfForcedPhotometry.corrected == True
+            )
+            combined_filter_measurements = list(session.execute(query6).scalars())
+            self.assertEqual(len(combined_filter_measurements), 1)  # Debería encontrar 1 medición
+            
+            # Verificar que las mediciones filtradas son las esperadas (usando oid y measurement_id)
+            self.assertEqual(
+                sorted([(m.oid, m.measurement_id) for m in bright_measurements]), 
+                sorted([
+                    (12345680, 987654321),
+                    (12345680, 987654322),
+                    (12345682, 987654324)
+                ])
+            )
+            
+            self.assertEqual(
+                sorted([(m.oid, m.measurement_id) for m in band1_measurements]), 
+                sorted([
+                    (12345680, 987654321),
+                    (12345681, 987654323)
+                ])
+            )
+            
+            self.assertEqual(
+                sorted([(m.oid, m.measurement_id) for m in corrected_measurements]), 
+                sorted([
+                    (12345681, 987654323),
+                    (12345682, 987654324)
+                ])
+            )
+    
+@pytest.mark.usefixtures("psql_service")
+class NonDetectionModelTest(unittest.TestCase):
+    """Pruebas específicas para el modelo NonDetection"""
+    
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "HOST": "localhost",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "PORT": 5435,
+            "DB_NAME": "postgres",
+        }
+        cls.db = PsqlDatabase(config)
+    
+    def setUp(self):
+        """Preparar la base de datos antes de cada prueba"""
+        self.db.create_db()
+
+    def tearDown(self):
+        """Limpiar la base de datos después de cada prueba"""
+        self.db.drop_db()
+
+    def test_query_empty_tables(self):
+        """Verificar que se pueden realizar consultas a la tabla NonDetection vacía"""
+        with self.db.session() as session:
+            query = select(NonDetection)
+            obj = session.execute(query)
+            # Verificar que no hay objetos (base de datos vacía)
+            self.assertEqual(len(list(obj)), 0)
+
+    def test_create_and_query_non_detection(self):
+        """Verificar que se pueden crear y consultar no-detecciones en la base de datos"""
+        # Primero, crear el objeto al que hará referencia la no-detección
+        test_object = Object(**OBJECT_DATA["filter"][0])
+        
+        with self.db.session() as session:
+            session.add(test_object)
+            session.commit()
+            object_oid = test_object.oid
+        
+        # Crear una nueva entrada de no-detección
+        test_non_detection = NonDetection(
+            oid=object_oid,
+            band=1,
+            mjd=60030.12345,
+            diffmaglim=19.5
+        )
+        
+        with self.db.session() as session:
+            session.add(test_non_detection)
+        
+        # Verificar que la no-detección se ha guardado
+        with self.db.session() as session:
+            query = select(NonDetection)
+            non_detections = list(session.execute(query))
+            
+            self.assertEqual(len(non_detections), 1)
+    
+    def test_create_multiple_non_detections(self):
+        """Verificar que se pueden crear y consultar múltiples no-detecciones"""
+        # Primero, crear los objetos a los que harán referencia las no-detecciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear instancias de NonDetection para cada conjunto de datos
+        non_detection_data = NON_DETECTION_DATA["filter"]
+        non_detections = [NonDetection(**data) for data in non_detection_data]
+        
+        # Agregar todas las no-detecciones en una sola sesión
+        with self.db.session() as session:
+            for nd in non_detections:
+                session.add(nd)
+        
+        # Verificar que se han guardado todas las no-detecciones
+        with self.db.session() as session:
+            query = select(NonDetection)
+            saved_non_detections = list(session.execute(query).scalars())
+            
+            # Verificar que el número de no-detecciones guardadas coincide con las creadas
+            self.assertEqual(len(saved_non_detections), len(non_detection_data))
+    
+    def test_filter_non_detections(self):
+        """Verificar que se pueden filtrar no-detecciones con criterios específicos"""
+        # Primero, crear los objetos a los que harán referencia las no-detecciones
+        for obj_data in OBJECT_DATA["filter"]:
+            # Guardar el objeto
+            obj = Object(**obj_data)
+            with self.db.session() as session:
+                session.add(obj)
+                session.commit()
+        
+        # Crear y agregar múltiples no-detecciones a la base de datos
+        non_detections = [NonDetection(**data) for data in NON_DETECTION_DATA["filter"]]
+        with self.db.session() as session:
+            for nd in non_detections:
+                session.add(nd)
+        
+        # Probar diferentes filtros
+        with self.db.session() as session:
+            # Filtrar por diffmaglim > 20.0
+            query1 = select(NonDetection).where(NonDetection.diffmaglim > 20.0)
+            deep_non_detections = list(session.execute(query1).scalars())
+            self.assertEqual(len(deep_non_detections), 2)  # Debería encontrar 2 no-detecciones
+            
+            # Filtrar por band = 1
+            query2 = select(NonDetection).where(NonDetection.band == 1)
+            band1_non_detections = list(session.execute(query2).scalars())
+            self.assertEqual(len(band1_non_detections), 2)  # Debería encontrar 2 no-detecciones
+            
+            # Filtrar por rango de mjd
+            query3 = select(NonDetection).where(NonDetection.mjd.between(60035, 60041))
+            mid_mjd_non_detections = list(session.execute(query3).scalars())
+            self.assertEqual(len(mid_mjd_non_detections), 2)  # Debería encontrar 2 no-detecciones
+            
+            # Filtrar por un oid específico
+            query4 = select(NonDetection).where(NonDetection.oid == 12345680)
+            obj_non_detections = list(session.execute(query4).scalars())
+            self.assertEqual(len(obj_non_detections), 2)  # Debería encontrar 2 no-detecciones
+            
+            # Filtrar por múltiples condiciones
+            query5 = select(NonDetection).where(
+                NonDetection.diffmaglim > 19.5,
+                NonDetection.band == 1
+            )
+            combined_filter_non_detections = list(session.execute(query5).scalars())
+            self.assertEqual(len(combined_filter_non_detections), 1)  # Debería encontrar 1 no-detección
+            
+            # Verificar que las no-detecciones filtradas son las esperadas (usando oid y mjd)
+            self.assertEqual(
+                sorted([(nd.oid, nd.mjd) for nd in deep_non_detections]), 
+                sorted([
+                    (12345681, 60040.34567),
+                    (12345682, 60045.45678)
+                ])
+            )
+            
+            self.assertEqual(
+                sorted([(nd.oid, nd.mjd) for nd in band1_non_detections]), 
+                sorted([
+                    (12345680, 60030.12345),
+                    (12345681, 60040.34567)
+                ])
+            )
+            
+            self.assertEqual(
+                sorted([(nd.oid, nd.mjd) for nd in obj_non_detections]), 
+                sorted([
+                    (12345680, 60030.12345),
+                    (12345680, 60035.23456)
+                ])
+            )
+            
 if __name__ == "__main__":
     unittest.main()
