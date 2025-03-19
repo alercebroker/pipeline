@@ -36,9 +36,6 @@ pandas-stubs = "^2.2.3.241126"
 [tool.black]
 line-length = 79
 
-[tool.pytest.ini_options]
-addopts = "-x"
-
 [tool.pyright]
 typeCheckingMode = "strict"
 reportConstantRedefinition = false

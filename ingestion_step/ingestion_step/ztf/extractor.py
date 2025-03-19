@@ -31,34 +31,42 @@ def _extract_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _extract_prv_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [
-        {
-            "objectId": message["objectId"],
-            "parent_candid": message["candid"],
-            "has_stamp": _has_stamp(message),
-            **prv_candidate,
-        }
-        for message in messages
-        for prv_candidate in message["prv_candidates"]
-    ]
+    prv_candidates = []
+    for message in messages:
+        if "prv_candidates" not in message or message["prv_candidates"] is None:
+            continue
+        for prv_candidate in message["prv_candidates"]:
+            prv_candidates.append(
+                {
+                    "objectId": message["objectId"],
+                    "parent_candid": message["candid"],
+                    "has_stamp": _has_stamp(message),
+                    **prv_candidate,
+                }
+            )
+
+    return prv_candidates
 
 
 def _extract_fp_hist(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [
-        {
-            "objectId": message["objectId"],
-            "ra": message["candidate"]["ra"],
-            "dec": message["candidate"]["dec"],
-            "magzpsci": message["candidate"]["magzpsci"],
-            "forcediffimflux": message["candidate"]["forcediffimflux"],
-            "forcediffimfluxunc": message["candidate"]["forcediffimfluxunc"],
-            "parent_candid": message["candid"],
-            "has_stamp": _has_stamp(message),
-            **fp_hist,
-        }
-        for message in messages
-        for fp_hist in message["fp_hists"]
-    ]
+    fp_hists = []
+    for message in messages:
+        if "fp_hists" not in message or message["fp_hists"] is None:
+            continue
+        for fp_hist in message["fp_hists"]:
+            fp_hists.append(
+                {
+                    "objectId": message["objectId"],
+                    "ra": message["candidate"]["ra"],
+                    "dec": message["candidate"]["dec"],
+                    "magzpsci": message["candidate"]["magzpsci"],
+                    "parent_candid": None,
+                    "has_stamp": _has_stamp(message),
+                    **fp_hist,
+                }
+            )
+
+    return fp_hists
 
 
 def extract(messages: list[dict[str, Any]]):

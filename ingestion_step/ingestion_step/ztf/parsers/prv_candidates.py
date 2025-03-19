@@ -3,6 +3,9 @@ from typing import NamedTuple
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
+    add_drb,
+    add_drbversion,
+    add_rfid,
     add_sid,
     add_tid,
     apply_transforms,
@@ -11,9 +14,20 @@ from ingestion_step.ztf.parsers.transforms import (
     isdiffpos_to_int,
     jd_to_mjd,
     objectId_to_oid,
-    sigmadec_to_e_dec,
-    sigmara_to_e_ra,
 )
+
+prv_candidates_tansforms = [
+    objectId_to_oid,
+    candid_to_measurment_id,
+    add_tid,
+    add_sid,
+    fid_to_band,
+    jd_to_mjd,
+    isdiffpos_to_int,
+    add_drb,
+    add_drbversion,
+    add_rfid,
+]
 
 
 class ParsedPrvCandidates(NamedTuple):
@@ -48,7 +62,7 @@ def _parse_dets_from_prv_candidates(
         "magapbig",
         "sigmagapbig",
         "parent_candid",
-        # "rband",
+        "rfid",
         # "magpsf_corr",
         # "sigmapsf_corr",
         # "sigmapsf_corr_ext",
@@ -75,17 +89,6 @@ def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.Data
 def parse_prv_candidates(
     prv_candidates: pd.DataFrame,
 ) -> ParsedPrvCandidates:
-    prv_candidates_tansforms = [
-        objectId_to_oid,
-        candid_to_measurment_id,
-        add_tid,
-        add_sid,
-        fid_to_band,
-        jd_to_mjd,
-        sigmara_to_e_ra,
-        sigmadec_to_e_dec,
-        isdiffpos_to_int,
-    ]
     apply_transforms(prv_candidates, prv_candidates_tansforms)
 
     detections = _parse_dets_from_prv_candidates(prv_candidates)

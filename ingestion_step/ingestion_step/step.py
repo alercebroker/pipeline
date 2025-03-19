@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Hashable, Iterable, cast
+from typing import Any, Hashable
 
 import pandas as pd
 from apf.core.step import GenericStep

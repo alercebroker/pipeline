@@ -8,12 +8,18 @@ from ingestion_step.ztf.parsers.transforms import (
     apply_transforms,
     candid_to_measurment_id,
     fid_to_band,
-    isdiffpos_to_int,
     jd_to_mjd,
     objectId_to_oid,
-    sigmadec_to_e_dec,
-    sigmara_to_e_ra,
 )
+
+candidates_tansforms = [
+    objectId_to_oid,
+    candid_to_measurment_id,
+    add_tid,
+    add_sid,
+    fid_to_band,
+    jd_to_mjd,
+]
 
 
 class ParsedCandidates(NamedTuple):
@@ -57,7 +63,7 @@ def _parse_dets_from_candidates(
         "magapbig",
         "sigmagapbig",
         "parent_candid",
-        # "rband",
+        "rfid",
         # "magpsf_corr",
         # "sigmapsf_corr",
         # "sigmapsf_corr_ext",
@@ -75,17 +81,6 @@ def _parse_dets_from_candidates(
 def parse_candidates(
     candidates: pd.DataFrame,
 ) -> ParsedCandidates:
-    candidates_tansforms = [
-        objectId_to_oid,
-        candid_to_measurment_id,
-        add_tid,
-        add_sid,
-        fid_to_band,
-        jd_to_mjd,
-        sigmara_to_e_ra,
-        sigmadec_to_e_dec,
-        isdiffpos_to_int,
-    ]
     apply_transforms(candidates, candidates_tansforms)
 
     objects = _parse_objs_from_candidates(candidates)

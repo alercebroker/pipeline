@@ -1,14 +1,13 @@
 from typing import Any
 
-import extractor
 import pandas as pd
 
 from ingestion_step.core.parsed_data import ParsedData
+from ingestion_step.core.parser_interface import ParserInterface
+from ingestion_step.ztf import extractor
 from ingestion_step.ztf.parsers.candidates import parse_candidates
 from ingestion_step.ztf.parsers.fp_hist import parse_fp_hist
 from ingestion_step.ztf.parsers.prv_candidates import parse_prv_candidates
-
-from ..core.parser_interface import ParserInterface
 
 
 class ZTFParser(ParserInterface):

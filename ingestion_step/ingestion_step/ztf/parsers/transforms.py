@@ -29,6 +29,10 @@ def objectId_to_oid(df: pd.DataFrame):
     df["oid"] = df["objectId"].apply(_str_to_int)
 
 
+def add_candid(df: pd.DataFrame):
+    df["candid"] = df.apply(lambda x: x["objectId"] + str(x["pid"]), axis=1)
+
+
 def candid_to_measurment_id(df: pd.DataFrame):
     df["measurement_id"] = df["candid"]
 
@@ -121,6 +125,18 @@ def add_e_mag(df: pd.DataFrame):
         )[1],
         axis=1,
     )
+
+
+def add_drb(df: pd.DataFrame):
+    df["drb"] = None
+
+
+def add_drbversion(df: pd.DataFrame):
+    df["drbversion"] = None
+
+
+def add_rfid(df: pd.DataFrame):
+    df["rfid"] = None
 
 
 def apply_transforms(
