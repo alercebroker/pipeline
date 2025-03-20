@@ -139,6 +139,23 @@ def detections_to_astro_object(
         w3 = xmatches["allwise"]["W3mag"]
         w4 = xmatches["allwise"]["W4mag"]
 
+    sgscore1 = np.nan
+    sgmag1 = np.nan
+    srmag1 = np.nan
+    simag1 = np.nan
+    szmag1 = np.nan
+    distpsnr1 = np.nan
+
+    for det in detections:
+        if "sgscore1" in det["extra_fields"].keys():
+            sgscore1 = det["extra_fields"]["sgscore1"]
+            sgmag1 = det["extra_fields"]["sgmag1"]
+            srmag1 = det["extra_fields"]["srmag1"]
+            simag1 = det["extra_fields"]["simag1"]
+            szmag1 = det["extra_fields"]["szmag1"]
+            distpsnr1 = det["extra_fields"]["distpsnr1"]
+            continue
+
     metadata = pd.DataFrame(
         [
             ["aid", aid],
@@ -147,12 +164,12 @@ def detections_to_astro_object(
             ["W2", w2],
             ["W3", w3],
             ["W4", w4],
-            ["sgscore1", detections[0]["extra_fields"]["sgscore1"]],
-            ["sgmag1", detections[0]["extra_fields"]["sgmag1"]],
-            ["srmag1", detections[0]["extra_fields"]["srmag1"]],
-            ["simag1", detections[0]["extra_fields"]["simag1"]],
-            ["szmag1", detections[0]["extra_fields"]["szmag1"]],
-            ["distpsnr1", detections[0]["extra_fields"]["distpsnr1"]],
+            ["sgscore1", sgscore1],
+            ["sgmag1", sgmag1],
+            ["srmag1", srmag1],
+            ["simag1", simag1],
+            ["szmag1", szmag1],
+            ["distpsnr1", distpsnr1],
         ],
         columns=["name", "value"],
     ).fillna(value=np.nan)

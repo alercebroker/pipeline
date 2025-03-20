@@ -86,7 +86,52 @@ def test_step_squidward_no_features_result(
 
 
 @pytest.mark.ztf
-def test_step_squidward_min_detections(
+def test_step_squidward_min_detections_lower(
+    env_variables_squidward,
+):
+    env_variables_squidward(
+        "squidward",
+        "alerce_classifiers.squidward.model.SquidwardFeaturesClassifier",
+        {
+            "MODEL_PATH": os.getenv("TEST_SQUIDWARD_MODEL_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.squidward.mapper.SquidwardMapper",
+            "MIN_DETECTIONS": "8",
+        },
+    )
+
+    from settings import config
+    from .conftest import INPUT_SCHEMA_PATH, add_fields_to_message
+    from fastavro.utils import generate_many
+    from fastavro.schema import load_schema
+    import random
+
+    random.seed(42)
+    schema = load_schema(str(INPUT_SCHEMA_PATH))
+    messages = generate_many(schema, 2)
+    messages = list(messages)
+
+    for message in messages:
+        message = add_fields_to_message(
+            message,
+            "features_squidward",
+            ["g", "r"],
+            False,
+            False,
+            5,
+        )
+
+    step = LateClassifier(config=config())
+
+    output, result_messages, features = step.execute(messages)
+    probabilities = output.probabilities
+
+    assert len(probabilities) == 0
+
+    del step
+
+
+@pytest.mark.ztf
+def test_step_squidward_min_detections_greater(
     kafka_service,
     produce_messages,
     env_variables_squidward,
@@ -105,12 +150,6 @@ def test_step_squidward_min_detections(
     )
 
     from settings import config
-
-    produce_messages("features_squidward", n_forced=6)
-    step = LateClassifier(config=config())
-    step.execute = mock.MagicMock()
-    step.start()
-    step.execute.assert_not_called()
 
     produce_messages("features_squidward", n_forced=2)
     kconsumer = kafka_consumer("squidward")

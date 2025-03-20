@@ -152,62 +152,6 @@ class LateClassifier(GenericStep):
             self.log_data(model_input)
             raise e
 
-    def discard_bogus_detections(self, detections: list[dict]) -> list[dict]:
-        RB_THRESHOLD = 0.55
-
-        filtered_detections = []
-
-        for det in detections:
-            bogus = False
-
-            if "extra_fields" in det.keys():
-                rb = (
-                    det["extra_fields"]["rb"]
-                    if "rb" in det["extra_fields"].keys()
-                    else None
-                )
-                procstatus = (
-                    det["extra_fields"]["procstatus"]
-                    if "procstatus" in det["extra_fields"].keys()
-                    else None
-                )
-            else:
-                rb = det["rb"] if "rb" in det.keys() else None
-                procstatus = (
-                    det["procstatus"] if "procstatus" in det.keys() else None
-                )
-
-            mask_rb = (
-                rb is not None and not det["forced"] and (rb < RB_THRESHOLD)
-            )
-            mask_procstatus = (
-                procstatus is not None
-                and det["forced"]
-                and (procstatus != "0")
-                and (procstatus != "57")
-            )
-            if mask_rb or mask_procstatus:
-                bogus = True
-
-            if not bogus:
-                filtered_detections.append(det)
-
-        return filtered_detections
-
-    def pre_execute(self, messages: List[dict]):
-        if self.min_detections is None:
-            return messages
-
-        def has_enough_detections(message: dict) -> bool:
-            n_dets = len(
-                [True for det in message["detections"] if not det["forced"]]
-            )
-            return n_dets >= self.min_detections
-
-        filtered_messages = filter(has_enough_detections, messages)
-        filtered_messages = list(filtered_messages)
-        return filtered_messages
-
     def execute(self, messages):
         """Run the classification.
 
@@ -219,29 +163,27 @@ class LateClassifier(GenericStep):
         """
         self.logger.info("Processing %i messages.", len(messages))
 
-        filtered_messages = []
-        for message in messages:
-            filtered_message = message.copy()
-            filtered_message["detections"] = self.discard_bogus_detections(
-                message["detections"]
-            )
-
-            n_dets = len(
-                [
-                    True
-                    for det in filtered_message["detections"]
-                    if not det["forced"]
-                ]
-            )
-            if n_dets == 0:
-                filtered_message["detections"] = []
-                filtered_message["features"] = None
-            filtered_messages.append(filtered_message)
-
-        model_input = create_input_dto(filtered_messages)
         probabilities = OutputDTO(
             DataFrame(), {"top": DataFrame(), "children": {}}
         )
+
+        def has_enough_detections(message: dict) -> bool:
+            n_dets = len(
+                [True for det in message["detections"] if not det["forced"]]
+            )
+            return n_dets >= self.min_detections
+
+        if self.min_detections is None:
+            model_input = create_input_dto(messages)
+        else:
+            filtered_messages = filter(has_enough_detections, messages)
+            filtered_messages = list(filtered_messages)
+
+            if len(filtered_messages) == 0:
+                self.logger.info(f"No messages have enough detections")
+                return probabilities, messages, DataFrame()
+
+            model_input = create_input_dto(filtered_messages)
 
         can, error = self.model.can_predict(model_input)
         if not can:

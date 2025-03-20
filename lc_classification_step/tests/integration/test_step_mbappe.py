@@ -90,46 +90,7 @@ def test_step_mbappe_no_features_result(
 
 
 @pytest.mark.ztf
-def test_step_mbappe_min_detections(
-    kafka_service,
-    produce_messages,
-    env_variables_mbappe,
-    kafka_consumer: Callable[[str], KafkaConsumer],
-    scribe_consumer: Callable[[], KafkaConsumer],
-):
-
-    env_variables_mbappe(
-        "mbappe",
-        "alerce_classifiers.mbappe.model.MbappeClassifier",
-        {
-            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
-            "QUANTILES_PATH": os.getenv("TEST_MBAPPE_QUANTILES_PATH"),
-            "CONFIG_PATH": os.getenv("TEST_MBAPPE_CONFIG_PATH"),
-            "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
-            "MIN_DETECTIONS": "6",
-        },
-    )
-
-    from settings import config
-
-    produce_messages("features_mbappe", n_forced=6)
-    step = LateClassifier(config=config())
-    step.execute = mock.MagicMock()
-    step.start()
-    step.execute.assert_not_called()
-
-    produce_messages("features_mbappe", n_forced=2)
-    kconsumer = kafka_consumer("mbappe")
-    step = LateClassifier(config=config())
-    step.start()
-
-    for message in kconsumer.consume():
-        assert_ztf_object_is_correct(message)
-        kconsumer.commit()
-
-
-@pytest.mark.ztf
-def test_step_mbappe_no_detections(
+def test_step_mbappe_min_detections_lower(
     env_variables_mbappe,
 ):
     env_variables_mbappe(
@@ -140,6 +101,7 @@ def test_step_mbappe_no_detections(
             "QUANTILES_PATH": os.getenv("TEST_MBAPPE_QUANTILES_PATH"),
             "CONFIG_PATH": os.getenv("TEST_MBAPPE_CONFIG_PATH"),
             "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
+            "MIN_DETECTIONS": "8",
         },
     )
 
@@ -163,9 +125,6 @@ def test_step_mbappe_no_detections(
             False,
             5,
         )
-        for det in message["detections"]:
-            if not det["forced"]:
-                det["extra_fields"]["rb"] = 0.1
 
     step = LateClassifier(config=config())
 
@@ -173,4 +132,38 @@ def test_step_mbappe_no_detections(
     probabilities = output.probabilities
 
     assert len(probabilities) == 0
-    assert len(features) == 0
+
+    del step
+
+
+@pytest.mark.ztf
+def test_step_mbappe_min_detections_greater(
+    kafka_service,
+    produce_messages,
+    env_variables_mbappe,
+    kafka_consumer: Callable[[str], KafkaConsumer],
+    scribe_consumer: Callable[[], KafkaConsumer],
+):
+
+    env_variables_mbappe(
+        "mbappe",
+        "alerce_classifiers.mbappe.model.MbappeClassifier",
+        {
+            "MODEL_PATH": os.getenv("TEST_MBAPPE_MODEL_PATH"),
+            "QUANTILES_PATH": os.getenv("TEST_MBAPPE_QUANTILES_PATH"),
+            "CONFIG_PATH": os.getenv("TEST_MBAPPE_CONFIG_PATH"),
+            "MAPPER_CLASS": "alerce_classifiers.mbappe.mapper.MbappeMapper",
+            "MIN_DETECTIONS": "6",
+        },
+    )
+
+    from settings import config
+
+    produce_messages("features_mbappe", n_forced=2)
+    kconsumer = kafka_consumer("mbappe")
+    step = LateClassifier(config=config())
+    step.start()
+
+    for message in kconsumer.consume():
+        assert_ztf_object_is_correct(message)
+        kconsumer.commit()

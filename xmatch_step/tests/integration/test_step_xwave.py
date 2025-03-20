@@ -8,7 +8,7 @@ from apf.producers import KafkaProducer, KafkaSchemalessProducer
 from confluent_kafka.admin import AdminClient
 from tests.data.messages import generate_input_batch, get_fake_xmatch
 from xmatch_step import XmatchStep
-from xmatch_step.core.xmatch_client import XmatchClient
+from xmatch_step.core.xwave_client import XwaveClient
 
 PRODUCER_SCHEMA_PATH = pathlib.Path(
     pathlib.Path(__file__).parent.parent.parent.parent,
@@ -78,6 +78,8 @@ XMATCH_CONFIG = {
             "Kmag",
             "e_Kmag",
         ],
+        "service_url": "http://quimal-db2.alerce.online:8081",
+        "selection": 1,
     }
 }
 
@@ -96,6 +98,7 @@ def setUp() -> None:
             "RETRIES": 3,
             "RETRY_INTERVAL": 1,
             "COMMIT": False,
+            "USE_XWAVE": True,
         }
         step_config.update(extra_config)
         step = XmatchStep(config=step_config)
@@ -125,17 +128,19 @@ def setUp() -> None:
         f.result()
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_step(kafka_service, setUp, kafka_consumer):
     step, batch = setUp()
     mock_xmatch = mock.Mock()
     mock_xmatch.return_value = get_fake_xmatch(batch)
-    XmatchClient.execute = mock_xmatch
+    XwaveClient.execute = mock_xmatch
     step.start()
     consumer = kafka_consumer(["xmatch"])
     messages = list(consumer.consume())
     assert len(messages) == 20
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_step_duplicate_objects(kafka_service, setUp, kafka_consumer):
     def repeat_oids(batch):
         return batch + batch
@@ -148,7 +153,7 @@ def test_step_duplicate_objects(kafka_service, setUp, kafka_consumer):
     step, batch = setUp(repeat_oids, {"CONSUMER_CONFIG": consumer_config})
     mock_xmatch = mock.Mock()
     mock_xmatch.return_value = get_fake_xmatch(batch)
-    XmatchClient.execute = mock_xmatch
+    XwaveClient.execute = mock_xmatch
     step.start()
     consumer = kafka_consumer(["xmatch"])
     messages = list(consumer.consume())
