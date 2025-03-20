@@ -1,0 +1,5 @@
+n_trees: 100
+criterion: gini
+max_depth: 50
+n_jobs: 8
+verbose: 11

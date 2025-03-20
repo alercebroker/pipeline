@@ -1,0 +1,6 @@
+__pycache__/
+
+/ztf_forced_photometry/preprocessed
+/ztf_forced_photometry/raw
+/ztf_forced_photometry/db_production
+/atlas

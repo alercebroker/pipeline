@@ -1,0 +1,5 @@
+n_trees: 500
+criterion: entropy
+max_depth: 100
+n_jobs: 8
+verbose: 11
