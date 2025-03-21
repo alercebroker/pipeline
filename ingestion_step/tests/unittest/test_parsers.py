@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from ingestion_step.ztf.extractor import ZTFData
-from ingestion_step.ztf.parsers import candidates, fp_hist, prv_candidates
+from ingestion_step.ztf.parsers import candidates, fp_hists, prv_candidates
 
 
 def apply_transforms(
@@ -54,16 +54,12 @@ def test_prv_candidates_parser(ztf_data: ZTFData):
         )
 
 
-def test_fp_hist_parser(ztf_data: ZTFData):
-    apply_transforms(ztf_data, "fp_hist", fp_hist.fp_transforms)
+def test_fp_hists_parser(ztf_data: ZTFData):
+    apply_transforms(ztf_data, "fp_hists", fp_hists.fp_transforms)
 
     try:
-        fp_hist._parse_fps_from_fp_hist(ztf_data["fp_hist"])
+        fp_hists._parse_fps_from_fp_hists(ztf_data["fp_hists"])
     except Exception as exception:
         pytest.fail(
-            f"Could not parse `forced_photometries` from `fp_hist`.\n{exception=}"
+            f"Could not parse `forced_photometries` from `fp_hists`.\n{exception=}"
         )
-
-
-def test_ztf_parser(ztf_data: ZTFData):
-    raise NotImplementedError

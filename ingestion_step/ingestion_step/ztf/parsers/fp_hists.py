@@ -30,7 +30,7 @@ fp_transforms = [
 ]
 
 
-def _parse_fps_from_fp_hist(fp_hist: pd.DataFrame) -> pd.DataFrame:
+def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
     cols = [
         "oid",
         "measurement_id",
@@ -78,11 +78,11 @@ def _parse_fps_from_fp_hist(fp_hist: pd.DataFrame) -> pd.DataFrame:
     return forced_photometries
 
 
-def parse_fp_hist(
-    fp_hist: pd.DataFrame,
+def parse_fp_hists(
+    fp_hists: pd.DataFrame,
 ) -> pd.DataFrame:
-    apply_transforms(fp_hist, fp_transforms)
+    apply_transforms(fp_hists, fp_transforms)
 
-    forced_photometries = _parse_fps_from_fp_hist(fp_hist)
+    forced_photometries = _parse_fps_from_fp_hists(fp_hists)
 
     return forced_photometries

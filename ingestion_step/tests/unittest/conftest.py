@@ -27,6 +27,17 @@ def ztf_data() -> extractor.ZTFData:
     ztf_data["prv_candidates"]["fid"] = np.random.randint(
         1, 4, size=len(ztf_data["prv_candidates"])
     )
-    ztf_data["fp_hist"]["fid"] = np.random.randint(1, 4, size=len(ztf_data["fp_hist"]))
+    ztf_data["fp_hists"]["fid"] = np.random.randint(
+        1, 4, size=len(ztf_data["fp_hists"])
+    )
 
     return ztf_data
+
+
+# Adds a better assertion message for subset comparassion
+def pytest_assertrepr_compare(op: str, left: object, right: object):
+    if isinstance(left, set) and isinstance(right, set) and op == "<=":
+        return [
+            "`left` is subset of `right` failed, missing elements from `right`:",
+            f"\t{left - right}",
+        ]

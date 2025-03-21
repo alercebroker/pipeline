@@ -6,7 +6,7 @@ import pandas as pd
 class ZTFData(TypedDict):
     candidates: pd.DataFrame
     prv_candidates: pd.DataFrame
-    fp_hist: pd.DataFrame
+    fp_hists: pd.DataFrame
 
 
 def _has_stamp(message: dict[str, Any]) -> bool:
@@ -48,7 +48,7 @@ def _extract_prv_candidates(messages: list[dict[str, Any]]) -> list[dict[str, An
     return prv_candidates
 
 
-def _extract_fp_hist(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _extract_fp_hists(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     fp_hists = []
     for message in messages:
         if "fp_hists" not in message or message["fp_hists"] is None:
@@ -73,5 +73,5 @@ def extract(messages: list[dict[str, Any]]):
     return ZTFData(
         candidates=pd.DataFrame(_extract_candidates(messages)),
         prv_candidates=pd.DataFrame(_extract_prv_candidates(messages)),
-        fp_hist=pd.DataFrame(_extract_fp_hist(messages)),
+        fp_hists=pd.DataFrame(_extract_fp_hists(messages)),
     )
