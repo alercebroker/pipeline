@@ -12,36 +12,30 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 FROM python-base as builder
 
-RUN pip install poetry
-COPY libs/survey_parser_plugins libs/survey_parser_plugins
-COPY sorting_hat_step/poetry.lock sorting_hat_step/pyproject.toml /app/
+RUN pip install poetry;
+COPY ingestion_step/poetry.lock ingestion_step/pyproject.toml /app/
 COPY libs/apf libs/apf
 COPY libs/db-plugins libs/db-plugins
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
-COPY schemas/sorting_hat_step schemas/sorting_hat_step
-COPY schemas/elasticc schemas/elasticc
-COPY schemas/ztf schemas/ztf 
-COPY schemas/atlas schemas/atlas 
 
 WORKDIR /app
-RUN poetry install --no-root --without=dev --without=test
-
+RUN poetry install --no-root --without=dev --without=test;
 
 FROM python:3.10-slim as production
-RUN pip install poetry
+RUN pip install poetry;
 
 COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
-COPY sorting_hat_step/sorting_hat_step /app/sorting_hat_step
-COPY sorting_hat_step/scripts /app/scripts
-COPY sorting_hat_step/credentials.py \
-  sorting_hat_step/settings.py \
-  sorting_hat_step/README.md \
+COPY ingestion_step/ingestion_step /app/ingestion_step
+COPY ingestion_step/scripts /app/scripts
+COPY ingestion_step/credentials.py \
+  ingestion_step/settings.py \
+  ingestion_step/README.md \
   /app/
 
 WORKDIR /app
-RUN poetry install --only-root
+RUN poetry install --only-root;
 
 CMD ["poetry", "run", "python", "scripts/run_step.py"]
