@@ -1,0 +1,5 @@
+__pycache__/
+
+**/logs/
+**/results/
+/models/experimentation/stamp_full/full_run_0.keras
