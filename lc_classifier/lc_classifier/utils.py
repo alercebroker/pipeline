@@ -96,9 +96,15 @@ def all_features_from_astro_objects(astro_objects: List[AstroObject]) -> pd.Data
     feature_list = []
     oids = []
     for astro_object in astro_objects:
+        #print(f'OID: {astro_object.detections.oid.iloc[0]}')
         features = astro_object.features.drop_duplicates(subset=["name", "fid"])
         features = features.set_index(["name", "fid"])
-        feature_list.append(features.loc[indexes]["value"].values)
+
+        try:
+            feature_list.append(features.loc[indexes]["value"].values)
+        except:
+            print(f'OID {astro_object.detections.oid.iloc[0]} no tiene todas las Features')
+            continue
 
         oid = query_ao_table(astro_object.metadata, "oid")
         oids.append(oid)
