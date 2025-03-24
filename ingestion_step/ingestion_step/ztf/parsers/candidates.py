@@ -12,7 +12,7 @@ from ingestion_step.ztf.parsers.transforms import (
     objectId_to_oid,
 )
 
-candidates_tansforms = [
+CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
     candid_to_measurment_id,
     add_tid,
@@ -20,6 +20,10 @@ candidates_tansforms = [
     fid_to_band,
     jd_to_mjd,
 ]
+"""
+List of mappings applied to the 'candidates' `DataFrame` before extracting each
+subset of columns.
+"""
 
 
 class ParsedCandidates(NamedTuple):
@@ -81,7 +85,13 @@ def _parse_dets_from_candidates(
 def parse_candidates(
     candidates: pd.DataFrame,
 ) -> ParsedCandidates:
-    apply_transforms(candidates, candidates_tansforms)
+    """
+    Parses a `DataFrame` of candidates into `objects` and `detections`.
+
+    Apply a series of mappings to the original `DataFrame` *mutating it in
+    place* then extracts a subset of it`s columns to form the new `DataFrames`.
+    """
+    apply_transforms(candidates, CANDIDATES_TRANSFORMS)
 
     objects = _parse_objs_from_candidates(candidates)
     detections = _parse_dets_from_candidates(candidates)

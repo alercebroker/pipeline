@@ -15,7 +15,7 @@ from ingestion_step.ztf.parsers.transforms import (
     objectId_to_oid,
 )
 
-fp_transforms = [
+FP_TRANSFORMS = [
     objectId_to_oid,
     add_candid,
     candid_to_measurment_id,
@@ -28,6 +28,10 @@ fp_transforms = [
     add_zero_e_ra,
     add_zero_e_dec,
 ]
+"""
+List of mappings applied to the 'fp_hists' `DataFrame` before extracting each
+subset of columns.
+"""
 
 
 def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
@@ -81,7 +85,13 @@ def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
 def parse_fp_hists(
     fp_hists: pd.DataFrame,
 ) -> pd.DataFrame:
-    apply_transforms(fp_hists, fp_transforms)
+    """
+    Parses a `DataFrame` of fp_hists into `forced_photometries`.
+
+    Apply a series of mappings to the original `DataFrame` *mutating it in
+    place* then extracts a subset of it`s columns to form the new `DataFrames`.
+    """
+    apply_transforms(fp_hists, FP_TRANSFORMS)
 
     forced_photometries = _parse_fps_from_fp_hists(fp_hists)
 

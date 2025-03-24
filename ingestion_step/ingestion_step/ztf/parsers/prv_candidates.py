@@ -16,7 +16,7 @@ from ingestion_step.ztf.parsers.transforms import (
     objectId_to_oid,
 )
 
-prv_candidates_tansforms = [
+PRV_CANDIDATES_TRANSFORMS = [
     objectId_to_oid,
     candid_to_measurment_id,
     add_tid,
@@ -28,6 +28,10 @@ prv_candidates_tansforms = [
     add_drbversion,
     add_rfid,
 ]
+"""
+List of mappings applied to the 'prv_candidates' `DataFrame` before extracting each
+subset of columns.
+"""
 
 
 class ParsedPrvCandidates(NamedTuple):
@@ -89,7 +93,13 @@ def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.Data
 def parse_prv_candidates(
     prv_candidates: pd.DataFrame,
 ) -> ParsedPrvCandidates:
-    apply_transforms(prv_candidates, prv_candidates_tansforms)
+    """
+    Parses a `DataFrame` of prv_candidates into `detections` and `non_detections`.
+
+    Apply a series of mappings to the original `DataFrame` *mutating it in
+    place* then extracts a subset of it`s columns to form the new `DataFrames`.
+    """
+    apply_transforms(prv_candidates, PRV_CANDIDATES_TRANSFORMS)
 
     detections = _parse_dets_from_prv_candidates(prv_candidates)
     non_detections = _parse_non_dets_from_prv_candidates(prv_candidates)

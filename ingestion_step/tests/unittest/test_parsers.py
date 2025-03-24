@@ -21,7 +21,7 @@ def apply_transforms(
 
 
 def test_parse_candidates(ztf_data: ZTFData):
-    apply_transforms(ztf_data, "candidates", candidates.candidates_tansforms)
+    apply_transforms(ztf_data, "candidates", candidates.CANDIDATES_TRANSFORMS)
 
     try:
         candidates._parse_objs_from_candidates(ztf_data["candidates"])
@@ -36,7 +36,7 @@ def test_parse_candidates(ztf_data: ZTFData):
 
 def test_prv_candidates_parser(ztf_data: ZTFData):
     apply_transforms(
-        ztf_data, "prv_candidates", prv_candidates.prv_candidates_tansforms
+        ztf_data, "prv_candidates", prv_candidates.PRV_CANDIDATES_TRANSFORMS
     )
 
     try:
@@ -55,7 +55,7 @@ def test_prv_candidates_parser(ztf_data: ZTFData):
 
 
 def test_fp_hists_parser(ztf_data: ZTFData):
-    apply_transforms(ztf_data, "fp_hists", fp_hists.fp_transforms)
+    apply_transforms(ztf_data, "fp_hists", fp_hists.FP_TRANSFORMS)
 
     try:
         fp_hists._parse_fps_from_fp_hists(ztf_data["fp_hists"])
