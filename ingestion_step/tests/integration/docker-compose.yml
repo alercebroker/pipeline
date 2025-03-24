@@ -20,12 +20,6 @@ services:
     depends_on:
       - zookeeper
 
-  mongo:
-    image: mongo
-    ports:
-      - "27017:27017"
-    command: mongod --notablescan
-
   postgres:
     image: postgres
     environment:

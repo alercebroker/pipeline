@@ -43,3 +43,16 @@ def insert_empty_objects_to_sql(db: PsqlConnection, records: List[dict[str, Any]
         )
         session.execute(statement)
         session.commit()
+
+
+def insert_objects(connection, objects_df):
+    pass
+
+def insert_detections(connection, detections_df):
+    pass
+
+def insert_forced_photometry(connection, forced_photometry_df):
+    pass
+
+def insert_non_detections(connection, non_detections_df):
+    pass
