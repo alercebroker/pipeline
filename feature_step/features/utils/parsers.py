@@ -125,6 +125,7 @@ def detections_to_astro_object(
     a_flux["unit"] = "diff_flux"
     a = pd.concat([a, a_flux], axis=0)
     a.set_index("aid", inplace=True)
+    a.drop(columns=["mag", "e_mag"], inplace=True)  # NEW
 
     aid = a.index.values[0]
     oid = a["oid"].iloc[0]
