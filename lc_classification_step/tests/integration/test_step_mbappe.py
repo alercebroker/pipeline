@@ -134,7 +134,6 @@ def test_step_mbappe_nonvalid_detections(
 
     for message in result_messages:
         assert len(message["detections"]) == 9
-
     assert len(probabilities) == 1
 
     del step
