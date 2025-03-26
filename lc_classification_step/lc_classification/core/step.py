@@ -9,6 +9,7 @@ from alerce_classifiers.base.dto import OutputDTO
 from lc_classification.core.parsers.input_dto import create_input_dto
 from typing import List, Tuple
 from pandas import DataFrame
+import numpy as np
 
 ZTF_CLASSIFIER_CLASS = (
     "lc_classifier.classifier.models.HierarchicalRandomForest"
@@ -173,17 +174,37 @@ class LateClassifier(GenericStep):
             )
             return n_dets >= self.min_detections
 
+        def discard_nonvalid_detections(detections: list[dict]) -> list[dict]:
+            dets = []
+            for det in detections:
+                if ~np.isclose(det["mag"], 100) and ~np.isclose(
+                    det["e_mag"], 100
+                ):
+                    dets.append(det)
+            return dets
+
         if self.min_detections is None:
-            model_input = create_input_dto(messages)
+            filtered_messages = []
+            for message in messages:
+                filtered_message = message.copy()
+                filtered_message["detections"] = discard_nonvalid_detections(
+                    filtered_message["detections"]
+                )
+                filtered_messages.append(filtered_message)
         else:
             filtered_messages = filter(has_enough_detections, messages)
             filtered_messages = list(filtered_messages)
+
+            for message in filtered_messages:
+                message["detections"] = discard_nonvalid_detections(
+                    message["detections"]
+                )
 
             if len(filtered_messages) == 0:
                 self.logger.info(f"No messages have enough detections")
                 return probabilities, messages, DataFrame()
 
-            model_input = create_input_dto(filtered_messages)
+        model_input = create_input_dto(filtered_messages)
 
         can, error = self.model.can_predict(model_input)
         if not can:
