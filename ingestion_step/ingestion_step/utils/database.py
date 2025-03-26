@@ -1,6 +1,8 @@
-from typing import Any, List
+from typing import Any, Hashable, List
 
+import pandas as pd
 from db_plugins.db.sql.models import (
+    DeclarativeBase,
     Detection,
     ForcedPhotometry,
     NonDetection,
@@ -50,12 +52,14 @@ def insert_empty_objects_to_sql(db: PsqlConnection, records: List[dict[str, Any]
         session.commit()
 
 
-def _db_statement_builder(model, data):
+def _db_statement_builder(
+    model: type[DeclarativeBase], data: list[dict[Hashable, Any]]
+):
     stmt = insert(model).values(data).on_conflict_do_nothing()
     return stmt
 
 
-def insert_objects(connection, objects_df):
+def insert_objects(connection: PsqlConnection, objects_df: pd.DataFrame):
     # editing the df
     objects_df["meanra"] = objects_df["ra"]
     objects_df["meandec"] = objects_df["dec"]
@@ -116,7 +120,7 @@ def insert_objects(connection, objects_df):
         session.commit()
 
 
-def insert_detections(connection, detections_df):
+def insert_detections(connection: PsqlConnection, detections_df: pd.DataFrame):
     # editing the df
     detections_df["magpsf_corr"] = None
     detections_df["sigmapsf_corr"] = None
@@ -178,7 +182,9 @@ def insert_detections(connection, detections_df):
         session.commit()
 
 
-def insert_forced_photometry(connection, forced_photometry_df):
+def insert_forced_photometry(
+    connection: PsqlConnection, forced_photometry_df: pd.DataFrame
+):
     # editing the df
     forced_photometry_df["mag_corr"] = None
     forced_photometry_df["e_mag_corr"] = None
@@ -256,7 +262,7 @@ def insert_forced_photometry(connection, forced_photometry_df):
         session.commit()
 
 
-def insert_non_detections(connection, non_detections_df):
+def insert_non_detections(connection: PsqlConnection, non_detections_df: pd.DataFrame):
     non_detections_df = non_detections_df.reset_index()
     non_detections_dict = non_detections_df[
         [

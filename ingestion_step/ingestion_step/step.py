@@ -4,8 +4,14 @@ from typing import Any, Hashable
 import pandas as pd
 from apf.core.step import GenericStep
 
-from ingestion_step.core.parsed_data import ParsedData
+from ingestion_step.core.parser_interface import ParsedData
 from ingestion_step.core.select_parser import select_parser
+from ingestion_step.utils.database import (
+    insert_detections,
+    insert_forced_photometry,
+    insert_non_detections,
+    insert_objects,
+)
 from settings import StepConfig
 
 from .database import PsqlConnection
@@ -31,7 +37,7 @@ class SortingHatStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(self, messages: list[dict[str, Any]]) -> ParsedData:
+    def execute(self, messages: list[dict[str, Any]]) -> ParsedData:  # pyright: ignore
         self.logger.info(f"Processing {len(messages)} alerts")
 
         self.ingestion_timestamp = int(datetime.now().timestamp())
@@ -44,6 +50,6 @@ class SortingHatStep(GenericStep):
 
         return parsed_data
 
-    def pre_produce(self, parsed_data: ParsedData) -> list[dict[Hashable, Any]]:
+    def pre_produce(self, parsed_data: ParsedData) -> list[dict[Hashable, Any]]:  # pyright: ignore
         detections = parsed_data["detections"].set_index("oid").to_dict("records")
         return detections

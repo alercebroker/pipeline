@@ -133,7 +133,7 @@ ztf_objects_expected = [
 ]
 
 # dataframes
-new_objects_df = pd.DataFrame.from_dict(new_objects_dict)
+new_objects_df = pd.DataFrame(new_objects_dict)
 new_objects_df = new_objects_df.set_index("oid")
 
 # -------------------
@@ -369,7 +369,7 @@ ztf_detections_expected = [
 ]
 
 # dataframes
-new_detections_df = pd.DataFrame.from_dict(new_detections_dict)
+new_detections_df = pd.DataFrame(new_detections_dict)
 new_detections_df = new_detections_df.set_index("oid")
 
 # --------------------------
@@ -677,7 +677,7 @@ ztf_fp_expected = [
 ]
 
 # dataframes
-new_fp_df = pd.DataFrame.from_dict(new_fp_dict)
+new_fp_df = pd.DataFrame(new_fp_dict)
 new_fp_df = new_fp_df.set_index("oid")
 
 # -----------------------
@@ -734,5 +734,5 @@ non_detections_expected = [
 ]
 
 # dataframes
-new_non_detections_df = pd.DataFrame.from_dict(new_non_detections_dict)
+new_non_detections_df = pd.DataFrame(new_non_detections_dict)
 new_non_detections_df = new_non_detections_df.set_index("oid")

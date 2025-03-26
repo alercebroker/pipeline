@@ -1,8 +1,10 @@
 import unittest
+from typing import Any
 
 import pytest
 from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
+    DeclarativeBase,
     Detection,
     ForcedPhotometry,
     NonDetection,
@@ -19,8 +21,7 @@ from ingestion_step.utils.database import (
     insert_non_detections,
     insert_objects,
 )
-
-from .data.ztf_messages import *
+from tests.integration.data import ztf_messages as msgs
 
 psql_config = {
     "ENGINE": "postgresql",
@@ -41,17 +42,18 @@ class BaseDbTests(unittest.TestCase):
 
         # insertar datos existente
 
-        session = self.psql_db.session()
         with self.psql_db.session() as session:
-            session.execute(insert(Object).values(existing_object_dict))
-            session.execute(insert(NonDetection).values(existing_non_detections_dict))
+            session.execute(insert(Object).values(msgs.existing_object_dict))
+            session.execute(
+                insert(NonDetection).values(msgs.existing_non_detections_dict)
+            )
             session.commit()
 
     def tearDown(self):
         # limpiar la db
         self.psql_db.drop_db()
 
-    def query_data(self, model):
+    def query_data(self, model: type[DeclarativeBase]):
         with self.psql_db.session() as session:
             query_result = session.execute(select(model))
             result = []
@@ -62,7 +64,12 @@ class BaseDbTests(unittest.TestCase):
 
         return result
 
-    def ziped_lists(self, first, seccond, field="oid"):
+    def ziped_lists(
+        self,
+        first: list[dict[str, Any]],
+        seccond: list[dict[str, Any]],
+        field: str = "oid",
+    ):
         result = zip(
             sorted(first, key=lambda x: x[field]),
             sorted(seccond, key=lambda x: x[field]),
@@ -70,47 +77,47 @@ class BaseDbTests(unittest.TestCase):
         return result
 
     def test_object(self):
-        insert_objects(self.psql_db, new_objects_df)
+        insert_objects(self.psql_db, msgs.new_objects_df)
 
         result = self.query_data(Object)
         result_ztf = self.query_data(ZtfObject)
 
-        for res, exp in self.ziped_lists(result, objects_expected):
+        for res, exp in self.ziped_lists(result, msgs.objects_expected):
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(result_ztf, ztf_objects_expected):
+        for res, exp in self.ziped_lists(result_ztf, msgs.ztf_objects_expected):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
-        insert_detections(self.psql_db, new_detections_df)
+        insert_detections(self.psql_db, msgs.new_detections_df)
 
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
 
-        for res, exp in self.ziped_lists(result_detections, detections_expected):
+        for res, exp in self.ziped_lists(result_detections, msgs.detections_expected):
             self.assertDictEqual(res, exp)
 
         for res, exp in self.ziped_lists(
-            result_ztf_detections, ztf_detections_expected
+            result_ztf_detections, msgs.ztf_detections_expected
         ):
             self.assertDictEqual(res, exp)
 
     def test_forced_photometry(self):
-        insert_forced_photometry(self.psql_db, new_fp_df)
+        insert_forced_photometry(self.psql_db, msgs.new_fp_df)
 
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
 
-        for res, exp in self.ziped_lists(result_fp, fp_expected):
+        for res, exp in self.ziped_lists(result_fp, msgs.fp_expected):
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(result_ztf_fp, ztf_fp_expected):
+        for res, exp in self.ziped_lists(result_ztf_fp, msgs.ztf_fp_expected):
             self.assertDictEqual(res, exp)
 
     def test_non_detections(self):
-        insert_non_detections(self.psql_db, new_non_detections_df)
+        insert_non_detections(self.psql_db, msgs.new_non_detections_df)
 
         result = self.query_data(NonDetection)
 
-        for res, exp in self.ziped_lists(result, non_detections_expected, "mjd"):
+        for res, exp in self.ziped_lists(result, msgs.non_detections_expected, "mjd"):
             self.assertDictEqual(res, exp)

@@ -6,14 +6,18 @@ from sqlalchemy.orm import Session, sessionmaker
 
 
 class PsqlConnection:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict[str, str | int | None]) -> None:
         url = self.__format_db_url(config)
         self._engine = create_engine(url, echo=True)
         self._session_factory = sessionmaker(
             self._engine,
         )
 
-    def __format_db_url(self, config):
+    def __format_db_url(self, config: dict[str, str | int | None]):
+        fields = ["USER", "PASSWORD", "HOST", "PORT", "DB_NAME"]
+        for field in fields:
+            assert field in config and config[field] is not None
+
         return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
     @contextmanager
