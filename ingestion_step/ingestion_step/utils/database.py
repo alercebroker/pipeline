@@ -120,7 +120,17 @@ def insert_detections(connection, detections_df):
 
     detections_df = detections_df.reset_index()
     
+
     detections_df_parsed = detections_df[[
+        "oid",
+        "measurement_id",
+        "mjd",
+        "ra",
+        "dec",
+        "band",
+    ]]
+    detections_dict = detections_df_parsed.to_dict("records")
+    detections_ztf_df_parsed = detections_df[[
         "oid",
         "measurement_id",
         "pid",
@@ -147,16 +157,10 @@ def insert_detections(connection, detections_df):
         "parent_candid",
         "has_stamp",
     ]]
-    detections_dict = detections_df_parsed.to_dict("records")
-    detections_ztf_df_parsed = detections_df[[
-        "oid",
-        "measurement_id",
-        "mjd",
-        "ra",
-        "dec",
-        "band",
-    ]]
     detections_ztf_dict = detections_ztf_df_parsed.to_dict("records")
+
+    print(f"--------\n{detections_df_parsed}\n------")
+    print(f"--------\n{detections_ztf_df_parsed}\n-----")
 
     detection_sql_stmt = _db_statement_builder(Detection, detections_dict)
     detection_ztf_sql_stmt = _db_statement_builder(ZtfDetection, detections_ztf_dict)

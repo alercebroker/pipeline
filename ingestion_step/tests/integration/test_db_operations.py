@@ -61,15 +61,15 @@ class BaseDbTests(unittest.TestCase):
                 result.append(new_data)
 
         return result
-    
+        
     def test_object(self):
         insert_objects(self.psql_db, new_objects_df)
 
         result = self.query_data(Object)
         result_ztf = self.query_data(ZtfObject)
 
-        self.assertDictEqual(result, objects_expected)
-        self.assertDictEqual(result_ztf, objects_expected)
+        self.assertCountEqual(result, objects_expected)
+        self.assertCountEqual(result_ztf, objects_expected)
 
     def test_detection(self):
         insert_detections(self.psql_db, new_detections_df)
@@ -77,8 +77,8 @@ class BaseDbTests(unittest.TestCase):
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
 
-        self.assertDictEqual(result_detections, detections_expected)
-        self.assertDictEqual(result_ztf_detections, detections_expected)
+        self.assertCountEqual(result_detections, detections_expected)
+        self.assertCountEqual(result_ztf_detections, detections_expected)
 
     def test_forced_photometry(self):
         insert_forced_photometry(self.psql_db, new_fp_df)
@@ -86,12 +86,12 @@ class BaseDbTests(unittest.TestCase):
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
 
-        self.assertDictEqual(result_fp, fp_expected)
-        self.assertDictEqual(result_ztf_fp, ztf_fp_expected)
+        self.assertCountEqual(result_fp, fp_expected)
+        self.assertCountEqual(result_ztf_fp, ztf_fp_expected)
 
     def test_non_detections(self):
         insert_non_detections(self.psql_db, new_non_detections_df)
         
         result = self.query_data(NonDetection)
 
-        self.assertDictEqual(result, non_detections_expected)
+        self.assertCountEqual(result, non_detections_expected)
