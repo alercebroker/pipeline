@@ -2,6 +2,16 @@ import os
 
 import psycopg2
 import pytest
+from db_plugins.db.sql._connection import PsqlDatabase
+
+psql_config = {
+    "ENGINE": "postgresql",
+    "HOST": "localhost",
+    "USER": "postgres",
+    "PASSWORD": "postgres",
+    "PORT": 5432,
+    "DB_NAME": "postgres",
+}
 
 
 @pytest.fixture(scope="session")
@@ -37,8 +47,18 @@ def psql_service(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(docker_ip, port)
     )
-    conn = psycopg2.connect(
-        f"dbname='postgres' user='postgres' host={docker_ip} port={port} password='postgres'"
-    )
-    return conn
 
+
+@pytest.fixture(scope="session")
+def psql_db(docker_ip, docker_services):
+    port = docker_services.port_for("postgres", 5432)
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(docker_ip, port)
+    )
+
+    psql_db = PsqlDatabase(psql_config)
+    psql_db.create_db()
+
+    yield psql_db
+
+    psql_db.drop_db()
