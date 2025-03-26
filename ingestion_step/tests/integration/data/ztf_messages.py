@@ -16,7 +16,7 @@ existing_object_dict = {
     "n_forced": 1,
     "n_non_det": 1,
     "corrected": False,
-    "stellar": False,    
+    "stellar": False,
 }
 
 existing_ztf_objects_expected = {
@@ -34,7 +34,7 @@ new_objects_dict = [
         "sid": 0,
         "ra": 24.9727713,
         "dec": 80.1261365,
-        "mjd": 58791.2800925998,       
+        "mjd": 58791.2800925998,
     },
     {
         "oid": 390733221096,
@@ -42,7 +42,7 @@ new_objects_dict = [
         "sid": 0,
         "ra": 43.3676758,
         "dec": 22.5319344,
-        "mjd": 58791.28415510012,        
+        "mjd": 58791.28415510012,
     },
     {
         "oid": 755834527363,
@@ -50,8 +50,8 @@ new_objects_dict = [
         "sid": 0,
         "ra": 23.5628347,
         "dec": 18.0653951,
-        "mjd": 58791.27378469985,        
-    }
+        "mjd": 58791.27378469985,
+    },
 ]
 
 objects_expected = [
@@ -105,8 +105,7 @@ objects_expected = [
         "n_non_det": 1,
         "corrected": False,
         "stellar": False,
-    }
-
+    },
 ]
 
 ztf_objects_expected = [
@@ -130,7 +129,7 @@ ztf_objects_expected = [
         "g_r_max_corr": None,
         "g_r_mean": None,
         "g_r_mean_corr": None,
-    }
+    },
 ]
 
 # dataframes
@@ -255,7 +254,7 @@ new_detections_dict = [
         "sigmagapbig": 0.1184,
         "rfid": 37032169288390928264,
         "parent_candid": 24855982039559546080,
-    }
+    },
 ]
 
 detections_expected = [
@@ -282,8 +281,7 @@ detections_expected = [
         "ra": 23.5628347,
         "dec": 18.0653951,
         "band": 1,
-    }
-
+    },
 ]
 
 ztf_detections_expected = [
@@ -367,7 +365,7 @@ ztf_detections_expected = [
         "dubious": False,
         "parent_candid": 24855982039559546080,
         "has_stamp": True,
-    }
+    },
 ]
 
 # dataframes
@@ -531,7 +529,7 @@ new_fp_dict = [
         "sigmagnr": 0.11599999666213989,
         "chinr": 6.926000118255615,
         "sharpnr": 0.4560000002384186,
-    }
+    },
 ]
 
 fp_expected = [
@@ -558,7 +556,7 @@ fp_expected = [
         "ra": 256.4062549,
         "dec": 34.1939546,
         "band": 0,
-    }
+    },
 ]
 
 ztf_fp_expected = [
@@ -675,7 +673,7 @@ ztf_fp_expected = [
         "sigmagnr": 0.11599999666213989,
         "chinr": 6.926000118255615,
         "sharpnr": 0.4560000002384186,
-    }
+    },
 ]
 
 # dataframes
@@ -697,19 +695,21 @@ new_non_detections_dict = [
     {
         "oid": 525514836051,
         "band": 0,
-        "mjd": 60466.40795140015,
+        "mjd": 60461.40795140015,
         "diffmaglim": 27.5782,
-    },{
-        "oid": 390733221096,
+    },
+    {
+        "oid": 525514836051,
         "band": 0,
         "mjd": 60462.40795140015,
         "diffmaglim": 22.5782,
-    },{
-        "oid": 29654240,
+    },
+    {
+        "oid": 525514836051,
         "band": 0,
         "mjd": 60463.40795140015,
         "diffmaglim": 23.5782,
-    }
+    },
 ]
 
 non_detections_expected = [
@@ -717,18 +717,20 @@ non_detections_expected = [
         "oid": 525514836051,
         "band": 0,
         "mjd": 60461.40795140015,
-        "diffmaglim": 21.5782,
-    },{
+        "diffmaglim": 20.5782,
+    },
+    {
         "oid": 525514836051,
         "band": 0,
         "mjd": 60462.40795140015,
         "diffmaglim": 22.5782,
-    },{
+    },
+    {
         "oid": 525514836051,
         "band": 0,
         "mjd": 60463.40795140015,
         "diffmaglim": 23.5782,
-    }
+    },
 ]
 
 # dataframes
