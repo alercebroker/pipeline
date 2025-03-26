@@ -33,6 +33,14 @@ test-utils = { path = "../libs/test_utils", develop = true }
 [tool.poetry.group.dev.dependencies]
 pandas-stubs = "^2.2.3.241126"
 
+
+[tool.poetry.group.notebook.dependencies]
+notebook = "^7.3.3"
+nbclassic = "^1.2.0"
+jupyter-console = "^6.6.3"
+jupynium = "^0.2.6"
+jupytext = "^1.16.7"
+
 [tool.black]
 line-length = 79
 

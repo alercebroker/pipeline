@@ -169,6 +169,8 @@ def isdiffpos_to_int(df: pd.DataFrame):
     df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
 
 
+# TODO: Check that the results are correct and add a small explanation.
+# Currently this function is a copy of the one implemented in prv_candidates_step
 def _calculate_mag(
     magzpsci: float, forcediffimflux: float, forcediffimfluxunc: float
 ) -> tuple[float, float]:
