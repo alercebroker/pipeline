@@ -1,6 +1,7 @@
-from typing import Any, Hashable, List
+from typing import Any, Hashable
 
 import pandas as pd
+from db_plugins.db.sql._connection import PsqlDatabase
 from db_plugins.db.sql.models import (
     DeclarativeBase,
     Detection,
@@ -13,44 +14,6 @@ from db_plugins.db.sql.models import (
 )
 from sqlalchemy.dialects.postgresql import insert
 
-from ..database import PsqlConnection
-
-
-def insert_empty_objects_to_sql(db: PsqlConnection, records: List[dict[str, Any]]):
-    # insert into db values = records on conflict do nothing
-    def format_extra_fields(record: dict[str, Any]):
-        extra_fields = record["extra_fields"]
-        return {
-            "ndethist": extra_fields["ndethist"],
-            "ncovhist": extra_fields["ncovhist"],
-            "mjdstarthist": extra_fields["jdstarthist"] - 2400000.5,
-            "mjdendhist": extra_fields["jdendhist"] - 2400000.5,
-            "meanra": record["ra"],
-            "meandec": record["dec"],
-            "firstmjd": record["mjd"],
-            "lastmjd": record["mjd"],
-            "deltajd": 0,
-            "step_id_corr": "",
-        }
-
-    oids = {
-        r["_id"]: format_extra_fields(r) for r in records if r["sid"].lower() == "ztf"
-    }
-    with db.session() as session:
-        to_insert = [{"oid": oid, **extra_fields} for oid, extra_fields in oids.items()]
-        statement = insert(Object).values(to_insert)
-        statement = statement.on_conflict_do_update(
-            "object_pkey",
-            set_=dict(
-                ndethist=statement.excluded.ndethist,
-                ncovhist=statement.excluded.ncovhist,
-                mjdstarthist=statement.excluded.mjdstarthist,
-                mjdendhist=statement.excluded.mjdendhist,
-            ),
-        )
-        session.execute(statement)
-        session.commit()
-
 
 def _db_statement_builder(
     model: type[DeclarativeBase], data: list[dict[Hashable, Any]]
@@ -59,7 +22,7 @@ def _db_statement_builder(
     return stmt
 
 
-def insert_objects(connection: PsqlConnection, objects_df: pd.DataFrame):
+def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
     # editing the df
     objects_df["meanra"] = objects_df["ra"]
     objects_df["meandec"] = objects_df["dec"]
@@ -120,14 +83,13 @@ def insert_objects(connection: PsqlConnection, objects_df: pd.DataFrame):
         session.commit()
 
 
-def insert_detections(connection: PsqlConnection, detections_df: pd.DataFrame):
+def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
     # editing the df
     detections_df["magpsf_corr"] = None
     detections_df["sigmapsf_corr"] = None
     detections_df["sigmapsf_corr_ext"] = None
     detections_df["corrected"] = False
     detections_df["dubious"] = False
-    detections_df["has_stamp"] = True
 
     detections_df = detections_df.reset_index()
 
@@ -152,7 +114,7 @@ def insert_detections(connection: PsqlConnection, detections_df: pd.DataFrame):
             "nid",
             "magpsf",
             "sigmapsf",
-            "magapfloat4",
+            "magap",
             "sigmagap",
             "distnr",
             "rb",
@@ -183,20 +145,29 @@ def insert_detections(connection: PsqlConnection, detections_df: pd.DataFrame):
 
 
 def insert_forced_photometry(
-    connection: PsqlConnection, forced_photometry_df: pd.DataFrame
+    connection: PsqlDatabase, forced_photometry_df: pd.DataFrame
 ):
     # editing the df
     forced_photometry_df["mag_corr"] = None
     forced_photometry_df["e_mag_corr"] = None
     forced_photometry_df["e_mag_corr_ext"] = None
-    forced_photometry_df["isdiffpos"] = -1
     forced_photometry_df["corrected"] = False
     forced_photometry_df["dubious"] = False
-    forced_photometry_df["has_stamp"] = True
 
     forced_photometry_df = forced_photometry_df.reset_index()
 
     forced_photometry_df_parsed = forced_photometry_df[
+        [
+            "oid",
+            "measurement_id",
+            "mjd",
+            "ra",
+            "dec",
+            "band",
+        ]
+    ]
+    forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
+    forced_photometry_ztf_df_parsed = forced_photometry_df[
         [
             "oid",
             "measurement_id",
@@ -236,17 +207,6 @@ def insert_forced_photometry(
             "sharpnr",
         ]
     ]
-    forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
-    forced_photometry_ztf_df_parsed = forced_photometry_df[
-        [
-            "oid",
-            "measurement_id",
-            "mjd",
-            "ra",
-            "dec",
-            "band",
-        ]
-    ]
     forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
 
     forced_photometry_sql_stmt = _db_statement_builder(
@@ -262,7 +222,7 @@ def insert_forced_photometry(
         session.commit()
 
 
-def insert_non_detections(connection: PsqlConnection, non_detections_df: pd.DataFrame):
+def insert_non_detections(connection: PsqlDatabase, non_detections_df: pd.DataFrame):
     non_detections_df = non_detections_df.reset_index()
     non_detections_dict = non_detections_df[
         [

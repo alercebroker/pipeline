@@ -3,6 +3,7 @@ from typing import Any, Hashable
 
 import pandas as pd
 from apf.core.step import GenericStep
+from db_plugins.db.sql._connection import PsqlDatabase
 
 from ingestion_step.core.parser_interface import ParsedData
 from ingestion_step.core.select_parser import select_parser
@@ -13,8 +14,6 @@ from ingestion_step.utils.database import (
     insert_objects,
 )
 from settings import StepConfig
-
-from .database import PsqlConnection
 
 
 class SortingHatStep(GenericStep):
@@ -27,7 +26,7 @@ class SortingHatStep(GenericStep):
     ):
         super().__init__(config=config, **kwargs)  # pyright: ignore
         self.parser = select_parser(config["SURVEY_STRATEGY"])
-        self.psql_driver = PsqlConnection(config["PSQL_CONFIG"])
+        self.psql_driver = PsqlDatabase(config["PSQL_CONFIG"])
 
     def _add_metrics(self, alerts: pd.DataFrame):
         self.metrics: dict[str, Any] = {}
@@ -47,6 +46,11 @@ class SortingHatStep(GenericStep):
         self.logger.info(f'Parsed {len(parsed_data["detections"])=}')
         self.logger.info(f'Parsed {len(parsed_data["non_detections"])=}')
         self.logger.info(f'Parsed {len(parsed_data["forced_photometries"])=}')
+
+        insert_objects(self.psql_driver, parsed_data["objects"])
+        insert_detections(self.psql_driver, parsed_data["detections"])
+        insert_non_detections(self.psql_driver, parsed_data["non_detections"])
+        insert_forced_photometry(self.psql_driver, parsed_data["forced_photometries"])
 
         return parsed_data
 
