@@ -143,7 +143,7 @@ new_objects_df = new_objects_df.set_index("oid")
 
 existing_detections_dict = {
     "oid": 525514836051,
-    "measurement_id": 2086152344815010007,
+    "measurement_id": 6522020776,
     "mjd": 59823.18777780002,
     "ra": 24.9727715,
     "dec": 80.1261364,
@@ -152,7 +152,7 @@ existing_detections_dict = {
 
 existing_ztf_detections_dict = {
     "oid": 525514836051,
-    "measurement_id": 2086152344815010007,
+    "measurement_id": 6522020776,
     "pid": 0,
     "diffmaglim": 20.7186,
     "isdiffpos": -1,
@@ -380,7 +380,7 @@ new_detections_df = new_detections_df.set_index("oid")
 
 existing_fp_dict = {
     "oid": 525514836051,
-    "measurement_id": 67052171037979992019,
+    "measurement_id": 6522020776,
     "mjd": 60754.49832180003,
     "ra": 256.4062549,
     "dec": 34.1939546,
