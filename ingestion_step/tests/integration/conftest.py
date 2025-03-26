@@ -25,8 +25,6 @@ def is_responsive_psql(host, port):
         print(f"Connection failed: {e}")
         return False
 
-
-
 @pytest.fixture(scope="session")
 def psql_service(docker_ip, docker_services):
     """Ensure that PSQL service is up and responsive."""

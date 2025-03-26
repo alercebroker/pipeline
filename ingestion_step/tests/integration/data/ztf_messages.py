@@ -394,7 +394,7 @@ existing_ztf_fp_dict = {
     "e_mag": 0.036699023097753525,
     "mag_corr": None,
     "e_mag_corr": None,
-    "e_mag_corr_ext": None  ,
+    "e_mag_corr_ext": None,
     "isdiffpos": -1,
     "corrected": False,
     "dubious": False,
@@ -569,7 +569,7 @@ ztf_fp_expected = [
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
         "e_mag_corr": None,
-        "e_mag_corr_ext": None  ,
+        "e_mag_corr_ext": None,
         "isdiffpos": -1,
         "corrected": False,
         "dubious": False,
@@ -607,7 +607,7 @@ ztf_fp_expected = [
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
         "e_mag_corr": None,
-        "e_mag_corr_ext": None  ,
+        "e_mag_corr_ext": None,
         "isdiffpos": -1,
         "corrected": False,
         "dubious": False,
@@ -645,7 +645,7 @@ ztf_fp_expected = [
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
         "e_mag_corr": None,
-        "e_mag_corr_ext": None  ,
+        "e_mag_corr_ext": None,
         "isdiffpos": -1,
         "corrected": False,
         "dubious": False,
@@ -734,9 +734,3 @@ non_detections_expected = [
 # dataframes
 new_non_detections_df = pd.DataFrame.from_dict(new_non_detections_dict)
 new_non_detections_df = new_non_detections_df.set_index("oid")
-
-
-print(f"debug objects df \n {new_objects_df}")
-print(f"debug objects df \n {new_detections_df}")
-print(f"debug objects df \n {new_fp_df}")
-print(f"debug objects df \n {new_non_detections_df}")
