@@ -44,6 +44,10 @@ class BaseDbTests(unittest.TestCase):
         session = self.psql_db.session()
         with self.psql_db.session() as session:
             session.execute(insert(Object).values(existing_object_dict))
+            session.execute(insert(Detection).values(existing_detections_dict))
+            session.execute(insert(ZtfDetection).values(existing_ztf_detections_dict))
+            session.execute(insert(ForcedPhotometry).values(existing_fp_dict))
+            session.execute(insert(ZtfForcedPhotometry).values(existing_ztf_fp_dict))
             session.execute(insert(NonDetection).values(existing_non_detections_dict))
             session.commit()
 
@@ -62,7 +66,7 @@ class BaseDbTests(unittest.TestCase):
 
         return result
 
-    def ziped_lists(self, first, seccond, field="oid"):
+    def ziped_lists(self, first, seccond, field):
         result = zip(
             sorted(first, key=lambda x: x[field]),
             sorted(seccond, key=lambda x: x[field]),
@@ -75,10 +79,10 @@ class BaseDbTests(unittest.TestCase):
         result = self.query_data(Object)
         result_ztf = self.query_data(ZtfObject)
 
-        for res, exp in self.ziped_lists(result, objects_expected):
+        for res, exp in self.ziped_lists(result, objects_expected, "oid"):
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(result_ztf, ztf_objects_expected):
+        for res, exp in self.ziped_lists(result_ztf, ztf_objects_expected, "oid"):
             self.assertDictEqual(res, exp)
 
     def test_detection(self):
@@ -87,12 +91,14 @@ class BaseDbTests(unittest.TestCase):
         result_detections = self.query_data(Detection)
         result_ztf_detections = self.query_data(ZtfDetection)
 
-        for res, exp in self.ziped_lists(result_detections, detections_expected):
+        for res, exp in self.ziped_lists(
+            result_detections, detections_expected, "measurement_id"
+        ):
             self.assertDictEqual(res, exp)
 
         for res, exp in self.ziped_lists(
-            result_ztf_detections, ztf_detections_expected
-        ):
+            result_ztf_detections, ztf_detections_expected, "measurement_id"
+        ):  
             self.assertDictEqual(res, exp)
 
     def test_forced_photometry(self):
@@ -101,10 +107,15 @@ class BaseDbTests(unittest.TestCase):
         result_fp = self.query_data(ForcedPhotometry)
         result_ztf_fp = self.query_data(ZtfForcedPhotometry)
 
-        for res, exp in self.ziped_lists(result_fp, fp_expected):
+        for res, exp in self.ziped_lists(result_fp, fp_expected, "measurement_id"):
             self.assertDictEqual(res, exp)
 
-        for res, exp in self.ziped_lists(result_ztf_fp, ztf_fp_expected):
+        for res, exp in self.ziped_lists(result_ztf_fp, ztf_fp_expected, "measurement_id"):
+            print(f"HERE ---- \n {res} \n {exp} \n")
+
+            for key in res.keys():
+                if res[key] != exp[key]:
+                    print(f"LLAVE MALA {key} {res[key]} != {exp[key]}f")
             self.assertDictEqual(res, exp)
 
     def test_non_detections(self):

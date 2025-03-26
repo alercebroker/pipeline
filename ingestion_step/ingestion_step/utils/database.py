@@ -123,7 +123,6 @@ def insert_detections(connection, detections_df):
     detections_df["sigmapsf_corr_ext"] = None
     detections_df["corrected"] = False
     detections_df["dubious"] = False
-    detections_df["has_stamp"] = True
 
     detections_df = detections_df.reset_index()
 
@@ -148,7 +147,7 @@ def insert_detections(connection, detections_df):
             "nid",
             "magpsf",
             "sigmapsf",
-            "magapfloat4",
+            "magap",
             "sigmagap",
             "distnr",
             "rb",
@@ -183,14 +182,24 @@ def insert_forced_photometry(connection, forced_photometry_df):
     forced_photometry_df["mag_corr"] = None
     forced_photometry_df["e_mag_corr"] = None
     forced_photometry_df["e_mag_corr_ext"] = None
-    forced_photometry_df["isdiffpos"] = -1
     forced_photometry_df["corrected"] = False
     forced_photometry_df["dubious"] = False
-    forced_photometry_df["has_stamp"] = True
 
     forced_photometry_df = forced_photometry_df.reset_index()
 
+
     forced_photometry_df_parsed = forced_photometry_df[
+        [
+            "oid",
+            "measurement_id",
+            "mjd",
+            "ra",
+            "dec",
+            "band",
+        ]
+    ]
+    forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
+    forced_photometry_ztf_df_parsed = forced_photometry_df[
         [
             "oid",
             "measurement_id",
@@ -228,17 +237,6 @@ def insert_forced_photometry(connection, forced_photometry_df):
             "sigmagnr",
             "chinr",
             "sharpnr",
-        ]
-    ]
-    forced_photometry_dict = forced_photometry_df_parsed.to_dict("records")
-    forced_photometry_ztf_df_parsed = forced_photometry_df[
-        [
-            "oid",
-            "measurement_id",
-            "mjd",
-            "ra",
-            "dec",
-            "band",
         ]
     ]
     forced_photometry_ztf_dict = forced_photometry_ztf_df_parsed.to_dict("records")
