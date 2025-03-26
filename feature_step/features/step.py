@@ -133,7 +133,6 @@ class FeatureStep(GenericStep):
                 lambda x: {**x, "index_column": str(x["candid"]) + "_" + x["oid"]},
                 message.get("detections", []),
             )
-
             xmatch_data = message["xmatches"]
 
             ao = detections_to_astro_object(list(m), xmatch_data, references_db)
