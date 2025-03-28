@@ -13,7 +13,6 @@ from ingestion_step.utils.database import (
     insert_non_detections,
     insert_objects,
 )
-from settings import StepConfig
 
 
 class SortingHatStep(GenericStep):
@@ -21,7 +20,7 @@ class SortingHatStep(GenericStep):
 
     def __init__(
         self,
-        config: StepConfig,
+        config,
         **kwargs: Any,
     ):
         super().__init__(config=config, **kwargs)  # pyright: ignore
