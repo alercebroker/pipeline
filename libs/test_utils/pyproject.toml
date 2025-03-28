@@ -4,22 +4,20 @@ version = "6.1.1a35"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "test_utils"}]
+packages = [{ include = "test_utils" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.9,<3.13"
 confluent_kafka = "2.0.2"
 pymongo = "^4.4.1"
 psycopg2-binary = "*"
 pytest-docker = "^1.0.1"
-db-plugins = "^25.0.0"
+db-plugins = "^27.0.0"
 
 [project]
 name = "test_utils"
-version = "1.0.0" # ignore this, we use [tool.poetry]->version
-classifiers = [
-    "Framework :: Pytest",
-]
+version = "1.0.0"                     # ignore this, we use [tool.poetry]->version
+classifiers = ["Framework :: Pytest"]
 
 [project.entry-points.pytest11]
 test_utils = "test_utils.fixtures"
