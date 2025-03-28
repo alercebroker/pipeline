@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
@@ -9,6 +10,7 @@ from ingestion_step.ztf.parsers.transforms import (
     add_zero_e_dec,
     add_zero_e_ra,
     apply_transforms,
+    calculate_isdiffpos,
     candid_to_measurment_id,
     fid_to_band,
     jd_to_mjd,
@@ -27,6 +29,7 @@ FP_TRANSFORMS = [
     add_e_mag,
     add_zero_e_ra,
     add_zero_e_dec,
+    calculate_isdiffpos,
 ]
 """
 List of mappings applied to the 'fp_hists' `DataFrame` before extracting each
@@ -44,10 +47,11 @@ def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
         "mjd",
         "mag",
         "e_mag",
+        "rfid",
         # "mag_corr",
         # "e_mag_corr",
         # "e_mag_corr_ext",
-        # "isdiffpos",
+        "isdiffpos",
         # "corrected",
         # "dubious",
         "parent_candid",
@@ -77,7 +81,7 @@ def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
         "sharpnr",
     ]
 
-    forced_photometries = fp_hist[cols]
+    forced_photometries = fp_hist[cols].replace({np.nan: None})
 
     return forced_photometries
 

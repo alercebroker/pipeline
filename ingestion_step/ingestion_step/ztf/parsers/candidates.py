@@ -1,5 +1,6 @@
 from typing import NamedTuple
 
+import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
@@ -8,6 +9,7 @@ from ingestion_step.ztf.parsers.transforms import (
     apply_transforms,
     candid_to_measurment_id,
     fid_to_band,
+    isdiffpos_to_int,
     jd_to_mjd,
     objectId_to_oid,
 )
@@ -17,6 +19,7 @@ CANDIDATES_TRANSFORMS = [
     candid_to_measurment_id,
     add_tid,
     add_sid,
+    isdiffpos_to_int,
     fid_to_band,
     jd_to_mjd,
 ]
@@ -34,9 +37,9 @@ class ParsedCandidates(NamedTuple):
 def _parse_objs_from_candidates(
     candidates: pd.DataFrame,
 ) -> pd.DataFrame:
-    cols = ["oid", "sid", "tid"]
+    cols = ["oid", "sid", "tid", "ra", "dec", "mjd"]
 
-    objects = candidates[cols]
+    objects = candidates[cols].replace({np.nan: None})
 
     return objects
 
@@ -77,7 +80,7 @@ def _parse_dets_from_candidates(
         # "step_id_corr",
     ]
 
-    detections = candidates[cols]
+    detections = candidates[cols].replace({np.nan: None})
 
     return detections
 

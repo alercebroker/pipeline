@@ -1,5 +1,6 @@
 from typing import NamedTuple
 
+import numpy as np
 import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
@@ -76,16 +77,16 @@ def _parse_dets_from_prv_candidates(
         # "step_id_corr",
     ]
 
-    detections = det_prv_candidates[cols]
+    detections = det_prv_candidates[cols].replace({np.nan: None})
 
     return detections
 
 
 def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
-    cols = ["objectId", "fid", "jd", "diffmaglim"]
+    cols = ["oid", "band", "mjd", "diffmaglim"]
 
-    non_detections = non_det_prv_candidates[cols]
+    non_detections = non_det_prv_candidates[cols].replace({np.nan: None})
 
     return non_detections
 

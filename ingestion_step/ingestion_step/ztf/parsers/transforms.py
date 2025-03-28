@@ -9,12 +9,6 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-FILTER = {
-    1: "g",
-    2: "r",
-    3: "i",
-}
-
 ERRORS = {
     1: 0.065,
     2: 0.085,
@@ -24,7 +18,7 @@ ERRORS = {
 ZERO_MAG = 100.0
 
 
-# Use a more appropiate conversion
+# WARN: Use a more appropiate conversion
 def _str_to_int(obj: str) -> int:
     """
     Converts a `str` to an `int`.
@@ -32,7 +26,7 @@ def _str_to_int(obj: str) -> int:
     Used to transform `oid` into an numeric unique identifier.
     """
     obj_bytes = obj.encode("utf-8")
-    return int.from_bytes(obj_bytes, byteorder="big")
+    return int.from_bytes(obj_bytes, byteorder="big") % 2**30
 
 
 def objectId_to_oid(df: pd.DataFrame):
@@ -57,7 +51,11 @@ def add_candid(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `candid`
     """
-    df["candid"] = df.apply(lambda x: x["objectId"] + str(x["pid"]), axis=1)
+
+    # WARN: Use a more appropiate conversion
+    df["candid"] = df.apply(
+        lambda x: _str_to_int(x["objectId"] + str(x["pid"])), axis=1
+    )
 
 
 def candid_to_measurment_id(df: pd.DataFrame):
@@ -82,11 +80,6 @@ def add_sid(df: pd.DataFrame):
     df["sid"] = 0
 
 
-def _to_filter_str(fid: int) -> str:
-    """Uses the mapping dict `FILTER` to convert the fid from an int to a str"""
-    return FILTER[fid]
-
-
 def fid_to_band(df: pd.DataFrame):
     """
     Computes the band str from the fid number.
@@ -96,7 +89,7 @@ def fid_to_band(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `band`
     """
-    df["band"] = df["fid"].apply(_to_filter_str)
+    df["band"] = df["fid"]
 
 
 def jd_to_mjd(df: pd.DataFrame):
@@ -239,6 +232,16 @@ def add_drbversion(df: pd.DataFrame):
 def add_rfid(df: pd.DataFrame):
     """Adds a rfid of None"""
     df["rfid"] = None
+
+
+def calculate_isdiffpos(df: pd.DataFrame):
+    """
+    Takes a `DataFrame` containing the columns:
+        - `forcediffimflux`
+    and uses them to calculate the new columns:
+        - `isdiffpos`
+    """
+    df["isdiffpos"] = np.choose(df["forcediffimflux"] > 0, [-1, 1])
 
 
 def apply_transforms(

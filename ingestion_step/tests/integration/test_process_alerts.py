@@ -33,5 +33,3 @@ def test_process_alerts_ztf(ztf_alerts: list[dict[str, Any]], psql_db: PsqlDatab
     insert_detections(psql_db, parsed_data["detections"])
     insert_non_detections(psql_db, parsed_data["non_detections"])
     insert_forced_photometry(psql_db, parsed_data["forced_photometries"])
-
-    return parsed_data

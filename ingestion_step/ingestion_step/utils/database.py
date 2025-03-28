@@ -23,6 +23,8 @@ def _db_statement_builder(
 
 
 def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
+    if len(objects_df) == 0:
+        return
     # editing the df
     objects_df["meanra"] = objects_df["ra"]
     objects_df["meandec"] = objects_df["dec"]
@@ -84,6 +86,8 @@ def insert_objects(connection: PsqlDatabase, objects_df: pd.DataFrame):
 
 
 def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
+    if len(detections_df) == 0:
+        return
     # editing the df
     detections_df["magpsf_corr"] = None
     detections_df["sigmapsf_corr"] = None
@@ -147,6 +151,8 @@ def insert_detections(connection: PsqlDatabase, detections_df: pd.DataFrame):
 def insert_forced_photometry(
     connection: PsqlDatabase, forced_photometry_df: pd.DataFrame
 ):
+    if len(forced_photometry_df) == 0:
+        return
     # editing the df
     forced_photometry_df["mag_corr"] = None
     forced_photometry_df["e_mag_corr"] = None
@@ -223,6 +229,8 @@ def insert_forced_photometry(
 
 
 def insert_non_detections(connection: PsqlDatabase, non_detections_df: pd.DataFrame):
+    if len(non_detections_df) == 0:
+        return
     non_detections_df = non_detections_df.reset_index()
     non_detections_dict = non_detections_df[
         [

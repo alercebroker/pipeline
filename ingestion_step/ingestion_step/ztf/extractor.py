@@ -87,7 +87,7 @@ def _extract_fp_hists(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "ra": message["candidate"]["ra"],
                     "dec": message["candidate"]["dec"],
                     "magzpsci": message["candidate"]["magzpsci"],
-                    "parent_candid": None,
+                    "parent_candid": message["candid"],
                     "has_stamp": _has_stamp(message),
                     **fp_hist,
                 }
