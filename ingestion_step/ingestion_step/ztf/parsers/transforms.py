@@ -157,14 +157,6 @@ def isdiffpos_to_int(df: pd.DataFrame):
     df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
 
 
-def create_add_froced(forced: bool):
-    def add_forced(df: pd.DataFrame):
-        """Addes froced equal to true"""
-        df["forced"] = forced
-
-    return add_forced
-
-
 def magpsf_to_mag(df: pd.DataFrame):
     df["mag"] = df["magpsf"]
 

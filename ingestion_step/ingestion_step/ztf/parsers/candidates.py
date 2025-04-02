@@ -8,7 +8,6 @@ from ingestion_step.ztf.parsers.transforms import (
     add_tid,
     apply_transforms,
     candid_to_measurment_id,
-    create_add_froced,
     fid_to_band,
     isdiffpos_to_int,
     jd_to_mjd,
@@ -31,7 +30,6 @@ CANDIDATES_TRANSFORMS = [
     sigmadec_to_e_dec,
     magpsf_to_mag,
     sigmapsf_to_e_mag,
-    create_add_froced(False),
 ]
 """
 List of mappings applied to the 'candidates' `DataFrame` before extracting each

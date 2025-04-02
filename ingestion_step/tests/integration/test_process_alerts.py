@@ -69,6 +69,16 @@ def test_process_alerts_ztf(ztf_alerts: list[dict[str, Any]], psql_db: PsqlDatab
         "extra_fields",
     ]
 
+    non_det_columns = [
+        "message_id",
+        "oid",
+        "sid",
+        "tid",
+        "band",
+        "mjd",
+        "diffmaglim",
+    ]
+
     objects = result["objects"].replace({np.nan: None})
     detections = pd.concat(
         [result["detections"], result["forced_photometries"]]
@@ -79,6 +89,8 @@ def test_process_alerts_ztf(ztf_alerts: list[dict[str, Any]], psql_db: PsqlDatab
         detections.columns.difference(det_columns)
     ].to_dict("records")
     detections = detections[det_columns]
+
+    non_detections = non_detections[non_det_columns]
 
     message_objects = groupby_message_id(objects)
     message_detections = groupby_message_id(detections)

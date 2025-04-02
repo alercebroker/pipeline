@@ -10,7 +10,6 @@ from ingestion_step.ztf.parsers.transforms import (
     apply_transforms,
     calculate_isdiffpos,
     candid_to_measurment_id,
-    create_add_froced,
     fid_to_band,
     forcediffimflux_to_e_mag,
     forcediffimflux_to_mag,
@@ -31,7 +30,6 @@ FP_TRANSFORMS = [
     add_zero_e_ra,
     add_zero_e_dec,
     calculate_isdiffpos,
-    create_add_froced(True),
 ]
 """
 List of mappings applied to the 'fp_hists' `DataFrame` before extracting each

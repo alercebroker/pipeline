@@ -11,7 +11,6 @@ from ingestion_step.ztf.parsers.transforms import (
     add_tid,
     apply_transforms,
     candid_to_measurment_id,
-    create_add_froced,
     fid_to_band,
     isdiffpos_to_int,
     jd_to_mjd,
@@ -34,7 +33,6 @@ PRV_CANDIDATES_TRANSFORMS = [
     magpsf_to_mag,
     sigmapsf_to_e_mag,
     isdiffpos_to_int,
-    create_add_froced(False),
     add_drb,
     add_drbversion,
     add_rfid,
@@ -101,7 +99,7 @@ def _parse_dets_from_prv_candidates(
 
 def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
-    cols = ["message_id", "oid", "band", "mjd", "diffmaglim"]
+    cols = ["message_id", "oid", "sid", "tid", "band", "mjd", "diffmaglim"]
 
     non_detections = non_det_prv_candidates[cols].replace({np.nan: None})
 
