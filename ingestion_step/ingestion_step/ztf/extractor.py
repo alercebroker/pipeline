@@ -34,13 +34,14 @@ def _extract_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     return [
         {
+            "message_id": message_id,
             "objectId": message["objectId"],
             "candid": message["candid"],
             "parent_candid": None,
             "has_stamp": _has_stamp(message),
             **message["candidate"],
         }
-        for message in messages
+        for message_id, message in enumerate(messages)
     ]
 
 
@@ -52,12 +53,13 @@ def _extract_prv_candidates(messages: list[dict[str, Any]]) -> list[dict[str, An
     exists and add some extra necessary fields from the alert to each one.
     """
     prv_candidates = []
-    for message in messages:
+    for message_id, message in enumerate(messages):
         if "prv_candidates" not in message or message["prv_candidates"] is None:
             continue
         for prv_candidate in message["prv_candidates"]:
             prv_candidates.append(
                 {
+                    "message_id": message_id,
                     "objectId": message["objectId"],
                     "parent_candid": message["candid"],
                     "has_stamp": _has_stamp(message),
@@ -77,12 +79,13 @@ def _extract_fp_hists(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
 
     fp_hists = []
-    for message in messages:
+    for message_id, message in enumerate(messages):
         if "fp_hists" not in message or message["fp_hists"] is None:
             continue
         for fp_hist in message["fp_hists"]:
             fp_hists.append(
                 {
+                    "message_id": message_id,
                     "objectId": message["objectId"],
                     "ra": message["candidate"]["ra"],
                     "dec": message["candidate"]["dec"],
