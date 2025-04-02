@@ -152,7 +152,7 @@ class ZtfForcedPhotometry(Base):
     isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
-    parent_candid = Column(BigInteger, nullable=False)  # varchar,
+    parent_candid = Column(BigInteger)  # varchar,
     has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
     field = Column(Integer, nullable=False)  # int4,
     rcid = Column(Integer, nullable=False)  # int4,
