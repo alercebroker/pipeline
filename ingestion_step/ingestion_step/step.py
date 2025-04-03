@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Hashable
+from typing import Any
 
 import pandas as pd
 from apf.core.step import GenericStep
@@ -20,7 +20,7 @@ class SortingHatStep(GenericStep):
 
     def __init__(
         self,
-        config,
+        config,  # pyright: ignore
         **kwargs: Any,
     ):
         super().__init__(config=config, **kwargs)  # pyright: ignore
@@ -53,6 +53,35 @@ class SortingHatStep(GenericStep):
 
         return parsed_data
 
-    def pre_produce(self, parsed_data: ParsedData) -> list[dict[Hashable, Any]]:  # pyright: ignore
-        detections = parsed_data["detections"].set_index("oid").to_dict("records")
-        return detections
+    def pre_produce(self, result: ParsedData):  # pyright: ignore
+        def groupby_message_id(
+            df: pd.DataFrame,
+        ) -> dict[int, list[dict[str, Any]]]:
+            return (
+                df.groupby("message_id").apply(lambda x: x.to_dict("records")).to_dict()
+            )
+
+        message_objects = groupby_message_id(result["objects"])
+        message_detections = groupby_message_id(result["detections"])
+        message_non_detections = groupby_message_id(result["non_detections"])
+        message_forced_photometries = groupby_message_id(result["forced_photometries"])
+
+        messages = []
+        for message_id, objects in message_objects.items():
+            detections = message_detections[message_id]
+            non_detections = message_non_detections[message_id]
+            forced_photometries = message_forced_photometries[message_id]
+
+            assert len(objects) == 1
+            obj = objects[0]
+
+            messages.append(
+                {
+                    "oid": obj["oid"],
+                    "candid": obj["measurement_id"],
+                    "detections": detections + forced_photometries,
+                    "non_detections": non_detections,
+                }
+            )
+
+        return messages

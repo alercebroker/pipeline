@@ -3,8 +3,6 @@ import pandas as pd
 
 from ingestion_step.ztf.parsers.transforms import (
     add_candid,
-    add_e_mag,
-    add_mag,
     add_sid,
     add_tid,
     add_zero_e_dec,
@@ -13,6 +11,8 @@ from ingestion_step.ztf.parsers.transforms import (
     calculate_isdiffpos,
     candid_to_measurment_id,
     fid_to_band,
+    forcediffimflux_to_e_mag,
+    forcediffimflux_to_mag,
     jd_to_mjd,
     objectId_to_oid,
 )
@@ -25,8 +25,8 @@ FP_TRANSFORMS = [
     add_sid,
     fid_to_band,
     jd_to_mjd,
-    add_mag,
-    add_e_mag,
+    forcediffimflux_to_mag,
+    forcediffimflux_to_e_mag,
     add_zero_e_ra,
     add_zero_e_dec,
     calculate_isdiffpos,
@@ -39,10 +39,15 @@ subset of columns.
 
 def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
     cols = [
+        "message_id",
         "oid",
+        "sid",
+        "tid",
         "measurement_id",
         "ra",
+        "e_ra",
         "dec",
+        "e_dec",
         "band",
         "mjd",
         "mag",
@@ -79,6 +84,7 @@ def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
         "sigmagnr",
         "chinr",
         "sharpnr",
+        "forced",
     ]
 
     forced_photometries = fp_hist[cols].replace({np.nan: None})

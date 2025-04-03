@@ -14,7 +14,11 @@ from ingestion_step.ztf.parsers.transforms import (
     fid_to_band,
     isdiffpos_to_int,
     jd_to_mjd,
+    magpsf_to_mag,
     objectId_to_oid,
+    sigmadec_to_e_dec,
+    sigmapsf_to_e_mag,
+    sigmara_to_e_ra,
 )
 
 PRV_CANDIDATES_TRANSFORMS = [
@@ -22,8 +26,12 @@ PRV_CANDIDATES_TRANSFORMS = [
     candid_to_measurment_id,
     add_tid,
     add_sid,
+    sigmara_to_e_ra,
+    sigmadec_to_e_dec,
     fid_to_band,
     jd_to_mjd,
+    magpsf_to_mag,
+    sigmapsf_to_e_mag,
     isdiffpos_to_int,
     add_drb,
     add_drbversion,
@@ -45,16 +53,23 @@ def _parse_dets_from_prv_candidates(
 ) -> pd.DataFrame:
     det_prv_candidates = prv_candidates[prv_candidates["candid"].notnull()]
     cols = [
+        "message_id",
         "oid",
+        "sid",
+        "tid",
         "measurement_id",
         "ra",
+        "e_ra",
         "dec",
+        "e_dec",
         "band",
         "mjd",
         "pid",
         "diffmaglim",
         "isdiffpos",
         "nid",
+        "mag",
+        "e_mag",
         "magpsf",
         "sigmapsf",
         "magap",
@@ -84,7 +99,7 @@ def _parse_dets_from_prv_candidates(
 
 def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
-    cols = ["oid", "band", "mjd", "diffmaglim"]
+    cols = ["message_id", "oid", "sid", "tid", "band", "mjd", "diffmaglim"]
 
     non_detections = non_det_prv_candidates[cols].replace({np.nan: None})
 

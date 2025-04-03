@@ -102,16 +102,6 @@ def jd_to_mjd(df: pd.DataFrame):
     df["mjd"] = df["jd"] - 2400000.5
 
 
-def _e_ra(sigmara: float | None, dec: float, fid: int) -> float:
-    """Computes the e_ra of a detection"""
-    if sigmara:
-        return sigmara
-    try:
-        return ERRORS[fid] / abs(math.cos(math.radians(dec)))
-    except ZeroDivisionError:
-        return float("nan")
-
-
 # TODO: Update to use numpy vectorized function instead of element wise
 def sigmara_to_e_ra(df: pd.DataFrame):
     """
@@ -125,7 +115,12 @@ def sigmara_to_e_ra(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `e_ra`
     """
-    df["e_ra"] = df.apply(lambda x: _e_ra(x["sigmara"], x["dec"], x["fid"]), axis=1)
+    df["e_ra"] = df.apply(
+        lambda x: x["sigmara"]
+        if "sigmara" in x
+        else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"]))),
+        axis=1,
+    )
 
 
 def sigmadec_to_e_dec(df: pd.DataFrame):
@@ -140,7 +135,7 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
         - `e_dec`
     """
     df["e_dec"] = df.apply(
-        lambda x: x["sigmadec"] if x["sigmadec"] else ERRORS[x["fid"]], axis=1
+        lambda x: x["sigmadec"] if "sigmadec" in x else ERRORS[x["fid"]], axis=1
     )
 
 
@@ -160,6 +155,14 @@ def isdiffpos_to_int(df: pd.DataFrame):
     ('t', 'f', '1' or '-1').
     """
     df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
+
+
+def magpsf_to_mag(df: pd.DataFrame):
+    df["mag"] = df["magpsf"]
+
+
+def sigmapsf_to_e_mag(df: pd.DataFrame):
+    df["e_mag"] = df["sigmapsf"]
 
 
 # TODO: Check that the results are correct and add a small explanation.
@@ -185,7 +188,7 @@ def _calculate_mag(
 
 
 # TODO: Update to use numpy vectorized function instead of element wise
-def add_mag(df: pd.DataFrame):
+def forcediffimflux_to_mag(df: pd.DataFrame):
     """
     Takes a `DataFrame` containing the columns:
         - `magzpsci`
@@ -202,7 +205,7 @@ def add_mag(df: pd.DataFrame):
     )
 
 
-def add_e_mag(df: pd.DataFrame):
+def forcediffimflux_to_e_mag(df: pd.DataFrame):
     """
     Takes a `DataFrame` containing the columns:
         - `magzpsci`
