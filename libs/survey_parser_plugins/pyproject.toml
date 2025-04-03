@@ -4,11 +4,11 @@ version = "6.1.1a44"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "survey_parser_plugins"}]
+packages = [{ include = "survey_parser_plugins" }]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.12"
-fastavro = "1.6.1"
+python = ">=3.7,<3.13"
+fastavro = ">=1.6.1, <=1.8.4"
 python-snappy = "^0.6.1"
 
 [tool.poetry.group.dev.dependencies]
