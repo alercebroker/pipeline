@@ -1,3 +1,5 @@
+import random
+import string
 from pathlib import Path
 from typing import Any, Callable, Iterable, cast
 
@@ -26,11 +28,19 @@ def replace_all_fids(alert: dict[str, Any]) -> dict[str, Any]:
     return alert
 
 
+def replace_objectId(alert: dict[str, Any]) -> dict[str, Any]:
+    alert["objectId"] = "ZTF18" + "".join(
+        random.choices(string.ascii_lowercase + string.digits, k=7)
+    )
+    return alert
+
+
 def generate_alerts(n: int = 10) -> Iterable[dict[str, Any]]:
     schema_path = str(base_schema_path.joinpath("alert.avsc"))
     schema = load_schema(schema_path)
     alerts = generate_many(schema, n)
 
     alerts = map(replace_all_fids, alerts)
+    alerts = map(replace_objectId, alerts)
 
     return alerts
