@@ -11,9 +11,9 @@
                 "name": "probabilities",
                 "type": "record",
                 "fields": [
-                    {"name": "sn", "type": "float"},
-                    {"name": "agn", "type": "float"},
-                    {"name": "vs", "type": "float"},
+                    {"name": "SN", "type": "float"},
+                    {"name": "AGN", "type": "float"},
+                    {"name": "VS", "type": "float"},
                     {"name": "asteroid", "type": "float"},
                     {"name": "bogus", "type": "float"},
                     {"name": "satellite", "type": "float"}

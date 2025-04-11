@@ -1,25 +1,32 @@
+# Standard library
+import logging
+import sys
+import traceback
+import io
+import gzip
+from typing import List, Tuple
+
+# Third-party
+import numexpr
+import numpy as np
+import pandas as pd
+from pandas import DataFrame
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert
+from astropy.io import fits
+
+# Alerce and APF
 from apf.core import get_class
 from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
-from db_plugins.db.sql.models import Probability
-from ms_classification_step.core.parsers.kafka_parser import KafkaParser
-import logging
-import numexpr
-import traceback
-import sys
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
-from alerce_classifiers.base._types import *
-from typing import List, Tuple
-import pandas as pd
-from pandas import DataFrame
-import numpy as np
-from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import insert
+from alerce_classifiers.base._types import Detections, NonDetections, Features, Xmatch, Stamps
+from db_plugins.db.sql.models import Probability
 
 
 class MultiScaleStampClassifier(GenericStep):
     """
-    MultiScaleStampClassifier
+    Classifier step for processing multi-scale stamps.
     """
 
     _mapper_names = {
@@ -28,17 +35,21 @@ class MultiScaleStampClassifier(GenericStep):
         "cutoutDifference": "diff",
     }
 
+    _mapper_isdiffpos = {
+        "f": -1,
+        "t": 1,
+    }
+
     def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
-
         numexpr.utils.set_num_threads(1)
 
-        """ CLASSSIFIER VERSION AND NAME"""
+        # Model and classifier config
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = self.config["MODEL_CONFIG"]["VERSION"]
 
-        """ KAFKA PARSERS AND SCRIBE PARSERS """
-        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
+        # Parsers
+        self.step_parser = get_class(config["STEP_PARSER_CLASS"])()
         # TODO:
         # self.scribe_producer = get_class(
         #     config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
@@ -47,40 +58,12 @@ class MultiScaleStampClassifier(GenericStep):
         #     config["SCRIBE_PARSER_CLASS"]
         # )(classifier_name=self.classifier_name)
 
-        """ DB CONNECTION AND MODEL"""
+        # DB connection and model
         self.engine = self._create_engie()
         self.mapper = get_class(config["MODEL_CONFIG"]["CLASS_MAPPER"])()
         self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
             **{"mapper": self.mapper, **config["MODEL_CONFIG"]["PARAMS"]}
         )
-
-    def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-        return self.step_parser.parse(
-            model_output=result[0],
-            messages=result[1],
-        ).value
-
-    def produce_scribe(self, commands: List[dict]):
-        """BYPASS FUNCTION"""
-        pass
-        # ids_list = []
-        # for command in commands:
-        #     ids_list.append(command["criteria"]["_id"])
-        #     self.scribe_producer.produce({"payload": json.dumps(command)})
-        # self.logger.debug(f"The list of objets from scribe are: {ids_list}")
-
-    def log_data(self, model_input):
-        """BYPASS MODEL INPUT (NECESSARY ?)"""
-        self.logger.info("data logger")
-
-    def predict(self, model_input: InputDTO) -> OutputDTO | None:
-        """MODELS ALREADY HAVE PREDICT METHOD (NECESSARY ??)"""
-        try:
-            return self.model.predict(model_input)
-        except Exception as e:
-            self.logger.error(e)
-            self.logger.error(traceback.print_exc())
-            # sys.exit(1)
 
     def execute(self, messages):
         """Run the classification.
@@ -95,38 +78,102 @@ class MultiScaleStampClassifier(GenericStep):
         output_dto = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
 
         if len(messages) >= 1:
-            input_dto = self._messages_to_input_dto(messages)
-            self.logger.info(f"{len(messages)} consumed")
+            df_stamps, messages_dict = self._read_and_transform_messages(messages)
+
             try:
-                self.logger.info(f"input : {input_dto}")
+                input_dto = self._df_to_input_dto(df_stamps)
+                self.logger.info(f"{len(messages_dict)} messages consumed")
+            except Exception as e:
+                self.logger.error("Error converting DataFrame to InputDTO")
+                self.logger.error(e)
+                self.logger.error(traceback.format_exc())
+                return output_dto, messages_dict, DataFrame()
+
+            try:
                 output_dto = self.predict(input_dto)
-                self.logger.info(f" output : {output_dto}")
                 self._insert_to_db_from_output_dto(output_dto)
             except Exception as e:
                 self.logger.error(e)
                 self.logger.error(traceback.print_exc())
 
-            return output_dto, messages, DataFrame()
-        else:
-            return output_dto, messages, DataFrame()
 
-    def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-        return (
-            result[0],
-            result[1],
-            DataFrame(),
+            return output_dto, messages_dict, DataFrame()
+        else:
+            return output_dto, messages_dict, DataFrame()
+
+    def _read_and_transform_messages(self, messages: list[dict]) -> pd.DataFrame:
+        """read compressed messages and return lightweight messages with only necesary data"""
+        records = []
+        for msg in messages:
+            try:
+                science = self._decode_fits(msg["cutoutScience"]["stampData"])
+                if science.shape == (63, 63):
+                    template = self._decode_fits(msg["cutoutTemplate"]["stampData"])
+                    diff = self._decode_fits(msg["cutoutDifference"]["stampData"])
+                    metadata = self._extract_metadata_from_message(msg)
+                    metadata["cutoutScience"] = science
+                    metadata["cutoutTemplate"] = template
+                    metadata["cutoutDifference"] = diff
+                    records.append(metadata)
+            except Exception as e:
+                logging.warning(f"Skipping message due to error: {e}")
+
+        df = pd.DataFrame.from_records(records)
+        if not df.empty:
+            df = df.set_index("oid").sort_values("jd", ascending=True)
+            df = df[~df.index.duplicated(keep="first")]
+            messages_dict = df.to_dict(orient="index")
+        else:
+            messages_dict = {}
+
+        logging.info(f"Kept {len(records)}/{len(messages)} messages with 63x63 stamps.")
+        return df, messages_dict
+
+        # USANDO PADDING DIRECTO
+        #records = []
+        #for msg in messages:
+        #    template = self._extract_metadata_from_message(msg)
+        #    for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
+        #        template[k] = self._pad_matrices(
+        #            matrix=self._decode_fits(msg[k]["stampData"]),
+        #            target_shape=(63, 63),
+        #        )
+        #    records.append(template)
+#
+        #df = pd.DataFrame.from_records(records).set_index('oid').sort_values("jd", ascending=True)
+        #df = df[~df.index.duplicated(keep="first")]
+        #messages_dict = df.to_dict(orient="index")
+        #return df, messages_dict
+
+    def _df_to_input_dto(self, df: pd.DataFrame) -> InputDTO:
+        return InputDTO(
+            Detections(DataFrame()),
+            NonDetections(DataFrame()),
+            Features(DataFrame()),
+            Xmatch(DataFrame()),
+            Stamps(df.rename(columns=self._mapper_names)),
         )
 
-    def tear_down(self):
-        if isinstance(self.consumer, KafkaConsumer):
-            self.consumer.teardown()
-        else:
-            self.consumer.__del__()
-        self.producer.__del__()
+    def predict(self, model_input: InputDTO) -> OutputDTO | None:
+        """MODELS ALREADY HAVE PREDICT METHOD (NECESSARY ??)"""
+        try:
+            return self.model.predict(model_input)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.print_exc())
 
-    def pre_execute(self, messages):
-        """override method"""
-        return self._read_and_transform_messages(messages)
+    def _extract_metadata_from_message(self, msg: dict) -> dict:
+        return {
+            "oid": msg["objectId"],
+            "jd": msg["candidate"]["jd"],
+            "ra": msg["candidate"]["ra"],
+            "dec": msg["candidate"]["dec"],
+            "ssdistnr": msg["candidate"]["ssdistnr"],
+            "isdiffpos": self._mapper_isdiffpos[msg["candidate"]["isdiffpos"]],
+            "sgscore1": msg["candidate"]["sgscore1"],
+            "distpsnr1": msg["candidate"]["distpsnr1"],
+            "candid": msg["candidate"]["candid"],
+        }
 
     def _pad_matrices(self, matrix: np.ndarray, target_shape: tuple) -> np.ndarray:
         current_shape = matrix.shape
@@ -140,55 +187,7 @@ class MultiScaleStampClassifier(GenericStep):
             matrix, ((0, pad_rows), (0, pad_cols)), mode="constant", constant_values=0
         )
 
-    def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
-        """read compressed messages and return lightweight messages with only necesary data"""
-        for i, msg in enumerate(messages):
-            """for each message extract only necessary information"""
-            template = {}
-            template.update(self._extract_metadata_from_message(msg))
-            for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                template.update(
-                    {
-                        k: self._pad_matrices(
-                            matrix=self._decode_fits(msg[k]["stampData"]),
-                            target_shape=(63, 63),
-                        )
-                    }
-                )
-            """ update the same list """
-            messages[i].update({"data_stamp_inference": template})
-        return messages
-
-    def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
-        """ensure that all stamps share the same dimension"""
-        messages_filtered = []
-        for msg in messages:
-            condition_01 = (
-                msg["data_stamp_inference"]["cutoutScience"].shape
-                == msg["data_stamp_inference"]["cutoutTemplate"].shape
-            )
-            condition_02 = (
-                msg["data_stamp_inference"]["cutoutScience"].shape
-                == msg["data_stamp_inference"]["cutoutDifference"].shape
-            )
-            if condition_01 and condition_02:
-                self.logger.info(
-                    f"stamps with the same dimension dim = {msg['data_stamp_inference']['cutoutScience'].shape}"
-                )
-                messages_filtered.append(msg)
-
-        return messages_filtered
-
-    def _extract_metadata_from_message(self, msg: dict) -> dict:
-        return {
-            "oid": msg["objectId"],
-            "ra": msg["candidate"]["ra"],
-            "dec": msg["candidate"]["dec"],
-            "candid": msg["candidate"]["candid"],
-        }
-
     def _decode_fits(self, data: bytes) -> np.array:
-
         import io
         import gzip
         from astropy.io import fits
@@ -197,25 +196,6 @@ class MultiScaleStampClassifier(GenericStep):
             decompressed_data = f.read()
             with fits.open(io.BytesIO(decompressed_data)) as hdul:
                 return hdul[0].data
-
-    def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
-
-        ## get only necessary information form each msg
-        records = []
-        for msg in messages:
-            records.append(msg["data_stamp_inference"])
-
-        return InputDTO(
-            Detections(DataFrame()),
-            NonDetections(DataFrame()),
-            Features(DataFrame()),
-            Xmatch(DataFrame()),
-            Stamps(
-                pd.DataFrame.from_records(records)
-                .set_index("oid")
-                .rename(columns=self._mapper_names)
-            ),
-        )
 
     def _get_ranking(self, output_dto: OutputDTO) -> DataFrame:
         probabilitites = output_dto.probabilities.reset_index()
@@ -258,3 +238,33 @@ class MultiScaleStampClassifier(GenericStep):
             self.logger.error(e)
             self.logger.error(traceback.print_exc())
             sys.exit(1)
+
+    def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        return (
+            result[0],
+            result[1],
+            DataFrame(),
+        )
+
+    def pre_produce(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
+        return self.step_parser.parse(
+            model_output=result[0],
+            messages=result[1],
+        ).value
+
+    def produce_scribe(self, commands: List[dict]):
+        """BYPASS FUNCTION"""
+        pass
+        # ids_list = []
+        # for command in commands:
+        #     ids_list.append(command["criteria"]["_id"])
+        #     self.scribe_producer.produce({"payload": json.dumps(command)})
+        # self.logger.debug(f"The list of objets from scribe are: {ids_list}")
+
+    def tear_down(self):
+        if isinstance(self.consumer, KafkaConsumer):
+            self.consumer.teardown()
+        else:
+            self.consumer.__del__()
+        self.producer.__del__()
+

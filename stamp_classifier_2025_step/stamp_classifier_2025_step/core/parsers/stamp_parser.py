@@ -11,21 +11,20 @@ class StampParser(KafkaParser):
         super().__init__(None)
 
     def parse(
-        self, model_output: OutputDTO, messages: list, **kwargs
+        self, model_output: OutputDTO, messages: dict, **kwargs
     ) -> KafkaOutput[list]:
 
         parsed = []
         probabilities = model_output.probabilities
-        for msg in messages:
+        for oid, msg in messages.items():
             try:
+                data = self._get_probabilities_by_oid(oid, probabilities=probabilities)
                 parsed.append(
-                    self._format_each_message(
-                        msg=msg,
-                        data=self._get_probabilities_by_oid(
-                            msg["data_stamp_inference"]["oid"],
-                            probabilities=probabilities,
-                        ),
-                    )
+                    {
+                        "objectId": oid,
+                        "candid": msg["candid"],
+                        "probabilities": data,
+                    }
                 )
             except Exception as e:
                 logging.error("Message with no probability")
@@ -39,9 +38,3 @@ class StampParser(KafkaParser):
             return {"error": "OID not found"}
         return probabilities.loc[oid].to_dict()
 
-    def _format_each_message(self, msg, data):
-        return {
-            "objectId": msg["data_stamp_inference"]["oid"],
-            "candid": msg["data_stamp_inference"]["candid"],
-            "probabilities": data,
-        }
