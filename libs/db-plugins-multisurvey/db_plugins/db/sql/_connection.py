@@ -16,7 +16,20 @@ logger = logging.getLogger(__name__)
 class PsqlDatabase:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
-        self._engine = engine or create_engine(db_url, echo=False)
+        schema = db_config.get("SCHEMA", None)
+        if schema:         
+            self._engine = engine or create_engine(
+                db_url,
+                echo=False,
+                connect_args={
+                    "options": "-csearch_path={}".format(
+                        schema
+                    )
+                },
+            )
+        else:
+            self._engine = engine or create_engine(db_url, echo=False)
+
         self._session_factory = sessionmaker(
             autocommit=False, autoflush=False, bind=self._engine
         )
