@@ -24,7 +24,7 @@ def test_serialize_non_detections(parsed_ztf_data: ParsedData):
 def test_serialize_ztf(parsed_ztf_data: ParsedData):
     msgs = serializer.serialize_ztf(parsed_ztf_data)
 
-    expected_keys = ["oid", "candid", "detections", "non_detections"]
+    expected_keys = ["oid", "measurement_id", "detections", "non_detections"]
 
     assert all([list(msg.keys()) == expected_keys for msg in msgs])
     assert sum(map(lambda msg: len(msg["detections"]), msgs)) == len(

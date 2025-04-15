@@ -91,7 +91,7 @@ def serialize_ztf(data: ParsedData) -> list[dict[str, Any]]:
         messages.append(
             {
                 "oid": obj["oid"],
-                "candid": obj["measurement_id"],
+                "measurement_id": obj["measurement_id"],
                 "detections": detections,
                 "non_detections": non_detections,
             }
