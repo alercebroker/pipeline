@@ -9,7 +9,6 @@ readme = "README.md"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-
 [tool.poetry.scripts]
 step = { callable = "scripts.run_step:step" }
 
