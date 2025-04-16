@@ -33,10 +33,6 @@
             },
             {
               "name": "band",
-              "type": "long"
-            },
-            {
-              "name": "band",
               "type": "int"
             },
             {
@@ -85,14 +81,24 @@
             },
             {
               "name": "parent_candid",
-              "type": ["long", "null"]
+              "type": [
+                "long",
+                "null"
+              ]
             },
             {
               "name": "extra_fields",
               "type": {
                 "default": {},
                 "type": "map",
-                "values": ["null", "int", "float", "string", "bytes", "boolean"]
+                "values": [
+                  "null",
+                  "int",
+                  "float",
+                  "string",
+                  "bytes",
+                  "boolean"
+                ]
               }
             }
           ]
