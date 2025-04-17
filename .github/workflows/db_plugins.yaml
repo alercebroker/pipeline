@@ -18,7 +18,7 @@ jobs:
   db_plugins_unittest:
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: [ '3.10', '3.11']
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'libs/db-plugins'
@@ -31,7 +31,7 @@ jobs:
   db_plugins_integration:
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: [ '3.10', '3.11']
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'libs/db-plugins'
@@ -49,7 +49,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
-      python-version: '3.8'
+      python-version: '3.10'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/unittest'
     secrets:
@@ -58,7 +58,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'sorting_hat_step'
-      python-version: '3.8'
+      python-version: '3.10'
       sources-folder: 'sorting_hat_step'
       test-folder: 'tests/integration'
       codecov-flags: ''  # Do not upload
@@ -76,7 +76,7 @@ jobs:
   scribe_unittest:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.9'
+      python-version: '3.10'
       sources-folder: 'mongo_scribe'
       base-folder: 'scribe'
       test-folder: 'tests/unittest'
@@ -86,7 +86,7 @@ jobs:
   scribe_integration:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
-      python-version: '3.9'
+      python-version: '3.10'
       sources-folder: 'mongo_scribe'
       base-folder: 'scribe'
       test-folder: 'tests/integration'
@@ -110,7 +110,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step'
-      python-version: "3.9"
+      python-version: "3.10"
       test-folder: "tests/unittest"
     secrets:
       GH_TOKEN: '${{ secrets.ADMIN_TOKEN }}'
@@ -118,7 +118,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: 'lightcurve-step'
-      python-version: "3.9"
+      python-version: "3.10"
       test-folder: "tests/integration"
       codecov-flags: "" # Do not upload
     secrets:

@@ -108,6 +108,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ inputs.base-folder }}
+          poetry env use python${{ inputs.python-version }}
           poetry install ${{ inputs.poetry-install }}
       - name: Tests with pytest
         run: |
