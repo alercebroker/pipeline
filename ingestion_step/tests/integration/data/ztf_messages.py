@@ -315,7 +315,7 @@ ztf_detections_expected = [
         "parent_candid": 4230345137,
         "has_stamp": True,
     },
-    {   
+    {
         "oid": 525514836051,
         "measurement_id": 3985006894,
         "pid": 0,
@@ -344,7 +344,7 @@ ztf_detections_expected = [
     },
     {
         "oid": 525514836051,
-        "measurement_id": 7765783962, 
+        "measurement_id": 7765783962,
         "pid": 0,
         "diffmaglim": 20.7186,
         "isdiffpos": -1,
@@ -391,6 +391,7 @@ existing_fp_dict = {
 existing_ztf_fp_dict = {
     "oid": 525514836051,
     "measurement_id": 4970430577,
+    "pid": 0,
     "mag": 18.8348445892334,
     "e_mag": 0.036699023097753525,
     "mag_corr": None,
@@ -431,6 +432,7 @@ new_fp_dict = [
     {
         "oid": 525514836051,
         "measurement_id": 4970430577,
+        "pid": 0,
         "mjd": 58791.2800925998,
         "ra": 24.9727713,
         "dec": 80.1261365,
@@ -468,6 +470,7 @@ new_fp_dict = [
     {
         "oid": 525514836051,
         "measurement_id": 9676191800,
+        "pid": 0,
         "mjd": 58791.28415510012,
         "ra": 43.3676758,
         "dec": 22.5319344,
@@ -505,6 +508,7 @@ new_fp_dict = [
     {
         "oid": 525514836051,
         "measurement_id": 5548762389,
+        "pid": 0,
         "mjd": 60754.49832180003,
         "ra": 256.4062549,
         "dec": 34.1939546,
@@ -572,6 +576,7 @@ ztf_fp_expected = [
     {
         "oid": 525514836051,
         "measurement_id": 4970430577,
+        "pid": 0,
         "mag": 18.8348445892334,
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
@@ -610,6 +615,7 @@ ztf_fp_expected = [
     {
         "oid": 525514836051,
         "measurement_id": 9676191800,
+        "pid": 0,
         "mag": 19.8348445892334,
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
@@ -644,11 +650,11 @@ ztf_fp_expected = [
         "sigmagnr": 0.11599999666213989,
         "chinr": 6.926000118255615,
         "sharpnr": 0.4560000002384186,
-        "has_stamp": False,
     },
     {
         "oid": 525514836051,
         "measurement_id": 5548762389,
+        "pid": 0,
         "mag": 18.8348445892334,
         "e_mag": 0.036699023097753525,
         "mag_corr": None,
@@ -683,7 +689,6 @@ ztf_fp_expected = [
         "sigmagnr": 0.11599999666213989,
         "chinr": 6.926000118255615,
         "sharpnr": 0.4560000002384186,
-        "has_stamp": False,
     },
 ]
 

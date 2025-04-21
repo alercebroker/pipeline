@@ -144,6 +144,7 @@ class ZtfForcedPhotometry(Base):
 
     oid = Column(BigInteger, nullable=False)  # int8,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
+    pid = Column(BigInteger) # int8
     mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     mag_corr = Column(DOUBLE_PRECISION)  # float8,
