@@ -13,7 +13,7 @@ def ztf_alerts() -> list[dict[str, Any]]:
     return list(generate_alerts())
 
 
-# Adds a better assertion message for subset comparassion
+# Adds a better assertion message for subset comparison
 def pytest_assertrepr_compare(op: str, left: object, right: object):
     if isinstance(left, set) and isinstance(right, set) and op == "<=":
         return [

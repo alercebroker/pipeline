@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from idmapper.mapper import catalog_oid_to_masterid, is_ztf_oid_valid, decode_masterid
+from idmapper.mapper import catalog_oid_to_masterid, decode_masterid
+from idmapper.ztf import is_ztf_oid_valid
 
 
 class TestZTFMapper(unittest.TestCase):

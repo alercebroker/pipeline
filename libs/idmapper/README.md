@@ -42,7 +42,8 @@ print(catalog, catalog_oid)
 To validate a ZTF object ID, use the `is_ztf_oid_valid` function:
 
 ```python
-from idmapper.mapper import is_ztf_oid_valid
+
+from idmapper.ztf import is_ztf_oid_valid
 
 ztf_oid = "ZTF20abcdefg"
 is_valid = is_ztf_oid_valid(ztf_oid)
