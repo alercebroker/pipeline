@@ -8,6 +8,7 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
+from idmapper.mapper import catalog_oid_to_masterid
 
 ERRORS = {
     1: 0.065,
@@ -16,17 +17,6 @@ ERRORS = {
 }
 
 ZERO_MAG = 100.0
-
-
-# WARN: Use a more appropiate conversion
-def _str_to_int(obj: str) -> int:
-    """
-    Converts a `str` to an `int`.
-
-    Used to transform `oid` into an numeric unique identifier.
-    """
-    obj_bytes = obj.encode("utf-8")
-    return int.from_bytes(obj_bytes, byteorder="big") % 2**30
 
 
 def objectId_to_oid(df: pd.DataFrame):
@@ -38,7 +28,9 @@ def objectId_to_oid(df: pd.DataFrame):
     and uses them to calculate the new columns:
         - `oid`
     """
-    df["oid"] = df["objectId"].apply(_str_to_int)
+    df["oid"] = df.apply(
+        lambda x: int(catalog_oid_to_masterid("ZTF", x["objectId"])), axis=1
+    )
 
 
 def add_candid(df: pd.DataFrame):
@@ -52,10 +44,8 @@ def add_candid(df: pd.DataFrame):
         - `candid`
     """
 
-    # WARN: Use a more appropiate conversion
-    df["candid"] = df.apply(
-        lambda x: _str_to_int(x["objectId"] + str(x["pid"])), axis=1
-    )
+    # WARN: Use a more appropiate conversion!
+    df["candid"] = df.apply(lambda x: x["oid"] ^ x["pid"], axis=1)
 
 
 def candid_to_measurment_id(df: pd.DataFrame):

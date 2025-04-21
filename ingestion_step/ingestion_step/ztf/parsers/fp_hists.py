@@ -44,6 +44,7 @@ def _parse_fps_from_fp_hists(fp_hist: pd.DataFrame) -> pd.DataFrame:
         "sid",
         "tid",
         "measurement_id",
+        "pid",
         "ra",
         "e_ra",
         "dec",

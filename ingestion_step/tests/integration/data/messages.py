@@ -1,11 +1,12 @@
-from fastavro import schemaless_writer
-from fastavro.utils import generate_one
-from fastavro.schema import load_schema
-from fastavro.repository.base import SchemaRepositoryError
 import io
 
+from fastavro import schemaless_writer
+from fastavro.repository.base import SchemaRepositoryError
+from fastavro.schema import load_schema
+from fastavro.utils import generate_one
 
-def generate_schemaless_batch(n):
+
+def generate_schemaless_batch(n: int):
     try:
         schema = load_schema("schemas/elasticc/elasticc.v0_9_1.alert.avsc")
     except SchemaRepositoryError:
@@ -14,7 +15,7 @@ def generate_schemaless_batch(n):
         )
 
     messages = []
-    for i in range(n):
+    for _ in range(n):
         out = io.BytesIO()
         schemaless_writer(out, schema, generate_one(schema))
         messages.append(out.getvalue())

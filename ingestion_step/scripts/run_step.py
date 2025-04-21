@@ -15,11 +15,8 @@ PACKAGE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 sys.path.append(PACKAGE_PATH)
 
 
-if os.getenv("CONFIG_FROM_YAML") or True:
-    STEP_CONFIG = config_from_yaml_file("/home/alex/Work/Projects/pipeline/ingestion_step/scripts/config.yaml")
-    STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key": "candid", "format": str}]
-else:
-    from settings import STEP_CONFIG
+STEP_CONFIG = config_from_yaml_file("config.yaml")
+STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key": "candid", "format": str}]
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG"):

@@ -177,6 +177,7 @@ def insert_forced_photometry(
         [
             "oid",
             "measurement_id",
+            "pid",
             "mag",
             "e_mag",
             "mag_corr",
