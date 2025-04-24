@@ -32,6 +32,10 @@
               "type": "int"
             },
             {
+              "name": "pid",
+              "type": "long"
+            },
+            {
               "name": "band",
               "type": "int"
             },
