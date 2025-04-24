@@ -11,7 +11,7 @@ from numpy.random import randint
 # Overwrite type as it is wrongly infered as `Unknown`
 load_schema = cast(Callable[[str], Schema], _load_schema)
 
-base_schema_path = Path("../schemas/ztf")
+base_schema_path = Path("tests/data/schema/ztf_custom")
 
 
 def replace_fid_det(det: dict[str, Any]) -> dict[str, Any]:

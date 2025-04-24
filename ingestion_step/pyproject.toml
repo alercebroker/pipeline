@@ -59,6 +59,7 @@ extraPaths = [
     "../libs/test_utils/",
     "../libs/apf/",
     "../libs/survey_parser_plugins/",
+    "../libs/idmapper/",
 ]
 
 [build-system]
