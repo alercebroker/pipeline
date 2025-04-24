@@ -22,7 +22,9 @@ def replace_fid_det(det: dict[str, Any]) -> dict[str, Any]:
 def replace_all_fids(alert: dict[str, Any]) -> dict[str, Any]:
     alert["candidate"] = replace_fid_det(alert["candidate"])
     if alert["prv_candidates"] is not None:
-        alert["prv_candidates"] = list(map(replace_fid_det, alert["prv_candidates"]))
+        alert["prv_candidates"] = list(
+            map(replace_fid_det, alert["prv_candidates"])
+        )
     if alert["fp_hists"] is not None:
         alert["fp_hists"] = list(map(replace_fid_det, alert["fp_hists"]))
     return alert

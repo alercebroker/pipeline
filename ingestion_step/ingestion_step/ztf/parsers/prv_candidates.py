@@ -97,7 +97,9 @@ def _parse_dets_from_prv_candidates(
     return detections
 
 
-def _parse_non_dets_from_prv_candidates(prv_candidates: pd.DataFrame) -> pd.DataFrame:
+def _parse_non_dets_from_prv_candidates(
+    prv_candidates: pd.DataFrame,
+) -> pd.DataFrame:
     non_det_prv_candidates = prv_candidates[prv_candidates["candid"].isnull()]
     cols = ["message_id", "oid", "sid", "tid", "band", "mjd", "diffmaglim"]
 
@@ -120,4 +122,6 @@ def parse_prv_candidates(
     detections = _parse_dets_from_prv_candidates(prv_candidates)
     non_detections = _parse_non_dets_from_prv_candidates(prv_candidates)
 
-    return ParsedPrvCandidates(detections=detections, non_detections=non_detections)
+    return ParsedPrvCandidates(
+        detections=detections, non_detections=non_detections
+    )

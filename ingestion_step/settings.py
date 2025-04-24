@@ -6,10 +6,14 @@ import pathlib
 from typing import Any, Callable, TypedDict
 
 producer_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "output.avsc"
+    pathlib.Path(__file__).parent.parent,
+    "schemas/sorting_hat_step",
+    "output.avsc",
 )
 metrics_schema_path = pathlib.Path(
-    pathlib.Path(__file__).parent.parent, "schemas/sorting_hat_step", "metrics.json"
+    pathlib.Path(__file__).parent.parent,
+    "schemas/sorting_hat_step",
+    "metrics.json",
 )
 scribe_schema_path = pathlib.Path(
     pathlib.Path(__file__).parent.parent, "schemas/scribe_step", "scribe.avsc"
@@ -73,14 +77,17 @@ if os.getenv("TOPIC_STRATEGY_TOPIC_FORMAT"):
         },
     }
 elif os.getenv("CONSUMER_TOPICS"):
-    CONSUMER_CONFIG["TOPICS"] = os.environ["CONSUMER_TOPICS"].strip().split(",")
+    CONSUMER_CONFIG["TOPICS"] = (
+        os.environ["CONSUMER_TOPICS"].strip().split(",")
+    )
 else:
     raise Exception("Add TOPIC_STRATEGY or CONSUMER_TOPICS")
 
 if os.getenv("CONSUMER_CLASS") == "apf.consumers.KafkaSchemalessConsumer":
     try:
         CONSUMER_CONFIG["SCHEMA_PATH"] = os.path.join(
-            os.path.dirname(__file__), "schemas/elasticc/elasticc.v0_9_1.alert.avsc"
+            os.path.dirname(__file__),
+            "schemas/elasticc/elasticc.v0_9_1.alert.avsc",
         )
         assert os.path.exists(CONSUMER_CONFIG["SCHEMA_PATH"])
     except AssertionError:
@@ -105,15 +112,25 @@ PRODUCER_CONFIG: ProducerConfig = {
     "TOPIC": os.environ["PRODUCER_TOPIC"],
     "PARAMS": {
         "bootstrap.servers": os.environ["PRODUCER_SERVER"],
-        "message.max.bytes": int(os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)),
+        "message.max.bytes": int(
+            os.getenv("PRODUCER_MESSAGE_MAX_BYTES", 6291456)
+        ),
     },
-    "SCHEMA_PATH": os.getenv("PRODUCER_SCHEMA_PATH", str(producer_schema_path)),
+    "SCHEMA_PATH": os.getenv(
+        "PRODUCER_SCHEMA_PATH", str(producer_schema_path)
+    ),
 }
 
-ExtraMetric = TypedDict("ExtraMetric", {"key": str, "format": Callable[[Any], str]})
+ExtraMetric = TypedDict(
+    "ExtraMetric", {"key": str, "format": Callable[[Any], str]}
+)
 MetricConfig = TypedDict(
     "MetricConfig",
-    {"CLASS": str, "PARAMS": dict[str, Any], "EXTRA_METRICS": list[ExtraMetric]},
+    {
+        "CLASS": str,
+        "PARAMS": dict[str, Any],
+        "EXTRA_METRICS": list[ExtraMetric],
+    },
 )
 METRICS_CONFIG: MetricConfig = {
     "CLASS": os.getenv("METRICS_CLASS", "apf.metrics.KafkaMetricsProducer"),
@@ -125,20 +142,34 @@ METRICS_CONFIG: MetricConfig = {
             "bootstrap.servers": os.getenv("METRICS_HOST"),
         },
         "TOPIC": os.getenv("METRICS_TOPIC", "metrics"),
-        "SCHEMA_PATH": os.getenv("METRICS_SCHEMA_PATH", str(metrics_schema_path)),
+        "SCHEMA_PATH": os.getenv(
+            "METRICS_SCHEMA_PATH", str(metrics_schema_path)
+        ),
     },
 }
 
-if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv("CONSUMER_KAFKA_PASSWORD"):
+if os.getenv("CONSUMER_KAFKA_USERNAME") and os.getenv(
+    "CONSUMER_KAFKA_PASSWORD"
+):
     CONSUMER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     CONSUMER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("CONSUMER_KAFKA_USERNAME")
-    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("CONSUMER_KAFKA_PASSWORD")
-if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv("PRODUCER_KAFKA_PASSWORD"):
+    CONSUMER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "CONSUMER_KAFKA_USERNAME"
+    )
+    CONSUMER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "CONSUMER_KAFKA_PASSWORD"
+    )
+if os.getenv("PRODUCER_KAFKA_USERNAME") and os.getenv(
+    "PRODUCER_KAFKA_PASSWORD"
+):
     PRODUCER_CONFIG["PARAMS"]["security.protocol"] = "SASL_SSL"
     PRODUCER_CONFIG["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"
-    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv("PRODUCER_KAFKA_USERNAME")
-    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv("PRODUCER_KAFKA_PASSWORD")
+    PRODUCER_CONFIG["PARAMS"]["sasl.username"] = os.getenv(
+        "PRODUCER_KAFKA_USERNAME"
+    )
+    PRODUCER_CONFIG["PARAMS"]["sasl.password"] = os.getenv(
+        "PRODUCER_KAFKA_PASSWORD"
+    )
 if os.getenv("METRICS_KAFKA_USERNAME") and os.getenv("METRICS_KAFKA_PASSWORD"):
     METRICS_CONFIG["PARAMS"]["PARAMS"]["security.protocol"] = "SASL_SSL"
     METRICS_CONFIG["PARAMS"]["PARAMS"]["sasl.mechanism"] = "SCRAM-SHA-512"

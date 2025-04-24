@@ -34,6 +34,7 @@ test-utils = { path = "../libs/test_utils", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 pandas-stubs = "^2.2.3.241126"
+black = "^25.1.0"
 
 
 [tool.poetry.group.notebook.dependencies]

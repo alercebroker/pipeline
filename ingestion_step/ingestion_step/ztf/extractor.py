@@ -20,12 +20,20 @@ def _has_stamp(message: dict[str, Any]) -> bool:
     """
     return (
         ("cutoutScience" in message and message["cutoutScience"] is not None)
-        and ("cutoutTemplate" in message and message["cutoutTemplate"] is not None)
-        and ("cutoutDifference" in message and message["cutoutDifference"] is not None)
+        and (
+            "cutoutTemplate" in message
+            and message["cutoutTemplate"] is not None
+        )
+        and (
+            "cutoutDifference" in message
+            and message["cutoutDifference"] is not None
+        )
     )
 
 
-def _extract_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _extract_candidates(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """
     Extract all candidates for the list of messages.
 
@@ -46,7 +54,9 @@ def _extract_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def _extract_prv_candidates(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _extract_prv_candidates(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """
     Extract all previous candidates for the list of messages.
 
@@ -55,7 +65,10 @@ def _extract_prv_candidates(messages: list[dict[str, Any]]) -> list[dict[str, An
     """
     prv_candidates = []
     for message_id, message in enumerate(messages):
-        if "prv_candidates" not in message or message["prv_candidates"] is None:
+        if (
+            "prv_candidates" not in message
+            or message["prv_candidates"] is None
+        ):
             continue
         for prv_candidate in message["prv_candidates"]:
             prv_candidates.append(

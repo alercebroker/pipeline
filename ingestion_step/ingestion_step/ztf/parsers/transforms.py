@@ -106,9 +106,11 @@ def sigmara_to_e_ra(df: pd.DataFrame):
         - `e_ra`
     """
     df["e_ra"] = df.apply(
-        lambda x: x["sigmara"]
-        if "sigmara" in x
-        else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"]))),
+        lambda x: (
+            x["sigmara"]
+            if "sigmara" in x
+            else ERRORS[x["fid"]] / abs(math.cos(math.radians(x["dec"])))
+        ),
         axis=1,
     )
 
@@ -125,7 +127,8 @@ def sigmadec_to_e_dec(df: pd.DataFrame):
         - `e_dec`
     """
     df["e_dec"] = df.apply(
-        lambda x: x["sigmadec"] if "sigmadec" in x else ERRORS[x["fid"]], axis=1
+        lambda x: x["sigmadec"] if "sigmadec" in x else ERRORS[x["fid"]],
+        axis=1,
     )
 
 
@@ -144,7 +147,9 @@ def isdiffpos_to_int(df: pd.DataFrame):
     Converts isdiffpos to a int representation (1 or -1) instead of a string
     ('t', 'f', '1' or '-1').
     """
-    df["isdiffpos"] = df["isdiffpos"].apply(lambda x: 1 if x in ["t", "1"] else -1)
+    df["isdiffpos"] = df["isdiffpos"].apply(
+        lambda x: 1 if x in ["t", "1"] else -1
+    )
 
 
 def magpsf_to_mag(df: pd.DataFrame):
@@ -171,7 +176,10 @@ def _calculate_mag(
         e_mag = ZERO_MAG
     else:
         e_mag = (
-            1.0857 * forcediffimfluxunc * flux2uJy / np.abs(forcediffimflux * flux2uJy)
+            1.0857
+            * forcediffimfluxunc
+            * flux2uJy
+            / np.abs(forcediffimflux * flux2uJy)
         )
 
     return mag, e_mag

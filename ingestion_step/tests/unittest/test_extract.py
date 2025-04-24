@@ -43,7 +43,9 @@ def test_extract(ztf_alerts: list[dict[str, Any]]):
 
     n_candidates = len(ztf_alerts)
     n_prv_candidates = sum(
-        len(alert["prv_candidates"]) for alert in ztf_alerts if alert["prv_candidates"]
+        len(alert["prv_candidates"])
+        for alert in ztf_alerts
+        if alert["prv_candidates"]
     )
     n_fp_hists = sum(
         len(alert["fp_hists"]) for alert in ztf_alerts if alert["fp_hists"]

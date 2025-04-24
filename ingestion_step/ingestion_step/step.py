@@ -36,7 +36,9 @@ class SortingHatStep(GenericStep):
         self.metrics["tid"] = alerts["tid"].tolist()
         self.metrics["aid"] = alerts["aid"].tolist()
 
-    def execute(self, messages: list[dict[str, Any]]) -> ParsedData:  # pyright: ignore
+    def execute(
+        self, messages: list[dict[str, Any]]
+    ) -> ParsedData:  # pyright: ignore
         self.logger.info(f"Processing {len(messages)} alerts")
 
         self.ingestion_timestamp = int(datetime.now().timestamp())
@@ -50,7 +52,9 @@ class SortingHatStep(GenericStep):
         insert_objects(self.psql_driver, parsed_data["objects"])
         insert_detections(self.psql_driver, parsed_data["detections"])
         insert_non_detections(self.psql_driver, parsed_data["non_detections"])
-        insert_forced_photometry(self.psql_driver, parsed_data["forced_photometries"])
+        insert_forced_photometry(
+            self.psql_driver, parsed_data["forced_photometries"]
+        )
 
         return parsed_data
 

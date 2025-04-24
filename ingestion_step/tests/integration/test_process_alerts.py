@@ -22,7 +22,9 @@ psql_config = {
 
 
 @pytest.mark.usefixtures("psql_db")
-def test_process_alerts_ztf(ztf_alerts: list[dict[str, Any]], psql_db: PsqlDatabase):
+def test_process_alerts_ztf(
+    ztf_alerts: list[dict[str, Any]], psql_db: PsqlDatabase
+):
     messages = ztf_alerts
 
     parser = select_parser("ztf")

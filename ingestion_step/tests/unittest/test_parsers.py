@@ -9,7 +9,9 @@ from ingestion_step.ztf.parsers import candidates, fp_hists, prv_candidates
 
 
 def apply_transforms(
-    ztf_data: ZTFData, df: str, transforms: list[Callable[[pd.DataFrame], None]]
+    ztf_data: ZTFData,
+    df: str,
+    transforms: list[Callable[[pd.DataFrame], None]],
 ):
     for transform in transforms:
         try:
@@ -26,12 +28,16 @@ def test_parse_candidates(ztf_data: ZTFData):
     try:
         candidates._parse_objs_from_candidates(ztf_data["candidates"])
     except Exception as exception:
-        pytest.fail(f"Could not parse `objects` from `candidates`.\n{exception=}")
+        pytest.fail(
+            f"Could not parse `objects` from `candidates`.\n{exception=}"
+        )
 
     try:
         candidates._parse_dets_from_candidates(ztf_data["candidates"])
     except Exception as exception:
-        pytest.fail(f"Could not parse `objects` from `candidates`.\n{exception=}")
+        pytest.fail(
+            f"Could not parse `objects` from `candidates`.\n{exception=}"
+        )
 
 
 def test_prv_candidates_parser(ztf_data: ZTFData):
@@ -40,14 +46,18 @@ def test_prv_candidates_parser(ztf_data: ZTFData):
     )
 
     try:
-        prv_candidates._parse_dets_from_prv_candidates(ztf_data["prv_candidates"])
+        prv_candidates._parse_dets_from_prv_candidates(
+            ztf_data["prv_candidates"]
+        )
     except Exception as exception:
         pytest.fail(
             f"Could not parse `detections` from `prv_candidates`.\n{exception=}"
         )
 
     try:
-        prv_candidates._parse_non_dets_from_prv_candidates(ztf_data["prv_candidates"])
+        prv_candidates._parse_non_dets_from_prv_candidates(
+            ztf_data["prv_candidates"]
+        )
     except Exception as exception:
         pytest.fail(
             f"Could not parse `non_detections` from `prv_candidates`.\n{exception=}"

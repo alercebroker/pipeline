@@ -45,7 +45,9 @@ def psql_service(docker_ip, docker_services):
     # `port_for` takes a container port and returns the corresponding host port
     port = docker_services.port_for("postgres", 5432)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(docker_ip, port)
+        timeout=30.0,
+        pause=0.1,
+        check=lambda: is_responsive_psql(docker_ip, port),
     )
 
 
@@ -53,7 +55,9 @@ def psql_service(docker_ip, docker_services):
 def psql_db(docker_ip, docker_services):
     port = docker_services.port_for("postgres", 5432)
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive_psql(docker_ip, port)
+        timeout=30.0,
+        pause=0.1,
+        check=lambda: is_responsive_psql(docker_ip, port),
     )
 
     psql_db = PsqlDatabase(psql_config)

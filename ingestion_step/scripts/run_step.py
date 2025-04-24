@@ -16,7 +16,9 @@ sys.path.append(PACKAGE_PATH)
 
 
 STEP_CONFIG = config_from_yaml_file("config.yaml")
-STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [{"key": "candid", "format": str}]
+STEP_CONFIG["METRICS_CONFIG"]["EXTRA_METRICS"] = [
+    {"key": "candid", "format": str}
+]
 
 level = logging.INFO
 if STEP_CONFIG.get("LOGGING_DEBUG"):
