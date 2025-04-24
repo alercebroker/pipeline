@@ -1,4 +1,4 @@
-FROM python:3.10-slim as python-base
+FROM python:3.10-slim AS python-base
 LABEL org.opencontainers.image.authors="ALeRCE"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -10,18 +10,28 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
   POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1
 
-FROM python-base as builder
+FROM python-base AS builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry;
+
 COPY ingestion_step/poetry.lock ingestion_step/pyproject.toml /app/
+
 COPY libs/apf libs/apf
-COPY libs/db-plugins libs/db-plugins
+COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
+COPY libs/idmapper libs/idmapper
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
+
+COPY schemas/ztf schemas/ztf
+COPY schemas/ingestion_step schemas/ingestion_step
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test;
 
-FROM python:3.10-slim as production
+FROM python:3.10-slim AS production
 RUN pip install poetry;
 
 COPY --from=builder /app /app
@@ -30,12 +40,11 @@ COPY --from=builder /schemas /schemas
 
 COPY ingestion_step/ingestion_step /app/ingestion_step
 COPY ingestion_step/scripts /app/scripts
-COPY ingestion_step/credentials.py \
-  ingestion_step/settings.py \
+COPY ingestion_step/settings.py \
   ingestion_step/README.md \
   /app/
 
 WORKDIR /app
 RUN poetry install --only-root;
 
-CMD ["poetry", "run", "python", "scripts/run_step.py"]
+CMD ["poetry", "run", "step"]
