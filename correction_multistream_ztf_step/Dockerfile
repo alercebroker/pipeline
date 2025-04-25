@@ -25,7 +25,7 @@ COPY libs/db-plugins-multisurvey libs/db-plugins-multisurvey
 COPY libs/idmapper libs/idmapper
 COPY libs/survey_parser_plugins libs/survey_parser_plugins
 
-COPY schemas/schemas/correction_ms_ztf schemas/schemas/correction_ms_ztf
+COPY schemas/correction_ms_ztf schemas/correction_ms_ztf
 
 WORKDIR /app
 RUN poetry install --no-root --without=dev --without=test;
@@ -41,9 +41,6 @@ COPY correction_multistream_ztf_step/correction_multistream_ztf_step /app/correc
 COPY correction_multistream_ztf_step/core /app/core
 COPY correction_multistream_ztf_step/tests /app/tests
 COPY correction_multistream_ztf_step/scripts /app/scripts
-COPY correction_multistream_ztf_step/settings.py \
-  correction_multistream_ztf_step/README.md \
-  /app/
 
 WORKDIR /app
 RUN poetry install --only-root;
