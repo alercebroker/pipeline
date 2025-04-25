@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: "sorting_hat_step"
-      python-version: "3.8"
+      python-version: "3.10"
       sources-folder: "sorting_hat_step"
       test-folder: "tests/unittest"
     secrets:
@@ -27,7 +27,7 @@ jobs:
     uses: ./.github/workflows/poetry-tests-template.yaml
     with:
       base-folder: "sorting_hat_step"
-      python-version: "3.8"
+      python-version: "3.10"
       sources-folder: "sorting_hat_step"
       test-folder: "tests/integration"
       codecov-flags: "sorting_hat_step_integration"

@@ -1,0 +1,9 @@
+services:
+  postgres_idmapper_test:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "25432:5432"
