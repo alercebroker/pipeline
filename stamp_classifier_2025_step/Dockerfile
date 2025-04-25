@@ -17,30 +17,29 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 RUN pip install poetry
-COPY ms_classification_step/poetry.lock \
-    ms_classification_step/pyproject.toml \
+COPY stamp_classifier_2025_step/pyproject.toml \
     /app/
 COPY libs/apf /libs/apf
+COPY libs/db-plugins /libs/db-plugins
 COPY alerce_classifiers /alerce_classifiers
-COPY schemas/lc_classification_step /schemas/lc_classification_step
-COPY schemas/scribe_step /schemas/scribe_step
+COPY schemas/stamp_classifier_2025_step /schemas/stamp_classifier_2025_step
+COPY schemas/ztf /schemas/ztf
 WORKDIR /app
-RUN poetry run python -m pip install setuptools wheel Cython==0.29.36 numpy
-RUN poetry run python -m pip install ../mhps --no-use-pep517
-RUN poetry install --no-root --without=dev --without=test --with=${model}
+RUN poetry install --no-root 
 
 
 FROM python:3.10-slim as production
 RUN pip install poetry
 COPY --from=builder /app /app
 COPY --from=builder /libs/apf /libs/apf
+COPY --from=builder /libs/db-plugins /libs/db-plugins
 COPY --from=builder /alerce_classifiers /alerce_classifiers
 COPY --from=builder /schemas /schemas
 COPY stamp_classifier_2025_step/scripts /app/scripts
 COPY stamp_classifier_2025_step/README.md /app/README.md
 COPY stamp_classifier_2025_step/settings.py /app/settings.py
 COPY stamp_classifier_2025_step/models_settings.py /app/models_settings.py
-COPY stamp_classifier_2025_step/ms_classification /app/stamp_classifier_2025_step
+COPY stamp_classifier_2025_step/stamp_classifier_2025_step /app/stamp_classifier_2025_step
 WORKDIR /app/
 RUN poetry install --only-root
-CMD ["poetry", "run",  "python", "scripts/run_step.py"]
+CMD ["poetry", "run", "python", "scripts/run_step.py"]  

@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 27.5.2
+description: Ingestion step
+name: ingestion-step
+type: application
+version: 27.5.2

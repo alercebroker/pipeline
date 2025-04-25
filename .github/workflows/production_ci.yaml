@@ -228,6 +228,17 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
+  build-ingestion-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: production
+      extra-args: ingestion_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+
   release-chart:
     needs:
       - build-alert-archiving-dagger

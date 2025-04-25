@@ -19,8 +19,20 @@ from astropy.io import fits
 from apf.core import get_class
 from apf.consumers import KafkaConsumer
 from apf.core.step import GenericStep
+from .db.db import PSQLConnection, store_probability
+from .parsers.kafka_parser import KafkaParser
+import logging
+import numexpr
+import traceback
+import sys
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
-from alerce_classifiers.base._types import Detections, NonDetections, Features, Xmatch, Stamps
+from alerce_classifiers.base._types import (
+    Detections,
+    NonDetections,
+    Features,
+    Xmatch,
+    Stamps,
+)
 from db_plugins.db.sql.models import Probability
 
 
@@ -44,62 +56,20 @@ class MultiScaleStampClassifier(GenericStep):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
 
-        # Model and classifier config
+        """ CLASSSIFIER VERSION AND NAME"""
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = self.config["MODEL_CONFIG"]["VERSION"]
 
-        # Parsers
-        self.step_parser = get_class(config["STEP_PARSER_CLASS"])()
-        # TODO:
-        # self.scribe_producer = get_class(
-        #     config["SCRIBE_PRODUCER_CONFIG"]["CLASS"]
-        # )(config["SCRIBE_PRODUCER_CONFIG"])
-        # self.scribe_parser: KafkaParser = get_class(
-        #     config["SCRIBE_PARSER_CLASS"]
-        # )(classifier_name=self.classifier_name)
+        """ KAFKA PARSERS AND SCRIBE PARSERS """
+        self.step_parser: KafkaParser = get_class(config["STEP_PARSER_CLASS"])()
 
-        # DB connection and model
-        self.engine = self._create_engie()
+        """ DB CONNECTION AND MODEL"""
+        self.db_config = self.config["DATABASE_CREDENTIALS"]
+        self.engine = PSQLConnection(self.db_config)
         self.mapper = get_class(config["MODEL_CONFIG"]["CLASS_MAPPER"])()
         self.model = get_class(config["MODEL_CONFIG"]["CLASS"])(
             **{"mapper": self.mapper, **config["MODEL_CONFIG"]["PARAMS"]}
         )
-
-    def execute(self, messages):
-        """Run the classification.
-
-        Parameters
-        ----------
-        messages : List[dict-like]
-            Current object data.
-
-        """
-
-        output_dto = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
-
-        if len(messages) >= 1:
-            df_stamps, messages_dict = self._read_and_transform_messages(messages)
-
-            try:
-                input_dto = self._df_to_input_dto(df_stamps)
-                self.logger.info(f"{len(messages_dict)} messages consumed")
-            except Exception as e:
-                self.logger.error("Error converting DataFrame to InputDTO")
-                self.logger.error(e)
-                self.logger.error(traceback.format_exc())
-                return output_dto, messages_dict, DataFrame()
-
-            try:
-                output_dto = self.predict(input_dto)
-                self._insert_to_db_from_output_dto(output_dto)
-            except Exception as e:
-                self.logger.error(e)
-                self.logger.error(traceback.print_exc())
-
-
-            return output_dto, messages_dict, DataFrame()
-        else:
-            return output_dto, messages_dict, DataFrame()
 
     def _read_and_transform_messages(self, messages: list[dict]) -> pd.DataFrame:
         """read compressed messages and return lightweight messages with only necesary data"""
@@ -130,8 +100,8 @@ class MultiScaleStampClassifier(GenericStep):
         return df, messages_dict
 
         # USANDO PADDING DIRECTO
-        #records = []
-        #for msg in messages:
+        # records = []
+        # for msg in messages:
         #    template = self._extract_metadata_from_message(msg)
         #    for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
         #        template[k] = self._pad_matrices(
@@ -139,11 +109,12 @@ class MultiScaleStampClassifier(GenericStep):
         #            target_shape=(63, 63),
         #        )
         #    records.append(template)
-#
-        #df = pd.DataFrame.from_records(records).set_index('oid').sort_values("jd", ascending=True)
-        #df = df[~df.index.duplicated(keep="first")]
-        #messages_dict = df.to_dict(orient="index")
-        #return df, messages_dict
+
+    #
+    # df = pd.DataFrame.from_records(records).set_index('oid').sort_values("jd", ascending=True)
+    # df = df[~df.index.duplicated(keep="first")]
+    # messages_dict = df.to_dict(orient="index")
+    # return df, messages_dict
 
     def _df_to_input_dto(self, df: pd.DataFrame) -> InputDTO:
         return InputDTO(
@@ -197,47 +168,83 @@ class MultiScaleStampClassifier(GenericStep):
             with fits.open(io.BytesIO(decompressed_data)) as hdul:
                 return hdul[0].data
 
-    def _get_ranking(self, output_dto: OutputDTO) -> DataFrame:
-        probabilitites = output_dto.probabilities.reset_index()
-        probabilitites_melt = probabilitites.melt(
-            id_vars=["oid"], var_name="class_name", value_name="probability"
-        )
-        probabilitites_melt["ranking"] = probabilitites_melt.groupby("oid")[
-            "probability"
-        ].rank(ascending=False, method="dense")
-        return probabilitites_melt
+    def pre_execute(self, messages):
+        """override method"""
+        return self._read_and_transform_messages(messages)
 
-    def _insert_to_db_from_output_dto(self, output_dto: OutputDTO) -> None:
-        probabilities = self._get_ranking(output_dto)
-        probabilities["classifier_name"] = self.classifier_name
-        probabilities["classifier_version"] = self.classifier_version
-        """ to records """
-        probabilities = probabilities.to_dict(orient="records")
-        """ probabilities insert to database """
-        try:
-            insert_stmt = insert(Probability).values(probabilities)
-            insert_stmt = insert_stmt.on_conflict_do_nothing()
-            with self.model_psql.connect() as conn:
-                conn.execute(insert_stmt)
-                conn.commit()
-
-        except Exception as e:
-            self.logger.error(e)
-            self.logger.error(traceback.print_exc())
-
-    def _create_engie(self):
-        try:
-            self.db_config = self.config["DATABASE_CREDENTIALS"]
-            self.model_psql = create_engine(
-                f"postgresql://{self.db_config['USER']}:{self.db_config['PASSWORD']}@{self.db_config['HOST']}:{self.db_config['PORT']}/{self.db_config['DB_NAME']}",
-                connect_args={
-                    "options": "-csearch_path={}".format(self.db_config["SCHEMA"])
-                },
+    def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
+        """ensure that all stamps share the same dimension"""
+        messages_filtered = []
+        for msg in messages:
+            condition_01 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutTemplate"].shape
             )
-        except Exception as e:
-            self.logger.error(e)
-            self.logger.error(traceback.print_exc())
-            sys.exit(1)
+            condition_02 = (
+                msg["data_stamp_inference"]["cutoutScience"].shape
+                == msg["data_stamp_inference"]["cutoutDifference"].shape
+            )
+            if condition_01 and condition_02:
+                self.logger.info(
+                    f"stamps with the same dimension dim = {msg['data_stamp_inference']['cutoutScience'].shape}"
+                )
+                messages_filtered.append(msg)
+
+        return messages_filtered
+
+    def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
+
+        ## get only necessary information form each msg
+        records = []
+        for msg in messages:
+            records.append(msg["data_stamp_inference"])
+
+        return InputDTO(
+            Detections(DataFrame()),
+            NonDetections(DataFrame()),
+            Features(DataFrame()),
+            Xmatch(DataFrame()),
+            Stamps(
+                pd.DataFrame.from_records(records)
+                .set_index("oid")
+                .rename(columns=self._mapper_names)
+            ),
+        )
+
+    def execute(self, messages):
+        """Run the classification.
+
+        Parameters
+        ----------
+        messages : List[dict-like]
+            Current object data.
+
+        """
+
+        output_dto = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
+
+        if len(messages) >= 1:
+            df_stamps, messages_dict = self._read_and_transform_messages(messages)
+
+            try:
+                input_dto = self._df_to_input_dto(df_stamps)
+                self.logger.info(f"{len(messages_dict)} messages consumed")
+            except Exception as e:
+                self.logger.error("Error converting DataFrame to InputDTO")
+                self.logger.error(e)
+                self.logger.error(traceback.format_exc())
+                return output_dto, messages_dict, DataFrame()
+
+            self.logger.info(f"input : {input_dto}")
+            output_dto = self.predict(input_dto)
+            self.logger.info(f" output : {output_dto}")
+            store_probability(
+                self.engine, self.classifier_name, self.classifier_version, output_dto
+            )
+
+            return output_dto, messages_dict, DataFrame()
+        else:
+            return output_dto, messages, DataFrame()
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
         return (
@@ -252,19 +259,9 @@ class MultiScaleStampClassifier(GenericStep):
             messages=result[1],
         ).value
 
-    def produce_scribe(self, commands: List[dict]):
-        """BYPASS FUNCTION"""
-        pass
-        # ids_list = []
-        # for command in commands:
-        #     ids_list.append(command["criteria"]["_id"])
-        #     self.scribe_producer.produce({"payload": json.dumps(command)})
-        # self.logger.debug(f"The list of objets from scribe are: {ids_list}")
-
     def tear_down(self):
         if isinstance(self.consumer, KafkaConsumer):
             self.consumer.teardown()
         else:
             self.consumer.__del__()
         self.producer.__del__()
-
