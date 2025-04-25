@@ -1,0 +1,56 @@
+
+enabled: true
+CONSUMER_CONFIG:
+  CLASS: "apf.consumers.KafkaSchemalessConsumer"
+  SCHEMA_PATH: "/home/kay/Descargas/pipeline_2204/pipeline/schemas/ingestion_step/output.avsc"
+  PARAMS:
+    bootstrap.servers: b-3-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196,b-1-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196,b-2-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196
+    group.id: "ztf-ingestion-reprocess20"
+    sasl.username: correction-ms-ztf
+    sasl.password: correction-ms-ztfx
+    security.protocol: "SASL_SSL"
+    sasl.mechanisms: "SCRAM-SHA-512"
+    auto.offset.reset: beginning
+  TOPICS: ["ztf-ingestion"]
+  consume.messages: 100
+  consume.timeout: 10
+PRODUCER_CONFIG:
+  CLASS: "apf.producers.KafkaSchemalessProducer"
+  PARAMS:
+    bootstrap.servers: b-3-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196,b-1-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196,b-2-public.internalstaging.nwexa4.c16.kafka.us-east-1.amazonaws.com:9196
+    sasl.username: correction-ms-ztf
+    sasl.password: correction-ms-ztfx
+    security.protocol: "SASL_SSL"
+    sasl.mechanisms: "SCRAM-SHA-512"
+    message.max.bytes: 67108864
+  TOPIC: "correction-ms-ztf"
+  SCHEMA_PATH: "/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_ms_ztf/output.avsc"
+#METRICS_CONFIG:
+#  CLASS: "apf.metrics.KafkaMetricsProducer"
+#  PARAMS:
+#    PARAMS:
+#      bootstrap.servers: b-3-public.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9196,b-1-public.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9196,b-2-public.internalproduction.u72mxb.c11.kafka.us-east-1.amazonaws.com:9196
+#      sasl.username: lightcurve
+#      sasl.password: lightcurvex
+#      security.protocol: "SASL_SSL"
+#      sasl.mechanisms: "SCRAM-SHA-512"
+#    TOPIC: "metrics"
+#    SCHEMA_PATH: "/home/vex/Descargas/pipeline (1)/pipeline/schemas/lightcurve_step/metrics.json"
+PYROSCOPE_SERVER: "http://pyroscope.pyroscope:4040"
+LOGGING_DEBUG: false
+MONGO_SECRET_NAME: "mongodb-alerts-production-writer"
+FEATURE_FLAGS:
+  PROMETHEUS: false
+  USE_PROFILING: true
+  SKIP_MJD_FILTER: true
+  USE_SQL: true
+  USE_MONGO: false
+PSQL_CONFIG:
+  HOST: 44.210.122.226
+  USER: alerce
+  PASSWORD: yR66ZK5tQJGj9qBeKSpXhTMS
+  PORT: 5432
+  DB_NAME: alercedb
+  SCHEMA: multisurvey
+
+    

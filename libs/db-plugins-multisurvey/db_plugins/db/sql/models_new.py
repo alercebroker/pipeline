@@ -39,7 +39,7 @@ class Object(Base):
     meanra = Column(DOUBLE_PRECISION, nullable=False)
     meandec = Column(DOUBLE_PRECISION, nullable=False)
     sigmara = Column(DOUBLE_PRECISION, nullable=False)
-    sigmade = Column(DOUBLE_PRECISION, nullable=False)
+    sigmadec = Column(DOUBLE_PRECISION, nullable=False)
     firstmjd = Column(DOUBLE_PRECISION, nullable=False)
     lastmjd = Column(DOUBLE_PRECISION, nullable=False)
     deltamjd = Column(DOUBLE_PRECISION, nullable=False)
@@ -83,6 +83,7 @@ class Detection(Base):
     dec = Column(DOUBLE_PRECISION, nullable=False)#float8,
     band = Column(SmallInteger, nullable=False)#int2,
 
+
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'measurement_id', name='pk_detection_oid_measurementid'),
         ForeignKeyConstraint([oid], [Object.oid]),
@@ -97,7 +98,7 @@ class ZtfDetection(Base):
     measurement_id = Column(BigInteger, nullable=False) #int8,
     pid = Column(BigInteger, nullable=False) #int8,
     diffmaglim = Column(REAL, nullable=False) #float4,
-    isdiffpos = Column(Boolean, nullable=False) #bool,
+    isdiffpos = Column(Integer, nullable=False) #int4 not null,
     nid = Column(Integer, nullable=False) #int4,
     magpsf = Column(REAL, nullable=False) #float4,
     sigmapsf = Column(REAL, nullable=False) # float4,
@@ -110,7 +111,8 @@ class ZtfDetection(Base):
     drbversion = Column(VARCHAR, nullable=False)# varchar,
     magapbig = Column(REAL, nullable=False)# float4,
     sigmagapbig = Column(Integer, nullable=False)# float4,
-    rband = Column(BigInteger, nullable=False)# int8,
+    rfid = Column(BigInteger, nullable=False)# int8,
+    #rband = Column(BigInteger, nullable=False)# int8,
     magpsf_corr = Column(Integer, nullable=False)# float4,
     sigmapsf_corr = Column(Integer, nullable=False)# float4,
     sigmapsf_corr_ext = Column(Integer, nullable=False)# float4,
@@ -118,8 +120,6 @@ class ZtfDetection(Base):
     dubious = Column(Boolean, nullable=False)# bool,
     parent_candid = Column(BigInteger, nullable=False)# int8,
     has_stamp = Column(Boolean, nullable=False)# bool,
-    step_id_corr = Column(SmallInteger, nullable=False) # int2
-
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'measurement_id', name='pk_ztfdetection_oid_measurementid'),
         ForeignKeyConstraint([oid], [Object.oid]),
@@ -148,8 +148,9 @@ class ZtfForcedPhotometry(Base):
     __tablename__ = "ztf_forced_photometry"
 
     oid = Column(BigInteger, nullable=False)  # int8,
+    pid = Column(BigInteger, nullable=False) #int8,
     measurement_id = Column(BigInteger, nullable=False)  # int8,
-    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8
     e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     mag_corr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     e_mag_corr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
@@ -157,11 +158,12 @@ class ZtfForcedPhotometry(Base):
     isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
-    parent_candid = Column(VARCHAR, nullable=False)  # varchar,
+    parent_candid = Column(BigInteger, nullable=False)  # varchar,
     has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
     field = Column(Integer, nullable=False)  # int4,
     rcid = Column(Integer, nullable=False)  # int4,
-    rband = Column(BigInteger, nullable=False)  # int8,
+    rfid = Column(BigInteger, nullable=False)  # int8,
+    #rband = Column(BigInteger, nullable=False)# int8,
     sciinpseeing = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     scibckgnd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     scisigpix = Column(DOUBLE_PRECISION, nullable=False)  # float8,
@@ -173,7 +175,7 @@ class ZtfForcedPhotometry(Base):
     exptime = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     adpctdif1 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     adpctdif2 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    diffmagli = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    diffmaglim = Column(DOUBLE_PRECISION, nullable=False)  # float8,
     programid = Column(Integer, nullable=False)  # int4,
     procstatus = Column(VARCHAR, nullable=False)  # varchar,
     distnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,

@@ -176,6 +176,8 @@ class KafkaProducer(GenericProducer):
         for topic in self.topic:
             flush = kwargs.pop("flush", False)
             try:
+                if key is not None and isinstance(key, int):
+                    key = str(key)
                 self.producer.produce(
                     topic, value=message, key=key, callback=acked, **kwargs
                 )
