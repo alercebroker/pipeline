@@ -4,6 +4,7 @@ from db_plugins.db.sql.models_new import Base
 from contextlib import contextmanager
 import logging
 
+
 def get_db_url(config: dict):
     return f"postgresql://{config['USER']}:{config['PASSWORD']}@{config['HOST']}:{config['PORT']}/{config['DB_NAME']}"
 
@@ -15,9 +16,7 @@ class PsqlDatabase:
     def __init__(self, db_config: dict, engine=None) -> None:
         db_url = get_db_url(db_config)
         self._engine = engine or create_engine(db_url, echo=False)
-        self._session_factory = sessionmaker(
-            autocommit=False, autoflush=False, bind=self._engine
-        )
+        self._session_factory = sessionmaker(autocommit=False, autoflush=False, bind=self._engine)
 
     def create_db(self):
         Base.metadata.create_all(self._engine)

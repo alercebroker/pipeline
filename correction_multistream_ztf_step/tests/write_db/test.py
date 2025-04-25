@@ -24,12 +24,13 @@ class BaseDbTests(unittest.TestCase):
         # Insert data
         insert_data_step = InsertData(self.connection)
         insert_data_step.insert_data()
-        
+
         # Clear DB
         self.tearDown()
 
     def tearDown(self):
         # limpiar la db
         self.connection.drop_db()
+
 
 base_db_tests = BaseDbTests()

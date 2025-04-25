@@ -3,8 +3,24 @@ from sqlalchemy.orm import sessionmaker, Session, scoped_session
 from contextlib import contextmanager
 from typing import ContextManager
 
-from data2 import detections, non_detection, ztf_forced_photometry,forced_photometry, objects, ztf_detections
-from db_plugins.db.sql.models_new import Base, Object, ZtfDetection, ZtfForcedPhotometry, ForcedPhotometry, NonDetection, Detection
+from data2 import (
+    detections,
+    non_detection,
+    ztf_forced_photometry,
+    forced_photometry,
+    objects,
+    ztf_detections,
+)
+from db_plugins.db.sql.models_new import (
+    Base,
+    Object,
+    ZtfDetection,
+    ZtfForcedPhotometry,
+    ForcedPhotometry,
+    NonDetection,
+    Detection,
+)
+
 
 class PSQLConnection:
     def __init__(self, config={}):
@@ -20,7 +36,9 @@ class PSQLConnection:
         )
 
     def _create_engine(self):
-        conn_str = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+        conn_str = (
+            f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+        )
         return create_engine(conn_str)
 
     @contextmanager
@@ -43,37 +61,47 @@ class PSQLConnection:
         with self.session() as session:
             meta = MetaData()
             meta.reflect(bind=self._engine)
-            for table in reversed(meta.sorted_tables): #important reverse order to avoid dependency errors.
+            for table in reversed(
+                meta.sorted_tables
+            ):  # important reverse order to avoid dependency errors.
                 session.execute(table.delete())
             session.commit()
 
-    def insert_data(self, detections_data, ztf_detections_data, non_detections_data, ztf_forced_photometry_data, forced_photometry_data, objects):
+    def insert_data(
+        self,
+        detections_data,
+        ztf_detections_data,
+        non_detections_data,
+        ztf_forced_photometry_data,
+        forced_photometry_data,
+        objects,
+    ):
         with self.session() as session:
             # Insert objects first
             for obj_data in objects:
                 obj = Object(**obj_data)
                 session.add(obj)
-            session.commit() # commit objects before inserting other data.
-            
-            print('Object done!')
+            session.commit()  # commit objects before inserting other data.
+
+            print("Object done!")
 
             # Insert detections
             for detection_data in detections_data:
                 detection = Detection(**detection_data)
                 session.add(detection)
-            print('Detection listo!')
+            print("Detection listo!")
 
             # Insert ztf_detections
             for ztf_detection_data in ztf_detections_data:
                 ztf_detection = ZtfDetection(**ztf_detection_data)
                 session.add(ztf_detection)
-            print('ZtfDetection done!')
-            
+            print("ZtfDetection done!")
+
             # Insert non_detections
             for non_detection_data in non_detections_data:
                 non_detection = NonDetection(**non_detection_data)
                 session.add(non_detection)
-            print('NonDetections done!')
+            print("NonDetections done!")
 
             # Insert ztf_forced_photometry
             if isinstance(ztf_forced_photometry_data, dict):
@@ -83,7 +111,7 @@ class PSQLConnection:
                 for fp_data in ztf_forced_photometry_data:
                     forced_phot = ZtfForcedPhotometry(**fp_data)
                     session.add(forced_phot)
-            print('ZTF forced photometry done!')
+            print("ZTF forced photometry done!")
 
             # Insert forced_photometry
             if isinstance(forced_photometry_data, dict):
@@ -93,8 +121,10 @@ class PSQLConnection:
                 for fp_data in forced_photometry_data:
                     forced_phot = ForcedPhotometry(**fp_data)
                     session.add(forced_phot)
-            print('FP done!')
-if __name__ == "__main__":  
+            print("FP done!")
+
+
+if __name__ == "__main__":
     connection = PSQLConnection()
 
     try:

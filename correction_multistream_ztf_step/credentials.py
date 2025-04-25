@@ -29,13 +29,11 @@ class _MongoConfig(UserDict):
 
     def __setitem__(self, key, value):
         """Converts keys from (case-insensitive) `snake_case` to `lowerCamelCase`"""
-        klist = [
-            w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))
-        ]
+        klist = [w.lower() if i == 0 else w.title() for i, w in enumerate(key.split("_"))]
         super().__setitem__("".join(klist), value)
 
 
-def get_credentials(secret_name,db_name):
+def get_credentials(secret_name, db_name):
     secret = get_secret(secret_name)
     secret = json.loads(secret)
     # check if config is valid
@@ -45,8 +43,3 @@ def get_credentials(secret_name,db_name):
         secret["port"] = int(secret["port"])
 
     return secret
-
-
-
-
-

@@ -4,11 +4,11 @@ import json
 import io
 import yaml
 
-with open('tests/consumer/kafka_config.yaml', 'r') as file:
+with open("tests/consumer/kafka_config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
-conf = config['kafka_config1']
-conf2 = config['kafka_config2']
+conf = config["kafka_config1"]
+conf2 = config["kafka_config2"]
 
 
 def consume_and_save_json(consumer_config, topic, schema_path, output_file):
@@ -28,22 +28,23 @@ def consume_and_save_json(consumer_config, topic, schema_path, output_file):
                 bytes_io = io.BytesIO(msg.value())
                 data = fastavro.schemaless_reader(bytes_io, schema)
                 print(data)
-                return data  
+                return data
     finally:
         consumer.close()
 
+
 data1 = consume_and_save_json(
-    conf, 
-    'correction', 
-    '/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_step/output.avsc',
-    'correction_data.json'
+    conf,
+    "correction",
+    "/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_step/output.avsc",
+    "correction_data.json",
 )
 
 data2 = consume_and_save_json(
-    conf2, 
-    'correction-ms-ztf', 
-   '/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_ms_ztf/output.avsc',
-    'correction_ms_ztf_data.json'
+    conf2,
+    "correction-ms-ztf",
+    "/home/kay/Descargas/pipeline_2204/pipeline/schemas/correction_ms_ztf/output.avsc",
+    "correction_ms_ztf_data.json",
 )
 
 print("Both topics processed successfully.")
