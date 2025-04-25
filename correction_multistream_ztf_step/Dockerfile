@@ -39,7 +39,6 @@ COPY --from=builder /schemas /schemas
 
 COPY correction_multistream_ztf_step/correction_multistream_ztf_step /app/correction_multistream_ztf_step
 COPY correction_multistream_ztf_step/core /app/core
-COPY correction_multistream_ztf_step/tests /app/tests
 COPY correction_multistream_ztf_step/scripts /app/scripts
 
 WORKDIR /app
