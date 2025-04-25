@@ -33,21 +33,21 @@ class Commons:
 class Object(Base):
     __tablename__ = "object"
 
-    oid = Column(BigInteger, nullable=False)
-    tid = Column(SmallInteger, nullable=False)
-    sid = Column(SmallInteger, nullable=False)
-    meanra = Column(DOUBLE_PRECISION, nullable=False)
-    meandec = Column(DOUBLE_PRECISION, nullable=False)
-    sigmara = Column(DOUBLE_PRECISION, nullable=False)
-    sigmadec = Column(DOUBLE_PRECISION, nullable=False)
-    firstmjd = Column(DOUBLE_PRECISION, nullable=False)
-    lastmjd = Column(DOUBLE_PRECISION, nullable=False)
-    deltamjd = Column(DOUBLE_PRECISION, nullable=False)
-    n_det = Column(Integer, nullable=False)
-    n_forced = Column(Integer, nullable=False)
-    n_non_det = Column(Integer, nullable=False)
-    corrected = Column(Boolean, nullable=False)
-    stellar = Column(Boolean, nullable=False)
+    oid = Column(BigInteger)
+    tid = Column(SmallInteger)
+    sid = Column(SmallInteger)
+    meanra = Column(DOUBLE_PRECISION)
+    meandec = Column(DOUBLE_PRECISION)
+    sigmara = Column(DOUBLE_PRECISION)
+    sigmadec = Column(DOUBLE_PRECISION)
+    firstmjd = Column(DOUBLE_PRECISION)
+    lastmjd = Column(DOUBLE_PRECISION)
+    deltamjd = Column(DOUBLE_PRECISION)
+    n_det = Column(Integer)
+    n_forced = Column(Integer)
+    n_non_det = Column(Integer)
+    corrected = Column(Boolean)
+    stellar = Column(Boolean)
 
     __table_args__ = (
         PrimaryKeyConstraint('oid', name='pk_object_oid'),
@@ -62,11 +62,11 @@ class ZtfObject(Base):
 
     __tablename__ = "ztf_object"
 
-    oid = Column(BigInteger, nullable=False)
-    g_r_max = Column(REAL, nullable=False)
-    g_r_max_corr = Column(REAL, nullable=False)
-    g_r_mean = Column(REAL, nullable=False)
-    g_r_mean_corr = Column(REAL, nullable=False)
+    oid = Column(BigInteger)
+    g_r_max = Column(REAL)
+    g_r_max_corr = Column(REAL)
+    g_r_mean = Column(REAL)
+    g_r_mean_corr = Column(REAL)
 
     __table_args__ = (
         PrimaryKeyConstraint('oid', name='pk_ztfobject_oid'),
@@ -76,12 +76,12 @@ class Detection(Base):
 
     __tablename__ = "detection"
 
-    oid = Column(BigInteger, nullable=False)#int8,
-    measurement_id = Column(BigInteger, nullable=False) #int8,
-    mjd = Column(DOUBLE_PRECISION, nullable=False)#float8,
-    ra = Column(DOUBLE_PRECISION, nullable=False)#float8,
-    dec = Column(DOUBLE_PRECISION, nullable=False)#float8,
-    band = Column(SmallInteger, nullable=False)#int2,
+    oid = Column(BigInteger)#int8,
+    measurement_id = Column(BigInteger) #int8,
+    mjd = Column(DOUBLE_PRECISION)#float8,
+    ra = Column(DOUBLE_PRECISION)#float8,
+    dec = Column(DOUBLE_PRECISION)#float8,
+    band = Column(SmallInteger)#int2,
 
 
     __table_args__ = (
@@ -94,32 +94,32 @@ class ZtfDetection(Base):
 
     __tablename__ = "ztf_detection"
 
-    oid = Column(BigInteger, nullable=False) #int8,
-    measurement_id = Column(BigInteger, nullable=False) #int8,
-    pid = Column(BigInteger, nullable=False) #int8,
-    diffmaglim = Column(REAL, nullable=False) #float4,
+    oid = Column(BigInteger) #int8,
+    measurement_id = Column(BigInteger) #int8,
+    pid = Column(BigInteger) #int8,
+    diffmaglim = Column(REAL) #float4,
     isdiffpos = Column(Integer, nullable=False) #int4 not null,
-    nid = Column(Integer, nullable=False) #int4,
-    magpsf = Column(REAL, nullable=False) #float4,
-    sigmapsf = Column(REAL, nullable=False) # float4,
-    magap = Column(REAL, nullable=False) # float4,
-    sigmagap = Column(REAL, nullable=False) # float4,
-    distnr= Column(REAL, nullable=False) # float4,
-    rb = Column(REAL, nullable=False)# float4,
-    rbversion = Column(VARCHAR, nullable=False)# varchar,
-    drb = Column(REAL, nullable=False)# float4,
-    drbversion = Column(VARCHAR, nullable=False)# varchar,
-    magapbig = Column(REAL, nullable=False)# float4,
-    sigmagapbig = Column(Integer, nullable=False)# float4,
-    rfid = Column(BigInteger, nullable=False)# int8,
-    #rband = Column(BigInteger, nullable=False)# int8,
-    magpsf_corr = Column(Integer, nullable=False)# float4,
-    sigmapsf_corr = Column(Integer, nullable=False)# float4,
-    sigmapsf_corr_ext = Column(Integer, nullable=False)# float4,
-    corrected = Column(Boolean, nullable=False)# bool,
-    dubious = Column(Boolean, nullable=False)# bool,
-    parent_candid = Column(BigInteger, nullable=False)# int8,
-    has_stamp = Column(Boolean, nullable=False)# bool,
+    nid = Column(Integer) #int4,
+    magpsf = Column(REAL) #float4,
+    sigmapsf = Column(REAL) # float4,
+    magap = Column(REAL) # float4,
+    sigmagap = Column(REAL) # float4,
+    distnr= Column(REAL) # float4,
+    rb = Column(REAL)# float4,
+    rbversion = Column(VARCHAR)# varchar,
+    drb = Column(REAL)# float4,
+    drbversion = Column(VARCHAR)# varchar,
+    magapbig = Column(REAL)# float4,
+    sigmagapbig = Column(Integer)# float4,
+    rfid = Column(BigInteger)# int8,
+    rband = Column(BigInteger)# int8,
+    magpsf_corr = Column(Integer)# float4,
+    sigmapsf_corr = Column(Integer)# float4,
+    sigmapsf_corr_ext = Column(Integer)# float4,
+    corrected = Column(Boolean)# bool,
+    dubious = Column(Boolean)# bool,
+    parent_candid = Column(BigInteger)# int8,
+    has_stamp = Column(Boolean)# bool,
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'measurement_id', name='pk_ztfdetection_oid_measurementid'),
         ForeignKeyConstraint([oid], [Object.oid]),
@@ -130,12 +130,12 @@ class ForcedPhotometry(Base):
 
     __tablename__ = "forced_photometry"
 
-    oid = Column(BigInteger, nullable=False)# int8,
-    measurement_id = Column(BigInteger, nullable=False)# int8,
-    mjd = Column(DOUBLE_PRECISION, nullable=False)# float8,
-    ra = Column(DOUBLE_PRECISION, nullable=False)# float8,
-    dec = Column(DOUBLE_PRECISION, nullable=False)# float8,
-    band = Column(SmallInteger, nullable=False)# int2,
+    oid = Column(BigInteger)# int8,
+    measurement_id = Column(BigInteger)# int8,
+    mjd = Column(DOUBLE_PRECISION)# float8,
+    ra = Column(DOUBLE_PRECISION)# float8,
+    dec = Column(DOUBLE_PRECISION)# float8,
+    band = Column(SmallInteger)# int2,
 
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'measurement_id', name='pk_forcedphotometry_oid_measurementid'),
@@ -147,44 +147,44 @@ class ZtfForcedPhotometry(Base):
 
     __tablename__ = "ztf_forced_photometry"
 
-    oid = Column(BigInteger, nullable=False)  # int8,
-    pid = Column(BigInteger, nullable=False) #int8,
-    measurement_id = Column(BigInteger, nullable=False)  # int8,
-    mag = Column(DOUBLE_PRECISION, nullable=False)  # float8
-    e_mag = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    mag_corr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    e_mag_corr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    e_mag_corr_ext = Column(DOUBLE_PRECISION, nullable=False)  # float8,
+    oid = Column(BigInteger)  # int8,
+    pid = Column(BigInteger) #int8,
+    measurement_id = Column(BigInteger)  # int8,
+    mag = Column(DOUBLE_PRECISION)  # float8
+    e_mag = Column(DOUBLE_PRECISION)  # float8,
+    mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr = Column(DOUBLE_PRECISION)  # float8,
+    e_mag_corr_ext = Column(DOUBLE_PRECISION)  # float8,
     isdiffpos = Column(Integer, nullable=False)  # int4 NOT NULL,
     corrected = Column(Boolean, nullable=False)  # bool NOT NULL,
     dubious = Column(Boolean, nullable=False)  # bool NOT NULL,
-    parent_candid = Column(BigInteger, nullable=False)  # varchar,
+    parent_candid = Column(BigInteger)  # varchar,
     has_stamp = Column(Boolean, nullable=False)  # bool NOT NULL,
-    field = Column(Integer, nullable=False)  # int4,
-    rcid = Column(Integer, nullable=False)  # int4,
-    rfid = Column(BigInteger, nullable=False)  # int8,
-    #rband = Column(BigInteger, nullable=False)# int8,
-    sciinpseeing = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    scibckgnd = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    scisigpix = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpsci = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpsciunc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magzpscirms = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    clrcoeff = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    clrcounc = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    exptime = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    adpctdif1 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    adpctdif2 = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    diffmaglim = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    programid = Column(Integer, nullable=False)  # int4,
-    procstatus = Column(VARCHAR, nullable=False)  # varchar,
-    distnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    ranr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    decnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    magnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    sigmagnr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    chinr = Column(DOUBLE_PRECISION, nullable=False)  # float8,
-    sharpnr = Column(DOUBLE_PRECISION, nullable=False)  # float8
+    field = Column(Integer)  # int4,
+    rcid = Column(Integer)  # int4,
+    rfid = Column(BigInteger)  # int8,
+    rband = Column(BigInteger)# int8,
+    sciinpseeing = Column(DOUBLE_PRECISION)  # float8,
+    scibckgnd = Column(DOUBLE_PRECISION)  # float8,
+    scisigpix = Column(DOUBLE_PRECISION)  # float8,
+    magzpsci = Column(DOUBLE_PRECISION)  # float8,
+    magzpsciunc = Column(DOUBLE_PRECISION)  # float8,
+    magzpscirms = Column(DOUBLE_PRECISION)  # float8,
+    clrcoeff = Column(DOUBLE_PRECISION)  # float8,
+    clrcounc = Column(DOUBLE_PRECISION)  # float8,
+    exptime = Column(DOUBLE_PRECISION)  # float8,
+    adpctdif1 = Column(DOUBLE_PRECISION)  # float8,
+    adpctdif2 = Column(DOUBLE_PRECISION)  # float8,
+    diffmaglim = Column(DOUBLE_PRECISION)  # float8,
+    programid = Column(Integer)  # int4,
+    procstatus = Column(VARCHAR)  # varchar,
+    distnr = Column(DOUBLE_PRECISION)  # float8,
+    ranr = Column(DOUBLE_PRECISION)  # float8,
+    decnr = Column(DOUBLE_PRECISION)  # float8,
+    magnr = Column(DOUBLE_PRECISION)  # float8,
+    sigmagnr = Column(DOUBLE_PRECISION)  # float8,
+    chinr = Column(DOUBLE_PRECISION)  # float8,
+    sharpnr = Column(DOUBLE_PRECISION)  # float8
 
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'measurement_id', name='pk_ztfforcedphotometry_oid_measurementid'),
@@ -196,10 +196,10 @@ class NonDetection(Base):
 
     __tablename__ = 'non_detection'
 
-    oid = Column(BigInteger, nullable=False)# int8,
-    band = Column(SmallInteger, nullable=False)# int2,
-    mjd = Column(DOUBLE_PRECISION, nullable=False)# float8,
-    diffmaglim = Column(REAL, nullable=False)# float4,
+    oid = Column(BigInteger)# int8,
+    band = Column(SmallInteger)# int2,
+    mjd = Column(DOUBLE_PRECISION)# float8,
+    diffmaglim = Column(REAL)# float4,
 
     __table_args__ = (
         PrimaryKeyConstraint('oid', 'mjd', name='pk_oid_mjd'),
