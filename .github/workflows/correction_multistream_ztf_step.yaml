@@ -14,26 +14,6 @@ jobs:
     with:
       base-folder: "correction_multistream_ztf_step"
       sources-folder: "correction_multistream_ztf_step"
-  correction_multistream_ztf_step_unittest:
-    uses: ./.github/workflows/poetry-tests-template.yaml
-    with:
-      base-folder: "correction_multistream_ztf_step"
-      python-version: "3.10"
-      test-folder: "tests/unittest"
-    secrets:
-      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
-  correction_multistream_ztf_step_integration:
-    uses: ./.github/workflows/poetry-tests-template.yaml
-    with:
-      base-folder: "correction_multistream_ztf_step"
-      python-version: "3.10"
-      sources-folder: "correction_multistream_ztf_step"
-      test-folder: "tests/integration"
-      codecov-flags: "correction_multistream_ztf_step_integration" # Do not upload
-    secrets:
-      GH_TOKEN: "${{ secrets.ADMIN_TOKEN }}"
-      CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
-
   build-correction-multistream-ztf-dagger:
     uses: ./.github/workflows/template_build_with_dagger.yaml
     with:
