@@ -1,0 +1,6 @@
+#!/home/alerce/Desktop/alerce/pipeline/correction_multistream_ztf_step/black/bin/python
+import sys
+from correction._step import run_step
+
+if __name__ == '__main__':
+    sys.exit(run_step())
