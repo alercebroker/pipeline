@@ -26,7 +26,13 @@ import numexpr
 import traceback
 import sys
 from alerce_classifiers.base.dto import OutputDTO, InputDTO
-from alerce_classifiers.base._types import Detections, NonDetections, Features, Xmatch, Stamps
+from alerce_classifiers.base._types import (
+    Detections,
+    NonDetections,
+    Features,
+    Xmatch,
+    Stamps,
+)
 from db_plugins.db.sql.models import Probability
 
 
@@ -49,7 +55,7 @@ class MultiScaleStampClassifier(GenericStep):
     def __init__(self, config={}, level=logging.INFO, model=None, **step_args):
         super().__init__(config=config, level=level, **step_args)
         numexpr.utils.set_num_threads(1)
-        
+
         """ CLASSSIFIER VERSION AND NAME"""
         self.classifier_name = self.config["MODEL_CONFIG"]["NAME"]
         self.classifier_version = self.config["MODEL_CONFIG"]["VERSION"]
@@ -65,6 +71,60 @@ class MultiScaleStampClassifier(GenericStep):
             **{"mapper": self.mapper, **config["MODEL_CONFIG"]["PARAMS"]}
         )
 
+    def _read_and_transform_messages(self, messages: list[dict]) -> pd.DataFrame:
+        """read compressed messages and return lightweight messages with only necesary data"""
+        records = []
+        for msg in messages:
+            try:
+                science = self._decode_fits(msg["cutoutScience"]["stampData"])
+                if science.shape == (63, 63):
+                    template = self._decode_fits(msg["cutoutTemplate"]["stampData"])
+                    diff = self._decode_fits(msg["cutoutDifference"]["stampData"])
+                    metadata = self._extract_metadata_from_message(msg)
+                    metadata["cutoutScience"] = science
+                    metadata["cutoutTemplate"] = template
+                    metadata["cutoutDifference"] = diff
+                    records.append(metadata)
+            except Exception as e:
+                logging.warning(f"Skipping message due to error: {e}")
+
+        df = pd.DataFrame.from_records(records)
+        if not df.empty:
+            df = df.set_index("oid").sort_values("jd", ascending=True)
+            df = df[~df.index.duplicated(keep="first")]
+            messages_dict = df.to_dict(orient="index")
+        else:
+            messages_dict = {}
+
+        logging.info(f"Kept {len(records)}/{len(messages)} messages with 63x63 stamps.")
+        return df, messages_dict
+
+        # USANDO PADDING DIRECTO
+        # records = []
+        # for msg in messages:
+        #    template = self._extract_metadata_from_message(msg)
+        #    for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
+        #        template[k] = self._pad_matrices(
+        #            matrix=self._decode_fits(msg[k]["stampData"]),
+        #            target_shape=(63, 63),
+        #        )
+        #    records.append(template)
+
+    #
+    # df = pd.DataFrame.from_records(records).set_index('oid').sort_values("jd", ascending=True)
+    # df = df[~df.index.duplicated(keep="first")]
+    # messages_dict = df.to_dict(orient="index")
+    # return df, messages_dict
+
+    def _df_to_input_dto(self, df: pd.DataFrame) -> InputDTO:
+        return InputDTO(
+            Detections(DataFrame()),
+            NonDetections(DataFrame()),
+            Features(DataFrame()),
+            Xmatch(DataFrame()),
+            Stamps(df.rename(columns=self._mapper_names)),
+        )
+
     def predict(self, model_input: InputDTO) -> OutputDTO | None:
         """MODELS ALREADY HAVE PREDICT METHOD (NECESSARY ??)"""
         try:
@@ -72,11 +132,19 @@ class MultiScaleStampClassifier(GenericStep):
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.print_exc())
-            # sys.exit(1)
 
-    def pre_execute(self, messages):
-        """override method"""
-        return self._read_and_transform_messages(messages)
+    def _extract_metadata_from_message(self, msg: dict) -> dict:
+        return {
+            "oid": msg["objectId"],
+            "jd": msg["candidate"]["jd"],
+            "ra": msg["candidate"]["ra"],
+            "dec": msg["candidate"]["dec"],
+            "ssdistnr": msg["candidate"]["ssdistnr"],
+            "isdiffpos": self._mapper_isdiffpos[msg["candidate"]["isdiffpos"]],
+            "sgscore1": msg["candidate"]["sgscore1"],
+            "distpsnr1": msg["candidate"]["distpsnr1"],
+            "candid": msg["candidate"]["candid"],
+        }
 
     def _pad_matrices(self, matrix: np.ndarray, target_shape: tuple) -> np.ndarray:
         current_shape = matrix.shape
@@ -90,36 +158,19 @@ class MultiScaleStampClassifier(GenericStep):
             matrix, ((0, pad_rows), (0, pad_cols)), mode="constant", constant_values=0
         )
 
-    def _read_and_transform_messages(self, messages: list[dict]) -> List[dict]:
-        
-        readed_oids = set()
-        filtered_messages = []
+    def _decode_fits(self, data: bytes) -> np.array:
+        import io
+        import gzip
+        from astropy.io import fits
 
-        """read compressed messages and return lightweight messages with only necesary data"""
-        for i, msg in enumerate(messages):
-            """for each message extract only necessary information"""
-            if msg["objectId"] not in readed_oids:
-                readed_oids.add(msg["objectId"])
-                template = {}
-                template.update(self._extract_metadata_from_message(msg))
-                for k in ["cutoutScience", "cutoutTemplate", "cutoutDifference"]:
-                    template.update(
-                        {
-                            k: self._pad_matrices(
-                                matrix=self._decode_fits(msg[k]["stampData"]),
-                                target_shape=(63, 63),
-                            )
-                        }
-                    )
-                """ update the same list """
-                msg.update({"data_stamp_inference": template})
-                filtered_messages.append(msg)
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
+            decompressed_data = f.read()
+            with fits.open(io.BytesIO(decompressed_data)) as hdul:
+                return hdul[0].data
 
-
-        logging.info(f"Readed {len(messages)} oids")
-        logging.info(f"Processing {len(readed_oids)} oids because deduplication")
-        logging.info(f"Removed {len(messages) - len(readed_oids)} messages because deduplication")
-        return filtered_messages
+    def pre_execute(self, messages):
+        """override method"""
+        return self._read_and_transform_messages(messages)
 
     def _check_dimension_stamps(self, messages: list[dict]) -> List[dict]:
         """ensure that all stamps share the same dimension"""
@@ -140,24 +191,6 @@ class MultiScaleStampClassifier(GenericStep):
                 messages_filtered.append(msg)
 
         return messages_filtered
-
-    def _extract_metadata_from_message(self, msg: dict) -> dict:
-        return {
-            "oid": msg["objectId"],
-            "ra": msg["candidate"]["ra"],
-            "dec": msg["candidate"]["dec"],
-            "candid": msg["candidate"]["candid"],
-        }
-
-    def _decode_fits(self, data: bytes) -> np.array:
-        import io
-        import gzip
-        from astropy.io import fits
-
-        with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
-            decompressed_data = f.read()
-            with fits.open(io.BytesIO(decompressed_data)) as hdul:
-                return hdul[0].data
 
     def _messages_to_input_dto(self, messages: List[dict]) -> InputDTO:
 
@@ -191,20 +224,29 @@ class MultiScaleStampClassifier(GenericStep):
         output_dto = OutputDTO(DataFrame(), {"top": DataFrame(), "children": {}})
 
         if len(messages) >= 1:
-            input_dto = self._messages_to_input_dto(messages)
-            self.logger.info(f"{len(messages)} consumed")
+            df_stamps, messages_dict = self._read_and_transform_messages(messages)
+
+            try:
+                input_dto = self._df_to_input_dto(df_stamps)
+                self.logger.info(f"{len(messages_dict)} messages consumed")
+            except Exception as e:
+                self.logger.error("Error converting DataFrame to InputDTO")
+                self.logger.error(e)
+                self.logger.error(traceback.format_exc())
+                return output_dto, messages_dict, DataFrame()
+
             self.logger.info(f"input : {input_dto}")
             output_dto = self.predict(input_dto)
             self.logger.info(f" output : {output_dto}")
-            store_probability(self.engine, self.classifier_name, self.classifier_version, output_dto)
+            store_probability(
+                self.engine, self.classifier_name, self.classifier_version, output_dto
+            )
 
-            return output_dto, messages, DataFrame()
+            return output_dto, messages_dict, DataFrame()
         else:
             return output_dto, messages, DataFrame()
-    
 
     def post_execute(self, result: Tuple[OutputDTO, List[dict], DataFrame]):
-
         return (
             result[0],
             result[1],
