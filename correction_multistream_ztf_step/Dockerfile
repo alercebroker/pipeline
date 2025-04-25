@@ -37,6 +37,10 @@ COPY --from=builder /app /app
 COPY --from=builder /libs /libs
 COPY --from=builder /schemas /schemas
 
+COPY correction_multistream_ztf_step/README.md \
+  /app/
+
+COPY correction_multistream_ztf_step/README.md /app/
 COPY correction_multistream_ztf_step/correction_multistream_ztf_step /app/correction_multistream_ztf_step
 COPY correction_multistream_ztf_step/core /app/core
 COPY correction_multistream_ztf_step/scripts /app/scripts
