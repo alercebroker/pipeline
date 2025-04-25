@@ -30,8 +30,8 @@ def set_logger(settings):
 
 
 def step_creator():
-    if True:
-        settings = config_from_yaml_file("scripts/config.yaml")
+    if os.getenv("CONFIG_FROM_YAML", False):
+        settings = config_from_yaml_file("/config/config.yaml")
     else:
         from settings import settings_creator
 
