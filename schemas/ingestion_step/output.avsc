@@ -28,12 +28,12 @@
               "type": "int"
             },
             {
-              "name": "pid",
-              "type": "long"
-            },
-            {
               "name": "tid",
               "type": "int"
+            },
+            {
+              "name": "pid",
+              "type": "long"
             },
             {
               "name": "band",
