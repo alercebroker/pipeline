@@ -231,9 +231,9 @@ jobs:
   build-ingestion-dagger:
     needs: update-packages-dagger
     uses: ./.github/workflows/template_build_with_dagger.yaml
-  with:
-    stage: production
-    extra-args: ingestion_step
+    with:
+      stage: production
+      extra-args: ingestion_step
     secrets:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
