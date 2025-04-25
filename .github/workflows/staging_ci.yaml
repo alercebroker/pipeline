@@ -250,6 +250,16 @@ jobs:
       GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
+  build-correction-multistream-ztf-dagger:
+    needs: update-packages-dagger
+    uses: ./.github/workflows/template_build_with_dagger.yaml
+    with:
+      stage: staging
+      extra-args: correction_multistream_ztf_step
+    secrets:
+      GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
   release-chart:
     needs:
       - build-alert-archiving-dagger
